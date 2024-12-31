@@ -1,0 +1,7 @@
+# Coding Style Guidelines/Rules
+1. All truthy defines should have a value of 0 or 1, not true or false, and not an empty definition. Thus we use #if DEFINE rather than stuff like #ifdef DEFINE for most of our preprocessor checks that we control. Checking if a macro is defined is allowed but not the primary way we do this logic
+2. In Batch scripts we use :: syntax for comments, not REM, except when inside an if/else scope where :: does not work. Environment variables internal to a script will use %lowercase_syntax%
+3. Keywords NOTE: and TODO: should be used with the expectation that they will be highlighted by the editor in any file they appear
+4. All compilable units (.exe, .dll, .lib) shall adopt a "unity build" approach where a single main.c can be compiled and it will #include all other source code it needs from there
+5. We shall adhere to warning level 4 on MSVC compiler except for a designated set of warnings we don't care about, specified in build.bat. All warnings will be treated as errors and therefore must be fixed before checkin
+6. All source files should have a header that clearly states the name of the file, creation date, author, and optionally a description of what the file contains. Script files like .bat and .py are excluded from this requirement.

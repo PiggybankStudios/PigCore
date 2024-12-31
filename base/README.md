@@ -1,0 +1,2 @@
+# base
+This folder contains files that have 0 dependencies on other parts of the codebase and are the most often relied upon by other parts of the code base. This includes stuff like common macros, fundamental typedefs (u32, i32, r32, etc.), compiler and platform detection, etc.

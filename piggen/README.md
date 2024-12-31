@@ -1,0 +1,2 @@
+# piggen Folder
+The piggen folder contains a `main.c` that can be compiled into `piggen.exe` which does the job of generating C code from custom syntax embedded inside .h/.c files. The generated files are placed in a `gen` folder next to where piggen was run from (usually inside the `_build` folder) and then the original source file is modified (if needed) to #include the generated file.
