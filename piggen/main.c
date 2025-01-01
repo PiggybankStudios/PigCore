@@ -13,6 +13,12 @@ Description:
 
 int main()
 {
+	#if COMPILER_MSVC
+	printf("Compiled by MSVC\n");
+	#endif
+	#if COMPILER_CLANG
+	printf("Compiled by Clang\n");
+	#endif
 	printf("Running piggen...");
 	// getchar(); //wait for user to press ENTER
 	printf("DONE!\n");

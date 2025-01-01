@@ -14,6 +14,11 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define _BUILD_CONFIG_H
 
+// Build .exe binaries for Windows platform
+#define BUILD_WINDOWS 1
+// Build binaries for Linux platform(s)
+#define BUILD_LINUX   1
+
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
