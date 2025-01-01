@@ -5,3 +5,4 @@
 4. All compilable units (.exe, .dll, .lib) shall adopt a "unity build" approach where a single main.c can be compiled and it will #include all other source code it needs from there
 5. We shall adhere to warning level 4 on MSVC compiler except for a designated set of warnings we don't care about, specified in build.bat. All warnings will be treated as errors and therefore must be fixed before checkin
 6. All source files should have a header that clearly states the name of the file, creation date, author, and optionally a description of what the file contains. Script files like .bat and .py are excluded from this requirement.
+7. All source files and folders containing them should be strictly lowercase with no spaces to make multi-platform path handling in build scripts and preprocessor easier

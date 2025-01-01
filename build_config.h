@@ -29,4 +29,8 @@ Description:
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS     1
 
+// Rather than compiling the project(s) it will simply output the
+// result of the preprocessor's pass over the code to the build folder
+#define DUMP_PREPROCESSOR 0
+
 #endif //  _BUILD_CONFIG_H

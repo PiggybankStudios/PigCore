@@ -9,10 +9,12 @@ Description:
 */
 
 #include <stdio.h>
+#include "base/base_macros.h"
 
 int main()
 {
-	printf("Hello World! This is piggen.exe\n");
-	getchar(); //wait for user to press ENTER
+	printf("Running piggen...");
+	// getchar(); //wait for user to press ENTER
+	printf("DONE!\n");
 	return 0;
 }

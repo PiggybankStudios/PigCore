@@ -19,6 +19,7 @@ for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN') do set BUILD_PIGGEN=%%
 for /f "delims=" %%i in ('%extract_define% RUN_PIGGEN') do set RUN_PIGGEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_TESTS') do set BUILD_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
+for /f "delims=" %%i in ('%extract_define% DUMP_PREPROCESSOR') do set DUMP_PREPROCESSOR=%%i
 
 :: +==============================+
 :: |        Find Compiler         |
@@ -28,9 +29,9 @@ for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
 :: call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64 -no_logo
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64 > NUL
 
-:: +==============================+
-:: |       Compiler Options       |
-:: +==============================+
+:: +--------------------------------------------------------------+
+:: |                       Compiler Options                       |
+:: +--------------------------------------------------------------+
 :: /FC = Full path for error messages
 :: /nologo = Suppress the startup banner
 :: /W4 = Warning level 4 [just below /Wall]
@@ -45,6 +46,8 @@ set common_cl_flags=/FC /nologo /W4 /WX
 :: /wd4127 = Conditional expression is constant [W4]
 :: /wd4706 = assignment within conditional expression [W?]
 set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /wd4996 /wd4127 /wd4706
+:: /I = Adds an include directory to search in when resolving #includes
+set common_cl_flags=%common_cl_flags% /I"%root%"
 if "%DEBUG_BUILD%"=="1" (
 	REM /Od = Optimization level: Debug
 	REM /Zi = Generate complete debugging information
@@ -65,24 +68,43 @@ if "%DEBUG_BUILD%"=="1" (
 
 set common_ld_flags=
 
+:: /P = Output the result of the preprocessor to {file_name}.i (disables the actual compilation)
+:: /C = Preserve comments through the preprocessor
+if "%DUMP_PREPROCESSOR%"=="1" (
+	set common_cl_flags=/P /C %common_cl_flags%
+)
+
 :: +--------------------------------------------------------------+
 :: |                       Build piggen.exe                       |
 :: +--------------------------------------------------------------+
-:: /Fe = Set the output file name
-set piggen_cl_flags=%common_cl_flags% /Fepiggen.exe
-set piggen_ld_flags=%common_ld_flags%
+:: /Fe = Set the output exe file name
+set piggen_exe_path=piggen.exe
+set piggen_args=%common_cl_flags% /Fe%piggen_exe_path% %root%\piggen\main.c /link %common_ld_flags%
 if "%BUILD_PIGGEN%"=="1" (
-	cl %piggen_cl_flags% %root%\piggen\main.c /link %piggen_ld_flags%
+	del %piggen_exe_path% > NUL 2> NUL
+	cl %piggen_args%
+	if "%DUMP_PREPROCESSOR%"=="1" (
+		COPY main.i piggen_preprocessed.i > NUL
+	)
+)
+
+if "%RUN_PIGGEN%"=="1" (
+	piggen %root%
 )
 
 :: +--------------------------------------------------------------+
 :: |                       Build tests.exe                        |
 :: +--------------------------------------------------------------+
-set tests_cl_flags=%common_cl_flags% /Fetests.exe
-set tests_ld_flags=%common_ld_flags%
+set tests_exe_path=tests.exe
+set tests_args=%common_cl_flags% /Fe%tests_exe_path% %root%\tests\main.c /link %common_ld_flags%
 if "%BUILD_TESTS%"=="1" (
-	cl %tests_cl_flags% %root%\tests\main.c /link %tests_ld_flags%
+	del %tests_exe_path% > NUL 2> NUL
+	cl %tests_args%
+	if "%DUMP_PREPROCESSOR%"=="1" (
+		COPY main.i tests_preprocessed.i > NUL
+	)
 )
+
 if "%RUN_TESTS%"=="1" (
 	tests.exe
 )
