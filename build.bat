@@ -4,6 +4,10 @@ if not exist _build mkdir _build
 pushd _build
 set root=..
 
+for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
+	set /A "build_start_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+)
+
 :: +--------------------------------------------------------------+
 :: |                    Scrape build_config.h                     |
 :: +--------------------------------------------------------------+
@@ -147,5 +151,14 @@ if "%BUILD_TESTS%"=="1" (
 if "%RUN_TESTS%"=="1" (
 	%tests_exe_path%
 )
+
+for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
+   set /A "build_end_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+)
+set /A build_elapsed_hundredths=build_end_time-build_start_time
+set /A build_elapsed_seconds_part=build_elapsed_hundredths/100
+set /A build_elapsed_hundredths_part=build_elapsed_hundredths%%100
+if %build_elapsed_hundredths_part% lss 10 set build_elapsed_hundredths_part=0%build_elapsed_hundredths_part%
+echo Build took %build_elapsed_seconds_part%.%build_elapsed_hundredths_part% seconds
 
 popd
