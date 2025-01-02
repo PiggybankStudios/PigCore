@@ -19,6 +19,15 @@ int main()
 	#if COMPILER_CLANG
 	printf("Compiled by Clang\n");
 	#endif
+	#if COMPILER_GCC
+	printf("Compiled by GCC\n");
+	#endif
+	#if OS_WINDOWS
+	printf("Running on Windows\n");
+	#endif
+	#if OS_LINUX
+	printf("Running on Linux\n");
+	#endif
 	printf("Running piggen...");
 	// getchar(); //wait for user to press ENTER
 	printf("DONE!\n");

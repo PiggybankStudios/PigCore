@@ -43,7 +43,7 @@ call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDe
 :: /W4 = Warning level 4 [just below /Wall]
 :: /WX = Treat warnings as errors
 set common_cl_flags=/FC /nologo /W4 /WX
-:: -fdiagnostics-absolute-paths = Print absolute paths in diagnostics
+:: -fdiagnostics-absolute-paths = Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 set common_clang_flags=-fdiagnostics-absolute-paths
 :: /wd4130 = Logical operation on address of string constant [W4] TODO: Should we re-enable this one? Don't know any scenarios where I want to do this
 :: /wd4201 = Nonstandard extension used: nameless struct/union [W4] TODO: Should we re-enable this restriction for ANSI compatibility?
@@ -57,7 +57,7 @@ set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /w
 :: /I = Adds an include directory to search in when resolving #includes
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths
-set common_clang_flags=%common_clang_flags% -I "..\%root%"
+set common_clang_flags=%common_clang_flags% -I "../%root%"
 if "%DEBUG_BUILD%"=="1" (
 	REM /Od = Optimization level: Debug
 	REM /Zi = Generate complete debugging information
@@ -93,10 +93,11 @@ if "%DUMP_PREPROCESSOR%"=="1" (
 :: |                       Build piggen.exe                       |
 :: +--------------------------------------------------------------+
 :: /Fe = Set the output exe file name
-set piggen_source_path=%root%\piggen\main.c
+set piggen_source_path=%root%/piggen/main.c
 set piggen_exe_path=piggen.exe
+set piggen_bin_path=piggen
 set piggen_cl_args=%common_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
-set piggen_clang_args=%common_clang_flags% -o %piggen_exe_path% ..\%piggen_source_path% %common_clang_ld_flags%
+set piggen_clang_args=%common_clang_flags% -o %piggen_bin_path% ../%piggen_source_path% %common_clang_ld_flags%
 if "%BUILD_PIGGEN%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo [Building piggen for Windows...]
@@ -111,7 +112,7 @@ if "%BUILD_PIGGEN%"=="1" (
 		echo [Building piggen for Linux...]
 		if not exist linux mkdir linux
 		pushd linux
-		clang %piggen_clang_args%
+		wsl clang %piggen_clang_args%
 		popd
 		echo [Built piggen for Linux!]
 	)
@@ -124,10 +125,11 @@ if "%RUN_PIGGEN%"=="1" (
 :: +--------------------------------------------------------------+
 :: |                       Build tests.exe                        |
 :: +--------------------------------------------------------------+
-set tests_source_path=%root%\tests\main.c
+set tests_source_path=%root%/tests/main.c
 set tests_exe_path=tests.exe
+set tests_bin_path=tests
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags%
-set tests_clang_args=%common_clang_flags% -o %tests_exe_path% ..\%tests_source_path% %common_clang_ld_flags%
+set tests_clang_args=%common_clang_flags% -o %tests_bin_path% ../%tests_source_path% %common_clang_ld_flags%
 if "%BUILD_TESTS%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo [Building tests for Windows...]
@@ -142,7 +144,7 @@ if "%BUILD_TESTS%"=="1" (
 		echo [Building tests for Linux...]
 		if not exist linux mkdir linux
 		pushd linux
-		clang %tests_clang_args%
+		wsl clang %tests_clang_args%
 		popd
 		echo [Built tests for Linux!]
 	)
