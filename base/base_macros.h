@@ -97,13 +97,10 @@ Description:
 // +--------------------------------------------------------------+
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
-#if WINDOWS_COMPILATION
 #define UNUSED(varName)        (void)(varName)
 #define UNREFERENCED(varName)  (void)(varName)
-#else
-#define UNUSED(varName)        (void)sizeof(varName)
-#define UNREFERENCED(varName)  (void)sizeof(varName)
-#endif
+// #define UNUSED(varName)        (void)sizeof(varName)
+// #define UNREFERENCED(varName)  (void)sizeof(varName)
 
 // #if WINDOWS_COMPILATION
 // 	#define PACKED(class_to_pack) __pragma( pack(push, 1) ) class_to_pack __pragma(pack(pop))

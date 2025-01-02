@@ -42,9 +42,16 @@ call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDe
 :: /nologo = Suppress the startup banner
 :: /W4 = Warning level 4 [just below /Wall]
 :: /WX = Treat warnings as errors
-set common_cl_flags=/FC /nologo /W4 /WX
+:: /std:clatest = Use latest C language spec features
+set common_cl_flags=/FC /nologo /W4 /WX /std:clatest
 :: -fdiagnostics-absolute-paths = Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
-set common_clang_flags=-fdiagnostics-absolute-paths
+:: -std=c2x = ?
+:: NOTE: Clang Warning Options: https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+:: -Wall = This enables all the warnings about constructions that some users consider questionable, and that are easy to avoid (or modify to prevent the warning), even in conjunction with macros.
+:: -Wextra = This enables some extra warning flags that are not enabled by -Wall.
+:: -Wshadow = Warn whenever a local variable or type declaration shadows another variable, parameter, type, class member (in C++), or instance variable (in Objective-C) or whenever a built-in function is shadowed
+:: -Wimplicit-fallthrough = Must use [[fallthrough]] on a case label that falls through to the next case
+set common_clang_flags=-fdiagnostics-absolute-paths -std=c2x -Wall -Wextra -Wshadow -Wimplicit-fallthrough
 :: /wd4130 = Logical operation on address of string constant [W4] TODO: Should we re-enable this one? Don't know any scenarios where I want to do this
 :: /wd4201 = Nonstandard extension used: nameless struct/union [W4] TODO: Should we re-enable this restriction for ANSI compatibility?
 :: /wd4324 = Structure was padded due to __declspec[align[]] [W4]
@@ -53,7 +60,8 @@ set common_clang_flags=-fdiagnostics-absolute-paths
 :: /wd4996 = Usage of deprecated function, class member, variable, or typedef [W3]
 :: /wd4127 = Conditional expression is constant [W4]
 :: /wd4706 = assignment within conditional expression [W?]
-set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /wd4996 /wd4127 /wd4706
+:: /we5262 = Enable the [[fallthrough]] missing warning
+set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /wd4996 /wd4127 /wd4706 /we5262 /wd4702
 :: /I = Adds an include directory to search in when resolving #includes
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths
@@ -112,7 +120,7 @@ if "%BUILD_PIGGEN%"=="1" (
 		echo [Building piggen for Linux...]
 		if not exist linux mkdir linux
 		pushd linux
-		wsl clang %piggen_clang_args%
+		wsl clang-18 %piggen_clang_args%
 		popd
 		echo [Built piggen for Linux!]
 	)
@@ -144,7 +152,7 @@ if "%BUILD_TESTS%"=="1" (
 		echo [Building tests for Linux...]
 		if not exist linux mkdir linux
 		pushd linux
-		wsl clang %tests_clang_args%
+		wsl clang-18 %tests_clang_args%
 		popd
 		echo [Built tests for Linux!]
 	)
