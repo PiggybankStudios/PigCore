@@ -21,7 +21,16 @@ Description:
 
 #define AssertMsg(condition, message) if (!(condition)) { assert(condition); }
 #define Assert(condition) AssertMsg(condition, "")
-
 #define NotNull(variable) Assert(variable != nullptr)
+
+#if DEBUG_BUILD
+#define DebugAssertMsg(condition, message) AssertMsg(condition, message)
+#define DebugAssert(condition) Assert(condition)
+#define DebugNotNull(variable) NotNull(variable)
+#else
+#define DebugAssertMsg(condition, message) //nothing
+#define DebugAssert(condition) //nothing
+#define DebugNotNull(variable) //nothing
+#endif
 
 #endif //  _BASE_ASSERT_H

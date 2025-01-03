@@ -39,12 +39,34 @@ int main()
 	#endif
 	MyPrintNoLine("Running piggen...");
 	
-	arena_s stdHeap = ZEROED;
+	u8 arenaBuffer1[256] = ZEROED;
+	
+	Arena stdHeap = ZEROED;
 	InitArenaStdHeap(&stdHeap);
-	arena_s scratch1 = ZEROED;
+	Arena stdAlias = ZEROED;
+	InitArenaAlias(&stdAlias, &stdHeap);
+	Arena bufferArena = ZEROED;
+	InitArenaBuffer(&bufferArena, arenaBuffer1, ArrayCount(arenaBuffer1));
+	Arena scratch1 = ZEROED;
 	InitArenaStackVirtual(&scratch1, Gigabytes(4));
-	arena_s scratch2 = ZEROED;
+	Arena scratch2 = ZEROED;
 	InitArenaStackVirtual(&scratch2, Gigabytes(4));
+	
+	u32* allocatedInt1 = AllocMem(&stdHeap, sizeof(u32));
+	MyPrint("allocatedInt1: %p", allocatedInt1);
+	u32* allocatedInt2 = AllocMem(&stdAlias, sizeof(u32));
+	MyPrint("allocatedInt2: %p", allocatedInt2);
+	FreeMem(&stdAlias, allocatedInt1, sizeof(u32));
+	u32* allocatedInt3 = AllocMem(&stdAlias, sizeof(u32));
+	MyPrint("allocatedInt3: %p", allocatedInt3);
+	
+	u32* allocatedInt4 = AllocMem(&bufferArena, sizeof(u32));
+	MyPrint("allocatedInt4: %p", allocatedInt4);
+	u32* allocatedInt5 = AllocMem(&bufferArena, sizeof(u32));
+	MyPrint("allocatedInt5: %p", allocatedInt5);
+	FreeMem(&bufferArena, allocatedInt5, sizeof(u32));
+	u32* allocatedInt6 = AllocMem(&bufferArena, sizeof(u32));
+	MyPrint("allocatedInt6: %p", allocatedInt6);
 	
 	// getchar(); //wait for user to press ENTER
 	MyPrint("DONE!");

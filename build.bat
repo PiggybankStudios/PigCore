@@ -69,15 +69,15 @@ set common_clang_flags=-fdiagnostics-absolute-paths -std=c2x -Wall -Wextra -Wsha
 :: /wd4458 = Declaration of 'identifier' hides class member [W4]
 :: /wd4505 = Unreferenced local function has been removed [W4]
 :: /wd4996 = Usage of deprecated function, class member, variable, or typedef [W3]
-:: /wd4127 = Conditional expression is constant [W4]
 :: /wd4706 = assignment within conditional expression [W?]
 :: /we5262 = Enable the [[fallthrough]] missing warning
-set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /wd4996 /wd4127 /wd4706 /we5262 /wd4702
+set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /wd4996 /wd4706 /we5262
 :: /I = Adds an include directory to search in when resolving #includes
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths
 set common_clang_flags=%common_clang_flags% -I "../%root%"
 if "%DEBUG_BUILD%"=="1" (
+	REM /MDd = ?
 	REM /Od = Optimization level: Debug
 	REM /Zi = Generate complete debugging information
 	REM /wd4065 = Switch statement contains 'default' but no 'case' labels
@@ -87,8 +87,10 @@ if "%DEBUG_BUILD%"=="1" (
 	REM /wd4189 = Local variable is initialized but not referenced [W4]
 	REM /wd4702 = Unreachable code [W4]
 	set common_cl_flags=%common_cl_flags% /MDd /Od /Zi /wd4065 /wd4100 /wd4101 /wd4127 /wd4189 /wd4702
-	set common_clang_flags=%common_clang_flags%
+	REM -Wno-unused-parameter = warning: unused parameter 'numBytes'
+	set common_clang_flags=%common_clang_flags% -Wno-unused-parameter
 ) else (
+	REM /MD = ?
 	REM /Ot = Favors fast code over small code
 	REM /Oy = Omit frame pointer [x86 only]
 	REM /O2 = Optimization level 2: Creates fast code
@@ -97,7 +99,8 @@ if "%DEBUG_BUILD%"=="1" (
 	set common_clang_flags=%common_clang_flags%
 )
 
-set common_ld_flags=
+:: -incremental:no = Suppresses warning about doing a full link when it can't find the previous .exe result. We don't need this when doing unity builds
+set common_ld_flags=-incremental:no
 set common_clang_ld_flags=
 
 if "%DUMP_PREPROCESSOR%"=="1" (

@@ -38,7 +38,15 @@ Description:
 // Used mostly by enum to string conversion functions when passed a value that is not valid in the enumeration
 #define UNKNOWN_STR  "unknown"
 
+// +--------------------------------------------------------------+
+// |               Language Feature Related Macros                |
+// +--------------------------------------------------------------+
+// Indicates the return value of a function should not be discarded (not assigned to a variable)
+// NOTE: This is part of C23 spec and seems to be supported by most recent MSVC compiler (as well as GCC and Clang of course)
+#define NODISCARD [[nodiscard]]
+
 // Used to specific an initial value for a structure that is entirely cleared to 0
+// NOTE: The 0 is required when compiling in C mode in MSVC compiler since it doesn't support C23 empty {} syntax
 #define ZEROED {0}
 
 // +--------------------------------------------------------------+
@@ -149,11 +157,21 @@ Description:
 #define IncrementU16(variable)             if ((variable) < 0xFFFF) { (variable)++; } else { (variable) = 0xFFFF; }
 #define IncrementU32(variable)             if ((variable) < 0xFFFFFFFFUL) { (variable)++; } else { (variable) = 0xFFFFFFFFUL; }
 #define IncrementU64(variable)             if ((variable) < 0xFFFFFFFFFFFFFFFFULL) { (variable)++; } else { (variable) = 0xFFFFFFFFFFFFFFFFULL; }
+#if TARGET_IS_32BIT
+#define IncrementUXX(variable)             IncrementU32(variable)
+#else
+#define IncrementUXX(variable)             IncrementU64(variable)
+#endif
 #define IncrementBy(variable, amount, max) if ((variable) + (amount) < (max) && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = (max); }
 #define IncrementU8By(variable, amount)    if ((variable) + (amount) < 0xFF && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = 0xFF; }
 #define IncrementU16By(variable, amount)   if ((variable) + (amount) < 0xFFFF && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = 0xFFFF; }
 #define IncrementU32By(variable, amount)   if ((variable) + (amount) < 0xFFFFFFFFUL && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = 0xFFFFFFFFUL; }
 #define IncrementU64By(variable, amount)   if ((variable) + (amount) < 0xFFFFFFFFFFFFFFFFULL && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = 0xFFFFFFFFFFFFFFFFULL; }
+#if TARGET_IS_32BIT
+#define IncrementUXXBy(variable, amount)   IncrementU32By(variable, amount)
+#else
+#define IncrementUXXBy(variable, amount)   IncrementU64By(variable, amount)
+#endif
 #define Decrement(variable)                if ((variable) > 0) { (variable)--; } else { (variable) = 0; }
 #define DecrementBy(variable, amount)      if ((variable) >= (amount)) { (variable) -= (amount); } else { (variable) = 0; }
 
@@ -275,11 +293,13 @@ END_EXTERN_C
 #define IncrementU16(variable)
 #define IncrementU32(variable)
 #define IncrementU64(variable)
+#define IncrementUXX(variable)
 #define IncrementBy(variable, amount, max)
 #define IncrementU8By(variable, amount)
 #define IncrementU16By(variable, amount)
 #define IncrementU32By(variable, amount)
 #define IncrementU64By(variable, amount)
+#define IncrementUXXBy(variable, amount)
 #define Decrement(variable)
 #define DecrementBy(variable, amount)
 #define FlipEndianU32(variable)

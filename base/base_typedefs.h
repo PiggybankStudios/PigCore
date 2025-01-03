@@ -52,9 +52,7 @@ typedef r64 rxx;
 #error Unsupported PLATFORM_XBIT define!
 #endif
 
-#if COMPILER_IS_MSVC
-#define nullptr 0
-#endif
+#define nullptr ((void*)0)
 
 #define VOID_FUNC_DEF(functionName) void functionName()
 typedef VOID_FUNC_DEF(void_func_f);
