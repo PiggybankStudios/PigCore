@@ -51,4 +51,8 @@ typedef r64 rxx;
 #error Unsupported PLATFORM_XBIT define!
 #endif
 
+#if COMPILER_IS_MSVC
+#define nullptr 0
+#endif
+
 #endif //  _BASE_TYPEDEFS_H

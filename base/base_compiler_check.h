@@ -59,8 +59,8 @@ Description:
 //TODO: Detect if we are compiling for OSX!
 #define TARGET_IS_OSX 0
 //TODO: Detect if we are compiling for PLAYDATE!
-#define TARGET_IS_PLAYDATE 0
 #define TARGET_IS_PLAYDATE_SIMULATOR 0
+#define TARGET_IS_PLAYDATE_DEVICE 0
 //TODO: Detect if we are compiling for WebAssembly!
 #define TARGET_IS_WEB 0
 //TODO: Detect if we are compiling for Orca!
@@ -77,6 +77,12 @@ Description:
 // +--------------------------------------------------------------+
 // |                    Derived TARGET Aspects                    |
 // +--------------------------------------------------------------+
+#if (TARGET_IS_PLAYDATE_DEVICE || TARGET_IS_PLAYDATE_SIMULATOR)
+#define TARGET_IS_PLAYDATE 1
+#else
+#define TARGET_IS_PLAYDATE 0
+#endif
+
 #if (TARGET_IS_WEB || TARGET_IS_ORCA)
 #define TARGET_IS_WASM 1
 #else
@@ -84,10 +90,16 @@ Description:
 #endif
 
 //TODO: Is there a more robust way to determine whether we are compiling 32-bit or 64-bit?
-#if (TARGET_IS_WASM || TARGET_IS_PLAYDATE)
+#if (TARGET_IS_WASM || TARGET_IS_PLAYDATE_DEVICE)
 #define TARGET_IS_32BIT 0
 #else
 #define TARGET_IS_64BIT 1
+#endif
+
+#if (TARGET_IS_WASM || TARGET_IS_PLAYDATE)
+#define TARGET_HAS_OFFICIAL_STDLIB 0
+#else
+#define TARGET_HAS_OFFICIAL_STDLIB 1
 #endif
 
 #endif //  _BASE_COMPILER_CHECK_H

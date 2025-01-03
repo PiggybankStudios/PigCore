@@ -1,5 +1,5 @@
 /*
-File:   main.c
+File:   piggen_main.c
 Author: Taylor Robbins
 Date:   12\31\2024
 Description: 
@@ -12,31 +12,34 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "std/std_includes.h"
+#include "std/std_malloc.h"
+#include "std/std_memset.h"
+#include "std/std_printf.h"
 
 int main()
 {
 	#if COMPILER_IS_MSVC
-	printf("Compiled by MSVC\n");
+	MyPrint("Compiled by MSVC");
 	#endif
 	#if COMPILER_IS_CLANG
-	printf("Compiled by Clang\n");
+	MyPrint("Compiled by Clang");
 	#endif
 	#if COMPILER_IS_GCC
-	printf("Compiled by GCC\n");
+	MyPrint("Compiled by GCC");
 	#endif
 	#if TARGET_IS_WINDOWS
-	printf("Running on Windows\n");
+	MyPrint("Running on Windows");
 	#endif
 	#if TARGET_IS_LINUX
-	printf("Running on Linux\n");
+	MyPrint("Running on Linux");
 	#endif
 	#if TARGET_IS_OSX
-	printf("Running on OSX\n");
+	MyPrint("Running on OSX");
 	#endif
-	printf("Running piggen...");
+	MyPrintNoLine("Running piggen...");
 	
 	// getchar(); //wait for user to press ENTER
-	printf("DONE!\n");
+	MyPrint("DONE!");
 	
 	return 0;
 }

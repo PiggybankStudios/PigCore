@@ -118,7 +118,7 @@ for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
 :: |                       Build piggen.exe                       |
 :: +--------------------------------------------------------------+
 :: /Fe = Set the output exe file name
-set piggen_source_path=%root%/piggen/main.c
+set piggen_source_path=%root%/piggen/piggen_main.c
 set piggen_exe_path=piggen.exe
 set piggen_bin_path=piggen
 set piggen_cl_args=%common_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
@@ -148,7 +148,7 @@ if "%BUILD_PIGGEN%"=="1" (
 :: +--------------------------------------------------------------+
 :: |                       Build tests.exe                        |
 :: +--------------------------------------------------------------+
-set tests_source_path=%root%/tests/main.c
+set tests_source_path=%root%/tests/tests_main.c
 set tests_exe_path=tests.exe
 set tests_bin_path=tests
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags%

@@ -57,8 +57,10 @@ Descriptions:
 	#include "gy_orca_aliases.h"
 #endif
 
-#if (TARGET_IS_PLAYDATE || TARGET_IS_PLAYDATE_SIMULATOR)
+#if TARGET_IS_PLAYDATE
 	#include "pd_api.h"
+	extern PlaydateAPI* pd;
+	void* (*pdrealloc)(void* pntr, size_t size);
 #endif
 
 #if TARGET_IS_WINDOWS
