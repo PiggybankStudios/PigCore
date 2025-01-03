@@ -29,4 +29,23 @@ Description:
 #endif
 #define MyStrStrNt(str1, str2)             strstr((str1), (str2))
 
+// +--------------------------------------------------------------+
+// |                      Convenience Macros                      |
+// +--------------------------------------------------------------+
+#define ClearArray(Array)      MyMemSet((Array), '\0', sizeof((Array)))
+#define ClearStruct(Structure) MyMemSet(&(Structure), '\0', sizeof((Structure)))
+#define ClearPointer(Pointer)  MyMemSet((Pointer), '\0', sizeof(*(Pointer)));
+
+#define SwapPointers(varType, pntr1, pntr2) do                                 \
+{                                                                              \
+	varType tempVarWithLongNameThatWontConflict;                               \
+	MyMemCopy(&tempVarWithLongNameThatWontConflict, (pntr2), sizeof(varType)); \
+	MyMemCopy((pntr2), (pntr1), sizeof(varType));                              \
+	MyMemCopy((pntr1), &tempVarWithLongNameThatWontConflict, sizeof(varType)); \
+	varType* tempPntrWithLongNameThatWontConflict;                             \
+	tempPntrWithLongNameThatWontConflict = (pntr2);                            \
+	(pntr2) = (pntr1);                                                         \
+	(pntr1) = tempPntrWithLongNameThatWontConflict;                            \
+} while(0)
+
 #endif //  _STD_MEMSET_H

@@ -15,6 +15,7 @@ Description:
 #include "std/std_malloc.h"
 #include "std/std_memset.h"
 #include "std/std_printf.h"
+#include "mem/mem_arena.h"
 
 int main()
 {
@@ -37,6 +38,13 @@ int main()
 	MyPrint("Running on OSX");
 	#endif
 	MyPrintNoLine("Running piggen...");
+	
+	arena_s stdHeap = ZEROED;
+	InitArenaStdHeap(&stdHeap);
+	arena_s scratch1 = ZEROED;
+	InitArenaStackVirtual(&scratch1, Gigabytes(4));
+	arena_s scratch2 = ZEROED;
+	InitArenaStackVirtual(&scratch2, Gigabytes(4));
 	
 	// getchar(); //wait for user to press ENTER
 	MyPrint("DONE!");

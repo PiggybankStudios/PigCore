@@ -35,6 +35,12 @@ Description:
 #define Sqrt2_64           1.41421356237309514547462185874      //accurate to 15 digits
 #define Sqrt2_32           1.41421353816986083984375f           //accurate to 7 digits
 
+// Used mostly by enum to string conversion functions when passed a value that is not valid in the enumeration
+#define UNKNOWN_STR  "unknown"
+
+// Used to specific an initial value for a structure that is entirely cleared to 0
+#define ZEROED {0}
+
 // +--------------------------------------------------------------+
 // |                     Function Like Macros                     |
 // +--------------------------------------------------------------+
@@ -137,6 +143,33 @@ Description:
 // NOTE: A version without the word "By" will be defined later when the current programTime source can be inferred
 #define TimeSinceBy(programTime, programTimeSnapshot) ((programTimeSnapshot <= programTime) ? (programTime - programTimeSnapshot) : 0)
 
+// These macros increment various integer types ONLY if they would not overflow when incremented (same with decrement and preventing underflowing for unsigned types)
+#define Increment(variable, max)           if ((variable) < (max)) { (variable)++; } else { (variable) = (max); }
+#define IncrementU8(variable)              if ((variable) < 0xFF) { (variable)++; } else { (variable) = 0xFF; }
+#define IncrementU16(variable)             if ((variable) < 0xFFFF) { (variable)++; } else { (variable) = 0xFFFF; }
+#define IncrementU32(variable)             if ((variable) < 0xFFFFFFFFUL) { (variable)++; } else { (variable) = 0xFFFFFFFFUL; }
+#define IncrementU64(variable)             if ((variable) < 0xFFFFFFFFFFFFFFFFULL) { (variable)++; } else { (variable) = 0xFFFFFFFFFFFFFFFFULL; }
+#define IncrementBy(variable, amount, max) if ((variable) + (amount) < (max) && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = (max); }
+#define IncrementU8By(variable, amount)    if ((variable) + (amount) < 0xFF && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = 0xFF; }
+#define IncrementU16By(variable, amount)   if ((variable) + (amount) < 0xFFFF && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = 0xFFFF; }
+#define IncrementU32By(variable, amount)   if ((variable) + (amount) < 0xFFFFFFFFUL && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = 0xFFFFFFFFUL; }
+#define IncrementU64By(variable, amount)   if ((variable) + (amount) < 0xFFFFFFFFFFFFFFFFULL && (variable) + (amount) > (variable)) { (variable) += (amount); } else { (variable) = 0xFFFFFFFFFFFFFFFFULL; }
+#define Decrement(variable)                if ((variable) > 0) { (variable)--; } else { (variable) = 0; }
+#define DecrementBy(variable, amount)      if ((variable) >= (amount)) { (variable) -= (amount); } else { (variable) = 0; }
+
+// Swaps the order of the 4-bytes in a u32 type variable using pointer arithmetic and shifting+masking+or-ing
+#define FlipEndianU32(variable) variable = (((*(((const u8*)&(variable)) + 0)) & 0xFF) << 24) | (((*(((const u8*)&(variable)) + 1)) & 0xFF) << 16) | (((*(((const u8*)&(variable)) + 2)) & 0xFF) << 8) | (((*(((const u8*)&(variable)) + 3)) & 0xFF) << 0);
+
+// Finds the one's compliment value for a particular u32 value
+#define OnesComplimentU32(variable) (variable ^ 0xFFFFFFFFL)
+
+#define STRUCT_VAR_SIZE(structureName, variableName) sizeof(((const structureName*)0)->variableName)
+#define STRUCT_VAR_OFFSET(structureName, variableName) (u32)((const u8*)&((const structureName*)0)->variableName - (const u8*)((const structureName*)0))
+#define STRUCT_VAR_END_OFFSET(structureName, variableName) (u32)(((const u8*)&((const structureName*)0)->variableName + sizeof(((const structureName*)0)->variableName)) - (const u8*)((const structureName*)0))
+#define IS_VAR_IN_X_BYTES_OF_STRUCT(structureName, numBytes, variableName) ((numBytes) >= STRUCT_VAR_END_OFFSET(structureName, variableName))
+
+#define SwapVariables(varType, var1, var2) do { varType tempVarWithLongNameThatWontConflict = (var2); (var2) = (var1); (var1) = tempVarWithLongNameThatWontConflict; } while(0)
+
 // +--------------------------------------------------------------+
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
@@ -193,6 +226,8 @@ e64
 e32
 Sqrt2_64
 Sqrt2_32
+UNKNOWN_STR
+ZEROED
 ATTR_PACKED
 __func__
 START_EXTERN_C
@@ -235,7 +270,25 @@ END_EXTERN_C
 #define COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)
 #define COORD3D_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)
 #define UNUSED(varName)
-#define UNREFERENCED(varName)
+#define Increment(variable, max)
+#define IncrementU8(variable)
+#define IncrementU16(variable)
+#define IncrementU32(variable)
+#define IncrementU64(variable)
+#define IncrementBy(variable, amount, max)
+#define IncrementU8By(variable, amount)
+#define IncrementU16By(variable, amount)
+#define IncrementU32By(variable, amount)
+#define IncrementU64By(variable, amount)
+#define Decrement(variable)
+#define DecrementBy(variable, amount)
+#define FlipEndianU32(variable)
+#define OnesComplimentU32(variable)
+#define STRUCT_VAR_SIZE(structureName, variableName)
+#define STRUCT_VAR_OFFSET(structureName, variableName)
+#define STRUCT_VAR_END_OFFSET(structureName, variableName)
+#define IS_VAR_IN_X_BYTES_OF_STRUCT(structureName, numBytes, variableName)
+#define SwapVariables(varType, var1, var2)
 #define PACKED(class_to_pack)
 #define START_PACK()
 #define END_PACK()

@@ -12,6 +12,7 @@ Description:
 #include "base/base_compiler_check.h"
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // We use an "i" to indicate it can hold integer numbers
 typedef int8_t      i8;
@@ -54,5 +55,14 @@ typedef r64 rxx;
 #if COMPILER_IS_MSVC
 #define nullptr 0
 #endif
+
+#define VOID_FUNC_DEF(functionName) void functionName()
+typedef VOID_FUNC_DEF(void_func_f);
+#define BOOL_FUNC_DEF(functionName) bool functionName()
+typedef BOOL_FUNC_DEF(bool_func_f);
+#define I32_FUNC_DEF(functionName) i32 functionName()
+typedef I32_FUNC_DEF(i32_func_f);
+#define VOID_PNTR_FUNC_DEF(functionName) void* functionName()
+typedef VOID_PNTR_FUNC_DEF(void_pntr_func_f);
 
 #endif //  _BASE_TYPEDEFS_H
