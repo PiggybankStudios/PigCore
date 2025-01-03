@@ -4,10 +4,6 @@ if not exist _build mkdir _build
 pushd _build
 set root=..
 
-for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
-	set /A "build_start_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
-)
-
 :: +--------------------------------------------------------------+
 :: |                    Scrape build_config.h                     |
 :: +--------------------------------------------------------------+
@@ -28,12 +24,26 @@ for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 
 :: +--------------------------------------------------------------+
-:: |                        Find Compiler                         |
+:: |                      Init MSVC Compiler                      |
 :: +--------------------------------------------------------------+
-:: NOTE: Uncomment or change one of these lines to match your installation of Visual Studio compiler
-:: call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
-:: call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64 -no_logo
-call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64 > NUL
+for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
+	set /A "vsdevcmd_start_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+)
+if "%BUILD_WINDOWS%"=="1" (
+	REM set VSCMD_DEBUG=1
+	REM NOTE: Uncomment or change one of these lines to match your installation of Visual Studio compiler
+	REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+	REM call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64 -no_logo
+	call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64 > NUL
+)
+for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
+	set /A "vsdevcmd_end_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+)
+set /A vsdevcmd_elapsed_hundredths=vsdevcmd_end_time-vsdevcmd_start_time
+set /A vsdevcmd_elapsed_seconds_part=vsdevcmd_elapsed_hundredths/100
+set /A vsdevcmd_elapsed_hundredths_part=vsdevcmd_elapsed_hundredths%%100
+if %vsdevcmd_elapsed_hundredths_part% lss 10 set vsdevcmd_elapsed_hundredths_part=0%vsdevcmd_elapsed_hundredths_part%
+if "%BUILD_WINDOWS%"=="1" ( echo VsDevCmd.bat took %vsdevcmd_elapsed_seconds_part%.%vsdevcmd_elapsed_hundredths_part% seconds )
 
 :: +--------------------------------------------------------------+
 :: |                       Compiler Options                       |
@@ -43,7 +53,8 @@ call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDe
 :: /W4 = Warning level 4 [just below /Wall]
 :: /WX = Treat warnings as errors
 :: /std:clatest = Use latest C language spec features
-set common_cl_flags=/FC /nologo /W4 /WX /std:clatest
+:: /experimental:c11atomics = Enables _Atomic types
+set common_cl_flags=/FC /nologo /W4 /WX /std:clatest /experimental:c11atomics
 :: -fdiagnostics-absolute-paths = Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 :: -std=c2x = ?
 :: NOTE: Clang Warning Options: https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
@@ -75,14 +86,14 @@ if "%DEBUG_BUILD%"=="1" (
 	REM /wd4127 = Conditional expression is constant [W4]
 	REM /wd4189 = Local variable is initialized but not referenced [W4]
 	REM /wd4702 = Unreachable code [W4]
-	set common_cl_flags=%common_cl_flags% /Od /Zi /wd4065 /wd4100 /wd4101 /wd4127 /wd4189 /wd4702
+	set common_cl_flags=%common_cl_flags% /MDd /Od /Zi /wd4065 /wd4100 /wd4101 /wd4127 /wd4189 /wd4702
 	set common_clang_flags=%common_clang_flags%
 ) else (
 	REM /Ot = Favors fast code over small code
 	REM /Oy = Omit frame pointer [x86 only]
 	REM /O2 = Optimization level 2: Creates fast code
 	REM /Zi = Generate complete debugging information [optional]
-	set common_cl_flags=%common_cl_flags% /Ot /Oy /O2
+	set common_cl_flags=%common_cl_flags% /MD /Ot /Oy /O2
 	set common_clang_flags=%common_clang_flags%
 )
 
@@ -97,6 +108,12 @@ if "%DUMP_PREPROCESSOR%"=="1" (
 	set common_clang_flags=%common_clang_flags% -E
 )
 
+
+
+for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
+	set /A "build_start_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+)
+
 :: +--------------------------------------------------------------+
 :: |                       Build piggen.exe                       |
 :: +--------------------------------------------------------------+
@@ -108,6 +125,7 @@ set piggen_cl_args=%common_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /
 set piggen_clang_args=%common_clang_flags% -o %piggen_bin_path% ../%piggen_source_path% %common_clang_ld_flags%
 if "%BUILD_PIGGEN%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
+		echo.
 		echo [Building piggen for Windows...]
 		del %piggen_exe_path% > NUL 2> NUL
 		cl %piggen_cl_args%
@@ -117,6 +135,7 @@ if "%BUILD_PIGGEN%"=="1" (
 		echo [Built piggen for Windows!]
 	)
 	if "%BUILD_LINUX%"=="1" (
+		echo.
 		echo [Building piggen for Linux...]
 		if not exist linux mkdir linux
 		pushd linux
@@ -124,10 +143,6 @@ if "%BUILD_PIGGEN%"=="1" (
 		popd
 		echo [Built piggen for Linux!]
 	)
-)
-
-if "%RUN_PIGGEN%"=="1" (
-	%piggen_exe_path% %root%
 )
 
 :: +--------------------------------------------------------------+
@@ -140,6 +155,7 @@ set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /lin
 set tests_clang_args=%common_clang_flags% -o %tests_bin_path% ../%tests_source_path% %common_clang_ld_flags%
 if "%BUILD_TESTS%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
+		echo.
 		echo [Building tests for Windows...]
 		del %tests_exe_path% > NUL 2> NUL
 		cl %tests_cl_args%
@@ -149,6 +165,7 @@ if "%BUILD_TESTS%"=="1" (
 		echo [Built tests for Windows!]
 	)
 	if "%BUILD_LINUX%"=="1" (
+		echo.
 		echo [Building tests for Linux...]
 		if not exist linux mkdir linux
 		pushd linux
@@ -158,17 +175,34 @@ if "%BUILD_TESTS%"=="1" (
 	)
 )
 
-if "%RUN_TESTS%"=="1" (
-	%tests_exe_path%
-)
-
+:: +--------------------------------------------------------------+
+:: |                  Measure Build Elapsed Time                  |
+:: +--------------------------------------------------------------+
 for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
-   set /A "build_end_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+	set /A "build_end_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
 )
 set /A build_elapsed_hundredths=build_end_time-build_start_time
 set /A build_elapsed_seconds_part=build_elapsed_hundredths/100
 set /A build_elapsed_hundredths_part=build_elapsed_hundredths%%100
 if %build_elapsed_hundredths_part% lss 10 set build_elapsed_hundredths_part=0%build_elapsed_hundredths_part%
+echo.
 echo Build took %build_elapsed_seconds_part%.%build_elapsed_hundredths_part% seconds
 
+:: +--------------------------------------------------------------+
+:: |                          Run Things                          |
+:: +--------------------------------------------------------------+
+:: TODO: Move this back up before we build anything since it eventually will be doing code generation that the other builds rely upon
+if "%RUN_PIGGEN%"=="1" (
+	echo.
+	echo [%piggen_exe_path%]
+	%piggen_exe_path% %root%
+)
+
+if "%RUN_TESTS%"=="1" (
+	echo.
+	echo [%tests_exe_path%]
+	%tests_exe_path%
+)
+
+echo.
 popd

@@ -37,42 +37,59 @@ Description:
 // +--------------------------------------------------------------+
 // |                     Function Like Macros                     |
 // +--------------------------------------------------------------+
+// Version numbers may be held in a variety of structs with various sizes for their major/minor and optionally build numbers
+// These macros simply make it easy to do < or > like comparisons when two numbers are paired together,
+// one being the "primary" number and the other only being significant if the primary numbers are equal
 #define IsVersionBelow(versionMajor, versionMinor, numberMajor, numberMinor) (((versionMajor) < (numberMajor)) || ((versionMajor) == (numberMajor) && (versionMinor) < (numberMinor)))
 #define IsVersionAbove(versionMajor, versionMinor, numberMajor, numberMinor) (((versionMajor) > (numberMajor)) || ((versionMajor) == (numberMajor) && (versionMinor) > (numberMinor)))
 
+// Either v1 == c1 and v2 == c2 OR v2 = c1 and v1 == c2
 #define IsEqualXor(variable1, variable2, condition1, condition2) (((variable1) == (condition1) && (variable2) == (condition2)) || ((variable1) == (condition2) && (variable2) == (condition1)))
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
+// Macros used to check or modify specific bit(s) in a field, the pattern of using individual bits as booleans is often referred to as "flags"
 #define IsFlagSet(BitwiseField, Bit) ((Bit) != 0 && ((BitwiseField) & (Bit)) == (Bit))
 #define FlagSet(BitwiseField, Bit)   (BitwiseField) |= (Bit)
 #define FlagUnset(BitwiseField, Bit) (BitwiseField) &= ~(Bit)
 #define FlagToggle(BitwiseField, Bit) ((BitwiseField) ^= (Bit))
 #define FlagSetTo(BitwiseField, Bit, condition) if (condition) { FlagSet((BitwiseField), (Bit)); } else { FlagUnset((BitwiseField), (Bit)); }
 
+// Similar to Flag macros above but satiates compiler warnings when using an enum type BitwiseField by doing C-style casts on the bit and the result
 #define FlagEnumSet(BitwiseField, Bit, enumType, castType)   (BitwiseField) = (enumType)(((castType)(BitwiseField)) | (castType)(Bit))
 #define FlagEnumUnset(BitwiseField, Bit, enumType, castType) (BitwiseField) = (enumType)(((castType)(BitwiseField)) & ~((castType)(Bit)))
 #define FlagEnumToggle(BitwiseField, Bit, enumType, castType) (BitwiseField) = (enumType)(((castType)(BitwiseField)) ^ ((castType)(Bit)))
 #define FlagEnumSetTo(BitwiseField, Bit, condition, enumType, castType) if (condition) { FlagEnumSet((BitwiseField), (Bit), (enumType), (castType)); } else { FlagEnumUnset((BitwiseField), (Bit), (enumType), (castType)); }
 
+// Shorthand for writing things like (4 * 1024 * 1024) as Megabytes(4).
+// Can be used for more than just memory sizes but these powers of 1024 are often
+// used when partitioning memory because they relate to binary bit patterns
 #define Kilobytes(value) ((value) * 1024UL)
 #define Megabytes(value) (Kilobytes((value)) * 1024UL)
 #define Gigabytes(value) (Megabytes((value)) * 1024UL)
 #define Terabytes(value) (Gigabytes((value)) * 1024UL)
 
+// Convert between radians and degrees, either with Pi32 or Pi64
 #define ToRadians32(degrees)		((degrees)/180.0f * Pi32)
 #define ToRadians64(degrees)		((degrees)/180.0 * Pi64)
 #define ToDegrees32(radians)		((radians)/Pi32 * 180.0f)
 #define ToDegrees64(radians)		((radians)/Pi64 * 180.0)
 
+// Converts all 3 pointers to u8* and does pointer arithmetic to determine if pntr is >= regionStart and < (regionStart + regionSize)
 #define IsPntrWithin(regionStart, regionSize, pntr) (((u8*)(pntr)) >= ((u8*)(regionStart)) && ((u8*)(pntr)) <= (((u8*)(regionStart)) + (regionSize)))
 #define IsSizedPntrWithin(regionStart, regionSize, pntr, size) (((u8*)(pntr)) >= ((u8*)(regionStart)) && (((u8*)(pntr)) + (size)) <= (((u8*)(regionStart)) + (regionSize)))
 
+// If outputPntr is not nullptr then assign it a given value.
+// Mostly used when an optional output parameter is being supplied to a function
 #define SetOptionalOutPntr(outputPntr, value) if ((outputPntr) != nullptr) { *(outputPntr) = (value); }
 
+// Used when doing debug logs in english, a particular number might have sway on the plurality of a following word
+// For example we say "1 bird" and "3 birds", and also "0 birds". So basically use a suffix (like "s") when the number != 1
 #define PluralEx(number, singularSuffix, multipleSuffix) (((number) == 1) ? (singularSuffix) : (multipleSuffix))
 #define Plural(number, multipleSuffix) (((number) == 1) ? "" : (multipleSuffix))
 
+// Meant to be used in a loop where we are finding the max/min value but we want to
+// accept the first value regardless of the current value in the trackVariable
 #define TrackMax(isFirst, trackVariable, newValue) do { if ((isFirst) || (trackVariable) < (newValue)) { (trackVariable) = (newValue); } } while(0)
 #define TrackMin(isFirst, trackVariable, newValue) do { if ((isFirst) || (trackVariable) > (newValue)) { (trackVariable) = (newValue); } } while(0)
 
@@ -83,25 +100,46 @@ Description:
 #define STRINGIFY(text)          #text
 #endif
 
+// When dealing with 3D coordinate systems we often will put a collection of items that are logically
+// part of a 3D grid into a 1-dimensional array. To convert between the 3D coordinates and the index
+// in the array we use these macros which ensure the ordering x/y/z axis is consistent
 #define INDEX_FROM_COORD3D(coordX, coordY, coordZ, arrayWidth, arrayHeight, arrayDepth) ( \
 	(coordY) * ((arrayWidth) * (arrayDepth)) +                                            \
 	(coordZ) * (arrayWidth) +                                                             \
 	(coordX)                                                                              \
 )
+#define COORD3D_X_FROM_INDEX(voxelIndex, arrayWidth) ((voxelIndex) % (arrayWidth))
+#define COORD3D_Y_FROM_INDEX(voxelIndex, arrayWidth, arrayDepth) ((voxelIndex) / ((arrayWidth) * (arrayDepth)))
+#define COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth) (((voxelIndex) % ((arrayWidth) * (arrayDepth))) / (arrayWidth))
+//NOTE: This macro relies on NewVec3i. You must include the vectors header file before using it!
+//TODO: This should probably be moved to wherever v3i is defined, and a version of the first macro made that takes a v3i argument
 #define COORD3D_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth) NewVec3i( \
-	(i32)((voxelIndex) % (arrayWidth)),                                               \
-	(i32)((voxelIndex) / ((arrayWidth) * (arrayDepth))),                              \
-	(i32)(((voxelIndex) % ((arrayWidth) * (arrayDepth))) / (arrayWidth))              \
+	(i32)COORD3D_X_FROM_INDEX(voxelIndex, arrayWidth),                                \
+	(i32)COORD3D_Y_FROM_INDEX(voxelIndex, arrayWidth, arrayDepth),                    \
+	(i32)COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)        \
 )
+
+// When unused variable warnings are enabled, these macros can help satiate the
+// warning for a particular variable but have no actual affect on the variable.
+// NOTE: This does not ensure the variable is not in use, it only satiates the warning
+#define UNUSED(varName)        (void)(varName)
+
+// Hiding the curly brackets inside a macro like this helps keep text editors from indenting
+// all our top-level elements in a file while still wrapping the entire file in extern "C"
+// NOTE: EXTERN_C_START and EXTERN_C_END are already defined by winnt.h (included by windows.h) so we had to change the name of our version slightly
+#define START_EXTERN_C extern "C" {
+#define END_EXTERN_C }
+
+// Often in a program we will have a running integer counter (say ms) that we will take copies of
+// and then compare later to see how long it's been since we took that copy. It's a simple
+// mathematically operation but making a macro makes it way more readable what we are doing
+// NOTE: A version without the word "By" will be defined later when the current programTime source can be inferred
+#define TimeSinceBy(programTime, programTimeSnapshot) ((programTimeSnapshot <= programTime) ? (programTime - programTimeSnapshot) : 0)
 
 // +--------------------------------------------------------------+
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
-#define UNUSED(varName)        (void)(varName)
-#define UNREFERENCED(varName)  (void)(varName)
-// #define UNUSED(varName)        (void)sizeof(varName)
-// #define UNREFERENCED(varName)  (void)sizeof(varName)
-
+//TODO: How does packing attributes work on all compilers and platforms?
 // #if WINDOWS_COMPILATION
 // 	#define PACKED(class_to_pack) __pragma( pack(push, 1) ) class_to_pack __pragma(pack(pop))
 // 	#define START_PACK()  __pragma(pack(push, 1))
@@ -131,9 +169,6 @@ Description:
 // 	//TODO: Figure out how to do IMPORT on other platforms
 // #endif
 
-#define EXTERN_C_START extern "C" {
-#define EXTERN_C_END }
-
 #endif //  _BASE_MACROS_H
 
 // +--------------------------------------------------------------+
@@ -159,8 +194,8 @@ Sqrt2_64
 Sqrt2_32
 ATTR_PACKED
 __func__
-EXTERN_C_START
-EXTERN_C_END
+START_EXTERN_C
+END_EXTERN_C
 @Types
 @Functions
 #define IsVersionBelow(versionMajor, versionMinor, numberMajor, numberMinor)
@@ -194,6 +229,9 @@ EXTERN_C_END
 #define STRINGIFY_DEFINE(define)
 #define STRINGIFY(text)
 #define INDEX_FROM_COORD3D(coordX, coordY, coordZ, arrayWidth, arrayHeight, arrayDepth)
+#define COORD3D_X_FROM_INDEX(voxelIndex, arrayWidth)
+#define COORD3D_Y_FROM_INDEX(voxelIndex, arrayWidth, arrayDepth)
+#define COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)
 #define COORD3D_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)
 #define UNUSED(varName)
 #define UNREFERENCED(varName)

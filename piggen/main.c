@@ -8,20 +8,35 @@ Description:
 	** the source file(s) to #include the generated code
 */
 
+#include "base/base_macros.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "base/base_macros.h"
 
-typedef struct
-{
-	int a;
-	int b;
-} MyType_t;
+#if COMPILER_MSVC
+#pragma warning(push)
+#pragma warning(disable: 5262) //error C5262: implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#endif
+#include <stdatomic.h>
+#if COMPILER_MSVC
+#pragma warning(pop)
+#endif
 
-// typedef int bool;
-// #define true ((bool)1)
-// #define false ((bool)0)
+#if COMPILER_MSVC
+#include <process.h> //needed for _beginthread/_endthread
+#endif
+
+#if OS_WINDOWS
+#include <windows.h> //provides Sleep()
+#elif OS_LINUX
+#include <unistd.h> //provides sleep()
+#endif
+
+#define my(type, a, b) _Generic(*(type*)0, \
+	int: ((a) - (b)),          \
+	float: ((a) + (b)),        \
+	bool: ((a) || (b)))
 
 int main()
 {
@@ -41,27 +56,19 @@ int main()
 	printf("Running on Linux\n");
 	#endif
 	printf("Running piggen...");
-		
-	unsigned char something[] =
-	#embed "piggen/test.txt";
-	for (int i = 0; i < ArrayCount(something); i++)
-	{
-		printf("[%d] = 0x%02X\n", i, something[i]);
-	}
 	
-	MyType_t test = {0};
-	typeof(test) test2;
-	test2.a = 2;
-	test2.b = 3;
-	printf("test={ a=%d, b=%d }\n", test.a, test.b);
-	printf("test2={ a=%d, b=%d }\n", test2.a, test2.b);
-	// printf("test2=%d\n", test2);
-	
-	bool test3 = false;
-	printf("test3=%s\n", test3 ? "true" : "false");
-	
-	// unsigned _BitInt(5) smallInt = 1;
-	// while (smallInt != 0) { printf("smallInt=%u\n", (unsigned int)smallInt); smallInt++; }
+	int i1 = 3;
+	int i2 = 7;
+	float f1 = 3.14159f;
+	float f2 = 13.7f;
+	bool b1 = true;
+	bool b2 = false;
+	int output1 = my(float, i1, i2);
+	float output2 = my(float, f1, f2);
+	bool output3 = my(bool, b1, b2);
+	printf("output1 = %d\n", output1);
+	printf("output2 = %f\n", output2);
+	printf("output3 = %s\n", output3 ? "True" : "False");
 	
 	// getchar(); //wait for user to press ENTER
 	printf("DONE!\n");

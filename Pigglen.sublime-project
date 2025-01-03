@@ -2,7 +2,87 @@
 	"folders":
 	[
 		{
-			"path": "."
+			"path": ".",
 		}
-	]
+	],
+	"settings":
+	{
+		"build_options":
+		[
+		],
+		"custom_constants":
+		[
+			"ATTR_PACKED",
+			"END_EXTERN_C",
+			"HalfPi32",
+			"HalfPi64",
+			"Pi32",
+			"Pi64",
+			"QuarterPi32",
+			"QuarterPi64",
+			"START_EXTERN_C",
+			"Sqrt2_32",
+			"Sqrt2_64",
+			"ThirdPi32",
+			"ThirdPi64",
+			"ThreeHalfsPi32",
+			"ThreeHalfsPi64",
+			"TwoPi32",
+			"TwoPi64",
+			"__func__",
+			"e32",
+			"e64",
+		],
+		"custom_functions":
+		[
+			"#define ArrayCount(Array)",
+			"#define COORD3D_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)",
+			"#define COORD3D_X_FROM_INDEX(voxelIndex, arrayWidth)",
+			"#define COORD3D_Y_FROM_INDEX(voxelIndex, arrayWidth, arrayDepth)",
+			"#define COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)",
+			"#define END_PACK()",
+			"#define EXPORT(returnType, functionName, ...)",
+			"#define FlagEnumSet(BitwiseField, Bit, enumType, castType)",
+			"#define FlagEnumSetTo(BitwiseField, Bit, condition, enumType, castType)",
+			"#define FlagEnumToggle(BitwiseField, Bit, enumType, castType)",
+			"#define FlagEnumUnset(BitwiseField, Bit, enumType, castType)",
+			"#define FlagSet(BitwiseField, Bit)",
+			"#define FlagSetTo(BitwiseField, Bit, condition)",
+			"#define FlagToggle(BitwiseField, Bit)",
+			"#define FlagUnset(BitwiseField, Bit)",
+			"#define Gigabytes(value)",
+			"#define IMPORT(returnType, functionName, ...)",
+			"#define INDEX_FROM_COORD3D(coordX, coordY, coordZ, arrayWidth, arrayHeight, arrayDepth)",
+			"#define IsEqualXor(variable1, variable2, condition1, condition2)",
+			"#define IsFlagSet(BitwiseField, Bit)",
+			"#define IsPntrWithin(regionStart, regionSize, pntr)",
+			"#define IsSizedPntrWithin(regionStart, regionSize, pntr, size)",
+			"#define IsVersionAbove(versionMajor, versionMinor, numberMajor, numberMinor)",
+			"#define IsVersionBelow(versionMajor, versionMinor, numberMajor, numberMinor)",
+			"#define Kilobytes(value)",
+			"#define Megabytes(value)",
+			"#define PACKED(class_to_pack)",
+			"#define Plural(number, multipleSuffix)",
+			"#define PluralEx(number, singularSuffix, multipleSuffix)",
+			"#define START_PACK()",
+			"#define STRINGIFY(text)",
+			"#define STRINGIFY_DEFINE(define)",
+			"#define SetOptionalOutPntr(outputPntr, value)",
+			"#define Terabytes(value)",
+			"#define ToDegrees32(radians)",
+			"#define ToDegrees64(radians)",
+			"#define ToRadians32(degrees)",
+			"#define ToRadians64(degrees)",
+			"#define TrackMax(isFirst, trackVariable, newValue)",
+			"#define TrackMin(isFirst, trackVariable, newValue)",
+			"#define UNREFERENCED(varName)",
+			"#define UNUSED(varName)"
+		],
+		"custom_globals":
+		[
+		],
+		"custom_types":
+		[
+		],
+	},
 }
