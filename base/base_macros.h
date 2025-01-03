@@ -10,6 +10,7 @@ Description:
 #define _BASE_MACROS_H
 
 #include "base/base_compiler_check.h"
+#include "base/base_typedefs.h"
 
 // +--------------------------------------------------------------+
 // |                       Global Constants                       |
@@ -140,7 +141,7 @@ Description:
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
 //TODO: How does packing attributes work on all compilers and platforms?
-// #if WINDOWS_COMPILATION
+// #if TARGET_IS_WINDOWS
 // 	#define PACKED(class_to_pack) __pragma( pack(push, 1) ) class_to_pack __pragma(pack(pop))
 // 	#define START_PACK()  __pragma(pack(push, 1))
 // 	#define END_PACK()    __pragma(pack(pop))
@@ -148,12 +149,12 @@ Description:
 // 	#define EXPORT(returnType, functionName, ...) returnType __declspec(dllexport) functionName(__VA_ARGS__)
 // 	#define IMPORT(returnType, functionName, ...) returnType __declspec(dllimport) functionName(__VA_ARGS__)
 // 	#define __func__ __FUNCTION__
-// #elif PLAYDATE_COMPILATION
+// #elif TARGET_IS_PLAYDATE
 // 	#define PACKED(class_to_pack) //TODO: Nothing?
 // 	#define START_PACK()          //TODO: Nothing?
 // 	#define END_PACK()            //TODO: Nothing?
 // 	#define ATTR_PACKED           //TODO: Nothing?
-// 	#if PLAYDATE_SIMULATOR
+// 	#if TARGET_IS_PLAYDATE_SIMULATOR
 // 	#define EXPORT(returnType, functionName, ...) returnType __declspec(dllexport) functionName(__VA_ARGS__)
 // 	#define IMPORT(returnType, functionName, ...) returnType __declspec(dllimport) functionName(__VA_ARGS__)
 // 	#else
