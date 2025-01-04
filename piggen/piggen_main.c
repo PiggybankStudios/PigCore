@@ -99,7 +99,7 @@ int main()
 	u32* num3 = (u32*)AllocMem(&scratch1, sizeof(u32));
 	MyPrint("num3 %p", num3);
 	PrintArena(&scratch1);
-	FreeMem(&scratch1, num2, sizeof(u32));
+	FreeMem(&scratch1, num3, sizeof(u32));
 	PrintArena(&scratch1);
 	ArenaResetToMark(&scratch1, mark1);
 	PrintArena(&scratch1);

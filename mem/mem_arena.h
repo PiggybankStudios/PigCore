@@ -36,6 +36,16 @@ typedef REALLOC_FUNC_DEF(ReallocFunc_f);
 #define FREE_FUNC_DEF(functionName)    void  functionName(void* allocPntr)
 typedef FREE_FUNC_DEF(FreeFunc_f);
 
+typedef enum ArenaFlag ArenaFlag;
+enum ArenaFlag
+{
+	ArenaFlag_None = 0x00,
+	ArenaFlag_AllowFreeWithoutSize = 0x01,
+	ArenaFlag_AssertOnFailedAlloc  = 0x02,
+	ArenaFlag_SingleAlloc          = 0x04,
+	ArenaFlag_AllowNullptrFree     = 0x08,
+};
+
 typedef enum ArenaType ArenaType;
 enum ArenaType
 {
@@ -79,6 +89,7 @@ struct Arena
 	const char* debugName;
 	#endif
 	uxx alignment;
+	u8 flags;
 	
 	uxx used;
 	uxx committed;
@@ -330,16 +341,31 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 		// +==============================+
 		// |   ArenaType_Alias AllocMem   |
 		// +==============================+
-		case ArenaType_Alias: DebugNotNull(arena->sourceArena); return AllocMemAligned(arena->sourceArena, numBytes, alignmentOverride);
+		case ArenaType_Alias:
+		{
+			if (IsFlagSet(arena->flags, ArenaFlag_SingleAlloc) && arena->allocCount >= 1) { AssertMsg(false, "Second allocation attempted from Buffer Arena with SingleAlloc flag!"); break; }
+			DebugNotNull(arena->sourceArena);
+			result = AllocMemAligned(arena->sourceArena, numBytes, alignmentOverride);
+			arena->used = arena->sourceArena->used;
+			arena->committed = arena->sourceArena->committed;
+			arena->size = arena->sourceArena->size;
+			arena->allocCount = arena->sourceArena->allocCount;
+			if (result == nullptr && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in Alias Arena!"); }
+		} break;
 		
 		// +==============================+
 		// |  ArenaType_StdHeap AllocMem  |
 		// +==============================+
 		case ArenaType_StdHeap:
 		{
+			if (IsFlagSet(arena->flags, ArenaFlag_SingleAlloc) && arena->allocCount >= 1) { AssertMsg(false, "Second allocation attempted from Buffer Arena with SingleAlloc flag!"); break; }
 			uxx alignedNumBytes = numBytes + (alignment > 1 ? alignment-1 : 0);
 			result = MyMalloc(alignedNumBytes);
-			if (result == nullptr) { break; }
+			if (result == nullptr)
+			{
+				if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in StdHeap Arena!"); }
+				break;
+			}
 			arena->used += alignedNumBytes;
 			IncrementUXX(arena->allocCount);
 			if (alignment > 1)
@@ -359,7 +385,7 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 		case ArenaType_Buffer:
 		{
 			DebugNotNull(arena->mainPntr);
-			//TODO: Check if SingleAlloc flag is enabled and fail if we already have 1 allocation
+			if (IsFlagSet(arena->flags, ArenaFlag_SingleAlloc) && arena->allocCount >= 1) { AssertMsg(false, "Second allocation attempted from Buffer Arena with SingleAlloc flag!"); break; }
 			
 			uxx currentMisalignment = (alignment > 1) ? (uxx)((size_t)((u8*)arena->mainPntr + arena->used) % alignment) : 0;
 			uxx alignmentBytesNeeded = (currentMisalignment > 0) ? (alignment - currentMisalignment) : 0;
@@ -371,6 +397,7 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 				arena->used += alignedNumBytes;
 				IncrementUXX(arena->allocCount);
 			}
+			else if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in Buffer Arena!"); }
 		} break;
 		
 		// +==============================+
@@ -381,7 +408,11 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 			DebugAssert(alignment == 0);
 			DebugNotNull(arena->allocFunc);
 			result = arena->allocFunc(numBytes);
-			if (result == nullptr) { break; }
+			if (result == nullptr)
+			{
+				if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in Funcs Arena!"); }
+				break;
+			}
 			arena->used += numBytes;
 			IncrementUXX(arena->allocCount);
 		} break;
@@ -445,6 +476,7 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 				arena->used += alignedNumBytes;
 				IncrementUXX(arena->allocCount);
 			}
+			else if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in StackVirtual Arena!"); }
 		} break;
 		
 		default:
@@ -466,7 +498,8 @@ NODISCARD void* AllocMem(Arena* arena, uxx numBytes)
 void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 {
 	DebugNotNull(arena);
-	//TODO: Check AllowNullptrFree and skip this assertion if true
+	if (allocPntr == nullptr && !IsFlagSet(arena->flags, ArenaFlag_AllowNullptrFree)) { AssertMsg(allocPntr != nullptr, "Tried to free nullptr from Arena!"); return; }
+	if (allocSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize)) { AssertMsg(allocSize != 0, "Tried to free from Arena without size!"); return; }
 	DebugNotNull(allocPntr);
 	
 	switch (arena->type)
@@ -474,14 +507,21 @@ void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 		// +=============================+
 		// |   ArenaType_Alias FreeMem   |
 		// +=============================+
-		case ArenaType_Alias: DebugNotNull(arena->sourceArena); FreeMem(arena->sourceArena, allocPntr, allocSize); break;
+		case ArenaType_Alias:
+		{
+			DebugNotNull(arena->sourceArena);
+			FreeMem(arena->sourceArena, allocPntr, allocSize);
+			arena->used = arena->sourceArena->used;
+			arena->committed = arena->sourceArena->committed;
+			arena->size = arena->sourceArena->size;
+			arena->allocCount = arena->sourceArena->allocCount;
+		} break;
 		
 		// +=============================+
 		// |  ArenaType_StdHeap FreeMem  |
 		// +=============================+
 		case ArenaType_StdHeap:
 		{
-			//TODO: Check AllowFreeWithoutSize flag!
 			//TODO: Is this going to complain for aligned allocations??
 			MyFree(allocPntr);
 			arena->used -= allocSize;
@@ -503,7 +543,7 @@ void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 			}
 			else
 			{
-				//TODO: Check AllowFreeWithoutSize flag!
+				// If this arena has the AllowFreeWithoutSize then we are blindly trusting the pointer is pointing to the last allocation
 				arena->used = allocIndex;
 			}
 			Decrement(arena->allocCount);
@@ -586,15 +626,114 @@ void FreeMemNoSize(Arena* arena, void* allocPntr)
 // +--------------------------------------------------------------+
 // |                Arena Realloc Implementations                 |
 // +--------------------------------------------------------------+
+//TODO: Should we have alignment option here?
 NODISCARD void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSize)
 {
 	DebugNotNull(arena);
-	UNUSED(arena);
-	UNUSED(allocPntr);
-	UNUSED(oldSize);
-	UNUSED(newSize);
-	//TODO: Implement me!
-	return nullptr;
+	NotNull(allocPntr);
+	void* result = nullptr;
+	
+	// Degenerate cases where we either do nothing, Alloc, or Free
+	if (oldSize == newSize) { return allocPntr; }
+	if (oldSize == 0 && allocPntr == nullptr)
+	{
+		result = AllocMem(arena, newSize);
+		return result;
+	}
+	if (newSize == 0)
+	{
+		FreeMem(arena, allocPntr, oldSize);
+		return nullptr;
+	}
+	
+	if (oldSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize)) { AssertMsg(oldSize != 0, "Tried to Realloc in Arena without oldSize!"); return nullptr; }
+	
+	switch (arena->type)
+	{
+		// +==============================+
+		// |  ArenaType_Alias ReallocMem  |
+		// +==============================+
+		case ArenaType_Alias:
+		{
+			DebugNotNull(arena->sourceArena);
+			result = ReallocMem(arena->sourceArena, allocPntr, oldSize, newSize);
+			if (result == nullptr && !IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(result != nullptr, "Realloc in Alias Arena failed!"); break; }
+		} break;
+		
+		// +==============================+
+		// | ArenaType_StdHeap ReallocMem |
+		// +==============================+
+		case ArenaType_StdHeap:
+		{
+			result = MyRealloc(allocPntr, newSize);
+			if (result == nullptr && !IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(result != nullptr, "Realloc in StdHeap Arena failed!"); break; }
+			if (result != nullptr)
+			{
+				if (newSize > oldSize) { arena->used += newSize - oldSize; }
+				else { arena->used -= oldSize - newSize; }
+			}
+			else { arena->used -= oldSize; }
+		} break;
+		
+		// +==============================+
+		// | ArenaType_Buffer ReallocMem  |
+		// +==============================+
+		case ArenaType_Buffer:
+		{
+			
+		} break;
+		
+		// +==============================+
+		// |  ArenaType_Funcs ReallocMem  |
+		// +==============================+
+		// case ArenaType_Funcs:
+		// {
+		// 	Unimplemented(); //TODO: Implement me!
+		// } break;
+		
+		// +==============================+
+		// | ArenaType_Generic ReallocMem |
+		// +==============================+
+		// case ArenaType_Generic:
+		// {
+		// 	Unimplemented(); //TODO: Implement me!
+		// } break;
+		
+		// +====================================+
+		// | ArenaType_GenericPaged ReallocMem  |
+		// +====================================+
+		// case ArenaType_GenericPaged:
+		// {
+		// 	Unimplemented(); //TODO: Implement me!
+		// } break;
+		
+		// +==============================+
+		// |  ArenaType_Stack ReallocMem  |
+		// +==============================+
+		// case ArenaType_Stack:
+		// {
+		// 	Unimplemented(); //TODO: Implement me!
+		// } break;
+		
+		// +==================================+
+		// | ArenaType_StackPaged ReallocMem  |
+		// +==================================+
+		// case ArenaType_StackPaged:
+		// {
+		// 	Unimplemented(); //TODO: Implement me!
+		// } break;
+		
+		// +====================================+
+		// | ArenaType_StackVirtual ReallocMem  |
+		// +====================================+
+		// case ArenaType_StackVirtual:
+		// {
+		// 	Unimplemented(); //TODO: Implement me!
+		// } break;
+		
+	}
+	
+	return result;
 }
 NODISCARD void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize)
 {
