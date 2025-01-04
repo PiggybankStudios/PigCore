@@ -17,6 +17,18 @@ Description:
 #include "std/std_printf.h"
 #include "mem/mem_arena.h"
 
+void PrintArena(Arena* arena)
+{
+	if (arena->committed > 0)
+	{
+		MyPrint("%s %llu/%llu (%llu virtual) - %llu allocations", arena->debugName, arena->used, arena->committed, arena->size, arena->allocCount);
+	}
+	else
+	{
+		MyPrint("%s %llu/%llu - %llu allocations", arena->debugName, arena->used, arena->size, arena->allocCount);
+	}
+}
+
 int main()
 {
 	#if COMPILER_IS_MSVC
@@ -52,21 +64,45 @@ int main()
 	Arena scratch2 = ZEROED;
 	InitArenaStackVirtual(&scratch2, Gigabytes(4));
 	
-	u32* allocatedInt1 = AllocMem(&stdHeap, sizeof(u32));
-	MyPrint("allocatedInt1: %p", allocatedInt1);
-	u32* allocatedInt2 = AllocMem(&stdAlias, sizeof(u32));
-	MyPrint("allocatedInt2: %p", allocatedInt2);
-	FreeMem(&stdAlias, allocatedInt1, sizeof(u32));
-	u32* allocatedInt3 = AllocMem(&stdAlias, sizeof(u32));
-	MyPrint("allocatedInt3: %p", allocatedInt3);
+	// u32* allocatedInt1 = AllocMem(&stdHeap, sizeof(u32));
+	// MyPrint("allocatedInt1: %p", allocatedInt1);
+	// PrintArena(&stdHeap);
+	// u32* allocatedInt2 = AllocMem(&stdAlias, sizeof(u32));
+	// MyPrint("allocatedInt2: %p", allocatedInt2);
+	// PrintArena(&stdHeap);
+	// FreeMem(&stdAlias, allocatedInt1, sizeof(u32));
+	// PrintArena(&stdHeap);
+	// u32* allocatedInt3 = AllocMem(&stdAlias, sizeof(u32));
+	// MyPrint("allocatedInt3: %p", allocatedInt3);
+	// PrintArena(&stdHeap);
 	
-	u32* allocatedInt4 = AllocMem(&bufferArena, sizeof(u32));
-	MyPrint("allocatedInt4: %p", allocatedInt4);
-	u32* allocatedInt5 = AllocMem(&bufferArena, sizeof(u32));
-	MyPrint("allocatedInt5: %p", allocatedInt5);
-	FreeMem(&bufferArena, allocatedInt5, sizeof(u32));
-	u32* allocatedInt6 = AllocMem(&bufferArena, sizeof(u32));
-	MyPrint("allocatedInt6: %p", allocatedInt6);
+	// u32* allocatedInt4 = AllocMem(&bufferArena, sizeof(u32));
+	// MyPrint("allocatedInt4: %p", allocatedInt4);
+	// PrintArena(&bufferArena);
+	// u32* allocatedInt5 = AllocMem(&bufferArena, sizeof(u32));
+	// MyPrint("allocatedInt5: %p", allocatedInt5);
+	// PrintArena(&bufferArena);
+	// FreeMem(&bufferArena, allocatedInt5, sizeof(u32));
+	// PrintArena(&bufferArena);
+	// u32* allocatedInt6 = AllocMem(&bufferArena, sizeof(u32));
+	// MyPrint("allocatedInt6: %p", allocatedInt6);
+	// PrintArena(&bufferArena);
+	
+	u64 mark1 = ArenaGetMark(&scratch1);
+	PrintArena(&scratch1);
+	u32* num1 = (u32*)AllocMem(&scratch1, sizeof(u32));
+	MyPrint("num1 %p", num1);
+	PrintArena(&scratch1);
+	u32* num2 = (u32*)AllocMem(&scratch1, sizeof(u32));
+	MyPrint("num2 %p", num2);
+	PrintArena(&scratch1);
+	u32* num3 = (u32*)AllocMem(&scratch1, sizeof(u32));
+	MyPrint("num3 %p", num3);
+	PrintArena(&scratch1);
+	FreeMem(&scratch1, num2, sizeof(u32));
+	PrintArena(&scratch1);
+	ArenaResetToMark(&scratch1, mark1);
+	PrintArena(&scratch1);
 	
 	// getchar(); //wait for user to press ENTER
 	MyPrint("DONE!");

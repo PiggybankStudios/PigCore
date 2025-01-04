@@ -14,17 +14,24 @@ Description:
 #include <stdint.h>
 #include <stdbool.h>
 
+// NOTE: Both "long" and "long long" in Clang are 8 bytes, so int64_t/uint64_t are "long"
+//       Meanwhile in MSVC "long" is 4 bytes while "long long" is 8 bytes, so int64_t/uint64_t are "long long"
+//       Format arguments like %llu will complain if this is technically a "long" and not a "long long"
+//       So to make sure we can always use %llu arguments across Windows and Linux we specifically typedef long long, not int64_t/uint64_t from stdint.h.
+
 // We use an "i" to indicate it can hold integer numbers
 typedef int8_t      i8;
 typedef int16_t     i16;
 typedef int32_t     i32;
-typedef int64_t     i64;
+typedef long long   i64;
+_Static_assert(sizeof(i64) == 8); //TODO: Change to StaticAssert once we diangose that
 
 // We use a "u" to distinguish these as only holding unsigned numbers (they are still integers, but "i" is already taken)
 typedef uint8_t     u8;
 typedef uint16_t    u16;
 typedef uint32_t    u32;
-typedef uint64_t    u64;
+typedef unsigned long long u64;
+_Static_assert(sizeof(u64) == 8); //TODO: Change to StaticAssert once we diangose that
 
 // We use an "r" to indicate it can hold real numbers
 typedef float       r32;

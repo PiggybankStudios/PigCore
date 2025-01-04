@@ -19,15 +19,19 @@ Description:
 
 #include <assert.h>
 
+//TODO: Why can't we use a #define around _Static_assert????
+#define StaticAssert(condition) _Static_assert(condition)
 #define AssertMsg(condition, message) if (!(condition)) { assert(condition); }
 #define Assert(condition) AssertMsg(condition, "")
 #define NotNull(variable) Assert(variable != nullptr)
 
 #if DEBUG_BUILD
+#define DebugStaticAssert(condition) _Static_assert(condition)
 #define DebugAssertMsg(condition, message) AssertMsg(condition, message)
 #define DebugAssert(condition) Assert(condition)
 #define DebugNotNull(variable) NotNull(variable)
 #else
+#define DebugStaticAssert(condition) //nothing
 #define DebugAssertMsg(condition, message) //nothing
 #define DebugAssert(condition) //nothing
 #define DebugNotNull(variable) //nothing

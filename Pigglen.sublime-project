@@ -49,6 +49,7 @@
 			"#define DebugAssert(condition)",
 			"#define DebugAssertMsg(condition, message)",
 			"#define DebugNotNull(variable)",
+			"#define DebugStaticAssert(condition)",
 			"#define Decrement(variable)",
 			"#define DecrementBy(variable, amount)",
 			"#define END_PACK()",

@@ -16,6 +16,8 @@ Description:
 #include "std/std_includes.h"
 #include "std/std_malloc.h"
 #include "std/std_memset.h"
+#include "std/std_math_ex.h"
+#include "os/os_virtual_mem.h"
 
 #ifndef MEM_ARENA_DEBUG_NAMES
 #define MEM_ARENA_DEBUG_NAMES DEBUG_BUILD
@@ -79,8 +81,9 @@ struct Arena
 	uxx alignment;
 	
 	uxx used;
-	uxx allocCount;
+	uxx committed;
 	uxx size;
+	uxx allocCount;
 	
 	Arena* sourceArena;
 	void* mainPntr;
@@ -137,8 +140,17 @@ void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize)
 	#if MEM_ARENA_DEBUG_NAMES
 	arenaOut->debugName = "[stack_virtual]";
 	#endif
-	//TODO: Call VirtualAlloc or mmap!
-	UNUSED(virtualSize);
+	uxx osMemPageSize = OsGetMemoryPageSize();
+	Assert(osMemPageSize > 0);
+	if ((virtualSize % osMemPageSize) != 0)
+	{
+		//round up to the nearest whole page size
+		virtualSize = ((virtualSize / osMemPageSize) + 1) * osMemPageSize;
+	}
+	arenaOut->mainPntr = OsReserveMemory(virtualSize);
+	NotNull(arenaOut->mainPntr);
+	arenaOut->size = virtualSize;
+	arenaOut->committed = 0;
 }
 
 // +--------------------------------------------------------------+
@@ -409,10 +421,31 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 		// +==================================+
 		// | ArenaType_StackVirtual AllocMem  |
 		// +==================================+
-		// case ArenaType_StackVirtual:
-		// {
-		// 	Unimplemented(); //TODO: Implement me!
-		// } break;
+		case ArenaType_StackVirtual:
+		{
+			DebugNotNull(arena->mainPntr);
+			uxx osMemPageSize = OsGetMemoryPageSize();
+			Assert(osMemPageSize > 0);
+			
+			uxx currentMisalignment = (alignment > 1) ? (uxx)((size_t)((u8*)arena->mainPntr + arena->used) % alignment) : 0;
+			uxx alignmentBytesNeeded = (currentMisalignment > 0) ? (alignment - currentMisalignment) : 0;
+			uxx alignedNumBytes = numBytes + alignmentBytesNeeded;
+			
+			if (arena->used + alignedNumBytes <= arena->size)
+			{
+				if (arena->used + alignedNumBytes > arena->committed)
+				{
+					uxx numTotalPagesNeeded = CeilDivUXX(arena->used + alignedNumBytes, osMemPageSize);
+					uxx numNewPagesNeeded = numTotalPagesNeeded - (arena->committed / osMemPageSize);
+					OsCommitReservedMemory((u8*)arena->mainPntr + arena->committed, numNewPagesNeeded * osMemPageSize);
+					arena->committed += (numNewPagesNeeded * osMemPageSize);
+				}
+				
+				result = (void*)((u8*)arena->mainPntr + arena->used);
+				arena->used += alignedNumBytes;
+				IncrementUXX(arena->allocCount);
+			}
+		} break;
 		
 		default:
 		{
@@ -430,7 +463,7 @@ NODISCARD void* AllocMem(Arena* arena, uxx numBytes)
 // +--------------------------------------------------------------+
 // |                  Arena Free Implementations                  |
 // +--------------------------------------------------------------+
-void FreeMem(Arena* arena, void* allocPntr, uxx size)
+void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 {
 	DebugNotNull(arena);
 	//TODO: Check AllowNullptrFree and skip this assertion if true
@@ -441,7 +474,7 @@ void FreeMem(Arena* arena, void* allocPntr, uxx size)
 		// +=============================+
 		// |   ArenaType_Alias FreeMem   |
 		// +=============================+
-		case ArenaType_Alias: DebugNotNull(arena->sourceArena); FreeMem(arena->sourceArena, allocPntr, size); break;
+		case ArenaType_Alias: DebugNotNull(arena->sourceArena); FreeMem(arena->sourceArena, allocPntr, allocSize); break;
 		
 		// +=============================+
 		// |  ArenaType_StdHeap FreeMem  |
@@ -451,7 +484,7 @@ void FreeMem(Arena* arena, void* allocPntr, uxx size)
 			//TODO: Check AllowFreeWithoutSize flag!
 			//TODO: Is this going to complain for aligned allocations??
 			MyFree(allocPntr);
-			arena->used -= size;
+			arena->used -= allocSize;
 			Decrement(arena->allocCount);
 		} break;
 		
@@ -461,12 +494,12 @@ void FreeMem(Arena* arena, void* allocPntr, uxx size)
 		case ArenaType_Buffer:
 		{
 			DebugNotNull(arena->mainPntr);
-			Assert(IsSizedPntrWithin(arena->mainPntr, arena->size, allocPntr, size));
+			Assert(IsSizedPntrWithin(arena->mainPntr, arena->size, allocPntr, allocSize));
 			uxx allocIndex = (uxx)((u8*)allocPntr - (u8*)arena->mainPntr);
-			if (size > 0)
+			if (allocSize > 0)
 			{
-				Assert(allocIndex + size == arena->used);
-				arena->used -= size;
+				Assert(allocIndex + allocSize == arena->used);
+				arena->used -= allocSize;
 			}
 			else
 			{
@@ -483,7 +516,7 @@ void FreeMem(Arena* arena, void* allocPntr, uxx size)
 		{
 			DebugNotNull(arena->freeFunc);
 			arena->freeFunc(allocPntr);
-			arena->used -= size;
+			arena->used -= allocSize;
 			Decrement(arena->allocCount);
 		} break;
 		
@@ -522,10 +555,22 @@ void FreeMem(Arena* arena, void* allocPntr, uxx size)
 		// +=================================+
 		// | ArenaType_StackVirtual FreeMem  |
 		// +=================================+
-		// case ArenaType_StackVirtual:
-		// {
-		// 	Unimplemented(); //TODO: Implement me!
-		// } break;
+		//NOTE: Freeing on stacks is not fully supported. You are expected to use Marks instead to free memory
+		case ArenaType_StackVirtual:
+		{
+			DebugNotNull(arena->mainPntr);
+			AssertMsg(allocSize > 0, "Stacks do not allowing freeing unless you know the size of the allocation!");
+			Assert(IsSizedPntrWithin(arena->mainPntr, arena->size, allocPntr, allocSize));
+			// The only case we support freeing is if you have the size AND you are the last allocation on the stack!
+			// Even then you're not guaranteed to return to the same usage you had before allocating because alignment
+			// requirements might have added a bit on the front
+			if ((u8*)allocPntr == ((u8*)arena->mainPntr + arena->used - allocSize))
+			{
+				arena->used -= allocSize;
+				Decrement(arena->allocCount);
+			}
+			else { AssertMsg(false, "Stacks do not allow arbitrary freeing! You can only free the last thing on the stack IF you know the size!"); }
+		} break;
 		
 		default:
 		{
@@ -581,7 +626,12 @@ void ArenaResetToMark(Arena* arena, uxx mark)
 		case ArenaType_Alias: DebugNotNull(arena->sourceArena); ArenaResetToMark(arena->sourceArena, mark); break;
 		// case ArenaType_Stack: //TODO: Implement me!
 		// case ArenaType_StackPaged: //TODO: Implement me!
-		case ArenaType_StackVirtual: arena->used = mark; break;
+		case ArenaType_StackVirtual:
+		{
+			//TODO: Do we want to uncommit committed pages?
+			arena->used = mark;
+			if (mark == 0) { arena->allocCount = 0; }
+		} break;
 		default: Assert(false); break;
 	}
 }

@@ -79,10 +79,10 @@ Description:
 // Shorthand for writing things like (4 * 1024 * 1024) as Megabytes(4).
 // Can be used for more than just memory sizes but these powers of 1024 are often
 // used when partitioning memory because they relate to binary bit patterns
-#define Kilobytes(value) ((value) * 1024UL)
-#define Megabytes(value) (Kilobytes((value)) * 1024UL)
-#define Gigabytes(value) (Megabytes((value)) * 1024UL)
-#define Terabytes(value) (Gigabytes((value)) * 1024UL)
+#define Kilobytes(value) ((value) * 1024ULL)
+#define Megabytes(value) (Kilobytes(value) * 1024ULL)
+#define Gigabytes(value) (Megabytes(value) * 1024ULL)
+#define Terabytes(value) (Gigabytes(value) * 1024ULL)
 
 // Convert between radians and degrees, either with Pi32 or Pi64
 #define ToRadians32(degrees)		((degrees)/180.0f * Pi32)
