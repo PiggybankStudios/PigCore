@@ -30,7 +30,7 @@ for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
 	set /A "vsdevcmd_start_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
 )
 if "%BUILD_WINDOWS%"=="1" (
-	REM set VSCMD_DEBUG=1
+	REM set VSCMD_DEBUG=3
 	REM NOTE: Uncomment or change one of these lines to match your installation of Visual Studio compiler
 	REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
 	REM call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64 -no_logo
@@ -77,7 +77,8 @@ set common_clang_flags=%common_clang_flags% -Wno-switch
 :: /I = Adds an include directory to search in when resolving #includes
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths
-set common_clang_flags=%common_clang_flags% -I "../%root%"
+:: -lm = Include the math library (required for stuff like sinf, atan, etc.)
+set common_clang_flags=%common_clang_flags% -I "../%root%" -lm
 if "%DEBUG_BUILD%"=="1" (
 	REM /MDd = ?
 	REM /Od = Optimization level: Debug

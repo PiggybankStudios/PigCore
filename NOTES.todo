@@ -2,4 +2,81 @@
 This file is a dumping ground for all kinds of textual notes that we take while we work on the project
 
 # TODO List
-	[ ] 
+	[ ] Figure out why inline is causing problems
+
+# GyLib Conversions
+	[!] gy_intrinsics.h
+	[!] gy_directions.h
+	[!] gy_easing.h
+	[!] gy_random.h
+	[!] gy_extras.h
+	[!] gy_hash.h (+add meowhash?)
+	[!] gy_unicode.h
+	[!] gy_string.h
+	[!] gy_result.h
+	[!] gy_parsing.h
+	[!] gy_ip.h
+	[!] gy_math.h (std_math_ex.h)
+	[!] gy_noise.h
+	[!] gy_os.h
+	[!] gy_performance.h
+	[!] gy_performance_sections.h
+	[!] gy_simple_parsers.h
+	[!] gy_sorting.h
+	[!] gy_standard_names.h
+	[!] gy_time.h
+	[!] gy_uuid.h
+	[x] gy_assert.h
+	[ ] gy_audio.h
+	[x] gy_basic_macros.h
+	[ ] gy_basis_vectors.h
+	[ ] gy_bezier.h
+	[ ] gy_bucket_array.h
+	[ ] gy_cereal.h
+	[ ] gy_collision.h
+	[?] gy_colors.h
+	[ ] gy_common_serializables.h
+	[ ] gy_cyclic_functions.h
+	[?] gy_debug.h
+	[x] gy_defines_check.h
+	[ ] gy_expression.h
+	[ ] gy_fifo.h
+	[ ] gy_func_table.cpp
+	[ ] gy_func_table.h
+	[ ] gy_id_map.h
+	[ ] gy_imgui_helpers.h
+	[ ] gy_linked_list.h
+	[-] gy_lookup.h
+	[ ] gy_matrices.h
+	[?] gy_memory.h
+	[ ] gy_network_bus.h
+	[ ] gy_orca_aliases.h
+	[ ] gy_orca_overloads.h
+	[-] gy_os_defs.h
+	[ ] gy_path.h
+	[ ] gy_primitives.h
+	[ ] gy_process_log.h
+	[ ] gy_quaternions.h
+	[ ] gy_rays.h
+	[ ] gy_rectangles.h
+	[ ] gy_resource_manifest.h
+	[ ] gy_scratch_arenas.cpp
+	[ ] gy_scratch_arenas.h
+	[ ] gy_serializable.h
+	[ ] gy_serialization_helpers.h
+	[ ] gy_socket.h
+	[X] gy_standard_colors.h
+	[x] gy_std.h
+	[ ] gy_str_hash_dictionary.h
+	[ ] gy_stream.h
+	[ ] gy_string_buffer.h
+	[ ] gy_string_builder.h
+	[ ] gy_string_fifo.h
+	[-] gy_temp_memory.cpp
+	[ ] gy_test_floatscan.h
+	[-] gy_threading.h
+	[ ] gy_triangulation.h
+	[x] gy_types.h
+	[x] gy_variable_array.h
+	[ ] gy_vectors.h
+	[ ] gy_word_tree.h

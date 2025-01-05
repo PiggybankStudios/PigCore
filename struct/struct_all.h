@@ -11,7 +11,8 @@ Description:
 #ifndef _STRUCT_ALL_H
 #define _STRUCT_ALL_H
 
-#include "base/base_typedefs.h" //Needed by struct_var_array.h
+#include "base/base_typedefs.h" //Needed by struct_color.h and struct_var_array.h
+#include "struct/struct_color.h"
 #include "base/base_macros.h" //Needed by struct_var_array.h
 #include "base/base_assert.h" //Needed by struct_var_array.h
 #include "mem/mem_arena.h" //Needed by struct_var_array.h
