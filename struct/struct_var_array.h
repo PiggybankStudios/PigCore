@@ -69,6 +69,7 @@ struct VarArray
 	Arena* arena; //doubles as IsInit check
 	uxx itemSize;
 	uxx itemAlignment;
+	uxx maxLength;
 	
 	#if VAR_ARRAY_DEBUG_INFO
 	const char* creationFilePath;
@@ -110,11 +111,11 @@ void InitVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, Arena* aren
 	VarArrayExpand(array, initialCountNeeded);
 }
 #if VAR_ARRAY_DEBUG_INFO
-#define InitVarArrayWithInitial(type, array, arena, initialCountNeeded) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (array), (arena), (initialCountNeeded))
-#define InitVarArray(type, array, arena) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (array), (arena), 0)
+#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
+#define InitVarArray(type, arrayPntr, arena) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
 #else
-#define InitVarArrayWithInitial(type, array, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (array), _Alignof(type), (initialCountNeeded))
-#define InitVarArray(type, array, arena) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (array), _Alignof(type), 0)
+#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), _Alignof(type), (initialCountNeeded))
+#define InitVarArray(type, arrayPntr, arena) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), _Alignof(type), 0)
 #endif
 
 bool IsVarArrayInit(const VarArray* array)
@@ -163,6 +164,7 @@ bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared at top
 	NotNull(array->arena);
 	Assert(array->itemSize > 0);
 	if (array->allocLength >= capacityRequired) { return false; }
+	if (array->maxLength > 0 && capacityRequired > array->maxLength) { return false; }
 	
 	uxx newLength = 0;
 	newLength = array->allocLength > 0 ? array->allocLength : VAR_ARRAY_MIN_SIZE;
@@ -171,6 +173,7 @@ bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared at top
 		//double in size, but don't overflow uxx type
 		newLength = (newLength <= UINTXX_MAX/2) ? (newLength*2) : UINTXX_MAX;
 	}
+	if (array->maxLength > 0 && newLength > array->maxLength) { newLength = array->maxLength; }
 	DebugAssert(newLength >= capacityRequired);
 	DebugAssert(newLength <= (UINT64_MAX / array->itemSize));
 	
@@ -208,11 +211,12 @@ bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared at top
 // +--------------------------------------------------------------+
 // |                        Query VarArray                        |
 // +--------------------------------------------------------------+
-bool VarArrayContains_(uxx itemSize, VarArray* array, const void* itemInQuestion)
+bool VarArrayContains_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion)
 {
 	NotNull(array);
 	DebugAssert(array->itemSize > 0);
 	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayContains. Make sure you're accessing the VarArray with the correct type!");
+	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayContains. Make sure you're accessing the VarArray with the correct type!");
 	if (itemInQuestion == nullptr) { return false; }
 	if (array->items == nullptr) { return false; }
 	if (!IsPntrWithin(array->items, array->length * array->itemSize, itemInQuestion)) { return false; }
@@ -223,18 +227,18 @@ bool VarArrayContains_(uxx itemSize, VarArray* array, const void* itemInQuestion
 	#endif
 	return true;
 }
-#define VarArrayContains(type, array, itemInQuestion) VarArrayContains_((uxx)sizeof(type), (array), (itemInQuestion))
+#define VarArrayContains(type, arrayPntr, itemPntrInQuestion) VarArrayContains_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntrInQuestion))
 
-bool VarArrayGetIndexOf_(uxx itemSize, VarArray* array, const void* itemInQuestion, uxx* indexOut)
+bool VarArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion, uxx* indexOut)
 {
-	if (!VarArrayContains_(itemSize, array, itemInQuestion)) { return false; }
+	if (!VarArrayContains_(itemSize, itemAlignment, array, itemInQuestion)) { return false; }
 	uxx offsetFromBase = (uxx)(((const u8*)itemInQuestion) - (u8*)array->items);
 	DebugAssert((offsetFromBase % array->itemSize) == 0);
 	DebugNotNull(indexOut);
 	*indexOut = (offsetFromBase / array->itemSize);
 	return true;
 }
-#define VarArrayGetIndexOf(type, array, itemInQuestion, indexOut) VarArrayGetIndexOf_((uxx)sizeof(type), (array), (itemInQuestion), (indexOut))
+#define VarArrayGetIndexOf(type, arrayPntr, itemInQuestion, indexOut) VarArrayGetIndexOf_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemInQuestion), (indexOut))
 
 // +--------------------------------------------------------------+
 // |                 Visit/Iterate Over VarArray                  |
@@ -250,16 +254,18 @@ void VarArrayVisit(VarArray* array, ArrayVisitFunc_f* visitFunc)
 }
 
 #define VarArrayLoop(arrayPntr, indexVarName) for (uxx indexVarName = 0; indexVarName < (arrayPntr)->length; indexVarName++)
-#define VarArrayLoopGet(type, varName, arrayPntr, indexVarName) type* varName = ((type*)(arrayPntr)->items) + (indexVarName);
+#define VarArrayLoopGet(type, varName, arrayPntr, indexVarName) type* varName = (((type*)(arrayPntr)->items) + (indexVarName));
+#define VarArrayLoopGetValue(type, varName, arrayPntr, indexVarName) type varName = *(((type*)(arrayPntr)->items) + (indexVarName));
 
 // +--------------------------------------------------------------+
 // |                    Get Item From VarArray                    |
 // +--------------------------------------------------------------+
-void* VarArrayGet_(uxx itemSize, const VarArray* array, uxx index, bool assertOnFailure)
+void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array, uxx index, bool assertOnFailure)
 {
 	NotNull(array);
 	DebugAssert(IsVarArrayInit(array));
 	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayGet. Make sure you're accessing the VarArray with the correct type!");
+	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayGet. Make sure you're accessing the VarArray with the correct type!");
 	if (index >= array->length)
 	{
 		if (assertOnFailure)
@@ -273,17 +279,31 @@ void* VarArrayGet_(uxx itemSize, const VarArray* array, uxx index, bool assertOn
 	void* result = (((u8*)array->items) + (index * array->itemSize));
 	return result;
 }
-#define VarArrayGetHard(type, array, index) ((type*)VarArrayGet_((uxx)sizeof(type), (array), (index), true))
-#define VarArrayGetSoft(type, array, index) ((type*)VarArrayGet_((uxx)sizeof(type), (array), (index), false))
-#define VarArrayGet(type, array, index) VarArrayGetHard(type, (array), (index))
 
-#define VarArrayGetFirstHard(type, array) VarArrayGetHard(type, (array), 0)
-#define VarArrayGetFirstSoft(type, array) (((array)->length > 0) ? VarArrayGetSoft(type, (array), 0) : nullptr)
-#define VarArrayGetFirst(type, array) VarArrayGetFirstHard(type, (array)) 
+//Hard indicates we want to assertOnFailure, opposed to Soft which will return nullptr. Not specifying leads to implicitly using Hard variant
+#define VarArrayGetHard(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index), true))
+#define VarArrayGetSoft(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index), false))
+#define VarArrayGet(type, arrayPntr, index) VarArrayGetHard(type, (arrayPntr), (index))
 
-#define VarArrayGetLastHard(type, array) VarArrayGetHard(type, (array), (array)->length - 1)
-#define VarArrayGetLastSoft(type, array) (((array)->length > 0) ? VarArrayGetSoft(type, (array), (array)->length - 1) : nullptr)
-#define VarArrayGetLast(type, array) VarArrayGetLastHard(type, (array)) 
+//Shorthand for passing 0 for index
+#define VarArrayGetFirstHard(type, arrayPntr) VarArrayGetHard(type, (arrayPntr), 0)
+#define VarArrayGetFirstSoft(type, arrayPntr) (((arrayPntr)->length > 0) ? VarArrayGetSoft(type, (arrayPntr), 0) : nullptr)
+#define VarArrayGetFirst(type, arrayPntr) VarArrayGetFirstHard(type, (arrayPntr)) 
+
+//Shorthand for passing arrayPntr->length-1 for index
+#define VarArrayGetLastHard(type, arrayPntr) VarArrayGetHard(type, (arrayPntr), (arrayPntr)->length - 1)
+#define VarArrayGetLastSoft(type, arrayPntr) (((arrayPntr)->length > 0) ? VarArrayGetSoft(type, (arrayPntr), (arrayPntr)->length - 1) : nullptr)
+#define VarArrayGetLast(type, arrayPntr) VarArrayGetLastHard(type, (arrayPntr)) 
+
+//Getting the value means dereferencing the pointer, this only works with Hard variants since dereference will imply a crash on nullptr
+#define VarArrayGetValueHard(type, arrayPntr, index) *VarArrayGetHard(type, (arrayPntr), (index))
+#define VarArrayGetValue(type, arrayPntr, index) VarArrayGetValueHard(type, (arrayPntr), (index))
+
+#define VarArrayGetFirstValueHard(type, arrayPntr) *VarArrayGetHard(type, (arrayPntr), 0)
+#define VarArrayGetFirstValue(type, arrayPntr) VarArrayGetFirstValueHard(type, (arrayPntr))
+
+#define VarArrayGetLastValueHard(type, arrayPntr) *VarArrayGetHard(type, (arrayPntr), (arrayPntr)->length-1)
+#define VarArrayGetLastValue(type, arrayPntr) VarArrayGetLastValueHard(type, (arrayPntr))
 
 // +--------------------------------------------------------------+
 // |                     Add Item to VarArray                     |
@@ -294,6 +314,7 @@ void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array)
 	DebugNotNull(array);
 	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayAdd. Make sure you're accessing the VarArray with the correct type!");
 	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayAdd. Make sure you're accessing the VarArray with the correct type!");
+	if (array->maxLength > 0 && array->length >= array->maxLength) { return nullptr; }
 	
 	VarArrayExpand(array, array->length+1);
 	DebugAssert(array->allocLength >= array->length+1);
@@ -307,6 +328,130 @@ void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array)
 	return result;
 }
 
-#define VarArrayAdd(type, array) (type*)VarArrayAdd_((uxx)sizeof(type), (uxx)_Alignof(type), (array))
+#define VarArrayAdd(type, arrayPntr) (type*)VarArrayAdd_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr))
+#define VarArrayAddValue(type, arrayPntr, value) do                  \
+{                                                                    \
+	/* We must evaluate (value) before manipulating the array */     \
+	/* because it may access/refer to elements in the array   */     \
+	type valueBeforeAdd_NOCONFLICT = (value);                        \
+	type* addedItemPntr_NOCONFLICT = VarArrayAdd(type, (arrayPntr)); \
+	DebugNotNull(addedItemPntr_NOCONFLICT);                          \
+	*addedItemPntr_NOCONFLICT = valueBeforeAdd_NOCONFLICT;           \
+} while(0)
+// This is simply an alias of VarArrayAddValue, but it's here to match the name of VarArrayPop below
+#define VarArrayPush(type, arrayPntr, value) VarArrayAddValue(type, (arrayPntr), (value))
+
+// +--------------------------------------------------------------+
+// |                  Insert Item Into VarArray                   |
+// +--------------------------------------------------------------+
+void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
+{
+	DebugNotNull(array);
+	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayInsert. Make sure you're accessing the VarArray with the correct type!");
+	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayInsert. Make sure you're accessing the VarArray with the correct type!");
+	Assert(index <= array->length);
+	if (array->maxLength > 0 && array->length >= array->maxLength) { return nullptr; }
+	
+	if (index == array->length) { return VarArrayAdd_(itemSize, itemAlignment, array); }
+	
+	VarArrayExpand(array, array->length+1);
+	DebugAssert(array->allocLength >= array->length+1);
+	
+	//Move all items above the index up by one slot
+	uxx insertionIndex = (index * array->itemSize);
+	u8* insertionPntr = ((u8*)array->items) + insertionIndex;
+	MyMemMove(insertionPntr + 1*array->itemSize, insertionPntr, (size_t)((array->length*array->itemSize) - insertionIndex));
+	
+	void* result = insertionPntr;
+	#if VAR_ARRAY_CLEAR_ITEMS_ON_ADD
+	MyMemSet(result, VAR_ARRAY_CLEAR_ITEM_BYTE_VALUE, array->itemSize);
+	#endif
+	array->length++;
+	
+	return result;
+}
+
+#define VarArrayInsert(type, arrayPntr, index) (type*)VarArrayInsert_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
+//NOTE: The (value) portion is evaluated AFTER the Insert occurs, it's meaning may change if it's accessing the array or using a pointer from the array!
+#define VarArrayInsertValue(type, arrayPntr, index, value) do                       \
+{                                                                                   \
+	/* We must evaluate (value) before manipulating the array */                    \
+	/* because it may access/refer to elements in the array   */                    \
+	type valueBeforeInsert_NOCONFLICT = (value);                                    \
+	type* insertedItemPntr_NOCONFLICT = VarArrayInsert(type, (arrayPntr), (index)); \
+	DebugNotNull(insertedItemPntr_NOCONFLICT);                                      \
+	*insertedItemPntr_NOCONFLICT = valueBeforeInsert_NOCONFLICT;                    \
+} while(0)
+
+// +--------------------------------------------------------------+
+// |               Remove Item at Index in VarArray               |
+// +--------------------------------------------------------------+
+void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
+{
+	DebugNotNull(array);
+	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayRemove. Make sure you're accessing the VarArray with the correct type!");
+	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayRemove. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(index < array->length, "VarArrayRemove index out of bounds!");
+	//move all items above index down by one
+	if (index < array->length-1)
+	{
+		u8* removePntr = (u8*)array->items + (index * array->itemSize);
+		MyMemMove(removePntr, removePntr + 1*array->itemSize, (array->length * (array->itemSize - (index+1))));
+	}
+	array->length--;
+}
+
+#define VarArrayRemoveAt(type, arrayPntr, index) VarArrayRemoveAt_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
+#define VarArrayGetAndRemoveValueAt(type, arrayPntr, index) VarArrayGetValue(type, (arrayPntr), (index)); VarArrayRemoveAt(type, (arrayPntr), (index))
+#define VarArrayPop(type, arrayPntr) VarArrayGetValue(type, (arrayPntr), (arrayPntr)->length-1); VarArrayRemoveAt(type, (arrayPntr), (arrayPntr)->length-1)
+#define VarArrayRemoveFirst(type, arrayPntr) VarArrayRemoveAt(type, (arrayPntr), 0)
+#define VarArrayRemoveLast(type, arrayPntr) VarArrayRemoveAt(type, (arrayPntr), (arrayPntr)->length-1)
+
+// +--------------------------------------------------------------+
+// |               Remove Item by Pntr in VarArray                |
+// +--------------------------------------------------------------+
+void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemToRemove)
+{
+	uxx itemIndex = 0;
+	bool itemInArray = VarArrayGetIndexOf_(itemSize, itemAlignment, array, itemToRemove, &itemIndex);
+	Assert(itemInArray);
+	VarArrayRemoveAt_(itemSize, itemAlignment, array, itemIndex);
+}
+
+#define VarArrayRemove(type, arrayPntr, itemPntr) VarArrayRemove_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntr))
+
+// +--------------------------------------------------------------+
+// |                 Copy VarArray Into New Arena                 |
+// +--------------------------------------------------------------+
+#if VAR_ARRAY_DEBUG_INFO
+void VarArrayCopy_(const char* filePath, uxx lineNumber, const char* funcName, VarArray* destArray, const VarArray* sourceArray, Arena* arena)
+#else
+void VarArrayCopy_(VarArray* destArray, const VarArray* sourceArray, Arena* arena)
+#endif
+{
+	NotNull(arena);
+	NotNull(destArray);
+	NotNull(sourceArray);
+	Assert(destArray != sourceArray);
+	#if VAR_ARRAY_DEBUG_INFO
+	InitVarArray_(filePath, lineNumber, funcName, sourceArray->itemSize, sourceArray->itemAlignment, destArray, arena, sourceArray->length);
+	#else
+	InitVarArray_(sourceArray->itemSize, sourceArray->itemAlignment, destArray, arena, sourceArray->length);
+	#endif
+	destArray->maxLength = sourceArray->maxLength;
+	if (sourceArray->length > 0)
+	{
+		DebugAssert(destArray->allocLength >= sourceArray->length);
+		NotNull(destArray->items);
+		destArray->length = sourceArray->length;
+		MyMemCopy(destArray->items, sourceArray->items, sourceArray->length * sourceArray->itemSize);
+	}
+}
+
+#if VAR_ARRAY_DEBUG_INFO
+#define VarArrayCopy(destArray, sourceArray, arenaPntr) VarArrayCopy_(__FILE__, __LINE__, __func__, (destArray), (sourceArray), (arenaPntr))
+#else
+#define VarArrayCopy(destArray, sourceArray, arenaPntr) VarArrayCopy_((destArray), (sourceArray), (arenaPntr))
+#endif
 
 #endif //  _STRUCT_VAR_ARRAY_H

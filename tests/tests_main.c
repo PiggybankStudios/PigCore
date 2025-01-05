@@ -36,10 +36,22 @@ void PrintArena(Arena* arena)
 void PrintVarArray(VarArray* array)
 {
 	#if VAR_ARRAY_DEBUG_INFO
-	MyPrint("VarArray %llu/%llu items (%llu bytes) at %p (from %s:%llu %s)", array->length, array->allocLength, array->itemSize, array->items, array->creationFilePath, array->creationLineNumber, array->creationFuncName);
+	const char* creationFileName = array->creationFilePath;
+	for (u64 cIndex = 0; array->creationFilePath != nullptr && array->creationFilePath[cIndex] != '\0'; cIndex++) { char c = array->creationFilePath[cIndex]; if (c == '/' || c == '\\') { creationFileName = &array->creationFilePath[cIndex+1]; } }
+	MyPrint("VarArray %llu/%llu items (itemSize=%llu, items=%p, from %s:%llu %s)", array->length, array->allocLength, array->itemSize, array->items, creationFileName, array->creationLineNumber, array->creationFuncName);
 	#else
-	MyPrint("VarArray %llu/%llu items (%llu bytes) at %p", array->length, array->allocLength, array->itemSize, array->items);
+	MyPrint("VarArray %llu/%llu items (itemSize=%llu, items=%p)", array->length, array->allocLength, array->itemSize, array->items);
 	#endif
+}
+void PrintNumbers(VarArray* array)
+{
+	MyPrintNoLine("[%llu]{", array->length);
+	VarArrayLoop(array, nIndex)
+	{
+		VarArrayLoopGetValue(u32, num, array, nIndex);
+		MyPrintNoLine(" %u", num);
+	}
+	MyPrint(" }");
 }
 
 int main()
@@ -134,20 +146,60 @@ int main()
 	#if 1
 	{
 		VarArray array1;
-		InitVarArray(u32, &array1, &stdHeap);
+		InitVarArrayWithInitial(u32, &array1, &stdHeap, 89);
 		PrintVarArray(&array1);
-		u32* num1 = VarArrayAdd(u32, &array1);
-		PrintVarArray(&array1);
-		u32* num2 = VarArrayAdd(u32, &array1);
-		PrintVarArray(&array1);
-		u32* num3 = VarArrayAdd(u32, &array1);
-		PrintVarArray(&array1);
-		u32* num4 = VarArrayAdd(u32, &array1);
-		PrintVarArray(&array1);
-		u32* num5 = VarArrayAdd(u32, &array1);
-		PrintVarArray(&array1);
-		FreeVarArray(&array1);
-		PrintVarArray(&array1);
+		PrintNumbers(&array1);
+		
+		VarArray array2;
+		InitVarArray(u32, &array2, &stdHeap);
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		array2.maxLength = 3;
+		
+		u32* numPntr1 = VarArrayAdd(u32, &array2);
+		*numPntr1 = 7;
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		
+		VarArrayAddValue(u32, &array2, 9);
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		
+		VarArrayPush(u32, &array2, VarArrayGetValue(u32, &array2, 1));
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		
+		u32* numPntr2 = VarArrayAdd(u32, &array2);
+		if (numPntr2 != nullptr) { *numPntr2 = 42; }
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		
+		VarArray array3;
+		VarArrayCopy(&array3, &array2, &stdHeap);
+		
+		u32 removedNum = VarArrayGetAndRemoveValueAt(u32, &array2, 2);
+		MyPrint("Removed array[2] = %u", removedNum);
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		
+		VarArrayInsertValue(u32, &array2, 1, VarArrayGetValue(u32, &array2, 0) * VarArrayGetValue(u32, &array2, 1));
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		
+		VarArrayRemoveAt(u32, &array2, 1);
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		
+		numPntr1 = VarArrayGet(u32, &array2, 0); //refresh our pointer to the value
+		VarArrayRemove(u32, &array2, numPntr1);
+		PrintVarArray(&array2);
+		PrintNumbers(&array2);
+		
+		FreeVarArray(&array2);
+		PrintVarArray(&array2);
+		
+		PrintVarArray(&array3);
+		PrintNumbers(&array3);
 	}
 	#endif
 	
