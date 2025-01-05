@@ -5,10 +5,10 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Figure out why inline is causing problems
 
 # GyLib Conversions
-	[!] gy_intrinsics.h
-	[!] gy_directions.h
-	[!] gy_easing.h
-	[!] gy_random.h
+	[X] gy_intrinsics.h
+	[X] gy_directions.h
+	[X] gy_easing.h
+	[X] gy_random.h
 	[!] gy_extras.h
 	[!] gy_hash.h (+add meowhash?)
 	[!] gy_unicode.h
