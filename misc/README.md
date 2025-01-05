@@ -1,0 +1,2 @@
+# misc Folder
+This folder contains a bunch of useful files that don't fall in one of the other categories, i.e. it's not a base layer file, it's not memory management related, it's not an OS level abstraction, it's not related to standard library features, and it's not a data structure

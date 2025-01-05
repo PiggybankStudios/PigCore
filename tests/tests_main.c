@@ -20,6 +20,7 @@ Description:
 #include "os/os_all.h"
 #include "mem/mem_all.h"
 #include "struct/struct_all.h"
+#include "misc/misc_all.h"
 
 void PrintArena(Arena* arena)
 {
@@ -143,7 +144,7 @@ int main()
 	MTLCreateSystemDefaultDevice();
 	#endif
 	
-	#if 1
+	#if 0
 	{
 		VarArray array1;
 		InitVarArrayWithInitial(u32, &array1, &stdHeap, 89);
