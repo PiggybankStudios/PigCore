@@ -3,7 +3,26 @@
 	[
 		{
 			"path": ".",
-		}
+			"folder_exclude_patterns": [
+				"_build",
+				"third_party",
+			],
+			"file_exclude_patterns": [
+				"*.rdbg",
+			],
+		},
+		{
+			"path": "third_party/stb",
+			"name": "stb",
+			"file_include_patterns": [
+				"stb_image.h",
+				"stb_image_write.h",
+				"stb_rect_pack.h",
+				"stb_sprintf.h",
+				"stb_truetype.h",
+				"stb_vorbis.h",
+			],
+		},
 	],
 	"settings":
 	{
@@ -17,6 +36,7 @@
 			"END_EXTERN_C",
 			"HalfPi32",
 			"HalfPi64",
+			"MEM_ARENA_DEBUG_NAMES",
 			"Pi32",
 			"Pi64",
 			"QuarterPi32",
@@ -31,6 +51,10 @@
 			"TwoPi32",
 			"TwoPi64",
 			"UNKNOWN_STR",
+			"VAR_ARRAY_CLEAR_ITEMS_ON_ADD",
+			"VAR_ARRAY_CLEAR_ITEM_BYTE_VALUE",
+			"VAR_ARRAY_DEBUG_INFO",
+			"VAR_ARRAY_MIN_SIZE",
 			"ZEROED",
 			"__func__",
 			"e32",
@@ -80,6 +104,8 @@
 			"#define IncrementU8By(variable, amount)",
 			"#define IncrementUXX(variable)",
 			"#define IncrementUXXBy(variable, amount)",
+			"#define InitVarArray(array, arena, type)",
+			"#define InitVarArrayWithInitial(type, array, arena, initialCountNeeded)",
 			"#define IsEqualXor(variable1, variable2, condition1, condition2)",
 			"#define IsFlagSet(BitwiseField, Bit)",
 			"#define IsPntrWithin(regionStart, regionSize, pntr)",
@@ -110,6 +136,12 @@
 			"#define TrackMin(isFirst, trackVariable, newValue)",
 			"#define UNREFERENCED(varName)",
 			"#define UNUSED(varName)",
+			"#define VarArrayContains(type, array, itemInQuestion)",
+			"#define VarArrayGet(type, array, index)",
+			"#define VarArrayGetHard(type, array, index)",
+			"#define VarArrayGetSoft(type, array, index)",
+			"#define VarArrayLoop(arrayPntr, indexVarName)",
+			"#define VarArrayLoopGet(type, varName, arrayPntr, indexVarName)",
 			"bool BOOL_FUNC_DEF()",
 			"bool CanArenaAllocAligned(const Arena* arena)",
 			"bool CanArenaCheckPntrFromArena(const Arena* arena)",
@@ -117,12 +149,19 @@
 			"bool CanArenaGetSize(const Arena* arena)",
 			"bool CanArenaVerifyIntegrity(const Arena* arena)",
 			"bool IsPntrFromArena(const Arena* arena, const void* allocPntr)",
+			"bool IsVarArrayInit(const VarArray* array)",
 			"i32 I32_FUNC_DEF()",
+			"void ARRAY_VISIT_FUNC_DEF(uxx itemIndex, void* item)",
+			"void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)",
+			"void FreeVarArray(VarArray* array)",
 			"void InitArenaAlias(Arena* arenaOut, Arena* sourceArena)",
 			"void InitArenaBuffer(Arena* arenaOut, void* bufferPntr, uxx bufferSize)",
 			"void InitArenaStackVirtual(arena_s* arenaOut, u64 virtualSize)",
 			"void InitArenaStdHeap(arena_s* arenaOut)",
 			"void VOID_FUNC_DEF()",
+			"void VarArrayClear(VarArray* array)",
+			"void VarArrayClearEx(VarArray* array, bool deallocate)",
+			"void VarArrayVisit(VarArray* array, ArrayVisitFunc_f* visitFunc)",
 			"void* VOID_PNTR_FUNC_DEF()",
 		],
 		"custom_globals":
@@ -131,6 +170,8 @@
 		"custom_types":
 		[
 			"AllocFunc_f",
+			"Arena",
+			"ArrayVisitFunc_f",
 			"FreeFunc_f",
 			"ReallocFunc_f",
 			"arena_type_e",

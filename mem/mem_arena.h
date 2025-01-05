@@ -9,11 +9,9 @@ Description:
 #ifndef _MEM_ARENA_H
 #define _MEM_ARENA_H
 
-#include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
-#include "std/std_includes.h"
 #include "std/std_malloc.h"
 #include "std/std_memset.h"
 #include "std/std_math_ex.h"

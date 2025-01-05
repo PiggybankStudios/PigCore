@@ -90,7 +90,7 @@ if "%DEBUG_BUILD%"=="1" (
 	REM /wd4702 = Unreachable code [W4]
 	set common_cl_flags=%common_cl_flags% /MDd /Od /Zi /wd4065 /wd4100 /wd4101 /wd4127 /wd4189 /wd4702
 	REM -Wno-unused-parameter = warning: unused parameter 'numBytes'
-	set common_clang_flags=%common_clang_flags% -Wno-unused-parameter
+	set common_clang_flags=%common_clang_flags% -Wno-unused-parameter -Wno-unused-variable
 ) else (
 	REM /MD = ?
 	REM /Ot = Favors fast code over small code
