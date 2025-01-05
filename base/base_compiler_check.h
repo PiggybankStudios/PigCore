@@ -56,8 +56,12 @@ Description:
 #define TARGET_IS_WINDOWS 0
 #endif
 
-//TODO: Detect if we are compiling for OSX!
+#ifdef __APPLE__
+#define TARGET_IS_OSX 1
+#else
 #define TARGET_IS_OSX 0
+#endif
+
 //TODO: Detect if we are compiling for PLAYDATE!
 #define TARGET_IS_PLAYDATE_SIMULATOR 0
 #define TARGET_IS_PLAYDATE_DEVICE 0

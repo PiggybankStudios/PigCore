@@ -31,8 +31,6 @@ Descriptions:
 #endif
 #if (TARGET_IS_LINUX || TARGET_IS_OSX)
 	#include <signal.h>
-#endif
-#if TARGET_IS_LINUX
 	// Gives us getpagesize and sleep
 	#include <unistd.h>
 	// Gives us mmap

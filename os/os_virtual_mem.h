@@ -23,17 +23,13 @@ uxx OsGetMemoryPageSize()
 		Assert(systemInfo.dwPageSize > 0);
 		return (uxx)systemInfo.dwPageSize;
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		//NOTE: getpagesize() was not available on Ubunutu in WSL
 		uxx result = sysconf(_SC_PAGESIZE);
 		Assert(result > 0);
 		return (uxx)result;
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	// 	SetOptionalOutPntr(errorOut, OsError_UnsupportedPlatform);
-	// }
 	#elif TARGET_IS_PLAYDATE
 	{
 		//This is the size of the L1 Cache (Since Playdate doesn't have virtual memory we'll just use this as a standin)
@@ -67,7 +63,7 @@ void* OsReserveMemory(uxx numBytes)
 		);
 		if (result != nullptr) { Assert((size_t)result % pageSize == 0); }
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		// https://unix.stackexchange.com/questions/405883/can-an-application-explicitly-commit-and-decommit-memory
 		// It seems like we can't force the application to commit any of this memory. Writing to pages automatically commits them.
@@ -113,7 +109,7 @@ void OsCommitReservedMemory(void* memoryPntr, uxx numBytes)
 		);
 		Assert(commitResult == memoryPntr); //TODO: Handle errors, call GetLastError and return an OsError_t
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		int protectResult = mprotect(
 			memoryPntr,
@@ -149,7 +145,7 @@ void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 		);
 		Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		int unmapResult = munmap(memoryPntr, reservedSize);
 		Assert(unmapResult == 0); //TODO: Handle errors, check errno and return an OsError_t

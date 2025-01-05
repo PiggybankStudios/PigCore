@@ -72,6 +72,8 @@ set common_clang_flags=-fdiagnostics-absolute-paths -std=c2x -Wall -Wextra -Wsha
 :: /wd4706 = assignment within conditional expression [W?]
 :: /we5262 = Enable the [[fallthrough]] missing warning
 set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /wd4996 /wd4706 /we5262
+:: -Wno-switch = 8 enumeration values not handled in switch: 'ArenaType_None', 'ArenaType_Funcs', 'ArenaType_Generic'...
+set common_clang_flags=%common_clang_flags% -Wno-switch
 :: /I = Adds an include directory to search in when resolving #includes
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths

@@ -61,8 +61,8 @@ int main()
 	InitArenaBuffer(&bufferArena, arenaBuffer1, ArrayCount(arenaBuffer1));
 	Arena scratch1 = ZEROED;
 	InitArenaStackVirtual(&scratch1, Gigabytes(4));
-	Arena scratch2 = ZEROED;
-	InitArenaStackVirtual(&scratch2, Gigabytes(4));
+	// Arena scratch2 = ZEROED;
+	// InitArenaStackVirtual(&scratch2, Gigabytes(4));
 	
 	// u32* allocatedInt1 = AllocMem(&stdHeap, sizeof(u32));
 	// MyPrint("allocatedInt1: %p", allocatedInt1);
