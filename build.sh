@@ -25,9 +25,6 @@ BUILD_TESTS=$($extract_defines BUILD_TESTS)
 RUN_TESTS=$($extract_defines RUN_TESTS)
 DUMP_PREPROCESSOR=$($extract_defines DUMP_PREPROCESSOR)
 
-# TODO: Restart computer and see if new path is picked up by Sublime's environment
-PATH=/opt/homebrew/opt/llvm/bin:$PATH
-
 # -fdiagnostics-absolute-paths = Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 # -std=c2x = ?
 # NOTE: Clang Warning Options: https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
@@ -38,6 +35,9 @@ PATH=/opt/homebrew/opt/llvm/bin:$PATH
 # -arch x86_64 = Build for Intel based processors
 # -arch arm64 = Build for M-series processors
 common_clang_flags="-fdiagnostics-absolute-paths -std=c2x -Wall -Wextra -Wshadow -Wimplicit-fallthrough -arch x86_64 -arch arm64"
+# -fmodules = Enables module @importing
+# -framework = Add a framework dependency
+common_clang_flags="$common_clang_flags -fmodules -framework Metal"
 # -Wno-switch = 8 enumeration values not handled in switch: 'ArenaType_None', 'ArenaType_Funcs', 'ArenaType_Generic'...
 common_clang_flags="$common_clang_flags -Wno-switch"
 # -I = Add directory to the end of the list of include search paths
@@ -51,7 +51,7 @@ common_clang_ld_flags=
 # |    Compile piggen Binary     |
 # +==============================+
 piggen_bin_path=piggen
-piggen_source_path=$root/piggen/piggen_main.c
+piggen_source_path=$root/piggen/piggen_main_objc.m
 piggen_clang_args="$common_clang_flags -o $piggen_bin_path $piggen_source_path $common_clang_ld_flags"
 if [ $BUILD_PIGGEN -eq 1 ]
 then

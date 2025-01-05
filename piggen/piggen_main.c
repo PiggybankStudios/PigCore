@@ -53,6 +53,8 @@ int main()
 	
 	u8 arenaBuffer1[256] = ZEROED;
 	
+	MTLCreateSystemDefaultDevice();
+	
 	Arena stdHeap = ZEROED;
 	InitArenaStdHeap(&stdHeap);
 	Arena stdAlias = ZEROED;
