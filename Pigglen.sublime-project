@@ -23,6 +23,10 @@
 				"stb_vorbis.h",
 			],
 		},
+		{
+			"path": "third_party/raylib/include",
+			"name": "raylib",
+		},
 	],
 	"settings":
 	{
@@ -41,6 +45,7 @@
 			"Axis_X",
 			"Axis_Y",
 			"Axis_Z",
+			"BUILD_WITH_RAYLIB",
 			"DbgLevel_Count",
 			"DbgLevel_Debug",
 			"DbgLevel_Error",

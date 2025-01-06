@@ -17,7 +17,7 @@ Description:
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS 1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   1
+#define BUILD_LINUX   0
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -25,9 +25,9 @@ Description:
 #define DEBUG_BUILD   1
 
 // Compiles piggen/main.c
-#define BUILD_PIGGEN   1
+#define BUILD_PIGGEN   0
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
-#define RUN_PIGGEN     1
+#define RUN_PIGGEN     0
 
 // Compiles tests/main.c
 #define BUILD_TESTS   1
@@ -37,5 +37,7 @@ Description:
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
 #define DUMP_PREPROCESSOR 0
+
+#define BUILD_WITH_RAYLIB 0
 
 #endif //  _BUILD_CONFIG_H

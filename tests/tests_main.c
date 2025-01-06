@@ -15,13 +15,25 @@ Description:
 #define VAR_ARRAY_CLEAR_ITEMS_ON_ADD    1
 #define VAR_ARRAY_CLEAR_ITEM_BYTE_VALUE 0xCC
 
+#include "build_config.h"
+
+#if BUILD_WITH_RAYLIB
+//NOTE: Compiling raylib.h with windows.h causes problems, see https://github.com/raysan5/raylib/issues/1217
+#define DONT_INCLUDE_WINDOWS_H 1
+#endif
+
 #include "base/base_all.h"
 #include "std/std_all.h"
-#include "os/os_all.h"
-#include "mem/mem_all.h"
-#include "struct/struct_all.h"
-#include "misc/misc_all.h"
+// #include "os/os_all.h"
+// #include "mem/mem_all.h"
+// #include "struct/struct_all.h"
+// #include "misc/misc_all.h"
 
+#if BUILD_WITH_RAYLIB
+#include "third_party/raylib/include/raylib.h"
+#endif
+
+#if 0
 void PrintArena(Arena* arena)
 {
 	if (arena->committed > 0)
@@ -54,6 +66,7 @@ void PrintNumbers(VarArray* array)
 	}
 	MyPrint(" }");
 }
+#endif
 
 int main()
 {
@@ -82,7 +95,7 @@ int main()
 	}
 	#endif
 	
-	#if 1
+	#if 0
 	Arena stdHeap = ZEROED;
 	InitArenaStdHeap(&stdHeap);
 	Arena stdAlias = ZEROED;
@@ -201,6 +214,21 @@ int main()
 		
 		PrintVarArray(&array3);
 		PrintNumbers(&array3);
+	}
+	#endif
+	
+	#if BUILD_WITH_RAYLIB
+	{
+		InitWindow(800, 600, "raylib [core] example - basic window");
+		SetTargetFPS(60);
+		while (!WindowShouldClose())
+		{
+			BeginDrawing();
+			ClearBackground(RAYWHITE);
+			DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+			EndDrawing();
+		}
+		CloseWindow();
 	}
 	#endif
 	

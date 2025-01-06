@@ -22,6 +22,7 @@ for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% DUMP_PREPROCESSOR') do set DUMP_PREPROCESSOR=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH_RAYLIB=%%i
 
 :: +--------------------------------------------------------------+
 :: |                      Init MSVC Compiler                      |
@@ -103,7 +104,8 @@ if "%DEBUG_BUILD%"=="1" (
 )
 
 :: -incremental:no = Suppresses warning about doing a full link when it can't find the previous .exe result. We don't need this when doing unity builds
-set common_ld_flags=-incremental:no
+:: /LIBPATH = Add a library search path
+set common_ld_flags=-incremental:no /LIBPATH:"%root%\third_party\raylib\lib"
 set common_clang_ld_flags=
 
 if "%DUMP_PREPROCESSOR%"=="1" (
@@ -158,6 +160,20 @@ set tests_source_path=%root%/tests/tests_main.c
 set tests_exe_path=tests.exe
 set tests_bin_path=tests
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags%
+if "%BUILD_WITH_RAYLIB%"=="1" (
+	REM raylib.lib   = ?
+	REM gdi32.lib    = ?
+	REM User32.lib   = ?
+	REM Shell32.lib  = Shlobj.h ? 
+	REM kernel32.lib = ?
+	REM winmm.lib    = ?
+	REM Winhttp.lib  = ?
+	REM Shlwapi.lib  = ?
+	REM Ole32.lib    = Combaseapi.h, CoCreateInstance
+	REM Advapi32.lib = Processthreadsapi.h, OpenProcessToken, GetTokenInformation
+	set tests_cl_args=%tests_cl_args% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
+	REM NOTE: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
+)
 set tests_clang_args=%common_clang_flags% -o %tests_bin_path% ../%tests_source_path% %common_clang_ld_flags%
 if "%BUILD_TESTS%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (

@@ -15,6 +15,10 @@ Descriptions:
 #include "build_config.h"
 #include "base/base_compiler_check.h"
 
+#ifndef DONT_INCLUDE_WINDOWS_H
+#define DONT_INCLUDE_WINDOWS_H 0
+#endif
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,7 +65,7 @@ Descriptions:
 	void* (*pdrealloc)(void* pntr, size_t size);
 #endif
 
-#if TARGET_IS_WINDOWS
+#if (TARGET_IS_WINDOWS && !DONT_INCLUDE_WINDOWS_H)
 	// Gives us Sleep
 	#include <windows.h>
 #endif
