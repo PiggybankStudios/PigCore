@@ -25,7 +25,7 @@ Description:
 #include "misc/misc_all.h"
 
 #if BUILD_WITH_RAYLIB
-#include "third_party/raylib/include/raylib.h"
+#include "third_party/raylib/raylib.h"
 #endif
 
 #if BUILD_WITH_BOX2D
@@ -36,10 +36,17 @@ Description:
 // |                           Globals                            |
 // +--------------------------------------------------------------+
 Arena* scratchArenas[2] = ZEROED;
+RandomSeries* mainRandom = nullptr;
+
+// +--------------------------------------------------------------+
+// |                      tests Source Files                      |
+// +--------------------------------------------------------------+
+#include "tests/tests_box2d.c"
 
 // +--------------------------------------------------------------+
 // |                           Helpers                            |
 // +--------------------------------------------------------------+
+
 #if 0
 void PrintArena(Arena* arena)
 {
@@ -72,145 +79,6 @@ void PrintNumbers(VarArray* array)
 		MyPrintNoLine(" %u", num);
 	}
 	MyPrint(" }");
-}
-#endif
-
-#if BUILD_WITH_BOX2D && BUILD_WITH_RAYLIB
-Color RaylibColorFromB2HexColor(b2HexColor b2Color)
-{
-	Color result = ZEROED;
-	result.r = (u8)(((u32)b2Color >> 16) & 0xFF);
-	result.g = (u8)(((u32)b2Color >> 8) & 0xFF);
-	result.b = (u8)(((u32)b2Color >> 0) & 0xFF);
-	result.a = 255;
-	return result;
-}
-
-const r32 physWorldScaleX = 40.0f;
-const r32 physWorldScaleY = -40.0f;
-const r32 physWorldOffsetX = 400.0f;
-const r32 physWorldOffsetY = 550.0f;
-void GetPhysRenderPos(r32 inX, r32 inY, i32* outX, i32* outY)
-{
-	*outX = (i32)(inX * physWorldScaleX + physWorldOffsetX);
-	*outY = (i32)(inY * physWorldScaleY + physWorldOffsetY);
-}
-void GetPhysPosFromRenderPos(i32 inX, i32 inY, r32* outX, r32* outY)
-{
-	*outX = ((r32)inX - physWorldOffsetX) / physWorldScaleX;
-	*outY = ((r32)inY - physWorldOffsetY) / physWorldScaleY;
-}
-
-void DebugBox2d_DrawPolygon(const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context)
-{
-	// static int a = 0; MyPrint("DrawPolygon[%d]", a++);
-	for (int vIndex = 0; vIndex < vertexCount; vIndex++)
-	{
-		i32 v1X, v1Y;
-		i32 v2X, v2Y;
-		GetPhysRenderPos(vertices[vIndex].x, vertices[vIndex].y, &v1X, &v1Y);
-		GetPhysRenderPos(vertices[(vIndex+1)%vertexCount].x, vertices[(vIndex+1)%vertexCount].y, &v2X, &v2Y);
-		DrawLine(v1X, v1Y, v2X, v2Y, RaylibColorFromB2HexColor(color));
-	}
-}
-
-void DebugBox2d_DrawSolidPolygon(b2Transform transform, const b2Vec2* vertices, int vertexCount, float radius, b2HexColor color, void* context)
-{
-	// static int a = 0; MyPrint("DrawSolidPolygon[%d]", a++);
-	Arena* scratch = scratchArenas[0];
-	uxx scratchMark = ArenaGetMark(scratch);
-	if (vertexCount > 0)
-	{
-		Vector2* convertedVertices = (Vector2*)AllocMem(scratch, sizeof(Vector2) * vertexCount);
-		NotNull(convertedVertices);
-		for (i32 vIndex = 0; vIndex < vertexCount; vIndex++)
-		{
-			b2Vec2 transformedVertex = b2TransformPoint(transform, vertices[vIndex]);
-			int vX, vY;
-			GetPhysRenderPos(transformedVertex.x, transformedVertex.y, &vX, &vY);
-			convertedVertices[vIndex].x = (r32)vX;
-			convertedVertices[vIndex].y = (r32)vY;
-		}
-		DrawTriangleFan(convertedVertices, vertexCount, RaylibColorFromB2HexColor(color));
-	}
-	ArenaResetToMark(scratch, scratchMark);
-}
-
-void DebugBox2d_DrawCircle(b2Vec2 center, float radius, b2HexColor color, void* context)
-{
-	// static int a = 0; MyPrint("DrawCircle[%d]", a++);
-	int centerX, centerY;
-	GetPhysRenderPos(center.x, center.y, &centerX, &centerY);
-	DrawCircleLines(centerX, centerY, radius, RaylibColorFromB2HexColor(color));
-}
-
-void DebugBox2d_DrawSolidCircle(b2Transform transform, float radius, b2HexColor color, void* context)
-{
-	// static int a = 0; MyPrint("DrawSolidCircle[%d]", a++);
-	//TODO: Take into account the transform.r!
-	int centerX, centerY;
-	GetPhysRenderPos(transform.p.x, transform.p.y, &centerX, &centerY);
-	DrawCircle(centerX, centerY, radius, RaylibColorFromB2HexColor(color));
-}
-
-void DebugBox2d_DrawCapsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context)
-{
-	static int a = 0; MyPrint("DrawCapsule[%d]", a++);
-	//TODO: Implement me!
-}
-
-void DebugBox2d_DrawSolidCapsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context)
-{
-	static int a = 0; MyPrint("DrawSolidCapsule[%d]", a++);
-	//TODO: Implement me!
-}
-
-void DebugBox2d_DrawSegment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void* context)
-{
-	// static int a = 0; MyPrint("DrawSegment[%d]", a++);
-	int p1X, p1Y;
-	GetPhysRenderPos(p1.x, p1.y, &p1X, &p1Y);
-	int p2X, p2Y;
-	GetPhysRenderPos(p2.x, p2.y, &p2X, &p2Y);
-	DrawLine(p1X, p1Y, p2X, p2Y, RaylibColorFromB2HexColor(color));
-}
-
-void DebugBox2d_DrawTransform(b2Transform transform, void* context)
-{
-	static int a = 0; MyPrint("DrawTransform[%d]", a++);
-	//TODO: Implement me!
-}
-
-void DebugBox2d_DrawPoint(b2Vec2 p, float size, b2HexColor color, void* context)
-{
-	static int a = 0; MyPrint("DrawPoint[%d]", a++);
-	//TODO: Implement me!
-}
-
-void DebugBox2d_DrawString(b2Vec2 p, const char* s, void* context)
-{
-	// static int a = 0; MyPrint("DrawString[%d]", a++);
-	int textX, textY;
-	GetPhysRenderPos(p.x, p.y, &textX, &textY);
-	DrawText(s, textX, textY, 10, DARKGRAY);
-}
-
-void SpawnBox(b2WorldId physWorld, r32 x, r32 y, r32 width, r32 height)
-{
-	b2BodyDef bodyDef = b2DefaultBodyDef();
-	bodyDef.type = b2_dynamicBody;
-	// bodyDef.position = { -55.0f, 13.5f };
-	bodyDef.position.x = x;
-	bodyDef.position.y = y;
-	b2BodyId bodyId = b2CreateBody(physWorld, &bodyDef);
-
-	b2ShapeDef shapeDef = b2DefaultShapeDef();
-	shapeDef.density = 1.0f;
-	shapeDef.friction = 0.5f;
-	shapeDef.restitution = 0.9f;
-
-	b2Polygon box = b2MakeBox(width, height);
-	b2ShapeId bodyShapeId = b2CreatePolygonShape(bodyId, &shapeDef, &box);
 }
 #endif
 
@@ -264,6 +132,7 @@ int main()
 	RandomSeries random;
 	InitRandomSeriesDefault(&random);
 	SeedRandomSeriesU64(&random, 42); //TODO: Actually seed the random number generator!
+	mainRandom = &random;
 	#endif
 	
 	#if 0
@@ -375,51 +244,7 @@ int main()
 	#endif
 	
 	#if BUILD_WITH_BOX2D
-	b2WorldId physWorld;
-	b2DebugDraw physDebugDraw = ZEROED;
-	{
-		b2WorldDef physWorldDef = b2DefaultWorldDef();
-		physWorld = b2CreateWorld(&physWorldDef);
-		
-		// Ground body
-		{
-			b2BodyDef bodyDef = b2DefaultBodyDef();
-			b2BodyId groundId = b2CreateBody(physWorld, &bodyDef);
-
-			b2ShapeDef shapeDef = b2DefaultShapeDef();
-			b2Segment segment = { { -20.0f, 0.0f }, { 20.0f, 0.0f } };
-			b2CreateSegmentShape(groundId, &shapeDef, &segment);
-		}
-		
-		SpawnBox(physWorld, 0.0f, 13.5f, 0.5f, 0.5f);
-		
-		physDebugDraw.DrawPolygon = DebugBox2d_DrawPolygon;
-		physDebugDraw.DrawSolidPolygon = DebugBox2d_DrawSolidPolygon;
-		physDebugDraw.DrawCircle = DebugBox2d_DrawCircle;
-		physDebugDraw.DrawSolidCircle = DebugBox2d_DrawSolidCircle;
-		physDebugDraw.DrawCapsule = DebugBox2d_DrawCapsule;
-		physDebugDraw.DrawSolidCapsule = DebugBox2d_DrawSolidCapsule;
-		physDebugDraw.DrawSegment = DebugBox2d_DrawSegment;
-		physDebugDraw.DrawTransform = DebugBox2d_DrawTransform;
-		physDebugDraw.DrawPoint = DebugBox2d_DrawPoint;
-		physDebugDraw.DrawString = DebugBox2d_DrawString;
-		physDebugDraw.drawingBounds.lowerBound.x = 0.0f;
-		physDebugDraw.drawingBounds.lowerBound.y = 0.0f;
-		physDebugDraw.drawingBounds.upperBound.x = 0.0f;
-		physDebugDraw.drawingBounds.upperBound.y = 0.0f;
-		physDebugDraw.useDrawingBounds = false;
-		physDebugDraw.drawShapes = true;
-		physDebugDraw.drawJoints = true;
-		physDebugDraw.drawJointExtras = false;
-		physDebugDraw.drawAABBs = false;
-		physDebugDraw.drawMass = false;
-		physDebugDraw.drawContacts = false;
-		physDebugDraw.drawGraphColors = false;
-		physDebugDraw.drawContactNormals = false;
-		physDebugDraw.drawContactImpulses = false;
-		physDebugDraw.drawFrictionImpulses = false;
-		physDebugDraw.context = nullptr;
-	}
+	InitBox2DTest();
 	#endif
 	
 	#if BUILD_WITH_RAYLIB
@@ -440,19 +265,8 @@ int main()
 			DrawText(textStr, windowWidth/2 - textWidth/2, windowHeight/2 - textSize/2, textSize, LIGHTGRAY);
 			
 			#if BUILD_WITH_BOX2D
-			{
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				{
-					r32 physMouseX, physMouseY;
-					GetPhysPosFromRenderPos(GetMouseX(), GetMouseY(), &physMouseX, &physMouseY);
-					SpawnBox(physWorld, physMouseX, physMouseY, GetRandR32Range(&random, 0.3f, 1.0f), GetRandR32Range(&random, 0.3f, 1.0f));
-				}
-				
-				const int numPhysSubSteps = 4;
-				b2World_Step(physWorld, GetFrameTime(), numPhysSubSteps);
-				
-				b2World_Draw(physWorld, &physDebugDraw);
-			}
+			UpdateBox2DTest();
+			RenderBox2DTest();
 			#endif
 			
 			EndDrawing();

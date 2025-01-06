@@ -24,12 +24,19 @@
 			],
 		},
 		{
-			"path": "third_party/raylib/include",
+			"path": "third_party/raylib",
 			"name": "raylib",
+			"file_exclude_patterns": [
+				"LICENSE",
+				"README.md",
+			],
 		},
 		{
 			"path": "third_party/box2d",
 			"name": "Box2D",
+			"file_exclude_patterns": [
+				"LICENSE",
+			],
 		},
 	],
 	"settings":
