@@ -41,4 +41,7 @@ Description:
 // Enables tests.exe being linked with raylib.lib and it's required libraries
 #define BUILD_WITH_RAYLIB 1
 
+// Enables tests.exe being linnked with box2d.lib and it's required libraries
+#define BUILD_WITH_BOX2D 1
+
 #endif //  _BUILD_CONFIG_H
