@@ -35,7 +35,7 @@ Description:
 // +==============================+
 // |        3D Directions         |
 // +==============================+
-// NOTE: Our coordinate system in Pig Engine (and everything else I work onin 3D)
+// NOTE: Our coordinate system in Pig Engine (and everything else I work on in 3D)
 //       is implicitly Left-Handed and Y-Up. The ASCII diagram below provides a
 //       small visual for what that means, and labels the names we give to each direction/side
 //

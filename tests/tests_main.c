@@ -17,17 +17,12 @@ Description:
 
 #include "build_config.h"
 
-//NOTE: Compiling raylib.h with windows.h causes problems, see https://github.com/raysan5/raylib/issues/1217
-#define DONT_INCLUDE_WINDOWS_H BUILD_WITH_RAYLIB
-
 #include "base/base_all.h"
 #include "std/std_all.h"
-#if !BUILD_WITH_RAYLIB
 #include "os/os_all.h"
 #include "mem/mem_all.h"
 #include "struct/struct_all.h"
 #include "misc/misc_all.h"
-#endif
 
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/include/raylib.h"
@@ -219,13 +214,20 @@ int main()
 	
 	#if BUILD_WITH_RAYLIB
 	{
-		InitWindow(800, 600, "raylib [core] example - basic window");
+		InitWindow(800, 600, "Tests (Pigglen)");
+		SetWindowMinSize(400, 200);
+		SetWindowState(FLAG_WINDOW_RESIZABLE);
 		SetTargetFPS(60);
 		while (!WindowShouldClose())
 		{
+			int windowWidth = GetRenderWidth();
+			int windowHeight = GetRenderHeight();
 			BeginDrawing();
 			ClearBackground(RAYWHITE);
-			DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+			const char* textStr = "Congrats! You created your first window!";
+			const int textSize = 20;
+			int textWidth = MeasureText(textStr, textSize);
+			DrawText(textStr, windowWidth/2 - textWidth/2, windowHeight/2 - textSize/2, textSize, LIGHTGRAY);
 			EndDrawing();
 		}
 		CloseWindow();

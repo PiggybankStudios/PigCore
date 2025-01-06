@@ -10,8 +10,9 @@ Description:
 #ifndef _STRUCT_COLOR_H
 #define _STRUCT_COLOR_H
 
-typedef struct Color Color;
-struct Color
+//NOTE: The name "Color" conflicts with a definition in <windows.h>
+typedef struct Color32 Color32;
+struct Color32
 {
 	u32 valueU32;
 	struct { u8 channel[4]; };
@@ -20,15 +21,15 @@ struct Color
 };
 
 //NOTE: This is BGRA order in memory, or in hex that's 0xAARRGGBB
-Color NewColorU32(u32 valueU32)
+Color32 NewColorU32(u32 valueU32)
 {
-	Color result;
+	Color32 result;
 	result.valueU32 = valueU32;
 	return result;
 }
-Color NewColor(u8 red, u8 green, u8 blue, u8 alpha)
+Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
 {
-	Color result;
+	Color32 result;
 	result.red = red;
 	result.green = green;
 	result.blue = blue;

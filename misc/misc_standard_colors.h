@@ -77,7 +77,7 @@ Description:
 	#define PureBlue                NewColorU32(PureBlue_Value)
 	#define PurePurple              NewColorU32(PurePurple_Value)
 	
-	Color GetPureColorByIndex(uxx index)
+	Color32 GetPureColorByIndex(uxx index)
 	{
 		switch (index % NUM_PREDEF_PURE_COLORS)
 		{
@@ -90,7 +90,7 @@ Description:
 			default: return PureRed;
 		}
 	}
-	Color GetGreyscaleColorByIndex(uxx index)
+	Color32 GetGreyscaleColorByIndex(uxx index)
 	{
 		switch (index % NUM_PREDEF_GREYSCALE_COLORS)
 		{
@@ -126,7 +126,7 @@ Description:
 			default: return NUM_PREDEF_PURE_COLORS;
 		}
 	}
-	uxx GetPureColorIndex(Color color)
+	uxx GetPureColorIndex(Color32 color)
 	{
 		return GetPureColorIndexByValue(color.valueU32);
 	}
@@ -153,7 +153,7 @@ Description:
 			default: return NUM_PREDEF_GREYSCALE_COLORS;
 		}
 	}
-	uxx GetGreyscaleColorIndex(Color color)
+	uxx GetGreyscaleColorIndex(Color32 color)
 	{
 		return GetGreyscaleColorIndexByValue(color.valueU32);
 	}
@@ -328,7 +328,7 @@ Description:
 	#define PalBlackLight           NewColorU32(PalBlackLight_Value)
 	#define PalBlackLighter         NewColorU32(PalBlackLighter_Value)
 
-	Color GetPredefPalColorByIndex(uxx index)
+	Color32 GetPredefPalColorByIndex(uxx index)
 	{
 		switch (index % NUM_PREDEF_PAL_COLORS)
 		{
@@ -492,7 +492,7 @@ Description:
 			default: return NUM_PREDEF_PAL_COLORS;
 		}
 	}
-	uxx GetPredefPalColorIndex(Color color)
+	uxx GetPredefPalColorIndex(Color32 color)
 	{
 		return GetPredefPalColorIndexByValue(color.valueU32);
 	}
@@ -545,7 +545,7 @@ Description:
 	#define MonokaiGray2                    NewColorU32(MonokaiGray2_Value)
 	#define MonokaiDarkGray                 NewColorU32(MonokaiDarkGray_Value)
 	
-	Color GetMonokaiColorByIndex(uxx index)
+	Color32 GetMonokaiColorByIndex(uxx index)
 	{
 		switch (index % NUM_MONOKAI_COLORS)
 		{
@@ -599,7 +599,7 @@ Description:
 			default: return NUM_MONOKAI_COLORS;
 		}
 	}
-	uxx GetMonokaiColorIndex(Color color)
+	uxx GetMonokaiColorIndex(Color32 color)
 	{
 		return GetMonokaiColorIndexByValue(color.valueU32);
 	}
@@ -608,7 +608,7 @@ Description:
 // +--------------------------------------------------------------+
 // |                       Other Functions                        |
 // +--------------------------------------------------------------+
-Color GetDbgLevelTextColor(DbgLevel dbgLevel)
+Color32 GetDbgLevelTextColor(DbgLevel dbgLevel)
 {
 	switch (dbgLevel)
 	{

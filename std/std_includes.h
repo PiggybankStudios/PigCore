@@ -15,10 +15,6 @@ Descriptions:
 #include "build_config.h"
 #include "base/base_compiler_check.h"
 
-#ifndef DONT_INCLUDE_WINDOWS_H
-#define DONT_INCLUDE_WINDOWS_H 0
-#endif
-
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,9 +61,28 @@ Descriptions:
 	void* (*pdrealloc)(void* pntr, size_t size);
 #endif
 
-#if (TARGET_IS_WINDOWS && !DONT_INCLUDE_WINDOWS_H)
-	// Gives us Sleep
+#if TARGET_IS_WINDOWS
+	#if BUILD_WITH_RAYLIB
+	//NOTE: All these things conflict with raylib.h definitions, so we #define before windows.h to make the header use a different name when #included
+	#define Rectangle Win32_Rectangle
+	#define CloseWindow Win32_CloseWindow
+	#define ShowCursor Win32_ShowCursor
+	#define Color Win32_Color
+	#endif
+	
 	#include <windows.h>
+	
+	#if BUILD_WITH_RAYLIB
+	#undef Rectangle
+	#undef CloseWindow
+	#undef ShowCursor
+	#undef Color
+	//NOTE: These 4 also conflict but they are #defines in windows.h, so all that is needed is to #undef them
+	#undef DrawText
+	#undef LoadImage
+	#undef DrawTextEx
+	#undef PlaySound
+	#endif
 #endif
 
 #endif //  _STD_INCLUDES_H
