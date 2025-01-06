@@ -17,17 +17,17 @@ Description:
 
 #include "build_config.h"
 
-#if BUILD_WITH_RAYLIB
 //NOTE: Compiling raylib.h with windows.h causes problems, see https://github.com/raysan5/raylib/issues/1217
-#define DONT_INCLUDE_WINDOWS_H 1
-#endif
+#define DONT_INCLUDE_WINDOWS_H BUILD_WITH_RAYLIB
 
 #include "base/base_all.h"
 #include "std/std_all.h"
-// #include "os/os_all.h"
-// #include "mem/mem_all.h"
-// #include "struct/struct_all.h"
-// #include "misc/misc_all.h"
+#if !BUILD_WITH_RAYLIB
+#include "os/os_all.h"
+#include "mem/mem_all.h"
+#include "struct/struct_all.h"
+#include "misc/misc_all.h"
+#endif
 
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/include/raylib.h"
@@ -95,7 +95,7 @@ int main()
 	}
 	#endif
 	
-	#if 0
+	#if 1
 	Arena stdHeap = ZEROED;
 	InitArenaStdHeap(&stdHeap);
 	Arena stdAlias = ZEROED;

@@ -38,6 +38,7 @@ Description:
 // result of the preprocessor's pass over the code to the build folder
 #define DUMP_PREPROCESSOR 0
 
+// Enables tests.exe being linked with raylib.lib and it's required libraries
 #define BUILD_WITH_RAYLIB 0
 
 #endif //  _BUILD_CONFIG_H

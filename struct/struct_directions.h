@@ -13,6 +13,9 @@ Description:
 #ifndef _STRUCT_DIRECTIONS_H
 #define _STRUCT_DIRECTIONS_H
 
+#include "base/base_typedefs.h"
+#include "std/std_basic_math.h"
+
 // +==============================+
 // |        2D Directions         |
 // +==============================+
@@ -63,7 +66,7 @@ enum Dir2
 	Dir2_Count = 4,
 };
 
-typedef Dir2Ex Dir2Ex;
+typedef enum Dir2Ex Dir2Ex;
 enum Dir2Ex
 {
 	Dir2Ex_None        = 0x00,
@@ -83,7 +86,7 @@ enum Dir2Ex
 	Dir2Ex_Count = 8,
 };
 
-typedef Dir3 Dir3;
+typedef enum Dir3 Dir3;
 enum Dir3
 {
 	Dir3_None        = 0x00,
@@ -881,7 +884,7 @@ Axis AxisFromIndex(u64 index)
 // +==============================+
 Dir2 Dir2Opposite(Dir2 dir2)
 {
-	Assert(IsSingleDir2(dir2));
+	Assert(IsSingleDir2(dir2, false));
 	switch (dir2)
 	{
 		case Dir2_Right: return Dir2_Left;
@@ -893,7 +896,7 @@ Dir2 Dir2Opposite(Dir2 dir2)
 }
 Dir2Ex Dir2ExOpposite(Dir2Ex dir2ex)
 {
-	Assert(IsSingleDir2Ex(dir2ex));
+	Assert(IsSingleDir2Ex(dir2ex, false));
 	switch (dir2ex)
 	{
 		case Dir2Ex_Right: return Dir2Ex_Left;
@@ -909,7 +912,7 @@ Dir2Ex Dir2ExOpposite(Dir2Ex dir2ex)
 }
 Dir3 Dir3Opposite(Dir3 dir3)
 {
-	Assert(IsSingleDir3(dir3));
+	Assert(IsSingleDir3(dir3, false));
 	switch (dir3)
 	{
 		case Dir3_Right:    return Dir3_Left;
@@ -927,13 +930,13 @@ Dir3 Dir3Opposite(Dir3 dir3)
 // +==============================+
 Dir2 Dir2ClockwiseBy(Dir2 dir2, u64 numQuarterTurns)
 {
-	Assert(IsSingleDir2(dir2));
+	Assert(IsSingleDir2(dir2, false));
 	return Dir2FromCwIndexStartingWith(dir2, numQuarterTurns);
 }
 Dir2 Dir2Clockwise(Dir2 dir2) { return Dir2ClockwiseBy(dir2, 1); }
 Dir2 Dir2CounterClockwiseBy(Dir2 dir2, u64 numQuarterTurns)
 {
-	Assert(IsSingleDir2(dir2));
+	Assert(IsSingleDir2(dir2, false));
 	return Dir2FromCcwIndexStartingWith(dir2, numQuarterTurns);
 }
 Dir2 Dir2CounterClockwise(Dir2 dir2) { return Dir2CounterClockwiseBy(dir2, 1); }
@@ -945,8 +948,8 @@ Dir2 Dir2CounterClockwise(Dir2 dir2) { return Dir2CounterClockwiseBy(dir2, 1); }
 // +==============================+
 u8 GetCwTurnsBetweenDir2(Dir2 start, Dir2 end)
 {
-	Assert(IsSingleDir2(start));
-	Assert(IsSingleDir2(end));
+	Assert(IsSingleDir2(start, false));
+	Assert(IsSingleDir2(end, false));
 	u8 startIndex = GetDir2Index(start);
 	u8 endIndex = GetDir2Index(end);
 	if (endIndex < startIndex) { endIndex += Dir2_Count; }
@@ -954,8 +957,8 @@ u8 GetCwTurnsBetweenDir2(Dir2 start, Dir2 end)
 }
 u8 GetCcwTurnsBetweenDir2(Dir2 start, Dir2 end)
 {
-	Assert(IsSingleDir2(start));
-	Assert(IsSingleDir2(end));
+	Assert(IsSingleDir2(start, false));
+	Assert(IsSingleDir2(end, false));
 	u8 startIndex = Dir2_Count - GetDir2Index(start);
 	u8 endIndex = Dir2_Count - GetDir2Index(end);
 	if (endIndex < startIndex) { endIndex += Dir2_Count; }
@@ -963,8 +966,8 @@ u8 GetCcwTurnsBetweenDir2(Dir2 start, Dir2 end)
 }
 u8 GetTurnsBetweenDir3(Dir3 start, Dir3 end)
 {
-	Assert(IsSingleDir3(start));
-	Assert(IsSingleDir3(end));
+	Assert(IsSingleDir3(start, false));
+	Assert(IsSingleDir3(end, false));
 	switch (start)
 	{
 		case Dir3_Right: switch (end)
@@ -1036,7 +1039,7 @@ u8 GetTurnsBetweenDir3(Dir3 start, Dir3 end)
 // +--------------------------------------------------------------+
 r32 GetDir2AngleR32(Dir2 dir2)
 {
-	Assert(IsSingleDir2(dir2));
+	Assert(IsSingleDir2(dir2, false));
 	switch (dir2)
 	{
 		case Dir2_Right: return 0.0f;
@@ -1048,7 +1051,7 @@ r32 GetDir2AngleR32(Dir2 dir2)
 }
 r64 GetDir2AngleR64(Dir2 dir2)
 {
-	Assert(IsSingleDir2(dir2));
+	Assert(IsSingleDir2(dir2, false));
 	switch (dir2)
 	{
 		case Dir2_Right: return 0.0;
@@ -1061,7 +1064,7 @@ r64 GetDir2AngleR64(Dir2 dir2)
 
 r32 GetDir2ExAngleR32(Dir2Ex dir2ex)
 {
-	Assert(IsSingleDir2Ex(dir2ex));
+	Assert(IsSingleDir2Ex(dir2ex, false));
 	switch (dir2ex)
 	{
 		case Dir2Ex_Right: return 0.0f;
@@ -1077,7 +1080,7 @@ r32 GetDir2ExAngleR32(Dir2Ex dir2ex)
 }
 r64 GetDir2ExAngleR64(Dir2Ex dir2ex)
 {
-	Assert(IsSingleDir2Ex(dir2ex));
+	Assert(IsSingleDir2Ex(dir2ex, false));
 	switch (dir2ex)
 	{
 		case Dir2Ex_Right: return 0.0;
