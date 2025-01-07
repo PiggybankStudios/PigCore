@@ -243,6 +243,53 @@ int main()
 	}
 	#endif
 	
+	#if 1
+	{
+		FilePath path = AsFilePath(StrNt("/test/"));
+		MyPrint("DoesPathHaveTrailingSlash(path) = %s", DoesPathHaveTrailingSlash(path) ? "true" : "false");
+		MyPrint("DoesPathHaveExt(path) = %s", DoesPathHaveExt(path) ? "true" : "false");
+		MyPrint("\"%.*s\" (path)", StrPrint(path));
+		ChangePathSlashesTo(path, '\\');
+		MyPrint("\"%.*s\" (ChangePathSlashesTo(path))", StrPrint(path));
+		FixPathSlashes(path);
+		MyPrint("\"%.*s\" (FixPathSlashes(path))", StrPrint(path));
+		MyPrint("\"%.*s\" (GetFileNamePart(path, false))", StrPrint(GetFileNamePart(path, false)));
+		MyPrint("\"%.*s\" (GetFileNamePart(path, true))", StrPrint(GetFileNamePart(path, true)));
+		MyPrint("\"%.*s\" (GetFileExtPart(path, true, true))", StrPrint(GetFileExtPart(path, true, true)));
+		MyPrint("\"%.*s\" (GetFileExtPart(path, false, true))", StrPrint(GetFileExtPart(path, false, true)));
+		MyPrint("\"%.*s\" (GetFileExtPart(path, true, false))", StrPrint(GetFileExtPart(path, true, false)));
+		MyPrint("\"%.*s\" (GetFileExtPart(path, false, false))", StrPrint(GetFileExtPart(path, false, false)));
+		FilePath allocPath = AllocFilePath(&scratch1, path, true);
+		AssertNullTerm(allocPath);
+		MyPrint("\"%.*s\" (allocPath)", StrPrint(allocPath));
+		FreeFilePathWithNt(&scratch1, &allocPath);
+		FilePath pathDirPart = GetFileDirectoryPart(path);
+		MyPrint("\"%.*s\" (GetFileDirectoryPart(path))", StrPrint(pathDirPart));
+		FilePath allocDirPath = AllocDirectoryPath(&scratch1, pathDirPart, false);
+		MyPrint("\"%.*s\" (allocDirPath)", StrPrint(allocDirPath));
+		FreeFilePath(&scratch1, &allocDirPath);
+		MyPrint("\"%.*s\" (path)", StrPrint(path));
+		MyPrint("\"%.*s\" (GetPathPart(path, -4, true))",  StrPrint(GetPathPart(path, -4, true)));
+		MyPrint("\"%.*s\" (GetPathPart(path, -3, true))",  StrPrint(GetPathPart(path, -3, true)));
+		MyPrint("\"%.*s\" (GetPathPart(path, -2, true))",  StrPrint(GetPathPart(path, -2, true)));
+		MyPrint("\"%.*s\" (GetPathPart(path, -1, true))",  StrPrint(GetPathPart(path, -1, true)));
+		MyPrint("\"%.*s\" (GetPathPart(path, 0,  true))",  StrPrint(GetPathPart(path, 0,  true)));
+		MyPrint("\"%.*s\" (GetPathPart(path, 1,  true))",  StrPrint(GetPathPart(path, 1,  true)));
+		MyPrint("\"%.*s\" (GetPathPart(path, 2,  true))",  StrPrint(GetPathPart(path, 2,  true)));
+		MyPrint("\"%.*s\" (GetPathPart(path, 3,  true))",  StrPrint(GetPathPart(path, 3,  true)));
+		MyPrint("\"%.*s\" (GetPathPart(path, -4, false))", StrPrint(GetPathPart(path, -4, false)));
+		MyPrint("\"%.*s\" (GetPathPart(path, -3, false))", StrPrint(GetPathPart(path, -3, false)));
+		MyPrint("\"%.*s\" (GetPathPart(path, -2, false))", StrPrint(GetPathPart(path, -2, false)));
+		MyPrint("\"%.*s\" (GetPathPart(path, -1, false))", StrPrint(GetPathPart(path, -1, false)));
+		MyPrint("\"%.*s\" (GetPathPart(path, 0,  false))", StrPrint(GetPathPart(path, 0,  false)));
+		MyPrint("\"%.*s\" (GetPathPart(path, 1,  false))", StrPrint(GetPathPart(path, 1,  false)));
+		MyPrint("\"%.*s\" (GetPathPart(path, 2,  false))", StrPrint(GetPathPart(path, 2,  false)));
+		MyPrint("\"%.*s\" (GetPathPart(path, 3,  false))", StrPrint(GetPathPart(path, 3,  false)));
+		MyPrint("%llu (CountPathParts(path, true))", CountPathParts(path, true));
+		MyPrint("%llu (CountPathParts(path, false))", CountPathParts(path, false));
+	}
+	#endif
+	
 	#if BUILD_WITH_BOX2D
 	InitBox2DTest();
 	#endif

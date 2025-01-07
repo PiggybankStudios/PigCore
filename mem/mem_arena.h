@@ -490,6 +490,11 @@ NODISCARD void* AllocMem(Arena* arena, uxx numBytes)
 	return AllocMemAligned(arena, numBytes, 0);
 }
 
+#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)_Alignof(type))
+#define AllocTypeUnaligned(type, arenaPntr)         (type*)AllocMem(       (arenaPntr), (uxx)sizeof(type),             0)
+#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
+#define AllocArrayUnaligned(type, arenaPntr, count) (type*)AllocMem(       (arenaPntr), (uxx)(sizeof(type) * (count)), 0)
+
 // +--------------------------------------------------------------+
 // |                  Arena Free Implementations                  |
 // +--------------------------------------------------------------+

@@ -123,14 +123,10 @@ bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr)
 	return false;
 }
 
-//NOTE: Before we changed the u64 length in Str8 to uxx type, printing a string
-//      with %.*s was one of the scenarios where 32-bit platforms would cause us
-//      trouble. So this macro used to sneak in a u32 cast for those platforms.
-//      Now it simply serves as a shorthand for passing the length and then chars
-//      in the right order, and also will help us fix up this use case in the future
-//      if we find any more idiosyncrasies with this format specifier
-#define StrPrint(myStrStruct)   (myStrStruct).length, (myStrStruct).chars
-#define StrPntrPrint(myStrPntr) (myStrPntr)->length, (myStrPntr)->chars
+//NOTE: These are meant to be used when formatting Str8 using any printf like functions
+//      Use the format specifier %.*s and then this macro in the var-args
+#define StrPrint(string)   (int)(string).length, (string).chars
+#define StrPntrPrint(strPntr) (int)(strPntr)->length, (strPntr)->chars
 
 // +--------------------------------------------------------------+
 // |                      Assertion Helpers                       |
