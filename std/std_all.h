@@ -12,11 +12,16 @@ Description:
 #define _STD_ALL_H
 
 #include "base/base_compiler_check.h" //required by all the other files
+
 #include "std/std_includes.h"
+
 #include "base/base_macros.h" //required by std_trig.h and std_basic_math.h
+
 #include "std/std_trig.h"
+
 #include "base/base_compiler_check.h" //required by the rest of the files
 #include "base/base_typedefs.h" //required by the rest of the files
+
 #include "std/std_malloc.h"
 #include "std/std_memset.h"
 #include "std/std_printf.h"

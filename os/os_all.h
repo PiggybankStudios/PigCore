@@ -12,9 +12,17 @@ Description:
 #define _OS_ALL_H
 
 #include "base/base_compiler_check.h" //required by os_virtual_mem.h
-#include "base/base_typedefs.h" //required by os_virtual_mem.h
-#include "base/base_macros.h" //required by os_virtual_mem.h
-#include "std/std_includes.h" //required by os_virtual_mem.h
+#include "base/base_typedefs.h" //required by os_virtual_mem.h and os_file.h
+#include "base/base_macros.h" //required by os_virtual_mem.h, os_path.h and os_file.h
+#include "std/std_includes.h" //required by os_virtual_mem.h, os_path.h and os_file.h
+#include "base/base_assert.h" //required by os_virtual_mem.h, os_path.h and os_file.h
+
 #include "os/os_virtual_mem.h"
+
+#include "mem/mem_arena.h" //required by os_path.h and os_file.h
+#include "struct/struct_string.h" //required by os_path.h and os_file.h
+
+#include "os/os_path.h"
+#include "os/os_file.h"
 
 #endif //  _OS_ALL_H

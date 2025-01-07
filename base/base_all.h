@@ -13,7 +13,12 @@ Description:
 
 #include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_macros.h"
+
 #include "std/std_includes.h" //required by base_assert.h
+
 #include "base/base_assert.h"
+#include "base/base_char.h"
+#include "base/base_unicode.h"
 
 #endif //  _BASE_ALL_H

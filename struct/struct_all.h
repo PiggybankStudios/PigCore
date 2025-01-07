@@ -12,12 +12,18 @@ Description:
 #define _STRUCT_ALL_H
 
 #include "base/base_typedefs.h" //Needed by struct_color.h and struct_var_array.h
+
 #include "struct/struct_color.h"
 #include "struct/struct_directions.h"
-#include "base/base_macros.h" //Needed by struct_var_array.h
-#include "base/base_assert.h" //Needed by struct_var_array.h
+
+#include "base/base_macros.h" //Needed by struct_string.h and struct_var_array.h
+#include "base/base_assert.h" //Needed by struct_string.h and struct_var_array.h
+
+#include "struct/struct_string.h"
+
 #include "mem/mem_arena.h" //Needed by struct_var_array.h
 #include "std/std_memset.h" //Needed by struct_var_array.h
+
 #include "struct/struct_var_array.h"
 
 #endif //  _STRUCT_ALL_H

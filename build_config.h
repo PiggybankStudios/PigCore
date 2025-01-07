@@ -32,7 +32,7 @@ Description:
 // Compiles tests/main.c
 #define BUILD_TESTS   1
 // Runs the result of compiling tests/main.c, aka the tests.exe
-#define RUN_TESTS     1
+#define RUN_TESTS     0
 
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
@@ -41,7 +41,7 @@ Description:
 // Enables tests.exe being linked with raylib.lib and it's required libraries
 #define BUILD_WITH_RAYLIB 1
 
-// Enables tests.exe being linnked with box2d.lib and it's required libraries
+// Enables tests.exe being linked with box2d.lib and it's required libraries
 #define BUILD_WITH_BOX2D 1
 
 #endif //  _BUILD_CONFIG_H

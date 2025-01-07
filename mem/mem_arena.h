@@ -832,3 +832,7 @@ bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure)
 }
 
 #endif //  _MEM_ARENA_H
+
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_STRING_H)
+#include "cross/cross_mem_arena_and_string.h"
+#endif

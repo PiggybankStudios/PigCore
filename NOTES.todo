@@ -11,8 +11,8 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] gy_random.h
 	[!] gy_extras.h
 	[!] gy_hash.h (+add meowhash?)
-	[!] gy_unicode.h
-	[!] gy_string.h
+	[X] gy_unicode.h
+	[?] gy_string.h
 	[!] gy_result.h
 	[!] gy_parsing.h
 	[!] gy_ip.h

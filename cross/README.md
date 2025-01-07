@@ -1,0 +1,2 @@
+# cross Folder
+This folder contains files that rely on 2 or more files that could be used or not used by the application. Whenever all dependent files detect they have all been included (by checking the include guard defines), they will include these cross_*.h files automatically. For example including mem_arena.h and struct_string.h will automatically trigger the include of cross_mem_arena_and_string.h. WARNING these cross files are not meant to be included manually, they do not include all of the things they depend on!
