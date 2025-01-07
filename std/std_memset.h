@@ -15,6 +15,7 @@ Description:
 
 #define MyMemSet(dest, value, length)      memset((dest), (value), (length))
 #define MyMemCompare(pntr1, pntr2, length) memcmp((pntr1), (pntr2), (length))
+#define MyMemEquals(pntr1, pntr2, length)  (MyMemCompare((pntr1), (pntr2), (length)) == 0)
 #define MyMemCopy(dest, source, length)    memcpy((dest), (source), (length))
 #define MyMemMove(dest, source, length)    memmove((dest), (source), (length))
 #define MyStrCopyNt(dest, source)          strcpy((dest), (source))

@@ -252,7 +252,7 @@ int main()
 	{
 		ScratchBegin(scratch);
 		
-		FilePath path = AsFilePath(StrNt("linux/piggen"));
+		FilePath path = AsFilePath(StrNt("../.gitignore"));
 		MyPrint("DoesPathHaveTrailingSlash(path) = %s", DoesPathHaveTrailingSlash(path) ? "true" : "false");
 		MyPrint("DoesPathHaveExt(path) = %s", DoesPathHaveExt(path) ? "true" : "false");
 		MyPrint("\"%.*s\" (path)", StrPrint(path));
@@ -310,6 +310,17 @@ int main()
 			fIndex++;
 		}
 		MyPrint("There are %llu file%s in \"%.*s\"", fIndex, Plural(fIndex, "s"), StrPrint(path));
+		
+		Str8 fileContents = Str8_Empty;
+		if (OsReadFile(path, scratch, true, &fileContents))
+		{
+			MyPrint("Opened file: %llu chars:", fileContents.length);
+			if (fileContents.length < 1024)
+			{
+				MyPrint("%.*s", StrPrint(fileContents));
+			}
+			FreeStr8WithNt(scratch, &fileContents);
+		}
 		
 		ScratchEnd(scratch);
 	}

@@ -36,7 +36,7 @@ Description:
 #define Sqrt2_32           1.41421353816986083984375f           //accurate to 7 digits
 
 // Used mostly by enum to string conversion functions when passed a value that is not valid in the enumeration
-#define UNKNOWN_STR  "unknown"
+#define UNKNOWN_STR  "Unknown"
 
 // +--------------------------------------------------------------+
 // |               Language Feature Related Macros                |

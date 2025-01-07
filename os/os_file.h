@@ -14,6 +14,24 @@ Description:
 #include "struct/struct_string.h"
 #include "mem/mem_scratch.h"
 
+#if TARGET_IS_WINDOWS
+const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
+{
+	switch (windowsErrorCode)
+	{
+		case ERROR_FILE_NOT_FOUND:    return "ERROR_FILE_NOT_FOUND";    //2
+		case ERROR_FILE_EXISTS:       return "ERROR_FILE_EXISTS";       //80
+		case ERROR_ALREADY_EXISTS:    return "ERROR_ALREADY_EXISTS";    //183
+		case ERROR_SHARING_VIOLATION: return "ERROR_SHARING_VIOLATION"; //?
+		case ERROR_PIPE_BUSY:         return "ERROR_PIPE_BUSY";         //?
+		case ERROR_ACCESS_DENIED:     return "ERROR_ACCESS_DENIED";     //?
+		case ERROR_DIRECTORY:         return "ERROR_DIRECTORY";         //267
+		// default: return (printUnknownValue ? TempPrint("(0x%08X)", windowsErrorCode) : "UNKNOWN"); //TODO: Add this option back in once we have PrintInArena function!
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
 // +--------------------------------------------------------------+
 // |                          Full Path                           |
 // +--------------------------------------------------------------+
@@ -281,6 +299,147 @@ bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut
 bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath)
 {
 	return OsIterFileStepEx(fileIter, nullptr, pathOut, pathOutArena, giveFullPath);
+}
+
+//NOTE: Passing nullptr for arena will output a Str8 that has length set but no chars pointer
+// NOTE: The contentsOut is always null-terminated
+bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* contentsOut)
+{
+	//NOTE: This function should be multi-thread safe!
+	NotNullStr(path);
+	NotNull(contentsOut);
+	ClearPointer(contentsOut);
+	ScratchBegin1(scratch, arena);
+	
+	#if TARGET_IS_WINDOWS
+	{
+		Str8 fullPath = OsGetFullPath(scratch, path); //ensures null-termination
+		ChangePathSlashesTo(fullPath, '\\');
+		
+		//TODO: This check maybe takes a lot of time? Should we just attempt to open the file and be done with it?
+		// if (!OsDoesFileExist(fullPath)) { ScratchEnd(scratch); return false; }
+		
+		HANDLE fileHandle = CreateFileA(
+			fullPath.chars,        //lpFileName
+			GENERIC_READ,          //dwDesiredAccess
+			FILE_SHARE_READ,       //dwShareMode
+			NULL,                  //lpSecurityAttributes (NULL: no sub process access)
+			OPEN_EXISTING,         //dwCreationDisposition
+			FILE_ATTRIBUTE_NORMAL, //dwFlagsAndAttributes
+			NULL                   //hTemplateFile
+		);
+		if (fileHandle == INVALID_HANDLE_VALUE)
+		{
+			DWORD errorCode = GetLastError();
+			if (errorCode == ERROR_FILE_NOT_FOUND)
+			{
+				MyPrint("ERROR: File not found at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
+			}
+			else
+			{
+				//The file might have permissions that prevent us from reading it
+				MyPrint("ERROR: Failed to open file that exists at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
+			}
+			ScratchEnd(scratch);
+			CloseHandle(fileHandle);
+			return false;
+		}
+		
+		LARGE_INTEGER fileSizeLargeInt;
+		BOOL getFileSizeResult = GetFileSizeEx(
+			fileHandle,       //hFile
+			&fileSizeLargeInt //lpFileSize
+		);
+		if (getFileSizeResult == 0)
+		{
+			DWORD errorCode = GetLastError();
+			MyPrint("ERROR: Failed to size of file at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
+			ScratchEnd(scratch);
+			CloseHandle(fileHandle);
+			return false;
+		}
+		
+		Assert(fileSizeLargeInt.QuadPart <= UINTXX_MAX);
+		uxx fileSize = (uxx)fileSizeLargeInt.QuadPart;
+		u8* fileData = AllocArray(u8, arena, fileSize+1); //+1 for null-term
+		AssertMsg(fileData != nullptr, "Failed to allocate space to hold file contents. The application probably tried to open a massive file");
+		Str8 result = NewStr8(fileSize, (char*)fileData);
+		
+		if (fileSize > 0)
+		{
+			//TODO: What about files that are larger than DWORD_MAX? Will we just fail to read these?
+			DWORD bytesRead = 0;
+			BOOL readFileResult = ReadFile(
+				fileHandle,           //hFile
+				result.chars,         //lpBuffer
+				(DWORD)result.length, //nNumberOfBytesToRead
+				&bytesRead,           //lpNumberOfBytesRead
+				NULL                  //lpOverlapped
+			);
+			if (readFileResult == 0)
+			{
+				DWORD errorCode = GetLastError();
+				MyPrint("ERROR: Failed to ReadFile contents at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
+				FreeStr8WithNt(arena, &result);
+				ScratchEnd(scratch);
+				CloseHandle(fileHandle);
+				return false;
+			}
+			if (bytesRead < result.length)
+			{
+				DWORD errorCode = GetLastError();
+				MyPrint("ERROR: Failed to read all of the file at \"%.*s\". Error code: %s. Read %u/%llu bytes", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode), bytesRead, result.length);
+				FreeStr8WithNt(arena, &result);
+				ScratchEnd(scratch);
+				CloseHandle(fileHandle);
+				return false;
+			}
+			
+			result.chars[result.length] = '\0'; //add null-term
+			
+			if (convertNewLines)
+			{
+				Str8 replacedResult = StrReplace(arena, result, StrNt("\r\n"), StrNt("\n"), true);
+				if (CanArenaFree(arena)) { FreeStr8WithNt(arena, &result); }
+				result = replacedResult;
+			}
+		}
+		else { result.chars[result.length] = '\0'; } //add null-term
+		
+		*contentsOut = result;
+		
+		ScratchEnd(scratch);
+		CloseHandle(fileHandle);
+	}
+	// #elif TARGET_IS_LINUX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	// #elif TARGET_IS_OSX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	#else
+	AssertMsg(false, "OsReadFile does not support the current platform yet!");
+	#endif
+	
+	return true;
+}
+Str8 OsReadTextFileScratch(FilePath path)
+{
+	Arena* scratch = GetScratch(nullptr); //Intentionally throwing away the mark here
+	Str8 fileContents = Str8_Empty;
+	bool readSuccess = OsReadFile(path, scratch, true, &fileContents);
+	// Assert(readSuccess); //NOTE: Enable me if you want to break on failure to read!
+	return readSuccess ? fileContents : Str8_Empty;
+}
+Str8 OsReadBinFileScratch(FilePath path)
+{
+	Arena* scratch = GetScratch(nullptr); //Intentionally throwing away the mark here
+	Str8 fileContents = Str8_Empty;
+	bool readSuccess = OsReadFile(path, scratch, false, &fileContents);
+	// Assert(readSuccess); //NOTE: Enable me if you want to break on failure to read!
+	return readSuccess ? fileContents : Str8_Empty;
 }
 
 #endif //  _OS_FILE_H

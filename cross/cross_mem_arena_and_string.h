@@ -60,19 +60,6 @@ Str8 AllocStrAndCopyNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
 #define AllocStr8Nt(arenaPntr, nullTermStr) AllocStrAndCopyNt((arenaPntr), (nullTermStr), false)
 #define AllocStr8Length(arenaPntr, length, charPntr) AllocStrAndCopy((arenaPntr), (length), (charPntr), false)
 
-Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)
-{
-	Str8 result;
-	result.length = left.length + right.length;
-	if (result.length == 0 && !addNullTerm) { return Str8_Empty; }
-	result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
-	if (result.chars == nullptr) { return Str8_Empty; }
-	if (left.length  > 0) { MyMemCopy(result.chars + 0,           left.chars,  left.length);  }
-	if (right.length > 0) { MyMemCopy(result.chars + left.length, right.chars, right.length); }
-	if (addNullTerm) { result.chars[result.length] = '\0'; }
-	return result;
-}
-
 void FreeStr8(Arena* arena, Str8* stringPntr)
 {
 	NotNull(stringPntr);
@@ -90,6 +77,83 @@ void FreeStr8WithNt(Arena* arena, Str8* stringPntr)
 		FreeMem(arena, stringPntr->chars, stringPntr->length+1);
 	}
 	ClearPointer(stringPntr);
+}
+
+Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)
+{
+	Str8 result;
+	result.length = left.length + right.length;
+	if (result.length == 0 && !addNullTerm) { return Str8_Empty; }
+	result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
+	if (result.chars == nullptr) { return Str8_Empty; }
+	if (left.length  > 0) { MyMemCopy(result.chars + 0,           left.chars,  left.length);  }
+	if (right.length > 0) { MyMemCopy(result.chars + left.length, right.chars, right.length); }
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	return result;
+}
+
+Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addNullTerm)
+{
+	NotNullStr(str);
+	NotNullStr(target);
+	NotNullStr(replacement);
+	if (target.length == 0) { return AllocStr8(arena, str); } //nothing to target means nothing to replace
+	Str8 result = Str8_Empty;
+	
+	for (u8 pass = 0; pass < 2; pass++)
+	{
+		uxx numBytesNeeded = 0;
+		
+		for (uxx bIndex = 0; bIndex < str.length; bIndex++)
+		{
+			if (bIndex + target.length <= str.length)
+			{
+				if (MyMemEquals(str.chars + bIndex, target.chars, target.length))
+				{
+					if (result.chars != nullptr)
+					{
+						Assert(numBytesNeeded + replacement.length <= result.length);
+						MyMemCopy(&result.chars[numBytesNeeded], replacement.chars, replacement.length);
+					}
+					numBytesNeeded += replacement.length;
+					bIndex += target.length-1;
+				}
+				else
+				{
+					if (result.chars != nullptr)
+					{
+						Assert(numBytesNeeded+1 <= result.length);
+						result.chars[numBytesNeeded] = str.chars[bIndex];
+					}
+					numBytesNeeded += 1;
+				}
+			}
+			else
+			{
+				if (result.chars != nullptr)
+				{
+					Assert(numBytesNeeded+1 <= result.length);
+					result.chars[numBytesNeeded] = str.chars[bIndex];
+				}
+				numBytesNeeded += 1;
+			}
+		}
+		
+		if (pass == 0)
+		{
+			result.length = numBytesNeeded;
+			if (arena == nullptr) { return result; }
+			result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
+			NotNull(result.chars);
+		}
+		else
+		{
+			Assert(numBytesNeeded == result.length);
+			if (addNullTerm) { result.chars[result.length] = '\0'; }
+		}
+	}
+	
+	return result;
 }
 
 #endif //  _CROSS_MEM_ARENA_AND_STRING_H
