@@ -120,6 +120,11 @@ int main()
 	u8 arenaBuffer1[256] = ZEROED;
 	Arena bufferArena = ZEROED;
 	InitArenaBuffer(&bufferArena, arenaBuffer1, ArrayCount(arenaBuffer1));
+	#endif
+	
+	#if 1
+	InitScratchArenasVirtual(Gigabytes(4));
+	#else
 	Arena scratch1 = ZEROED;
 	InitArenaStackVirtual(&scratch1, Gigabytes(4));
 	Arena scratch2 = ZEROED;
@@ -245,7 +250,9 @@ int main()
 	
 	#if 1
 	{
-		FilePath path = AsFilePath(StrNt("/test/"));
+		ScratchBegin(scratch);
+		
+		FilePath path = AsFilePath(StrNt("linux/piggen"));
 		MyPrint("DoesPathHaveTrailingSlash(path) = %s", DoesPathHaveTrailingSlash(path) ? "true" : "false");
 		MyPrint("DoesPathHaveExt(path) = %s", DoesPathHaveExt(path) ? "true" : "false");
 		MyPrint("\"%.*s\" (path)", StrPrint(path));
@@ -259,34 +266,52 @@ int main()
 		MyPrint("\"%.*s\" (GetFileExtPart(path, false, true))", StrPrint(GetFileExtPart(path, false, true)));
 		MyPrint("\"%.*s\" (GetFileExtPart(path, true, false))", StrPrint(GetFileExtPart(path, true, false)));
 		MyPrint("\"%.*s\" (GetFileExtPart(path, false, false))", StrPrint(GetFileExtPart(path, false, false)));
-		FilePath allocPath = AllocFilePath(&scratch1, path, true);
+		FilePath allocPath = AllocFilePath(scratch, path, true);
 		AssertNullTerm(allocPath);
 		MyPrint("\"%.*s\" (allocPath)", StrPrint(allocPath));
-		FreeFilePathWithNt(&scratch1, &allocPath);
-		FilePath pathDirPart = GetFileDirectoryPart(path);
-		MyPrint("\"%.*s\" (GetFileDirectoryPart(path))", StrPrint(pathDirPart));
-		FilePath allocDirPath = AllocDirectoryPath(&scratch1, pathDirPart, false);
-		MyPrint("\"%.*s\" (allocDirPath)", StrPrint(allocDirPath));
-		FreeFilePath(&scratch1, &allocDirPath);
-		MyPrint("\"%.*s\" (path)", StrPrint(path));
-		MyPrint("\"%.*s\" (GetPathPart(path, -4, true))",  StrPrint(GetPathPart(path, -4, true)));
-		MyPrint("\"%.*s\" (GetPathPart(path, -3, true))",  StrPrint(GetPathPart(path, -3, true)));
-		MyPrint("\"%.*s\" (GetPathPart(path, -2, true))",  StrPrint(GetPathPart(path, -2, true)));
-		MyPrint("\"%.*s\" (GetPathPart(path, -1, true))",  StrPrint(GetPathPart(path, -1, true)));
-		MyPrint("\"%.*s\" (GetPathPart(path, 0,  true))",  StrPrint(GetPathPart(path, 0,  true)));
-		MyPrint("\"%.*s\" (GetPathPart(path, 1,  true))",  StrPrint(GetPathPart(path, 1,  true)));
-		MyPrint("\"%.*s\" (GetPathPart(path, 2,  true))",  StrPrint(GetPathPart(path, 2,  true)));
-		MyPrint("\"%.*s\" (GetPathPart(path, 3,  true))",  StrPrint(GetPathPart(path, 3,  true)));
-		MyPrint("\"%.*s\" (GetPathPart(path, -4, false))", StrPrint(GetPathPart(path, -4, false)));
-		MyPrint("\"%.*s\" (GetPathPart(path, -3, false))", StrPrint(GetPathPart(path, -3, false)));
-		MyPrint("\"%.*s\" (GetPathPart(path, -2, false))", StrPrint(GetPathPart(path, -2, false)));
-		MyPrint("\"%.*s\" (GetPathPart(path, -1, false))", StrPrint(GetPathPart(path, -1, false)));
-		MyPrint("\"%.*s\" (GetPathPart(path, 0,  false))", StrPrint(GetPathPart(path, 0,  false)));
-		MyPrint("\"%.*s\" (GetPathPart(path, 1,  false))", StrPrint(GetPathPart(path, 1,  false)));
-		MyPrint("\"%.*s\" (GetPathPart(path, 2,  false))", StrPrint(GetPathPart(path, 2,  false)));
-		MyPrint("\"%.*s\" (GetPathPart(path, 3,  false))", StrPrint(GetPathPart(path, 3,  false)));
+		FreeFilePathWithNt(scratch, &allocPath);
+		FilePath pathFolderPart = GetFileFolderPart(path);
+		MyPrint("\"%.*s\" (GetFileFolderPart(path))", StrPrint(pathFolderPart));
+		FilePath allocFolderPath = AllocFolderPath(scratch, pathFolderPart, false);
+		MyPrint("\"%.*s\" (allocFolderPath)", StrPrint(allocFolderPath));
+		FreeFilePath(scratch, &allocFolderPath);
+		MyPrint("FullPath will be %llu chars", OsGetFullPathLength(path)); 
+		FilePath fullPath = OsGetFullPath(scratch, path);
+		MyPrint("\"%.*s\"[%llu] (fullPath)", StrPrint(fullPath), fullPath.length);
+		// MyPrint("\"%.*s\" (path)", StrPrint(path));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, -4, true))",  StrPrint(GetPathPart(fullPath, -4, true)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, -3, true))",  StrPrint(GetPathPart(fullPath, -3, true)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, -2, true))",  StrPrint(GetPathPart(fullPath, -2, true)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, -1, true))",  StrPrint(GetPathPart(fullPath, -1, true)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, 0,  true))",  StrPrint(GetPathPart(fullPath, 0,  true)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, 1,  true))",  StrPrint(GetPathPart(fullPath, 1,  true)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, 2,  true))",  StrPrint(GetPathPart(fullPath, 2,  true)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, 3,  true))",  StrPrint(GetPathPart(fullPath, 3,  true)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, -4, false))", StrPrint(GetPathPart(fullPath, -4, false)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, -3, false))", StrPrint(GetPathPart(fullPath, -3, false)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, -2, false))", StrPrint(GetPathPart(fullPath, -2, false)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, -1, false))", StrPrint(GetPathPart(fullPath, -1, false)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, 0,  false))", StrPrint(GetPathPart(fullPath, 0,  false)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, 1,  false))", StrPrint(GetPathPart(fullPath, 1,  false)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, 2,  false))", StrPrint(GetPathPart(fullPath, 2,  false)));
+		MyPrint("\"%.*s\" (GetPathPart(fullPath, 3,  false))", StrPrint(GetPathPart(fullPath, 3,  false)));
 		MyPrint("%llu (CountPathParts(path, true))", CountPathParts(path, true));
 		MyPrint("%llu (CountPathParts(path, false))", CountPathParts(path, false));
+		MyPrint("%s (OsDoesFileExist(path))", OsDoesFileExist(path) ? "true" : "false");
+		MyPrint("%s (OsDoesFolderExist(path))", OsDoesFolderExist(path) ? "true" : "false");
+		
+		OsFileIter fileIter = OsIterateFiles(scratch, path, true, true);
+		u64 fIndex = 0;
+		bool isFolder = false;
+		FilePath iterFilePath = Str8_Empty;
+		while (OsIterFileStepEx(&fileIter, &isFolder, &iterFilePath, scratch, false))
+		{
+			MyPrint("OsIterFileStep[%llu]: \"%.*s\"%s", fIndex, StrPrint(iterFilePath), isFolder ? " (Folder)" : "");
+			fIndex++;
+		}
+		MyPrint("There are %llu file%s in \"%.*s\"", fIndex, Plural(fIndex, "s"), StrPrint(path));
+		
+		ScratchEnd(scratch);
 	}
 	#endif
 	

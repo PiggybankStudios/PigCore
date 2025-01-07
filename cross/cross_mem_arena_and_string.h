@@ -60,6 +60,19 @@ Str8 AllocStrAndCopyNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
 #define AllocStr8Nt(arenaPntr, nullTermStr) AllocStrAndCopyNt((arenaPntr), (nullTermStr), false)
 #define AllocStr8Length(arenaPntr, length, charPntr) AllocStrAndCopy((arenaPntr), (length), (charPntr), false)
 
+Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)
+{
+	Str8 result;
+	result.length = left.length + right.length;
+	if (result.length == 0 && !addNullTerm) { return Str8_Empty; }
+	result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
+	if (result.chars == nullptr) { return Str8_Empty; }
+	if (left.length  > 0) { MyMemCopy(result.chars + 0,           left.chars,  left.length);  }
+	if (right.length > 0) { MyMemCopy(result.chars + left.length, right.chars, right.length); }
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	return result;
+}
+
 void FreeStr8(Arena* arena, Str8* stringPntr)
 {
 	NotNull(stringPntr);

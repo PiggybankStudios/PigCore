@@ -7,7 +7,7 @@ Description:
 	** a cross-platform manner (handling forward and backslashes and sometimes
 	** syntax like . and ..).
 	** This file also contains functions that help us check where our executable
-	** is located and where we are running from (the current working directory)
+	** is located and where we are running from (the current working folder)
 */
 
 #ifndef _OS_PATH_H
@@ -57,7 +57,7 @@ NODISCARD FilePath AllocFilePath(Arena* arena, Str8 pathStr, bool addNullTerm)
 	FixPathSlashes(result); //we assume we can and should fix slashes since we are allocating the path on an arena
 	return result;
 }
-NODISCARD FilePath AllocDirectoryPath(Arena* arena, Str8 pathStr, bool addNullTerm)
+NODISCARD FilePath AllocFolderPath(Arena* arena, Str8 pathStr, bool addNullTerm)
 {
 	FilePath result = ZEROED;
 	if (pathStr.length == 0 && !addNullTerm) { return Str8_Empty; }
@@ -98,8 +98,8 @@ Str8 GetFileExtPart(FilePath path, bool includeSubExtensions, bool includeLeadin
 		? NewStr8(path.length - periodIndex, path.chars + periodIndex)
 		: NewStr8(path.length - (periodIndex+1), path.chars + periodIndex+1);
 }
-//NOTE: If you have a path that is already a directory, this will trim the last part of the path unless there is a trailing slash!
-FilePath GetFileDirectoryPart(FilePath path)
+//NOTE: If you have a path that is already a folder, this will trim the last part of the path unless there is a trailing slash!
+FilePath GetFileFolderPart(FilePath path)
 {
 	uxx lastSlashIndex = path.length;
 	for (uxx cIndex = 0; cIndex < path.length; cIndex++)
