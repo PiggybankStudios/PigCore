@@ -301,6 +301,9 @@ bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOutArena
 	return OsIterFileStepEx(fileIter, nullptr, pathOut, pathOutArena, giveFullPath);
 }
 
+// +--------------------------------------------------------------+
+// |                       Read Entire File                       |
+// +--------------------------------------------------------------+
 //NOTE: Passing nullptr for arena will output a Str8 that has length set but no chars pointer
 // NOTE: The contentsOut is always null-terminated
 bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* contentsOut)
@@ -441,5 +444,326 @@ Str8 OsReadBinFileScratch(FilePath path)
 	// Assert(readSuccess); //NOTE: Enable me if you want to break on failure to read!
 	return readSuccess ? fileContents : Str8_Empty;
 }
+
+//TODO: Can we do some sort of asynchronous file read? Like kick off the read and get a callback later?
+
+// +--------------------------------------------------------------+
+// |                      Write Entire File                       |
+// +--------------------------------------------------------------+
+//NOTE: If convertNewLines is true, you should not be passing \r\n instances in your file contents, only \n
+bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
+{
+	NotNullStr(path);
+	NotNullStr(fileContents);
+	bool result = false;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		ScratchBegin(scratch);
+		
+		if (convertNewLines)
+		{
+			//TODO: If the contents already have \r\n instances, then this will not work.
+			//      Maybe we should use a bit more complicated logic than StrReplace?
+			fileContents = StrReplace(scratch, fileContents, StrNt("\n"), StrNt("\r\n"), false);
+			NotNullStr(fileContents);
+		}
+		
+		Str8 fullPath = OsGetFullPath(scratch, path);
+		NotNullStr(fullPath);
+		
+		HANDLE fileHandle = CreateFileA(
+			fullPath.chars,        //Name of the file
+			GENERIC_WRITE,         //Open for writing
+			0,                     //Do not share
+			NULL,                  //Default security
+			CREATE_ALWAYS,         //Always overwrite
+			FILE_ATTRIBUTE_NORMAL, //Default file attributes
+			0                      //No Template File
+		);
+		if (fileHandle != INVALID_HANDLE_VALUE)
+		{
+			//TODO: Should we assert if fileContents.length > max value of DWORD?
+			DWORD bytesWritten = 0;
+			BOOL writeResult = TRUE;
+			if (fileContents.length > 0)
+			{
+				writeResult = WriteFile(
+					fileHandle, //hFile
+					fileContents.chars, //lpBuffer
+					(DWORD)fileContents.length, //nNumberOfBytesToWrite
+					&bytesWritten, //lpNumberOfBytesWritten
+					0 //lpOverlapped
+				);
+			}
+			if (writeResult == TRUE)
+			{
+				if ((uxx)bytesWritten == fileContents.length)
+				{
+					result = true;
+				}
+				else
+				{
+					MyPrint("WARNING: Only wrote %u/%llu bytes to file at \"%.*s\"", bytesWritten, fileContents.length, StrPrint(fullPath));
+				}
+			}
+			else
+			{
+				MyPrint("ERROR: Failed to write %llu bytes to file at \"%.*s\"", fileContents.length, StrPrint(fullPath));
+			}
+			CloseHandle(fileHandle);
+		}
+		else
+		{
+			MyPrint("ERROR: Failed to open file for writing at \"%.*s\"", StrPrint(fullPath));
+		}
+		ScratchEnd(scratch);
+	}
+	// #elif TARGET_IS_LINUX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	// #elif TARGET_IS_OSX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	#else
+	AssertMsg(false, "OsWriteFile does not support the current platform yet!");
+	#endif
+	
+	return result;
+}
+bool OsWriteTextFile(FilePath path, Str8 fileContents) { return OsWriteFile(path, fileContents, true); }
+bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile(path, fileContents, false); }
+
+//TODO: Can we do some sort of asynchronous file write function? Like a fire and forget style thing?
+//      This would probably require the code to know if an operation on that file is already in
+//      progress, otherwise we may run into conflicts with order of operations
+
+// +--------------------------------------------------------------+
+// |                Open File For Reading/Writing                 |
+// +--------------------------------------------------------------+
+typedef enum OsOpenFileMode OsOpenFileMode;
+enum OsOpenFileMode
+{
+	OsOpenFileMode_None = 0,
+	OsOpenFileMode_Read,
+	OsOpenFileMode_Write,
+	OsOpenFileMode_Append,
+	OsOpenFileMode_Count,
+};
+const char* GetOsOpenFileModeStr(OsOpenFileMode enumValue)
+{
+	switch (enumValue)
+	{
+		case OsOpenFileMode_None:   return "None";
+		case OsOpenFileMode_Read:   return "Read";
+		case OsOpenFileMode_Write:  return "Write";
+		case OsOpenFileMode_Append: return "Append";
+		default: return "Unknown";
+	}
+}
+
+typedef struct OsFile OsFile;
+struct OsFile
+{
+	Arena* arena;
+	bool isOpen;
+	bool openedForWriting;
+	bool isKnownSize;
+	uxx cursorIndex;
+	uxx fileSize;
+	FilePath path; //has nullterm
+	FilePath fullPath; //has nullterm
+	
+	#if TARGET_IS_WINDOWS
+	HANDLE handle;
+	#endif
+};
+
+void OsCloseFile(OsFile* file)
+{
+	NotNull(file);
+	if (file->arena != nullptr && CanArenaFree(file->arena))
+	{
+		FreeFilePathWithNt(file->arena, &file->path);
+		FreeFilePathWithNt(file->arena, &file->fullPath);
+	}
+	ClearPointer(file);
+}
+
+bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut)
+{
+	NotNullStr(path);
+	NotNull(openFileOut);
+	bool result = false;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		ScratchBegin1(scratch, arena);
+		Str8 fullPath = OsGetFullPath(scratch, path);
+		bool forWriteOrAppend = (mode == OsOpenFileMode_Write || mode == OsOpenFileMode_Append);
+		bool forWriting = (mode == OsOpenFileMode_Write);
+		
+		HANDLE fileHandle = CreateFileA(
+			fullPath.pntr,                                     //lpFileName
+			(forWriteOrAppend ? GENERIC_WRITE : GENERIC_READ), //dwDesiredAccess
+			(forWriteOrAppend ? 0 : FILE_SHARE_READ),          //dwShareMode
+			NULL,                                              //lpSecurityAttributes
+			(forWriting ? CREATE_ALWAYS : OPEN_ALWAYS),        //dwCreationDisposition
+			FILE_ATTRIBUTE_NORMAL,                             //dwFlagsAndAttributes
+			NULL                                               //hTemplateFile
+		);
+		if (fileHandle == INVALID_HANDLE_VALUE)
+		{
+			MyPrint("ERROR: Failed to %s file at \"%.*s\"", (forWriting ? "Create" : "Open"), StrPrint(fullPath));
+			ScratchEnd(scratch);
+			return false;
+		}
+		
+		uxx fileSize = 0;
+		uxx cursorIndex = 0;
+		if (calculateSize)
+		{
+			//Seek to the end of the file
+			LONG newCursorPosHighOrder = 0;
+			DWORD newCursorPos = SetFilePointer(
+				fileHandle,             //hFile
+				0,                      //lDistanceToMove
+				&newCursorPosHighOrder, //lDistanceToMoveHigh
+				FILE_END                //dMoveMethod
+			);
+			if (newCursorPos == INVALID_SET_FILE_POINTER)
+			{
+				MyPrint("ERROR: Failed to seek to the end of the file when opened for %s \"%.*s\"!", GetOsOpenFileModeStr(mode), StrPrint(fullPath));
+				CloseHandle(fileHandle);
+				ScratchEnd(scratch);
+				return false;
+			}
+			#if TARGET_IS_32BIT
+			Assert(newCursorPosHighOrder == 0); //We can't handle 64-bit cursor position with uxx
+			fileSize = (uxx)newCursorPos;
+			#else
+			fileSize = (((uxx)newCursorPosHighOrder << 32) | (uxx)newCursorPos);
+			#endif
+			cursorIndex = fileSize;
+			
+			if (!forWriteOrAppend)
+			{
+				//Seek back to the beginning
+				DWORD beginMove = SetFilePointer(
+					fileHandle, //hFile
+					0, //lDistanceToMove,
+					NULL, //lDistanceToMoveHigh
+					FILE_BEGIN
+				);
+				Assert(beginMove != INVALID_SET_FILE_POINTER);
+				cursorIndex = 0;
+			}
+		}
+		
+		ScratchEnd(scratch);
+		
+		ClearPointer(openFileOut);
+		openFileOut->arena = arena;
+		openFileOut->isOpen = true;
+		openFileOut->handle = fileHandle;
+		openFileOut->openedForWriting = forWriteOrAppend;
+		openFileOut->isKnownSize = calculateSize;
+		openFileOut->cursorIndex = cursorIndex;
+		openFileOut->fileSize = fileSize;
+		openFileOut->path = AllocFilePath(arena, path, true);
+		NotNullStr(openFileOut->path);
+		openFileOut->fullPath = AllocFilePath(arena, fullPath, true);
+		NotNullStr(openFileOut->fullPath);
+		result = true;
+	}
+	// #elif TARGET_IS_LINUX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	// #elif TARGET_IS_OSX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	#else
+	AssertMsg(false, "OsOpenFile does not support the current platform yet!");
+	#endif
+	
+	return result;
+}
+
+//NOTE: If convertNewLines is true, you should not be passing \r\n instances in your file contents, only \n
+bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines)
+{
+	NotNull(file);
+	NotNullStr(fileContentsPart);
+	if (!file->isOpen) { return false; }
+	Assert(file->openedForWriting);
+	if (fileContentsPart.length == 0) { return true; } //no bytes to write always succeeds
+	bool result = false;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		ScratchBegin(scratch);
+		Assert(file->handle != INVALID_HANDLE_VALUE);
+		
+		if (convertNewLines)
+		{
+			fileContentsPart = StrReplace(scratch, fileContentsPart, StrNt("\n"), StrNt("\r\n"), false);
+			NotNullStr(fileContentsPart);
+		}
+		
+		Assert(fileContentsPart.length <= UINT32_MAX); //TODO: Is there a DWORD_MAX constant?
+		DWORD numBytesToWrite = (DWORD)fileContentsPart.length;
+		DWORD numBytesWritten = 0;
+		BOOL writeResult = WriteFile(
+			file->handle,          //hFile
+			fileContentsPart.pntr, //lpBuffer
+			numBytesToWrite,       //nNumberOfBytesToWrite
+			&numBytesWritten,      //lpNumberOfnumBytesWritten
+			NULL                   //lpOverlapped
+		);
+		if (writeResult == 0)
+		{
+			DWORD errorCode = GetLastError();
+			MyPrint("ERROR: WriteFile failed: 0x%08X (%u)", errorCode, errorCode);
+			ScratchEnd(scratch);
+			return false;
+		}
+		
+		file->cursorIndex += (uxx)numBytesWritten;
+		file->fileSize += (uxx)numBytesWritten;
+		
+		Assert(numBytesWritten <= numBytesToWrite);
+		if (numBytesWritten < numBytesToWrite)
+		{
+			MyPrint("ERROR: Partial write occurred: %u/%u", numBytesWritten, numBytesToWrite);
+			ScratchEnd(scratch);
+			return false;
+		}
+		
+		result = true;
+		ScratchEnd(scratch);
+	}
+	// #elif TARGET_IS_LINUX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	// #elif TARGET_IS_OSX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	#else
+	AssertMsg(false, "OsWriteToOpenFile does not support the current platform yet!");
+	#endif
+	
+	return result;
+}
+bool OsWriteToOpenTextFile(OsFile* file, Str8 fileContentsPart) { return OsWriteToOpenFile(file, fileContentsPart, true); }
+bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart) { return OsWriteToOpenFile(file, fileContentsPart, false); }
+
+//TODO: Implement OsMoveFileCursorRelative
+//TODO: Implement OsMoveFileCursor
 
 #endif //  _OS_FILE_H

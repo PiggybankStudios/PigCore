@@ -322,6 +322,23 @@ int main()
 			FreeStr8WithNt(scratch, &fileContents);
 		}
 		
+		// bool writeSuccess = OsWriteTextFile(path, StrNt("Hello, we have replaced the file contents with\ngarbage!\n\n:)"));
+		// MyPrint("OsWriteTextFile(...): %s", writeSuccess ? "Success" : "Failure");
+		
+		// OsFile file;
+		// if (OsOpenFile(scratch, path, OsOpenFileMode_Append, true, &file))
+		// {
+		// 	MyPrint("OsOpenFile Succeeded! File is %llu bytes, cursor at %llu", file.fileSize, file.cursorIndex);
+		// 	bool writeSuccess = OsWriteToOpenTextFile(&file, StrNt("\n\nHello :)"));
+		// 	MyPrint("OsWriteToOpenTextFile(\"\\n\\nHello :)\") %s", writeSuccess ? "Succeeded!" : "Failed!");
+		// 	writeSuccess = OsWriteToOpenTextFile(&file, StrNt(""));
+		// 	MyPrint("OsWriteToOpenTextFile(\"\") %s", writeSuccess ? "Succeeded!" : "Failed!");
+		// 	writeSuccess = OsWriteToOpenTextFile(&file, StrNt("\nTest"));
+		// 	MyPrint("OsWriteToOpenTextFile(\"\\nTest\") %s", writeSuccess ? "Succeeded!" : "Failed!");
+		// 	OsCloseFile(&file);
+		// }
+		// else { MyPrint("OsOpenFile Failed!"); }
+		
 		ScratchEnd(scratch);
 	}
 	#endif

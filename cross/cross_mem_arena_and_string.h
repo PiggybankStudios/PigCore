@@ -91,6 +91,8 @@ Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)
 	if (addNullTerm) { result.chars[result.length] = '\0'; }
 	return result;
 }
+//TODO: Add JoinStringsInArenaWithChar that takes left, sepChar, and right
+//TODO: Add JoinStringsInArena3 that takes left, middle, and right
 
 Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addNullTerm)
 {
