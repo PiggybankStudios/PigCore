@@ -24,12 +24,24 @@ Description:
 #include "struct/struct_all.h"
 #include "misc/misc_all.h"
 
+#if BUILD_WITH_SOKOL && BUILD_WITH_RAYLIB
+#error SOKOL and RAYLIB are not meant to be enabled at the same time. Use one or the other!
+#endif
+
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/raylib.h"
 #endif
-
 #if BUILD_WITH_BOX2D
 #include "third_party/box2d/box2d.h"
+#endif
+#if BUILD_WITH_SOKOL
+#define SOKOL_D3D11
+#define SOKOL_IMPL
+#include "third_party/sokol/sokol_gfx.h"
+#include "third_party/sokol/sokol_app.h"
+#include "third_party/sokol/sokol_log.h"
+#include "third_party/sokol/sokol_glue.h"
+// #include "dbgui/dbgui.h"
 #endif
 
 // +--------------------------------------------------------------+
@@ -85,7 +97,11 @@ void PrintNumbers(VarArray* array)
 // +--------------------------------------------------------------+
 // |                             Main                             |
 // +--------------------------------------------------------------+
+#if BUILD_WITH_SOKOL
+int MyMain()
+#else
 int main()
+#endif
 {
 	MyPrint("Running tests...\n");
 	
@@ -367,37 +383,96 @@ int main()
 	// +==============================+
 	// |      RayLib/Box2D Tests      |
 	// +==============================+
-	#if BUILD_WITH_BOX2D
-	InitBox2DTest();
-	#endif
-	#if BUILD_WITH_RAYLIB
 	{
-		InitWindow(800, 600, "Tests (Pigglen)");
-		SetWindowMinSize(400, 200);
-		SetWindowState(FLAG_WINDOW_RESIZABLE);
-		SetTargetFPS(60);
-		while (!WindowShouldClose())
+		#if BUILD_WITH_BOX2D
+		InitBox2DTest();
+		#endif
+		#if BUILD_WITH_RAYLIB
 		{
-			int windowWidth = GetRenderWidth();
-			int windowHeight = GetRenderHeight();
-			BeginDrawing();
-			ClearBackground(RAYWHITE);
-			const char* textStr = "Congrats! You created your first window!";
-			const int textSize = 20;
-			int textWidth = MeasureText(textStr, textSize);
-			DrawText(textStr, windowWidth/2 - textWidth/2, windowHeight/2 - textSize/2, textSize, LIGHTGRAY);
-			
-			#if BUILD_WITH_BOX2D
-			UpdateBox2DTest();
-			RenderBox2DTest();
-			#endif
-			
-			EndDrawing();
+			InitWindow(800, 600, "Tests (Pigglen)");
+			SetWindowMinSize(400, 200);
+			SetWindowState(FLAG_WINDOW_RESIZABLE);
+			SetTargetFPS(60);
+			while (!WindowShouldClose())
+			{
+				int windowWidth = GetRenderWidth();
+				int windowHeight = GetRenderHeight();
+				BeginDrawing();
+				ClearBackground(RAYWHITE);
+				const char* textStr = "Congrats! You created your first window!";
+				const int textSize = 20;
+				int textWidth = MeasureText(textStr, textSize);
+				DrawText(textStr, windowWidth/2 - textWidth/2, windowHeight/2 - textSize/2, textSize, LIGHTGRAY);
+				
+				#if BUILD_WITH_BOX2D
+				UpdateBox2DTest();
+				RenderBox2DTest();
+				#endif
+				
+				EndDrawing();
+			}
+			CloseWindow();
 		}
-		CloseWindow();
+		#endif
 	}
-	#endif
 	
 	MyPrint("All tests completed successfully!");
 	return 0;
 }
+
+#if BUILD_WITH_SOKOL
+sg_pass_action sokolPassAction;
+
+void AppInit(void)
+{
+	sg_setup(&(sg_desc){
+		.environment = sglue_environment(),
+		.logger.func = slog_func,
+	});
+	sokolPassAction = (sg_pass_action){
+		.colors[0] = {
+			.load_action = SG_LOADACTION_CLEAR,
+			.clear_value = { 1.0f, 0.0f, 0.0f, 1.0f }
+		}
+	};
+}
+
+void AppFrame(void)
+{
+	float newGreen = sokolPassAction.colors[0].clear_value.g + 0.01f;
+	sokolPassAction.colors[0].clear_value.g = (newGreen > 1.0f) ? 0.0f : newGreen;
+	sg_begin_pass(&(sg_pass){ .action = sokolPassAction, .swapchain = sglue_swapchain() });
+	sg_end_pass();
+	sg_commit();
+}
+
+void AppCleanup(void)
+{
+	sg_shutdown();
+}
+
+void AppEvent(const sapp_event* event)
+{
+	UNUSED(event);
+	
+}
+
+
+sapp_desc sokol_main(int argc, char* argv[])
+{
+	UNUSED(argc);
+	UNUSED(argv);
+	MyMain();
+	return (sapp_desc){
+		.init_cb = AppInit,
+		.frame_cb = AppFrame,
+		.cleanup_cb = AppCleanup,
+		.event_cb = AppEvent,
+		.width = 400,
+		.height = 300,
+		.window_title = "Simple Sokol App!",
+		.icon.sokol_default = true,
+		.logger.func = slog_func,
+	};
+}
+#endif

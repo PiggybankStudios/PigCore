@@ -29,3 +29,12 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Fixup Required:** Compile `box2d.lib` in debug and release and add to `_lib_debug/` and `_lib_release/`. Copy `include/box2d/` folder contents into `third_party/box2d`
 **Required For:**
 * Building tests.exe with a little physics test (only if `BUILD_WITH_BOX2D` is enabled in `build_config.h`, also only renders if raylib is also enabled)
+
+## Sokol
+**URL(s):** [github.com/floooh/sokol](https://github.com/floooh/sokol)
+**Folder Name:** `sokol`
+**Download Required:** No, all necassary files are included in the repository
+**Current Version:** Commit `c1cc713a48669fb78c8fadc1a3cb9dd6c3bb97d3` from Dec 29 2024
+**Fixup Required:** Delete all non-essential files after cloning (everything  that's not soko_*.h)
+**Required For:**
+* Building tests.exe into a little graphical window application (only if `BUILD_WITH_SOKOL` is enabled in `build_config.h`)

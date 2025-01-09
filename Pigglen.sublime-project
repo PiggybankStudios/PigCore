@@ -38,6 +38,20 @@
 				"LICENSE",
 			],
 		},
+		{
+			"path": "third_party/sokol",
+			"name": "Sokol",
+			"folder_exclude_patterns": [
+				".github",
+				"tests",
+			],
+			"file_exclude_patterns": [
+				".gitignore",
+				".editorconfig",
+				"LICENSE",
+				"README.md",
+			],
+		},
 	],
 	"settings":
 	{
@@ -70,6 +84,7 @@
 			"BLUE",
 			"BROWN",
 			"BUILD_WITH_RAYLIB",
+			"BUILD_WITH_SOKOL",
 			"CAMERA_CUSTOM",
 			"CAMERA_FIRST_PERSON",
 			"CAMERA_FREE",
