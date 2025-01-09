@@ -35,10 +35,21 @@ Description:
 #include "third_party/box2d/box2d.h"
 #endif
 #if BUILD_WITH_SOKOL
+#if TARGET_IS_WINDOWS
 #define SOKOL_D3D11
+#elif TARGET_IS_LINUX
+#define SOKOL_GLCORE
+#endif
 #define SOKOL_IMPL
 #include "third_party/sokol/sokol_gfx.h"
+#if TARGET_IS_LINUX
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
+#endif
 #include "third_party/sokol/sokol_app.h"
+#if TARGET_IS_LINUX
+#pragma clang diagnostic pop
+#endif
 #include "third_party/sokol/sokol_log.h"
 #include "third_party/sokol/sokol_glue.h"
 // #include "dbgui/dbgui.h"

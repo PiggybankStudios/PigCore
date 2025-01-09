@@ -186,6 +186,9 @@ if "%BUILD_WITH_BOX2D%"=="1" (
 	set tests_cl_args=%tests_cl_args% box2d.lib
 )
 set tests_clang_args=%common_clang_flags% -o %tests_bin_path% ../%tests_source_path% %common_clang_ld_flags%
+if "%BUILD_WITH_SOKOL%"=="1" (
+	set tests_clang_args=%tests_clang_args% -lX11 -lXi -lGL -ldl -lXcursor
+)
 if "%BUILD_TESTS%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo.
