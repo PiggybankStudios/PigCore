@@ -47,7 +47,6 @@ Description:
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
-Arena* scratchArenas[2] = ZEROED;
 RandomSeries* mainRandom = nullptr;
 
 // +--------------------------------------------------------------+
@@ -148,7 +147,7 @@ int main()
 	// |     Scratch Arena Tests      |
 	// +==============================+
 	#if 1
-	InitScratchArenasVirtual(Megabytes(2));
+	InitScratchArenasVirtual(Gigabytes(4));
 	#else
 	Arena scratch1 = ZEROED;
 	InitArenaStackVirtual(&scratch1, Gigabytes(4));

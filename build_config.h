@@ -42,10 +42,10 @@ Description:
 // | Optional Libraries/Frameworks |
 // +===============================+
 // Enables tests.exe being linked with raylib.lib and it's required libraries
-#define BUILD_WITH_RAYLIB 0
+#define BUILD_WITH_RAYLIB 1
 // Enables tests.exe being linked with box2d.lib and it's required libraries
-#define BUILD_WITH_BOX2D 0
+#define BUILD_WITH_BOX2D 1
 // Enables tests.exe using sokol header files (NOTE: We don't actually need to link against anything in the build.bat, so this could just be a regular define outside build_config.h)
-#define BUILD_WITH_SOKOL 1
+#define BUILD_WITH_SOKOL 0
 
 #endif //  _BUILD_CONFIG_H

@@ -37,8 +37,7 @@ void DebugBox2d_DrawPolygon(const b2Vec2* vertices, int vertexCount, b2HexColor 
 void DebugBox2d_DrawSolidPolygon(b2Transform transform, const b2Vec2* vertices, int vertexCount, float radius, b2HexColor color, void* context)
 {
 	// static int a = 0; MyPrint("DrawSolidPolygon[%d]", a++);
-	Arena* scratch = scratchArenas[0];
-	uxx scratchMark = ArenaGetMark(scratch);
+	ScratchBegin(scratch);
 	if (vertexCount > 0)
 	{
 		Vector2* convertedVertices = (Vector2*)AllocMem(scratch, sizeof(Vector2) * vertexCount);
@@ -53,7 +52,7 @@ void DebugBox2d_DrawSolidPolygon(b2Transform transform, const b2Vec2* vertices, 
 		}
 		DrawTriangleFan(convertedVertices, vertexCount, RaylibColorFromB2HexColor(color));
 	}
-	ArenaResetToMark(scratch, scratchMark);
+	ScratchEnd(scratch);
 }
 
 void DebugBox2d_DrawCircle(b2Vec2 center, float radius, b2HexColor color, void* context)
