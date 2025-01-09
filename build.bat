@@ -58,13 +58,13 @@ if "%BUILD_WINDOWS%"=="1" ( echo VsDevCmd.bat took %vsdevcmd_elapsed_seconds_par
 :: /experimental:c11atomics = Enables _Atomic types
 set common_cl_flags=/FC /nologo /W4 /WX /std:clatest /experimental:c11atomics
 :: -fdiagnostics-absolute-paths = Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
-:: -std=c2x = ?
+:: -std=gnu2x = Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
 :: NOTE: Clang Warning Options: https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
 :: -Wall = This enables all the warnings about constructions that some users consider questionable, and that are easy to avoid (or modify to prevent the warning), even in conjunction with macros.
 :: -Wextra = This enables some extra warning flags that are not enabled by -Wall.
 :: -Wshadow = Warn whenever a local variable or type declaration shadows another variable, parameter, type, class member (in C++), or instance variable (in Objective-C) or whenever a built-in function is shadowed
 :: -Wimplicit-fallthrough = Must use [[fallthrough]] on a case label that falls through to the next case
-set common_clang_flags=-fdiagnostics-absolute-paths -std=c2x -Wall -Wextra -Wshadow -Wimplicit-fallthrough
+set common_clang_flags=-fdiagnostics-absolute-paths -std=gnu2x -Wall -Wextra -Wshadow -Wimplicit-fallthrough
 :: /wd4130 = Logical operation on address of string constant [W4] TODO: Should we re-enable this one? Don't know any scenarios where I want to do this
 :: /wd4201 = Nonstandard extension used: nameless struct/union [W4] TODO: Should we re-enable this restriction for ANSI compatibility?
 :: /wd4324 = Structure was padded due to __declspec[align[]] [W4]

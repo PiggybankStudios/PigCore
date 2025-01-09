@@ -44,7 +44,7 @@ Description:
 // +--------------------------------------------------------------+
 // |                  Determine TARGET Platform                   |
 // +--------------------------------------------------------------+
-#ifdef __linux__
+#if (defined(__linux__) || defined(__unix__))
 #define TARGET_IS_LINUX 1
 #else
 #define TARGET_IS_LINUX 0

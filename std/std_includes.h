@@ -35,6 +35,7 @@ Descriptions:
 	#include <unistd.h>
 	// Gives us mmap
 	#include <sys/mman.h>
+	#include <errno.h>
 #endif
 #if COMPILER_IS_MSVC
 	#pragma warning(push)

@@ -13,24 +13,7 @@ Description:
 #include "std/std_includes.h"
 #include "struct/struct_string.h"
 #include "mem/mem_scratch.h"
-
-#if TARGET_IS_WINDOWS
-const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
-{
-	switch (windowsErrorCode)
-	{
-		case ERROR_FILE_NOT_FOUND:    return "ERROR_FILE_NOT_FOUND";    //2
-		case ERROR_FILE_EXISTS:       return "ERROR_FILE_EXISTS";       //80
-		case ERROR_ALREADY_EXISTS:    return "ERROR_ALREADY_EXISTS";    //183
-		case ERROR_SHARING_VIOLATION: return "ERROR_SHARING_VIOLATION"; //?
-		case ERROR_PIPE_BUSY:         return "ERROR_PIPE_BUSY";         //?
-		case ERROR_ACCESS_DENIED:     return "ERROR_ACCESS_DENIED";     //?
-		case ERROR_DIRECTORY:         return "ERROR_DIRECTORY";         //267
-		// default: return (printUnknownValue ? TempPrint("(0x%08X)", windowsErrorCode) : "UNKNOWN"); //TODO: Add this option back in once we have PrintInArena function!
-		default: return UNKNOWN_STR;
-	}
-}
-#endif
+#include "os/os_error.h"
 
 // +--------------------------------------------------------------+
 // |                          Full Path                           |
@@ -291,7 +274,7 @@ bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut
 	// }
 	#else
 	AssertMsg(false, "OsIterFileStep does not support the current platform yet!");
-	result.finished = true;
+	fileIter->finished = true;
 	#endif
 	
 	return false;

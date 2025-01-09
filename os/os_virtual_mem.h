@@ -14,6 +14,7 @@ Description:
 #include "base/base_macros.h"
 #include "base/base_assert.h"
 #include "std/std_includes.h"
+#include "os/os_error.h"
 
 uxx OsGetMemoryPageSize()
 {
@@ -66,23 +67,22 @@ void* OsReserveMemory(uxx numBytes)
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
+		// WSL Ubuntu Problems with mmap? https://github.com/microsoft/WSL/issues/658
 		// https://unix.stackexchange.com/questions/405883/can-an-application-explicitly-commit-and-decommit-memory
 		// It seems like we can't force the application to commit any of this memory. Writing to pages automatically commits them.
 		// That's not the end of the world but it is a difference in behavior
 		// TODO: Maybe we can use mprotect? Do we need to calling code to manage the protection since it knows the size of the reserved memory?
+		//NOTE: If you get MAP_ANONYMOUS is undefined, try using -std=gnu11 instead of something like -std=c11
 		result = mmap(
 			nullptr, //addr
 			numBytes, //length
 			PROT_READ|PROT_WRITE, //prot
-			#ifdef MAP_ANONYMOUS //TODO: Why is MAP_ANONYMOUS not available in Ubunutu Clang in WSL?
-			MAP_ANONYMOUS |
-			#endif
-			MAP_PRIVATE,
+			MAP_ANONYMOUS | MAP_PRIVATE, //flags
 			-1, //fd,
 			0 //offset
 		);
-		if (result != nullptr) { Assert((uxx)result % pageSize == 0); }
 		Assert(result != MAP_FAILED);
+		if (result != nullptr && result != MAP_FAILED) { Assert((uxx)result % pageSize == 0); }
 	}
 	#else
 	AssertMsg(false, "OsReserveMemory is not implemented for the current TARGET!");

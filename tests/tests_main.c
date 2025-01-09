@@ -89,7 +89,10 @@ int main()
 {
 	MyPrint("Running tests...\n");
 	
-	#if 1
+	// +==============================+
+	// |  OS and Compiler Printouts   |
+	// +==============================+
+	#if 0
 	{
 		#if COMPILER_IS_MSVC
 		MyPrint("Compiled by MSVC");
@@ -112,6 +115,9 @@ int main()
 	}
 	#endif
 	
+	// +==============================+
+	// |         Basic Arenas         |
+	// +==============================+
 	#if 1
 	Arena stdHeap = ZEROED;
 	InitArenaStdHeap(&stdHeap);
@@ -122,8 +128,11 @@ int main()
 	InitArenaBuffer(&bufferArena, arenaBuffer1, ArrayCount(arenaBuffer1));
 	#endif
 	
+	// +==============================+
+	// |     Scratch Arena Tests      |
+	// +==============================+
 	#if 1
-	InitScratchArenasVirtual(Gigabytes(4));
+	InitScratchArenasVirtual(Megabytes(2));
 	#else
 	Arena scratch1 = ZEROED;
 	InitArenaStackVirtual(&scratch1, Gigabytes(4));
@@ -133,6 +142,9 @@ int main()
 	scratchArenas[1] = &scratch2;
 	#endif
 	
+	// +==============================+
+	// |      RandomSeries Tests      |
+	// +==============================+
 	#if 1
 	RandomSeries random;
 	InitRandomSeriesDefault(&random);
@@ -140,6 +152,9 @@ int main()
 	mainRandom = &random;
 	#endif
 	
+	// +==============================+
+	// |         Arena Tests          |
+	// +==============================+
 	#if 0
 	{
 		u32* allocatedInt1 = AllocMem(&stdHeap, sizeof(u32));
@@ -188,6 +203,9 @@ int main()
 	MTLCreateSystemDefaultDevice();
 	#endif
 	
+	// +==============================+
+	// |        VarArray Tests        |
+	// +==============================+
 	#if 0
 	{
 		VarArray array1;
@@ -248,7 +266,10 @@ int main()
 	}
 	#endif
 	
-	#if 1
+	// +==============================+
+	// |          File Tests          |
+	// +==============================+
+	#if 0
 	{
 		ScratchBegin(scratch);
 		
@@ -343,10 +364,12 @@ int main()
 	}
 	#endif
 	
+	// +==============================+
+	// |      RayLib/Box2D Tests      |
+	// +==============================+
 	#if BUILD_WITH_BOX2D
 	InitBox2DTest();
 	#endif
-	
 	#if BUILD_WITH_RAYLIB
 	{
 		InitWindow(800, 600, "Tests (Pigglen)");
