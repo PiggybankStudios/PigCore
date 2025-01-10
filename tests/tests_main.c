@@ -24,6 +24,8 @@ Description:
 #include "base/base_macros.h"
 #include "std/std_includes.h"
 #include "std/std_printf.h"
+#include "mem/mem_arena.h"
+#include "mem/mem_scratch.h"
 #else
 #include "base/base_all.h"
 #include "std/std_all.h"
@@ -161,20 +163,25 @@ int main()
 	// +==============================+
 	// |         Basic Arenas         |
 	// +==============================+
-	#if !TARGET_IS_WASM
+	#if TARGET_IS_WASM
+	Arena wasmMemory = ZEROED;
+	InitArenaStackWasm(&wasmMemory);
+	#else
 	Arena stdHeap = ZEROED;
 	InitArenaStdHeap(&stdHeap);
 	Arena stdAlias = ZEROED;
 	InitArenaAlias(&stdAlias, &stdHeap);
+	#endif
 	u8 arenaBuffer1[256] = ZEROED;
 	Arena bufferArena = ZEROED;
 	InitArenaBuffer(&bufferArena, arenaBuffer1, ArrayCount(arenaBuffer1));
-	#endif
 	
 	// +==============================+
 	// |     Scratch Arena Tests      |
 	// +==============================+
-	#if !TARGET_IS_WASM
+	#if TARGET_IS_WASM
+	InitScratchArenas(Megabytes(256), &wasmMemory);
+	#else
 	InitScratchArenasVirtual(Gigabytes(4));
 	#endif
 	
@@ -193,6 +200,7 @@ int main()
 	// +==============================+
 	#if 0
 	{
+		#if !TARGET_IS_WASM
 		u32* allocatedInt1 = AllocMem(&stdHeap, sizeof(u32));
 		MyPrint("allocatedInt1: %p", allocatedInt1);
 		PrintArena(&stdHeap);
@@ -204,6 +212,7 @@ int main()
 		u32* allocatedInt3 = AllocMem(&stdAlias, sizeof(u32));
 		MyPrint("allocatedInt3: %p", allocatedInt3);
 		PrintArena(&stdHeap);
+		#endif
 		
 		u32* allocatedInt4 = AllocMem(&bufferArena, sizeof(u32));
 		MyPrint("allocatedInt4: %p", allocatedInt4);
@@ -498,6 +507,13 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.icon.sokol_default = true,
 		.logger.func = slog_func,
 	};
+}
+#endif
+
+#if TARGET_IS_WASM
+WASM_EXPORTED_FUNC(int, Init)
+{
+	return main();
 }
 #endif
 

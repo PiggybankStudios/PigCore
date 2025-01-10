@@ -40,7 +40,16 @@ thread_local Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
 Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
 #endif
 
-//NOTE: This needs to be called once for each thread!
+//NOTE: Init needs to be called once for each thread!
+
+void InitScratchArenas(uxx stackSizePerArena, Arena* sourceArena)
+{
+	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
+	{
+		InitArenaStack(&scratchArenasArray[aIndex], stackSizePerArena, sourceArena);
+	}
+}
+//TODO: Add an option for StackPaged once that's implemented
 void InitScratchArenasVirtual(uxx virtualSizePerArena)
 {
 	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
@@ -48,7 +57,6 @@ void InitScratchArenasVirtual(uxx virtualSizePerArena)
 		InitArenaStackVirtual(&scratchArenasArray[aIndex], virtualSizePerArena);
 	}
 }
-//TODO: Add other options here once we have other arena stack types implemented!
 
 typedef struct ScratchArena ScratchArena;
 struct ScratchArena

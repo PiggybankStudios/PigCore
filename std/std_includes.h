@@ -23,10 +23,10 @@ Descriptions:
 #include <stddef.h>
 #include <stdarg.h>
 #include <assert.h>
+#include <string.h>
 
 #if !TARGET_IS_WASM
 #include <math.h>
-#include <string.h>
 #include <float.h>
 #endif
 #if (TARGET_IS_WINDOWS || TARGET_IS_WEB)

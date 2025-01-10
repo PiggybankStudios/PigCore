@@ -14,11 +14,9 @@ Description:
 #include "base/base_typedefs.h" //required by mem_arena.h and mem_scratch.h
 #include "base/base_macros.h" //required by mem_arena.h and mem_scratch.h
 #include "base/base_assert.h" //required by mem_arena.h and mem_scratch.h
-
+#include "base/base_math.h" //required by mem_arena.h
 #include "std/std_malloc.h" //required by mem_arena.h
 #include "std/std_memset.h" //required by mem_arena.h
-#include "std/std_math_ex.h" //required by mem_arena.h
-
 #include "os/os_virtual_mem.h" //required by mem_arena.h
 
 #include "mem/mem_arena.h"

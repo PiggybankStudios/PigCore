@@ -6,6 +6,15 @@ Description:
 	** Holds the implementations for functions like malloc(), realloc(), and free()
 */
 
+//TODO: We should probably use something like dlmalloc (or our own allocator) to
+//      manage the growable memory block that is provided to us as a WASM module.
+//      For now we simply assert that freeing is not possible, and malloc always
+//      just grows the memory. The application is expected to only call malloc
+//      and manage the memory itself. The problem is that malloc doesn't obviously
+//      guarantee that the returned pointer is going to be right after the previous
+//      allocated chunk, so the guarantees of a growing block of memory are a little
+//      clunky to rely upon. And of course, if anyone calls free() we assert.
+
 void* malloc(size_t numBytes)
 {
 	return WasmMemoryAllocate(numBytes);

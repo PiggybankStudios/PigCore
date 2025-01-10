@@ -14,6 +14,7 @@ Description:
 #include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
+#include "base/base_math.h"
 
 #include "std/std_includes.h" //required by base_assert.h
 

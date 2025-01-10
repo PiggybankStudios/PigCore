@@ -12,19 +12,15 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
+#include "base/base_math.h"
 #include "std/std_malloc.h"
 #include "std/std_memset.h"
-#include "std/std_math_ex.h"
 #include "os/os_virtual_mem.h"
 
 #ifndef MEM_ARENA_DEBUG_NAMES
 #define MEM_ARENA_DEBUG_NAMES DEBUG_BUILD
 #endif
 
-//TODO: Flag AllowFreeWithoutSize
-//TODO: Flag AssertOnFailedAlloc
-//TODO: Flag SingleAlloc
-//TODO: Flag AllowNullptrFree
 //TODO: MaxUsed limitation
 
 #define ALLOC_FUNC_DEF(functionName)   void* functionName(uxx numBytes)
@@ -57,6 +53,7 @@ enum ArenaType
 	ArenaType_Stack,
 	ArenaType_StackPaged,
 	ArenaType_StackVirtual,
+	ArenaType_StackWasm,
 	// ArenaType_FreeListArray, //TODO: We could have an arena that only accepts a particular size of allocations and therefore is faster at finding/freeing/verifying/etc.
 	ArenaType_Count,
 };
@@ -75,6 +72,7 @@ const char* GetArenaTypeStr(ArenaType arenaType)
 		case ArenaType_Stack:         return "Stack";
 		case ArenaType_StackPaged:    return "StackPaged";
 		case ArenaType_StackVirtual:  return "StackVirtual";
+		case ArenaType_StackWasm:     return "StackWasm";
 		default: return UNKNOWN_STR;
 	};
 }
@@ -101,6 +99,8 @@ struct Arena
 	ReallocFunc_f* reallocFunc;
 	FreeFunc_f* freeFunc;
 };
+
+NODISCARD void* AllocMem(Arena* arena, uxx numBytes);
 
 // +--------------------------------------------------------------+
 // |                   Initialization Functions                   |
@@ -141,6 +141,20 @@ void InitArenaBuffer(Arena* arenaOut, void* bufferPntr, uxx bufferSize)
 	arenaOut->size = bufferSize;
 }
 
+void InitArenaStack(Arena* arenaOut, uxx stackSize, Arena* sourceArena)
+{
+	NotNull(arenaOut);
+	NotNull(sourceArena);
+	ClearPointer(arenaOut);
+	arenaOut->type = ArenaType_Stack;
+	#if MEM_ARENA_DEBUG_NAMES
+	arenaOut->debugName = "[stack]";
+	#endif
+	arenaOut->mainPntr = AllocMem(sourceArena, stackSize);
+	NotNull(arenaOut->mainPntr);
+	arenaOut->size = stackSize;
+}
+
 void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize)
 {
 	NotNull(arenaOut);
@@ -162,6 +176,25 @@ void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize)
 	arenaOut->committed = 0;
 }
 
+#if TARGET_IS_WASM
+void InitArenaStackWasm(Arena* arenaOut)
+{
+	NotNull(arenaOut);
+	ClearPointer(arenaOut);
+	arenaOut->type = ArenaType_StackWasm;
+	#if MEM_ARENA_DEBUG_NAMES
+	arenaOut->debugName = "[stack_wasm]";
+	#endif
+	//NOTE: With our own std library implementation, malloc works a little differently, see wasm_std_malloc.c
+	u8* heapBeginning = (u8*)MyMalloc(1);
+	NotNull(heapBeginning);
+	arenaOut->mainPntr = heapBeginning;
+	//TODO: Technically we have a bit less than this amount since some amount of stuff was probably already allocated before this arena was initialized
+	arenaOut->size = WASM_MEMORY_MAX_SIZE;
+	arenaOut->committed = 0;
+}
+#endif
+
 // +--------------------------------------------------------------+
 // |                      Capability Queries                      |
 // +--------------------------------------------------------------+
@@ -176,9 +209,10 @@ bool CanArenaCheckPntrFromArena(const Arena* arena)
 		case ArenaType_Funcs:        return false;
 		// case ArenaType_Generic:      return true;
 		// case ArenaType_GenericPaged: return true;
-		// case ArenaType_Stack:        return true;
+		case ArenaType_Stack:        return true;
 		// case ArenaType_StackPaged:   return true;
 		case ArenaType_StackVirtual: return true;
+		case ArenaType_StackWasm:    return true;
 		default: return false;
 	}
 }
@@ -194,9 +228,10 @@ bool CanArenaGetSize(const Arena* arena)
 		case ArenaType_Funcs:        return false;
 		// case ArenaType_Generic:      return true;
 		// case ArenaType_GenericPaged: return true;
-		// case ArenaType_Stack:        return false;
+		case ArenaType_Stack:        return false;
 		// case ArenaType_StackPaged:   return false;
 		case ArenaType_StackVirtual: return false;
+		case ArenaType_StackWasm:    return false;
 		default: return false;
 	}
 }
@@ -207,14 +242,15 @@ bool CanArenaAllocAligned(const Arena* arena)
 	switch (arena->type)
 	{
 		case ArenaType_Alias: DebugNotNull(arena->sourceArena); return CanArenaAllocAligned(arena->sourceArena);
-		case ArenaType_StdHeap: return true;
-		case ArenaType_Buffer: return true;
-		case ArenaType_Funcs: return false;
+		case ArenaType_StdHeap:      return true;
+		case ArenaType_Buffer:       return true;
+		case ArenaType_Funcs:        return false;
 		// case ArenaType_Generic: return true;
 		// case ArenaType_GenericPaged: return true;
-		// case ArenaType_Stack: return true;
+		case ArenaType_Stack:        return true;
 		// case ArenaType_StackPaged: return true;
 		case ArenaType_StackVirtual: return true;
+		case ArenaType_StackWasm:    return true;
 		default: return false;
 	}
 }
@@ -230,9 +266,10 @@ bool CanArenaFree(const Arena* arena)
 		case ArenaType_Funcs:        return true;
 		// case ArenaType_Generic:      return true;
 		// case ArenaType_GenericPaged: return true;
-		// case ArenaType_Stack:        return true;
-		// case ArenaType_StackPaged:   return true;
+		case ArenaType_Stack:        return false;
+		// case ArenaType_StackPaged:   return false;
 		case ArenaType_StackVirtual: return false;
+		case ArenaType_StackWasm:    return false;
 		default: return false;
 	}
 }
@@ -248,9 +285,10 @@ bool CanArenaResetToMark(const Arena* arena)
 		case ArenaType_Funcs:        return false;
 		// case ArenaType_Generic:      return true;
 		// case ArenaType_GenericPaged: return true;
-		// case ArenaType_Stack:        return false;
-		// case ArenaType_StackPaged:   return false;
+		case ArenaType_Stack:        return true;
+		// case ArenaType_StackPaged:   return true;
 		case ArenaType_StackVirtual: return true;
+		case ArenaType_StackWasm:    return true;
 		default: return false;
 	}
 }
@@ -266,9 +304,10 @@ bool CanArenaSoftGrow(const Arena* arena)
 		case ArenaType_Funcs:        return false;
 		// case ArenaType_Generic:      return true;
 		// case ArenaType_GenericPaged: return true;
-		// case ArenaType_Stack:        return false;
-		// case ArenaType_StackPaged:   return false;
+		case ArenaType_Stack:        return true;
+		// case ArenaType_StackPaged:   return true;
 		case ArenaType_StackVirtual: return true;
+		case ArenaType_StackWasm:    return true;
 		default: return false;
 	}
 }
@@ -284,9 +323,10 @@ bool CanArenaVerifyIntegrity(const Arena* arena)
 		case ArenaType_Funcs:        return false;
 		// case ArenaType_Generic:      return true;
 		// case ArenaType_GenericPaged: return true;
-		// case ArenaType_Stack:        return true;
+		case ArenaType_Stack:        return true;
 		// case ArenaType_StackPaged:   return true;
 		case ArenaType_StackVirtual: return true;
+		case ArenaType_StackWasm:    return true;
 		default: return false;
 	}
 }
@@ -294,6 +334,8 @@ bool CanArenaVerifyIntegrity(const Arena* arena)
 // +--------------------------------------------------------------+
 // |            Arena IsPntrFromArena Implementations             |
 // +--------------------------------------------------------------+
+//TODO: This may be a bit misleading. If one arena sources it's memory from another one,
+//      they will both say the allocation is from them.
 bool IsPntrFromArena(const Arena* arena, const void* allocPntr)
 {
 	DebugNotNull(arena);
@@ -304,9 +346,10 @@ bool IsPntrFromArena(const Arena* arena, const void* allocPntr)
 		case ArenaType_Buffer: return IsPntrWithin(arena->mainPntr, arena->size, allocPntr);
 		// case ArenaType_Generic:      //TODO: Implement me!
 		// case ArenaType_GenericPaged: //TODO: Implement me!
-		// case ArenaType_Stack:        //TODO: Implement me!
+		case ArenaType_Stack: return IsPntrWithin(arena->mainPntr, arena->size, allocPntr);
 		// case ArenaType_StackPaged:   //TODO: Implement me!
 		case ArenaType_StackVirtual: return IsPntrWithin(arena->mainPntr, arena->size, allocPntr);
+		case ArenaType_StackWasm: return IsPntrWithin(arena->mainPntr, arena->size, allocPntr);
 		default: return false;
 	}
 }
@@ -434,10 +477,26 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 		// +==============================+
 		// |   ArenaType_Stack AllocMem   |
 		// +==============================+
-		// case ArenaType_Stack:
-		// {
-		// 	Unimplemented(); //TODO: Implement me!
-		// } break;
+		case ArenaType_Stack:
+		{
+			DebugNotNull(arena->mainPntr);
+			
+			uxx currentMisalignment = (alignment > 1) ? (uxx)((size_t)((u8*)arena->mainPntr + arena->used) % alignment) : 0;
+			uxx alignmentBytesNeeded = (currentMisalignment > 0) ? (alignment - currentMisalignment) : 0;
+			uxx alignedNumBytes = numBytes + alignmentBytesNeeded;
+			
+			if (arena->used + alignedNumBytes <= arena->size)
+			{
+				if (arena->used + alignedNumBytes <= arena->size)
+				{
+					result = (void*)((u8*)arena->mainPntr + arena->used);
+					arena->used += alignedNumBytes;
+					IncrementUXX(arena->allocCount);
+				}
+				else if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in ArenaType_Stack Arena!"); }
+			}
+			else if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in ArenaType_Stack Arena!"); }
+		} break;
 		
 		// +===============================+
 		// | ArenaType_StackPaged AllocMem |
@@ -477,6 +536,38 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 			else if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in StackVirtual Arena!"); }
 		} break;
 		
+		// +==============================+
+		// | ArenaType_StackWasm AllocMem |
+		// +==============================+
+		case ArenaType_StackWasm:
+		{
+			DebugNotNull(arena->mainPntr);
+			uxx osMemPageSize = OsGetMemoryPageSize();
+			Assert(osMemPageSize > 0);
+			
+			uxx currentMisalignment = (alignment > 1) ? (uxx)((size_t)((u8*)arena->mainPntr + arena->used) % alignment) : 0;
+			uxx alignmentBytesNeeded = (currentMisalignment > 0) ? (alignment - currentMisalignment) : 0;
+			uxx alignedNumBytes = numBytes + alignmentBytesNeeded;
+			
+			if (arena->used + alignedNumBytes <= arena->size)
+			{
+				if (arena->used + alignedNumBytes > arena->committed)
+				{
+					uxx numNewBytesNeeded = (arena->used + alignedNumBytes) - arena->committed;
+					u8* newCommittedArea = (u8*)MyMalloc(numNewBytesNeeded);
+					AssertMsg(newCommittedArea != nullptr, "Ran out of WASM memory! Stdlib malloc() return nullptr!");
+					if (newCommittedArea == nullptr) { return nullptr; }
+					AssertMsg(newCommittedArea == arena->mainPntr + arena->committed, "WASM malloc did not return next chunk of memory sequentially! Someone else must have called malloc somewhere! You can only have one StackWasm arena active at a time and no-one can call std malloc besides that one arena!");
+					arena->committed += numNewBytesNeeded;
+				}
+				
+				result = (void*)((u8*)arena->mainPntr + arena->used);
+				arena->used += alignedNumBytes;
+				IncrementUXX(arena->allocCount);
+			}
+			else if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in ArenaType_StackWasm Arena!"); }
+		} break;
+		
 		default:
 		{
 			AssertMsg(false, "Arena type does not have an AllocMem implementation!");
@@ -485,7 +576,7 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 	
 	return result;
 }
-NODISCARD void* AllocMem(Arena* arena, uxx numBytes)
+NODISCARD void* AllocMem(Arena* arena, uxx numBytes) //pre-declared at top of file
 {
 	return AllocMemAligned(arena, numBytes, 0);
 }
@@ -582,10 +673,21 @@ void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 		// +=============================+
 		// |   ArenaType_Stack FreeMem   |
 		// +=============================+
-		// case ArenaType_Stack:
-		// {
-		// 	Unimplemented(); //TODO: Implement me!
-		// } break;
+		case ArenaType_Stack:
+		{
+			DebugNotNull(arena->mainPntr);
+			AssertMsg(allocSize > 0, "Stacks do not allowing freeing unless you know the size of the allocation!");
+			Assert(IsSizedPntrWithin(arena->mainPntr, arena->size, allocPntr, allocSize));
+			// The only case we support freeing is if you have the size AND you are the last allocation on the stack!
+			// Even then you're not guaranteed to return to the same usage you had before allocating because alignment
+			// requirements might have added a bit on the front
+			if ((u8*)allocPntr == ((u8*)arena->mainPntr + arena->used - allocSize))
+			{
+				arena->used -= allocSize;
+				Decrement(arena->allocCount);
+			}
+			else { AssertMsg(false, "Stacks do not allow arbitrary freeing! You can only free the LAST thing on the stack!"); }
+		} break;
 		
 		// +==============================+
 		// | ArenaType_StackPaged FreeMem |
@@ -612,7 +714,26 @@ void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 				arena->used -= allocSize;
 				Decrement(arena->allocCount);
 			}
-			else { AssertMsg(false, "Stacks do not allow arbitrary freeing! You can only free the last thing on the stack IF you know the size!"); }
+			else { AssertMsg(false, "Stacks do not allow arbitrary freeing! You can only free the LAST thing on the stack!"); }
+		} break;
+		
+		// +==============================+
+		// | ArenaType_StackWasm FreeMem  |
+		// +==============================+
+		case ArenaType_StackWasm:
+		{
+			DebugNotNull(arena->mainPntr);
+			AssertMsg(allocSize > 0, "Stacks do not allowing freeing unless you know the size of the allocation!");
+			Assert(IsSizedPntrWithin(arena->mainPntr, arena->size, allocPntr, allocSize));
+			// The only case we support freeing is if you have the size AND you are the last allocation on the stack!
+			// Even then you're not guaranteed to return to the same usage you had before allocating because alignment
+			// requirements might have added a bit on the front
+			if ((u8*)allocPntr == ((u8*)arena->mainPntr + arena->used - allocSize))
+			{
+				arena->used -= allocSize;
+				Decrement(arena->allocCount);
+			}
+			else { AssertMsg(false, "Stacks do not allow arbitrary freeing! You can only free the LAST thing on the stack!"); }
 		} break;
 		
 		default:
@@ -734,6 +855,18 @@ NODISCARD void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSi
 		// 	Unimplemented(); //TODO: Implement me!
 		// } break;
 		
+		// +================================+
+		// | ArenaType_StackWasm ReallocMem |
+		// +================================+
+		// case ArenaType_StackWasm:
+		// {
+		// 	Unimplemented(); //TODO: Implement me!
+		// } break;
+		
+		default:
+		{
+			AssertMsg(false, "Arena type does not have a ReallocMem implementation!");
+		} break;
 	}
 	
 	return result;
@@ -753,10 +886,11 @@ NODISCARD uxx ArenaGetMark(Arena* arena)
 	switch (arena->type)
 	{
 		case ArenaType_Alias: DebugNotNull(arena->sourceArena); return ArenaGetMark(arena->sourceArena);
-		// case ArenaType_Stack: //TODO: Implement me!
+		case ArenaType_Stack: return arena->used;
 		// case ArenaType_StackPaged: //TODO: Implement me!
 		case ArenaType_StackVirtual: return arena->used;
-		default: Assert(false); return 0;
+		case ArenaType_StackWasm: return arena->used;
+		default: AssertMsg(false, "Arena type does not have a ArenaGetMark implementation!"); return 0;
 	}
 }
 void ArenaResetToMark(Arena* arena, uxx mark)
@@ -766,7 +900,11 @@ void ArenaResetToMark(Arena* arena, uxx mark)
 	switch (arena->type)
 	{
 		case ArenaType_Alias: DebugNotNull(arena->sourceArena); ArenaResetToMark(arena->sourceArena, mark); break;
-		// case ArenaType_Stack: //TODO: Implement me!
+		case ArenaType_Stack:
+		{
+			arena->used = mark;
+			if (mark == 0) { arena->allocCount = 0; }
+		} break;
 		// case ArenaType_StackPaged: //TODO: Implement me!
 		case ArenaType_StackVirtual:
 		{
@@ -774,7 +912,13 @@ void ArenaResetToMark(Arena* arena, uxx mark)
 			arena->used = mark;
 			if (mark == 0) { arena->allocCount = 0; }
 		} break;
-		default: Assert(false); break;
+		case ArenaType_StackWasm:
+		{
+			//NOTE: Memory usage for our WASM module is not actually going down. We can't ever really free memory in WASM
+			arena->used = mark;
+			if (mark == 0) { arena->allocCount = 0; }
+		} break;
+		default: AssertMsg(false, "Arena type does not have a ArenaResetToMark implementation!"); break;
 	}
 }
 

@@ -27,6 +27,9 @@ Description:
 #include "std/std_printf.h"
 #include "std/std_basic_math.h"
 #include "std/std_angles.h"
+
+#include "base/base_math.h" //required by std_math_ex.h
+
 #include "std/std_math_ex.h"
 
 #endif //  _STD_ALL_H

@@ -40,7 +40,7 @@ uxx OsGetMemoryPageSize()
 	#elif TARGET_IS_WASM
 	{
 		//This is the size of the allocation pages in the WASM memory model, and WASM doesn't support virtual memory afaik
-		return Kilobytes(64);
+		return WASM_MEMORY_PAGE_SIZE;
 	}
 	#else
 	AssertMsg(false, "OsGetMemoryPageSize does not support the current platform yet!");

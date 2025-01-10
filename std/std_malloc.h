@@ -23,6 +23,16 @@ Description:
 #define MyFree(pntr) free(pntr)
 
 // +--------------------------------------------------------------+
+// |               WebAssembly Malloc Only Routing                |
+// +--------------------------------------------------------------+
+#elif TARGET_IS_WASM
+
+#define MyMalloc(numBytes) malloc(numBytes)
+#define MyMallocType(numBytes) (type*)malloc(sizeof(type))
+#define MyRealloc(pntr, numBytes) realloc((pntr), (numBytes)) //This will assert if called!
+#define MyFree(pntr) free(pntr) //This will assert if called!
+
+// +--------------------------------------------------------------+
 // |                  Playdate pdrealloc Routing                  |
 // +--------------------------------------------------------------+
 #elif TARGET_IS_PLAYDATE
@@ -42,7 +52,7 @@ void _free_r(struct _reent* _REENT, void* ptr ) { if ( ptr != NULL ) pdrealloc(p
 // |                       Unhandled TARGET                       |
 // +--------------------------------------------------------------+
 #else
-#error This TARGET is not supported yet in std_memory.h! We must decide what to do will malloc/realloc/free calls!
+#error This TARGET is not supported yet in std_malloc.h! We must decide what to do will malloc/realloc/free calls!
 #endif
 
 #endif //  _STD_MEMORY_H
