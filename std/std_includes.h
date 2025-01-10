@@ -16,16 +16,19 @@ Descriptions:
 #include "base/base_compiler_check.h"
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <limits.h>
 #include <stddef.h>
+#include <stdarg.h>
+#include <assert.h>
+
+#if !TARGET_IS_WASM
 #include <math.h>
 #include <string.h>
-#include <stdarg.h>
 #include <float.h>
-// #include <assert.h> //TODO: Do we want this?
+#endif
 #if (TARGET_IS_WINDOWS || TARGET_IS_WEB)
 	#include <intrin.h>
 #endif
@@ -40,10 +43,8 @@ Descriptions:
 #if COMPILER_IS_MSVC
 	#pragma warning(push)
 	#pragma warning(disable: 5262) //error C5262: implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
-	#endif
 	// Gives us things like atomic_int type
 	#include <stdatomic.h>
-	#if COMPILER_IS_MSVC
 	#pragma warning(pop)
 #endif
 #if COMPILER_IS_MSVC
@@ -71,6 +72,7 @@ Descriptions:
 	#define Color Win32_Color
 	#endif
 	
+	//TODO: We probably want WIN32_LEAN_AND_MEAN
 	#include <windows.h>
 	
 	#if BUILD_WITH_RAYLIB

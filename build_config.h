@@ -15,9 +15,11 @@ Description:
 #define _BUILD_CONFIG_H
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 1
+#define BUILD_WINDOWS 0
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   1
+#define BUILD_LINUX   0
+// Build the WASM binary for operating as a webpage
+#define BUILD_WEB     1
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -37,6 +39,9 @@ Description:
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
 #define DUMP_PREPROCESSOR 0
+// After .wasm file(s) are generated, we will run wasm2wat on them to make a .wat
+// file (a text format of WebAssembly that is readable, mostly for debugging purposes)
+#define CONVERT_WASM_TO_WAT 1
 
 // +===============================+
 // | Optional Libraries/Frameworks |
@@ -46,6 +51,6 @@ Description:
 // Enables tests.exe being linked with box2d.lib and it's required libraries
 #define BUILD_WITH_BOX2D 0
 // Enables tests.exe using sokol header files (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL 1
+#define BUILD_WITH_SOKOL 0
 
 #endif //  _BUILD_CONFIG_H

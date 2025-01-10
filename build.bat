@@ -20,8 +20,10 @@ for /f "delims=" %%i in ('%extract_define% RUN_PIGGEN') do set RUN_PIGGEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_TESTS') do set BUILD_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% DUMP_PREPROCESSOR') do set DUMP_PREPROCESSOR=%%i
+for /f "delims=" %%i in ('%extract_define% CONVERT_WASM_TO_WAT') do set CONVERT_WASM_TO_WAT=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH_RAYLIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_BOX2D') do set BUILD_WITH_BOX2D=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL') do set BUILD_WITH_SOKOL=%%i
@@ -81,7 +83,17 @@ set common_clang_flags=%common_clang_flags% -Wno-switch
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths
 :: -lm = Include the math library (required for stuff like sinf, atan, etc.)
-set common_clang_flags=%common_clang_flags% -I "../%root%" -lm
+set linux_clang_flags=-lm -I "../%root%"
+:: --target=wasm32 = ?
+:: --no-standard-libraries = ?
+:: --no-standard-includes = ?
+:: -mbulk-memory = ?
+set wasm_clang_flags=--target=wasm32 --no-standard-libraries --no-standard-includes -mbulk-memory
+:: -Wl, = Pass the following argument(s) to the linker
+:: --allow-undefined = ?
+:: --no-entry = ?
+set wasm_clang_flags=%wasm_clang_flags% -Wl,--allow-undefined -Wl,--no-entry
+set wasm_clang_flags=%wasm_clang_flags% -I "../%root%" -I "../%root%/wasm/std/include"
 if "%DEBUG_BUILD%"=="1" (
 	REM /MDd = ?
 	REM /Od = Optimization level: Debug
@@ -108,7 +120,6 @@ if "%DEBUG_BUILD%"=="1" (
 :: -incremental:no = Suppresses warning about doing a full link when it can't find the previous .exe result. We don't need this when doing unity builds
 :: /LIBPATH = Add a library search path
 set common_ld_flags=-incremental:no
-set common_clang_ld_flags=
 
 if "%DEBUG_BUILD%"=="1" (
 	set common_ld_flags=%common_ld_flags% /LIBPATH:"%root%\third_party\_lib_debug"
@@ -138,7 +149,7 @@ set piggen_source_path=%root%/piggen/piggen_main.c
 set piggen_exe_path=piggen.exe
 set piggen_bin_path=piggen
 set piggen_cl_args=%common_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
-set piggen_clang_args=%common_clang_flags% -o %piggen_bin_path% ../%piggen_source_path% %common_clang_ld_flags%
+set piggen_clang_args=%common_clang_flags% %linux_clang_flags% -o %piggen_bin_path% ../%piggen_source_path%
 if "%BUILD_PIGGEN%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo.
@@ -167,6 +178,8 @@ if "%BUILD_PIGGEN%"=="1" (
 set tests_source_path=%root%/tests/tests_main.c
 set tests_exe_path=tests.exe
 set tests_bin_path=tests
+set tests_wasm_path=tests.wasm
+set tests_wat_path=tests.wat
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags%
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM raylib.lib   = ?
@@ -185,19 +198,23 @@ if "%BUILD_WITH_RAYLIB%"=="1" (
 if "%BUILD_WITH_BOX2D%"=="1" (
 	set tests_cl_args=%tests_cl_args% box2d.lib
 )
-set tests_clang_args=%common_clang_flags% -o %tests_bin_path% ../%tests_source_path% %common_clang_ld_flags%
+set tests_clang_args=%common_clang_flags% %linux_clang_flags% -o %tests_bin_path% ../%tests_source_path%
 if "%BUILD_WITH_SOKOL%"=="1" (
 	set tests_clang_args=%tests_clang_args% -lX11 -lXi -lGL -ldl -lXcursor
 )
+set tests_web_args=%common_clang_flags% %wasm_clang_flags% -o %tests_wasm_path% ../%tests_source_path%"
 if "%BUILD_TESTS%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo.
 		echo [Building tests for Windows...]
+		
 		del %tests_exe_path% > NUL 2> NUL
 		cl %tests_cl_args%
+		
 		if "%DUMP_PREPROCESSOR%"=="1" (
 			COPY main.i tests_preprocessed.i > NUL
 		)
+		
 		echo [Built tests for Windows!]
 	)
 	if "%BUILD_LINUX%"=="1" (
@@ -205,9 +222,29 @@ if "%BUILD_TESTS%"=="1" (
 		echo [Building tests for Linux...]
 		if not exist linux mkdir linux
 		pushd linux
+		
+		del %tests_bin_path% > NUL 2> NUL
 		wsl clang-18 %tests_clang_args%
+		
 		popd
 		echo [Built tests for Linux!]
+	)
+	if "%BUILD_WEB%"=="1" (
+		echo.
+		echo [Building tests for Web...]
+		if not exist web mkdir web
+		pushd web
+		
+		del %tests_wasm_path% > NUL 2> NUL
+		del %tests_wat_path% > NUL 2> NUL
+		clang %tests_web_args%
+		
+		if "%CONVERT_WASM_TO_WAT%"=="1" (
+			wasm2wat %tests_wasm_path% > %tests_wat_path%
+		)
+		
+		popd web
+		echo [Built tests for Web!]
 	)
 )
 

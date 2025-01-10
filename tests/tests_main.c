@@ -17,12 +17,21 @@ Description:
 
 #include "build_config.h"
 
+#include "base/base_compiler_check.h"
+
+#if TARGET_IS_WASM
+#include "base/base_typedefs.h"
+#include "base/base_macros.h"
+#include "std/std_includes.h"
+#include "std/std_printf.h"
+#else
 #include "base/base_all.h"
 #include "std/std_all.h"
 #include "os/os_all.h"
 #include "mem/mem_all.h"
 #include "struct/struct_all.h"
 #include "misc/misc_all.h"
+#endif
 
 #if BUILD_WITH_SOKOL && BUILD_WITH_RAYLIB
 #error SOKOL and RAYLIB are not meant to be enabled at the same time. Use one or the other!
@@ -52,18 +61,20 @@ Description:
 #endif
 #include "third_party/sokol/sokol_log.h"
 #include "third_party/sokol/sokol_glue.h"
-// #include "dbgui/dbgui.h"
 #endif
 
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
+#if !TARGET_IS_WASM
 RandomSeries* mainRandom = nullptr;
+#endif
 
 // +--------------------------------------------------------------+
 // |                      tests Source Files                      |
 // +--------------------------------------------------------------+
 #include "tests/tests_box2d.c"
+#include "tests/tests_wasm_std.c"
 
 // +--------------------------------------------------------------+
 // |                           Helpers                            |
@@ -118,7 +129,7 @@ int main()
 	// +==============================+
 	// |  OS and Compiler Printouts   |
 	// +==============================+
-	#if 0
+	#if 1
 	{
 		#if COMPILER_IS_MSVC
 		MyPrint("Compiled by MSVC");
@@ -138,13 +149,19 @@ int main()
 		#if TARGET_IS_OSX
 		MyPrint("Running on OSX");
 		#endif
+		#if TARGET_IS_WEB
+		MyPrint("Running on WEB");
+		#endif
+		#if TARGET_IS_ORCA
+		MyPrint("Running on ORCA");
+		#endif
 	}
 	#endif
 	
 	// +==============================+
 	// |         Basic Arenas         |
 	// +==============================+
-	#if 1
+	#if !TARGET_IS_WASM
 	Arena stdHeap = ZEROED;
 	InitArenaStdHeap(&stdHeap);
 	Arena stdAlias = ZEROED;
@@ -157,21 +174,14 @@ int main()
 	// +==============================+
 	// |     Scratch Arena Tests      |
 	// +==============================+
-	#if 1
+	#if !TARGET_IS_WASM
 	InitScratchArenasVirtual(Gigabytes(4));
-	#else
-	Arena scratch1 = ZEROED;
-	InitArenaStackVirtual(&scratch1, Gigabytes(4));
-	Arena scratch2 = ZEROED;
-	InitArenaStackVirtual(&scratch2, Gigabytes(4));
-	scratchArenas[0] = &scratch1;
-	scratchArenas[1] = &scratch2;
 	#endif
 	
 	// +==============================+
 	// |      RandomSeries Tests      |
 	// +==============================+
-	#if 1
+	#if !TARGET_IS_WASM
 	RandomSeries random;
 	InitRandomSeriesDefault(&random);
 	SeedRandomSeriesU64(&random, 42); //TODO: Actually seed the random number generator!
@@ -223,6 +233,10 @@ int main()
 		ArenaResetToMark(&scratch1, mark1);
 		PrintArena(&scratch1);
 	}
+	#endif
+	
+	#if TARGET_IS_WASM
+	RunWasmStdTests();
 	#endif
 	
 	#if TARGET_IS_OSX
@@ -485,4 +499,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.logger.func = slog_func,
 	};
 }
+#endif
+
+#if TARGET_IS_WASM
+#include "wasm/std/wasm_std_main.c"
 #endif

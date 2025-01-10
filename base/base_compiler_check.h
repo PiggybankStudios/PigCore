@@ -62,11 +62,15 @@ Description:
 #define TARGET_IS_OSX 0
 #endif
 
+#ifdef __wasm32__
+#define TARGET_IS_WEB 1
+#else
+#define TARGET_IS_WEB 0
+#endif
+
 //TODO: Detect if we are compiling for PLAYDATE!
 #define TARGET_IS_PLAYDATE_SIMULATOR 0
 #define TARGET_IS_PLAYDATE_DEVICE 0
-//TODO: Detect if we are compiling for WebAssembly!
-#define TARGET_IS_WEB 0
 //TODO: Detect if we are compiling for Orca!
 #define TARGET_IS_ORCA 0
 
@@ -95,8 +99,10 @@ Description:
 
 //TODO: Is there a more robust way to determine whether we are compiling 32-bit or 64-bit?
 #if (TARGET_IS_WASM || TARGET_IS_PLAYDATE_DEVICE)
-#define TARGET_IS_32BIT 0
+#define TARGET_IS_32BIT 1
+#define TARGET_IS_64BIT 0
 #else
+#define TARGET_IS_32BIT 0
 #define TARGET_IS_64BIT 1
 #endif
 

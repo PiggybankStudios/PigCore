@@ -1,0 +1,2 @@
+# wasm Folder
+This folder contains files that facilitate us compiling for WebAssembly. The sub-folder "std/" can be added to the include path when compiling for WASM to provide implementations for C standard library header files. The files in this folder provide both the C-side and javascript-side glue functions that allow the WASM module to request things from the browser

@@ -13,6 +13,7 @@ Other Page: https://peteroupc.github.io/random.html#Existing_RNG_APIs_in_Program
 
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
+#include "base/base_assert.h"
 
 #ifndef DEFAULT_RANDOM_SERIES_TYPE
 #define DEFAULT_RANDOM_SERIES_TYPE RandomSeriesType_LinearCongruential64

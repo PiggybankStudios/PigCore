@@ -17,11 +17,13 @@ Description:
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 
-#include <assert.h>
-
 //TODO: Why can't we use a #define around _Static_assert????
 #define StaticAssert(condition) _Static_assert(condition)
+#if TARGET_IS_WASM
+#define AssertMsg(condition, message) if (!(condition)) { assert_msg(condition, (message)); }
+#else
 #define AssertMsg(condition, message) if (!(condition)) { assert(condition); }
+#endif
 #define Assert(condition) AssertMsg(condition, "")
 #define NotNull(variable) Assert(variable != nullptr)
 
