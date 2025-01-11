@@ -1,5 +1,14 @@
 #!/usr/bin/python
 
+#  File:   extract_define.py
+#  Author: Taylor Robbins
+#  Date:   12\31\2024
+#  Description: 
+#  	** Scrapes a C/C++ header file in search for a #define with a particular name.
+#  	** Outputs the value part of the #define to stdout
+#  Usage:
+#  	** python extract_define.py [path] [DEFINE_NAME]
+
 import os.path
 import sys
 import re

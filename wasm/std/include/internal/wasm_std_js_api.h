@@ -9,11 +9,12 @@ Description:
 #ifndef _WASM_STD_JS_API_H
 #define _WASM_STD_JS_API_H
 
+#if TARGET_IS_WEB
 WASM_IMPORTED_FUNC void jsStdPrint(const char* messageStrPntr, int messageLength);
 WASM_IMPORTED_FUNC _Noreturn void jsStdAbort(const char* messageStrPntr, int exitCode);
 WASM_IMPORTED_FUNC _Noreturn void jsStdAssertFailure(const char* filePathPntr, int fileLineNum, const char* funcNamePntr, const char* conditionStrPntr, const char* messageStrPntr);
 WASM_IMPORTED_FUNC void jsStdDebugBreak();
 WASM_IMPORTED_FUNC void jsStdGrowMemory(unsigned int numPages);
-WASM_IMPORTED_FUNC unsigned int jsStdGetHeapSize();
+#endif
 
 #endif //  _WASM_STD_JS_API_H

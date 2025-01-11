@@ -51,17 +51,23 @@ void* WasmMemoryAllocate(uint32_t numBytes)
 	if ((numBytesNeeded % WASM_MEMORY_PAGE_SIZE) != 0) { numPagesNeeded++; }
 	if (numPagesNeeded > WASM_MEMORY_MAX_NUM_PAGES)
 	{
-		jsStdAbort("The WebAssembly module has run out of memory! WebAssembly only allows for 2GB of memory to be allocated per module", -1);
+		assert_msg(numPagesNeeded <= WASM_MEMORY_MAX_NUM_PAGES, "The WebAssembly module has run out of memory! WebAssembly only allows for 2GB of memory to be allocated per module");
 		return nullptr;
 	}
 	else if (WasmMemoryNumPagesAllocated < numPagesNeeded)
 	{
+		#if TARGET_IS_WEB
 		jsStdGrowMemory(numPagesNeeded - WasmMemoryNumPagesAllocated);
+		#else
+		#error The current TARGET doesn't have a GrowMemory implementation!
+		#endif
 		WasmMemoryNumPagesAllocated = numPagesNeeded;
+		// jsPrintInteger("WasmMemoryNumPagesAllocated", WasmMemoryNumPagesAllocated);
 	}
 	
 	void* result = (void*)(WasmMemoryHeapCurrentAddress);
 	WasmMemoryHeapCurrentAddress += numBytes;
+	// jsPrintInteger("WasmMemoryHeapCurrentAddress", WasmMemoryHeapCurrentAddress);
 	
 	return result;
 }

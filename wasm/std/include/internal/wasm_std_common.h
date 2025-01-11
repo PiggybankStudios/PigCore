@@ -45,9 +45,9 @@ Description:
 #error This standard library implementation assumes little-endian byte order
 #endif
 
-#define WASM_MEMORY_PAGE_SIZE      (64*1024UL) //64kB or 65,536b
-#define WASM_MEMORY_MAX_NUM_PAGES  (64*1024UL) //65,536 pages * 64 kB/page = 4GB
-#define WASM_MEMORY_MAX_SIZE       (WASM_MEMORY_MAX_NUM_PAGES * WASM_MEMORY_PAGE_SIZE)
+#define WASM_MEMORY_PAGE_SIZE      (64*1024ULL) //64kB or 65,536b
+#define WASM_MEMORY_MAX_NUM_PAGES  (64*1024ULL) //65,536 pages * 64 kB/page = 4GB
+#define WASM_MEMORY_MAX_SIZE       ((u64)WASM_MEMORY_MAX_NUM_PAGES * (u64)WASM_MEMORY_PAGE_SIZE)
 #define WASM_PROTECTED_SIZE        1024       //1kB at start of wasm memory should be unused and should never be written to
 
 #if LANGUAGE_CPP

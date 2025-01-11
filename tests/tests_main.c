@@ -23,6 +23,9 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "std/std_includes.h"
+WASM_IMPORTED_FUNC void jsPrintInteger(const char* labelStrPntr, u64 number);
+WASM_IMPORTED_FUNC void jsPrintFloat(const char* labelStrPntr, double number);
+WASM_IMPORTED_FUNC void jsPrintString(const char* labelStrPntr, const char* strPntr);
 #include "std/std_printf.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
@@ -126,6 +129,10 @@ int MyMain()
 int main()
 #endif
 {
+	jsPrintInteger("test1", 42);
+	jsPrintFloat("test2", Pi64);
+	jsPrintString("test3", "Hello Web!");
+	
 	MyPrint("Running tests...\n");
 	
 	// +==============================+
@@ -166,6 +173,7 @@ int main()
 	#if TARGET_IS_WASM
 	Arena wasmMemory = ZEROED;
 	InitArenaStackWasm(&wasmMemory);
+	FlagSet(wasmMemory.flags, ArenaFlag_AssertOnFailedAlloc);
 	#else
 	Arena stdHeap = ZEROED;
 	InitArenaStdHeap(&stdHeap);
@@ -181,6 +189,7 @@ int main()
 	// +==============================+
 	#if TARGET_IS_WASM
 	InitScratchArenas(Megabytes(256), &wasmMemory);
+	// InitScratchArenas(1024, &wasmMemory);
 	#else
 	InitScratchArenasVirtual(Gigabytes(4));
 	#endif
@@ -511,8 +520,9 @@ sapp_desc sokol_main(int argc, char* argv[])
 #endif
 
 #if TARGET_IS_WASM
-WASM_EXPORTED_FUNC(int, Init)
+WASM_EXPORTED_FUNC(int, ModuleInit, r32 initializeTimestamp)
 {
+	UNUSED(initializeTimestamp);
 	return main();
 }
 #endif

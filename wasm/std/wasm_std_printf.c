@@ -29,7 +29,11 @@ int vprintf(const char* restrict formatStr, va_list args)
 	if (result > 0 && result < STD_PRINTF_BUFFER_SIZE)
 	{
 		stdGlobalPrintBuffer[result] = '\0'; //ensure null-termination
+		#if TARGET_IS_WEB
 		jsStdPrint(&stdGlobalPrintBuffer[0], result);
+		#else
+		#error The current TARGET doesn't have a print implementation!
+		#endif
 	}
 	return result;
 }

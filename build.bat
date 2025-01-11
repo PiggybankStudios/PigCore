@@ -135,6 +135,11 @@ if "%DUMP_PREPROCESSOR%"=="1" (
 	set common_clang_flags=%common_clang_flags% -E
 )
 
+set wasm_js_files=..\%root%\wasm\wasm_globals.js
+set wasm_js_files=%wasm_js_files% ..\%root%\wasm\std\include\internal\wasm_std_js_api.js
+set wasm_js_files=%wasm_js_files% ..\%root%\wasm\wasm_app_js_api.js
+set wasm_js_files=%wasm_js_files% ..\%root%\wasm\wasm_main.js
+
 
 
 for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
@@ -178,7 +183,7 @@ if "%BUILD_PIGGEN%"=="1" (
 set tests_source_path=%root%/tests/tests_main.c
 set tests_exe_path=tests.exe
 set tests_bin_path=tests
-set tests_wasm_path=tests.wasm
+set tests_wasm_path=app.wasm
 set tests_wat_path=tests.wat
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags%
 if "%BUILD_WITH_RAYLIB%"=="1" (
@@ -242,6 +247,10 @@ if "%BUILD_TESTS%"=="1" (
 		if "%CONVERT_WASM_TO_WAT%"=="1" (
 			wasm2wat %tests_wasm_path% > %tests_wat_path%
 		)
+		
+		COPY ..\%root%\wasm\wasm_app_style.css main.css > NUL 2> NUL
+		COPY ..\%root%\wasm\wasm_app_index.html index.html > NUL 2> NUL
+		python ..\%root%\_scripts\combine_files.py combined.js %wasm_js_files%
 		
 		popd web
 		echo [Built tests for Web!]

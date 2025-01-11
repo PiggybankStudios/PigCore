@@ -1,0 +1,22 @@
+body
+{
+	/* TODO: Where does this collection of font names come from? Is it standard or something? */
+	font-family: -apple-system,BlinkMacSystemFont,segoe ui,Helvetica,Arial,sans-serif,apple color emoji,segoe ui emoji,segoe ui symbol;
+}
+
+.main_section
+{
+	text-align: center;
+}
+
+#canvas_container
+{
+	display: inline-block;
+}
+
+canvas
+{
+	border: 1px solid black;
+	width: 640px;
+	height: 480px;
+}

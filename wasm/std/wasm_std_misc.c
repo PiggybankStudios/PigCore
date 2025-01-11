@@ -13,14 +13,26 @@ int abs(int value)
 
 _Noreturn void exit(int exitCode)
 {
+	#if TARGET_IS_WEB
 	jsStdAbort("exit", exitCode);
+	#else
+	#error The current TARGET doesn't have an abort implementation!
+	#endif
 }
 
 _Noreturn void abort()
 {
+	#if TARGET_IS_WEB
 	jsStdAbort("abort", 0);
+	#else
+	#error The current TARGET doesn't have an abort implementation!
+	#endif
 }
 _Noreturn void abort_msg(const char* message)
 {
+	#if TARGET_IS_WEB
 	jsStdAbort(message, 0);
+	#else
+	#error The current TARGET doesn't have an abort implementation!
+	#endif
 }

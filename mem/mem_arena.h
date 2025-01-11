@@ -188,9 +188,10 @@ void InitArenaStackWasm(Arena* arenaOut)
 	//NOTE: With our own std library implementation, malloc works a little differently, see wasm_std_malloc.c
 	u8* heapBeginning = (u8*)MyMalloc(1);
 	NotNull(heapBeginning);
-	arenaOut->mainPntr = heapBeginning;
+	arenaOut->mainPntr = heapBeginning+1;
 	//TODO: Technically we have a bit less than this amount since some amount of stuff was probably already allocated before this arena was initialized
-	arenaOut->size = WASM_MEMORY_MAX_SIZE;
+	//NOTE: We use UINTXX_MAX here rather than WASM_MEMORY_MAX_SIZE because that constant is 1 more than u32 max value
+	arenaOut->size = UINTXX_MAX;
 	arenaOut->committed = 0;
 }
 #endif
