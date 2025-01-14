@@ -26,6 +26,7 @@ Description:
 WASM_IMPORTED_FUNC void jsPrintInteger(const char* labelStrPntr, u64 number);
 WASM_IMPORTED_FUNC void jsPrintFloat(const char* labelStrPntr, double number);
 WASM_IMPORTED_FUNC void jsPrintString(const char* labelStrPntr, const char* strPntr);
+WASM_IMPORTED_FUNC void jsPrintStringLength(const char* labelStrPntr, const char* strPntr, u32 strLength);
 #include "std/std_printf.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
@@ -132,6 +133,7 @@ int main()
 	jsPrintInteger("test1", 42);
 	jsPrintFloat("test2", Pi64);
 	jsPrintString("test3", "Hello Web!");
+	jsPrintStringLength("test4", "Hello Webly!", 12);
 	
 	MyPrint("Running tests...\n");
 	
@@ -524,6 +526,12 @@ WASM_EXPORTED_FUNC(int, ModuleInit, r32 initializeTimestamp)
 {
 	UNUSED(initializeTimestamp);
 	return main();
+}
+
+WASM_EXPORTED_FUNC(void, ModuleUpdate, r64 elapsedMs)
+{
+	MyPrint("Update %lfms", elapsedMs);
+	//TODO: Implement me!
 }
 #endif
 

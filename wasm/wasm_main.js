@@ -41,32 +41,30 @@ function CreateGlContext(canvas)
 
 async function InitializeWasmModule(wasmFilePath, initialWasmPageCount)
 {
-	appGlobals.wasmMemory = new WebAssembly.Memory({ initial: initialWasmPageCount });
+	appGlobals.textDecoder = new TextDecoder("utf-8");
+	// appGlobals.wasmMemory = new WebAssembly.Memory({ initial: initialWasmPageCount });
 	
 	let wasmEnvironment =
 	{
-		memory: appGlobals.wasmMemory,
 		...jsStdApiFuncs,
 		...jsAppApiFuncs,
 	};
-	
-	// console.log("Before loading wasm module we have " + wasmMemory.buffer.byteLength);
 	appGlobals.wasmModule = await loadWasmModule(wasmFilePath, wasmEnvironment);
-	// appGlobals.heapBase = appGlobals.wasmModule.exports.GetHeapBaseAddress();
-	// console.log("After loading wasm module we now have " + wasmMemory.buffer.byteLength);
-	// console.log("WasmModule:", appGlobals.wasmModule);
 	
-	let numMemoryPagesAfterLoad = appGlobals.wasmMemory.buffer.byteLength / WASM_MEMORY_PAGE_SIZE;
-	if ((appGlobals.wasmMemory.buffer.byteLength % WASM_MEMORY_PAGE_SIZE) != 0)
+	appGlobals.memDataView = new DataView(new Uint8Array(appGlobals.wasmModule.exports.memory.buffer).buffer);
+	let heapBaseAddress = appGlobals.wasmModule.exports.__heap_base.value;
+	console.log("__heap_base = " + heapBaseAddress);
+	
+	let memorySize = appGlobals.wasmModule.exports.memory.buffer.byteLength;
+	let numMemoryPagesAfterLoad = memorySize / WASM_MEMORY_PAGE_SIZE;
+	if ((memorySize % WASM_MEMORY_PAGE_SIZE) != 0)
 	{
-		console.warn("wasmMemory.buffer.byteLength (" + appGlobals.wasmMemory.buffer.byteLength + ") is not a multiple of WASM_MEMORY_PAGE_SIZE (" + WASM_MEMORY_PAGE_SIZE + ")");
+		console.warn("memorySize (" + memorySize + ") is not a multiple of WASM_MEMORY_PAGE_SIZE (" + WASM_MEMORY_PAGE_SIZE + ")");
 		numMemoryPagesAfterLoad++;
 	}
 	appGlobals.wasmModule.exports.InitStdLib(numMemoryPagesAfterLoad);
 	
-	// console.log("Getting time...");
 	let initializeTimestamp = Math.floor(Date.now() / 1000); //TODO: Should we be worried about this being a 32-bit float?
-	// console.log("Calling Initialize...");
 	appGlobals.wasmModule.exports.ModuleInit(initializeTimestamp);
 }
 
@@ -112,12 +110,12 @@ async function MainLoop()
 	
 	// appGlobals.wasmModule.exports.UpdateAndRender(0);
 	
-	// function renderFrame()
-	// {
-	// 	appGlobals.wasmModule.exports.UpdateAndRender(16.6666);
-	// 	window.requestAnimationFrame(renderFrame);
-	// }
-	// window.requestAnimationFrame(renderFrame);
+	function renderFrame()
+	{
+		appGlobals.wasmModule.exports.ModuleUpdate(16.6666);
+		window.requestAnimationFrame(renderFrame);
+	}
+	window.requestAnimationFrame(renderFrame);
 	// console.log("MainLoop Done!");
 }
 

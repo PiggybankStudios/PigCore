@@ -9,20 +9,27 @@ Description:
 
 function jsPrintInteger(labelStrPntr, number)
 {
-	let labelStr = wasmPntrToJsString(appGlobals.wasmMemory, labelStrPntr);
-	console.log(labelStr.length + ": " + number + " (0x" + number.toString(16) + ")");
+	let labelStr = wasmPntrToJsString(labelStrPntr);
+	console.log(labelStr + ": " + number + " (0x" + number.toString(16) + ")");
 }
 
 function jsPrintFloat(labelStrPntr, number)
 {
-	let labelStr = wasmPntrToJsString(appGlobals.wasmMemory, labelStrPntr);
+	let labelStr = wasmPntrToJsString(labelStrPntr);
 	console.log(labelStr + ": " + number);
 }
 
 function jsPrintString(labelStrPntr, strPntr)
 {
-	let labelStr = wasmPntrToJsString(appGlobals.wasmMemory, labelStrPntr);
-	let str = wasmPntrToJsString(appGlobals.wasmMemory, strPntr);
+	let labelStr = wasmPntrToJsString(labelStrPntr);
+	let str = wasmPntrToJsString(strPntr);
+	console.log(labelStr + ": \"" + str + "\"");
+}
+
+function jsPrintStringLength(labelStrPntr, strPntr, strLength)
+{
+	let labelStr = wasmPntrToJsString(labelStrPntr);
+	let str = wasmPntrAndLengthToJsString(strPntr, strLength);
 	console.log(labelStr + ": \"" + str + "\"");
 }
 
@@ -31,6 +38,7 @@ jsAppApiFuncs =
 	jsPrintInteger: jsPrintInteger,
 	jsPrintFloat: jsPrintFloat,
 	jsPrintString: jsPrintString,
+	jsPrintStringLength: jsPrintStringLength,
 };
 
 // ======================== End of wasm_app_js_api.js ========================

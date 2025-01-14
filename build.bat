@@ -92,7 +92,7 @@ set wasm_clang_flags=--target=wasm32 --no-standard-libraries --no-standard-inclu
 :: -Wl, = Pass the following argument(s) to the linker
 :: --allow-undefined = ?
 :: --no-entry = ?
-set wasm_clang_flags=%wasm_clang_flags% -Wl,--allow-undefined -Wl,--no-entry
+set wasm_clang_flags=%wasm_clang_flags% -Wl,--allow-undefined -Wl,--no-entry -Wl,--export=__heap_base
 set wasm_clang_flags=%wasm_clang_flags% -I "../%root%" -I "../%root%/wasm/std/include"
 if "%DEBUG_BUILD%"=="1" (
 	REM /MDd = ?

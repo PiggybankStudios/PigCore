@@ -20,8 +20,10 @@ var appGlobals =
 	heapBase: 0,
 	canvas: null,
 	glContext: null,
-	wasmMemory: null,
+	// wasmMemory: null,
+	memDataView: null,
 	wasmModule: null,
+	textDecoder: null,
 };
 
 // +--------------------------------------------------------------+
@@ -29,7 +31,6 @@ var appGlobals =
 // +--------------------------------------------------------------+
 async function loadWasmModule(filePath, environment)
 {
-	// console.log("Loading " + filePath + "...");
 	let result = null;
 	try
 	{
@@ -39,7 +40,6 @@ async function loadWasmModule(filePath, environment)
 			{ env: environment }
 		);
 		result = wasmModule.instance;
-		// console.log("Loaded module exports:", result.exports);
 	}
 	catch (exception)
 	{
@@ -48,22 +48,28 @@ async function loadWasmModule(filePath, environment)
 	return result;
 }
 
-function wasmPntrToJsString(memory, ptr)
+//TODO: We should do some performance measurements of wasmPntrToJsString vs wasmPntrAndLengthToJsString!
+function wasmPntrToJsString(ptr)
 {
-	const codes = [];
-	const buf = new Uint8Array(memory.buffer);
-	
-	let cIndex = 0;
-	while (true)
+	let cIndex = ptr;
+	while (cIndex < appGlobals.memDataView.byteLength)
 	{
-		const char = buf[ptr + cIndex];
-		if (!char) { break; }
-		codes.push(char);
+		let byteValue = appGlobals.memDataView.getUint8(cIndex, true);
+		if (byteValue == 0)
+		{
+			break;
+		}
 		cIndex++;
 	}
-	
-	//TODO: Can we do something else? If we do our own UTF-8 parsing maybe?
-	return String.fromCharCode(...codes);
+	return appGlobals.textDecoder.decode(
+		appGlobals.memDataView.buffer.slice(ptr, cIndex)
+	);
+}
+function wasmPntrAndLengthToJsString(ptr, length)
+{
+	return appGlobals.textDecoder.decode(
+		appGlobals.memDataView.buffer.slice(ptr, ptr + length)
+	);
 }
 
 // ======================== End of wasm_globals.js ========================

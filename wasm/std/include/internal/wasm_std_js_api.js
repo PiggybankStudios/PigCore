@@ -13,13 +13,13 @@ Description:
 
 function jsStdPrint(messageStrPntr, messageLength)
 {
-	let messageStr = wasmPntrToJsString(appGlobals.wasmMemory, messageStrPntr);
+	let messageStr = wasmPntrToJsString(messageStrPntr);
 	console.log(messageStr);
 }
 
 function jsStdAbort(messageStrPntr, exitCode)
 {
-	let messageStr = wasmPntrToJsString(appGlobals.wasmMemory, messageStrPntr);
+	let messageStr = wasmPntrToJsString(messageStrPntr);
 	let exitStr = "Abort [" + exitCode + "]: " + messageStr;
 	console.error(exitStr);
 	throw new Error(exitStr);
@@ -27,13 +27,13 @@ function jsStdAbort(messageStrPntr, exitCode)
 
 function jsStdAssertFailure(filePathPntr, fileLineNum, funcNamePntr, conditionStrPntr, messageStrPntr)
 {
-	let filePath = wasmPntrToJsString(appGlobals.wasmMemory, filePathPntr);
-	let funcName = wasmPntrToJsString(appGlobals.wasmMemory, funcNamePntr);
-	let conditionStr = wasmPntrToJsString(appGlobals.wasmMemory, conditionStrPntr);
+	let filePath = wasmPntrToJsString(filePathPntr);
+	let funcName = wasmPntrToJsString(funcNamePntr);
+	let conditionStr = wasmPntrToJsString(conditionStrPntr);
 	let outputMessage = "";
 	if (messageStrPntr != 0)
 	{
-		let messageStr = wasmPntrToJsString(appGlobals.wasmMemory, messageStrPntr);
+		let messageStr = wasmPntrToJsString(messageStrPntr);
 		outputMessage = "Assertion failed, " + messageStr + " (" + conditionStr + ") is not true! In " + filePath + ":" + fileLineNum + " " + funcName + "(...)";
 	}
 	else
@@ -56,9 +56,10 @@ function jsStdDebugBreak()
 // __builtin_huge_valf(); // similar to Infinity in JS
 function jsStdGrowMemory(numPages)
 {
-	let currentPageCount = appGlobals.wasmMemory.buffer.byteLength / WASM_MEMORY_PAGE_SIZE;
+	let currentPageCount = appGlobals.wasmModule.exports.memory.buffer.byteLength / WASM_MEMORY_PAGE_SIZE;
 	// console.log("Memory growing by " + numPages + " pages (" + currentPageCount + " -> " + (currentPageCount + numPages) + ")");
-	appGlobals.wasmMemory.grow(numPages);
+	appGlobals.wasmModule.exports.memory.grow(numPages);
+	appGlobals.memDataView = new DataView(new Uint8Array(appGlobals.wasmModule.exports.memory.buffer).buffer);
 }
 
 jsStdApiFuncs =
