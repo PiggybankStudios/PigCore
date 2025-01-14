@@ -511,7 +511,6 @@ WASM_EXPORTED_FUNC(int, ModuleInit, r32 initializeTimestamp)
 WASM_EXPORTED_FUNC(void, ModuleUpdate, r64 elapsedMs)
 {
 	MyPrint("Update %lfms", elapsedMs);
-	r32 test1 = SqrtR32(15.0f);
 	//TODO: Implement me!
 }
 #endif

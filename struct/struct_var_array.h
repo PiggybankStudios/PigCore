@@ -214,9 +214,14 @@ bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared at top
 bool VarArrayContains_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion)
 {
 	NotNull(array);
-	DebugAssert(array->itemSize > 0);
-	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayContains. Make sure you're accessing the VarArray with the correct type!");
-	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayContains. Make sure you're accessing the VarArray with the correct type!");
+	#if DEBUG_BUILD
+	Assert(array->itemSize > 0);
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayContains. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayContains. Make sure you're accessing the VarArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
 	if (itemInQuestion == nullptr) { return false; }
 	if (array->items == nullptr) { return false; }
 	if (!IsPntrWithin(array->items, array->length * array->itemSize, itemInQuestion)) { return false; }
@@ -263,9 +268,14 @@ void VarArrayVisit(VarArray* array, ArrayVisitFunc_f* visitFunc)
 void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array, uxx index, bool assertOnFailure)
 {
 	NotNull(array);
-	DebugAssert(IsVarArrayInit(array));
-	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayGet. Make sure you're accessing the VarArray with the correct type!");
-	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayGet. Make sure you're accessing the VarArray with the correct type!");
+	#if DEBUG_BUILD
+	Assert(IsVarArrayInit(array));
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayGet. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayGet. Make sure you're accessing the VarArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
 	if (index >= array->length)
 	{
 		if (assertOnFailure)
@@ -311,9 +321,14 @@ void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array, uxx i
 //NOTE: This always asserts on failure to allocate since VarArrayExpand defaults to asserting
 void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array)
 {
-	DebugNotNull(array);
-	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayAdd. Make sure you're accessing the VarArray with the correct type!");
-	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayAdd. Make sure you're accessing the VarArray with the correct type!");
+	#if DEBUG_BUILD
+	NotNull(array);
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayAdd. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayAdd. Make sure you're accessing the VarArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
 	if (array->maxLength > 0 && array->length >= array->maxLength) { return nullptr; }
 	
 	VarArrayExpand(array, array->length+1);
@@ -388,9 +403,14 @@ void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx inde
 // +--------------------------------------------------------------+
 void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
 {
-	DebugNotNull(array);
-	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayRemove. Make sure you're accessing the VarArray with the correct type!");
-	DebugAssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayRemove. Make sure you're accessing the VarArray with the correct type!");
+	#if DEBUG_BUILD
+	NotNull(array);
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayRemove. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayRemove. Make sure you're accessing the VarArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
 	AssertMsg(index < array->length, "VarArrayRemove index out of bounds!");
 	//move all items above index down by one
 	if (index < array->length-1)

@@ -112,6 +112,8 @@ bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 	// 	//TODO: Implement me!
 	// }
 	#else
+	UNUSED(path);
+	UNUSED(isFolderOut);
 	AssertMsg(false, "OsDoesFileOrFolderExist does not support the current platform yet!");
 	return false;
 	#endif
@@ -191,6 +193,10 @@ OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, bool i
 	// 	//TODO: Implement me!
 	// }
 	#else
+	UNUSED(arena);
+	UNUSED(path);
+	UNUSED(includeFiles);
+	UNUSED(includeFolders);
 	AssertMsg(false, "OsIterateFiles does not support the current platform yet!");
 	result.finished = true;
 	#endif
@@ -273,6 +279,11 @@ bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut
 	// 	//TODO: Implement me!
 	// }
 	#else
+	UNUSED(fileIter);
+	UNUSED(isFolderOut);
+	UNUSED(pathOut);
+	UNUSED(pathOutArena);
+	UNUSED(giveFullPath);
 	AssertMsg(false, "OsIterFileStep does not support the current platform yet!");
 	fileIter->finished = true;
 	#endif
@@ -394,7 +405,6 @@ bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* content
 		
 		*contentsOut = result;
 		
-		ScratchEnd(scratch);
 		CloseHandle(fileHandle);
 	}
 	// #elif TARGET_IS_LINUX
@@ -406,9 +416,14 @@ bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* content
 	// 	//TODO: Implement me!
 	// }
 	#else
+	UNUSED(path);
+	UNUSED(arena);
+	UNUSED(convertNewLines);
+	UNUSED(contentsOut);
 	AssertMsg(false, "OsReadFile does not support the current platform yet!");
 	#endif
 	
+	ScratchEnd(scratch);
 	return true;
 }
 Str8 OsReadTextFileScratch(FilePath path)
@@ -511,6 +526,9 @@ bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 	// 	//TODO: Implement me!
 	// }
 	#else
+	UNUSED(path);
+	UNUSED(fileContents);
+	UNUSED(convertNewLines);
 	AssertMsg(false, "OsWriteFile does not support the current platform yet!");
 	#endif
 	
@@ -670,6 +688,11 @@ bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculate
 	// 	//TODO: Implement me!
 	// }
 	#else
+	UNUSED(arena);
+	UNUSED(path);
+	UNUSED(mode);
+	UNUSED(calculateSize);
+	UNUSED(openFileOut);
 	AssertMsg(false, "OsOpenFile does not support the current platform yet!");
 	#endif
 	
@@ -738,6 +761,9 @@ bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines
 	// 	//TODO: Implement me!
 	// }
 	#else
+	UNUSED(file);
+	UNUSED(fileContentsPart);
+	UNUSED(convertNewLines);
 	AssertMsg(false, "OsWriteToOpenFile does not support the current platform yet!");
 	#endif
 	

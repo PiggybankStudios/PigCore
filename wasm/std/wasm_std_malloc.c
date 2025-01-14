@@ -22,23 +22,30 @@ void* malloc(size_t numBytes)
 
 void* calloc(size_t numElements, size_t elemSize)
 {
+	UNUSED(numElements);
+	UNUSED(elemSize);
 	assert_msg(false, "callocing memory is not allowed in WebAssembly!");
 	return nullptr;
 }
 
 void* realloc(void* prevAllocPntr, size_t newSize)
 {
+	UNUSED(prevAllocPntr);
+	UNUSED(newSize);
 	assert_msg(false, "reallocing memory is not allowed in WebAssembly!");
 	return nullptr;
 }
 
 void free(void* allocPntr)
 {
+	UNUSED(allocPntr);
 	assert_msg(false, "freeing memory is not allowed in WebAssembly!");
 }
 
 void* aligned_alloc(size_t numBytes, size_t alignmentSize)
 {
+	UNUSED(numBytes);
+	UNUSED(alignmentSize);
 	assert_msg(false, "aligned_allocing memory is not allowed in WebAssembly!");
 	return nullptr;
 }

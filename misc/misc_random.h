@@ -255,6 +255,12 @@ u32 GetRandU32Range(RandomSeries* series, u32 min, u32 max)
 	return result;
 }
 
+//TODO: For some reason we are getting these unreachable code warnings in this code??
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4702) //warning C4702: unreachable code
+#endif //COMPILER_IS_MSVC
+
 u64 GetRandU64(RandomSeries* series) //pre-declared a little ways above since all other unsigned GetRands rely on this one
 {
 	NotNull(series); //TODO: Convert to NotNull_?
@@ -298,6 +304,10 @@ i16 GetRandI16Range(RandomSeries* series, i16 min, i16 max)
 	u64 randU64 = GetRandU64(series);
 	return (i16)((i32)(randU64 % (u64)(max-min)) + min);
 }
+
+#if COMPILER_IS_MSVC
+#pragma warning(pop)
+#endif
 
 i32 GetRandI32(RandomSeries* series)
 {
