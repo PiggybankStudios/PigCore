@@ -558,7 +558,7 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 					u8* newCommittedArea = (u8*)MyMalloc(numNewBytesNeeded);
 					AssertMsg(newCommittedArea != nullptr, "Ran out of WASM memory! Stdlib malloc() return nullptr!");
 					if (newCommittedArea == nullptr) { return nullptr; }
-					AssertMsg(newCommittedArea == arena->mainPntr + arena->committed, "WASM malloc did not return next chunk of memory sequentially! Someone else must have called malloc somewhere! You can only have one StackWasm arena active at a time and no-one can call std malloc besides that one arena!");
+					AssertMsg(newCommittedArea == (u8*)arena->mainPntr + arena->committed, "WASM malloc did not return next chunk of memory sequentially! Someone else must have called malloc somewhere! You can only have one StackWasm arena active at a time and no-one can call std malloc besides that one arena!");
 					arena->committed += numNewBytesNeeded;
 				}
 				

@@ -18,12 +18,12 @@ void* _memcpy(void* dest, const void* source, size_t numBytes);
 #define memcpy(dest, source, numBytes) _memcpy((dest), (source), (numBytes))
 void* _memmove(void* dest, const void* source, size_t numBytes);
 #define memmove(dest, source, numBytes) _memmove((dest), (source), (numBytes))
-// TODO: char* strcpy(char* dest, const char* source);
+char* strcpy(char* dest, const char* source);
 // TODO: char* strstr(const char* haystack, const char* needle);
 
-// TODO: int strcmp(const char* left, const char* right);
-// TODO: int strncmp(const char* left, const char* right, size_t numBytes);
-// TODO: size_t strlen(const char* str);
+int strcmp(const char* left, const char* right);
+int strncmp(const char* left, const char* right, size_t numBytes);
+size_t strlen(const char* str);
 // TODO: size_t wcslen(const wchar_t* str);
 
 CONDITIONAL_EXTERN_C_END

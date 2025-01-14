@@ -37,7 +37,7 @@ typedef struct Str16 Str16;
 struct Str16
 {
 	uxx length;
-	union { wchar_t* chars; u16* words; void* pntr; };
+	union { char16_t* chars; u16* words; void* pntr; };
 };
 
 typedef struct Str8Pair Str8Pair;

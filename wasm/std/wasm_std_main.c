@@ -15,8 +15,16 @@ Description:
 #include <stdbool.h>
 #include <limits.h>
 #include <assert.h>
+#include <float.h>
+#include <math.h>
 #include <string.h>
+#include <uchar.h>
 
+#include "wasm/std/wasm_std_math_helpers.c"
+#include "wasm/std/wasm_std_math_float.c"
+#include "wasm/std/wasm_std_math_basic.c"
+#include "wasm/std/wasm_std_math_trig.c"
+#include "wasm/std/wasm_std_math_pow.c"
 #include "wasm/std/wasm_std_memory.c"
 #include "wasm/std/wasm_std_malloc.c"
 #include "wasm/std/wasm_std_debugbreak.c"

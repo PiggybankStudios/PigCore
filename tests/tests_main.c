@@ -19,25 +19,12 @@ Description:
 
 #include "base/base_compiler_check.h"
 
-#if TARGET_IS_WASM
-#include "base/base_typedefs.h"
-#include "base/base_macros.h"
-#include "std/std_includes.h"
-WASM_IMPORTED_FUNC void jsPrintInteger(const char* labelStrPntr, u64 number);
-WASM_IMPORTED_FUNC void jsPrintFloat(const char* labelStrPntr, double number);
-WASM_IMPORTED_FUNC void jsPrintString(const char* labelStrPntr, const char* strPntr);
-WASM_IMPORTED_FUNC void jsPrintStringLength(const char* labelStrPntr, const char* strPntr, u32 strLength);
-#include "std/std_printf.h"
-#include "mem/mem_arena.h"
-#include "mem/mem_scratch.h"
-#else
 #include "base/base_all.h"
 #include "std/std_all.h"
 #include "os/os_all.h"
 #include "mem/mem_all.h"
 #include "struct/struct_all.h"
 #include "misc/misc_all.h"
-#endif
 
 #if BUILD_WITH_SOKOL && BUILD_WITH_RAYLIB
 #error SOKOL and RAYLIB are not meant to be enabled at the same time. Use one or the other!
@@ -72,9 +59,7 @@ WASM_IMPORTED_FUNC void jsPrintStringLength(const char* labelStrPntr, const char
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
-#if !TARGET_IS_WASM
 RandomSeries* mainRandom = nullptr;
-#endif
 
 // +--------------------------------------------------------------+
 // |                      tests Source Files                      |
@@ -130,11 +115,6 @@ int MyMain()
 int main()
 #endif
 {
-	jsPrintInteger("test1", 42);
-	jsPrintFloat("test2", Pi64);
-	jsPrintString("test3", "Hello Web!");
-	jsPrintStringLength("test4", "Hello Webly!", 12);
-	
 	MyPrint("Running tests...\n");
 	
 	// +==============================+
@@ -199,7 +179,7 @@ int main()
 	// +==============================+
 	// |      RandomSeries Tests      |
 	// +==============================+
-	#if !TARGET_IS_WASM
+	#if 1
 	RandomSeries random;
 	InitRandomSeriesDefault(&random);
 	SeedRandomSeriesU64(&random, 42); //TODO: Actually seed the random number generator!
@@ -531,6 +511,7 @@ WASM_EXPORTED_FUNC(int, ModuleInit, r32 initializeTimestamp)
 WASM_EXPORTED_FUNC(void, ModuleUpdate, r64 elapsedMs)
 {
 	MyPrint("Update %lfms", elapsedMs);
+	r32 test1 = SqrtR32(15.0f);
 	//TODO: Implement me!
 }
 #endif

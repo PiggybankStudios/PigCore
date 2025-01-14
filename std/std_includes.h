@@ -19,16 +19,15 @@ Descriptions:
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <float.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <assert.h>
 #include <string.h>
-
-#if !TARGET_IS_WASM
 #include <math.h>
-#include <float.h>
-#endif
+#include <uchar.h> //for char16_t
+
 #if (TARGET_IS_WINDOWS || TARGET_IS_WEB)
 	#include <intrin.h>
 #endif

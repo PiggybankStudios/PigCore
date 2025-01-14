@@ -102,7 +102,7 @@ void* _memset(void* pntr, int value, size_t numBytes)
 		
 		return pntr;
 	}
-	#endif
+	#endif //WASM_STD_USE_BUILTIN_MEMSET
 }
 
 int memcmp(const void* left, const void* right, size_t numBytes)
@@ -115,7 +115,7 @@ int memcmp(const void* left, const void* right, size_t numBytes)
 
 void* _memcpy(void* dest, const void* source, size_t numBytes)
 {
-	#if PIG_WASM_STD_USE_BUILTIN_MEMCPY
+	#if WASM_STD_USE_BUILTIN_MEMCPY
 	// Basically converts to memory.copy instruction
 	return __builtin_memcpy(dest, source, numBytes);
 	#else
@@ -274,5 +274,116 @@ void* _memcpy(void* dest, const void* source, size_t numBytes)
 		
 		return dest;
 	}
-	#endif
+	#endif //WASM_STD_USE_BUILTIN_MEMCPY
+}
+
+void* _memmove(void* dest, const void* source, size_t numBytes)
+{
+	#if WASM_STD_USE_BUILTIN_MEMMOVE
+	return __builtin_memmove(dest, source, numBytes);
+	#else
+	char* destCharPntr = dest;
+	const char* sourceCharPntr = source;
+	
+	if (destCharPntr == sourceCharPntr) { return destCharPntr; }
+	if ((uintptr_t)sourceCharPntr - (uintptr_t)destCharPntr - numBytes <= -2 * numBytes)
+	{
+		return memcpy(destCharPntr, sourceCharPntr, numBytes);
+	}
+	
+	if (destCharPntr < sourceCharPntr)
+	{
+		if ((uintptr_t)sourceCharPntr % SIZEOF_A_SIZE_T == (uintptr_t)destCharPntr % SIZEOF_A_SIZE_T)
+		{
+			while ((uintptr_t)destCharPntr % SIZEOF_A_SIZE_T)
+			{
+				if (!numBytes--) { return dest; }
+				*destCharPntr++ = *sourceCharPntr++;
+			}
+			for (; numBytes >= SIZEOF_A_SIZE_T; numBytes -= SIZEOF_A_SIZE_T, destCharPntr += SIZEOF_A_SIZE_T, sourceCharPntr += SIZEOF_A_SIZE_T)
+			{
+				*(a_size_t*)destCharPntr = *(a_size_t*)sourceCharPntr;
+			}
+		}
+		for (; numBytes; numBytes--) { *destCharPntr++ = *sourceCharPntr++; }
+	}
+	else
+	{
+		if (((uintptr_t)sourceCharPntr % SIZEOF_A_SIZE_T) == ((uintptr_t)destCharPntr % SIZEOF_A_SIZE_T))
+		{
+			while ((uintptr_t)(destCharPntr + numBytes) % SIZEOF_A_SIZE_T)
+			{
+				if (!numBytes--) { return dest; }
+				destCharPntr[numBytes] = sourceCharPntr[numBytes];
+			}
+			while (numBytes >= SIZEOF_A_SIZE_T)
+			{
+				numBytes -= SIZEOF_A_SIZE_T;
+				*(a_size_t*)(destCharPntr+numBytes) = *(a_size_t*)(sourceCharPntr + numBytes);
+			}
+		}
+		while (numBytes)
+		{
+			numBytes--;
+			destCharPntr[numBytes] = sourceCharPntr[numBytes];
+		}
+	}
+	
+	return dest;
+	#endif //WASM_STD_USE_BUILTIN_MEMMOVE
+}
+
+int strcmp(const char* left, const char* right)
+{
+	//Modified implementation from Musl Lib-C
+	for (; *left == *right && *left; left++, right++);
+	return (*(unsigned char*)left - *(unsigned char*)right);
+}
+
+char* strcpy(char* dest, const char* source)
+{
+	a_size_t* destWord;
+	const a_size_t* sourceWord;
+	if ((uintptr_t)source % sizeof(size_t) == (uintptr_t)dest % sizeof(size_t))
+	{
+		for (; (uintptr_t)source % sizeof(size_t); source++, dest++)
+		{
+			if (!(*dest=*source)) { return dest; }
+		}
+		destWord = (void*)dest;
+		sourceWord = (const void*)source;
+		for (; !WORD_CONTAINS_ZERO(*sourceWord); *destWord++ = *sourceWord++) { }
+		dest=(void*)destWord;
+		source=(const void*)sourceWord;
+	}
+	for (; (*dest=*source); source++, dest++) { }
+
+	return dest;
+}
+
+//TODO: Add strstr implementation!
+
+int strncmp(const char* left, const char* right, size_t numBytes)
+{
+	//Modified implementation from Musl Lib-C
+	const unsigned char* leftPntr = (void*)left;
+	const unsigned char* rightPntr = (void*)right;
+	if (!numBytes--) { return 0; }
+	for (; (*leftPntr && *rightPntr && numBytes && *leftPntr == *rightPntr); leftPntr++, rightPntr++, numBytes--);
+	return *leftPntr - *rightPntr;
+}
+
+size_t strlen(const char* str)
+{
+	//Modified implementation from Musl Lib-C
+	const char* startPntr = str;
+	const a_size_t* wordPntr;
+	for (; ((uintptr_t)str % sizeof(size_t)) != 0; str++)
+	{
+		if (!*str) { return str-startPntr; }
+	}
+	for (wordPntr = (const void *)str; !WORD_CONTAINS_ZERO(*wordPntr); wordPntr++) { }
+	str = (const void *)wordPntr;
+	for (; *str; str++) { }
+	return (str - startPntr);
 }
