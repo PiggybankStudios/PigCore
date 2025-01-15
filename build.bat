@@ -28,6 +28,7 @@ for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH_RAYLIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_BOX2D') do set BUILD_WITH_BOX2D=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL') do set BUILD_WITH_SOKOL=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SDL') do set BUILD_WITH_SDL=%%i
 
 :: +--------------------------------------------------------------+
 :: |                      Init MSVC Compiler                      |
@@ -216,6 +217,9 @@ if "%BUILD_WITH_RAYLIB%"=="1" (
 )
 if "%BUILD_WITH_BOX2D%"=="1" (
 	set tests_cl_args=%tests_cl_args% box2d.lib
+)
+if "%BUILD_WITH_SDL%"=="1" (
+	set tests_cl_args=%tests_cl_args% SDL2.lib
 )
 set tests_clang_args=%common_clang_flags% %linux_clang_flags% -o %tests_bin_path% ../%tests_source_path%
 if "%BUILD_WITH_SOKOL%"=="1" (

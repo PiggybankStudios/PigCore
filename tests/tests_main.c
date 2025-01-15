@@ -65,8 +65,12 @@ Description:
 #include "third_party/sokol/sokol_glue.h"
 #endif
 
+#if BUILD_WITH_SDL
 #if COMPILER_IS_EMSCRIPTEN
 #include <SDL/SDL.h>
+#else
+#include "third_party/SDL/SDL.h"
+#endif
 #endif
 
 // +--------------------------------------------------------------+
@@ -124,10 +128,22 @@ void PrintNumbers(VarArray* array)
 // +--------------------------------------------------------------+
 #if BUILD_WITH_SOKOL
 int MyMain()
+#elif BUILD_WITH_SDL
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
-int main()
+int main(int argc, char* argv[])
 #endif
 {
+	#if BUILD_WITH_SOKOL
+	#elif BUILD_WITH_SDL
+	UNUSED(hInstance);
+	UNUSED(hPrevInstance);
+	UNUSED(lpCmdLine);
+	UNUSED(nCmdShow);
+	#else
+	UNUSED(argc);
+	UNUSED(argv);
+	#endif
 	MyPrint("Running tests...\n");
 	
 	// +==============================+
@@ -457,7 +473,7 @@ int main()
 	// +==============================+
 	// |          SDL Tests           |
 	// +==============================+
-	#if COMPILER_IS_EMSCRIPTEN
+	#if (BUILD_WITH_SDL && COMPILER_IS_EMSCRIPTEN)
 	{
 		MyPrint("Running SDL tests...");
 		SDL_Init(SDL_INIT_VIDEO);
@@ -478,6 +494,36 @@ int main()
 		SDL_Flip(screen);
 		
 		SDL_Quit();
+	}
+	#elif BUILD_WITH_SDL
+	{
+		int initResult = SDL_Init(SDL_INIT_VIDEO);
+		Assert(initResult >= 0);
+		SDL_Window* window = SDL_CreateWindow("Tests (SDL)", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, 0);
+		NotNull(window);
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+		SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+		NotNull(renderer);
+		
+		bool windowShouldClose = false;
+		while (!windowShouldClose)
+		{
+			SDL_SetRenderDrawColor(renderer, 96, 128, 255, 255);
+			SDL_RenderClear(renderer);
+			
+			SDL_Event event;
+			while (SDL_PollEvent(&event))
+			{
+				switch (event.type)
+				{
+					case SDL_QUIT: windowShouldClose = true; break;
+					default: break;
+				}
+			}
+			
+			SDL_RenderPresent(renderer);
+			SDL_Delay(16);
+		}
 	}
 	#endif
 	

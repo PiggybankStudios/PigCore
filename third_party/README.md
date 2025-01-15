@@ -1,6 +1,8 @@
 # third_party Folder
 This folder contains (or needs to be made to contain) copies of all third party library headers and source files. Some of these libraries are included directly in the git repository, others need to be downloaded into this folder manually before compilation. Refer to the list below to figure out which libraries are needed for which pieces of the repository, and which ones you'll need to download manually after cloning.
 
+---
+
 # List of Libraries
 
 ## stb
@@ -18,7 +20,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 * Compiling for Playdate and WebAssembly we use `stb_sprintf.h` as a printf implementation
 
-
+---
 
 ## raylib 5.5
 **URL(s):** [www.raylib.com](https://www.raylib.com/) [github.com/raysan5/raylib](https://github.com/raysan5/raylib)
@@ -35,7 +37,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 * Building `test.exe` into a raylib based graphical application (only if `BUILD_WITH_RAYLIB` is enabled in `build_config.h`)
 
-
+---
 
 ## Box2D 3.0
 **URL(s):** [box2d.org](https://box2d.org/) [github.com/erincatto/box2d](https://github.com/erincatto/box2d)
@@ -52,7 +54,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 * Building tests.exe with a little physics test (only if `BUILD_WITH_BOX2D` is enabled in `build_config.h`, also only renders if raylib is also enabled)
 
-
+---
 
 ## Sokol
 **URL(s):** [github.com/floooh/sokol](https://github.com/floooh/sokol)
@@ -69,7 +71,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 * Building tests.exe into a little graphical window application (only if `BUILD_WITH_SOKOL` is enabled in `build_config.h`)
 
-
+---
 
 ## GLAD (OpenGL ES)
 **URL(s):** [https://glad.dav1d.de/](https://glad.dav1d.de/)
@@ -93,3 +95,20 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Required For:**
 
 * Building tests.exe into a graphical web application (only if `BUILD_WEB` and `BUILD_WITH_SOKOL` are enabled in `build_config.h`)
+
+---
+
+## SDL 2.30.11
+**URL(s):** [https://github.com/libsdl-org/SDL/releases/tag/release-2.30.11](https://github.com/libsdl-org/SDL/releases/tag/release-2.30.11)
+
+**Folder Name:** `SDL`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Release 2.30.11 from Jan 1st 2025
+
+**Fixup Required:** Add contents of include folder to SDL folder. Compile SDL in both Debug and Release x64 modes and copy both `SDL2.lib` versions to `_lib_debug/` and `_lib_release/` folders (also copy `SDL2.pdb` for debug). Copy SDL2.dll to `_build` folder
+
+**Required For:**
+
+* Building tests.exe into a little graphical window application (only if `BUILD_WITH_SDL` is enabled in `build_config.h`)
