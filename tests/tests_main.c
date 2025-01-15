@@ -41,9 +41,18 @@ Description:
 #define SOKOL_D3D11
 #elif TARGET_IS_LINUX
 #define SOKOL_GLCORE
+#elif TARGET_IS_WEB
+#define SOKOL_WGPU
 #endif
 #define SOKOL_IMPL
+#if TARGET_IS_WASM
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels [-Wimplicit-fallthrough]
+#endif
 #include "third_party/sokol/sokol_gfx.h"
+#if TARGET_IS_WASM
+#pragma clang diagnostic pop
+#endif
 #if TARGET_IS_LINUX
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
@@ -54,6 +63,10 @@ Description:
 #endif
 #include "third_party/sokol/sokol_log.h"
 #include "third_party/sokol/sokol_glue.h"
+#endif
+
+#if COMPILER_IS_EMSCRIPTEN
+#include <SDL/SDL.h>
 #endif
 
 // +--------------------------------------------------------------+
@@ -152,7 +165,7 @@ int main()
 	// +==============================+
 	// |         Basic Arenas         |
 	// +==============================+
-	#if TARGET_IS_WASM
+	#if USING_CUSTOM_STDLIB
 	Arena wasmMemory = ZEROED;
 	InitArenaStackWasm(&wasmMemory);
 	FlagSet(wasmMemory.flags, ArenaFlag_AssertOnFailedAlloc);
@@ -169,9 +182,10 @@ int main()
 	// +==============================+
 	// |     Scratch Arena Tests      |
 	// +==============================+
-	#if TARGET_IS_WASM
+	#if USING_CUSTOM_STDLIB
 	InitScratchArenas(Megabytes(256), &wasmMemory);
-	// InitScratchArenas(1024, &wasmMemory);
+	#elif TARGET_IS_WASM
+	InitScratchArenas(Megabytes(256), &stdHeap);
 	#else
 	InitScratchArenasVirtual(Gigabytes(4));
 	#endif
@@ -235,7 +249,7 @@ int main()
 	}
 	#endif
 	
-	#if TARGET_IS_WASM
+	#if USING_CUSTOM_STDLIB
 	RunWasmStdTests();
 	#endif
 	
@@ -440,6 +454,33 @@ int main()
 		#endif
 	}
 	
+	// +==============================+
+	// |          SDL Tests           |
+	// +==============================+
+	#if COMPILER_IS_EMSCRIPTEN
+	{
+		MyPrint("Running SDL tests...");
+		SDL_Init(SDL_INIT_VIDEO);
+		SDL_Surface* screen = SDL_SetVideoMode(256, 256, 32, SDL_SWSURFACE);
+		
+		if (SDL_MUSTLOCK(screen)) { MyPrint("Locking..."); SDL_LockSurface(screen); }
+		
+		for (int yOffset = 0; yOffset < 256; yOffset++)
+		{
+			for (int xOffset = 0; xOffset < 256; xOffset++)
+			{
+				int alpha = (xOffset + yOffset) % 255;
+				*((u32*)screen->pixels + yOffset*256 + xOffset) = SDL_MapRGBA(screen->format, xOffset, yOffset, 255-yOffset, alpha);
+			}
+		}
+		
+		if (SDL_MUSTLOCK(screen)) { SDL_UnlockSurface(screen); }
+		SDL_Flip(screen);
+		
+		SDL_Quit();
+	}
+	#endif
+	
 	MyPrint("All tests completed successfully!");
 	return 0;
 }
@@ -501,7 +542,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 }
 #endif
 
-#if TARGET_IS_WASM
+#if TARGET_IS_WASM && !COMPILER_IS_EMSCRIPTEN
 WASM_EXPORTED_FUNC(int, ModuleInit, r32 initializeTimestamp)
 {
 	UNUSED(initializeTimestamp);
@@ -515,6 +556,6 @@ WASM_EXPORTED_FUNC(void, ModuleUpdate, r64 elapsedMs)
 }
 #endif
 
-#if TARGET_IS_WASM
+#if USING_CUSTOM_STDLIB
 #include "wasm/std/wasm_std_main.c"
 #endif

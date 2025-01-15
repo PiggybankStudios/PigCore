@@ -14,37 +14,43 @@ Description:
 // |                      Determine COMPILER                      |
 // +--------------------------------------------------------------+
 //NOTE: Clang lies a bunch, it gives __GNUC__ and _MSC_VER defines even though it is neither! Thus we check it first and preclude the others if we find __clang__
-#ifdef __clang__
+#ifdef __EMSCRIPTEN__
+#define COMPILER_IS_EMSCRIPTEN 1
+#else
+#define COMPILER_IS_EMSCRIPTEN 0
+#endif
+
+#if (defined(__clang__) && !COMPILER_IS_EMSCRIPTEN)
 #define COMPILER_IS_CLANG 1
 #else
 #define COMPILER_IS_CLANG 0
 #endif
 
-#if defined(__GNUC__) && !COMPILER_IS_CLANG
+#if (defined(__GNUC__) && !COMPILER_IS_CLANG && !COMPILER_IS_EMSCRIPTEN)
 #define COMPILER_IS_GCC 1
 #else
 #define COMPILER_IS_GCC 0
 #endif
 
 //format=VVRR VV=version, RR=Revision, ex. v8.23=0823, LG_Laptop=v19.41.34120
-#if defined(_MSC_VER) && !COMPILER_IS_CLANG
+#if (defined(_MSC_VER) && !COMPILER_IS_CLANG && !COMPILER_IS_EMSCRIPTEN)
 #define COMPILER_IS_MSVC 1
 #else
 #define COMPILER_IS_MSVC 0
 #endif
 
 //Make sure we have exactly one of the COMPILER defines set to true
-#if COMPILER_IS_MSVC + COMPILER_IS_CLANG + COMPILER_IS_GCC > 1
+#if COMPILER_IS_EMSCRIPTEN + COMPILER_IS_MSVC + COMPILER_IS_CLANG + COMPILER_IS_GCC > 1
 #error Failed to differentiate which compiler is running based on the pre-defined compiler flags!
 #endif
-#if COMPILER_IS_MSVC + COMPILER_IS_CLANG + COMPILER_IS_GCC < 1
-#error We dont support the current compiler! Should be Clang, GCC, or MSVC
+#if COMPILER_IS_EMSCRIPTEN + COMPILER_IS_MSVC + COMPILER_IS_CLANG + COMPILER_IS_GCC < 1
+#error We dont support the current compiler! Should be Clang, GCC, Emscripten, or MSVC
 #endif
 
 // +--------------------------------------------------------------+
 // |                  Determine TARGET Platform                   |
 // +--------------------------------------------------------------+
-#if (defined(__linux__) || defined(__unix__))
+#if ((defined(__linux__) || defined(__unix__)) && !COMPILER_IS_EMSCRIPTEN)
 #define TARGET_IS_LINUX 1
 #else
 #define TARGET_IS_LINUX 0
@@ -110,6 +116,12 @@ Description:
 #define TARGET_HAS_OFFICIAL_STDLIB 0
 #else
 #define TARGET_HAS_OFFICIAL_STDLIB 1
+#endif
+
+#if (TARGET_IS_WASM && !COMPILER_IS_EMSCRIPTEN)
+#define USING_CUSTOM_STDLIB 1
+#else
+#define USING_CUSTOM_STDLIB 0
 #endif
 
 #endif //  _BASE_COMPILER_CHECK_H

@@ -19,7 +19,7 @@ Description:
 
 //TODO: Why can't we use a #define around _Static_assert????
 #define StaticAssert(condition) _Static_assert(condition)
-#if TARGET_IS_WASM
+#if USING_CUSTOM_STDLIB
 #define AssertMsg(condition, message) if (!(condition)) { assert_msg(condition, (message)); }
 #else
 #define AssertMsg(condition, message) if (!(condition)) { assert(condition); }

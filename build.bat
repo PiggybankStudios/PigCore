@@ -21,6 +21,7 @@ for /f "delims=" %%i in ('%extract_define% BUILD_TESTS') do set BUILD_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% DUMP_PREPROCESSOR') do set DUMP_PREPROCESSOR=%%i
 for /f "delims=" %%i in ('%extract_define% CONVERT_WASM_TO_WAT') do set CONVERT_WASM_TO_WAT=%%i
+for /f "delims=" %%i in ('%extract_define% USE_EMSCRIPTEN') do set USE_EMSCRIPTEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
@@ -49,6 +50,11 @@ set /A vsdevcmd_elapsed_seconds_part=vsdevcmd_elapsed_hundredths/100
 set /A vsdevcmd_elapsed_hundredths_part=vsdevcmd_elapsed_hundredths%%100
 if %vsdevcmd_elapsed_hundredths_part% lss 10 set vsdevcmd_elapsed_hundredths_part=0%vsdevcmd_elapsed_hundredths_part%
 if "%BUILD_WINDOWS%"=="1" ( echo VsDevCmd.bat took %vsdevcmd_elapsed_seconds_part%.%vsdevcmd_elapsed_hundredths_part% seconds )
+
+if "%USE_EMSCRIPTEN%"=="1" (
+	call "C:\gamedev\lib\emsdk\emsdk_env.bat" > NUL 2> NUL
+)
+
 
 :: +--------------------------------------------------------------+
 :: |                       Compiler Options                       |
@@ -85,15 +91,22 @@ set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -lm = Include the math library (required for stuff like sinf, atan, etc.)
 set linux_clang_flags=-lm -I "../%root%"
 :: --target=wasm32 = ?
-:: --no-standard-libraries = ?
-:: --no-standard-includes = ?
 :: -mbulk-memory = ?
-set wasm_clang_flags=--target=wasm32 --no-standard-libraries --no-standard-includes -mbulk-memory
-:: -Wl, = Pass the following argument(s) to the linker
-:: --allow-undefined = ?
-:: --no-entry = ?
-set wasm_clang_flags=%wasm_clang_flags% -Wl,--allow-undefined -Wl,--no-entry -Wl,--export=__heap_base
-set wasm_clang_flags=%wasm_clang_flags% -I "../%root%" -I "../%root%/wasm/std/include"
+:: TODO: -Wl,--export-dynamic ?
+:: TODO: -Wl,--export-dynamic ?
+:: TODO: -nostdlib ?
+:: TODO: -Wl,--initial-memory=6553600 ?
+set wasm_clang_flags=--target=wasm32 -mbulk-memory -I "../%root%"
+if "%USE_EMSCRIPTEN%"=="1" (
+	set wasm_clang_flags=%wasm_clang_flags% -sUSE_SDL -sALLOW_MEMORY_GROWTH
+) else (
+	REM -Wl, = Pass the following argument(s) to the linker
+	REM --allow-undefined = ?
+	REM --no-entry = ?
+	REM --no-standard-libraries = ?
+	REM --no-standard-includes = ?
+	set wasm_clang_flags=%wasm_clang_flags% -I "../%root%/wasm/std/include" --no-standard-libraries --no-standard-includes -Wl,--no-entry -Wl,--export=__heap_base -Wl,--allow-undefined
+)
 if "%DEBUG_BUILD%"=="1" (
 	REM /MDd = ?
 	REM /Od = Optimization level: Debug
@@ -184,7 +197,8 @@ set tests_source_path=%root%/tests/tests_main.c
 set tests_exe_path=tests.exe
 set tests_bin_path=tests
 set tests_wasm_path=app.wasm
-set tests_wat_path=tests.wat
+set tests_wat_path=app.wat
+set tests_html_path=index.html
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags%
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM raylib.lib   = ?
@@ -207,7 +221,13 @@ set tests_clang_args=%common_clang_flags% %linux_clang_flags% -o %tests_bin_path
 if "%BUILD_WITH_SOKOL%"=="1" (
 	set tests_clang_args=%tests_clang_args% -lX11 -lXi -lGL -ldl -lXcursor
 )
-set tests_web_args=%common_clang_flags% %wasm_clang_flags% -o %tests_wasm_path% ../%tests_source_path%"
+REM 
+set tests_web_args=%common_clang_flags% %wasm_clang_flags% ../%tests_source_path%"
+if "%USE_EMSCRIPTEN%"=="1" (
+	set tests_web_args=-o %tests_html_path% %tests_web_args%
+) else (
+	set tests_web_args=-o %tests_wasm_path% %tests_web_args%
+)
 if "%BUILD_TESTS%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo.
@@ -240,17 +260,27 @@ if "%BUILD_TESTS%"=="1" (
 		if not exist web mkdir web
 		pushd web
 		
-		del %tests_wasm_path% > NUL 2> NUL
-		del %tests_wat_path% > NUL 2> NUL
-		clang %tests_web_args%
+		del *.wasm > NUL 2> NUL
+		del *.wat > NUL 2> NUL
+		del *.css > NUL 2> NUL
+		del *.html > NUL 2> NUL
+		del *.js > NUL 2> NUL
 		
-		if "%CONVERT_WASM_TO_WAT%"=="1" (
-			wasm2wat %tests_wasm_path% > %tests_wat_path%
+		if "%USE_EMSCRIPTEN%"=="1" (
+			emcc %tests_web_args%
+			if "%CONVERT_WASM_TO_WAT%"=="1" (
+				wasm2wat index.wasm > index.wat
+			)
+		) else (
+			clang %tests_web_args%
+			COPY ..\%root%\wasm\wasm_app_style.css main.css > NUL 2> NUL
+			COPY ..\%root%\wasm\wasm_app_index.html index.html > NUL 2> NUL
+			python ..\%root%\_scripts\combine_files.py combined.js %wasm_js_files%
+			if "%CONVERT_WASM_TO_WAT%"=="1" (
+				wasm2wat %tests_wasm_path% > %tests_wat_path%
+			)
 		)
 		
-		COPY ..\%root%\wasm\wasm_app_style.css main.css > NUL 2> NUL
-		COPY ..\%root%\wasm\wasm_app_index.html index.html > NUL 2> NUL
-		python ..\%root%\_scripts\combine_files.py combined.js %wasm_js_files%
 		
 		popd web
 		echo [Built tests for Web!]

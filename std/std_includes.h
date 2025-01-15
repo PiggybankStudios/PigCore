@@ -28,7 +28,7 @@ Descriptions:
 #include <math.h>
 #include <uchar.h> //for char16_t
 
-#if (TARGET_IS_WINDOWS || TARGET_IS_WEB)
+#if (TARGET_IS_WINDOWS || USING_CUSTOM_STDLIB)
 	#include <intrin.h>
 #endif
 #if (TARGET_IS_LINUX || TARGET_IS_OSX)

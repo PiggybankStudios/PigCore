@@ -176,7 +176,7 @@ void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize)
 	arenaOut->committed = 0;
 }
 
-#if TARGET_IS_WASM
+#if USING_CUSTOM_STDLIB
 void InitArenaStackWasm(Arena* arenaOut)
 {
 	NotNull(arenaOut);

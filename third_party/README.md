@@ -69,3 +69,27 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 * Building tests.exe into a little graphical window application (only if `BUILD_WITH_SOKOL` is enabled in `build_config.h`)
 
+
+
+## GLAD (OpenGL ES)
+**URL(s):** [https://glad.dav1d.de/](https://glad.dav1d.de/)
+
+**Folder Name:** `glad_es`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Generated using the following settings
+	* Language: C/C++
+	* Specification: OpenGL
+	* Profile: Compatibility
+	* gl: None
+	* gles1: None
+	* gles2: Version 3.0
+	* glsc2: None
+	* All Extensions
+
+**Fixup Required:** Flatten 3 files to glad folder. Change `#include <KHR/khrplatform.h>` to `#include <glad/khrplatform.h>` in `glad.h` or put `khrplatform.h` in a separate `KHR` folder
+
+**Required For:**
+
+* Building tests.exe into a graphical web application (only if `BUILD_WEB` and `BUILD_WITH_SOKOL` are enabled in `build_config.h`)

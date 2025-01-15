@@ -15,16 +15,16 @@ Description:
 #define _BUILD_CONFIG_H
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 1
+#define BUILD_WINDOWS 0
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   1
+#define BUILD_LINUX   0
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     1
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
-#define DEBUG_BUILD   0
+#define DEBUG_BUILD   1
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
@@ -42,6 +42,8 @@ Description:
 // After .wasm file(s) are generated, we will run wasm2wat on them to make a .wat
 // file (a text format of WebAssembly that is readable, mostly for debugging purposes)
 #define CONVERT_WASM_TO_WAT 1
+// Use emcc when compiling the WEB files
+#define USE_EMSCRIPTEN 1
 
 // +===============================+
 // | Optional Libraries/Frameworks |
