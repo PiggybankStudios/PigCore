@@ -159,3 +159,7 @@ bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr)
 #if defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
 #include "cross/cross_string_and_unicode.h"
 #endif
+
+#if defined(_MISC_HASH_H) && defined(_STRUCT_STRING_H)
+#include "cross/cross_string_and_hash.h"
+#endif

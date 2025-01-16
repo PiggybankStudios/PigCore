@@ -60,6 +60,14 @@
 				"README.md",
 			],
 		},
+		{
+			"path": "third_party/meow_hash",
+			"name": "meow_hash",
+			"file_exclude_patterns": [
+				"LICENSE",
+				"README.md",
+			],
+		},
 	],
 	"settings":
 	{
@@ -1514,6 +1522,7 @@
 			"GamepadButton",
 			"Gesture",
 			"GlyphInfo",
+			"Hash128",
 			"Image",
 			"KeyboardKey",
 			"LoadFileDataCallback",

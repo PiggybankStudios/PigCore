@@ -9,7 +9,10 @@ Date:   01\05\2025
 
 #include "misc/misc_dbg_level.h"
 
-#include "base/base_typedefs.h" //required by misc_random.h
+#include "base/base_typedefs.h" //required by basically everyone
+
+#include "misc/misc_hash.h"
+
 #include "base/base_macros.h" //required by misc_random.h
 
 #include "misc/misc_random.h"
@@ -30,5 +33,9 @@ Date:   01\05\2025
 #include "mem/mem_arena.h" //required by misc_printing.h
 
 #include "misc/misc_printing.h"
+
+#include "struct/struct_vectors.h" //required by misc_noise.h
+
+#include "misc/misc_noise.h"
 
 #endif //  _MISC_ALL_H

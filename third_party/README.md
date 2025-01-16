@@ -130,3 +130,20 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 * struct_vectors.h, struct_matrices.h, and struct_quaternion.h depend on HandmadeMath.h
 
+
+
+## meow_hash 0.5
+**URL(s):** [https://github.com/cmuratori/meow_hash](https://github.com/cmuratori/meow_hash) [https://www.computerenhance.com/p/meowhash](https://www.computerenhance.com/p/meowhash)
+
+**Folder Name:** `meow_hash`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Commit `b080caa7e51576fe3151c8976110df7966fa6a38` from Jul 2nd 2021
+
+**Fixup Required:** Delete everything besides meow_hash_x64_aesni.h, LICENSE, and README.md
+
+**Required For:**
+
+* misc_hash.h depends on meow_hash
+

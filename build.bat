@@ -85,12 +85,15 @@ set common_clang_flags=-fdiagnostics-absolute-paths -std=gnu2x -Wall -Wextra -Ws
 :: /we5262 = Enable the [[fallthrough]] missing warning
 set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /wd4996 /wd4706 /we5262
 :: -Wno-switch = 8 enumeration values not handled in switch: 'ArenaType_None', 'ArenaType_Funcs', 'ArenaType_Generic'...
-set common_clang_flags=%common_clang_flags% -Wno-switch
+:: -Wno-unused-function = unused function 'MeowExpandSeed'
+set common_clang_flags=%common_clang_flags% -Wno-switch -Wno-unused-function
 :: /I = Adds an include directory to search in when resolving #includes
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths
 :: -lm = Include the math library (required for stuff like sinf, atan, etc.)
-set linux_clang_flags=-lm -I "../%root%"
+:: -mssse3 = For MeowHash to work we need sse3 support
+:: -maes = For MeowHash to work we need aes support
+set linux_clang_flags=-lm -I "../%root%" -mssse3 -maes
 :: --target=wasm32 = ?
 :: -mbulk-memory = ?
 :: TODO: -Wl,--export-dynamic ?

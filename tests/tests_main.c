@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |         Vector Tests         |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		v2 foobarV2 = Div(Add(V2_Half, NewV2(0, 2)), 3.0f);
 		v2 fooV2 = V2_Zero_Const;
@@ -285,7 +285,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |         Matrix Tests         |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		v3 pos = NewV3(1, 2, 3);
 		mat2 fooMat2 = NewMat2(1, 2, 3, 4);
@@ -314,7 +314,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |       Quaternion Tests       |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		quat foo = Quat_Identity_Const;
 		quat bar = ToQuatFromAxis(NormalizeV3(V3_One), HalfPi32);
@@ -325,6 +325,72 @@ int main(int argc, char* argv[])
 		MyPrint("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].Y, barTransform.Columns[1].Y, barTransform.Columns[2].Y, barTransform.Columns[3].Y);
 		MyPrint("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].Z, barTransform.Columns[1].Z, barTransform.Columns[2].Z, barTransform.Columns[3].Z);
 		MyPrint("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].W, barTransform.Columns[1].W, barTransform.Columns[2].W, barTransform.Columns[3].W);
+	}
+	#endif
+	
+	// +==============================+
+	// |        Printing Tests        |
+	// +==============================+
+	#if 0
+	{
+		ScratchBegin(scratch);
+		char* print1 = PrintInArena(scratch, "Hello %llu World!", GetRandU64Range(mainRandom, 0, 10000));
+		MyPrint("print1 = \"%s\"", print1);
+		Str8 print2 = PrintInArenaStr(scratch, "Hello %llu World! \"%s\"", GetRandU64Range(mainRandom, 0, 10000), print1);
+		MyPrint("print2 = \"%.*s\"", StrPrint(print2));
+		
+		Str8 print3 = Str8_Empty;
+		u64 randomNum = GetRandU64Range(mainRandom, 0, 32);
+		for (u8 pass = 0; pass < 2; pass++)
+		{
+			u64 charIndex = 0;
+			for (u64 nIndex = 0; nIndex < randomNum; nIndex++)
+			{
+				TwoPassPrint(print3.chars, print3.length, &charIndex, "%s%llu", (nIndex > 0) ? "+" : "", nIndex);
+			}
+			if (pass == 0) { print3.chars = AllocArray(char, scratch, charIndex+1); print3.length = charIndex; }
+			else { Assert(charIndex == print3.length); print3.chars[print3.length] = '\0'; }
+		}
+		MyPrint("print3 = \"%.*s\"", StrPrint(print3));
+		
+		ScratchEnd(scratch);
+	}
+	#endif
+	
+	// +--------------------------------------------------------------+
+	// |                        Hashing Tests                         |
+	// +--------------------------------------------------------------+
+	#if 1
+	{
+		u8 randomBuffer[32] = { 0xAF, 0x20, 0xCD, 0xC6, 0xDB, 0x9C, 0x59, 0x22, 0xC7, 0xD8, 0xA5, 0x3E, 0x73, 0xD4, 0xB1, 0x1A, 0xDF, 0x90, 0x7D, 0xB6, 0x0B, 0x0C, 0x09, 0x12, 0xF7, 0x48, 0x55, 0x2E, 0xA3, 0x44, 0x61, 0x0B };
+		MyPrint("Buffer before: %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X",
+			randomBuffer[0],  randomBuffer[1],  randomBuffer[2],  randomBuffer[3],  randomBuffer[4],  randomBuffer[5],  randomBuffer[6],  randomBuffer[7],
+			randomBuffer[8],  randomBuffer[9],  randomBuffer[10], randomBuffer[11], randomBuffer[12], randomBuffer[13], randomBuffer[14], randomBuffer[15],
+			randomBuffer[16], randomBuffer[17], randomBuffer[18], randomBuffer[19], randomBuffer[20], randomBuffer[21], randomBuffer[22], randomBuffer[23],
+			randomBuffer[24], randomBuffer[25], randomBuffer[26], randomBuffer[27], randomBuffer[28], randomBuffer[29], randomBuffer[30], randomBuffer[31]
+		);
+		Str8 string = StrNt("Hello World!");
+		
+		u64 fnvHash1 = FnvHashU64(&randomBuffer[0], sizeof(randomBuffer));
+		MyPrint("fnvHash1 = 0x%016llX", fnvHash1);
+		u32 fnvHash2 = FnvHashU32(&randomBuffer[0], sizeof(randomBuffer));
+		MyPrint("fnvHash2 = 0x%08X", fnvHash2);
+		u64 fnvHash3 = FnvHashStrU64(string);
+		MyPrint("FnvHashStrU64(\"%s\") = 0x%016llX", string.chars, fnvHash3);
+		
+		#if MEOW_HASH_AVAILABLE
+		Hash128 meowHash1 = MeowHash128(&randomBuffer[0], sizeof(randomBuffer));
+		MyPrint("MeowHash: %08X-%08X-%08X-%08X", meowHash1.parts[0], meowHash1.parts[1], meowHash1.parts[2], meowHash1.parts[3]);
+		Hash128 meowHash2 = MeowHashStr128(string);
+		MyPrint("MeowHash(\"%s\"): %08X-%08X-%08X-%08X", string.chars, meowHash2.parts[0], meowHash2.parts[1], meowHash2.parts[2], meowHash2.parts[3]);
+		#endif //MEOW_HASH_AVAILABLE
+		
+		MyPrint("Buffer after:  %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X",
+			randomBuffer[0],  randomBuffer[1],  randomBuffer[2],  randomBuffer[3],  randomBuffer[4],  randomBuffer[5],  randomBuffer[6],  randomBuffer[7],
+			randomBuffer[8],  randomBuffer[9],  randomBuffer[10], randomBuffer[11], randomBuffer[12], randomBuffer[13], randomBuffer[14], randomBuffer[15],
+			randomBuffer[16], randomBuffer[17], randomBuffer[18], randomBuffer[19], randomBuffer[20], randomBuffer[21], randomBuffer[22], randomBuffer[23],
+			randomBuffer[24], randomBuffer[25], randomBuffer[26], randomBuffer[27], randomBuffer[28], randomBuffer[29], randomBuffer[30], randomBuffer[31]
+		);
 	}
 	#endif
 	
