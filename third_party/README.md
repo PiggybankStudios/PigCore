@@ -112,3 +112,21 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Required For:**
 
 * Building tests.exe into a little graphical window application (only if `BUILD_WITH_SDL` is enabled in `build_config.h`)
+
+
+
+## HandmadeMath.h
+**URL(s):** [https://github.com/HandmadeMath/HandmadeMath/releases/tag/v2.0.0](https://github.com/HandmadeMath/HandmadeMath/releases/tag/v2.0.0)
+
+**Folder Name:** `handmade_math`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** v2.0.0 from Feb 20th 2023
+
+**Fixup Required:** Simply copy HandmadeMath.h into the folder
+
+**Required For:**
+
+* struct_vectors.h, struct_matrices.h, and struct_quaternion.h depend on HandmadeMath.h
+

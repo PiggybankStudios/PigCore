@@ -290,6 +290,7 @@ if "%BUILD_TESTS%"=="1" (
 		echo [Built tests for Web!]
 	)
 )
+REM TODO: For some reason when building for WEB with EMSCRIPTEN we are never running anything below this end parens!
 
 :: +--------------------------------------------------------------+
 :: |                  Measure Build Elapsed Time                  |

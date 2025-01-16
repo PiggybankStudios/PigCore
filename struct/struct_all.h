@@ -26,4 +26,10 @@ Description:
 
 #include "struct/struct_var_array.h"
 
+#include "struct/struct_handmade_math_include.h" //Needed by struct_vectors.h, struct_quaternion.h, and struct_matrices.h
+
+#include "struct/struct_vectors.h"
+#include "struct/struct_quaternion.h"
+#include "struct/struct_matrices.h"
+
 #endif //  _STRUCT_ALL_H

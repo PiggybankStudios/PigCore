@@ -27,6 +27,7 @@ Descriptions:
 #include <string.h>
 #include <math.h>
 #include <uchar.h> //for char16_t
+//TODO: HandmadeMath.h includes <xmmintrin.h> when SSE is supported
 
 #if (TARGET_IS_WINDOWS || USING_CUSTOM_STDLIB)
 	#include <intrin.h>

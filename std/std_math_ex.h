@@ -58,16 +58,16 @@ r64 ConvertSampleI32ToR64(i32 sampleI32) { return ((r64)sampleI32 / (r64)INT32_M
 #define DEFAULT_R32_TOLERANCE 0.001f
 #define DEFAULT_R64_TOLERANCE 0.001 //TODO: Choose a different tolerance for R64!
 
-bool BasicallyEqualR32(r32 value1, r32 value2, r32 tolerance) { return (AbsR32(value1 - value2) <= tolerance); }
-bool BasicallyEqualR64(r64 value1, r64 value2, r64 tolerance) { return (AbsR64(value1 - value2) <= tolerance); }
+bool AreSimilarR32(r32 value1, r32 value2, r32 tolerance) { return (AbsR32(value1 - value2) <= tolerance); }
+bool AreSimilarR64(r64 value1, r64 value2, r64 tolerance) { return (AbsR64(value1 - value2) <= tolerance); }
 
-bool BasicallyGreaterThanR32(r32 value1, r32 value2, r32 tolerance) { return ((value1 > value2) || BasicallyEqualR32(value1, value2, tolerance)); }
-bool BasicallyGreaterThanR64(r64 value1, r64 value2, r64 tolerance) { return ((value1 > value2) || BasicallyEqualR64(value1, value2, tolerance)); }
+bool AreSimilarOrGreaterR32(r32 value1, r32 value2, r32 tolerance) { return ((value1 > value2) || AreSimilarR32(value1, value2, tolerance)); }
+bool AreSimilarOrGreaterR64(r64 value1, r64 value2, r64 tolerance) { return ((value1 > value2) || AreSimilarR64(value1, value2, tolerance)); }
 
-bool BasicallyLessThanR32(r32 value1, r32 value2, r32 tolerance) { return ((value1 < value2) || BasicallyEqualR32(value1, value2, tolerance)); }
-bool BasicallyLessThanR64(r64 value1, r64 value2, r64 tolerance) { return ((value1 < value2) || BasicallyEqualR64(value1, value2, tolerance)); }
+bool AreSimilarOrLessR32(r32 value1, r32 value2, r32 tolerance) { return ((value1 < value2) || AreSimilarR32(value1, value2, tolerance)); }
+bool AreSimilarOrLessR64(r64 value1, r64 value2, r64 tolerance) { return ((value1 < value2) || AreSimilarR64(value1, value2, tolerance)); }
 
-bool BasicallyBetweenR32(r32 value, r32 min, r32 max, r32 tolerance) { return ((value > min && value < max) || BasicallyEqualR32(value, min, tolerance) || BasicallyEqualR32(value, max, tolerance)); }
-bool BasicallyBetweenR64(r64 value, r64 min, r64 max, r64 tolerance) { return ((value > min && value < max) || BasicallyEqualR64(value, min, tolerance) || BasicallyEqualR64(value, max, tolerance)); }
+bool AreSimilarBetweenR32(r32 value, r32 min, r32 max, r32 tolerance) { return ((value > min && value < max) || AreSimilarR32(value, min, tolerance) || AreSimilarR32(value, max, tolerance)); }
+bool AreSimilarBetweenR64(r64 value, r64 min, r64 max, r64 tolerance) { return ((value > min && value < max) || AreSimilarR64(value, min, tolerance) || AreSimilarR64(value, max, tolerance)); }
 
 #endif //  _STD_MATH_EX_H

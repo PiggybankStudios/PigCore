@@ -47,7 +47,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] gy_imgui_helpers.h
 	[ ] gy_linked_list.h
 	[-] gy_lookup.h
-	[ ] gy_matrices.h
+	[X] gy_matrices.h
 	[?] gy_memory.h
 	[ ] gy_network_bus.h
 	[ ] gy_orca_aliases.h
@@ -56,7 +56,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] gy_path.h
 	[ ] gy_primitives.h
 	[ ] gy_process_log.h
-	[ ] gy_quaternions.h
+	[X] gy_quaternions.h
 	[ ] gy_rays.h
 	[ ] gy_rectangles.h
 	[ ] gy_resource_manifest.h
@@ -78,5 +78,5 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] gy_triangulation.h
 	[x] gy_types.h
 	[x] gy_variable_array.h
-	[ ] gy_vectors.h
+	[X] gy_vectors.h
 	[ ] gy_word_tree.h

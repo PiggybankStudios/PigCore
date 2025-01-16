@@ -128,14 +128,14 @@ void PrintNumbers(VarArray* array)
 // +--------------------------------------------------------------+
 #if BUILD_WITH_SOKOL
 int MyMain()
-#elif BUILD_WITH_SDL
+#elif (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int main(int argc, char* argv[])
 #endif
 {
 	#if BUILD_WITH_SOKOL
-	#elif BUILD_WITH_SDL
+	#elif (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 	UNUSED(hInstance);
 	UNUSED(hPrevInstance);
 	UNUSED(lpCmdLine);
@@ -262,6 +262,69 @@ int main(int argc, char* argv[])
 		PrintArena(&scratch1);
 		ArenaResetToMark(&scratch1, mark1);
 		PrintArena(&scratch1);
+	}
+	#endif
+	
+	// +==============================+
+	// |         Vector Tests         |
+	// +==============================+
+	#if 1
+	{
+		v2 foobarV2 = Div(Add(V2_Half, NewV2(0, 2)), 3.0f);
+		v2 fooV2 = V2_Zero_Const;
+		v3 fooV3 = V3_Zero_Const;
+		v4 fooV4 = V4_Zero_Const;
+		v2i fooV2i = V2i_Zero_Const;
+		v3i fooV3i = V3i_Zero_Const;
+		v4i fooV4i = V4i_Zero_Const;
+		MyPrint("sizeof(v2) = %zu", sizeof(v2));
+		MyPrint("foobar = (%f, %f)", foobarV2.X, foobarV2.Y);
+	}
+	#endif
+	
+	// +==============================+
+	// |         Matrix Tests         |
+	// +==============================+
+	#if 1
+	{
+		v3 pos = NewV3(1, 2, 3);
+		mat2 fooMat2 = NewMat2(1, 2, 3, 4);
+		mat3 fooMat3 = MakeScaleXYZMat3(2, 4, 8); //NewMat3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+		mat4 fooMat4 = MakeTranslateXYZMat4(1, 1, 1); //NewMat4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+		mat4 barMat4 = NewMat4(16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
+		mat4 foobarMat4 = MulMat4(fooMat4, barMat4);
+		pos = MulMat4AndV3(fooMat4, pos, true);
+		// pos = LinearCombineV4Mat4(ToV4From3(pos, 1.0f), fooMat4).XYZ;
+		MyPrint("sizeof(mat2) = %zu", sizeof(mat2));
+		MyPrint("sizeof(mat3) = %zu", sizeof(mat3));
+		MyPrint("sizeof(mat4) = %zu", sizeof(mat4));
+		MyPrint("pos = (%.0f, %.0f, %.0f)", pos.X, pos.Y, pos.Z);
+		MyPrint("fooMat2 = (%.0f, %.0f)", fooMat2.Columns[0].X, fooMat2.Columns[1].X);
+		MyPrint("          (%.0f, %.0f)", fooMat2.Columns[0].Y, fooMat2.Columns[1].Y);
+		MyPrint("fooMat3 = (%.0f, %.0f, %.0f)", fooMat3.Columns[0].X, fooMat3.Columns[1].X, fooMat3.Columns[2].X);
+		MyPrint("          (%.0f, %.0f, %.0f)", fooMat3.Columns[0].Y, fooMat3.Columns[1].Y, fooMat3.Columns[2].Y);
+		MyPrint("          (%.0f, %.0f, %.0f)", fooMat3.Columns[0].Z, fooMat3.Columns[1].Z, fooMat3.Columns[2].Z);
+		MyPrint("foobarMat4 = (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].X, foobarMat4.Columns[1].X, foobarMat4.Columns[2].X, foobarMat4.Columns[3].X);
+		MyPrint("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].Y, foobarMat4.Columns[1].Y, foobarMat4.Columns[2].Y, foobarMat4.Columns[3].Y);
+		MyPrint("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].Z, foobarMat4.Columns[1].Z, foobarMat4.Columns[2].Z, foobarMat4.Columns[3].Z);
+		MyPrint("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].W, foobarMat4.Columns[1].W, foobarMat4.Columns[2].W, foobarMat4.Columns[3].W);
+	}
+	#endif
+	
+	// +==============================+
+	// |       Quaternion Tests       |
+	// +==============================+
+	#if 1
+	{
+		quat foo = Quat_Identity_Const;
+		quat bar = ToQuatFromAxis(NormalizeV3(V3_One), HalfPi32);
+		mat4 barTransform = ToMat4FromQuat(bar);
+		MyPrint("foo = (%f, %f, %f, %f)", foo.X, foo.Y, foo.Z, foo.W);
+		MyPrint("bar = (%f, %f, %f, %f)", bar.X, bar.Y, bar.Z, bar.W);
+		MyPrint("barTransform = (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].X, barTransform.Columns[1].X, barTransform.Columns[2].X, barTransform.Columns[3].X);
+		MyPrint("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].Y, barTransform.Columns[1].Y, barTransform.Columns[2].Y, barTransform.Columns[3].Y);
+		MyPrint("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].Z, barTransform.Columns[1].Z, barTransform.Columns[2].Z, barTransform.Columns[3].Z);
+		MyPrint("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].W, barTransform.Columns[1].W, barTransform.Columns[2].W, barTransform.Columns[3].W);
 	}
 	#endif
 	
@@ -592,7 +655,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 WASM_EXPORTED_FUNC(int, ModuleInit, r32 initializeTimestamp)
 {
 	UNUSED(initializeTimestamp);
-	return main();
+	return main(0, nullptr);
 }
 
 WASM_EXPORTED_FUNC(void, ModuleUpdate, r64 elapsedMs)
