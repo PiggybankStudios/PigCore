@@ -24,4 +24,11 @@ Date:   01\05\2025
 
 #include "misc/misc_standard_colors.h"
 
+#include "std/std_includes.h" //required by misc_printing.h
+#include "struct/struct_string.h" //required by misc_printing.h
+#include "std/std_printf.h" //required by misc_printing.h
+#include "mem/mem_arena.h" //required by misc_printing.h
+
+#include "misc/misc_printing.h"
+
 #endif //  _MISC_ALL_H

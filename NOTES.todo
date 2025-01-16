@@ -9,7 +9,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] gy_directions.h
 	[X] gy_easing.h
 	[X] gy_random.h
-	[!] gy_extras.h
+	[X] gy_extras.h
 	[!] gy_hash.h (+add meowhash?)
 	[X] gy_unicode.h
 	[?] gy_string.h

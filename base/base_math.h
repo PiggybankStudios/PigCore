@@ -63,6 +63,10 @@ i64 SignOfI64(i64 value) { return (value < 0) ? -1 : ((value > 0) ? 1 : 0); }
 r32 SignOfR32(r32 value) { return (value < 0.0f) ? -1.0f : ((value > 0.0f) ? 1.0f : 0.0f); }
 r64 SignOfR64(r64 value) { return (value < 0.0) ? -1.0 : ((value > 0.0) ? 1.0 : 0.0); }
 
+u8  ClampU8(u8   value, u8  min, u8  max) { return (value < min) ? min : ((value > max) ? max : value); }
+u16 ClampU16(u16 value, u16 min, u16 max) { return (value < min) ? min : ((value > max) ? max : value); }
+u32 ClampU32(u32 value, u32 min, u32 max) { return (value < min) ? min : ((value > max) ? max : value); }
+u64 ClampU64(u64 value, u64 min, u64 max) { return (value < min) ? min : ((value > max) ? max : value); }
 i8  ClampI8(i8   value, i8  min, i8  max) { return (value < min) ? min : ((value > max) ? max : value); }
 i16 ClampI16(i16 value, i16 min, i16 max) { return (value < min) ? min : ((value > max) ? max : value); }
 i32 ClampI32(i32 value, i32 min, i32 max) { return (value < min) ? min : ((value > max) ? max : value); }

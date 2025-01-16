@@ -587,3 +587,7 @@ r32 InverseEase(EasingStyle style, r32 y)
 }
 
 #endif //  _MISC_EASING_H
+
+#if defined(_MISC_EASING_H) && defined(_STD_MATH_EX_H)
+#include "cross/cross_easing_and_math_ex.h"
+#endif

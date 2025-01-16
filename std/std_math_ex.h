@@ -46,6 +46,9 @@ r64 InverseLerpClampR64(r64 start, r64 end, r64 value) { return ClampR64((value 
 r32 FractionalPartR32(r32 value) { return AbsR32(ModR32(value, 1.0f)); }
 r64 FractionalPartR64(r64 value) { return AbsR64(ModR64(value, 1.0)); }
 
+// +--------------------------------------------------------------+
+// |              Audio Sample Conversion Functions               |
+// +--------------------------------------------------------------+
 // TODO: Use ClampCast in these conversions!
 i8 ConvertSampleR64ToI8(r64 sample) { return (i8)RoundR64i(sample * INT8_MAX); }
 i16 ConvertSampleR64ToI16(r64 sample) { return (i16)RoundR64i(sample * INT16_MAX); }
@@ -54,6 +57,9 @@ r64 ConvertSampleI8ToR64(i8 sampleI8) { return ((r64)sampleI8 / (r64)INT8_MAX); 
 r64 ConvertSampleI16ToR64(i16 sampleI16) { return ((r64)sampleI16 / (r64)INT16_MAX); }
 r64 ConvertSampleI32ToR64(i32 sampleI32) { return ((r64)sampleI32 / (r64)INT32_MAX); }
 
+// +--------------------------------------------------------------+
+// |                  Float Comparison Functions                  |
+// +--------------------------------------------------------------+
 //NOTE: A fixed tolerance is never a perfect solution. But it's usually good enough for our purposes when a float value is within a "reasonable" range
 #define DEFAULT_R32_TOLERANCE 0.001f
 #define DEFAULT_R64_TOLERANCE 0.001 //TODO: Choose a different tolerance for R64!
@@ -70,4 +76,60 @@ bool AreSimilarOrLessR64(r64 value1, r64 value2, r64 tolerance) { return ((value
 bool AreSimilarBetweenR32(r32 value, r32 min, r32 max, r32 tolerance) { return ((value > min && value < max) || AreSimilarR32(value, min, tolerance) || AreSimilarR32(value, max, tolerance)); }
 bool AreSimilarBetweenR64(r64 value, r64 min, r64 max, r64 tolerance) { return ((value > min && value < max) || AreSimilarR64(value, min, tolerance) || AreSimilarR64(value, max, tolerance)); }
 
+// +--------------------------------------------------------------+
+// |               Oscillate and Animate Functions                |
+// +--------------------------------------------------------------+
+r32 OscillateBy(u64 timeSource, r32 min, r32 max, u64 periodMs, u64 offset)
+{
+	r32 lerpValue = (SinR32((((timeSource + offset) % periodMs) / (r32)periodMs) * 2*Pi32) + 1.0f) / 2.0f;
+	return min + (max - min) * lerpValue;
+}
+r32 OscillateSawBy(u64 timeSource, r32 min, r32 max, u64 periodMs, u64 offset)
+{
+	r32 lerpValue = (SawR32((((timeSource + offset) % periodMs) / (r32)periodMs) * 2*Pi32) + 1.0f) / 2.0f;
+	return min + (max - min) * lerpValue;
+}
+
+r32 AnimateBy(u64 timeSource, r32 min, r32 max, u64 periodMs, u64 offset)
+{
+	r32 lerpValue = ((timeSource + offset) % periodMs) / (r32)periodMs;
+	return min + (max - min) * lerpValue;
+}
+r32 AnimateAndPauseBy(u64 timeSource, r32 min, r32 max, u64 animationTime, u64 pauseTime, u64 offset)
+{
+	u64 lerpIntValue = (u64)((timeSource + offset) % (animationTime + pauseTime));
+	if (lerpIntValue >= animationTime) { lerpIntValue = animationTime; }
+	return min + (max - min) * (lerpIntValue / (r32)animationTime);
+}
+
+u64 AnimateByU64(u64 timeSource, u64 min, u64 max, u64 periodMs, u64 offset)
+{
+	Assert(periodMs > 0);
+	if (min == max) { return min; }
+	bool reversed = false;
+	if (max < min) { SwapVariables(u64, min, max); reversed = true; }
+	u64 bucketTime = periodMs / (max-min);
+	u64 inLoopTime = ((timeSource + offset) % periodMs);
+	if (reversed) { inLoopTime = periodMs-1 - inLoopTime; }
+	u64 result = ClampU64(inLoopTime / bucketTime, min, max-1);
+	return result;
+}
+u64 AnimateAndPauseByU64(u64 timeSource, u64 min, u64 max, u64 animationTime, u64 pauseTime, u64 offset, bool useFirstFrameForPause)
+{
+	Assert(animationTime > 0);
+	if (min == max) { return min; }
+	bool reversed = false;
+	if (max < min) { SwapVariables(u64, min, max); reversed = true; }
+	u64 bucketTime = animationTime / (max - min);
+	u64 inLoopTime = ((timeSource + offset) % (animationTime + pauseTime));
+	if (inLoopTime > animationTime) { inLoopTime = (useFirstFrameForPause ? 0 : animationTime-1); }
+	if (reversed) { inLoopTime = animationTime-1 - inLoopTime; }
+	u64 result = ClampU64(inLoopTime / bucketTime, min, max-1);
+	return result;
+}
+
 #endif //  _STD_MATH_EX_H
+
+#if defined(_MISC_EASING_H) && defined(_STD_MATH_EX_H)
+#include "cross/cross_easing_and_math_ex.h"
+#endif
