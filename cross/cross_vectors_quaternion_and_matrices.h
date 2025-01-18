@@ -7,6 +7,8 @@ Date:   01\15\2025
 #ifndef _CROSS_VECTORS_QUATERNION_AND_MATRICES_H
 #define _CROSS_VECTORS_QUATERNION_AND_MATRICES_H
 
+//NOTE: Intentionally no includes here
+
 // +--------------------------------------------------------------+
 // |                      C11 Generic Macros                      |
 // +--------------------------------------------------------------+

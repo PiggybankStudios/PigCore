@@ -378,12 +378,15 @@ size_t strlen(const char* str)
 	//Modified implementation from Musl Lib-C
 	const char* startPntr = str;
 	const a_size_t* wordPntr;
+	//Walk 1 character at a time until we are size_t aligned
 	for (; ((uintptr_t)str % sizeof(size_t)) != 0; str++)
 	{
 		if (!*str) { return str-startPntr; }
 	}
+	//Check size_t bytes at once with WORD_CONTAINS_ZERO
 	for (wordPntr = (const void *)str; !WORD_CONTAINS_ZERO(*wordPntr); wordPntr++) { }
 	str = (const void *)wordPntr;
+	//Walk 0-3 bytes until we find the 0 in the word
 	for (; *str; str++) { }
 	return (str - startPntr);
 }

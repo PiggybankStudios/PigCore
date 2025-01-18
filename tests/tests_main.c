@@ -357,9 +357,9 @@ int main(int argc, char* argv[])
 	}
 	#endif
 	
-	// +--------------------------------------------------------------+
-	// |                        Hashing Tests                         |
-	// +--------------------------------------------------------------+
+	// +==============================+
+	// |        Hashing Tests         |
+	// +==============================+
 	#if 1
 	{
 		u8 randomBuffer[32] = { 0xAF, 0x20, 0xCD, 0xC6, 0xDB, 0x9C, 0x59, 0x22, 0xC7, 0xD8, 0xA5, 0x3E, 0x73, 0xD4, 0xB1, 0x1A, 0xDF, 0x90, 0x7D, 0xB6, 0x0B, 0x0C, 0x09, 0x12, 0xF7, 0x48, 0x55, 0x2E, 0xA3, 0x44, 0x61, 0x0B };
@@ -391,6 +391,34 @@ int main(int argc, char* argv[])
 			randomBuffer[16], randomBuffer[17], randomBuffer[18], randomBuffer[19], randomBuffer[20], randomBuffer[21], randomBuffer[22], randomBuffer[23],
 			randomBuffer[24], randomBuffer[25], randomBuffer[26], randomBuffer[27], randomBuffer[28], randomBuffer[29], randomBuffer[30], randomBuffer[31]
 		);
+	}
+	#endif
+	
+	// +==============================+
+	// |        Unicode Tests         |
+	// +==============================+
+	#if 1
+	{
+		u32 testCodepoints[] = { 0x7F, 0x80, 0xFE, 0xFF, 0xF0, 0x9F, 0xA7, 0xA9, /*kanji*/0x93E1, /*puzzle emoji*/0x1F9E9 };
+		for (u64 cIndex = 0; cIndex < ArrayCount(testCodepoints); cIndex++)
+		{
+			u8 encodedBuffer[UTF8_MAX_CHAR_SIZE];
+			u8 numBytes = GetUtf8BytesForCode(testCodepoints[cIndex], &encodedBuffer[0], false);
+			MyPrintNoLine("Codepoint U+%X = [%u]{ ", testCodepoints[cIndex], numBytes);
+			for (u8 bIndex = 0; bIndex < numBytes; bIndex++) { MyPrintNoLine("%s%02X", bIndex > 0 ? ", " : "", encodedBuffer[bIndex]); }
+			MyPrintNoLine("}");
+			u32 decodedCodepoint = 0;
+			u8 numBytes2 = GetCodepointForUtf8(numBytes, (char*)&encodedBuffer[0], &decodedCodepoint);
+			if (numBytes != numBytes2) { MyPrint("ERROR: decoded byte count is %u not %u", numBytes2, numBytes); }
+			MyPrint(" (Decoded=U+%X)", decodedCodepoint);
+		}
+		char* utf8Str = u8" \u00FF \u93E1 \U0001F9E9 "; //NOTE: Putting the kanji or emoji directly in the string literal doesn't produce the result we want?
+		MyPrintNoLine("utf8Str = %llu bytes: ", MyStrLength64(utf8Str));
+		for (u64 bIndex = 0; utf8Str[bIndex] != '\0'; bIndex++)
+		{
+			MyPrintNoLine("%s%02X", (bIndex > 0 ? ", " : ""), CharToU8(utf8Str[bIndex]));
+		}
+		MyPrint("");
 	}
 	#endif
 	

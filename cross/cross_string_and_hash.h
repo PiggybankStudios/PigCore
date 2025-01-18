@@ -7,6 +7,8 @@ Date:   01\15\2025
 #ifndef _CROSS_STRING_AND_HASH_H
 #define _CROSS_STRING_AND_HASH_H
 
+//NOTE: Intentionally no includes here
+
 u8 FnvHashStrU8(Str8 string)
 {
 	return FnvHashU8(string.pntr, string.length);

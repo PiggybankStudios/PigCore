@@ -20,6 +20,7 @@ Description:
 #include "base/base_assert.h"
 
 #define UTF8_MAX_CODEPOINT 0x10FFFFUL
+#define UCS2_MAX_CHAR_SIZE 2 //words
 #define UTF8_MAX_CHAR_SIZE 4 //bytes
 
 #define NUM_LETTERS_IN_ENGLISH_ALPHABET 26
@@ -312,4 +313,8 @@ u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint)
 
 #if defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
 #include "cross/cross_string_and_unicode.h"
+#endif
+
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
+#include "cross/cross_mem_arena_string_and_unicode.h"
 #endif

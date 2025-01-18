@@ -59,34 +59,29 @@ struct Str8Pair
 // +--------------------------------------------------------------+
 Str8 StrNt(const char* nullTermStr)
 {
-	#if DEBUG_BUILD
-	Str8 result = ZEROED;
-	#else
 	Str8 result;
-	#endif
 	result.length = (nullTermStr != nullptr) ? (uxx)MyStrLength64(nullTermStr) : 0;
 	result.chars = (char*)nullTermStr; //throw away const qualifier
 	return result;
 }
 Str8 NewStr8(uxx length, const void* pntr)
 {
-	#if DEBUG_BUILD
-	Str8 result = ZEROED;
-	#else
 	Str8 result;
-	#endif
 	result.length = length;
 	result.pntr = (void*)pntr; //throw away const qualifier
 	return result;
 }
 
+Str16 Str16Nt(const char16_t* nullTermStr)
+{
+	Str16 result;
+	result.length = ((nullTermStr != nullptr) ? (uxx)MyWideStrLength(nullTermStr) : 0);
+	result.chars = (char16_t*)nullTermStr;
+	return result;
+}
 Str16 NewStr16(uxx length, const void* pntr)
 {
-	#if DEBUG_BUILD
-	Str16 result = ZEROED;
-	#else
 	Str16 result;
-	#endif
 	result.length = length;
 	result.pntr = (void*)pntr; //throw away const qualifier
 	return result;
@@ -94,11 +89,7 @@ Str16 NewStr16(uxx length, const void* pntr)
 
 Str8Pair NewStr8Pair(Str8 left, Str8 right)
 {
-	#if DEBUG_BUILD
-	Str8Pair result = ZEROED;
-	#else
 	Str8Pair result;
-	#endif
 	result.left = left;
 	result.right = right;
 	return result;
@@ -158,6 +149,10 @@ bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr)
 
 #if defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
 #include "cross/cross_string_and_unicode.h"
+#endif
+
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
+#include "cross/cross_mem_arena_string_and_unicode.h"
 #endif
 
 #if defined(_MISC_HASH_H) && defined(_STRUCT_STRING_H)
