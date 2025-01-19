@@ -22,6 +22,7 @@ for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% DUMP_PREPROCESSOR') do set DUMP_PREPROCESSOR=%%i
 for /f "delims=" %%i in ('%extract_define% CONVERT_WASM_TO_WAT') do set CONVERT_WASM_TO_WAT=%%i
 for /f "delims=" %%i in ('%extract_define% USE_EMSCRIPTEN') do set USE_EMSCRIPTEN=%%i
+for /f "delims=" %%i in ('%extract_define% ENABLE_AUTO_PROFILE') do set ENABLE_AUTO_PROFILE=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
@@ -204,6 +205,10 @@ set tests_wasm_path=app.wasm
 set tests_wat_path=app.wat
 set tests_html_path=index.html
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags%
+set tests_clang_args=%common_clang_flags% %linux_clang_flags% -o %tests_bin_path% ../%tests_source_path%
+if "%ENABLE_AUTO_PROFILE%"=="1" (
+	set tests_clang_args=-finstrument-functions %tests_clang_args%
+)
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM raylib.lib   = ?
 	REM gdi32.lib    = ?
@@ -224,7 +229,6 @@ if "%BUILD_WITH_BOX2D%"=="1" (
 if "%BUILD_WITH_SDL%"=="1" (
 	set tests_cl_args=%tests_cl_args% SDL2.lib
 )
-set tests_clang_args=%common_clang_flags% %linux_clang_flags% -o %tests_bin_path% ../%tests_source_path%
 if "%BUILD_WITH_SOKOL%"=="1" (
 	set tests_clang_args=%tests_clang_args% -lX11 -lXi -lGL -ldl -lXcursor
 )

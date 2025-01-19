@@ -98,6 +98,7 @@ RandomSeries* mainRandom = nullptr;
 // +--------------------------------------------------------------+
 #include "tests/tests_box2d.c"
 #include "tests/tests_wasm_std.c"
+#include "tests/tests_auto_profile.c"
 
 // +--------------------------------------------------------------+
 // |                           Helpers                            |

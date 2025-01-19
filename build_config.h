@@ -44,6 +44,8 @@ Description:
 #define CONVERT_WASM_TO_WAT 1
 // Use emcc when compiling the WEB files
 #define USE_EMSCRIPTEN 0
+// Enables auto-profiling on function entry/exit (for clang only). Dumps to a file that can be viewed by spall
+#define ENABLE_AUTO_PROFILE 0
 
 // +===============================+
 // | Optional Libraries/Frameworks |
