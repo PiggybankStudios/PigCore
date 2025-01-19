@@ -36,6 +36,7 @@ enum Result
 	Result_ExePathTooLong,
 	Result_FailedToAllocateMemory,
 	Result_UnsupportedPlatform,
+	Result_ParsingFailure,
 	
 	Result_Count,
 };
@@ -53,6 +54,7 @@ const char* GetResultStr(Result result)
 		case Result_ExePathTooLong: return "ExePathTooLong";
 		case Result_FailedToAllocateMemory: return "FailedToAllocateMemory";
 		case Result_UnsupportedPlatform: return "UnsupportedPlatform";
+		case Result_ParsingFailure: return "ParsingFailure";
 		default: return UNKNOWN_STR;
 	}
 }

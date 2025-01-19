@@ -300,6 +300,7 @@ bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOutArena
 // +--------------------------------------------------------------+
 //NOTE: Passing nullptr for arena will output a Str8 that has length set but no chars pointer
 // NOTE: The contentsOut is always null-terminated
+//TODO: Return Result instead of bool!
 bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* contentsOut)
 {
 	//NOTE: This function should be multi-thread safe!

@@ -376,7 +376,7 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 	DebugNotNull(arena);
 	
 	void* result = nullptr;
-	uxx alignment = (alignmentOverride != 0) ? alignmentOverride : arena->alignment;
+	uxx alignment = (alignmentOverride != UINTXX_MAX) ? alignmentOverride : arena->alignment;
 	
 	switch (arena->type)
 	{
@@ -579,13 +579,13 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 }
 NODISCARD void* AllocMem(Arena* arena, uxx numBytes) //pre-declared at top of file
 {
-	return AllocMemAligned(arena, numBytes, 0);
+	return AllocMemAligned(arena, numBytes, UINTXX_MAX);
 }
 
 #define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)_Alignof(type))
-#define AllocTypeUnaligned(type, arenaPntr)         (type*)AllocMem(       (arenaPntr), (uxx)sizeof(type),             0)
+#define AllocTypeUnaligned(type, arenaPntr)         (type*)AllocMem(       (arenaPntr), (uxx)sizeof(type))
 #define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
-#define AllocArrayUnaligned(type, arenaPntr, count) (type*)AllocMem(       (arenaPntr), (uxx)(sizeof(type) * (count)), 0)
+#define AllocArrayUnaligned(type, arenaPntr, count) (type*)AllocMem(       (arenaPntr), (uxx)(sizeof(type) * (count)))
 
 // +--------------------------------------------------------------+
 // |                  Arena Free Implementations                  |
@@ -712,6 +712,7 @@ void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 			// requirements might have added a bit on the front
 			if ((u8*)allocPntr == ((u8*)arena->mainPntr + arena->used - allocSize))
 			{
+				//TODO: Do we want to uncommit committed pages?
 				arena->used -= allocSize;
 				Decrement(arena->allocCount);
 			}
@@ -835,10 +836,31 @@ NODISCARD void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSi
 		// +==============================+
 		// |  ArenaType_Stack ReallocMem  |
 		// +==============================+
-		// case ArenaType_Stack:
-		// {
-		// 	Unimplemented(); //TODO: Implement me!
-		// } break;
+		case ArenaType_Stack:
+		{
+			//TODO: Should we be silently ignoring scenarios where we can't free things? Esp. when newSize == 0
+			DebugNotNull(arena->mainPntr);
+			uxx allocIndex = (uxx)((u8*)allocPntr - (u8*)arena->mainPntr);
+			// If the allocation is the last thing on the arena, then we can actually just grow it
+			if (oldSize > 0 && allocIndex + oldSize == arena->used)
+			{
+				if (newSize == 0)
+				{
+					FreeMem(arena, allocPntr, oldSize);
+				}
+				else if (allocIndex + newSize <= arena->size)
+				{
+					arena->used = allocIndex + newSize;
+					result = allocPntr;
+				}
+			}
+			//Otherwise a Realloc is the same as a call to Alloc, the old allocation will be "forgotten"
+			else if (newSize > 0)
+			{
+				result = AllocMem(arena, newSize);
+			}
+			if (result == nullptr && newSize > 0 && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to reallocate in Stack Arena!"); }
+		} break;
 		
 		// +==================================+
 		// | ArenaType_StackPaged ReallocMem  |
@@ -851,10 +873,39 @@ NODISCARD void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSi
 		// +====================================+
 		// | ArenaType_StackVirtual ReallocMem  |
 		// +====================================+
-		// case ArenaType_StackVirtual:
-		// {
-		// 	Unimplemented(); //TODO: Implement me!
-		// } break;
+		case ArenaType_StackVirtual:
+		{
+			//TODO: Should we be silently ignoring scenarios where we can't free things? Esp. when newSize == 0
+			DebugNotNull(arena->mainPntr);
+			uxx allocIndex = (uxx)((u8*)allocPntr - (u8*)arena->mainPntr);
+			// If the allocation is the last thing on the arena, then we can actually just grow it
+			if (oldSize > 0 && allocIndex + oldSize == arena->used)
+			{
+				if (newSize == 0)
+				{
+					FreeMem(arena, allocPntr, oldSize);
+				}
+				else if (newSize > oldSize)
+				{
+					void* newAlloc = AllocMemAligned(arena, newSize - oldSize, 0);
+					Assert((u8*)newAlloc == (u8*)arena->mainPntr + allocIndex + oldSize);
+					arena->used = allocIndex + newSize;
+					result = allocPntr;
+				}
+				else if (newSize < oldSize)
+				{
+					//TODO: Do we want to uncommit committed pages?
+					arena->used = allocIndex + newSize;
+					result = allocPntr;
+				}
+			}
+			//Otherwise a Realloc is the same as a call to Alloc, the old allocation will be "forgotten"
+			else if (newSize > 0)
+			{
+				result = AllocMem(arena, newSize);
+			}
+			if (result == nullptr && newSize > 0 && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to reallocate in StackVirtual Arena!"); }
+		} break;
 		
 		// +================================+
 		// | ArenaType_StackWasm ReallocMem |

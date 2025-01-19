@@ -17,9 +17,9 @@ Description:
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS 1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   1
+#define BUILD_LINUX   0
 // Build the WASM binary for operating as a webpage
-#define BUILD_WEB     1
+#define BUILD_WEB     0
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -51,7 +51,7 @@ Description:
 // | Optional Libraries/Frameworks |
 // +===============================+
 // Enables tests.exe being linked with raylib.lib and it's required libraries
-#define BUILD_WITH_RAYLIB 0
+#define BUILD_WITH_RAYLIB 1
 // Enables tests.exe being linked with box2d.lib and it's required libraries
 #define BUILD_WITH_BOX2D 0
 // Enables tests.exe using sokol header files (and on non-windows OS' adds required libraries for Sokol to work)

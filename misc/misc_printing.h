@@ -15,6 +15,11 @@ Description:
 #include "struct/struct_string.h"
 #include "mem/mem_arena.h"
 
+//TODO: We should thoroughly test calling vsnprintf multiple times on a single va_list without va_start/va_end in-between
+//      This seems to be working fine, but I seem to recall running into problems with it before
+//      If it does work fine we should add some macros/functions that allow you do that easily to allocate a printed string into an Arena
+//      NOTE: BuilderVanished pointed out this stackoverflow: https://stackoverflow.com/questions/55274350/can-i-use-va-list-twice-as-following
+
 char* PrintInArena(Arena* arena, const char* formatString, ...)
 {
 	NotNull(arena);
