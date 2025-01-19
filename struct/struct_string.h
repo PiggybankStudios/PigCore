@@ -16,6 +16,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
+#include "base/base_char.h"
 
 // +--------------------------------------------------------------+
 // |                       String Structure                       |
@@ -57,7 +58,7 @@ struct Str8Pair
 // +--------------------------------------------------------------+
 // |                       Basic String API                       |
 // +--------------------------------------------------------------+
-Str8 StrNt(const char* nullTermStr)
+Str8 StrLit(const char* nullTermStr)
 {
 	Str8 result;
 	result.length = (nullTermStr != nullptr) ? (uxx)MyStrLength64(nullTermStr) : 0;
@@ -72,7 +73,7 @@ Str8 NewStr8(uxx length, const void* pntr)
 	return result;
 }
 
-Str16 Str16Nt(const char16_t* nullTermStr)
+Str16 Str16Lit(const char16_t* nullTermStr)
 {
 	Str16 result;
 	result.length = ((nullTermStr != nullptr) ? (uxx)MyWideStrLength(nullTermStr) : 0);
@@ -140,6 +141,132 @@ bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr)
 #define DebugNotEmptyStr(string)         //nothing
 #define DebugNotEmptyStrPntr(stringPntr) //nothing
 #endif
+
+// +--------------------------------------------------------------+
+// |                 String Manipulation Helpers                  |
+// +--------------------------------------------------------------+
+Str8 TrimLeadingWhitespace(Str8 target)
+{
+	NotNullStr(target);
+	Str8 result = target;
+	while (result.length > 0)
+	{
+		if (IsCharWhitespace(result.chars[0], false))
+		{
+			result.length--;
+			result.chars++;
+		}
+		else { break; }
+	}
+	return result;
+}
+Str8 TrimTrailingWhitespace(Str8 target)
+{
+	NotNullStr(target);
+	Str8 result = target;
+	while (result.length > 0)
+	{
+		if (IsCharWhitespace(result.chars[result.length-1], false))
+		{
+			result.length--;
+		}
+		else { break; }
+	}
+	return result;
+}
+
+Str8 TrimWhitespace(Str8 target)
+{
+	NotNullStr(target);
+	Str8 result = target;
+	result = TrimLeadingWhitespace(result);
+	result = TrimTrailingWhitespace(result);
+	return result;
+}
+
+//TODO: Str8 StrSubstring(Str8* target, uxx startIndex)
+//TODO: Str8 StrSubstring(Str8* target, uxx startIndex, uxx endIndex)
+//TODO: Str8 StrSubstringLength(Str8* target, uxx startIndex, uxx length)
+//TODO: Str8 CombineStrs(MemArena_t* memArena, Str8 str1, Str8 str2)
+//TODO: Str8 CombineStrs(MemArena_t* memArena, Str8 str1, Str8 str2, Str8 str3)
+//TODO: Str8 CombineStrs(MemArena_t* memArena, Str8 str1, Str8 str2, Str8 str3, Str8 str4)
+//TODO: bool StrEquals(Str8 target, Str8 comparison)
+//TODO: bool StrEquals(Str8 target, const char* comparisonNt)
+//TODO: bool StrEquals(Str8 target, uxx comparisonLength, const char* comparisonPntr)
+//TODO: bool StrEquals(const char* comparisonNt, Str8 target)
+//TODO: bool StrEquals(uxx comparisonLength, const char* comparisonPntr, Str8 target)
+//TODO: i32 StrCompareIgnoreCase(Str8 str1, Str8 str2, uxx compareLength)
+//TODO: i32 StrCompareIgnoreCase(Str8 str1, Str8 str2)
+//TODO: i32 StrCompareIgnoreCase(Str8 str1, const char* nullTermStr, uxx compareLength)
+//TODO: i32 StrCompareIgnoreCase(Str8 str1, const char* nullTermStr)
+//TODO: i32 StrCompareIgnoreCase(const char* str1, const char* str2, uxx compareLength)
+//TODO: bool StrEqualsIgnoreCase(Str8 target, Str8 comparison)
+//TODO: bool StrEqualsIgnoreCase(Str8 target, const char* comparisonNt)
+//TODO: bool StrEqualsIgnoreCase(Str8 target, uxx comparisonLength, const char* comparisonPntr)
+//TODO: bool StrEqualsIgnoreCase(const char* comparisonNt, Str8 target)
+//TODO: bool StrEqualsIgnoreCase(uxx comparisonLength, const char* comparisonPntr, Str8 target)
+//TODO: bool StrStartsWith(Str8 str, Str8 prefix, bool ignoreCase = false)
+//TODO: bool StrStartsWith(Str8 str, const char* nullTermPrefixStr, bool ignoreCase = false)
+//TODO: bool StrStartsWith(const char* nullTermStr, Str8 prefix, bool ignoreCase = false)
+//TODO: bool StrStartsWith(const char* nullTermStr, const char* nullTermPrefixStr, bool ignoreCase = false)
+//TODO: bool StrEndsWith(Str8 str, Str8 suffix, bool ignoreCase = false)
+//TODO: bool StrEndsWith(Str8 str, const char* nullTermSuffix, bool ignoreCase = false)
+//TODO: bool StrEndsWith(const char* nullTermStr, Str8 suffix, bool ignoreCase = false)
+//TODO: bool StrEndsWith(const char* nullTermStr, const char* nullTermSuffix, bool ignoreCase = false)
+//TODO: bool StrStartsWithSlash(Str8 str)
+//TODO: bool StrStartsWithSlash(const char* nullTermStr)
+//TODO: bool StrEndsWithSlash(Str8 str)
+//TODO: bool StrEndsWithSlash(const char* nullTermStr)
+//TODO: bool SplitStringFixed(Str8 target, Str8 delineator, uxx numPieces, Str8* piecesBuffer, bool ignoreCase = false)
+//TODO: bool SplitStringFixed(Str8 target, const char* delineatorNullTerm, uxx numPieces, Str8* piecesBuffer, bool ignoreCase = false)
+//TODO: bool SplitStringFixed(const char* targetNullTerm, Str8 delineator, uxx numPieces, Str8* piecesBuffer, bool ignoreCase = false)
+//TODO: bool SplitStringFixed(const char* targetNullTerm, const char* delineatorNullTerm, uxx numPieces, Str8* piecesBuffer, bool ignoreCase = false)
+//TODO: Str8* SplitString(MemArena_t* memArena, Str8 target, Str8 delineator, uxx* numPiecesOut = nullptr, bool ignoreCase = false)
+//TODO: Str8* SplitString(MemArena_t* memArena, Str8 target, const char* delineatorNt, uxx* numPiecesOut = nullptr, bool ignoreCase = false)
+//TODO: Str8* SplitString(MemArena_t* memArena, const char* targetNt, Str8 delineator, uxx* numPiecesOut = nullptr, bool ignoreCase = false)
+//TODO: Str8* SplitString(MemArena_t* memArena, const char* targetNt, const char* delineatorNt, uxx* numPiecesOut = nullptr, bool ignoreCase = false)
+//TODO: bool SplitStringFast(SplitStringContext_t* context, Str8 target, char separatorChar, bool includeEmptyPieces = false)
+//TODO: Str8* SplitStringBySpacesFastTemp(MemArena_t* tempArena, Str8 target, uxx* numPiecesOut)
+//TODO: Str8* SplitStringBySlashesFastTemp(MemArena_t* tempArena, Str8 target, uxx* numPiecesOut)
+//TODO: uxx UnescapeQuotedStringInPlace(Str8* target, bool removeQuotes = true, bool allowNewLineEscapes = true, bool allowOtherEscapeCodes = false)
+//TODO: Str8 UnescapeQuotedStringInArena(MemArena_t* memArena, Str8 target, bool removeQuotes = true, bool allowNewLineEscapes = true, bool allowOtherEscapeCodes = false)
+//TODO: Str8* SplitStringBySpacesWithQuotesAndUnescape(MemArena_t* memArena, Str8 target, uxx* numPiecesOut)
+//TODO: void StrSpliceInPlace(Str8 target, uxx startIndex, Str8 replacement)
+//TODO: void StrSpliceInPlace(Str8 target, uxx startIndex, const char* replacementNullTerm)
+//TODO: void StrSpliceInPlace(char* targetNullTermStr, uxx startIndex, Str8 replacement)
+//TODO: void StrSpliceInPlace(char* targetNullTermStr, uxx startIndex, const char* replacementNullTerm)
+//TODO: Str8 StrSplice(Str8 target, uxx startIndex, uxx endIndex, Str8 replacement, MemArena_t* memArena)
+//TODO: Str8 StrSplice(Str8 target, uxx startIndex, uxx endIndex, const char* replacementNullTerm, MemArena_t* memArena)
+//TODO: Str8 StrSplice(char* targetNullTermStr, uxx startIndex, uxx endIndex, Str8 replacement, MemArena_t* memArena)
+//TODO: Str8 StrSplice(char* targetNullTermStr, uxx startIndex, uxx endIndex, const char* replacement, MemArena_t* memArena)
+//TODO: uxx StrReplaceInPlace(Str8 str, Str8 target, Str8 replacement, bool ignoreCase = false, bool allowShrinking = false)
+//TODO: uxx StrReplaceInPlace(Str8 str, const char* target, const char* replacement, bool ignoreCase = false, bool allowShrinking = false)
+//TODO: Str8 StrReplace(Str8 str, Str8 target, Str8 replacement, MemArena_t* memArena)
+//TODO: Str8 StrReplace(Str8 str, const char* target, const char* replacement, MemArena_t* memArena)
+//TODO: Str8 StrReplaceMultiple(Str8 str, uxx numReplacements, const MyStrPair_t* replacements, MemArena_t* memArena)
+//TODO: bool FindSubstring(Str8 target, Str8 substring, uxx* indexOut = nullptr, bool ignoreCase = false, uxx startIndex = 0)
+//TODO: bool FindSubstring(Str8 target, const char* nullTermSubstring, uxx* indexOut= nullptr, bool ignoreCase = false, uxx startIndex = 0)
+//TODO: bool FindSubstring(const char* nullTermTarget, Str8 substring, uxx* indexOut= nullptr, bool ignoreCase = false, uxx startIndex = 0)
+//TODO: bool FindSubstring(const char* nullTermTarget, const char* nullTermSubstring, uxx* indexOut= nullptr, bool ignoreCase = false, uxx startIndex = 0)
+//TODO: Str8 FindStrParensPart(Str8 target, char openParensChar = '(', char closeParensChar = ')')
+//TODO: Str8 FindStrParensPart(const char* nullTermTarget, char openParensChar = '(', char closeParensChar = ')')
+//TODO: Str8 StringRepeat(MemArena_t* memArena, Str8 str, uxx numRepetitions)
+//TODO: Str8 StringRepeat(MemArena_t* memArena, const char* nullTermStr, uxx numRepetitions)
+//TODO: Str8 FormatBytes(uxx numBytes, MemArena_t* memArena)
+//TODO: const char* FormatBytesNt(uxx numBytes, MemArena_t* memArena)
+//TODO: Str8 FormatNumberWithCommas(uxx number, MemArena_t* memArena = nullptr)
+//TODO: const char* FormatNumberWithCommasNt(uxx number, MemArena_t* memArena = nullptr)
+//TODO: bool IsValidIdentifierStr(Str8 str, bool allowUnderscores = true, bool allowNumbers = true, bool allowLeadingNumbers = false, bool allowEmpty = false, bool allowSpaces = false)
+//TODO: bool IsStringMadeOfChars(Str8 str, Str8 allowedChars, uxx* firstInvalidCharOut = nullptr)
+//TODO: void StrReallocAppend(Str8* baseStr, Str8 appendStr, MemArena_t* memArena)
+//TODO: void StrReallocAppend(Str8* baseStr, const char* appendNullTermStr, MemArena_t* memArena)
+//TODO: WordBreakCharClass_t GetWordBreakCharClass(u32 codepoint)
+//TODO: bool IsCharPairWordBreak(u32 prevCodepoint, u32 nextCodepoint, bool forward, bool subwords)
+//TODO: uxx FindNextWordBreakInString(Str8 str, uxx startIndex, bool forward, bool subwords, bool includeBreakAtStartIndex = false)
+//TODO: Str8 FormatRealTime(const RealTime_t* realTime, MemArena_t* memArena, bool includeDayOfWeek = true, bool includeHourMinuteSecond = true, bool includeMonthDayYear = true)
+//TODO: const char* FormatRealTimeNt(const RealTime_t* realTime, MemArena_t* memArena, bool includeDayOfWeek = true, bool includeHourMinuteSecond = true, bool includeMonthDayYear = true)
+//TODO: Str8 FormatMilliseconds(uxx milliseconds, MemArena_t* memArena)
+//TODO: const char* FormatMillisecondsNt(uxx milliseconds, MemArena_t* memArena)
 
 #endif //  _STRUCT_STRING_H
 

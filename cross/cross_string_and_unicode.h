@@ -17,7 +17,7 @@ u8 GetCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut)
 	return GetCodepointForUtf8(str.length - index, str.chars + index, codepointOut);
 }
 
-bool DoesStrContainMultibyteUtf8Characters(Str8 str)
+bool DoesStrContainMultibyteUtf8Chars(Str8 str)
 {
 	for (uxx bIndex = 0; bIndex < str.length; bIndex++)
 	{
@@ -25,5 +25,86 @@ bool DoesStrContainMultibyteUtf8Characters(Str8 str)
 	}
 	return false;
 }
+
+//Returns target.length if no matching char is found
+uxx FindNextCharInStrEx(Str8 target, uxx startIndex, Str8 searchCharsStr, bool ignoreCharsInQuotes)
+{
+	NotNullStr(target);
+	Assert(startIndex <= target.length);
+	bool inQuotes = false;
+	u32 previousCodepoint = 0;
+	for (uxx cIndex = startIndex; cIndex < target.length; )
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(target, cIndex, &codepoint);
+		if (codepointSize == 0) { cIndex++; continue; } //invalid utf-8 encoding in target
+		for (uxx sIndex = 0; sIndex < searchCharsStr.length; )
+		{
+			u32 searchCodepoint = 0;
+			u8 searchCodepointSize = GetCodepointForUtf8Str(searchCharsStr, sIndex, &searchCodepoint);
+			DebugAssert(searchCodepointSize > 0);
+			if (searchCodepointSize == 0) { return target.length; } //invalid utf-8 encoding in searchCharsStr
+			if (codepoint == searchCodepoint && !inQuotes)
+			{
+				return cIndex;
+			}
+			sIndex += searchCodepointSize;
+		}
+		if (ignoreCharsInQuotes && codepoint == '"' && !(inQuotes && previousCodepoint == '\\'))
+		{
+			inQuotes = !inQuotes;
+		}
+		previousCodepoint = codepoint;
+		cIndex += codepointSize;
+	}
+	return target.length;
+}
+uxx FindNextCharInStr(Str8 target, uxx startIndex, Str8 searchCharsStr) { return FindNextCharInStrEx(target, startIndex, searchCharsStr, false); }
+
+uxx FindNextUnknownCharInStrEx(Str8 target, uxx startIndex, Str8 knownCharsStr, bool ignoreCharsInQuotes)
+{
+	NotNullStr(target);
+	Assert(startIndex <= target.length);
+	bool inQuotes = false;
+	u32 previousCodepoint = 0;
+	for (uxx cIndex = startIndex; cIndex < target.length; )
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(target, cIndex, &codepoint);
+		if (codepointSize == 0) { cIndex++; continue; } //invalid utf-8 encoding in target
+		bool isKnownChar = false;
+		for (uxx sIndex = 0; sIndex < knownCharsStr.length; )
+		{
+			u32 searchCodepoint = 0;
+			u8 searchCodepointSize = GetCodepointForUtf8Str(knownCharsStr, sIndex, &searchCodepoint);
+			DebugAssert(searchCodepointSize > 0);
+			if (searchCodepointSize == 0) { return target.length; } //invalid utf-8 encoding in knownCharsStr
+			if (codepoint == searchCodepoint && !inQuotes)
+			{
+				isKnownChar = true;
+				break;
+			}
+			sIndex += searchCodepointSize;
+		}
+		if (!isKnownChar)
+		{
+			return cIndex;
+		}
+		if (ignoreCharsInQuotes && codepoint == '"' && !(inQuotes && previousCodepoint == '\\'))
+		{
+			inQuotes = !inQuotes;
+		}
+		previousCodepoint = codepoint;
+		cIndex += codepointSize;
+	}
+	return target.length;
+}
+uxx FindNextUnknownCharInStr(Str8 target, uxx startIndex, Str8 knownCharsStr) { return FindNextUnknownCharInStrEx(target, startIndex, knownCharsStr, false); }
+
+uxx FindNextWhitespaceInStrEx(Str8 target, uxx startIndex, bool ignoreCharsInQuotes)
+{
+	return FindNextCharInStrEx(target, startIndex, StrLit(WHITESPACE_CHARS), ignoreCharsInQuotes);
+}
+bool FindNextWhitespaceInStr(Str8 target, uxx startIndex) { return FindNextWhitespaceInStrEx(target, startIndex, false); }
 
 #endif //  _CROSS_STRING_AND_UNICODE_H

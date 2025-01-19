@@ -78,6 +78,7 @@ void PrintVa_Print(const char* formatString, va_list args, char* allocatedSpace,
 	allocatedSpace[previousResult] = '\0';
 }
 
+//NOTE: This always adds a null-terminating character to the allocation
 #define PrintInArenaVa(arena, resultName, resultLengthName, formatString)               \
 char* resultName = nullptr;                                                             \
 int resultLengthName = 0;                                                               \

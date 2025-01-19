@@ -15,12 +15,21 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
 
-char GetLowercaseAnsiiChar(char c)
+#define ALPHA_LOWERCASE_CHARS "abcdefghijklmnopqrstuvwxyz"
+#define ALPHA_UPPERCASE_CHARS "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define ALPHA_ALL_CHARS       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define HEX_LOWERCASE_CHARS   "0123456789abcdef"
+#define HEX_UPPERCASE_CHARS   "0123456789ABCDEF"
+#define HEX_ALL_CHARS         "0123456789abcdefABCDEF"
+#define WHITESPACE_CHARS_EX   " \t\r\n"
+#define WHITESPACE_CHARS      " \t"
+
+char ToLowerChar(char c)
 {
 	if (c >= 'A' && c <= 'Z') { return 'a' + (c - 'A'); }
 	return c;
 }
-char GetUppercaseAnsiiChar(char c)
+char ToUpperChar(char c)
 {
 	if (c >= 'a' && c <= 'z') { return 'A' + (c - 'a'); }
 	return c;

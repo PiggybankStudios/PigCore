@@ -7,8 +7,6 @@ Date:   01\05\2025
 #ifndef _MISC_ALL_H
 #define _MISC_ALL_H
 
-#include "misc/misc_dbg_level.h"
-
 #include "base/base_typedefs.h" //required by basically everyone
 
 #include "misc/misc_hash.h"
@@ -22,7 +20,6 @@ Date:   01\05\2025
 
 #include "misc/misc_easing.h"
 
-#include "base/base_typedefs.h" //required by misc_standard_colors.h
 #include "struct/struct_color.h" //required by misc_standard_colors.h
 
 #include "misc/misc_standard_colors.h"

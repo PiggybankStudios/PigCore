@@ -14,6 +14,8 @@ Description:
 #include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
+#include "base/base_dbg_level.h"
+#include "base/base_debug_output.h"
 #include "base/base_math.h"
 
 #include "std/std_includes.h" //required by base_assert.h
@@ -21,5 +23,7 @@ Description:
 #include "base/base_assert.h"
 #include "base/base_char.h"
 #include "base/base_unicode.h"
+
+#include "base/base_debug_output_impl.h"
 
 #endif //  _BASE_ALL_H

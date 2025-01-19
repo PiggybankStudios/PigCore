@@ -12,7 +12,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] gy_extras.h
 	[X] gy_hash.h (+add meowhash?)
 	[X] gy_unicode.h
-	[?] gy_string.h
+	[x] gy_string.h //NOTE: There are a lot of helper functions that haven't been moved over here yet but the basics are here
 	[!] gy_result.h
 	[!] gy_parsing.h
 	[!] gy_ip.h

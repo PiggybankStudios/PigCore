@@ -18,6 +18,7 @@ Description:
 
 #include "base/base_macros.h" //Needed by struct_string.h and struct_var_array.h
 #include "base/base_assert.h" //Needed by struct_string.h and struct_var_array.h
+#include "base/base_char.h" //Needed by struct_string.h
 
 #include "struct/struct_string.h"
 

@@ -122,12 +122,12 @@ u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions)
 u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut) //somewhat tested
 {
 	Assert(strPntr != nullptr || maxNumBytes == 0);
-	if (codepointOut != nullptr) { *codepointOut = 0; }
+	SetOptionalOutPntr(codepointOut, 0);
 	if (maxNumBytes == 0) { return 0; }
 	const u8* bytePntr = (const u8*)strPntr;
 	if (bytePntr[0] <= 127)
 	{
-		if (codepointOut != nullptr) { *codepointOut = (u32)bytePntr[0]; }
+		SetOptionalOutPntr(codepointOut, (u32)bytePntr[0]);
 		return 1;
 	}
 	else if (bytePntr[0] < 0xC0)
@@ -139,7 +139,7 @@ u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut) 
 	{
 		if (maxNumBytes < 2) { return 0; }
 		if (bytePntr[1] < 0x80 || bytePntr[1] >= 0xC0) { return 0; }
-		if (codepointOut != nullptr) { *codepointOut = ((u32)(bytePntr[0] & 0x1F) << 6) | ((u32)(bytePntr[1] & 0x3F) << 0); }
+		SetOptionalOutPntr(codepointOut, ((u32)(bytePntr[0] & 0x1F) << 6) | ((u32)(bytePntr[1] & 0x3F) << 0));
 		return 2;
 	}
 	else if (bytePntr[0] < 0xF0)
@@ -147,7 +147,7 @@ u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut) 
 		if (maxNumBytes < 3) { return 0; }
 		if (bytePntr[1] < 0x80 || bytePntr[1] >= 0xC0) { return 0; }
 		if (bytePntr[2] < 0x80 || bytePntr[2] >= 0xC0) { return 0; }
-		if (codepointOut != nullptr) { *codepointOut = ((u32)(bytePntr[0] & 0x0F) << 12) | ((u32)(bytePntr[1] & 0x3F) << 6) | ((u32)(bytePntr[2] & 0x3F) << 0); }
+		SetOptionalOutPntr(codepointOut, ((u32)(bytePntr[0] & 0x0F) << 12) | ((u32)(bytePntr[1] & 0x3F) << 6) | ((u32)(bytePntr[2] & 0x3F) << 0));
 		return 3;
 	}
 	else if (bytePntr[0] < 0xF8)
@@ -156,7 +156,7 @@ u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut) 
 		if (bytePntr[1] < 0x80 || bytePntr[1] >= 0xC0) { return 0; }
 		if (bytePntr[2] < 0x80 || bytePntr[2] >= 0xC0) { return 0; }
 		if (bytePntr[3] < 0x80 || bytePntr[3] >= 0xC0) { return 0; }
-		if (codepointOut != nullptr) { *codepointOut = ((u32)(bytePntr[0] & 0x07) << 18) | ((u32)(bytePntr[1] & 0x3F) << 12) | ((u32)(bytePntr[2] & 0x3F) << 6) | ((u32)(bytePntr[3] & 0x3F) << 0); }
+		SetOptionalOutPntr(codepointOut, ((u32)(bytePntr[0] & 0x07) << 18) | ((u32)(bytePntr[1] & 0x3F) << 12) | ((u32)(bytePntr[2] & 0x3F) << 6) | ((u32)(bytePntr[3] & 0x3F) << 0));
 		return 4;
 	}
 	else
@@ -248,6 +248,19 @@ i32 CompareCodepoints(u32 codepoint1, u32 codepoint2)
 	if (codepoint1 < codepoint2) { return -1; }
 	else if (codepoint1 > codepoint2) { return 1; }
 	else { return 0; }
+}
+
+bool DoesNtStrContainMultibyteUtf8Chars(const char* nullTermStr)
+{
+	for (uxx bIndex = 0; nullTermStr[bIndex] != '\0'; bIndex++)
+	{
+		u8 numCharsLeft = nullTermStr[bIndex+1] == '\0' ? 1
+			: (nullTermStr[bIndex+2] == '\0' ? 2
+			: (nullTermStr[bIndex+3] == '\0' ? 3
+			: 4));
+		if (GetCodepointForUtf8(numCharsLeft, nullTermStr + bIndex, nullptr) > 0) { return true; }
+	}
+	return false;
 }
 
 // +--------------------------------------------------------------+

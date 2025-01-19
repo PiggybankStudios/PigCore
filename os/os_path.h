@@ -23,7 +23,7 @@ Description:
 typedef Str8 FilePath;
 
 #define NewFilePath(length, pntr) (NewStr8((length), (pntr)))
-#define FilePathNt(nullTermStr)   (StrNt(nullTermStr))
+#define FilePathLit(nullTermStr)  (StrLit(nullTermStr))
 #define AsFilePath(string)        (string)
 
 #define FreeFilePath(arenaPntr, pathPntr) FreeStr8((arenaPntr), (pathPntr))

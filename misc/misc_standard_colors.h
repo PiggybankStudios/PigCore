@@ -13,7 +13,6 @@ Description:
 
 #include "base/base_typedefs.h"
 #include "struct/struct_color.h"
-#include "misc/misc_dbg_level.h"
 
 // +--------------------------------------------------------------+
 // |                         Pure Colors                          |
@@ -605,22 +604,8 @@ Description:
 	}
 // +--------------------------------------------------------------+
 
-// +--------------------------------------------------------------+
-// |                       Other Functions                        |
-// +--------------------------------------------------------------+
-Color32 GetDbgLevelTextColor(DbgLevel dbgLevel)
-{
-	switch (dbgLevel)
-	{
-		case DbgLevel_Debug:   return MonokaiGray1;     break;
-		case DbgLevel_Regular: return MonokaiWhite;     break;
-		case DbgLevel_Info:    return MonokaiGreen;     break;
-		case DbgLevel_Notify:  return MonokaiPurple;    break;
-		case DbgLevel_Other:   return MonokaiLightBlue; break;
-		case DbgLevel_Warning: return MonokaiOrange;    break;
-		case DbgLevel_Error:   return MonokaiMagenta;   break;
-		default: return MonokaiWhite; break;
-	}
-}
-
 #endif //  _MISC_STANDARD_COLORS_H
+
+#if defined(_BASE_DBG_LEVEL_H) && defined(_MISC_STANDARD_COLORS_H)
+#include "cross/cross_dbg_level_and_standard_colors.h"
+#endif

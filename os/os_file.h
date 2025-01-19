@@ -178,7 +178,7 @@ OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, bool i
 		NotNullStr(result.folderPath);
 		ChangePathSlashesTo(result.folderPath, '\\');
 		//NOTE: File iteration in windows requires that we have a slash on the end and a * wildcard character
-		result.folderPathWithWildcard = JoinStringsInArena(arena, result.folderPath, StrNt("*"), true);
+		result.folderPathWithWildcard = JoinStringsInArena(arena, result.folderPath, StrLit("*"), true);
 		NotNullStr(result.folderPathWithWildcard);
 		MyPrint("result.folderPath: \"%.*s\"", StrPrint(result.folderPath));
 		MyPrint("result.folderPathWithWildcard: \"%.*s\"", StrPrint(result.folderPathWithWildcard));
@@ -254,11 +254,11 @@ bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut
 				{
 					if (giveFullPath)
 					{
-						*pathOut = JoinStringsInArena(pathOutArena, fileIter->folderPath, StrNt(fileIter->findData.cFileName), false);
+						*pathOut = JoinStringsInArena(pathOutArena, fileIter->folderPath, StrLit(fileIter->findData.cFileName), false);
 					}
 					else
 					{
-						*pathOut = AllocFilePath(pathOutArena, StrNt(fileIter->findData.cFileName), false);
+						*pathOut = AllocFilePath(pathOutArena, StrLit(fileIter->findData.cFileName), false);
 					}
 					NotNullStr(*pathOut);
 					FixPathSlashes(*pathOut);
@@ -396,7 +396,7 @@ bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* content
 			
 			if (convertNewLines)
 			{
-				Str8 replacedResult = StrReplace(arena, result, StrNt("\r\n"), StrNt("\n"), true);
+				Str8 replacedResult = StrReplace(arena, result, StrLit("\r\n"), StrLit("\n"), true);
 				if (CanArenaFree(arena)) { FreeStr8WithNt(arena, &result); }
 				result = replacedResult;
 			}
@@ -463,7 +463,7 @@ bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 		{
 			//TODO: If the contents already have \r\n instances, then this will not work.
 			//      Maybe we should use a bit more complicated logic than StrReplace?
-			fileContents = StrReplace(scratch, fileContents, StrNt("\n"), StrNt("\r\n"), false);
+			fileContents = StrReplace(scratch, fileContents, StrLit("\n"), StrLit("\r\n"), false);
 			NotNullStr(fileContents);
 		}
 		
@@ -716,7 +716,7 @@ bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines
 		
 		if (convertNewLines)
 		{
-			fileContentsPart = StrReplace(scratch, fileContentsPart, StrNt("\n"), StrNt("\r\n"), false);
+			fileContentsPart = StrReplace(scratch, fileContentsPart, StrLit("\n"), StrLit("\r\n"), false);
 			NotNullStr(fileContentsPart);
 		}
 		
