@@ -35,6 +35,7 @@ Description:
 //      like VarArray which could expose us to more re-entrancy (if VarArray does debug output) but maybe it's worth it?
 //      Or maybe we just handle the memory without a data structure?
 
+thread_local bool DebugOutputIsOnNewLine = true;
 #if DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
 thread_local uxx DebugOutputLineLength = 0;
 thread_local char DebugOutputLineBuffer[DEBUG_OUTPUT_LINE_BUFFER_SIZE] = ZEROED;
@@ -47,10 +48,6 @@ thread_local bool DebugOutputLineOverflowOccurred = false;
 // void DebugOutputRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* message)
 DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 {
-	#if DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
-	bool isLineOverflowOutput = DebugOutputLineOverflowOccurred;
-	#endif
-	
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR) ||
 		(level == DbgLevel_Info    && ENABLE_DEBUG_OUTPUT_LEVEL_INFO)    ||
@@ -60,8 +57,19 @@ DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		(level == DbgLevel_Error   && ENABLE_DEBUG_OUTPUT_LEVEL_ERROR)   ||
 		level == DbgLevel_None || level >= DbgLevel_Count)
 	{
+		#if DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
+		bool isLineOverflowOutput = DebugOutputLineOverflowOccurred;
+		#endif
+		
 		#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
-		MyPrintNoLine("%s: %s%s", GetDbgLevelStr(level), message, newLine ? "\n" : "");
+		if (DebugOutputIsOnNewLine)
+		{
+			MyPrintNoLine("%s: %s%s", GetDbgLevelStr(level), message, newLine ? "\n" : "");
+		}
+		else
+		{
+			MyPrintNoLine("%s%s", message, newLine ? "\n" : "");
+		}
 		#else
 		MyPrintNoLine("%s%s", message, newLine ? "\n" : "");
 		#endif
@@ -72,8 +80,11 @@ DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		//      the "Output" window when debugging. Sending our debug output to OutputDebugString
 		//      ensures that our debug output can be viewed from the "Output" window in Windows debuggers.
 		#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
-		OutputDebugStringA(GetDbgLevelStr(level));
-		OutputDebugStringA(": ");
+		if (DebugOutputIsOnNewLine)
+		{
+			OutputDebugStringA(GetDbgLevelStr(level));
+			OutputDebugStringA(": ");
+		}
 		#endif
 		OutputDebugStringA(message);
 		if (newLine) { OutputDebugStringA("\n"); }
@@ -112,7 +123,7 @@ DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 				if (message[bIndex] == '\0') { break; }
 			}
 			#else //DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
-			DebugOutputCallback(filePath, lineNumber, funcName, level, newLine, message); }
+			DebugOutputCallback(filePath, lineNumber, funcName, level, newLine, message);
 			#endif
 		}
 		#endif
@@ -124,6 +135,15 @@ DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 			DebugOutputLineOverflowOccurred = false;
 		}
 		#endif
+		
+		if (newLine) { DebugOutputIsOnNewLine = true; }
+		else if (message != nullptr)
+		{
+			uxx messageLength = (uxx)MyStrLength(message);
+			if (message != nullptr && message[messageLength-1] == '\n') { DebugOutputIsOnNewLine = true; }
+			else { DebugOutputIsOnNewLine = false; }
+		}
+		else { DebugOutputIsOnNewLine = false; }
 	}
 }
 

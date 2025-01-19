@@ -15,6 +15,21 @@ Description:
 #define VAR_ARRAY_CLEAR_ITEMS_ON_ADD    1
 #define VAR_ARRAY_CLEAR_ITEM_BYTE_VALUE 0xCC
 
+// #define DEBUG_OUTPUT_PRINT_LEVEL_PREFIX             1
+// // #define DEBUG_OUTPUT_LINE_BUFFER_SIZE               14 //512
+// #define DEBUG_OUTPUT_ERRORS_ON_LINE_OVERFLOW        1
+// #define DEBUG_OUTPUT_TO_WIN32_OUTPUTDEBUGSTRING     1
+// #define DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE       1
+// #define DEBUG_OUTPUT_CALLBACK_GLOBAL                1
+// #define DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE 0
+#define ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG   1
+#define ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR 1
+#define ENABLE_DEBUG_OUTPUT_LEVEL_INFO    1
+#define ENABLE_DEBUG_OUTPUT_LEVEL_NOTIFY  1
+#define ENABLE_DEBUG_OUTPUT_LEVEL_OTHER   1
+#define ENABLE_DEBUG_OUTPUT_LEVEL_WARNING 1
+#define ENABLE_DEBUG_OUTPUT_LEVEL_ERROR   1
+
 #include "build_config.h"
 
 #include "base/base_compiler_check.h"
@@ -120,6 +135,31 @@ void PrintNumbers(VarArray* array)
 		Print_D(" %u", num);
 	}
 	PrintLine_D(" }");
+}
+#endif
+
+#if 1
+// +==============================+
+// |   TestsDebugOutputCallback   |
+// +==============================+
+// void TestsDebugOutputCallback(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* message)
+DEBUG_OUTPUT_HANDLER_DEF(TestsDebugOutputCallback)
+{
+	#if 1
+	MyPrint("TestsDebugOutputCallback(%s, %s):", GetDbgLevelStr(level), newLine ? "newLine" : "sameLine");
+	MyPrint("\tfrom: %s:%u in %s(...)", filePath, lineNumber, funcName);
+	MyPrint("\tmessage: \"%s\"", message);
+	MyPrint("");
+	#else
+	MyPrint("TestsDebugOutputCallback:");
+	MyPrint("\tfilePath: \"%s\"", filePath);
+	MyPrint("\tlineNumber: %u", lineNumber);
+	MyPrint("\tfuncName: \"%s\"", funcName);
+	MyPrint("\tlevel: DbgLevel_%s", GetDbgLevelStr(level));
+	MyPrint("\tnewLine: %s", newLine ? "True" : "False");
+	MyPrint("\tmessage: \"%s\"", message);
+	MyPrint("");
+	#endif
 }
 #endif
 
@@ -266,6 +306,51 @@ int main(int argc, char* argv[])
 	#endif
 	
 	// +==============================+
+	// |      Debug Output Tests      |
+	// +==============================+
+	#if 1
+	{
+		// #if DEBUG_OUTPUT_CALLBACK_GLOBAL
+		// DebugOutputCallback = TestsDebugOutputCallback;
+		// #endif
+		
+		WriteLine_D("Hello Debug!");
+		WriteLine_R("Hello Regular!");
+		WriteLine_I("Hello Info!");
+		WriteLine_N("Hello Notify!");
+		WriteLine_O("Hello Other!");
+		WriteLine_W("Hello Warning!");
+		WriteLine_E("Hello Error!");
+		
+		u64 testInt = 42;
+		PrintLine_D("Print %llu Debug!", testInt++);
+		PrintLine_R("Print %llu Regular!", testInt++);
+		PrintLine_I("Print %llu Info!", testInt++);
+		PrintLine_N("Print %llu Notify!", testInt++);
+		PrintLine_O("Print %llu Other!", testInt++);
+		PrintLine_W("Print %llu Warning!", testInt++);
+		PrintLine_E("Print %llu Error!", testInt++);
+		
+		for (u64 lIndex = 0; lIndex < DbgLevel_Count; lIndex++)
+		{
+			PrintLineAt((DbgLevel)lIndex, "OutputAt(%s)", GetDbgLevelStr((DbgLevel)lIndex));
+		}
+		
+		Write_R("Enabled Levels: ");
+		Print_D("D[%llu]", testInt++);
+		Print_R(", R[%llu]", testInt++);
+		Print_I(", I[%llu]", testInt++);
+		Print_N(", N[%llu]", testInt++);
+		Print_O(", O[%llu]", testInt++);
+		Print_W(", W[%llu]", testInt++);
+		Print_E(", E[%llu]", testInt++);
+		WriteLine_R("");
+		
+		WriteLine_I("This\nis multiple\nlines!");
+	}
+	#endif
+	
+	// +==============================+
 	// |         Vector Tests         |
 	// +==============================+
 	#if 0
@@ -360,7 +445,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |        Hashing Tests         |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		u8 randomBuffer[32] = { 0xAF, 0x20, 0xCD, 0xC6, 0xDB, 0x9C, 0x59, 0x22, 0xC7, 0xD8, 0xA5, 0x3E, 0x73, 0xD4, 0xB1, 0x1A, 0xDF, 0x90, 0x7D, 0xB6, 0x0B, 0x0C, 0x09, 0x12, 0xF7, 0x48, 0x55, 0x2E, 0xA3, 0x44, 0x61, 0x0B };
 		PrintLine_D("Buffer before: %02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X",
@@ -397,7 +482,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |        Unicode Tests         |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		u32 testCodepoints[] = { 0x7F, 0x80, 0xFE, 0xFF, 0xF0, 0x9F, 0xA7, 0xA9, /*kanji*/0x93E1, /*puzzle emoji*/0x1F9E9 };
 		for (u64 cIndex = 0; cIndex < ArrayCount(testCodepoints); cIndex++)

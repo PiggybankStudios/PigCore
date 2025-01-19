@@ -1231,6 +1231,8 @@
 			"void ClearWindowState(unsigned int flags)",
 			"void CloseAudioDevice(void)",
 			"void CloseWindow(void)",
+			"void DEBUG_OUTPUT_HANDLER_DEF(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* message)",
+			"void DEBUG_PRINT_HANDLER_DEF(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* formatString, ...)",
 			"void DebugPrintRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* formatString, ...)",
 			"void DetachAudioMixedProcessor(AudioCallback processor)",
 			"void DetachAudioStreamProcessor(AudioStream stream, AudioCallback processor)",
