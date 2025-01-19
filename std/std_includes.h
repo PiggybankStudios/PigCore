@@ -14,6 +14,7 @@ Descriptions:
 
 #include "build_config.h"
 #include "base/base_compiler_check.h"
+#include "base/base_defines_check.h"
 
 #include <stdint.h>
 #include <stdlib.h>
