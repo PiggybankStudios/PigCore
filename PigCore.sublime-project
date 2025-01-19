@@ -173,6 +173,7 @@
 			"Dir3_Right",
 			"Dir3_Up",
 			"EMPTY_STRUCT",
+			"ENABLE_AUTO_PROFILE",
 			"END_EXTERN_C",
 			"EasingStyle_BackIn",
 			"EasingStyle_BackInOut",

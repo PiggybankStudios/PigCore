@@ -1,5 +1,5 @@
-# Pigglen
-Pigglen is a rewrite of pieces of other repositories I've created in the past like [Pig Engine](https://github.com/PiggybankStudios/PigEngine), [GyLib](https://github.com/PiggybankStudios/GyLib), etc. but written in pure C (not C++) and with some new goals and assumptions that align better with my goals as a programmer. The name derives from Pig Engine (Pig is a useful prefix for names in the codebase since it's 3 letters and easy to pronounce) and the english word "glen", implying this is a pleasent space that has good code
+# PigCore
+PigCore is a rewrite of pieces of other repositories I've created in the past like [Pig Engine](https://github.com/PiggybankStudios/PigEngine), [GyLib](https://github.com/PiggybankStudios/GyLib), etc. but written in pure C (not C++) and with some new goals and assumptions that align better with my goals as a programmer. The name "Pig" is a useful prefix for names in the codebase since it's 3 letters and easy to pronounce, "Core" simply describes that this repository contains all the of the core functionality of a project that depends on Pig technology.
 
 ## Goals
 1. Keep documentation up-to-date as things are built. We don't need documentation for everything but we should always have a minimum bar of explanation written down for things like folder structure and namespaces

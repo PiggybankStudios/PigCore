@@ -703,7 +703,7 @@ int main(int argc, char* argv[])
 		#endif
 		#if BUILD_WITH_RAYLIB
 		{
-			InitWindow(800, 600, "Tests (Pigglen)");
+			InitWindow(800, 600, "Tests (PigCore)");
 			SetWindowMinSize(400, 200);
 			SetWindowState(FLAG_WINDOW_RESIZABLE);
 			SetTargetFPS(60);
