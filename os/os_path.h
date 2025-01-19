@@ -22,6 +22,8 @@ Description:
 //NOTE: Although this is named "File" it can also hold a path to a folder too
 typedef Str8 FilePath;
 
+#define FilePath_Empty Str8_Empty
+
 #define NewFilePath(length, pntr) (NewStr8((length), (pntr)))
 #define FilePathLit(nullTermStr)  (StrLit(nullTermStr))
 #define AsFilePath(string)        (string)

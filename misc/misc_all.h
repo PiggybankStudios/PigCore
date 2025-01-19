@@ -7,12 +7,13 @@ Date:   01\05\2025
 #ifndef _MISC_ALL_H
 #define _MISC_ALL_H
 
-#include "base/base_typedefs.h" //required by basically everyone
+#include "base/base_macros.h" //required by misc_result.h and misc_random.h
+
+#include "misc/misc_result.h"
+
+#include "base/base_typedefs.h" //required by everyone below
 
 #include "misc/misc_hash.h"
-
-#include "base/base_macros.h" //required by misc_random.h
-
 #include "misc/misc_random.h"
 
 #include "std/std_trig.h" //required by misc_easing.h

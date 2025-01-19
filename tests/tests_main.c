@@ -308,7 +308,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |      Debug Output Tests      |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		// #if DEBUG_OUTPUT_CALLBACK_GLOBAL
 		// DebugOutputCallback = TestsDebugOutputCallback;
@@ -589,9 +589,19 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |          File Tests          |
 	// +==============================+
-	#if 0
+	#if 1
 	{
 		ScratchBegin(scratch);
+		
+		Result exePathError = Result_None;
+		FilePath exeFilePath = OsGetExecutablePath(scratch, &exePathError);
+		if (IsEmptyStr(exeFilePath)) { PrintLine_E("Failed to get exe path: %s", GetResultStr(exePathError)); }
+		else { PrintLine_D("Exe Path: \"%.*s\"", StrPrint(exeFilePath)); }
+		
+		Result workingDirError = Result_None;
+		FilePath workingDir = OsGetWorkingDirectory(scratch, &workingDirError);
+		if (IsEmptyStr(workingDir)) { PrintLine_E("Failed to get working directory: %s", GetResultStr(workingDirError)); }
+		else { PrintLine_D("Working Directory: \"%.*s\"", StrPrint(workingDir)); }
 		
 		FilePath path = FilePathLit("../.gitignore");
 		PrintLine_D("DoesPathHaveTrailingSlash(path) = %s", DoesPathHaveTrailingSlash(path) ? "true" : "false");

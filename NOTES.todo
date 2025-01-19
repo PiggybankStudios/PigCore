@@ -13,12 +13,12 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] gy_hash.h (+add meowhash?)
 	[X] gy_unicode.h
 	[x] gy_string.h //NOTE: There are a lot of helper functions that haven't been moved over here yet but the basics are here
-	[!] gy_result.h
+	[X] gy_result.h
 	[!] gy_parsing.h
 	[!] gy_ip.h
 	[!] gy_math.h (std_math_ex.h)
 	[!] gy_noise.h
-	[!] gy_os.h
+	[X] gy_os.h
 	[!] gy_performance.h
 	[!] gy_performance_sections.h
 	[!] gy_simple_parsers.h
@@ -37,7 +37,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[?] gy_colors.h
 	[ ] gy_common_serializables.h
 	[ ] gy_cyclic_functions.h
-	[?] gy_debug.h
+	[X] gy_debug.h
 	[x] gy_defines_check.h
 	[ ] gy_expression.h
 	[ ] gy_fifo.h
