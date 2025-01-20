@@ -78,11 +78,14 @@ struct OsFile
 	#endif
 };
 
+//NOTE: The name "dll" is a misnomer on non-windows platforms. This can represent a .dll or a .so
 typedef struct OsDll OsDll;
 struct OsDll
 {
 	#if TARGET_IS_WINDOWS
 	HMODULE handle;
+	#elif TARGET_IS_LINUX
+	void* handle;
 	#else
 	int placeholder;
 	#endif
@@ -841,6 +844,24 @@ PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
 		dllOut->handle = LoadLibraryA(pathNt.chars);
 		if (dllOut->handle != NULL) { result = Result_Success; }
 		else { result = Result_Failure; }
+		ScratchEnd(scratch);
+	}
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin(scratch);
+		FilePath pathNt = AllocFilePath(scratch, path, true);
+		ChangePathSlashesTo(pathNt, '/');
+		dllOut->handle = dlopen(
+			pathNt.chars, //file
+			RTLD_NOW //mode TODO: Do we ever want RTLD_LAZY?
+		);
+		if (dllOut->handle != nullptr) { result = Result_Success; }
+		else
+		{
+			char* errorStr = dlerror();
+			PrintLine_E("dlopen failed: \"%s\"", errorStr);
+			result = Result_Failure;
+		}
 		ScratchEnd(scratch);
 	}
 	#else

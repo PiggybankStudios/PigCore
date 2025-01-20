@@ -40,6 +40,7 @@ Descriptions:
 	// Gives us mmap
 	#include <sys/mman.h>
 	#include <errno.h>
+	#include <dlfcn.h> //needed for dlopen
 #endif
 #if COMPILER_IS_MSVC
 	#pragma warning(push)
