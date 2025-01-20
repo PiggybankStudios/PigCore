@@ -21,6 +21,8 @@ Description:
 #include "std/std_printf.h"
 #include "misc/misc_printing.h"
 
+//TODO: Check if the scratch arenas have been initialized on the current thread before using them for print formatting. Maybe use a small thread_local buffer instead when that happens?
+
 //TODO: We could potentially change the function signature of these functions to take Str8 (instead of const char* with implicit reliance on null-terminating character)
 //      This could allow places to output strings without needing a null-terminating character and without a memory arena to allocate into to get a null-terminated string copy
 

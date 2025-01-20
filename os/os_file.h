@@ -14,6 +14,7 @@ Description:
 #include "struct/struct_string.h"
 #include "mem/mem_scratch.h"
 #include "os/os_error.h"
+#include "misc/misc_result.h"
 
 // +--------------------------------------------------------------+
 // |                          Full Path                           |
@@ -775,5 +776,43 @@ bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart) { return OsWriteT
 
 //TODO: Implement OsMoveFileCursorRelative
 //TODO: Implement OsMoveFileCursor
+
+// +--------------------------------------------------------------+
+// |                         DLL Loading                          |
+// +--------------------------------------------------------------+
+typedef struct OsDll OsDll;
+struct OsDll
+{
+	#if TARGET_IS_WINDOWS
+	HMODULE handle;
+	#else
+	int placeholder;
+	#endif
+};
+
+Result OsLoadDll(FilePath path, OsDll* dllOut)
+{
+	NotNullStr(path);
+	NotNull(dllOut);
+	Result result = Result_None;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		ScratchBegin(scratch);
+		FilePath pathNt = AllocFilePath(scratch, path, true);
+		ChangePathSlashesTo(pathNt, '\\');
+		dllOut->handle = LoadLibraryA(pathNt.chars);
+		if (dllOut->handle != NULL) { result = Result_Success; }
+		else { result = Result_Failure; }
+		ScratchEnd(scratch);
+	}
+	#else
+	UNUSED(path);
+	AssertMsg(false, "OsLoadDll does not support the current platform yet!");
+	result = Result_UnsupportedPlatform;
+	#endif
+	
+	return result;
+}
 
 #endif //  _OS_FILE_H

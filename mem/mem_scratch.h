@@ -35,9 +35,9 @@ Description:
 #define NUM_SCRATCH_ARENAS_PER_THREAD   3
 
 #if SCRATCH_ARENAS_THREAD_LOCAL
-thread_local Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
+thread_local Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
 #else
-Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
+Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
 #endif
 
 //NOTE: Init needs to be called once for each thread!

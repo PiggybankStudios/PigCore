@@ -24,9 +24,11 @@ Description:
 #include "struct/struct_string.h" //required by os_path.h and os_file.h
 
 #include "os/os_path.h"
+
+#include "misc/misc_result.h" //required by os_file.h and os_process_info.h
+
 #include "os/os_file.h"
 
-#include "misc/misc_result.h" //required by os_process_info.h
 #include "mem/mem_scratch.h" //required by os_process_info.h
 
 #include "os/os_process_info.h"
