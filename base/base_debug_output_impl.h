@@ -101,7 +101,6 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		if (DebugOutputCallback != nullptr)
 		{
 			#if DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
-			uxx messageLength = (uxx)MyStrLength(message);
 			uxx prevNewLineIndex = 0;
 			for (uxx bIndex = 0; ; bIndex++) //we end loop AFTER finding the nullterm, see break below
 			{
