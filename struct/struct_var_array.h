@@ -85,15 +85,132 @@ struct VarArray
 #define ARRAY_VISIT_FUNC_DEF(functionName) void functionName(uxx itemIndex, void* item)
 typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 
-bool VarArrayExpand(struct VarArray* array, uxx capacityRequired);
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	#if VAR_ARRAY_DEBUG_INFO
+	void InitVarArray_(const char* filePath, uxx lineNumber, const char* funcName, uxx itemSize, uxx itemAlignment, VarArray* array, Arena* arena, uxx initialCountNeeded);
+	#else
+	void InitVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, Arena* arena, uxx initialCountNeeded);
+	#endif
+	PIG_CORE_INLINE bool IsVarArrayInit(const VarArray* array);
+	void FreeVarArray(VarArray* array);
+	void VarArrayClearEx(VarArray* array, bool deallocate);
+	PIG_CORE_INLINE void VarArrayClear(VarArray* array);
+	bool VarArrayExpand(VarArray* array, uxx capacityRequired);
+	bool VarArrayContains_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion);
+	PIG_CORE_INLINE bool VarArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion, uxx* indexOut);
+	PIG_CORE_INLINE void VarArrayVisit(VarArray* array, ArrayVisitFunc_f* visitFunc);
+	PIG_CORE_INLINE void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array, uxx index, bool assertOnFailure);
+	void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array);
+	void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index);
+	void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index);
+	PIG_CORE_INLINE void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemToRemove);
+	#if VAR_ARRAY_DEBUG_INFO
+	void VarArrayCopy_(const char* filePath, uxx lineNumber, const char* funcName, VarArray* destArray, const VarArray* sourceArray, Arena* arena);
+	#else
+	void VarArrayCopy_(VarArray* destArray, const VarArray* sourceArray, Arena* arena);
+	#endif
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#if VAR_ARRAY_DEBUG_INFO
+#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
+#define InitVarArray(type, arrayPntr, arena) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
+#else
+#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), _Alignof(type), (initialCountNeeded))
+#define InitVarArray(type, arrayPntr, arena) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), _Alignof(type), 0)
+#endif
+
+#define VarArrayContains(type, arrayPntr, itemPntrInQuestion) VarArrayContains_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntrInQuestion))
+
+#define VarArrayGetIndexOf(type, arrayPntr, itemInQuestion, indexOut) VarArrayGetIndexOf_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemInQuestion), (indexOut))
+
+#define VarArrayLoop(arrayPntr, indexVarName) for (uxx indexVarName = 0; indexVarName < (arrayPntr)->length; indexVarName++)
+#define VarArrayLoopGet(type, varName, arrayPntr, indexVarName) type* varName = (((type*)(arrayPntr)->items) + (indexVarName));
+#define VarArrayLoopGetValue(type, varName, arrayPntr, indexVarName) type varName = *(((type*)(arrayPntr)->items) + (indexVarName));
+
+//Hard indicates we want to assertOnFailure, opposed to Soft which will return nullptr. Not specifying leads to implicitly using Hard variant
+#define VarArrayGetHard(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index), true))
+#define VarArrayGetSoft(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index), false))
+#define VarArrayGet(type, arrayPntr, index) VarArrayGetHard(type, (arrayPntr), (index))
+
+//Shorthand for passing 0 for index
+#define VarArrayGetFirstHard(type, arrayPntr) VarArrayGetHard(type, (arrayPntr), 0)
+#define VarArrayGetFirstSoft(type, arrayPntr) (((arrayPntr)->length > 0) ? VarArrayGetSoft(type, (arrayPntr), 0) : nullptr)
+#define VarArrayGetFirst(type, arrayPntr) VarArrayGetFirstHard(type, (arrayPntr)) 
+
+//Shorthand for passing arrayPntr->length-1 for index
+#define VarArrayGetLastHard(type, arrayPntr) VarArrayGetHard(type, (arrayPntr), (arrayPntr)->length - 1)
+#define VarArrayGetLastSoft(type, arrayPntr) (((arrayPntr)->length > 0) ? VarArrayGetSoft(type, (arrayPntr), (arrayPntr)->length - 1) : nullptr)
+#define VarArrayGetLast(type, arrayPntr) VarArrayGetLastHard(type, (arrayPntr)) 
+
+//Getting the value means dereferencing the pointer, this only works with Hard variants since dereference will imply a crash on nullptr
+#define VarArrayGetValueHard(type, arrayPntr, index) *VarArrayGetHard(type, (arrayPntr), (index))
+#define VarArrayGetValue(type, arrayPntr, index) VarArrayGetValueHard(type, (arrayPntr), (index))
+
+#define VarArrayGetFirstValueHard(type, arrayPntr) *VarArrayGetHard(type, (arrayPntr), 0)
+#define VarArrayGetFirstValue(type, arrayPntr) VarArrayGetFirstValueHard(type, (arrayPntr))
+
+#define VarArrayGetLastValueHard(type, arrayPntr) *VarArrayGetHard(type, (arrayPntr), (arrayPntr)->length-1)
+#define VarArrayGetLastValue(type, arrayPntr) VarArrayGetLastValueHard(type, (arrayPntr))
+
+#define VarArrayAdd(type, arrayPntr) (type*)VarArrayAdd_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr))
+#define VarArrayAddValue(type, arrayPntr, value) do                  \
+{                                                                    \
+	/* We must evaluate (value) before manipulating the array */     \
+	/* because it may access/refer to elements in the array   */     \
+	type valueBeforeAdd_NOCONFLICT = (value);                        \
+	type* addedItemPntr_NOCONFLICT = VarArrayAdd(type, (arrayPntr)); \
+	DebugNotNull(addedItemPntr_NOCONFLICT);                          \
+	*addedItemPntr_NOCONFLICT = valueBeforeAdd_NOCONFLICT;           \
+} while(0)
+// This is simply an alias of VarArrayAddValue, but it's here to match the name of VarArrayPop below
+#define VarArrayPush(type, arrayPntr, value) VarArrayAddValue(type, (arrayPntr), (value))
+
+#define VarArrayInsert(type, arrayPntr, index) (type*)VarArrayInsert_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
+//NOTE: The (value) portion is evaluated AFTER the Insert occurs, it's meaning may change if it's accessing the array or using a pointer from the array!
+#define VarArrayInsertValue(type, arrayPntr, index, value) do                       \
+{                                                                                   \
+	/* We must evaluate (value) before manipulating the array */                    \
+	/* because it may access/refer to elements in the array   */                    \
+	type valueBeforeInsert_NOCONFLICT = (value);                                    \
+	type* insertedItemPntr_NOCONFLICT = VarArrayInsert(type, (arrayPntr), (index)); \
+	DebugNotNull(insertedItemPntr_NOCONFLICT);                                      \
+	*insertedItemPntr_NOCONFLICT = valueBeforeInsert_NOCONFLICT;                    \
+} while(0)
+
+#define VarArrayRemoveAt(type, arrayPntr, index) VarArrayRemoveAt_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
+#define VarArrayGetAndRemoveValueAt(type, arrayPntr, index) VarArrayGetValue(type, (arrayPntr), (index)); VarArrayRemoveAt(type, (arrayPntr), (index))
+#define VarArrayPop(type, arrayPntr) VarArrayGetValue(type, (arrayPntr), (arrayPntr)->length-1); VarArrayRemoveAt(type, (arrayPntr), (arrayPntr)->length-1)
+#define VarArrayRemoveFirst(type, arrayPntr) VarArrayRemoveAt(type, (arrayPntr), 0)
+#define VarArrayRemoveLast(type, arrayPntr) VarArrayRemoveAt(type, (arrayPntr), (arrayPntr)->length-1)
+
+#define VarArrayRemove(type, arrayPntr, itemPntr) VarArrayRemove_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntr))
+
+#if VAR_ARRAY_DEBUG_INFO
+#define VarArrayCopy(destArray, sourceArray, arenaPntr) VarArrayCopy_(__FILE__, __LINE__, __func__, (destArray), (sourceArray), (arenaPntr))
+#else
+#define VarArrayCopy(destArray, sourceArray, arenaPntr) VarArrayCopy_((destArray), (sourceArray), (arenaPntr))
+#endif
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXP bool VarArrayExpand(struct VarArray* array, uxx capacityRequired);
 
 // +--------------------------------------------------------------+
 // |                     Initialize VarArray                      |
 // +--------------------------------------------------------------+
 #if VAR_ARRAY_DEBUG_INFO
-void InitVarArray_(const char* filePath, uxx lineNumber, const char* funcName, uxx itemSize, uxx itemAlignment, VarArray* array, Arena* arena, uxx initialCountNeeded)
+PEXP void InitVarArray_(const char* filePath, uxx lineNumber, const char* funcName, uxx itemSize, uxx itemAlignment, VarArray* array, Arena* arena, uxx initialCountNeeded)
 #else
-void InitVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, Arena* arena, uxx initialCountNeeded)
+PEXP void InitVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, Arena* arena, uxx initialCountNeeded)
 #endif
 {
 	NotNull(array);
@@ -110,15 +227,8 @@ void InitVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, Arena* aren
 	#endif
 	VarArrayExpand(array, initialCountNeeded);
 }
-#if VAR_ARRAY_DEBUG_INFO
-#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
-#define InitVarArray(type, arrayPntr, arena) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
-#else
-#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), _Alignof(type), (initialCountNeeded))
-#define InitVarArray(type, arrayPntr, arena) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), _Alignof(type), 0)
-#endif
 
-bool IsVarArrayInit(const VarArray* array)
+PEXPI bool IsVarArrayInit(const VarArray* array)
 {
 	return (array->arena != nullptr);
 }
@@ -126,7 +236,7 @@ bool IsVarArrayInit(const VarArray* array)
 // +--------------------------------------------------------------+
 // |                        Free VarArray                         |
 // +--------------------------------------------------------------+
-void FreeVarArray(VarArray* array)
+PEXP void FreeVarArray(VarArray* array)
 {
 	NotNull(array);
 	Assert(IsVarArrayInit(array));
@@ -141,7 +251,7 @@ void FreeVarArray(VarArray* array)
 // +--------------------------------------------------------------+
 // |                        Clear VarArray                        |
 // +--------------------------------------------------------------+
-void VarArrayClearEx(VarArray* array, bool deallocate)
+PEXP void VarArrayClearEx(VarArray* array, bool deallocate)
 {
 	NotNull(array);
 	if (deallocate && array->allocLength > 0)
@@ -153,12 +263,12 @@ void VarArrayClearEx(VarArray* array, bool deallocate)
 	}
 	array->length = 0;
 }
-void VarArrayClear(VarArray* array) { VarArrayClearEx(array, false); }
+PEXPI void VarArrayClear(VarArray* array) { VarArrayClearEx(array, false); }
 
 // +--------------------------------------------------------------+
 // |                       Expand VarArray                        |
 // +--------------------------------------------------------------+
-bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared at top of file
+PEXP bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared at top of file
 {
 	NotNull(array);
 	NotNull(array->arena);
@@ -211,7 +321,7 @@ bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared at top
 // +--------------------------------------------------------------+
 // |                        Query VarArray                        |
 // +--------------------------------------------------------------+
-bool VarArrayContains_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion)
+PEXP bool VarArrayContains_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion)
 {
 	NotNull(array);
 	#if DEBUG_BUILD
@@ -232,9 +342,8 @@ bool VarArrayContains_(uxx itemSize, uxx itemAlignment, VarArray* array, const v
 	#endif
 	return true;
 }
-#define VarArrayContains(type, arrayPntr, itemPntrInQuestion) VarArrayContains_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntrInQuestion))
 
-bool VarArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion, uxx* indexOut)
+PEXPI bool VarArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion, uxx* indexOut)
 {
 	if (!VarArrayContains_(itemSize, itemAlignment, array, itemInQuestion)) { return false; }
 	uxx offsetFromBase = (uxx)(((const u8*)itemInQuestion) - (u8*)array->items);
@@ -243,12 +352,11 @@ bool VarArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, VarArray* array, const
 	*indexOut = (offsetFromBase / array->itemSize);
 	return true;
 }
-#define VarArrayGetIndexOf(type, arrayPntr, itemInQuestion, indexOut) VarArrayGetIndexOf_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemInQuestion), (indexOut))
 
 // +--------------------------------------------------------------+
 // |                 Visit/Iterate Over VarArray                  |
 // +--------------------------------------------------------------+
-void VarArrayVisit(VarArray* array, ArrayVisitFunc_f* visitFunc)
+PEXPI void VarArrayVisit(VarArray* array, ArrayVisitFunc_f* visitFunc)
 {
 	DebugNotNull(array);
 	DebugNotNull(visitFunc);
@@ -258,14 +366,10 @@ void VarArrayVisit(VarArray* array, ArrayVisitFunc_f* visitFunc)
 	}
 }
 
-#define VarArrayLoop(arrayPntr, indexVarName) for (uxx indexVarName = 0; indexVarName < (arrayPntr)->length; indexVarName++)
-#define VarArrayLoopGet(type, varName, arrayPntr, indexVarName) type* varName = (((type*)(arrayPntr)->items) + (indexVarName));
-#define VarArrayLoopGetValue(type, varName, arrayPntr, indexVarName) type varName = *(((type*)(arrayPntr)->items) + (indexVarName));
-
 // +--------------------------------------------------------------+
 // |                    Get Item From VarArray                    |
 // +--------------------------------------------------------------+
-void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array, uxx index, bool assertOnFailure)
+PEXPI void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array, uxx index, bool assertOnFailure)
 {
 	NotNull(array);
 	#if DEBUG_BUILD
@@ -290,36 +394,11 @@ void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array, uxx i
 	return result;
 }
 
-//Hard indicates we want to assertOnFailure, opposed to Soft which will return nullptr. Not specifying leads to implicitly using Hard variant
-#define VarArrayGetHard(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index), true))
-#define VarArrayGetSoft(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index), false))
-#define VarArrayGet(type, arrayPntr, index) VarArrayGetHard(type, (arrayPntr), (index))
-
-//Shorthand for passing 0 for index
-#define VarArrayGetFirstHard(type, arrayPntr) VarArrayGetHard(type, (arrayPntr), 0)
-#define VarArrayGetFirstSoft(type, arrayPntr) (((arrayPntr)->length > 0) ? VarArrayGetSoft(type, (arrayPntr), 0) : nullptr)
-#define VarArrayGetFirst(type, arrayPntr) VarArrayGetFirstHard(type, (arrayPntr)) 
-
-//Shorthand for passing arrayPntr->length-1 for index
-#define VarArrayGetLastHard(type, arrayPntr) VarArrayGetHard(type, (arrayPntr), (arrayPntr)->length - 1)
-#define VarArrayGetLastSoft(type, arrayPntr) (((arrayPntr)->length > 0) ? VarArrayGetSoft(type, (arrayPntr), (arrayPntr)->length - 1) : nullptr)
-#define VarArrayGetLast(type, arrayPntr) VarArrayGetLastHard(type, (arrayPntr)) 
-
-//Getting the value means dereferencing the pointer, this only works with Hard variants since dereference will imply a crash on nullptr
-#define VarArrayGetValueHard(type, arrayPntr, index) *VarArrayGetHard(type, (arrayPntr), (index))
-#define VarArrayGetValue(type, arrayPntr, index) VarArrayGetValueHard(type, (arrayPntr), (index))
-
-#define VarArrayGetFirstValueHard(type, arrayPntr) *VarArrayGetHard(type, (arrayPntr), 0)
-#define VarArrayGetFirstValue(type, arrayPntr) VarArrayGetFirstValueHard(type, (arrayPntr))
-
-#define VarArrayGetLastValueHard(type, arrayPntr) *VarArrayGetHard(type, (arrayPntr), (arrayPntr)->length-1)
-#define VarArrayGetLastValue(type, arrayPntr) VarArrayGetLastValueHard(type, (arrayPntr))
-
 // +--------------------------------------------------------------+
 // |                     Add Item to VarArray                     |
 // +--------------------------------------------------------------+
 //NOTE: This always asserts on failure to allocate since VarArrayExpand defaults to asserting
-void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array)
+PEXP void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array)
 {
 	#if DEBUG_BUILD
 	NotNull(array);
@@ -343,23 +422,10 @@ void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array)
 	return result;
 }
 
-#define VarArrayAdd(type, arrayPntr) (type*)VarArrayAdd_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr))
-#define VarArrayAddValue(type, arrayPntr, value) do                  \
-{                                                                    \
-	/* We must evaluate (value) before manipulating the array */     \
-	/* because it may access/refer to elements in the array   */     \
-	type valueBeforeAdd_NOCONFLICT = (value);                        \
-	type* addedItemPntr_NOCONFLICT = VarArrayAdd(type, (arrayPntr)); \
-	DebugNotNull(addedItemPntr_NOCONFLICT);                          \
-	*addedItemPntr_NOCONFLICT = valueBeforeAdd_NOCONFLICT;           \
-} while(0)
-// This is simply an alias of VarArrayAddValue, but it's here to match the name of VarArrayPop below
-#define VarArrayPush(type, arrayPntr, value) VarArrayAddValue(type, (arrayPntr), (value))
-
 // +--------------------------------------------------------------+
 // |                  Insert Item Into VarArray                   |
 // +--------------------------------------------------------------+
-void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
+PEXP void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
 {
 	DebugNotNull(array);
 	DebugAssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayInsert. Make sure you're accessing the VarArray with the correct type!");
@@ -386,22 +452,10 @@ void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx inde
 	return result;
 }
 
-#define VarArrayInsert(type, arrayPntr, index) (type*)VarArrayInsert_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
-//NOTE: The (value) portion is evaluated AFTER the Insert occurs, it's meaning may change if it's accessing the array or using a pointer from the array!
-#define VarArrayInsertValue(type, arrayPntr, index, value) do                       \
-{                                                                                   \
-	/* We must evaluate (value) before manipulating the array */                    \
-	/* because it may access/refer to elements in the array   */                    \
-	type valueBeforeInsert_NOCONFLICT = (value);                                    \
-	type* insertedItemPntr_NOCONFLICT = VarArrayInsert(type, (arrayPntr), (index)); \
-	DebugNotNull(insertedItemPntr_NOCONFLICT);                                      \
-	*insertedItemPntr_NOCONFLICT = valueBeforeInsert_NOCONFLICT;                    \
-} while(0)
-
 // +--------------------------------------------------------------+
 // |               Remove Item at Index in VarArray               |
 // +--------------------------------------------------------------+
-void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
+PEXP void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
 {
 	#if DEBUG_BUILD
 	NotNull(array);
@@ -421,16 +475,10 @@ void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx ind
 	array->length--;
 }
 
-#define VarArrayRemoveAt(type, arrayPntr, index) VarArrayRemoveAt_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
-#define VarArrayGetAndRemoveValueAt(type, arrayPntr, index) VarArrayGetValue(type, (arrayPntr), (index)); VarArrayRemoveAt(type, (arrayPntr), (index))
-#define VarArrayPop(type, arrayPntr) VarArrayGetValue(type, (arrayPntr), (arrayPntr)->length-1); VarArrayRemoveAt(type, (arrayPntr), (arrayPntr)->length-1)
-#define VarArrayRemoveFirst(type, arrayPntr) VarArrayRemoveAt(type, (arrayPntr), 0)
-#define VarArrayRemoveLast(type, arrayPntr) VarArrayRemoveAt(type, (arrayPntr), (arrayPntr)->length-1)
-
 // +--------------------------------------------------------------+
 // |               Remove Item by Pntr in VarArray                |
 // +--------------------------------------------------------------+
-void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemToRemove)
+PEXPI void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemToRemove)
 {
 	uxx itemIndex = 0;
 	bool itemInArray = VarArrayGetIndexOf_(itemSize, itemAlignment, array, itemToRemove, &itemIndex);
@@ -438,15 +486,13 @@ void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, const voi
 	VarArrayRemoveAt_(itemSize, itemAlignment, array, itemIndex);
 }
 
-#define VarArrayRemove(type, arrayPntr, itemPntr) VarArrayRemove_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntr))
-
 // +--------------------------------------------------------------+
 // |                 Copy VarArray Into New Arena                 |
 // +--------------------------------------------------------------+
 #if VAR_ARRAY_DEBUG_INFO
-void VarArrayCopy_(const char* filePath, uxx lineNumber, const char* funcName, VarArray* destArray, const VarArray* sourceArray, Arena* arena)
+PEXP void VarArrayCopy_(const char* filePath, uxx lineNumber, const char* funcName, VarArray* destArray, const VarArray* sourceArray, Arena* arena)
 #else
-void VarArrayCopy_(VarArray* destArray, const VarArray* sourceArray, Arena* arena)
+PEXP void VarArrayCopy_(VarArray* destArray, const VarArray* sourceArray, Arena* arena)
 #endif
 {
 	NotNull(arena);
@@ -468,10 +514,6 @@ void VarArrayCopy_(VarArray* destArray, const VarArray* sourceArray, Arena* aren
 	}
 }
 
-#if VAR_ARRAY_DEBUG_INFO
-#define VarArrayCopy(destArray, sourceArray, arenaPntr) VarArrayCopy_(__FILE__, __LINE__, __func__, (destArray), (sourceArray), (arenaPntr))
-#else
-#define VarArrayCopy(destArray, sourceArray, arenaPntr) VarArrayCopy_((destArray), (sourceArray), (arenaPntr))
-#endif
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_VAR_ARRAY_H

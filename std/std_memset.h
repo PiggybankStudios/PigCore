@@ -10,6 +10,7 @@ Description:
 #define _STD_MEMSET_H
 
 #include "base/base_compiler_check.h"
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 
@@ -29,7 +30,7 @@ Description:
 	#define MyWideStrLength32(str)         ((u32)wcslen(str))
 	#define MyWideStrLength64(str)         ((u64)wcslen(str))
 #else
-	static inline size_t MyWideStrLength(const char16_t* str) { size_t result = 0; while (str[result] != 0) { result++; } return result; }
+	PIG_CORE_INLINE size_t MyWideStrLength(const char16_t* str) { size_t result = 0; while (str[result] != 0) { result++; } return result; }
 	#define MyWideStrLength32(str) ((u32)MyWideStrLength(str))
 	#define MyWideStrLength64(str) ((u64)MyWideStrLength(str))
 #endif

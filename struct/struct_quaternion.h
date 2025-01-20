@@ -24,7 +24,14 @@ Description:
 typedef HMM_Quat quat;
 
 // +--------------------------------------------------------------+
-// |                        New Functions                         |
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	//NOTE: There are no actual functions in this file yet
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
 // +--------------------------------------------------------------+
 #define NewQuat(x, y, z, w) HMM_Q((x), (y), (z), (w))
 
@@ -32,15 +39,9 @@ typedef HMM_Quat quat;
 #define ToV4FromQuat(quaternion) NewV4((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
 #define ToQuatFromAxis(axis, angle) HMM_QFromAxisAngle_LH((axis), (angle))
 
-// +--------------------------------------------------------------+
-// |                   Simple Value Definitions                   |
-// +--------------------------------------------------------------+
 #define Quat_Identity NewQuat(0.0f, 0.0f, 0.0f, 1.0f)
 #define Quat_Identity_Const (quat){{{{{ 0.0f, 0.0f, 0.0f }}}, 1.0f }}
 
-// +--------------------------------------------------------------+
-// |                Operator Overload Equivalents                 |
-// +--------------------------------------------------------------+
 #define AddQuat(left, right) HMM_AddQ((left), (right))
 
 #define SubQuat(left, right) HMM_SubQ((left), (right))
@@ -51,9 +52,6 @@ typedef HMM_Quat quat;
 
 #define ShrinkQuat(quaternion, divisor) HMM_DivQF((quaternion), (divisor))
 
-// +--------------------------------------------------------------+
-// |                    Common Quaternion Math                    |
-// +--------------------------------------------------------------+
 #define DotQuat(left, right) HMM_DotQ((left), (right))
 
 #define InvertQuat(quaternion) HMM_InvQ(quaternion)
@@ -67,11 +65,17 @@ typedef HMM_Quat quat;
 //TODO: Do we want EquivalentQuat?
 //TODO: Do we want OppositeQuat?
 
-// +--------------------------------------------------------------+
-// |             Basic Quaternion Creation Functions              |
-// +--------------------------------------------------------------+
 // HMM_QFromAxisAngle_RH
 // HMM_QFromAxisAngle_LH
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+//NOTE: There are no actual functions in this file yet
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_QUATERNION_H
 

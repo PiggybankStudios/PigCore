@@ -37,6 +37,10 @@ Description:
 //      like VarArray which could expose us to more re-entrancy (if VarArray does debug output) but maybe it's worth it?
 //      Or maybe we just handle the memory without a data structure?
 
+#if PIG_CORE_IMPLEMENTATION
+
+DebugOutput_f* DebugOutputCallback = nullptr;
+
 thread_local bool DebugOutputIsOnNewLine = true;
 #if DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
 thread_local uxx DebugOutputLineLength = 0;
@@ -48,7 +52,7 @@ thread_local bool DebugOutputLineOverflowOccurred = false;
 // |      DebugOutputRouter       |
 // +==============================+
 // void DebugOutputRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* message)
-DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
+PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 {
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR) ||
@@ -153,7 +157,7 @@ DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 // |       DebugPrintRouter       |
 // +==============================+
 // void DebugPrintRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* formatString, ...)
-DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
+PEXP DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
 {
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR) ||
@@ -181,5 +185,7 @@ DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
 		ScratchEnd(scratch);
 	}
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _BASE_DEBUG_OUTPUT_IMPL_H

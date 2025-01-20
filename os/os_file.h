@@ -16,12 +16,115 @@ Description:
 #include "os/os_error.h"
 #include "misc/misc_result.h"
 
+typedef struct OsFileIter OsFileIter;
+struct OsFileIter
+{
+	Arena* arena;
+	FilePath folderPath; //has a trailing slash
+	FilePath folderPathWithWildcard;
+	bool includeFiles;
+	bool includeFolders;
+	
+	bool finished;
+	uxx index;
+	uxx nextIndex;
+	
+	#if TARGET_IS_WINDOWS
+	WIN32_FIND_DATAA findData;
+	HANDLE handle;
+	#endif
+};
+
+typedef enum OsOpenFileMode OsOpenFileMode;
+enum OsOpenFileMode
+{
+	OsOpenFileMode_None = 0,
+	OsOpenFileMode_Read,
+	OsOpenFileMode_Write,
+	OsOpenFileMode_Append,
+	OsOpenFileMode_Count,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetOsOpenFileModeStr(OsOpenFileMode enumValue);
+#else
+PEXP const char* GetOsOpenFileModeStr(OsOpenFileMode enumValue)
+{
+	switch (enumValue)
+	{
+		case OsOpenFileMode_None:   return "None";
+		case OsOpenFileMode_Read:   return "Read";
+		case OsOpenFileMode_Write:  return "Write";
+		case OsOpenFileMode_Append: return "Append";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
+typedef struct OsFile OsFile;
+struct OsFile
+{
+	Arena* arena;
+	bool isOpen;
+	bool openedForWriting;
+	bool isKnownSize;
+	uxx cursorIndex;
+	uxx fileSize;
+	FilePath path; //has nullterm
+	FilePath fullPath; //has nullterm
+	
+	#if TARGET_IS_WINDOWS
+	HANDLE handle;
+	#endif
+};
+
+typedef struct OsDll OsDll;
+struct OsDll
+{
+	#if TARGET_IS_WINDOWS
+	HMODULE handle;
+	#else
+	int placeholder;
+	#endif
+};
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	FilePath OsGetFullPath(Arena* arena, FilePath relativePath);
+	PIG_CORE_INLINE uxx OsGetFullPathLength(FilePath relativePath);
+	bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut);
+	PIG_CORE_INLINE bool OsDoesFileExist(FilePath path);
+	PIG_CORE_INLINE bool OsDoesFolderExist(FilePath path);
+	PIG_CORE_INLINE void OsFreeFileIter(OsFileIter* fileIter);
+	OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, bool includeFolders);
+	bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath);
+	PIG_CORE_INLINE bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath);
+	bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* contentsOut);
+	PIG_CORE_INLINE Str8 OsReadTextFileScratch(FilePath path);
+	PIG_CORE_INLINE Str8 OsReadBinFileScratch(FilePath path);
+	bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines);
+	PIG_CORE_INLINE bool OsWriteTextFile(FilePath path, Str8 fileContents);
+	PIG_CORE_INLINE bool OsWriteBinFile(FilePath path, Str8 fileContents);
+	void OsCloseFile(OsFile* file);
+	bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut);
+	bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines);
+	PIG_CORE_INLINE bool OsWriteToOpenTextFile(OsFile* file, Str8 fileContentsPart);
+	PIG_CORE_INLINE bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart);
+	Result OsLoadDll(FilePath path, OsDll* dllOut);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
 // +--------------------------------------------------------------+
 // |                          Full Path                           |
 // +--------------------------------------------------------------+
 // Passing nullptr for arena will return a FilePath with no chars pntr but length is filled out
 // NOTE: The result is always null-terminated
-FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
+PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 {
 	NotNullStr(relativePath);
 	FilePath result = Str8_Empty_Const;
@@ -76,7 +179,7 @@ FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 	ScratchEnd(scratch);
 	return result;
 }
-uxx OsGetFullPathLength(FilePath relativePath)
+PEXPI uxx OsGetFullPathLength(FilePath relativePath)
 {
 	FilePath lengthOnlyPath = OsGetFullPath(nullptr, relativePath);
 	return lengthOnlyPath.length;
@@ -85,7 +188,7 @@ uxx OsGetFullPathLength(FilePath relativePath)
 // +--------------------------------------------------------------+
 // |                            Exists                            |
 // +--------------------------------------------------------------+
-bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
+PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 {
 	#if TARGET_IS_WINDOWS
 	{
@@ -119,13 +222,13 @@ bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 	return false;
 	#endif
 }
-bool OsDoesFileExist(FilePath path)
+PEXPI bool OsDoesFileExist(FilePath path)
 {
 	bool isFolder = false;
 	bool doesExist = OsDoesFileOrFolderExist(path, &isFolder);
 	return (doesExist && !isFolder);
 }
-bool OsDoesFolderExist(FilePath path)
+PEXPI bool OsDoesFolderExist(FilePath path)
 {
 	bool isFolder = false;
 	bool doesExist = OsDoesFileOrFolderExist(path, &isFolder);
@@ -135,33 +238,14 @@ bool OsDoesFolderExist(FilePath path)
 // +--------------------------------------------------------------+
 // |                          Iteration                           |
 // +--------------------------------------------------------------+
-typedef struct OsFileIter OsFileIter;
-struct OsFileIter
-{
-	Arena* arena;
-	FilePath folderPath; //has a trailing slash
-	FilePath folderPathWithWildcard;
-	bool includeFiles;
-	bool includeFolders;
-	
-	bool finished;
-	uxx index;
-	uxx nextIndex;
-	
-	#if TARGET_IS_WINDOWS
-	WIN32_FIND_DATAA findData;
-	HANDLE handle;
-	#endif
-};
-
-void OsFreeFileIter(OsFileIter* fileIter)
+PEXPI void OsFreeFileIter(OsFileIter* fileIter)
 {
 	if (fileIter->folderPath.chars != nullptr) { FreeStr8WithNt(fileIter->arena, &fileIter->folderPath); }
 	if (fileIter->folderPathWithWildcard.chars != nullptr) { FreeStr8WithNt(fileIter->arena, &fileIter->folderPathWithWildcard); }
 	ClearPointer(fileIter);
 }
 
-OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, bool includeFolders)
+PEXP OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, bool includeFolders)
 {
 	OsFileIter result = ZEROED;
 	
@@ -206,7 +290,7 @@ OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, bool i
 }
 
 // Ex version gives isFolderOut
-bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath)
+PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath)
 {
 	NotNull(fileIter);
 	if (pathOut != nullptr) { Assert(pathOutArena != nullptr); }
@@ -291,7 +375,7 @@ bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut
 	
 	return false;
 }
-bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath)
+PEXPI bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath)
 {
 	return OsIterFileStepEx(fileIter, nullptr, pathOut, pathOutArena, giveFullPath);
 }
@@ -302,7 +386,7 @@ bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOutArena
 //NOTE: Passing nullptr for arena will output a Str8 that has length set but no chars pointer
 // NOTE: The contentsOut is always null-terminated
 //TODO: Return Result instead of bool!
-bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* contentsOut)
+PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* contentsOut)
 {
 	//NOTE: This function should be multi-thread safe!
 	NotNullStr(path);
@@ -428,7 +512,7 @@ bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* content
 	ScratchEnd(scratch);
 	return true;
 }
-Str8 OsReadTextFileScratch(FilePath path)
+PEXPI Str8 OsReadTextFileScratch(FilePath path)
 {
 	Arena* scratch = GetScratch(nullptr); //Intentionally throwing away the mark here
 	Str8 fileContents = Str8_Empty;
@@ -436,7 +520,7 @@ Str8 OsReadTextFileScratch(FilePath path)
 	// Assert(readSuccess); //NOTE: Enable me if you want to break on failure to read!
 	return readSuccess ? fileContents : Str8_Empty;
 }
-Str8 OsReadBinFileScratch(FilePath path)
+PEXPI Str8 OsReadBinFileScratch(FilePath path)
 {
 	Arena* scratch = GetScratch(nullptr); //Intentionally throwing away the mark here
 	Str8 fileContents = Str8_Empty;
@@ -451,7 +535,7 @@ Str8 OsReadBinFileScratch(FilePath path)
 // |                      Write Entire File                       |
 // +--------------------------------------------------------------+
 //NOTE: If convertNewLines is true, you should not be passing \r\n instances in your file contents, only \n
-bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
+PEXP bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 {
 	NotNullStr(path);
 	NotNullStr(fileContents);
@@ -536,8 +620,8 @@ bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 	
 	return result;
 }
-bool OsWriteTextFile(FilePath path, Str8 fileContents) { return OsWriteFile(path, fileContents, true); }
-bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile(path, fileContents, false); }
+PEXPI bool OsWriteTextFile(FilePath path, Str8 fileContents) { return OsWriteFile(path, fileContents, true); }
+PEXPI bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile(path, fileContents, false); }
 
 //TODO: Can we do some sort of asynchronous file write function? Like a fire and forget style thing?
 //      This would probably require the code to know if an operation on that file is already in
@@ -546,45 +630,7 @@ bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile(path,
 // +--------------------------------------------------------------+
 // |                Open File For Reading/Writing                 |
 // +--------------------------------------------------------------+
-typedef enum OsOpenFileMode OsOpenFileMode;
-enum OsOpenFileMode
-{
-	OsOpenFileMode_None = 0,
-	OsOpenFileMode_Read,
-	OsOpenFileMode_Write,
-	OsOpenFileMode_Append,
-	OsOpenFileMode_Count,
-};
-const char* GetOsOpenFileModeStr(OsOpenFileMode enumValue)
-{
-	switch (enumValue)
-	{
-		case OsOpenFileMode_None:   return "None";
-		case OsOpenFileMode_Read:   return "Read";
-		case OsOpenFileMode_Write:  return "Write";
-		case OsOpenFileMode_Append: return "Append";
-		default: return "Unknown";
-	}
-}
-
-typedef struct OsFile OsFile;
-struct OsFile
-{
-	Arena* arena;
-	bool isOpen;
-	bool openedForWriting;
-	bool isKnownSize;
-	uxx cursorIndex;
-	uxx fileSize;
-	FilePath path; //has nullterm
-	FilePath fullPath; //has nullterm
-	
-	#if TARGET_IS_WINDOWS
-	HANDLE handle;
-	#endif
-};
-
-void OsCloseFile(OsFile* file)
+PEXP void OsCloseFile(OsFile* file)
 {
 	NotNull(file);
 	if (file->arena != nullptr && CanArenaFree(file->arena))
@@ -595,7 +641,7 @@ void OsCloseFile(OsFile* file)
 	ClearPointer(file);
 }
 
-bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut)
+PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut)
 {
 	NotNullStr(path);
 	NotNull(openFileOut);
@@ -702,7 +748,7 @@ bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculate
 }
 
 //NOTE: If convertNewLines is true, you should not be passing \r\n instances in your file contents, only \n
-bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines)
+PEXP bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines)
 {
 	NotNull(file);
 	NotNullStr(fileContentsPart);
@@ -771,8 +817,8 @@ bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines
 	
 	return result;
 }
-bool OsWriteToOpenTextFile(OsFile* file, Str8 fileContentsPart) { return OsWriteToOpenFile(file, fileContentsPart, true); }
-bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart) { return OsWriteToOpenFile(file, fileContentsPart, false); }
+PEXPI bool OsWriteToOpenTextFile(OsFile* file, Str8 fileContentsPart) { return OsWriteToOpenFile(file, fileContentsPart, true); }
+PEXPI bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart) { return OsWriteToOpenFile(file, fileContentsPart, false); }
 
 //TODO: Implement OsMoveFileCursorRelative
 //TODO: Implement OsMoveFileCursor
@@ -780,17 +826,7 @@ bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart) { return OsWriteT
 // +--------------------------------------------------------------+
 // |                         DLL Loading                          |
 // +--------------------------------------------------------------+
-typedef struct OsDll OsDll;
-struct OsDll
-{
-	#if TARGET_IS_WINDOWS
-	HMODULE handle;
-	#else
-	int placeholder;
-	#endif
-};
-
-Result OsLoadDll(FilePath path, OsDll* dllOut)
+PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
 {
 	NotNullStr(path);
 	NotNull(dllOut);
@@ -814,5 +850,7 @@ Result OsLoadDll(FilePath path, OsDll* dllOut)
 	
 	return result;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_FILE_H

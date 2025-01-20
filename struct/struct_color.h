@@ -20,14 +20,27 @@ struct Color32
 	struct { u8 blue, green, red, alpha; };
 };
 
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE Color32 NewColorU32(u32 valueU32);
+	PIG_CORE_INLINE Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
 //NOTE: This is BGRA order in memory, or in hex that's 0xAARRGGBB
-Color32 NewColorU32(u32 valueU32)
+PEXPI Color32 NewColorU32(u32 valueU32)
 {
 	Color32 result;
 	result.valueU32 = valueU32;
 	return result;
 }
-Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
+PEXPI Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
 {
 	Color32 result;
 	result.red = red;
@@ -36,5 +49,7 @@ Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
 	result.alpha = alpha;
 	return result;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_COLOR_H

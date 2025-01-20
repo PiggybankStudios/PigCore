@@ -37,7 +37,10 @@ enum DbgLevel
 	DbgLevel_Error,
 	DbgLevel_Count,
 };
-const char* GetDbgLevelStr(DbgLevel enumValue)
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetDbgLevelStr(DbgLevel enumValue);
+#else
+PEXP const char* GetDbgLevelStr(DbgLevel enumValue)
 {
 	switch (enumValue)
 	{
@@ -49,9 +52,10 @@ const char* GetDbgLevelStr(DbgLevel enumValue)
 		case DbgLevel_Other:   return "Other";
 		case DbgLevel_Warning: return "Warning";
 		case DbgLevel_Error:   return "Error";
-		default: return "Unknown";
+		default: return UNKNOWN_STR;
 	}
 }
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _BASE_DBG_LEVEL_H
 

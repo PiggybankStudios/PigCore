@@ -18,12 +18,17 @@ Description:
 // +--------------------------------------------------------------+
 #if TARGET_IS_PLAYDATE
 
+#if PIG_CORE_IMPLEMENTATION
 #define STB_SPRINTF_IMPLEMENTATION
+#endif
 #include "third_party/stb/stb_sprintf.h"
 
 #define MyPrint(formatStr, ...) printf_is_not_supported_on_playdate
 #define MyPrintNoLine(formatStr, ...) printf_is_not_supported_on_playdate
 
+//TODO: If we ever compile PigCore as a dll for Playdate then we may need to markup
+//      stbsp_sprintf with PEXP or maybe we need our own routing function around
+//      the call just so we can mark it up
 #ifndef MyBufferPrintf
 #define MyBufferPrintf(buffer, bufferSize, formatStr, ...) stbsp_snprintf((buffer), (bufferSize), (formatStr), ##__VA_ARGS__)
 #endif

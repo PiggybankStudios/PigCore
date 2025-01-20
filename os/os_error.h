@@ -14,8 +14,25 @@ Description:
 #include "base/base_macros.h"
 #include "std/std_includes.h"
 
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	#if TARGET_IS_WINDOWS
+	const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode);
+	#endif
+	#if (TARGET_IS_LINUX || TARGET_IS_OSX)
+	const char* GetErrnoStr(int errnoValue);
+	#endif
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
 #if TARGET_IS_WINDOWS
-const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
+PEXP const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 {
 	switch (windowsErrorCode)
 	{
@@ -26,14 +43,14 @@ const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 		case ERROR_PIPE_BUSY:         return "ERROR_PIPE_BUSY";         //?
 		case ERROR_ACCESS_DENIED:     return "ERROR_ACCESS_DENIED";     //?
 		case ERROR_DIRECTORY:         return "ERROR_DIRECTORY";         //267
-		// default: return (printUnknownValue ? TempPrint("(0x%08X)", windowsErrorCode) : "UNKNOWN"); //TODO: Add this option back in once we have PrintInArena function!
+		// default: return (printUnknownValue ? TempPrint("(0x%08X)", windowsErrorCode) : UNKNOWN_STR); //TODO: Add this option back in once we have PrintInArena function!
 		default: return UNKNOWN_STR;
 	}
 }
 #endif
 
-#if TARGET_IS_LINUX || TARGET_IS_OSX
-const char* GetErrnoStr(int errnoValue)
+#if (TARGET_IS_LINUX || TARGET_IS_OSX)
+PEXP const char* GetErrnoStr(int errnoValue)
 {
 	switch (errnoValue)
 	{
@@ -176,5 +193,7 @@ const char* GetErrnoStr(int errnoValue)
 	}
 }
 #endif
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_ERROR_H

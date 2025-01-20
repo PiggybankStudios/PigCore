@@ -76,7 +76,15 @@ Description:
 	#define PureBlue                NewColorU32(PureBlue_Value)
 	#define PurePurple              NewColorU32(PurePurple_Value)
 	
-	Color32 GetPureColorByIndex(uxx index)
+	#if !PIG_CORE_IMPLEMENTATION
+	Color32 GetPureColorByIndex(uxx index);
+	Color32 GetGreyscaleColorByIndex(uxx index);
+	uxx GetPureColorIndexByValue(u32 colorValue);
+	uxx GetPureColorIndex(Color32 color);
+	uxx GetGreyscaleColorIndexByValue(u32 colorValue);
+	uxx GetGreyscaleColorIndex(Color32 color);
+	#else //PIG_CORE_IMPLEMENTATION
+	PEXP Color32 GetPureColorByIndex(uxx index)
 	{
 		switch (index % NUM_PREDEF_PURE_COLORS)
 		{
@@ -89,7 +97,7 @@ Description:
 			default: return PureRed;
 		}
 	}
-	Color32 GetGreyscaleColorByIndex(uxx index)
+	PEXP Color32 GetGreyscaleColorByIndex(uxx index)
 	{
 		switch (index % NUM_PREDEF_GREYSCALE_COLORS)
 		{
@@ -112,7 +120,7 @@ Description:
 			default: return Black;
 		}
 	}
-	uxx GetPureColorIndexByValue(u32 colorValue)
+	PEXP uxx GetPureColorIndexByValue(u32 colorValue)
 	{
 		switch (colorValue)
 		{
@@ -125,11 +133,11 @@ Description:
 			default: return NUM_PREDEF_PURE_COLORS;
 		}
 	}
-	uxx GetPureColorIndex(Color32 color)
+	PEXP uxx GetPureColorIndex(Color32 color)
 	{
 		return GetPureColorIndexByValue(color.valueU32);
 	}
-	uxx GetGreyscaleColorIndexByValue(u32 colorValue)
+	PEXP uxx GetGreyscaleColorIndexByValue(u32 colorValue)
 	{
 		switch (colorValue)
 		{
@@ -152,10 +160,11 @@ Description:
 			default: return NUM_PREDEF_GREYSCALE_COLORS;
 		}
 	}
-	uxx GetGreyscaleColorIndex(Color32 color)
+	PEXP uxx GetGreyscaleColorIndex(Color32 color)
 	{
 		return GetGreyscaleColorIndexByValue(color.valueU32);
 	}
+	#endif //PIG_CORE_IMPLEMENTATION
 // +--------------------------------------------------------------+
 
 // +--------------------------------------------------------------+
@@ -327,7 +336,12 @@ Description:
 	#define PalBlackLight           NewColorU32(PalBlackLight_Value)
 	#define PalBlackLighter         NewColorU32(PalBlackLighter_Value)
 
-	Color32 GetPredefPalColorByIndex(uxx index)
+	#if !PIG_CORE_IMPLEMENTATION
+	Color32 GetPredefPalColorByIndex(uxx index);
+	uxx GetPredefPalColorIndexByValue(u32 colorValue);
+	uxx GetPredefPalColorIndex(Color32 color);
+	#else //PIG_CORE_IMPLEMENTATION
+	PEXP Color32 GetPredefPalColorByIndex(uxx index)
 	{
 		switch (index % NUM_PREDEF_PAL_COLORS)
 		{
@@ -414,7 +428,7 @@ Description:
 			default: return Black;
 		}
 	}
-	uxx GetPredefPalColorIndexByValue(u32 colorValue)
+	PEXP uxx GetPredefPalColorIndexByValue(u32 colorValue)
 	{
 		switch (colorValue)
 		{
@@ -491,10 +505,11 @@ Description:
 			default: return NUM_PREDEF_PAL_COLORS;
 		}
 	}
-	uxx GetPredefPalColorIndex(Color32 color)
+	PEXP uxx GetPredefPalColorIndex(Color32 color)
 	{
 		return GetPredefPalColorIndexByValue(color.valueU32);
 	}
+	#endif //PIG_CORE_IMPLEMENTATION
 // +--------------------------------------------------------------+
 
 // +--------------------------------------------------------------+
@@ -544,7 +559,12 @@ Description:
 	#define MonokaiGray2                    NewColorU32(MonokaiGray2_Value)
 	#define MonokaiDarkGray                 NewColorU32(MonokaiDarkGray_Value)
 	
-	Color32 GetMonokaiColorByIndex(uxx index)
+	#if !PIG_CORE_IMPLEMENTATION
+	Color32 GetMonokaiColorByIndex(uxx index);
+	uxx GetMonokaiColorIndexByValue(u32 colorValue);
+	uxx GetMonokaiColorIndex(Color32 color);
+	#else //PIG_CORE_IMPLEMENTATION
+	PEXP Color32 GetMonokaiColorByIndex(uxx index)
 	{
 		switch (index % NUM_MONOKAI_COLORS)
 		{
@@ -571,7 +591,7 @@ Description:
 			default: return Black;
 		}
 	}
-	uxx GetMonokaiColorIndexByValue(u32 colorValue)
+	PEXP uxx GetMonokaiColorIndexByValue(u32 colorValue)
 	{
 		switch (colorValue)
 		{
@@ -598,10 +618,11 @@ Description:
 			default: return NUM_MONOKAI_COLORS;
 		}
 	}
-	uxx GetMonokaiColorIndex(Color32 color)
+	PEXP uxx GetMonokaiColorIndex(Color32 color)
 	{
 		return GetMonokaiColorIndexByValue(color.valueU32);
 	}
+	#endif //PIG_CORE_IMPLEMENTATION
 // +--------------------------------------------------------------+
 
 #endif //  _MISC_STANDARD_COLORS_H

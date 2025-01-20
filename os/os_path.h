@@ -24,6 +24,27 @@ typedef Str8 FilePath;
 
 #define FilePath_Empty Str8_Empty
 
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE bool DoesPathHaveTrailingSlash(FilePath path);
+	uxx ChangePathSlashesTo(FilePath path, char slashType);
+	PIG_CORE_INLINE uxx FixPathSlashes(FilePath path);
+	NODISCARD PIG_CORE_INLINE FilePath AllocFilePath(Arena* arena, Str8 pathStr, bool addNullTerm);
+	NODISCARD PIG_CORE_INLINE FilePath AllocFolderPath(Arena* arena, Str8 pathStr, bool addNullTerm);
+	Str8 GetFileNamePart(FilePath path, bool includeExtension);
+	Str8 GetFileExtPart(FilePath path, bool includeSubExtensions, bool includeLeadingPeriod);
+	PIG_CORE_INLINE FilePath GetFileFolderPart(FilePath path);
+	PIG_CORE_INLINE bool DoesPathHaveExt(FilePath path);
+	uxx CountPathParts(FilePath path, bool includeEmptyBeginOrEnd);
+	Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd);
+	Str8 CollapsePathParts(FilePath path);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
 #define NewFilePath(length, pntr) (NewStr8((length), (pntr)))
 #define FilePathLit(nullTermStr)  (StrLit(nullTermStr))
 #define AsFilePath(string)        (string)
@@ -31,10 +52,15 @@ typedef Str8 FilePath;
 #define FreeFilePath(arenaPntr, pathPntr) FreeStr8((arenaPntr), (pathPntr))
 #define FreeFilePathWithNt(arenaPntr, pathPntr) FreeStr8WithNt((arenaPntr), (pathPntr))
 
-bool DoesPathHaveTrailingSlash(FilePath path) { return (path.chars != nullptr && path.length > 0 && (path.chars[path.length-1] == '\\' || path.chars[path.length-1] == '/')); }
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXPI bool DoesPathHaveTrailingSlash(FilePath path) { return (path.chars != nullptr && path.length > 0 && (path.chars[path.length-1] == '\\' || path.chars[path.length-1] == '/')); }
 
 //These both return the number of slashes that had to be replaced
-uxx ChangePathSlashesTo(FilePath path, char slashType)
+PEXP uxx ChangePathSlashesTo(FilePath path, char slashType)
 {
 	uxx replaceCount = 0;
 	for (uxx cIndex = 0; cIndex < path.length; cIndex++)
@@ -47,19 +73,19 @@ uxx ChangePathSlashesTo(FilePath path, char slashType)
 	}
 	return replaceCount;
 }
-uxx FixPathSlashes(FilePath path)
+PEXPI uxx FixPathSlashes(FilePath path)
 {
 	//We try to store paths with forward slashes because it doesn't conflict with escape sequences usually
 	return ChangePathSlashesTo(path, '/');
 }
 
-NODISCARD FilePath AllocFilePath(Arena* arena, Str8 pathStr, bool addNullTerm)
+NODISCARD PEXPI FilePath AllocFilePath(Arena* arena, Str8 pathStr, bool addNullTerm)
 {
 	FilePath result = AllocStrAndCopy(arena, pathStr.length, pathStr.chars, addNullTerm);
 	FixPathSlashes(result); //we assume we can and should fix slashes since we are allocating the path on an arena
 	return result;
 }
-NODISCARD FilePath AllocFolderPath(Arena* arena, Str8 pathStr, bool addNullTerm)
+NODISCARD PEXPI FilePath AllocFolderPath(Arena* arena, Str8 pathStr, bool addNullTerm)
 {
 	FilePath result = ZEROED;
 	if (pathStr.length == 0 && !addNullTerm) { return Str8_Empty; }
@@ -73,7 +99,7 @@ NODISCARD FilePath AllocFolderPath(Arena* arena, Str8 pathStr, bool addNullTerm)
 	return result;
 }
 
-Str8 GetFileNamePart(FilePath path, bool includeExtension)
+PEXP Str8 GetFileNamePart(FilePath path, bool includeExtension)
 {
 	uxx lastSlashIndex = 0;
 	uxx firstPeriodIndex = path.length;
@@ -87,7 +113,7 @@ Str8 GetFileNamePart(FilePath path, bool includeExtension)
 		: NewStr8(firstPeriodIndex - (lastSlashIndex+1), path.chars + lastSlashIndex+1);
 }
 //NOTE: "subExtensions" are things like "important" in "file.important.txt"
-Str8 GetFileExtPart(FilePath path, bool includeSubExtensions, bool includeLeadingPeriod)
+PEXP Str8 GetFileExtPart(FilePath path, bool includeSubExtensions, bool includeLeadingPeriod)
 {
 	uxx periodIndex = path.length;
 	for (uxx cIndex = 0; cIndex < path.length; cIndex++)
@@ -101,7 +127,7 @@ Str8 GetFileExtPart(FilePath path, bool includeSubExtensions, bool includeLeadin
 		: NewStr8(path.length - (periodIndex+1), path.chars + periodIndex+1);
 }
 //NOTE: If you have a path that is already a folder, this will trim the last part of the path unless there is a trailing slash!
-FilePath GetFileFolderPart(FilePath path)
+PEXPI FilePath GetFileFolderPart(FilePath path)
 {
 	uxx lastSlashIndex = path.length;
 	for (uxx cIndex = 0; cIndex < path.length; cIndex++)
@@ -111,7 +137,7 @@ FilePath GetFileFolderPart(FilePath path)
 	return NewFilePath(lastSlashIndex < path.length ? lastSlashIndex+1 : lastSlashIndex, path.chars);
 }
 
-bool DoesPathHaveExt(FilePath path)
+PEXPI bool DoesPathHaveExt(FilePath path)
 {
 	bool result = false;
 	for (uxx cIndex = 0; cIndex < path.length; cIndex++)
@@ -122,7 +148,7 @@ bool DoesPathHaveExt(FilePath path)
 	return result;
 }
 
-uxx CountPathParts(FilePath path, bool includeEmptyBeginOrEnd)
+PEXP uxx CountPathParts(FilePath path, bool includeEmptyBeginOrEnd)
 {
 	uxx result = 0;
 	uxx finalSlash = path.length;
@@ -142,7 +168,7 @@ uxx CountPathParts(FilePath path, bool includeEmptyBeginOrEnd)
 }
 
 // Pass negative value for partIndex to index from the end
-Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
+PEXP Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
 {
 	if (partIndex >= 0) //index is from beginning
 	{
@@ -198,7 +224,7 @@ Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
 // as long as there is a preceeding part of the path that can be removed at the same time
 #if 0
 // TODO: This function is going to be a little harder to implement than I originally thought
-Str8 CollapsePathParts(FilePath path)
+PEXP Str8 CollapsePathParts(FilePath path)
 {
 	uxx newLength = path.length;
 	for (uxx cIndex = 0; cIndex+3 <= path.length; cIndex++)
@@ -223,5 +249,7 @@ Str8 CollapsePathParts(FilePath path)
 	}
 }
 #endif
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_PATH_H

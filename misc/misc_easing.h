@@ -80,7 +80,10 @@ enum EasingStyle
 	EasingStyle_NumStyles,
 };
 
-const char* GetEasingStyleStr(EasingStyle style)
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetEasingStyleStr(EasingStyle style);
+#else
+PEXP const char* GetEasingStyleStr(EasingStyle style)
 {
 	switch (style)
 	{
@@ -119,19 +122,71 @@ const char* GetEasingStyleStr(EasingStyle style)
 		case EasingStyle_EarlyInOut:       return "EarlyInOut";
 		case EasingStyle_LogTwoOutCustom:  return "LogTwoOutCustom";
 		case EasingStyle_LogTwoInCustom:   return "LogTwoInCustom";
-		default:                           return "Unknown";
+		default:                           return UNKNOWN_STR;
 	}
 }
+#endif
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE r32 EaseLinear(r32 p);
+	PIG_CORE_INLINE r32 InverseEaseLinear(r32 y);
+	PIG_CORE_INLINE r32 EaseQuadraticIn(r32 p);
+	PIG_CORE_INLINE r32 InverseEaseQuadraticIn(r32 y);
+	PIG_CORE_INLINE r32 EaseQuadraticOut(r32 p);
+	PIG_CORE_INLINE r32 InverseEaseQuadraticOut(r32 y);
+	PIG_CORE_INLINE r32 EaseQuadraticInOut(r32 p);
+	PIG_CORE_INLINE r32 InverseEaseQuadraticInOut(r32 y);
+	PIG_CORE_INLINE r32 EaseCubicIn(r32 p);
+	PIG_CORE_INLINE r32 EaseCubicOut(r32 p);
+	PIG_CORE_INLINE r32 EaseCubicInOut(r32 p);
+	PIG_CORE_INLINE r32 EaseQuarticIn(r32 p);
+	PIG_CORE_INLINE r32 EaseQuarticOut(r32 p);
+	PIG_CORE_INLINE r32 EaseQuarticInOut(r32 p) ;
+	PIG_CORE_INLINE r32 EaseQuinticIn(r32 p) ;
+	PIG_CORE_INLINE r32 EaseQuinticOut(r32 p) ;
+	PIG_CORE_INLINE r32 EaseQuinticInOut(r32 p) ;
+	PIG_CORE_INLINE r32 EaseSineIn(r32 p);
+	PIG_CORE_INLINE r32 EaseSineOut(r32 p);
+	PIG_CORE_INLINE r32 EaseSineInOut(r32 p);
+	PIG_CORE_INLINE r32 EaseCircularIn(r32 p);
+	PIG_CORE_INLINE r32 EaseCircularOut(r32 p);
+	PIG_CORE_INLINE r32 EaseCircularInOut(r32 p);
+	PIG_CORE_INLINE r32 EaseExponentialIn(r32 p);
+	PIG_CORE_INLINE r32 EaseExponentialOut(r32 p);
+	PIG_CORE_INLINE r32 EaseExponentialInOut(r32 p);
+	PIG_CORE_INLINE r32 EaseElasticIn(r32 p);
+	PIG_CORE_INLINE r32 EaseElasticOut(r32 p);
+	PIG_CORE_INLINE r32 EaseElasticInOut(r32 p);
+	PIG_CORE_INLINE r32 EaseBackIn(r32 p);
+	PIG_CORE_INLINE r32 EaseBackOut(r32 p);
+	PIG_CORE_INLINE r32 EaseBackInOut(r32 p);
+	PIG_CORE_INLINE r32 EaseBounceOut(r32 p);
+	PIG_CORE_INLINE r32 EaseBounceIn(r32 p);
+	PIG_CORE_INLINE r32 EaseBounceInOut(r32 p);
+	PIG_CORE_INLINE r32 EaseEarlyInOut(r32 p);
+	PIG_CORE_INLINE r32 EaseLogTwoOutCustom(r32 p);
+	PIG_CORE_INLINE r32 EaseLogTwoInCustom(r32 p);
+	r32 Ease(EasingStyle style, r32 p);
+	r32 InverseEase(EasingStyle style, r32 y);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
 
 // +==============================+
 // |            Linear            |
 // +==============================+
 // Modeled after the line y = x
-r32 EaseLinear(r32 p)
+PEXPI r32 EaseLinear(r32 p)
 {
 	return p;
 }
-r32 InverseEaseLinear(r32 y)
+PEXPI r32 InverseEaseLinear(r32 y)
 {
 	return y;
 }
@@ -140,21 +195,21 @@ r32 InverseEaseLinear(r32 y)
 // |          Quadratic           |
 // +==============================+
 // Modeled after the parabola y = x^2
-r32 EaseQuadraticIn(r32 p)
+PEXPI r32 EaseQuadraticIn(r32 p)
 {
 	return p * p;
 }
-r32 InverseEaseQuadraticIn(r32 y)
+PEXPI r32 InverseEaseQuadraticIn(r32 y)
 {
 	return SqrtR32(y);
 }
 
 // Modeled after the parabola y = -x^2 + 2x
-r32 EaseQuadraticOut(r32 p)
+PEXPI r32 EaseQuadraticOut(r32 p)
 {
 	return -(p * (p - 2));
 }
-r32 InverseEaseQuadraticOut(r32 y)
+PEXPI r32 InverseEaseQuadraticOut(r32 y)
 {
 	return 1 - SqrtR32(-y + 1);
 }
@@ -162,7 +217,7 @@ r32 InverseEaseQuadraticOut(r32 y)
 // Modeled after the piecewise quadratic
 // y = (1/2)((2x)^2)             ; [0, 0.5)
 // y = -(1/2)((2x-1)*(2x-3) - 1) ; [0.5, 1]
-r32 EaseQuadraticInOut(r32 p)
+PEXPI r32 EaseQuadraticInOut(r32 p)
 {
 	if (p < 0.5f)
 	{
@@ -173,7 +228,7 @@ r32 EaseQuadraticInOut(r32 p)
 		return (-2 * p * p) + (4 * p) - 1;
 	}
 }
-r32 InverseEaseQuadraticInOut(r32 y)
+PEXPI r32 InverseEaseQuadraticInOut(r32 y)
 {
 	if (y < 0.5f)
 	{
@@ -189,13 +244,13 @@ r32 InverseEaseQuadraticInOut(r32 y)
 // |            Cubic             |
 // +==============================+
 // Modeled after the cubic y = x^3
-r32 EaseCubicIn(r32 p)
+PEXPI r32 EaseCubicIn(r32 p)
 {
 	return p * p * p;
 }
 
 // Modeled after the cubic y = (x - 1)^3 + 1
-r32 EaseCubicOut(r32 p)
+PEXPI r32 EaseCubicOut(r32 p)
 {
 	r32 f = (p - 1);
 	return f * f * f + 1;
@@ -204,7 +259,7 @@ r32 EaseCubicOut(r32 p)
 // Modeled after the piecewise cubic
 // y = (1/2)((2x)^3)       ; [0, 0.5)
 // y = (1/2)((2x-2)^3 + 2) ; [0.5, 1]
-r32 EaseCubicInOut(r32 p)
+PEXPI r32 EaseCubicInOut(r32 p)
 {
 	if (p < 0.5f)
 	{
@@ -221,13 +276,13 @@ r32 EaseCubicInOut(r32 p)
 // |           Quartic            |
 // +==============================+
 // Modeled after the quartic x^4
-r32 EaseQuarticIn(r32 p)
+PEXPI r32 EaseQuarticIn(r32 p)
 {
 	return p * p * p * p;
 }
 
 // Modeled after the quartic y = 1 - (x - 1)^4
-r32 EaseQuarticOut(r32 p)
+PEXPI r32 EaseQuarticOut(r32 p)
 {
 	r32 f = (p - 1);
 	return f * f * f * (1 - p) + 1;
@@ -236,7 +291,7 @@ r32 EaseQuarticOut(r32 p)
 // Modeled after the piecewise quartic
 // y = (1/2)((2x)^4)        ; [0, 0.5)
 // y = -(1/2)((2x-2)^4 - 2) ; [0.5, 1]
-r32 EaseQuarticInOut(r32 p) 
+PEXPI r32 EaseQuarticInOut(r32 p) 
 {
 	if (p < 0.5f)
 	{
@@ -253,13 +308,13 @@ r32 EaseQuarticInOut(r32 p)
 // |           Quintic            |
 // +==============================+
 // Modeled after the quintic y = x^5
-r32 EaseQuinticIn(r32 p) 
+PEXPI r32 EaseQuinticIn(r32 p) 
 {
 	return p * p * p * p * p;
 }
 
 // Modeled after the quintic y = (x - 1)^5 + 1
-r32 EaseQuinticOut(r32 p) 
+PEXPI r32 EaseQuinticOut(r32 p) 
 {
 	r32 f = (p - 1);
 	return f * f * f * f * f + 1;
@@ -268,7 +323,7 @@ r32 EaseQuinticOut(r32 p)
 // Modeled after the piecewise quintic
 // y = (1/2)((2x)^5)       ; [0, 0.5)
 // y = (1/2)((2x-2)^5 + 2) ; [0.5, 1]
-r32 EaseQuinticInOut(r32 p) 
+PEXPI r32 EaseQuinticInOut(r32 p) 
 {
 	if (p < 0.5f)
 	{
@@ -285,19 +340,19 @@ r32 EaseQuinticInOut(r32 p)
 // |             Sine             |
 // +==============================+
 // Modeled after quarter-cycle of sine wave
-r32 EaseSineIn(r32 p)
+PEXPI r32 EaseSineIn(r32 p)
 {
 	return SinR32((p - 1) * (Pi32*2)) + 1;
 }
 
 // Modeled after quarter-cycle of sine wave (different phase)
-r32 EaseSineOut(r32 p)
+PEXPI r32 EaseSineOut(r32 p)
 {
 	return SinR32(p * (Pi32*2));
 }
 
 // Modeled after half sine wave
-r32 EaseSineInOut(r32 p)
+PEXPI r32 EaseSineInOut(r32 p)
 {
 	return 0.5f * (1 - CosR32(p * Pi32));
 }
@@ -306,13 +361,13 @@ r32 EaseSineInOut(r32 p)
 // |           Circular           |
 // +==============================+
 // Modeled after shifted quadrant IV of unit circle
-r32 EaseCircularIn(r32 p)
+PEXPI r32 EaseCircularIn(r32 p)
 {
 	return 1 - SqrtR32(1 - (p * p));
 }
 
 // Modeled after shifted quadrant II of unit circle
-r32 EaseCircularOut(r32 p)
+PEXPI r32 EaseCircularOut(r32 p)
 {
 	return SqrtR32((2 - p) * p);
 }
@@ -320,7 +375,7 @@ r32 EaseCircularOut(r32 p)
 // Modeled after the piecewise circular function
 // y = (1/2)(1 - SqrtR32(1 - 4x^2))           ; [0, 0.5)
 // y = (1/2)(SqrtR32(-(2x - 3)*(2x - 1)) + 1) ; [0.5, 1]
-r32 EaseCircularInOut(r32 p)
+PEXPI r32 EaseCircularInOut(r32 p)
 {
 	if (p < 0.5f)
 	{
@@ -336,13 +391,13 @@ r32 EaseCircularInOut(r32 p)
 // |         Exponential          |
 // +==============================+
 // Modeled after the exponential function y = 2^(10(x - 1))
-r32 EaseExponentialIn(r32 p)
+PEXPI r32 EaseExponentialIn(r32 p)
 {
 	return (p == 0.0f) ? p : PowR32(2, 10 * (p - 1));
 }
 
 // Modeled after the exponential function y = -2^(-10x) + 1
-r32 EaseExponentialOut(r32 p)
+PEXPI r32 EaseExponentialOut(r32 p)
 {
 	return (p == 1.0f) ? p : 1 - PowR32(2, -10 * p);
 }
@@ -350,7 +405,7 @@ r32 EaseExponentialOut(r32 p)
 // Modeled after the piecewise exponential
 // y = (1/2)2^(10(2x - 1))         ; [0,0.5)
 // y = -(1/2)*2^(-10(2x - 1))) + 1 ; [0.5,1]
-r32 EaseExponentialInOut(r32 p)
+PEXPI r32 EaseExponentialInOut(r32 p)
 {
 	if (p == 0.0f || p == 1.0f) { return p; }
 	
@@ -368,13 +423,13 @@ r32 EaseExponentialInOut(r32 p)
 // |           Elastic            |
 // +==============================+
 // Modeled after the damped sine wave y = SinR32(13pi/2*x)*PowR32(2, 10 * (x - 1))
-r32 EaseElasticIn(r32 p)
+PEXPI r32 EaseElasticIn(r32 p)
 {
 	return SinR32(13 * (Pi32*2) * p) * PowR32(2, 10 * (p - 1));
 }
 
 // Modeled after the damped sine wave y = SinR32(-13pi/2*(x + 1))*PowR32(2, -10x) + 1
-r32 EaseElasticOut(r32 p)
+PEXPI r32 EaseElasticOut(r32 p)
 {
 	return SinR32(-13 * (Pi32*2) * (p + 1)) * PowR32(2, -10 * p) + 1;
 }
@@ -382,7 +437,7 @@ r32 EaseElasticOut(r32 p)
 // Modeled after the piecewise exponentially-damped sine wave:
 // y = (1/2)*SinR32(13pi/2*(2*x))*PowR32(2, 10 * ((2*x) - 1))      ; [0,0.5)
 // y = (1/2)*(SinR32(-13pi/2*((2x-1)+1))*PowR32(2,-10(2*x-1)) + 2) ; [0.5, 1]
-r32 EaseElasticInOut(r32 p)
+PEXPI r32 EaseElasticInOut(r32 p)
 {
 	if (p < 0.5f)
 	{
@@ -398,13 +453,13 @@ r32 EaseElasticInOut(r32 p)
 // |             Back             |
 // +==============================+
 // Modeled after the overshooting cubic y = x^3-x*SinR32(x*pi)
-r32 EaseBackIn(r32 p)
+PEXPI r32 EaseBackIn(r32 p)
 {
 	return p * p * p - p * SinR32(p * Pi32);
 }
 
 // Modeled after overshooting cubic y = 1-((1-x)^3-(1-x)*SinR32((1-x)*pi))
-r32 EaseBackOut(r32 p)
+PEXPI r32 EaseBackOut(r32 p)
 {
 	r32 f = (1 - p);
 	return 1 - (f * f * f - f * SinR32(f * Pi32));
@@ -413,7 +468,7 @@ r32 EaseBackOut(r32 p)
 // Modeled after the piecewise overshooting cubic function:
 // y = (1/2)*((2x)^3-(2x)*SinR32(2*x*pi))           ; [0, 0.5)
 // y = (1/2)*(1-((1-x)^3-(1-x)*SinR32((1-x)*pi))+1) ; [0.5, 1]
-r32 EaseBackInOut(r32 p)
+PEXPI r32 EaseBackInOut(r32 p)
 {
 	if (p < 0.5f)
 	{
@@ -430,7 +485,7 @@ r32 EaseBackInOut(r32 p)
 // +==============================+
 // |            Bounce            |
 // +==============================+
-r32 EaseBounceOut(r32 p)
+PEXPI r32 EaseBounceOut(r32 p)
 {
 	if (p < 4/11.0f)
 	{
@@ -450,12 +505,12 @@ r32 EaseBounceOut(r32 p)
 	}
 }
 
-r32 EaseBounceIn(r32 p)
+PEXPI r32 EaseBounceIn(r32 p)
 {
 	return 1 - EaseBounceOut(1 - p);
 }
 
-r32 EaseBounceInOut(r32 p)
+PEXPI r32 EaseBounceInOut(r32 p)
 {
 	if (p < 0.5f)
 	{
@@ -470,7 +525,7 @@ r32 EaseBounceInOut(r32 p)
 // +==============================+
 // |            Early             |
 // +==============================+
-r32 EaseEarlyInOut(r32 p)
+PEXPI r32 EaseEarlyInOut(r32 p)
 {
 	r32 p2 = (1.2f * p);
 	if (p < 0.418f)
@@ -490,11 +545,11 @@ r32 EaseEarlyInOut(r32 p)
 // +==============================+
 // |         LogTwoCustom         |
 // +==============================+
-r32 EaseLogTwoOutCustom(r32 p)
+PEXPI r32 EaseLogTwoOutCustom(r32 p)
 {
 	return (1 / 3.16987f) * Log2R32((8.0f * p) + 1.0f);
 }
-r32 EaseLogTwoInCustom(r32 p)
+PEXPI r32 EaseLogTwoInCustom(r32 p)
 {
 	return (PowR32(2, (3.16987f * p)) - 1.0f) / 8.0f;
 }
@@ -502,7 +557,7 @@ r32 EaseLogTwoInCustom(r32 p)
 // +==============================+
 // |           Generic            |
 // +==============================+
-r32 Ease(EasingStyle style, r32 p)
+PEXP r32 Ease(EasingStyle style, r32 p)
 {
 	switch (style)
 	{
@@ -544,7 +599,7 @@ r32 Ease(EasingStyle style, r32 p)
 	};
 }
 //TODO: Implement more inverse easing operations
-r32 InverseEase(EasingStyle style, r32 y)
+PEXP r32 InverseEase(EasingStyle style, r32 y)
 {
 	switch (style)
 	{
@@ -585,6 +640,8 @@ r32 InverseEase(EasingStyle style, r32 y)
 		default: Assert(false); return y;
 	};
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MISC_EASING_H
 

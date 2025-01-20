@@ -37,7 +37,11 @@ enum RandomSeriesType
 	RandomSeriesType_XoroShiro128,           //XS128
 	RandomSeriesType_NumTypes,
 };
-const char* GetRandomSeriesTypeStr(RandomSeriesType enumValue)
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetRandomSeriesTypeStr(RandomSeriesType enumValue);
+const char* GetRandomSeriesTypeAcronymStr(RandomSeriesType enumValue);
+#else
+PEXP const char* GetRandomSeriesTypeStr(RandomSeriesType enumValue)
 {
 	switch (enumValue)
 	{
@@ -48,10 +52,10 @@ const char* GetRandomSeriesTypeStr(RandomSeriesType enumValue)
 		case RandomSeriesType_LinearCongruential64:   return "LinearCongruential64";
 		case RandomSeriesType_PermutedCongruential64: return "PermutedCongruential64";
 		case RandomSeriesType_XoroShiro128:           return "XoroShiro128";
-		default: return "Unknown";
+		default: return UNKNOWN_STR;
 	}
 }
-const char* GetRandomSeriesTypeAcronymStr(RandomSeriesType enumValue)
+PEXP const char* GetRandomSeriesTypeAcronymStr(RandomSeriesType enumValue)
 {
 	switch (enumValue)
 	{
@@ -62,9 +66,10 @@ const char* GetRandomSeriesTypeAcronymStr(RandomSeriesType enumValue)
 		case RandomSeriesType_LinearCongruential64:   return "LCG64";
 		case RandomSeriesType_PermutedCongruential64: return "PGC64";
 		case RandomSeriesType_XoroShiro128:           return "XS128";
-		default: return "Unknown";
+		default: return UNKNOWN_STR;
 	}
 }
+#endif
 
 typedef struct RandomSeries RandomSeries;
 struct RandomSeries
@@ -78,9 +83,47 @@ struct RandomSeries
 };
 
 // +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	void InitRandomSeriesEx(RandomSeries* series, RandomSeriesType type, u64 defaultIncrement);
+	PIG_CORE_INLINE void InitRandomSeries(RandomSeries* series, RandomSeriesType type);
+	PIG_CORE_INLINE void InitRandomSeriesDefault(RandomSeries* series);
+	PIG_CORE_INLINE void SeedRandomSeriesU32(RandomSeries* series, u32 seed);
+	PIG_CORE_INLINE void SeedRandomSeriesU64(RandomSeries* series, u64 seed);
+	PIG_CORE_INLINE void SeedRandomSeriesU128(RandomSeries* series, u64 seed1, u64 seed2);
+	PIG_CORE_INLINE u64 XS128_rotl(const u64 x, int k);
+	void StepRandomSeries(RandomSeries* series, u64 numberOfSteps);
+	PIG_CORE_INLINE u8 GetRandU8(RandomSeries* series);
+	PIG_CORE_INLINE u8 GetRandU8Range(RandomSeries* series, u8 min, u8 max);
+	PIG_CORE_INLINE u16 GetRandU16(RandomSeries* series);
+	PIG_CORE_INLINE u16 GetRandU16Range(RandomSeries* series, u16 min, u16 max);
+	PIG_CORE_INLINE u32 GetRandU32(RandomSeries* series);
+	PIG_CORE_INLINE u32 GetRandU32Range(RandomSeries* series, u32 min, u32 max);
+	PIG_CORE_INLINE u64 GetRandU64(RandomSeries* series);
+	PIG_CORE_INLINE u64 GetRandU64Range(RandomSeries* series, u64 min, u64 max);
+	PIG_CORE_INLINE i8 GetRandI8(RandomSeries* series);
+	PIG_CORE_INLINE i8 GetRandI8Range(RandomSeries* series, i8 min, i8 max);
+	PIG_CORE_INLINE i16 GetRandI16(RandomSeries* series);
+	PIG_CORE_INLINE i16 GetRandI16Range(RandomSeries* series, i16 min, i16 max);
+	PIG_CORE_INLINE i32 GetRandI32(RandomSeries* series);
+	PIG_CORE_INLINE i32 GetRandI32Range(RandomSeries* series, i32 min, i32 max);
+	PIG_CORE_INLINE i64 GetRandI64(RandomSeries* series);
+	PIG_CORE_INLINE r32 GetRandR32(RandomSeries* series);
+	PIG_CORE_INLINE r32 GetRandR32Range(RandomSeries* series, r32 min, r32 max);
+	PIG_CORE_INLINE r64 GetRandR64(RandomSeries* series);
+	PIG_CORE_INLINE r64 GetRandR64Range(RandomSeries* series, r64 min, r64 max);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
 // |                           Creation                           |
 // +--------------------------------------------------------------+
-void InitRandomSeriesEx(RandomSeries* series, RandomSeriesType type, u64 defaultIncrement)
+PEXP void InitRandomSeriesEx(RandomSeries* series, RandomSeriesType type, u64 defaultIncrement)
 {
 	NotNull(series);
 	ClearPointer(series);
@@ -90,13 +133,13 @@ void InitRandomSeriesEx(RandomSeries* series, RandomSeriesType type, u64 default
 	series->defaultIncrement = defaultIncrement;
 	series->generationCount = 0;
 }
-void InitRandomSeries(RandomSeries* series, RandomSeriesType type) { InitRandomSeriesEx(series, type, 1); }
-void InitRandomSeriesDefault(RandomSeries* series) { InitRandomSeriesEx(series, DEFAULT_RANDOM_SERIES_TYPE, 1); }
+PEXPI void InitRandomSeries(RandomSeries* series, RandomSeriesType type) { InitRandomSeriesEx(series, type, 1); }
+PEXPI void InitRandomSeriesDefault(RandomSeries* series) { InitRandomSeriesEx(series, DEFAULT_RANDOM_SERIES_TYPE, 1); }
 
 // +--------------------------------------------------------------+
 // |                             Seed                             |
 // +--------------------------------------------------------------+
-void SeedRandomSeriesU32(RandomSeries* series, u32 seed)
+PEXPI void SeedRandomSeriesU32(RandomSeries* series, u32 seed)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	series->state = (u64)seed;
@@ -105,7 +148,7 @@ void SeedRandomSeriesU32(RandomSeries* series, u32 seed)
 	series->generationCount = 0;
 	series->seeded = true;
 }
-void SeedRandomSeriesU64(RandomSeries* series, u64 seed)
+PEXPI void SeedRandomSeriesU64(RandomSeries* series, u64 seed)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	series->state = seed;
@@ -114,7 +157,7 @@ void SeedRandomSeriesU64(RandomSeries* series, u64 seed)
 	series->generationCount = 0;
 	series->seeded = true;
 }
-void SeedRandomSeriesU128(RandomSeries* series, u64 seed1, u64 seed2)
+PEXPI void SeedRandomSeriesU128(RandomSeries* series, u64 seed1, u64 seed2)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	series->state = (seed1 ^ seed2);
@@ -128,7 +171,7 @@ void SeedRandomSeriesU128(RandomSeries* series, u64 seed1, u64 seed2)
 // |                       Helper Functions                       |
 // +--------------------------------------------------------------+
 //TODO: Can this function be inline tagged?
-u64 XS128_rotl(const u64 x, int k)
+PEXPI u64 XS128_rotl(const u64 x, int k)
 {
 	return (x << k) | (x >> (64 - k));
 }
@@ -136,7 +179,7 @@ u64 XS128_rotl(const u64 x, int k)
 // +--------------------------------------------------------------+
 // |                             Step                             |
 // +--------------------------------------------------------------+
-void StepRandomSeries(RandomSeries* series, u64 numberOfSteps)
+PEXP void StepRandomSeries(RandomSeries* series, u64 numberOfSteps)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	Assert(series->type < RandomSeriesType_NumTypes); //TODO: Change to Assert_?
@@ -205,20 +248,20 @@ void StepRandomSeries(RandomSeries* series, u64 numberOfSteps)
 // +--------------------------------------------------------------+
 // |                             Get                              |
 // +--------------------------------------------------------------+
-u64 GetRandU64(RandomSeries* series);
+PEXPI u64 GetRandU64(RandomSeries* series);
 
 //NOTE: Max values are not inclusive in all these functions (except float, but that generally doesn't matter)
 
 //TODO: Are the modulo operators here going to effect the distribution of the random series?
 //      Also do the floating point ideas of "precision" actually work like I want? Can we perform floating point
 //      math up in those ranges? Maybe we should modulo into a conservative estimate of r32/r64 precision
-u8 GetRandU8(RandomSeries* series)
+PEXPI u8 GetRandU8(RandomSeries* series)
 {
 	u64 randU64 = GetRandU64(series);
 	//TODO: Probably should just bit-mask instead of modulo for perf reasons
 	return (u8)(randU64 % 256);
 }
-u8 GetRandU8Range(RandomSeries* series, u8 min, u8 max)
+PEXPI u8 GetRandU8Range(RandomSeries* series, u8 min, u8 max)
 {
 	if (max < min) { SwapVariables(u8, min, max); }
 	if (min == max) { return min; }
@@ -226,12 +269,12 @@ u8 GetRandU8Range(RandomSeries* series, u8 min, u8 max)
 	return (u8)((randU64 % (max-min)) + min);
 }
 
-u16 GetRandU16(RandomSeries* series)
+PEXPI u16 GetRandU16(RandomSeries* series)
 {
 	u64 randU64 = GetRandU64(series);
 	return (u16)(randU64 % 65536);
 }
-u16 GetRandU16Range(RandomSeries* series, u16 min, u16 max)
+PEXPI u16 GetRandU16Range(RandomSeries* series, u16 min, u16 max)
 {
 	if (max < min) { SwapVariables(u16, min, max); }
 	if (min == max) { return min; }
@@ -239,13 +282,13 @@ u16 GetRandU16Range(RandomSeries* series, u16 min, u16 max)
 	return (u16)((randU64 % (max-min)) + min);
 }
 
-u32 GetRandU32(RandomSeries* series)
+PEXPI u32 GetRandU32(RandomSeries* series)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	StepRandomSeries(series, series->defaultIncrement);
 	return (u32)(series->state % UINT32_MAX);
 }
-u32 GetRandU32Range(RandomSeries* series, u32 min, u32 max)
+PEXPI u32 GetRandU32Range(RandomSeries* series, u32 min, u32 max)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	if (max < min) { SwapVariables(u32, min, max); }
@@ -261,13 +304,13 @@ u32 GetRandU32Range(RandomSeries* series, u32 min, u32 max)
 #pragma warning(disable: 4702) //warning C4702: unreachable code
 #endif //COMPILER_IS_MSVC
 
-u64 GetRandU64(RandomSeries* series) //pre-declared a little ways above since all other unsigned GetRands rely on this one
+PEXPI u64 GetRandU64(RandomSeries* series) //pre-declared a little ways above since all other unsigned GetRands rely on this one
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	StepRandomSeries(series, series->defaultIncrement);
 	return series->state;
 }
-u64 GetRandU64Range(RandomSeries* series, u64 min, u64 max)
+PEXPI u64 GetRandU64Range(RandomSeries* series, u64 min, u64 max)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	if (max < min) { SwapVariables(u64, min, max); }
@@ -277,13 +320,13 @@ u64 GetRandU64Range(RandomSeries* series, u64 min, u64 max)
 	return result;
 }
 
-i8 GetRandI8(RandomSeries* series)
+PEXPI i8 GetRandI8(RandomSeries* series)
 {
 	return ReinterpretCastU8ToI8(GetRandU8(series));
 	u64 randU64 = GetRandU64(series);
 	return (i8)((randU64 % 256) - 128);
 }
-i8 GetRandI8Range(RandomSeries* series, i8 min, i8 max)
+PEXPI i8 GetRandI8Range(RandomSeries* series, i8 min, i8 max)
 {
 	if (max < min) { SwapVariables(i8, min, max); }
 	if (min == max) { return min; }
@@ -291,13 +334,13 @@ i8 GetRandI8Range(RandomSeries* series, i8 min, i8 max)
 	return (i8)((i32)(randU64 % (u64)(max-min)) + min);
 }
 
-i16 GetRandI16(RandomSeries* series)
+PEXPI i16 GetRandI16(RandomSeries* series)
 {
 	return ReinterpretCastU16ToI16(GetRandU16(series));
 	u64 randU64 = GetRandU64(series);
 	return (i16)((randU64 % 256) - 1216);
 }
-i16 GetRandI16Range(RandomSeries* series, i16 min, i16 max)
+PEXPI i16 GetRandI16Range(RandomSeries* series, i16 min, i16 max)
 {
 	if (max < min) { SwapVariables(i16, min, max); }
 	if (min == max) { return min; }
@@ -309,11 +352,11 @@ i16 GetRandI16Range(RandomSeries* series, i16 min, i16 max)
 #pragma warning(pop)
 #endif
 
-i32 GetRandI32(RandomSeries* series)
+PEXPI i32 GetRandI32(RandomSeries* series)
 {
 	return ReinterpretCastU32ToI32(GetRandU32(series));
 }
-i32 GetRandI32Range(RandomSeries* series, i32 min, i32 max)
+PEXPI i32 GetRandI32Range(RandomSeries* series, i32 min, i32 max)
 {
 	if (max < min) { SwapVariables(i32, min, max); }
 	if (min == max) { return min; }
@@ -321,13 +364,13 @@ i32 GetRandI32Range(RandomSeries* series, i32 min, i32 max)
 	return (i32)((i64)(randU64 % (u64)(max-min)) + min);
 }
 
-i64 GetRandI64(RandomSeries* series)
+PEXPI i64 GetRandI64(RandomSeries* series)
 {
 	return ReinterpretCastU64ToI64(GetRandU64(series));
 }
 //TODO: If we can find a better way to do the signed modulos that don't require a larger number space to accomplish then we should implement GetRandI64
 
-r32 GetRandR32(RandomSeries* series)
+PEXPI r32 GetRandR32(RandomSeries* series)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	StepRandomSeries(series, series->defaultIncrement);
@@ -335,13 +378,13 @@ r32 GetRandR32(RandomSeries* series)
 	r32 result = (r32)integerRandom / (r32)RAND_FLOAT_PRECISION_R32;
 	return result;
 }
-r32 GetRandR32Range(RandomSeries* series, r32 min, r32 max)
+PEXPI r32 GetRandR32Range(RandomSeries* series, r32 min, r32 max)
 {
 	if (max < min) { SwapVariables(r32, min, max); }
 	return (GetRandR32(series) * (max - min)) + min;
 }
 
-r64 GetRandR64(RandomSeries* series)
+PEXPI r64 GetRandR64(RandomSeries* series)
 {
 	NotNull(series); //TODO: Convert to NotNull_?
 	StepRandomSeries(series, series->defaultIncrement);
@@ -349,10 +392,12 @@ r64 GetRandR64(RandomSeries* series)
 	r64 result = (r64)integerRandom / (r64)RAND_FLOAT_PRECISION_R64;
 	return result;
 }
-r64 GetRandR64Range(RandomSeries* series, r64 min, r64 max)
+PEXPI r64 GetRandR64Range(RandomSeries* series, r64 min, r64 max)
 {
 	if (max < min) { SwapVariables(r64, min, max); }
 	return (GetRandR64(series) * (max - min)) + min;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MISC_RANDOM_H

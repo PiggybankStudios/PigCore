@@ -13,9 +13,21 @@ Date:   01\15\2025
 #include "std/std_basic_math.h"
 #include "misc/misc_random.h"
 
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	// v2 GetBlueNoisePosInRec(u64 seed, rec bounds, u64 numOfPositions, u64 index);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
 //TODO: Enable me and fix me up once we have the rec type!
 #if 0
-v2 GetBlueNoisePosInRec(u64 seed, rec bounds, u64 numOfPositions, u64 index)
+PEXP v2 GetBlueNoisePosInRec(u64 seed, rec bounds, u64 numOfPositions, u64 index)
 {
 	Assert(numOfPositions > 0);
 	Assert(numOfPositions <= 0x7FFFFFFF); //TODO: Honestly this just breaks down for really large numbers because numRows*numCols can be bigger than u32 max
@@ -72,5 +84,7 @@ v2 GetBlueNoisePosInRec(u64 seed, rec bounds, u64 numOfPositions, u64 index)
 	return bounds.topLeft + offset;
 }
 #endif
+	
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MISC_NOISE_H

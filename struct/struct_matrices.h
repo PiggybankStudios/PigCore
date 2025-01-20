@@ -12,6 +12,7 @@ Description:
 #ifndef _STRUCT_MATRICES_H
 #define _STRUCT_MATRICES_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "struct/struct_vectors.h"
@@ -26,41 +27,17 @@ typedef HMM_Mat3 mat3;
 typedef HMM_Mat4 mat4;
 
 // +--------------------------------------------------------------+
-// |                        New Functions                         |
+// |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
-static inline mat2 NewMat2(
-	r32 r0c0, r32 r0c1,
-	r32 r1c0, r32 r1c1)
-{
-	mat2 result;
-	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1;
-	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1;
-	return result;
-}
-static inline mat3 NewMat3(
-	r32 r0c0, r32 r0c1, r32 r0c2,
-	r32 r1c0, r32 r1c1, r32 r1c2,
-	r32 r2c0, r32 r2c1, r32 r2c2)
-{
-	mat3 result;
-	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1; result.Elements[2][0] = r0c2;
-	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1; result.Elements[2][1] = r1c2;
-	result.Elements[0][2] = r2c0; result.Elements[1][2] = r2c1; result.Elements[2][2] = r2c2;
-	return result;
-}
-static inline mat4 NewMat4(
-	r32 r0c0, r32 r0c1, r32 r0c2, r32 r0c3,
-	r32 r1c0, r32 r1c1, r32 r1c2, r32 r1c3,
-	r32 r2c0, r32 r2c1, r32 r2c2, r32 r2c3,
-	r32 r3c0, r32 r3c1, r32 r3c2, r32 r3c3)
-{
-	mat4 result;
-	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1; result.Elements[2][0] = r0c2; result.Elements[3][0] = r0c3;
-	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1; result.Elements[2][1] = r1c2; result.Elements[3][1] = r1c3;
-	result.Elements[0][2] = r2c0; result.Elements[1][2] = r2c1; result.Elements[2][2] = r2c2; result.Elements[3][2] = r2c3;
-	result.Elements[0][3] = r3c0; result.Elements[1][3] = r3c1; result.Elements[2][3] = r3c2; result.Elements[3][3] = r3c3;
-	return result;
-}
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE mat2 NewMat2(r32 r0c0, r32 r0c1, r32 r1c0, r32 r1c1);
+	PIG_CORE_INLINE mat3 NewMat3(r32 r0c0, r32 r0c1, r32 r0c2, r32 r1c0, r32 r1c1, r32 r1c2, r32 r2c0, r32 r2c1, r32 r2c2);
+	PIG_CORE_INLINE mat4 NewMat4(r32 r0c0, r32 r0c1, r32 r0c2, r32 r0c3, r32 r1c0, r32 r1c1, r32 r1c2, r32 r1c3, r32 r2c0, r32 r2c1, r32 r2c2, r32 r2c3, r32 r3c0, r32 r3c1, r32 r3c2, r32 r3c3);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
 
 #define FillMat2(value) NewMat2((value), (value), (value), (value))
 #define FillMat3(value) NewMat3((value), (value), (value), (value), (value), (value), (value), (value), (value))
@@ -70,9 +47,6 @@ static inline mat4 NewMat4(
 #define FillDiagonalMat3(value) HMM_M3D(value)
 #define FillDiagonalMat4(value) HMM_M4D(value)
 
-// +--------------------------------------------------------------+
-// |                   Simple Value Definitions                   |
-// +--------------------------------------------------------------+
 #define Mat2_Zero FillMat2(0.0f)
 #define Mat3_Zero FillMat3(0.0f)
 #define Mat4_Zero FillMat4(0.0f)
@@ -83,9 +57,6 @@ static inline mat4 NewMat4(
 
 //TODO: Would we ever use MatN_Zero_Const and MatN_Identity_Const?
 
-// +--------------------------------------------------------------+
-// |                Operator Overload Equivalents                 |
-// +--------------------------------------------------------------+
 #define AddMat2(left, right) HMM_AddM2((left), (right))
 #define AddMat3(left, right) HMM_AddM3((left), (right))
 #define AddMat4(left, right) HMM_AddM4((left), (right))
@@ -110,24 +81,9 @@ static inline mat4 NewMat4(
 #define MulMat3AndV3(matrix3, vec3) HMM_MulM3V3((matrix3), (vec3))
 #define MulMat4AndV4(matrix4, vec4) HMM_MulM4V4((matrix4), (vec4))
 
-//TODO: Do we really need this variant where we pass out the W value?
-static inline v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut)
-{
-	v4 vec4 = ToV4From3(vec3, includeTranslation ? 1.0f : 0.0f);
-	vec4 = MulMat4AndV4(matrix4, vec4);
-	SetOptionalOutPntr(wOut, vec4.W);
-	//TODO: This ternary operator makes me think we're doing something wrong with the divide by W thing.
-	//      We should really look into how 3D points and vectors are transformed by 4x4 matrix transformations
-	return (vec4.W != 0) ? ShrinkV4(vec4, vec4.W).XYZ : vec4.XYZ;
-}
-static inline v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation) { return MulMat4AndV3GetW(matrix4, vec3, includeTranslation, nullptr); }
-
 //a.k.a. Apply a new transform matrix from the LEFT side
 #define TransformMat4(mat4Pntr, matrix4) *(mat4Pntr) = MulMat4((matrix4), *(mat4Pntr))
 
-// +--------------------------------------------------------------+
-// |                      Common Matrix Math                      |
-// +--------------------------------------------------------------+
 #define TransposeMat2(matrix2) HMM_TransposeM2(matrix2)
 #define TransposeMat3(matrix3) HMM_TransposeM3(matrix3)
 #define TransposeMat4(matrix4) HMM_TransposeM4(matrix4)
@@ -146,17 +102,6 @@ static inline v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation) { 
 //TODO: Not entirely sure what this is useful for?
 #define LinearCombineV4Mat4(vec4Left, matrix4Right) HMM_LinearCombineV4M4((vec4Left), (matrix4Right))
 
-// +--------------------------------------------------------------+
-// |               Basic Matrix Creation Functions                |
-// +--------------------------------------------------------------+
-static inline mat3 MakeTranslateMat3(v2 vec2)
-{
-	return NewMat3(
-		1.0f, 0.0f, vec2.X,
-		0.0f, 1.0f, vec2.Y,
-		0.0f, 0.0f, 1.0f
-	);
-}
 #define MakeTranslateXMat3(x) MakeTranslateMat3(NewV2((x), 0.0f))
 #define MakeTranslateYMat3(y) MakeTranslateMat3(NewV2(0.0f, (y)))
 
@@ -166,14 +111,6 @@ static inline mat3 MakeTranslateMat3(v2 vec2)
 #define MakeTranslateYMat4(y) HMM_Translate(NewV3(0.0f, (y), 0.0f))
 #define MakeTranslateZMat4(z) HMM_Translate(NewV3(0.0f, 0.0f, (z)))
 
-static inline mat3 MakeScaleMat3(v3 vec3)
-{
-	return NewMat3(
-		vec3.X, 0.0f, 0.0f,
-		0.0f, vec3.Y, 0.0f,
-		0.0f, 0.0f, vec3.Z
-	);
-}
 #define Make2DScaleMat3(vec2) MakeScaleMat3(ToV3From2((vec2), 1.0f))
 #define MakeScaleXYZMat3(x, y, z) MakeScaleMat3(NewV3((x), (y), (z)))
 #define MakeScaleXMat3(x) MakeScaleMat3(NewV3((x), 1.0f, 1.0f))
@@ -195,9 +132,6 @@ static inline mat3 MakeScaleMat3(v3 vec3)
 #define MakeRotateYMat4(angle) HMM_Rotate_LH((angle), V3_Up)
 #define MakeRotateZMat4(angle) HMM_Rotate_LH((angle), V3_Forward)
 
-// +--------------------------------------------------------------+
-// |              Complex Matrix Creation Functions               |
-// +--------------------------------------------------------------+
 //NOTE: When working with OpenGL  use the Gl variant (implying z range [-1, 1])
 //      When working with DirectX use the Dx variant (implying z range [0, 1])
 
@@ -209,9 +143,6 @@ static inline mat3 MakeScaleMat3(v3 vec3)
 
 #define MakeLookAtMat4(eye, center, up) HMM_LookAt_LH((eye), (center), (up))
 
-// +--------------------------------------------------------------+
-// |                   Invert Matrix Functions                    |
-// +--------------------------------------------------------------+
 //TODO: InvertTranslateMat3?
 //TODO: InvertRotateMat3?
 //TODO: InvertScaleMat3?
@@ -221,6 +152,80 @@ static inline mat3 MakeScaleMat3(v3 vec3)
 #define InvertOrthographicMat4(matrix4) HMM_InvOrthographic(matrix4)
 #define InvertPerspectiveMat4(matrix4) HMM_InvPerspective_LH(matrix4)
 #define InvertLookAtMat4(matrix4) HMM_InvLookAt(matrix4)
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                        New Functions                         |
+// +--------------------------------------------------------------+
+PEXPI mat2 NewMat2(
+	r32 r0c0, r32 r0c1,
+	r32 r1c0, r32 r1c1)
+{
+	mat2 result;
+	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1;
+	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1;
+	return result;
+}
+PEXPI mat3 NewMat3(
+	r32 r0c0, r32 r0c1, r32 r0c2,
+	r32 r1c0, r32 r1c1, r32 r1c2,
+	r32 r2c0, r32 r2c1, r32 r2c2)
+{
+	mat3 result;
+	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1; result.Elements[2][0] = r0c2;
+	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1; result.Elements[2][1] = r1c2;
+	result.Elements[0][2] = r2c0; result.Elements[1][2] = r2c1; result.Elements[2][2] = r2c2;
+	return result;
+}
+PEXPI mat4 NewMat4(
+	r32 r0c0, r32 r0c1, r32 r0c2, r32 r0c3,
+	r32 r1c0, r32 r1c1, r32 r1c2, r32 r1c3,
+	r32 r2c0, r32 r2c1, r32 r2c2, r32 r2c3,
+	r32 r3c0, r32 r3c1, r32 r3c2, r32 r3c3)
+{
+	mat4 result;
+	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1; result.Elements[2][0] = r0c2; result.Elements[3][0] = r0c3;
+	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1; result.Elements[2][1] = r1c2; result.Elements[3][1] = r1c3;
+	result.Elements[0][2] = r2c0; result.Elements[1][2] = r2c1; result.Elements[2][2] = r2c2; result.Elements[3][2] = r2c3;
+	result.Elements[0][3] = r3c0; result.Elements[1][3] = r3c1; result.Elements[2][3] = r3c2; result.Elements[3][3] = r3c3;
+	return result;
+}
+
+//TODO: Do we really need this variant where we pass out the W value?
+PEXPI v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut)
+{
+	v4 vec4 = ToV4From3(vec3, includeTranslation ? 1.0f : 0.0f);
+	vec4 = MulMat4AndV4(matrix4, vec4);
+	SetOptionalOutPntr(wOut, vec4.W);
+	//TODO: This ternary operator makes me think we're doing something wrong with the divide by W thing.
+	//      We should really look into how 3D points and vectors are transformed by 4x4 matrix transformations
+	return (vec4.W != 0) ? ShrinkV4(vec4, vec4.W).XYZ : vec4.XYZ;
+}
+PEXPI v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation) { return MulMat4AndV3GetW(matrix4, vec3, includeTranslation, nullptr); }
+
+PEXPI mat3 MakeTranslateMat3(v2 vec2)
+{
+	return NewMat3(
+		1.0f, 0.0f, vec2.X,
+		0.0f, 1.0f, vec2.Y,
+		0.0f, 0.0f, 1.0f
+	);
+}
+
+PEXPI mat3 MakeScaleMat3(v3 vec3)
+{
+	return NewMat3(
+		vec3.X, 0.0f, 0.0f,
+		0.0f, vec3.Y, 0.0f,
+		0.0f, 0.0f, vec3.Z
+	);
+}
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_MATRICES_H
 

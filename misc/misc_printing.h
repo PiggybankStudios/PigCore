@@ -20,7 +20,47 @@ Description:
 //      If it does work fine we should add some macros/functions that allow you do that easily to allocate a printed string into an Arena
 //      NOTE: BuilderVanished pointed out this stackoverflow: https://stackoverflow.com/questions/55274350/can-i-use-va-list-twice-as-following
 
-char* PrintInArena(Arena* arena, const char* formatString, ...)
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	char* PrintInArena(Arena* arena, const char* formatString, ...);
+	Str8 PrintInArenaStr(Arena* arena, const char* formatString, ...);
+	int PrintVa_Measure(const char* formatString, va_list args);
+	void PrintVa_Print(const char* formatString, va_list args, char* allocatedSpace, int previousResult);
+	void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex, const char* formatString, ...);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+//NOTE: This always adds a null-terminating character to the allocation
+#define PrintInArenaVa(arena, resultName, resultLengthName, formatString)               \
+char* resultName = nullptr;                                                             \
+int resultLengthName = 0;                                                               \
+va_list resultName##_args;                                                              \
+do                                                                                      \
+{                                                                                       \
+	va_start(resultName##_args, formatString);                                          \
+	resultLengthName = PrintVa_Measure((formatString), resultName##_args);              \
+	va_end(resultName##_args);                                                          \
+	if (resultLengthName >= 0)                                                          \
+	{                                                                                   \
+		resultName = AllocArray(char, (arena), resultLengthName+1);                     \
+		if (resultName == nullptr) { break; }                                           \
+		va_start(resultName##_args, formatString);                                      \
+		PrintVa_Print((formatString), resultName##_args, resultName, resultLengthName); \
+		va_end(resultName##_args);                                                      \
+	}                                                                                   \
+}                                                                                       \
+while(0)
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXP char* PrintInArena(Arena* arena, const char* formatString, ...)
 {
 	NotNull(arena);
 	NotNull(formatString);
@@ -44,7 +84,7 @@ char* PrintInArena(Arena* arena, const char* formatString, ...)
 	
 	return result;
 }
-Str8 PrintInArenaStr(Arena* arena, const char* formatString, ...)
+PEXP Str8 PrintInArenaStr(Arena* arena, const char* formatString, ...)
 {
 	NotNull(arena);
 	NotNull(formatString);
@@ -69,12 +109,12 @@ Str8 PrintInArenaStr(Arena* arena, const char* formatString, ...)
 	return NewStr8((uxx)length, result);
 }
 
-int PrintVa_Measure(const char* formatString, va_list args)
+PEXP int PrintVa_Measure(const char* formatString, va_list args)
 {
 	int result = MyVaListPrintf(nullptr, 0, formatString, args);
 	return result;
 }
-void PrintVa_Print(const char* formatString, va_list args, char* allocatedSpace, int previousResult)
+PEXP void PrintVa_Print(const char* formatString, va_list args, char* allocatedSpace, int previousResult)
 {
 	Assert(previousResult >= 0);
 	NotNull(allocatedSpace);
@@ -82,27 +122,6 @@ void PrintVa_Print(const char* formatString, va_list args, char* allocatedSpace,
 	Assert(printResult == previousResult);
 	allocatedSpace[previousResult] = '\0';
 }
-
-//NOTE: This always adds a null-terminating character to the allocation
-#define PrintInArenaVa(arena, resultName, resultLengthName, formatString)               \
-char* resultName = nullptr;                                                             \
-int resultLengthName = 0;                                                               \
-va_list resultName##_args;                                                              \
-do                                                                                      \
-{                                                                                       \
-	va_start(resultName##_args, formatString);                                          \
-	resultLengthName = PrintVa_Measure((formatString), resultName##_args);              \
-	va_end(resultName##_args);                                                          \
-	if (resultLengthName >= 0)                                                          \
-	{                                                                                   \
-		resultName = AllocArray(char, (arena), resultLengthName+1);                     \
-		if (resultName == nullptr) { break; }                                           \
-		va_start(resultName##_args, formatString);                                      \
-		PrintVa_Print((formatString), resultName##_args, resultName, resultLengthName); \
-		va_end(resultName##_args);                                                      \
-	}                                                                                   \
-}                                                                                       \
-while(0)
 
 // Sometimes we want to do a single memory allocation for a collection of strings
 // TwoPassPrint is meant to be put inside a loop that runs twice, first pass it only
@@ -122,7 +141,7 @@ while(0)
 // 		if (pass == 0) { result.chars = AllocArray(char, memArena, charIndex+1); result.length = charIndex; }
 // 		else { Assert(charIndex == result.length); result.chars[result.length] = '\0'; }
 // 	}
-void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex, const char* formatString, ...)
+PEXP void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex, const char* formatString, ...)
 {
 	Assert(resultPntr == nullptr || resultLength > 0);
 	NotNull(currentByteIndex);
@@ -164,5 +183,6 @@ void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex, con
 	*currentByteIndex += printSize;
 }
 
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MISC_PRINTING_H

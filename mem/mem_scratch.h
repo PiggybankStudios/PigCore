@@ -34,30 +34,6 @@ Description:
 
 #define NUM_SCRATCH_ARENAS_PER_THREAD   3
 
-#if SCRATCH_ARENAS_THREAD_LOCAL
-thread_local Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
-#else
-Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
-#endif
-
-//NOTE: Init needs to be called once for each thread!
-
-void InitScratchArenas(uxx stackSizePerArena, Arena* sourceArena)
-{
-	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
-	{
-		InitArenaStack(&scratchArenasArray[aIndex], stackSizePerArena, sourceArena);
-	}
-}
-//TODO: Add an option for StackPaged once that's implemented
-void InitScratchArenasVirtual(uxx virtualSizePerArena)
-{
-	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
-	{
-		InitArenaStackVirtual(&scratchArenasArray[aIndex], virtualSizePerArena);
-	}
-}
-
 typedef struct ScratchArena ScratchArena;
 struct ScratchArena
 {
@@ -65,7 +41,67 @@ struct ScratchArena
 	uxx mark;
 };
 
-Arena* GetScratch2(Arena* conflict1, Arena* conflict2, uxx* markOut)
+#if PIG_CORE_IMPLEMENTATION
+	#if SCRATCH_ARENAS_THREAD_LOCAL
+	thread_local Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
+	#else
+	Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
+	#endif
+#else //!PIG_CORE_IMPLEMENTATION
+	#if SCRATCH_ARENAS_THREAD_LOCAL
+	extern thread_local Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
+	#else
+	extern Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
+	#endif
+#endif
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	void InitScratchArenas(uxx stackSizePerArena, Arena* sourceArena);
+	void InitScratchArenasVirtual(uxx virtualSizePerArena);
+	PIG_CORE_INLINE Arena* GetScratch2(Arena* conflict1, Arena* conflict2, uxx* markOut);
+	PIG_CORE_INLINE Arena* GetScratch1(Arena* conflict1, uxx* markOut);
+	PIG_CORE_INLINE Arena* GetScratch(uxx* markOut);
+	PIG_CORE_INLINE ScratchArena GetScratchArena2(Arena* conflict1, Arena* conflict2);
+	PIG_CORE_INLINE ScratchArena GetScratchArena1(Arena* conflict1);
+	PIG_CORE_INLINE ScratchArena GetScratchArena();
+	PIG_CORE_INLINE void ReleaseScratchArena(ScratchArena* scratchArena);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#define ScratchBegin2(variableName, conflict1, conflict2) uxx variableName##_mark = 0; Arena* variableName = GetScratch2((conflict1), (conflict2), &variableName##_mark)
+#define ScratchBegin1(variableName, conflict1) ScratchBegin2(variableName, (conflict1), nullptr)
+#define ScratchBegin(variableName) ScratchBegin2(variableName, nullptr, nullptr)
+#define ScratchEnd(variableName) do { ArenaResetToMark(variableName, variableName##_mark); variableName = nullptr; variableName##_mark = 0; } while(0)
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+//NOTE: Init needs to be called once for each thread!
+
+PEXP void InitScratchArenas(uxx stackSizePerArena, Arena* sourceArena)
+{
+	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
+	{
+		InitArenaStack(&scratchArenasArray[aIndex], stackSizePerArena, sourceArena);
+	}
+}
+//TODO: Add an option for StackPaged once that's implemented
+PEXP void InitScratchArenasVirtual(uxx virtualSizePerArena)
+{
+	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
+	{
+		InitArenaStackVirtual(&scratchArenasArray[aIndex], virtualSizePerArena);
+	}
+}
+
+PEXPI Arena* GetScratch2(Arena* conflict1, Arena* conflict2, uxx* markOut)
 {
 	Arena* result = (conflict1 != &scratchArenasArray[0] && conflict2 != &scratchArenasArray[0])
 		? &scratchArenasArray[0]
@@ -75,28 +111,25 @@ Arena* GetScratch2(Arena* conflict1, Arena* conflict2, uxx* markOut)
 	SetOptionalOutPntr(markOut, ArenaGetMark(result));
 	return result;
 }
-Arena* GetScratch1(Arena* conflict1, uxx* markOut) { return GetScratch2(conflict1, nullptr, markOut); }
-Arena* GetScratch(uxx* markOut) { return GetScratch2(nullptr, nullptr, markOut); }
+PEXPI Arena* GetScratch1(Arena* conflict1, uxx* markOut) { return GetScratch2(conflict1, nullptr, markOut); }
+PEXPI Arena* GetScratch(uxx* markOut) { return GetScratch2(nullptr, nullptr, markOut); }
 
-ScratchArena GetScratchArena2(Arena* conflict1, Arena* conflict2)
+PEXPI ScratchArena GetScratchArena2(Arena* conflict1, Arena* conflict2)
 {
 	ScratchArena result;
 	result.arena = GetScratch2(conflict1, conflict2, &result.mark);
 	return result;
 }
-ScratchArena GetScratchArena1(Arena* conflict1) { return GetScratchArena2(conflict1, nullptr); }
-ScratchArena GetScratchArena() { return GetScratchArena2(nullptr, nullptr); }
+PEXPI ScratchArena GetScratchArena1(Arena* conflict1) { return GetScratchArena2(conflict1, nullptr); }
+PEXPI ScratchArena GetScratchArena() { return GetScratchArena2(nullptr, nullptr); }
 
-void ReleaseScratchArena(ScratchArena* scratchArena)
+PEXPI void ReleaseScratchArena(ScratchArena* scratchArena)
 {
 	NotNull(scratchArena->arena);
 	ArenaResetToMark(scratchArena->arena, scratchArena->mark);
 	ClearPointer(scratchArena);
 }
 
-#define ScratchBegin2(variableName, conflict1, conflict2) uxx variableName##_mark = 0; Arena* variableName = GetScratch2((conflict1), (conflict2), &variableName##_mark)
-#define ScratchBegin1(variableName, conflict1) ScratchBegin2(variableName, (conflict1), nullptr)
-#define ScratchBegin(variableName) ScratchBegin2(variableName, nullptr, nullptr)
-#define ScratchEnd(variableName) do { ArenaResetToMark(variableName, variableName##_mark); variableName = nullptr; variableName##_mark = 0; } while(0)
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MEM_SCRATCH_H

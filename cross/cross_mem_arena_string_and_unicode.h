@@ -9,8 +9,27 @@ Date:   01\17\2025
 
 //NOTE: Intentionally no includes here
 
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	Str8 ConvertUcs2StrToUtf8(Arena* arena, Str16 usc2Str, bool addNullTerm);
+	Str16 ConvertUtf8StrToUcs2(Arena* arena, Str8 utf8Str, bool addNullTerm);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#define ToStr16From8(arena, usc2Str, addNullTerm) ConvertUcs2StrToUtf8((arena), (usc2Str), (addNullTerm))
+#define ToStr8From16(arena, utf8Str, addNullTerm) ConvertUtf8StrToUcs2((arena), (utf8Str), (addNullTerm))
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
 //TODO: This function isn't fully implemented, it just casts each 16-bit character to u32
-Str8 ConvertUcs2StrToUtf8(Arena* arena, Str16 usc2Str, bool addNullTerm)
+PEXP Str8 ConvertUcs2StrToUtf8(Arena* arena, Str16 usc2Str, bool addNullTerm)
 {
 	Assert(usc2Str.pntr != nullptr || usc2Str.length == 0);
 	u8 encodeBuffer[UTF8_MAX_CHAR_SIZE];
@@ -48,9 +67,8 @@ Str8 ConvertUcs2StrToUtf8(Arena* arena, Str16 usc2Str, bool addNullTerm)
 	}
 	return result;
 }
-#define ToStr16From8(arena, usc2Str, addNullTerm) ConvertUcs2StrToUtf8((arena), (usc2Str), (addNullTerm))
 
-Str16 ConvertUtf8StrToUcs2(Arena* arena, Str8 utf8Str, bool addNullTerm)
+PEXP Str16 ConvertUtf8StrToUcs2(Arena* arena, Str8 utf8Str, bool addNullTerm)
 {
 	NotNullStr(utf8Str);
 	u16 encodeBuffer[UCS2_MAX_CHAR_SIZE];
@@ -89,6 +107,7 @@ Str16 ConvertUtf8StrToUcs2(Arena* arena, Str8 utf8Str, bool addNullTerm)
 	}
 	return result;
 }
-#define ToStr8From16(arena, utf8Str, addNullTerm) ConvertUtf8StrToUcs2((arena), (utf8Str), (addNullTerm))
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _CROSS_MEM_ARENA_STRING_AND_UNICODE_H

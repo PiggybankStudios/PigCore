@@ -11,11 +11,38 @@ Description:
 
 //NOTE: Intentionally no includes here!
 
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE char* AllocAndCopyChars(Arena* arena, uxx numChars, const char* charsToCopy, bool addNullTerm);
+	PIG_CORE_INLINE char* AllocAndCopyCharsNt(Arena* arena, const char* nullTermStr, bool addNullTerm);
+	PIG_CORE_INLINE Str8 AllocStrAndCopy(Arena* arena, uxx numChars, const char* charsToCopy, bool addNullTerm);
+	PIG_CORE_INLINE Str8 AllocStrAndCopyNt(Arena* arena, const char* nullTermStr, bool addNullTerm);
+	PIG_CORE_INLINE void FreeStr8(Arena* arena, Str8* stringPntr);
+	PIG_CORE_INLINE void FreeStr8WithNt(Arena* arena, Str8* stringPntr);
+	Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm);
+	Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addNullTerm);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+//NOTE: These all implicitly assume addNullTerm=false
+#define AllocStr8(arenaPntr, string) AllocStrAndCopy((arenaPntr), (string).length, (string).chars, false)
+#define AllocStr8Nt(arenaPntr, nullTermStr) AllocStrAndCopyNt((arenaPntr), (nullTermStr), false)
+#define AllocStr8Length(arenaPntr, length, charPntr) AllocStrAndCopy((arenaPntr), (length), (charPntr), false)
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
 //NOTE: When addNullTerm is true we will allocate one more byte than numChars to hold a null-terminating character
 //      As such, when Freeing these strings, we will pass an innacurate size value to the Arena.
 //      If the string is being allocated from an arena that doesn't track sizes, then you might
 //      want to forego allocating the nullterm character so sizes are accurate during Free.
-char* AllocAndCopyChars(Arena* arena, uxx numChars, const char* charsToCopy, bool addNullTerm)
+PEXPI char* AllocAndCopyChars(Arena* arena, uxx numChars, const char* charsToCopy, bool addNullTerm)
 {
 	DebugNotNull(arena);
 	Assert(charsToCopy != nullptr || numChars == 0);
@@ -32,21 +59,21 @@ char* AllocAndCopyChars(Arena* arena, uxx numChars, const char* charsToCopy, boo
 	}
 	return result;
 }
-char* AllocAndCopyCharsNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
+PEXPI char* AllocAndCopyCharsNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
 {
 	DebugNotNull(arena);
 	DebugNotNull(nullTermStr);
 	uxx numChars = MyStrLength64(nullTermStr);
 	return AllocAndCopyChars(arena, numChars, nullTermStr, addNullTerm);
 }
-Str8 AllocStrAndCopy(Arena* arena, uxx numChars, const char* charsToCopy, bool addNullTerm)
+PEXPI Str8 AllocStrAndCopy(Arena* arena, uxx numChars, const char* charsToCopy, bool addNullTerm)
 {
 	DebugNotNull(arena);
 	DebugNotNull(charsToCopy);
 	char* allocatedChars = AllocAndCopyChars(arena, numChars, charsToCopy, addNullTerm);
 	return (allocatedChars != nullptr) ? NewStr8(numChars, allocatedChars) : Str8_Empty;
 }
-Str8 AllocStrAndCopyNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
+PEXPI Str8 AllocStrAndCopyNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
 {
 	DebugNotNull(arena);
 	DebugNotNull(nullTermStr);
@@ -55,12 +82,7 @@ Str8 AllocStrAndCopyNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
 	return (allocatedChars != nullptr) ? NewStr8(numChars, allocatedChars) : Str8_Empty;
 }
 
-//NOTE: These all implicitly assume addNullTerm=false
-#define AllocStr8(arenaPntr, string) AllocStrAndCopy((arenaPntr), (string).length, (string).chars, false)
-#define AllocStr8Nt(arenaPntr, nullTermStr) AllocStrAndCopyNt((arenaPntr), (nullTermStr), false)
-#define AllocStr8Length(arenaPntr, length, charPntr) AllocStrAndCopy((arenaPntr), (length), (charPntr), false)
-
-void FreeStr8(Arena* arena, Str8* stringPntr)
+PEXPI void FreeStr8(Arena* arena, Str8* stringPntr)
 {
 	NotNull(stringPntr);
 	if (stringPntr->length > 0)
@@ -69,7 +91,7 @@ void FreeStr8(Arena* arena, Str8* stringPntr)
 	}
 	ClearPointer(stringPntr);
 }
-void FreeStr8WithNt(Arena* arena, Str8* stringPntr)
+PEXPI void FreeStr8WithNt(Arena* arena, Str8* stringPntr)
 {
 	NotNull(stringPntr);
 	if (stringPntr->length > 0 || stringPntr->chars != nullptr)
@@ -79,7 +101,7 @@ void FreeStr8WithNt(Arena* arena, Str8* stringPntr)
 	ClearPointer(stringPntr);
 }
 
-Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)
+PEXP Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)
 {
 	Str8 result;
 	result.length = left.length + right.length;
@@ -94,7 +116,7 @@ Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)
 //TODO: Add JoinStringsInArenaWithChar that takes left, sepChar, and right
 //TODO: Add JoinStringsInArena3 that takes left, middle, and right
 
-Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addNullTerm)
+PEXP Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addNullTerm)
 {
 	NotNullStr(str);
 	NotNullStr(target);
@@ -157,5 +179,7 @@ Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addN
 	
 	return result;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _CROSS_MEM_ARENA_AND_STRING_H

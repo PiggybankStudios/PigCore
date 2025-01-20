@@ -172,10 +172,88 @@ enum Axis
 };
 
 // +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	// PIG_CORE_INLINE v2 ToVec2(Dir2 dir2);
+	// PIG_CORE_INLINE v2 ToVec2(Dir2Ex dir2ex);
+	// PIG_CORE_INLINE v2i ToVec2i(Dir2 dir2);
+	// PIG_CORE_INLINE v2i ToVec2i(Dir2Ex dir2ex);
+	// PIG_CORE_INLINE v3 ToVec3(Dir3 dir3);
+	// PIG_CORE_INLINE v3i ToVec3i(Dir3 dir3);
+	// PIG_CORE_INLINE v3 ToVec3(Dir3Ex_t dir3ex);
+	// PIG_CORE_INLINE v3i ToVec3i(Dir3Ex_t dir3ex);
+	// PIG_CORE_INLINE v3 ToVec3(Axis axis);
+	// PIG_CORE_INLINE v3i ToVec3i(Axis axis);
+	// PIG_CORE_INLINE Dir2 ToDir2(v2 vector);
+	// PIG_CORE_INLINE Dir2 ToDir2(v2i vector);
+	PIG_CORE_INLINE Dir2 ToDir2FromAxis(Axis axis, bool positive);
+	// PIG_CORE_INLINE Dir3 ToDir3(v3 vector);
+	// PIG_CORE_INLINE Dir3 ToDir3(v3i vector);
+	PIG_CORE_INLINE Dir3 ToDir3FromAxis(Axis axis, bool positive);
+	// PIG_CORE_INLINE bool IsToDir3Ambiguous(v3i vector);
+	PIG_CORE_INLINE Axis GetDir2Axis(Dir2 dir2);
+	PIG_CORE_INLINE Axis GetDir3Axis(Dir3 dir3);
+	PIG_CORE_INLINE Dir2Ex Dir2ExFromDir2Flags(u8 dirFlags);
+	PIG_CORE_INLINE u8 Dir2FlagsFromDir2Ex(Dir2Ex dir2ex);
+	PIG_CORE_INLINE bool IsDir2Positive(Dir2 dir2);
+	PIG_CORE_INLINE bool IsSingleDir2(Dir2 dir2, bool allowNone);
+	PIG_CORE_INLINE bool IsSingleDir2Ex(Dir2Ex dir2ex, bool allowNone);
+	PIG_CORE_INLINE bool IsCardinalDir2Ex(Dir2Ex dir2ex, bool allowNone);
+	PIG_CORE_INLINE bool IsDiagonalDir2Ex(Dir2Ex dir2ex, bool allowNone);
+	PIG_CORE_INLINE bool IsDir3Positive(Dir3 dir3);
+	PIG_CORE_INLINE bool IsSingleDir3(Dir3 dir3, bool allowNone);
+	PIG_CORE_INLINE u8 Dir2BitwiseCount(Dir2 dir2);
+	PIG_CORE_INLINE u8 Dir2ExBitwiseCount(Dir2Ex dir2ex);
+	PIG_CORE_INLINE u8 Dir3BitwiseCount(Dir3 dir3);
+	const char* GetDir2String(Dir2 dir2);
+	const char* GetDir2ExString(Dir2Ex dir2ex);
+	const char* GetDir3String(Dir3 dir3);
+	const char* GetDir3SideString(Dir3 dir3);
+	PIG_CORE_INLINE u8 GetDir2Index(Dir2 dir2);
+	PIG_CORE_INLINE u8 GetDir2ExIndex(Dir2Ex dir2ex);
+	PIG_CORE_INLINE u8 GetDir3Index(Dir3 dir3);
+	PIG_CORE_INLINE u8 GetAxisIndex(Axis axis);
+	PIG_CORE_INLINE Dir2 Dir2FromIndex(u64 index);
+	PIG_CORE_INLINE Dir2 Dir2FromCwIndex(u64 index);
+	PIG_CORE_INLINE Dir2 Dir2FromCwIndexStartingWith(Dir2 startingDir, u64 index);
+	PIG_CORE_INLINE Dir2 Dir2FromCcwIndex(u64 index);
+	PIG_CORE_INLINE Dir2 Dir2FromCcwIndexStartingWith(Dir2 startingDir, u64 index);
+	PIG_CORE_INLINE Dir2Ex Dir2ExFromIndex(u64 index);
+	PIG_CORE_INLINE Dir3 Dir3FromIndex(u64 index);
+	PIG_CORE_INLINE Axis AxisFromIndex(u64 index);
+	PIG_CORE_INLINE Dir2 Dir2Opposite(Dir2 dir2);
+	PIG_CORE_INLINE Dir2Ex Dir2ExOpposite(Dir2Ex dir2ex);
+	PIG_CORE_INLINE Dir3 Dir3Opposite(Dir3 dir3);
+	PIG_CORE_INLINE Dir2 Dir2ClockwiseBy(Dir2 dir2, u64 numQuarterTurns);
+	PIG_CORE_INLINE Dir2 Dir2Clockwise(Dir2 dir2);
+	PIG_CORE_INLINE Dir2 Dir2CounterClockwiseBy(Dir2 dir2, u64 numQuarterTurns);
+	PIG_CORE_INLINE Dir2 Dir2CounterClockwise(Dir2 dir2);
+	PIG_CORE_INLINE u8 GetCwTurnsBetweenDir2(Dir2 start, Dir2 end);
+	PIG_CORE_INLINE u8 GetCcwTurnsBetweenDir2(Dir2 start, Dir2 end);
+	PIG_CORE_INLINE u8 GetTurnsBetweenDir3(Dir3 start, Dir3 end);
+	PIG_CORE_INLINE r32 GetDir2AngleR32(Dir2 dir2);
+	PIG_CORE_INLINE r64 GetDir2AngleR64(Dir2 dir2);
+	PIG_CORE_INLINE r32 GetDir2ExAngleR32(Dir2Ex dir2ex);
+	PIG_CORE_INLINE r64 GetDir2ExAngleR64(Dir2Ex dir2ex);
+	PIG_CORE_INLINE char GetDir2Char(Dir2 dir2);
+	PIG_CORE_INLINE Dir2 GetCardinalDir2sFromDir2Ex(Dir2Ex diagonalDir);
+	// PIG_CORE_INLINE v2 RotateVec2NumTurnsClockwise(v2 vector, u64 numQuarterTurns);
+	// PIG_CORE_INLINE v2i RotateVec2iNumTurnsClockwise(v2i vector, u64 numQuarterTurns);
+	// PIG_CORE_INLINE v2 Get2DCornerVecByIndex(u64 cornerIndex);
+	// PIG_CORE_INLINE i32 Vec3iAmountInDir(v3i vector, Dir3 direction);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
 // |               Casting and Conversion Functions               |
 // +--------------------------------------------------------------+
 #if 0
-v2 ToVec2(Dir2 dir2)
+PEXPI v2 ToVec2(Dir2 dir2)
 {
 	v2 result = {};
 	if (IsFlagSet(dir2, Dir2_Right)) { result.x += 1.0f; }
@@ -184,7 +262,7 @@ v2 ToVec2(Dir2 dir2)
 	if (IsFlagSet(dir2, Dir2_Up))    { result.y -= 1.0f; }
 	return result;
 }
-v2 ToVec2(Dir2Ex dir2ex)
+PEXPI v2 ToVec2(Dir2Ex dir2ex)
 {
 	v2 result = {};
 	if (IsFlagSet(dir2ex, Dir2Ex_Right)) { result.x += 1.0f; }
@@ -197,7 +275,7 @@ v2 ToVec2(Dir2Ex dir2ex)
 	if (IsFlagSet(dir2ex, Dir2Ex_BottomLeft))  { result.x -= 1.0f; result.y += 1.0f; }
 	return result;
 }
-v2i ToVec2i(Dir2 dir2)
+PEXPI v2i ToVec2i(Dir2 dir2)
 {
 	v2i result = {};
 	if (IsFlagSet(dir2, Dir2_Right)) { result.x += 1; }
@@ -206,7 +284,7 @@ v2i ToVec2i(Dir2 dir2)
 	if (IsFlagSet(dir2, Dir2_Up))    { result.y -= 1; }
 	return result;
 }
-v2i ToVec2i(Dir2Ex dir2ex)
+PEXPI v2i ToVec2i(Dir2Ex dir2ex)
 {
 	v2i result = {};
 	if (IsFlagSet(dir2ex, Dir2Ex_Right)) { result.x += 1; }
@@ -220,7 +298,7 @@ v2i ToVec2i(Dir2Ex dir2ex)
 	return result;
 }
 
-v3 ToVec3(Dir3 dir3)
+PEXPI v3 ToVec3(Dir3 dir3)
 {
 	v3 result = {};
 	if (IsFlagSet(dir3, Dir3_Right))    { result.x += 1.0f; }
@@ -231,7 +309,7 @@ v3 ToVec3(Dir3 dir3)
 	if (IsFlagSet(dir3, Dir3_Backward)) { result.z -= 1.0f; }
 	return result;
 }
-v3i ToVec3i(Dir3 dir3)
+PEXPI v3i ToVec3i(Dir3 dir3)
 {
 	v3i result = {};
 	if (IsFlagSet(dir3, Dir3_Right))    { result.x += 1; }
@@ -242,7 +320,7 @@ v3i ToVec3i(Dir3 dir3)
 	if (IsFlagSet(dir3, Dir3_Backward)) { result.z -= 1; }
 	return result;
 }
-v3 ToVec3(Dir3Ex_t dir3ex)
+PEXPI v3 ToVec3(Dir3Ex_t dir3ex)
 {
 	v3 result = {};
 	if (IsFlagSet(dir3ex, Dir3Ex_Right))            { result.x += 1.0f; }
@@ -273,7 +351,7 @@ v3 ToVec3(Dir3Ex_t dir3ex)
 	if (IsFlagSet(dir3ex, Dir3Ex_TopLeftFront))     { result.x -= 1.0f; result.y += 1.0f; result.z += 1.0f; }
 	return result;
 }
-v3i ToVec3i(Dir3Ex_t dir3ex)
+PEXPI v3i ToVec3i(Dir3Ex_t dir3ex)
 {
 	v3i result = {};
 	if (IsFlagSet(dir3ex, Dir3Ex_Right))            { result.x += 1; }
@@ -304,7 +382,7 @@ v3i ToVec3i(Dir3Ex_t dir3ex)
 	if (IsFlagSet(dir3ex, Dir3Ex_TopLeftFront))     { result.x -= 1; result.y += 1; result.z += 1; }
 	return result;
 }
-v3 ToVec3(Axis axis)
+PEXPI v3 ToVec3(Axis axis)
 {
 	v3 result = {};
 	if (IsFlagSet(axis, Axis_X)) { result.x += 1.0f; }
@@ -312,7 +390,7 @@ v3 ToVec3(Axis axis)
 	if (IsFlagSet(axis, Axis_Z)) { result.z += 1.0f; }
 	return result;
 }
-v3i ToVec3i(Axis axis)
+PEXPI v3i ToVec3i(Axis axis)
 {
 	v3i result = {};
 	if (IsFlagSet(axis, Axis_X)) { result.x += 1; }
@@ -321,7 +399,7 @@ v3i ToVec3i(Axis axis)
 	return result;
 }
 
-Dir2 ToDir2(v2 vector)
+PEXPI Dir2 ToDir2(v2 vector)
 {
 	if (vector == Vec2_Zero) { return Dir2_None; }
 	if (AbsR32(vector.x) >= AbsR32(vector.y))
@@ -335,7 +413,7 @@ Dir2 ToDir2(v2 vector)
 		else { return Dir2_Down; }
 	}
 }
-Dir2 ToDir2(v2i vector)
+PEXPI Dir2 ToDir2(v2i vector)
 {
 	if (vector == Vec2i_Zero) { return Dir2_None; }
 	if (AbsI32(vector.x) >= AbsI32(vector.y))
@@ -350,7 +428,7 @@ Dir2 ToDir2(v2i vector)
 	}
 }
 #endif
-Dir2 ToDir2(Axis axis, bool positive)
+PEXPI Dir2 ToDir2FromAxis(Axis axis, bool positive)
 {
 	switch (axis)
 	{
@@ -361,7 +439,7 @@ Dir2 ToDir2(Axis axis, bool positive)
 }
 
 #if 0
-Dir3 ToDir3(v3 vector)
+PEXPI Dir3 ToDir3(v3 vector)
 {
 	if (vector == Vec3_Zero) { return Dir3_None; }
 	r32 absX = AbsR32(vector.x);
@@ -383,7 +461,7 @@ Dir3 ToDir3(v3 vector)
 		else { return Dir3_Forward; }
 	}
 }
-Dir3 ToDir3(v3i vector)
+PEXPI Dir3 ToDir3(v3i vector)
 {
 	if (vector == Vec3i_Zero) { return Dir3_None; }
 	i32 absX = AbsI32(vector.x);
@@ -406,7 +484,7 @@ Dir3 ToDir3(v3i vector)
 	}
 }
 #endif
-Dir3 ToDir3(Axis axis, bool positive)
+PEXPI Dir3 ToDir3FromAxis(Axis axis, bool positive)
 {
 	switch (axis)
 	{
@@ -417,7 +495,7 @@ Dir3 ToDir3(Axis axis, bool positive)
 	}
 }
 #if 0
-bool IsToDir3Ambiguous(v3i vector)
+PEXPI bool IsToDir3Ambiguous(v3i vector)
 {
 	if (vector == Vec3i_Zero) { return true; }
 	i32 absX = AbsI32(vector.x);
@@ -438,7 +516,7 @@ bool IsToDir3Ambiguous(v3i vector)
 }
 #endif
 
-Axis GetDir2Axis(Dir2 dir2)
+PEXPI Axis GetDir2Axis(Dir2 dir2)
 {
 	switch (dir2)
 	{
@@ -449,7 +527,7 @@ Axis GetDir2Axis(Dir2 dir2)
 		default: return Axis_None;
 	}
 }
-Axis GetDir3Axis(Dir3 dir3)
+PEXPI Axis GetDir3Axis(Dir3 dir3)
 {
 	switch (dir3)
 	{
@@ -463,7 +541,7 @@ Axis GetDir3Axis(Dir3 dir3)
 	}
 }
 
-Dir2Ex Dir2ExFromDir2Flags(u8 dirFlags)
+PEXPI Dir2Ex Dir2ExFromDir2Flags(u8 dirFlags)
 {
 	switch (dirFlags)
 	{
@@ -478,7 +556,7 @@ Dir2Ex Dir2ExFromDir2Flags(u8 dirFlags)
 		default: return Dir2Ex_None;
 	}
 }
-u8 Dir2FlagsFromDir2Ex(Dir2Ex dir2ex)
+PEXPI u8 Dir2FlagsFromDir2Ex(Dir2Ex dir2ex)
 {
 	switch (dir2ex)
 	{
@@ -497,12 +575,12 @@ u8 Dir2FlagsFromDir2Ex(Dir2Ex dir2ex)
 // +--------------------------------------------------------------+
 // |                     Validation Functions                     |
 // +--------------------------------------------------------------+
-bool IsDir2Positive(Dir2 dir2)
+PEXPI bool IsDir2Positive(Dir2 dir2)
 {
 	return (dir2 == Dir2_Right || dir2 == Dir2_Down);
 }
 
-bool IsSingleDir2(Dir2 dir2, bool allowNone)
+PEXPI bool IsSingleDir2(Dir2 dir2, bool allowNone)
 {
 	if (dir2 == Dir2_None && allowNone) { return true; }
 	if (dir2 == Dir2_Right) { return true; }
@@ -512,7 +590,7 @@ bool IsSingleDir2(Dir2 dir2, bool allowNone)
 	return false;
 }
 
-bool IsSingleDir2Ex(Dir2Ex dir2ex, bool allowNone)
+PEXPI bool IsSingleDir2Ex(Dir2Ex dir2ex, bool allowNone)
 {
 	if (dir2ex == Dir2Ex_None && allowNone) { return true; }
 	if (dir2ex == Dir2Ex_Right)       { return true; }
@@ -525,7 +603,7 @@ bool IsSingleDir2Ex(Dir2Ex dir2ex, bool allowNone)
 	if (dir2ex == Dir2Ex_BottomLeft)  { return true; }
 	return false;
 }
-bool IsCardinalDir2Ex(Dir2Ex dir2ex, bool allowNone)
+PEXPI bool IsCardinalDir2Ex(Dir2Ex dir2ex, bool allowNone)
 {
 	if (dir2ex == Dir2Ex_None && allowNone) { return true; }
 	if (dir2ex == Dir2Ex_Right) { return true; }
@@ -534,7 +612,7 @@ bool IsCardinalDir2Ex(Dir2Ex dir2ex, bool allowNone)
 	if (dir2ex == Dir2Ex_Up)    { return true; }
 	return false;
 }
-bool IsDiagonalDir2Ex(Dir2Ex dir2ex, bool allowNone)
+PEXPI bool IsDiagonalDir2Ex(Dir2Ex dir2ex, bool allowNone)
 {
 	if (dir2ex == Dir2Ex_None && allowNone) { return true; }
 	if (dir2ex == Dir2Ex_TopLeft)     { return true; }
@@ -544,12 +622,12 @@ bool IsDiagonalDir2Ex(Dir2Ex dir2ex, bool allowNone)
 	return false;
 }
 
-bool IsDir3Positive(Dir3 dir3)
+PEXPI bool IsDir3Positive(Dir3 dir3)
 {
 	return (dir3 == Dir3_Right || dir3 == Dir3_Up || dir3 == Dir3_Forward);
 }
 
-bool IsSingleDir3(Dir3 dir3, bool allowNone)
+PEXPI bool IsSingleDir3(Dir3 dir3, bool allowNone)
 {
 	if (dir3 == Dir3_None && allowNone) { return true; }
 	if (dir3 == Dir3_Right)    { return true; }
@@ -561,7 +639,7 @@ bool IsSingleDir3(Dir3 dir3, bool allowNone)
 	return false;
 }
 
-u8 Dir2BitwiseCount(Dir2 dir2)
+PEXPI u8 Dir2BitwiseCount(Dir2 dir2)
 {
 	u8 result = 0;
 	if (IsFlagSet(dir2, Dir2_Right)) { result++; }
@@ -570,7 +648,7 @@ u8 Dir2BitwiseCount(Dir2 dir2)
 	if (IsFlagSet(dir2, Dir2_Up))    { result++; }
 	return result;
 }
-u8 Dir2ExBitwiseCount(Dir2Ex dir2ex)
+PEXPI u8 Dir2ExBitwiseCount(Dir2Ex dir2ex)
 {
 	u8 result = 0;
 	if (IsFlagSet(dir2ex, Dir2Ex_Right))       { result++; }
@@ -583,7 +661,7 @@ u8 Dir2ExBitwiseCount(Dir2Ex dir2ex)
 	if (IsFlagSet(dir2ex, Dir2Ex_BottomLeft))  { result++; }
 	return result;
 }
-u8 Dir3BitwiseCount(Dir3 dir3)
+PEXPI u8 Dir3BitwiseCount(Dir3 dir3)
 {
 	u8 result = 0;
 	if (IsFlagSet(dir3, Dir3_Right))    { result++; }
@@ -598,7 +676,7 @@ u8 Dir3BitwiseCount(Dir3 dir3)
 // +--------------------------------------------------------------+
 // |                     GetString Functions                      |
 // +--------------------------------------------------------------+
-const char* GetDir2String(Dir2 dir2)
+PEXP const char* GetDir2String(Dir2 dir2)
 {
 	switch ((u8)dir2) //cast to satiate compiler warning
 	{
@@ -618,11 +696,11 @@ const char* GetDir2String(Dir2 dir2)
 		case (Dir2_Left  | Dir2_Right | Dir2_Down): return "NotUp";
 		case (Dir2_Left  | Dir2_Right | Dir2_Up):   return "NotDown";
 		case Dir2_All: return "All";
-		default: return "Unknown";
+		default: return UNKNOWN_STR;
 	};
 }
 
-const char* GetDir2ExString(Dir2Ex dir2ex)
+PEXP const char* GetDir2ExString(Dir2Ex dir2ex)
 {
 	switch ((u8)dir2ex) //cast to satiate compiler warning
 	{
@@ -639,21 +717,21 @@ const char* GetDir2ExString(Dir2Ex dir2ex)
 		case Dir2Ex_Diagonal:    return "Diagonal";
 		case (Dir2Ex_Left  | Dir2Ex_Right): return "Horizontal";
 		case (Dir2Ex_Up    | Dir2Ex_Down):  return "Vertical";
-		case (Dir2Ex_Left  | Dir2Ex_Up):    return "TopLeft";
-		case (Dir2Ex_Right | Dir2Ex_Up):    return "TopRight";
-		case (Dir2Ex_Left  | Dir2Ex_Down):  return "BottomLeft";
-		case (Dir2Ex_Right | Dir2Ex_Down):  return "BottomRight";
+		case (Dir2Ex_Left  | Dir2Ex_Up):    return "UpLeft";
+		case (Dir2Ex_Right | Dir2Ex_Up):    return "UpRight";
+		case (Dir2Ex_Left  | Dir2Ex_Down):  return "DownLeft";
+		case (Dir2Ex_Right | Dir2Ex_Down):  return "DownRight";
 		case (Dir2Ex_Right | Dir2Ex_Up    | Dir2Ex_Down): return "NotLeft";
 		case (Dir2Ex_Left  | Dir2Ex_Up    | Dir2Ex_Down): return "NotRight";
 		case (Dir2Ex_Left  | Dir2Ex_Right | Dir2Ex_Down): return "NotUp";
 		case (Dir2Ex_Left  | Dir2Ex_Right | Dir2Ex_Up):   return "NotDown";
 		//TODO: Do we want to give names to any other combinations?
 		case Dir2Ex_All:         return "All";
-		default: return "Unknown";
+		default: return UNKNOWN_STR;
 	}
 }
 
-const char* GetDir3String(Dir3 dir3)
+PEXP const char* GetDir3String(Dir3 dir3)
 {
 	switch ((u8)dir3) //cast to satiate compiler warning
 	{
@@ -692,11 +770,11 @@ const char* GetDir3String(Dir3 dir3)
 		//TODO: We could add Not[Dir] variants
 		//TODO: We could add Not[Hori/Vert] variants
 		case Dir3_All: return "All";
-		default: return "Unknown";
+		default: return UNKNOWN_STR;
 	};
 }
 
-const char* GetDir3SideString(Dir3 dir3)
+PEXP const char* GetDir3SideString(Dir3 dir3)
 {
 	switch ((u8)dir3) //cast to satiate compiler warning
 	{
@@ -735,7 +813,7 @@ const char* GetDir3SideString(Dir3 dir3)
 		//TODO: We could add Not[Dir] variants
 		//TODO: We could add Not[Hori/Vert] variants
 		case Dir3_All: return "All";
-		default: return "Unknown";
+		default: return UNKNOWN_STR;
 	};
 }
 
@@ -745,7 +823,7 @@ const char* GetDir3SideString(Dir3 dir3)
 // +==============================+
 // |         GetDirIndex          |
 // +==============================+
-u8 GetDir2Index(Dir2 dir2)
+PEXPI u8 GetDir2Index(Dir2 dir2)
 {
 	switch (dir2)
 	{
@@ -756,7 +834,7 @@ u8 GetDir2Index(Dir2 dir2)
 		default: return Dir2_Count;
 	}
 }
-u8 GetDir2ExIndex(Dir2Ex dir2ex)
+PEXPI u8 GetDir2ExIndex(Dir2Ex dir2ex)
 {
 	switch (dir2ex)
 	{
@@ -771,7 +849,7 @@ u8 GetDir2ExIndex(Dir2Ex dir2ex)
 		default: return Dir2Ex_Count;
 	}
 }
-u8 GetDir3Index(Dir3 dir3)
+PEXPI u8 GetDir3Index(Dir3 dir3)
 {
 	switch (dir3)
 	{
@@ -784,7 +862,7 @@ u8 GetDir3Index(Dir3 dir3)
 		default: return Dir3_Count;
 	}
 }
-u8 GetAxisIndex(Axis axis)
+PEXPI u8 GetAxisIndex(Axis axis)
 {
 	switch (axis)
 	{
@@ -799,7 +877,7 @@ u8 GetAxisIndex(Axis axis)
 // +==============================+
 // |         DirFromIndex         |
 // +==============================+
-Dir2 Dir2FromIndex(u64 index) //clockwise starting from right
+PEXPI Dir2 Dir2FromIndex(u64 index) //clockwise starting from right
 {
 	switch (index % Dir2_Count)
 	{
@@ -810,16 +888,16 @@ Dir2 Dir2FromIndex(u64 index) //clockwise starting from right
 		default: Assert(false); return Dir2_None; //shouldn't be possible because % above
 	}
 }
-Dir2 Dir2FromCwIndex(u64 index) //same as Dir2FromIndex
+PEXPI Dir2 Dir2FromCwIndex(u64 index) //same as Dir2FromIndex
 {
 	return Dir2FromIndex(index);
 }
-Dir2 Dir2FromCwIndexStartingWith(Dir2 startingDir, u64 index)
+PEXPI Dir2 Dir2FromCwIndexStartingWith(Dir2 startingDir, u64 index)
 {
 	u64 offset = GetDir2Index(startingDir);
 	return Dir2FromCwIndex(index + offset);
 }
-Dir2 Dir2FromCcwIndex(u64 index)
+PEXPI Dir2 Dir2FromCcwIndex(u64 index)
 {
 	switch (index % Dir2_Count)
 	{
@@ -830,12 +908,12 @@ Dir2 Dir2FromCcwIndex(u64 index)
 		default: Assert(false); return Dir2_None; //shouldn't be possible because % above
 	}
 }
-Dir2 Dir2FromCcwIndexStartingWith(Dir2 startingDir, u64 index)
+PEXPI Dir2 Dir2FromCcwIndexStartingWith(Dir2 startingDir, u64 index)
 {
 	u64 offset = (startingDir != Dir2_Right) ? (Dir2_Count - GetDir2Index(startingDir)) : 0;
 	return Dir2FromCcwIndex(index + offset);
 }
-Dir2Ex Dir2ExFromIndex(u64 index)
+PEXPI Dir2Ex Dir2ExFromIndex(u64 index)
 {
 	switch (index % Dir2Ex_Count)
 	{
@@ -850,7 +928,7 @@ Dir2Ex Dir2ExFromIndex(u64 index)
 		default: Assert(false); return Dir2Ex_None; //shouldn't be possible because % above
 	}
 }
-Dir3 Dir3FromIndex(u64 index)
+PEXPI Dir3 Dir3FromIndex(u64 index)
 {
 	switch (index % Dir3_Count)
 	{
@@ -863,7 +941,7 @@ Dir3 Dir3FromIndex(u64 index)
 		default: Assert(false); return Dir3_None; //shouldn't be possible because % above
 	}
 }
-Axis AxisFromIndex(u64 index)
+PEXPI Axis AxisFromIndex(u64 index)
 {
 	switch (index % Axis_Count)
 	{
@@ -882,7 +960,7 @@ Axis AxisFromIndex(u64 index)
 // +==============================+
 // |           Opposite           |
 // +==============================+
-Dir2 Dir2Opposite(Dir2 dir2)
+PEXPI Dir2 Dir2Opposite(Dir2 dir2)
 {
 	Assert(IsSingleDir2(dir2, false));
 	switch (dir2)
@@ -894,7 +972,7 @@ Dir2 Dir2Opposite(Dir2 dir2)
 		default: return Dir2_None;
 	}
 }
-Dir2Ex Dir2ExOpposite(Dir2Ex dir2ex)
+PEXPI Dir2Ex Dir2ExOpposite(Dir2Ex dir2ex)
 {
 	Assert(IsSingleDir2Ex(dir2ex, false));
 	switch (dir2ex)
@@ -910,7 +988,7 @@ Dir2Ex Dir2ExOpposite(Dir2Ex dir2ex)
 		default: return Dir2Ex_None;
 	}
 }
-Dir3 Dir3Opposite(Dir3 dir3)
+PEXPI Dir3 Dir3Opposite(Dir3 dir3)
 {
 	Assert(IsSingleDir3(dir3, false));
 	switch (dir3)
@@ -928,25 +1006,25 @@ Dir3 Dir3Opposite(Dir3 dir3)
 // +==============================+
 // |          Clockwise           |
 // +==============================+
-Dir2 Dir2ClockwiseBy(Dir2 dir2, u64 numQuarterTurns)
+PEXPI Dir2 Dir2ClockwiseBy(Dir2 dir2, u64 numQuarterTurns)
 {
 	Assert(IsSingleDir2(dir2, false));
 	return Dir2FromCwIndexStartingWith(dir2, numQuarterTurns);
 }
-Dir2 Dir2Clockwise(Dir2 dir2) { return Dir2ClockwiseBy(dir2, 1); }
-Dir2 Dir2CounterClockwiseBy(Dir2 dir2, u64 numQuarterTurns)
+PEXPI Dir2 Dir2Clockwise(Dir2 dir2) { return Dir2ClockwiseBy(dir2, 1); }
+PEXPI Dir2 Dir2CounterClockwiseBy(Dir2 dir2, u64 numQuarterTurns)
 {
 	Assert(IsSingleDir2(dir2, false));
 	return Dir2FromCcwIndexStartingWith(dir2, numQuarterTurns);
 }
-Dir2 Dir2CounterClockwise(Dir2 dir2) { return Dir2CounterClockwiseBy(dir2, 1); }
+PEXPI Dir2 Dir2CounterClockwise(Dir2 dir2) { return Dir2CounterClockwiseBy(dir2, 1); }
 
 //TODO: Add Dir2ExClockwise and Dir2ExCounterClockwise
 
 // +==============================+
 // |      GetTurnsBetweenDir      |
 // +==============================+
-u8 GetCwTurnsBetweenDir2(Dir2 start, Dir2 end)
+PEXPI u8 GetCwTurnsBetweenDir2(Dir2 start, Dir2 end)
 {
 	Assert(IsSingleDir2(start, false));
 	Assert(IsSingleDir2(end, false));
@@ -955,7 +1033,7 @@ u8 GetCwTurnsBetweenDir2(Dir2 start, Dir2 end)
 	if (endIndex < startIndex) { endIndex += Dir2_Count; }
 	return endIndex - startIndex;
 }
-u8 GetCcwTurnsBetweenDir2(Dir2 start, Dir2 end)
+PEXPI u8 GetCcwTurnsBetweenDir2(Dir2 start, Dir2 end)
 {
 	Assert(IsSingleDir2(start, false));
 	Assert(IsSingleDir2(end, false));
@@ -964,7 +1042,7 @@ u8 GetCcwTurnsBetweenDir2(Dir2 start, Dir2 end)
 	if (endIndex < startIndex) { endIndex += Dir2_Count; }
 	return endIndex - startIndex;
 }
-u8 GetTurnsBetweenDir3(Dir3 start, Dir3 end)
+PEXPI u8 GetTurnsBetweenDir3(Dir3 start, Dir3 end)
 {
 	Assert(IsSingleDir3(start, false));
 	Assert(IsSingleDir3(end, false));
@@ -1037,7 +1115,7 @@ u8 GetTurnsBetweenDir3(Dir3 start, Dir3 end)
 // +--------------------------------------------------------------+
 // |                       Other Functions                        |
 // +--------------------------------------------------------------+
-r32 GetDir2AngleR32(Dir2 dir2)
+PEXPI r32 GetDir2AngleR32(Dir2 dir2)
 {
 	Assert(IsSingleDir2(dir2, false));
 	switch (dir2)
@@ -1049,7 +1127,7 @@ r32 GetDir2AngleR32(Dir2 dir2)
 		default: return 0.0f;
 	}
 }
-r64 GetDir2AngleR64(Dir2 dir2)
+PEXPI r64 GetDir2AngleR64(Dir2 dir2)
 {
 	Assert(IsSingleDir2(dir2, false));
 	switch (dir2)
@@ -1062,7 +1140,7 @@ r64 GetDir2AngleR64(Dir2 dir2)
 	}
 }
 
-r32 GetDir2ExAngleR32(Dir2Ex dir2ex)
+PEXPI r32 GetDir2ExAngleR32(Dir2Ex dir2ex)
 {
 	Assert(IsSingleDir2Ex(dir2ex, false));
 	switch (dir2ex)
@@ -1078,7 +1156,7 @@ r32 GetDir2ExAngleR32(Dir2Ex dir2ex)
 		default: return 0.0f;
 	}
 }
-r64 GetDir2ExAngleR64(Dir2Ex dir2ex)
+PEXPI r64 GetDir2ExAngleR64(Dir2Ex dir2ex)
 {
 	Assert(IsSingleDir2Ex(dir2ex, false));
 	switch (dir2ex)
@@ -1095,7 +1173,7 @@ r64 GetDir2ExAngleR64(Dir2Ex dir2ex)
 	}
 }
 
-char GetDir2Char(Dir2 dir2)
+PEXPI char GetDir2Char(Dir2 dir2)
 {
 	Assert(IsSingleDir2(dir2, true) || dir2 == Dir2_All);
 	switch (dir2)
@@ -1110,7 +1188,7 @@ char GetDir2Char(Dir2 dir2)
 	}
 }
 
-Dir2 GetCardinalDir2sFromDir2Ex(Dir2Ex diagonalDir)
+PEXPI Dir2 GetCardinalDir2sFromDir2Ex(Dir2Ex diagonalDir)
 {
 	u8 result = 0x00;
 	if (IsFlagSet(diagonalDir, Dir2Ex_Right))       { result |= Dir2_Right;           }
@@ -1126,7 +1204,7 @@ Dir2 GetCardinalDir2sFromDir2Ex(Dir2Ex diagonalDir)
 
 #if 0
 //TODO: Rename these Vec2Clockwise90 and add VecCounterClockwise90
-v2 RotateVec2NumTurnsClockwise(v2 vector, u64 numQuarterTurns)
+PEXPI v2 RotateVec2NumTurnsClockwise(v2 vector, u64 numQuarterTurns)
 {
 	switch (numQuarterTurns % Dir2_Count)
 	{
@@ -1137,7 +1215,7 @@ v2 RotateVec2NumTurnsClockwise(v2 vector, u64 numQuarterTurns)
 		default: Assert(false); return vector; //shouldn't be possible because % above
 	}
 }
-v2i RotateVec2iNumTurnsClockwise(v2i vector, u64 numQuarterTurns)
+PEXPI v2i RotateVec2iNumTurnsClockwise(v2i vector, u64 numQuarterTurns)
 {
 	switch (numQuarterTurns % Dir2_Count)
 	{
@@ -1150,7 +1228,7 @@ v2i RotateVec2iNumTurnsClockwise(v2i vector, u64 numQuarterTurns)
 }
 
 //TODO: Rename to Vec2UnitRecCornerFromIndex and add Vec2UnitCubeCornerFromIndex
-v2 Get2DCornerVecByIndex(u64 cornerIndex)
+PEXPI v2 Get2DCornerVecByIndex(u64 cornerIndex)
 {
 	switch (cornerIndex % 4)
 	{
@@ -1163,7 +1241,7 @@ v2 Get2DCornerVecByIndex(u64 cornerIndex)
 }
 
 //TODO: Rename this Vec3iDotDir3 and add Vec3DotDir3, Vec2DotDir2, and Vec2iDotDir2
-i32 Vec3iAmountInDir(v3i vector, Dir3 direction)
+PEXPI i32 Vec3iAmountInDir(v3i vector, Dir3 direction)
 {
 	switch (direction)
 	{
@@ -1177,5 +1255,7 @@ i32 Vec3iAmountInDir(v3i vector, Dir3 direction)
 	}
 }
 #endif
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_DIRECTIONS_H

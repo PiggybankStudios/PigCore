@@ -41,12 +41,34 @@ Description:
 #define UNICODE_KATAKANA_COUNT 96
 #define UNICODE_KATAKANA_END   (UNICODE_KATAKANA_START + UNICODE_KATAKANA_COUNT)
 
-u32 GetLowercaseCodepoint(u32 codepoint)
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE u32 GetLowercaseCodepoint(u32 codepoint);
+	PIG_CORE_INLINE u32 GetUppercaseCodepoint(u32 codepoint);
+	u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions);
+	u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut);
+	u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOut);
+	i32 CompareCodepoints(u32 codepoint1, u32 codepoint2);
+	bool DoesNtStrContainMultibyteUtf8Chars(const char* nullTermStr);
+	u8 GetUcs2WordsForCode(u32 codepoint, u16* wordBufferOut, bool doAssertions);
+	u8 GetCodepointForUcs2(u64 maxNumWords, const u16* strPntr, u32* codepointOut);
+	PIG_CORE_INLINE u32 GetMonospaceCodepointFor(u32 codepoint);
+	PIG_CORE_INLINE u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXPI u32 GetLowercaseCodepoint(u32 codepoint)
 {
 	if (codepoint >= 'A' && codepoint <= 'Z') { return 'a' + (codepoint - 'A'); }
 	return codepoint;
 }
-u32 GetUppercaseCodepoint(u32 codepoint)
+PEXPI u32 GetUppercaseCodepoint(u32 codepoint)
 {
 	if (codepoint >= 'a' && codepoint <= 'z') { return 'A' + (codepoint - 'z'); }
 	return codepoint;
@@ -57,7 +79,7 @@ u32 GetUppercaseCodepoint(u32 codepoint)
 // +--------------------------------------------------------------+
 //returns number of bytes needed to store this codepoint in UTF-8 and stores the values in byteBufferOut if not nullptr
 //NOTE: byteBufferOut is assumed to be 4 bytes or greater and no null-terminating character is written to the buffer
-u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions)
+PEXP u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions)
 {
 	if (codepoint <= 0x7F)
 	{
@@ -119,7 +141,7 @@ u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions)
 //If an invalid encoding is detected then we return 0. If maxNumBytes == 0 then we return 0.
 //TODO: Should we accept characters that are technically valid but encoded in a larger number of bytes than needed?
 //      Like a 4-byte encoding of \0 would be dumb because it could cause non-null-terminated UTF-8 strings to become null terminated collapsed ASCII strings
-u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut) //somewhat tested
+PEXP u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut) //somewhat tested
 {
 	Assert(strPntr != nullptr || maxNumBytes == 0);
 	SetOptionalOutPntr(codepointOut, 0);
@@ -168,7 +190,7 @@ u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut) 
 
 //Using the startIndex as a known max length to walk backwards this function will look backwards through a string until it finds a full encoded character
 //Returns the number of bytes that encoded character took up and stores the codepoint for it in codepointOut
-u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOut)
+PEXP u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOut)
 {
 	if (startIndex == 0) { return 0; }
 	NotNull(strPntr);
@@ -226,7 +248,7 @@ u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOu
 }
 
 //Compares two characters for alphabetic order
-i32 CompareCodepoints(u32 codepoint1, u32 codepoint2)
+PEXP i32 CompareCodepoints(u32 codepoint1, u32 codepoint2)
 {
 	if (codepoint1 == codepoint2) { return 0; }
 	u32 majorClass1 = 0;
@@ -250,7 +272,7 @@ i32 CompareCodepoints(u32 codepoint1, u32 codepoint2)
 	else { return 0; }
 }
 
-bool DoesNtStrContainMultibyteUtf8Chars(const char* nullTermStr)
+PEXP bool DoesNtStrContainMultibyteUtf8Chars(const char* nullTermStr)
 {
 	for (uxx bIndex = 0; nullTermStr[bIndex] != '\0'; bIndex++)
 	{
@@ -268,7 +290,7 @@ bool DoesNtStrContainMultibyteUtf8Chars(const char* nullTermStr)
 // +--------------------------------------------------------------+
 //returns number of 16-bit words needed to store this codepoint in UCS-2 and stores the values in wordBufferOut if not nullptr
 //NOTE: wordBufferOut is assumed to be 2 words or greater and no null-terminating character is written to the buffer
-u8 GetUcs2WordsForCode(u32 codepoint, u16* wordBufferOut, bool doAssertions) //untested
+PEXP u8 GetUcs2WordsForCode(u32 codepoint, u16* wordBufferOut, bool doAssertions) //untested
 {
 	if (codepoint >= 0x0000 && codepoint <= 0xD7FF)
 	{
@@ -294,7 +316,7 @@ u8 GetUcs2WordsForCode(u32 codepoint, u16* wordBufferOut, bool doAssertions) //u
 	}
 }
 
-u8 GetCodepointForUcs2(u64 maxNumWords, const u16* strPntr, u32* codepointOut)
+PEXP u8 GetCodepointForUcs2(u64 maxNumWords, const u16* strPntr, u32* codepointOut)
 {
 	UNUSED(maxNumWords);
 	UNUSED(strPntr);
@@ -307,20 +329,22 @@ u8 GetCodepointForUcs2(u64 maxNumWords, const u16* strPntr, u32* codepointOut)
 // |                     Bespoke Conversions                      |
 // +--------------------------------------------------------------+
 // Works on all alphanumeric characters
-u32 GetMonospaceCodepointFor(u32 codepoint)
+PEXPI u32 GetMonospaceCodepointFor(u32 codepoint)
 {
 	if (codepoint >= 'A' && codepoint <= 'Z') { return 0x1D670 + (codepoint - 'A'); }
 	if (codepoint >= 'a' && codepoint <= 'z') { return 0x1D68A + (codepoint - 'a'); }
 	if (codepoint >= '0' && codepoint <= '9') { return 0x1D7F6 + (codepoint - '0'); }
 	return 0;
 }
-u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint)
+PEXPI u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint)
 {
 	if (monospaceCodepoint >= 0x1D670 && monospaceCodepoint <= 0x1D689) { return CharToU32('A') + (monospaceCodepoint - 0x1D670); }
 	if (monospaceCodepoint >= 0x1D68A && monospaceCodepoint <= 0x1D6A3) { return CharToU32('a') + (monospaceCodepoint - 0x1D68A); }
 	if (monospaceCodepoint >= 0x1D7F6 && monospaceCodepoint <= 0x1D7FF) { return CharToU32('0') + (monospaceCodepoint - 0x1D7F6); }
 	return 0;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _BASE_UNICODE_H
 

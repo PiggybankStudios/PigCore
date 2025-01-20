@@ -17,8 +17,21 @@ Description:
 #include "mem/mem_scratch.h"
 #include "os/os_path.h"
 
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	FilePath OsGetExecutablePath(Arena* arena, Result* resultOut);
+	FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
 // Always returns path with forward slashes and null-terminating char (unless it fails, then it returns FilePath_Empty)
-FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
+PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 {
 	NotNull(arena);
 	SetOptionalOutPntr(resultOut, Result_None);
@@ -96,7 +109,7 @@ FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 
 // Always returns path with forward slashes
 // Guarantees that the path ends with a forward slash
-FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
+PEXP FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
 {
 	NotNull(arena);
 	SetOptionalOutPntr(resultOut, Result_None);
@@ -157,5 +170,7 @@ FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
 	
 	return resultPath;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_PROGRAM_H

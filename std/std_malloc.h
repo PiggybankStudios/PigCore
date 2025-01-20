@@ -43,9 +43,15 @@ Description:
 #define MyFree(pntr) pdrealloc((pntr), 0)
 
 #if PLAYDATE_DEVICE
-void* _malloc_r(struct _reent* _REENT, size_t nbytes) { return pdrealloc(NULL,nbytes); }
-void* _realloc_r(struct _reent* _REENT, void* ptr, size_t nbytes) { return pdrealloc(ptr,nbytes); }
-void _free_r(struct _reent* _REENT, void* ptr ) { if ( ptr != NULL ) pdrealloc(ptr,0); }
+	#if PIG_CORE_IMPLEMENTATION
+	void* _malloc_r(struct _reent* _REENT, size_t nbytes) { return pdrealloc(NULL,nbytes); }
+	void* _realloc_r(struct _reent* _REENT, void* ptr, size_t nbytes) { return pdrealloc(ptr,nbytes); }
+	void _free_r(struct _reent* _REENT, void* ptr ) { if ( ptr != NULL ) pdrealloc(ptr,0); }
+	#else
+	PEXP void* _malloc_r(struct _reent* _REENT, size_t nbytes);
+	PEXP void* _realloc_r(struct _reent* _REENT, void* ptr, size_t nbytes);
+	PEXP void _free_r(struct _reent* _REENT, void* ptr );
+	#endif
 #endif //PLAYDATE_DEVICE
 
 // +--------------------------------------------------------------+

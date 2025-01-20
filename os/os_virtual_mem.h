@@ -23,7 +23,22 @@ Description:
 #define WASM_PROTECTED_SIZE        1024       //1kB at start of wasm memory should be unused and should never be written to
 #endif
 
-uxx OsGetMemoryPageSize()
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	uxx OsGetMemoryPageSize();
+	void* OsReserveMemory(uxx numBytes);
+	void OsCommitReservedMemory(void* memoryPntr, uxx numBytes);
+	void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXP uxx OsGetMemoryPageSize()
 {
 	#if TARGET_IS_WINDOWS
 	{
@@ -56,7 +71,7 @@ uxx OsGetMemoryPageSize()
 }
 
 //NOTE: numBytes MUST be a multiple of memory page size!
-void* OsReserveMemory(uxx numBytes)
+PEXP void* OsReserveMemory(uxx numBytes)
 {
 	void* result = nullptr;
 	uxx pageSize = OsGetMemoryPageSize();
@@ -99,7 +114,7 @@ void* OsReserveMemory(uxx numBytes)
 }
 
 //NOTE: numBytes must be a multiple of memory page size, and memoryPntr must be aligned to the beginning of a page
-void OsCommitReservedMemory(void* memoryPntr, uxx numBytes)
+PEXP void OsCommitReservedMemory(void* memoryPntr, uxx numBytes)
 {
 	if (numBytes == 0) { return; }
 	uxx pageSize = OsGetMemoryPageSize();
@@ -135,7 +150,7 @@ void OsCommitReservedMemory(void* memoryPntr, uxx numBytes)
 	#endif
 }
 
-void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
+PEXP void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 {
 	Assert((memoryPntr == nullptr) == (reservedSize == 0));
 	if (memoryPntr == nullptr) { return; }
@@ -167,5 +182,6 @@ void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 	#endif
 }
 
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_VIRTUAL_MEM_H

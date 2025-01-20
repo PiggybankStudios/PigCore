@@ -29,7 +29,7 @@ enum Result
 	Result_None = 0,
 	Result_Success,
 	Result_Failure,
-	Result_Unknown,
+	Result_Unknown, //TODO: This name conflicts with UNKNOWN_STR macro thats returned from the GetResultStr function!
 	Result_Finished,
 	
 	Result_EmptyPath,
@@ -41,7 +41,10 @@ enum Result
 	Result_Count,
 };
 
-const char* GetResultStr(Result result)
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetResultStr(Result result);
+#else
+PEXP const char* GetResultStr(Result result)
 {
 	switch (result)
 	{
@@ -58,5 +61,6 @@ const char* GetResultStr(Result result)
 		default: return UNKNOWN_STR;
 	}
 }
+#endif
 
 #endif //  _MISC_RESULT_H

@@ -11,13 +11,32 @@ Description:
 
 //NOTE: Intentionally no includes here
 
-u8 GetCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut)
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE u8 GetCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut);
+	bool DoesStrContainMultibyteUtf8Chars(Str8 str);
+	uxx FindNextCharInStrEx(Str8 target, uxx startIndex, Str8 searchCharsStr, bool ignoreCharsInQuotes);
+	PIG_CORE_INLINE uxx FindNextCharInStr(Str8 target, uxx startIndex, Str8 searchCharsStr);
+	uxx FindNextUnknownCharInStrEx(Str8 target, uxx startIndex, Str8 knownCharsStr, bool ignoreCharsInQuotes);
+	PIG_CORE_INLINE uxx FindNextUnknownCharInStr(Str8 target, uxx startIndex, Str8 knownCharsStr);
+	PIG_CORE_INLINE uxx FindNextWhitespaceInStrEx(Str8 target, uxx startIndex, bool ignoreCharsInQuotes);
+	PIG_CORE_INLINE bool FindNextWhitespaceInStr(Str8 target, uxx startIndex);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXPI u8 GetCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut)
 {
 	Assert(index <= str.length);
 	return GetCodepointForUtf8(str.length - index, str.chars + index, codepointOut);
 }
 
-bool DoesStrContainMultibyteUtf8Chars(Str8 str)
+PEXP bool DoesStrContainMultibyteUtf8Chars(Str8 str)
 {
 	for (uxx bIndex = 0; bIndex < str.length; bIndex++)
 	{
@@ -27,7 +46,7 @@ bool DoesStrContainMultibyteUtf8Chars(Str8 str)
 }
 
 //Returns target.length if no matching char is found
-uxx FindNextCharInStrEx(Str8 target, uxx startIndex, Str8 searchCharsStr, bool ignoreCharsInQuotes)
+PEXP uxx FindNextCharInStrEx(Str8 target, uxx startIndex, Str8 searchCharsStr, bool ignoreCharsInQuotes)
 {
 	NotNullStr(target);
 	Assert(startIndex <= target.length);
@@ -59,9 +78,9 @@ uxx FindNextCharInStrEx(Str8 target, uxx startIndex, Str8 searchCharsStr, bool i
 	}
 	return target.length;
 }
-uxx FindNextCharInStr(Str8 target, uxx startIndex, Str8 searchCharsStr) { return FindNextCharInStrEx(target, startIndex, searchCharsStr, false); }
+PEXPI uxx FindNextCharInStr(Str8 target, uxx startIndex, Str8 searchCharsStr) { return FindNextCharInStrEx(target, startIndex, searchCharsStr, false); }
 
-uxx FindNextUnknownCharInStrEx(Str8 target, uxx startIndex, Str8 knownCharsStr, bool ignoreCharsInQuotes)
+PEXP uxx FindNextUnknownCharInStrEx(Str8 target, uxx startIndex, Str8 knownCharsStr, bool ignoreCharsInQuotes)
 {
 	NotNullStr(target);
 	Assert(startIndex <= target.length);
@@ -99,12 +118,14 @@ uxx FindNextUnknownCharInStrEx(Str8 target, uxx startIndex, Str8 knownCharsStr, 
 	}
 	return target.length;
 }
-uxx FindNextUnknownCharInStr(Str8 target, uxx startIndex, Str8 knownCharsStr) { return FindNextUnknownCharInStrEx(target, startIndex, knownCharsStr, false); }
+PEXPI uxx FindNextUnknownCharInStr(Str8 target, uxx startIndex, Str8 knownCharsStr) { return FindNextUnknownCharInStrEx(target, startIndex, knownCharsStr, false); }
 
-uxx FindNextWhitespaceInStrEx(Str8 target, uxx startIndex, bool ignoreCharsInQuotes)
+PEXPI uxx FindNextWhitespaceInStrEx(Str8 target, uxx startIndex, bool ignoreCharsInQuotes)
 {
 	return FindNextCharInStrEx(target, startIndex, StrLit(WHITESPACE_CHARS), ignoreCharsInQuotes);
 }
-bool FindNextWhitespaceInStr(Str8 target, uxx startIndex) { return FindNextWhitespaceInStrEx(target, startIndex, false); }
+PEXPI bool FindNextWhitespaceInStr(Str8 target, uxx startIndex) { return FindNextWhitespaceInStrEx(target, startIndex, false); }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _CROSS_STRING_AND_UNICODE_H

@@ -15,15 +15,39 @@ Description:
 #include "misc/misc_result.h"
 #include "mem/mem_scratch.h"
 
-thread_local Arena* StbImageScratchArena = nullptr;
+typedef struct ImageData ImageData;
+struct ImageData
+{
+	v2i size;
+	uxx numPixels;
+	u32* pixels;
+};
 
-void* StbImageMalloc(size_t numBytes)
+#if PIG_CORE_IMPLEMENTATION
+thread_local Arena* StbImageScratchArena = nullptr;
+#else
+extern thread_local Arena* StbImageScratchArena;
+#endif
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+static void* StbImageMalloc(size_t numBytes)
 {
 	NotNull(StbImageScratchArena);
 	return AllocMem(StbImageScratchArena, (uxx)numBytes);
 }
 
-void* StbImageRealloc(void* allocPntr, size_t oldNumBytes, size_t newNumBytes)
+static void* StbImageRealloc(void* allocPntr, size_t oldNumBytes, size_t newNumBytes)
 {
 	NotNull(StbImageScratchArena);
 	if (allocPntr == nullptr)
@@ -35,7 +59,7 @@ void* StbImageRealloc(void* allocPntr, size_t oldNumBytes, size_t newNumBytes)
 		return ReallocMem(StbImageScratchArena, allocPntr, (uxx)oldNumBytes, (uxx)newNumBytes);
 	}
 }
-void StbImageFree(void* allocPntr)
+static void StbImageFree(void* allocPntr)
 {
 	NotNull(StbImageScratchArena);
 	UNUSED(allocPntr);
@@ -57,7 +81,9 @@ void StbImageFree(void* allocPntr)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
 #endif
+
 #include "third_party/stb/stb_image.h"
+
 #if COMPILER_IS_MSVC
 #pragma warning(pop)
 #endif
@@ -65,15 +91,7 @@ void StbImageFree(void* allocPntr)
 #pragma clang diagnostic pop
 #endif
 
-typedef struct ImageData ImageData;
-struct ImageData
-{
-	v2i size;
-	uxx numPixels;
-	u32* pixels;
-};
-
-Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut)
+PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut)
 {
 	NotNullStr(fileContents);
 	NotNull(imageDataOut);
@@ -113,5 +131,7 @@ Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataO
 	
 	return Result_Success;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _GFX_IMAGE_LOADING_H

@@ -56,46 +56,26 @@ struct Str8Pair
 };
 
 // +--------------------------------------------------------------+
-// |                       Basic String API                       |
+// |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
-Str8 StrLit(const char* nullTermStr)
-{
-	Str8 result;
-	result.length = (nullTermStr != nullptr) ? (uxx)MyStrLength64(nullTermStr) : 0;
-	result.chars = (char*)nullTermStr; //throw away const qualifier
-	return result;
-}
-Str8 NewStr8(uxx length, const void* pntr)
-{
-	Str8 result;
-	result.length = length;
-	result.pntr = (void*)pntr; //throw away const qualifier
-	return result;
-}
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE Str8 StrLit(const char* nullTermStr);
+	PIG_CORE_INLINE Str8 NewStr8(uxx length, const void* pntr);
+	PIG_CORE_INLINE Str16 Str16Lit(const char16_t* nullTermStr);
+	PIG_CORE_INLINE Str16 NewStr16(uxx length, const void* pntr);
+	PIG_CORE_INLINE Str8Pair NewStr8Pair(Str8 left, Str8 right);
+	PIG_CORE_INLINE bool IsEmptyStr(Str8 string) { return (string.length == 0); };
+	PIG_CORE_INLINE bool IsNullStr(Str8 string) { return (string.length > 0 && string.pntr == nullptr); };
+	PIG_CORE_INLINE bool IsNullTerminated(Str8 string) { return (string.pntr != nullptr && string.chars[string.length] == '\0'); };
+	PIG_CORE_INLINE bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr);
+	Str8 TrimLeadingWhitespace(Str8 target);
+	Str8 TrimTrailingWhitespace(Str8 target);
+	PIG_CORE_INLINE Str8 TrimWhitespace(Str8 target);
+#endif //!PIG_CORE_IMPLEMENTATION
 
-Str16 Str16Lit(const char16_t* nullTermStr)
-{
-	Str16 result;
-	result.length = ((nullTermStr != nullptr) ? (uxx)MyWideStrLength(nullTermStr) : 0);
-	result.chars = (char16_t*)nullTermStr;
-	return result;
-}
-Str16 NewStr16(uxx length, const void* pntr)
-{
-	Str16 result;
-	result.length = length;
-	result.pntr = (void*)pntr; //throw away const qualifier
-	return result;
-}
-
-Str8Pair NewStr8Pair(Str8 left, Str8 right)
-{
-	Str8Pair result;
-	result.left = left;
-	result.right = right;
-	return result;
-}
-
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
 #define Str8_Empty       NewStr8(0, nullptr)
 #define Str8_Empty_Const ((Str8)ZEROED)
 
@@ -105,24 +85,11 @@ Str8Pair NewStr8Pair(Str8 left, Str8 right)
 #define Str8Pair_Empty       NewStr8Pair(MyStr_Empty_Const, MyStr_Empty_Const)
 #define Str8Pair_Empty_Const ((Str8Pair)ZEROED)
 
-bool IsEmptyStr(Str8 string) { return (string.length == 0); }
-bool IsNullStr(Str8 string) { return (string.length > 0 && string.pntr == nullptr); }
-bool IsNullTerminated(Str8 string) { return (string.pntr != nullptr && string.chars[string.length] == '\0'); }
-bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr)
-{
-	if (bufferPntr == nullptr) { return false; }
-	for (uxx bIndex = 0; bIndex < bufferSize; bIndex++) { if (((char*)bufferPntr)[bIndex] == '\0') { return true; } }
-	return false;
-}
-
 //NOTE: These are meant to be used when formatting Str8 using any printf like functions
 //      Use the format specifier %.*s and then this macro in the var-args
 #define StrPrint(string)   (int)(string).length, (string).chars
 #define StrPntrPrint(strPntr) (int)(strPntr)->length, (strPntr)->chars
 
-// +--------------------------------------------------------------+
-// |                      Assertion Helpers                       |
-// +--------------------------------------------------------------+
 #define AssertNullTerm(string)      Assert(IsNullTerminated(string))
 #define NotNullStr(string)          Assert(!IsNullStr(string))
 #define NotNullStrPntr(stringPntr)  Assert((stringPntr) != nullptr && !IsNullStr(*(stringPntr)))
@@ -143,9 +110,65 @@ bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr)
 #endif
 
 // +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                       Basic String API                       |
+// +--------------------------------------------------------------+
+PEXPI Str8 StrLit(const char* nullTermStr)
+{
+	Str8 result;
+	result.length = (nullTermStr != nullptr) ? (uxx)MyStrLength64(nullTermStr) : 0;
+	result.chars = (char*)nullTermStr; //throw away const qualifier
+	return result;
+}
+PEXPI Str8 NewStr8(uxx length, const void* pntr)
+{
+	Str8 result;
+	result.length = length;
+	result.pntr = (void*)pntr; //throw away const qualifier
+	return result;
+}
+
+PEXPI Str16 Str16Lit(const char16_t* nullTermStr)
+{
+	Str16 result;
+	result.length = ((nullTermStr != nullptr) ? (uxx)MyWideStrLength(nullTermStr) : 0);
+	result.chars = (char16_t*)nullTermStr;
+	return result;
+}
+PEXPI Str16 NewStr16(uxx length, const void* pntr)
+{
+	Str16 result;
+	result.length = length;
+	result.pntr = (void*)pntr; //throw away const qualifier
+	return result;
+}
+
+PEXPI Str8Pair NewStr8Pair(Str8 left, Str8 right)
+{
+	Str8Pair result;
+	result.left = left;
+	result.right = right;
+	return result;
+}
+
+PEXPI bool IsEmptyStr(Str8 string) { return (string.length == 0); }
+PEXPI bool IsNullStr(Str8 string) { return (string.length > 0 && string.pntr == nullptr); }
+PEXPI bool IsNullTerminated(Str8 string) { return (string.pntr != nullptr && string.chars[string.length] == '\0'); }
+PEXPI bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr)
+{
+	if (bufferPntr == nullptr) { return false; }
+	for (uxx bIndex = 0; bIndex < bufferSize; bIndex++) { if (((char*)bufferPntr)[bIndex] == '\0') { return true; } }
+	return false;
+}
+
+// +--------------------------------------------------------------+
 // |                 String Manipulation Helpers                  |
 // +--------------------------------------------------------------+
-Str8 TrimLeadingWhitespace(Str8 target)
+PEXP Str8 TrimLeadingWhitespace(Str8 target)
 {
 	NotNullStr(target);
 	Str8 result = target;
@@ -160,7 +183,7 @@ Str8 TrimLeadingWhitespace(Str8 target)
 	}
 	return result;
 }
-Str8 TrimTrailingWhitespace(Str8 target)
+PEXP Str8 TrimTrailingWhitespace(Str8 target)
 {
 	NotNullStr(target);
 	Str8 result = target;
@@ -175,7 +198,7 @@ Str8 TrimTrailingWhitespace(Str8 target)
 	return result;
 }
 
-Str8 TrimWhitespace(Str8 target)
+PEXPI Str8 TrimWhitespace(Str8 target)
 {
 	NotNullStr(target);
 	Str8 result = target;
@@ -267,6 +290,8 @@ Str8 TrimWhitespace(Str8 target)
 //TODO: const char* FormatRealTimeNt(const RealTime_t* realTime, MemArena_t* memArena, bool includeDayOfWeek = true, bool includeHourMinuteSecond = true, bool includeMonthDayYear = true)
 //TODO: Str8 FormatMilliseconds(uxx milliseconds, MemArena_t* memArena)
 //TODO: const char* FormatMillisecondsNt(uxx milliseconds, MemArena_t* memArena)
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_STRING_H
 

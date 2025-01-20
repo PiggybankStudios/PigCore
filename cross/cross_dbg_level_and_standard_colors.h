@@ -7,7 +7,21 @@ Date:   01\18\2025
 #ifndef _CROSS_DBG_LEVEL_AND_STANDARD_COLORS_H
 #define _CROSS_DBG_LEVEL_AND_STANDARD_COLORS_H
 
-Color32 GetDbgLevelTextColor(DbgLevel dbgLevel)
+//NOTE: Intentionally no includes here
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE Color32 GetDbgLevelTextColor(DbgLevel dbgLevel);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXPI Color32 GetDbgLevelTextColor(DbgLevel dbgLevel)
 {
 	switch (dbgLevel)
 	{
@@ -21,5 +35,7 @@ Color32 GetDbgLevelTextColor(DbgLevel dbgLevel)
 		default: return MonokaiWhite; break;
 	}
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _CROSS_DBG_LEVEL_AND_STANDARD_COLORS_H

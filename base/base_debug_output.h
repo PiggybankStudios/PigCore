@@ -85,11 +85,16 @@ typedef DEBUG_OUTPUT_HANDLER_DEF(DebugOutput_f);
 typedef DEBUG_PRINT_HANDLER_DEF(DebugPrint_f);
 
 #if DEBUG_OUTPUT_CALLBACK_GLOBAL
-DebugOutput_f* DebugOutputCallback = nullptr;
+extern DebugOutput_f* DebugOutputCallback;
 #endif //DEBUG_OUTPUT_CALLBACK_GLOBAL
 
+#if PIG_CORE_IMPLEMENTATION
+PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter);
+PEXP DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter);
+#else
 DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter);
 DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter);
+#endif
 
 //NOTE: Calling the level specific macros below is preferrable because they can be compile-time removed if one of the ENABLE defines above is false
 //      Using the ...At variants here will still guard against output of the debug string at runtime if the specific level is disabled but

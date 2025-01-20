@@ -58,7 +58,10 @@ enum ArenaType
 	ArenaType_Count,
 };
 //TODO: We should use piggen to generate this function!
-const char* GetArenaTypeStr(ArenaType arenaType)
+#if !PIG_CORE_IMPLEMENTATION
+PEXPI const char* GetArenaTypeStr(ArenaType arenaType);
+#else
+PIG_CORE_INLINE const char* GetArenaTypeStr(ArenaType arenaType)
 {
 	switch (arenaType)
 	{
@@ -76,6 +79,7 @@ const char* GetArenaTypeStr(ArenaType arenaType)
 		default: return UNKNOWN_STR;
 	};
 }
+#endif
 
 typedef struct Arena Arena; //TODO: Generate this forward declaration automatically?
 struct Arena
@@ -100,12 +104,59 @@ struct Arena
 	FreeFunc_f* freeFunc;
 };
 
-NODISCARD void* AllocMem(Arena* arena, uxx numBytes);
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	void InitArenaStdHeap(Arena* arenaOut);
+	void InitArenaAlias(Arena* arenaOut, Arena* sourceArena);
+	void InitArenaBuffer(Arena* arenaOut, void* bufferPntr, uxx bufferSize);
+	void InitArenaStack(Arena* arenaOut, uxx stackSize, Arena* sourceArena);
+	void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize);
+	void InitArenaStackWasm(Arena* arenaOut);
+	bool CanArenaCheckPntrFromArena(const Arena* arena);
+	bool CanArenaGetSize(const Arena* arena);
+	bool CanArenaAllocAligned(const Arena* arena);
+	bool CanArenaFree(const Arena* arena);
+	bool CanArenaResetToMark(const Arena* arena);
+	bool CanArenaSoftGrow(const Arena* arena);
+	bool CanArenaVerifyIntegrity(const Arena* arena);
+	bool IsPntrFromArena(const Arena* arena, const void* allocPntr);
+	uxx GetAllocSize(const Arena* arena, const void* allocPntr);
+	NODISCARD void* AllocMem(Arena* arena, uxx numBytes);
+	NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverride);
+	void FreeMem(Arena* arena, void* allocPntr, uxx allocSize);
+	void FreeMemNoSize(Arena* arena, void* allocPntr);
+	NODISCARD void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSize);
+	NODISCARD void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize);
+	NODISCARD PIG_CORE_INLINE uxx ArenaGetMark(Arena* arena);
+	PIG_CORE_INLINE void ArenaResetToMark(Arena* arena, uxx mark);
+	uxx ArenaSoftGrowBegin(const Arena* arena, const void* allocPntr, uxx allocSize);
+	PIG_CORE_INLINE uxx ArenaSoftGrowBeginNoSize(const Arena* arena, const void* allocPntr);
+	void ArenaSoftGrowEnd(Arena* arena, void* allocPntr, uxx allocSize, uxx newSpaceUsed);
+	PIG_CORE_INLINE void ArenaSoftGrowEndNoSize(Arena* arena, void* allocPntr, uxx newSpaceUsed);
+	bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)_Alignof(type))
+#define AllocTypeUnaligned(type, arenaPntr)         (type*)AllocMem(       (arenaPntr), (uxx)sizeof(type))
+#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
+#define AllocArrayUnaligned(type, arenaPntr, count) (type*)AllocMem(       (arenaPntr), (uxx)(sizeof(type) * (count)))
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes);
 
 // +--------------------------------------------------------------+
 // |                   Initialization Functions                   |
 // +--------------------------------------------------------------+
-void InitArenaStdHeap(Arena* arenaOut)
+PEXP void InitArenaStdHeap(Arena* arenaOut)
 {
 	NotNull(arenaOut);
 	ClearPointer(arenaOut);
@@ -115,7 +166,7 @@ void InitArenaStdHeap(Arena* arenaOut)
 	#endif
 }
 
-void InitArenaAlias(Arena* arenaOut, Arena* sourceArena)
+PEXP void InitArenaAlias(Arena* arenaOut, Arena* sourceArena)
 {
 	NotNull(arenaOut);
 	NotNull(sourceArena);
@@ -127,7 +178,7 @@ void InitArenaAlias(Arena* arenaOut, Arena* sourceArena)
 	arenaOut->sourceArena = sourceArena;
 }
 
-void InitArenaBuffer(Arena* arenaOut, void* bufferPntr, uxx bufferSize)
+PEXP void InitArenaBuffer(Arena* arenaOut, void* bufferPntr, uxx bufferSize)
 {
 	NotNull(arenaOut);
 	NotNull(bufferPntr);
@@ -141,7 +192,7 @@ void InitArenaBuffer(Arena* arenaOut, void* bufferPntr, uxx bufferSize)
 	arenaOut->size = bufferSize;
 }
 
-void InitArenaStack(Arena* arenaOut, uxx stackSize, Arena* sourceArena)
+PEXP void InitArenaStack(Arena* arenaOut, uxx stackSize, Arena* sourceArena)
 {
 	NotNull(arenaOut);
 	NotNull(sourceArena);
@@ -155,7 +206,7 @@ void InitArenaStack(Arena* arenaOut, uxx stackSize, Arena* sourceArena)
 	arenaOut->size = stackSize;
 }
 
-void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize)
+PEXP void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize)
 {
 	NotNull(arenaOut);
 	ClearPointer(arenaOut);
@@ -177,7 +228,7 @@ void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize)
 }
 
 #if USING_CUSTOM_STDLIB
-void InitArenaStackWasm(Arena* arenaOut)
+PEXP void InitArenaStackWasm(Arena* arenaOut)
 {
 	NotNull(arenaOut);
 	ClearPointer(arenaOut);
@@ -199,7 +250,7 @@ void InitArenaStackWasm(Arena* arenaOut)
 // +--------------------------------------------------------------+
 // |                      Capability Queries                      |
 // +--------------------------------------------------------------+
-bool CanArenaCheckPntrFromArena(const Arena* arena)
+PEXP bool CanArenaCheckPntrFromArena(const Arena* arena)
 {
 	DebugNotNull(arena);
 	switch (arena->type)
@@ -218,7 +269,7 @@ bool CanArenaCheckPntrFromArena(const Arena* arena)
 	}
 }
 
-bool CanArenaGetSize(const Arena* arena)
+PEXP bool CanArenaGetSize(const Arena* arena)
 {
 	DebugNotNull(arena);
 	switch (arena->type)
@@ -237,7 +288,7 @@ bool CanArenaGetSize(const Arena* arena)
 	}
 }
 
-bool CanArenaAllocAligned(const Arena* arena)
+PEXP bool CanArenaAllocAligned(const Arena* arena)
 {
 	DebugNotNull(arena);
 	switch (arena->type)
@@ -256,7 +307,7 @@ bool CanArenaAllocAligned(const Arena* arena)
 	}
 }
 
-bool CanArenaFree(const Arena* arena)
+PEXP bool CanArenaFree(const Arena* arena)
 {
 	DebugNotNull(arena);
 	switch (arena->type)
@@ -275,7 +326,7 @@ bool CanArenaFree(const Arena* arena)
 	}
 }
 
-bool CanArenaResetToMark(const Arena* arena)
+PEXP bool CanArenaResetToMark(const Arena* arena)
 {
 	DebugNotNull(arena);
 	switch (arena->type)
@@ -294,7 +345,7 @@ bool CanArenaResetToMark(const Arena* arena)
 	}
 }
 
-bool CanArenaSoftGrow(const Arena* arena)
+PEXP bool CanArenaSoftGrow(const Arena* arena)
 {
 	DebugNotNull(arena);
 	switch (arena->type)
@@ -313,7 +364,7 @@ bool CanArenaSoftGrow(const Arena* arena)
 	}
 }
 
-bool CanArenaVerifyIntegrity(const Arena* arena)
+PEXP bool CanArenaVerifyIntegrity(const Arena* arena)
 {
 	DebugNotNull(arena);
 	switch (arena->type)
@@ -337,7 +388,7 @@ bool CanArenaVerifyIntegrity(const Arena* arena)
 // +--------------------------------------------------------------+
 //TODO: This may be a bit misleading. If one arena sources it's memory from another one,
 //      they will both say the allocation is from them.
-bool IsPntrFromArena(const Arena* arena, const void* allocPntr)
+PEXP bool IsPntrFromArena(const Arena* arena, const void* allocPntr)
 {
 	DebugNotNull(arena);
 	Assert(CanArenaCheckPntrFromArena(arena));
@@ -358,7 +409,7 @@ bool IsPntrFromArena(const Arena* arena, const void* allocPntr)
 // +--------------------------------------------------------------+
 // |                Arena GetSize Implementations                 |
 // +--------------------------------------------------------------+
-uxx GetAllocSize(const Arena* arena, const void* allocPntr)
+PEXP uxx GetAllocSize(const Arena* arena, const void* allocPntr)
 {
 	DebugNotNull(arena);
 	NotNull(allocPntr);
@@ -371,7 +422,7 @@ uxx GetAllocSize(const Arena* arena, const void* allocPntr)
 // +--------------------------------------------------------------+
 // |               Arena Allocation Implementations               |
 // +--------------------------------------------------------------+
-NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverride)
+NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverride)
 {
 	DebugNotNull(arena);
 	
@@ -577,20 +628,15 @@ NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverrid
 	
 	return result;
 }
-NODISCARD void* AllocMem(Arena* arena, uxx numBytes) //pre-declared at top of file
+NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes) //pre-declared at top of file
 {
 	return AllocMemAligned(arena, numBytes, UINTXX_MAX);
 }
 
-#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)_Alignof(type))
-#define AllocTypeUnaligned(type, arenaPntr)         (type*)AllocMem(       (arenaPntr), (uxx)sizeof(type))
-#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
-#define AllocArrayUnaligned(type, arenaPntr, count) (type*)AllocMem(       (arenaPntr), (uxx)(sizeof(type) * (count)))
-
 // +--------------------------------------------------------------+
 // |                  Arena Free Implementations                  |
 // +--------------------------------------------------------------+
-void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
+PEXP void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 {
 	DebugNotNull(arena);
 	if (allocPntr == nullptr && !IsFlagSet(arena->flags, ArenaFlag_AllowNullptrFree)) { AssertMsg(allocPntr != nullptr, "Tried to free nullptr from Arena!"); return; }
@@ -744,7 +790,7 @@ void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 		} break;
 	}
 }
-void FreeMemNoSize(Arena* arena, void* allocPntr)
+PEXP void FreeMemNoSize(Arena* arena, void* allocPntr)
 {
 	FreeMem(arena, allocPntr, 0);
 }
@@ -753,7 +799,7 @@ void FreeMemNoSize(Arena* arena, void* allocPntr)
 // |                Arena Realloc Implementations                 |
 // +--------------------------------------------------------------+
 //TODO: Should we have alignment option here?
-NODISCARD void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSize)
+NODISCARD PEXP void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSize)
 {
 	DebugNotNull(arena);
 	NotNull(allocPntr);
@@ -923,7 +969,7 @@ NODISCARD void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSi
 	
 	return result;
 }
-NODISCARD void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize)
+NODISCARD PEXP void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize)
 {
 	return ReallocMem(arena, allocPntr, 0, newSize);
 }
@@ -931,7 +977,7 @@ NODISCARD void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize)
 // +--------------------------------------------------------------+
 // |                Arena Push/Pop Implementations                |
 // +--------------------------------------------------------------+
-NODISCARD uxx ArenaGetMark(Arena* arena)
+NODISCARD PEXPI uxx ArenaGetMark(Arena* arena)
 {
 	DebugNotNull(arena);
 	Assert(CanArenaResetToMark(arena));
@@ -945,7 +991,7 @@ NODISCARD uxx ArenaGetMark(Arena* arena)
 		default: AssertMsg(false, "Arena type does not have a ArenaGetMark implementation!"); return 0;
 	}
 }
-void ArenaResetToMark(Arena* arena, uxx mark)
+PEXPI void ArenaResetToMark(Arena* arena, uxx mark)
 {
 	DebugNotNull(arena);
 	Assert(CanArenaResetToMark(arena));
@@ -988,7 +1034,7 @@ void ArenaResetToMark(Arena* arena, uxx mark)
 // Returns the amount of room that is available immediately following the allocation
 // Any value <= to the returned value here can be passed to SoftGrowEnd and is guaranteed to succeed
 // (assuming no new allocations happened in-between soft grow begin/end)
-uxx ArenaSoftGrowBegin(const Arena* arena, const void* allocPntr, uxx allocSize)
+PEXP uxx ArenaSoftGrowBegin(const Arena* arena, const void* allocPntr, uxx allocSize)
 {
 	DebugNotNull(arena);
 	Assert(CanArenaSoftGrow(arena));
@@ -1000,13 +1046,13 @@ uxx ArenaSoftGrowBegin(const Arena* arena, const void* allocPntr, uxx allocSize)
 }
 // The size can be assumed in some arenas, by choosing to not pass a size you accept
 // some arenas returning 0 because they cannot determine the size of the allocation
-uxx ArenaSoftGrowBeginNoSize(const Arena* arena, const void* allocPntr)
+PEXPI uxx ArenaSoftGrowBeginNoSize(const Arena* arena, const void* allocPntr)
 {
 	return ArenaSoftGrowBegin(arena, allocPntr, 0);
 }
 
 // This will Assert if the newSpaceUsed value is invalid!
-void ArenaSoftGrowEnd(Arena* arena, void* allocPntr, uxx allocSize, uxx newSpaceUsed)
+PEXP void ArenaSoftGrowEnd(Arena* arena, void* allocPntr, uxx allocSize, uxx newSpaceUsed)
 {
 	DebugNotNull(arena);
 	UNUSED(arena);
@@ -1015,7 +1061,7 @@ void ArenaSoftGrowEnd(Arena* arena, void* allocPntr, uxx allocSize, uxx newSpace
 	UNUSED(newSpaceUsed);
 	//TODO: Implement me!
 }
-void ArenaSoftGrowEndNoSize(Arena* arena, void* allocPntr, uxx newSpaceUsed)
+PEXPI void ArenaSoftGrowEndNoSize(Arena* arena, void* allocPntr, uxx newSpaceUsed)
 {
 	ArenaSoftGrowEnd(arena, allocPntr, 0, newSpaceUsed);
 }
@@ -1023,7 +1069,7 @@ void ArenaSoftGrowEndNoSize(Arena* arena, void* allocPntr, uxx newSpaceUsed)
 // +--------------------------------------------------------------+
 // |            Arena VerifyIntegrity Implementations             |
 // +--------------------------------------------------------------+
-bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure)
+PEXP bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure)
 {
 	DebugNotNull(arena);
 	UNUSED(arena);
@@ -1031,6 +1077,8 @@ bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure)
 	//TODO: Implement me!
 	return false;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MEM_ARENA_H
 

@@ -24,42 +24,81 @@ Description:
 #define WHITESPACE_CHARS_EX   " \t\r\n"
 #define WHITESPACE_CHARS      " \t"
 
-char ToLowerChar(char c)
+#ifdef IsCharAlphaNumeric
+//NOTE: winuser.h defines this macro as an alias for IsCharAlphaNumericA or IsCharAlphaNumericW
+#undef IsCharAlphaNumeric
+#endif
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE char ToLowerChar(char c);
+	PIG_CORE_INLINE char ToUpperChar(char c);
+	PIG_CORE_INLINE u8 CharToU8(char c);
+	PIG_CORE_INLINE u32 CharToU32(char c);
+	PIG_CORE_INLINE char GetHexChar(u8 hexValue, bool upperCase);
+	PIG_CORE_INLINE u8 GetUpperNibble(u8 value);
+	PIG_CORE_INLINE u8 GetLowerNibble(u8 value);
+	PIG_CORE_INLINE u8 GetHexCharValue(char hexChar);
+	PIG_CORE_INLINE bool IsCharNumeric(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharHexadecimal(u32 codepoint);
+	PIG_CORE_INLINE bool AreCharsHexidecimal(u64 numChars, char* charsPntr);
+	PIG_CORE_INLINE bool IsCharAlphabetic(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharLowercaseAlphabet(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharUppercaseAlphabet(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharWhitespace(u32 codepoint, bool includeNewLines);
+	PIG_CORE_INLINE bool IsCharAnsii(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharRenderableAnsii(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharExtendedAnsii(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharAlphaNumeric(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharSyntax(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharPunctuationStart(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharPunctuationEnd(u32 codepoint);
+	bool IsValidIdentifier(uxx strLength, const char* strPntr, bool allowEmpty, bool allowDashes, bool allowSpaces);
+#endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXPI char ToLowerChar(char c)
 {
 	if (c >= 'A' && c <= 'Z') { return 'a' + (c - 'A'); }
 	return c;
 }
-char ToUpperChar(char c)
+PEXPI char ToUpperChar(char c)
 {
 	if (c >= 'a' && c <= 'z') { return 'A' + (c - 'a'); }
 	return c;
 }
 
-u8 CharToU8(char c)
+PEXPI u8 CharToU8(char c)
 {
 	return *((u8*)&c);
 }
-u32 CharToU32(char c)
+PEXPI u32 CharToU32(char c)
 {
 	return (u32)(*((u8*)&c));
 }
 
-char GetHexChar(u8 hexValue, bool upperCase)
+PEXPI char GetHexChar(u8 hexValue, bool upperCase)
 {
 	if (hexValue <= 9) { return '0' + hexValue; }
 	else if (hexValue < 16) { return (upperCase ? 'A' : 'a') + (hexValue - 10); }
 	else { return '?'; }
 }
-u8 GetUpperNibble(u8 value)
+PEXPI u8 GetUpperNibble(u8 value)
 {
 	return ((value & 0xF0) >> 4);
 }
-u8 GetLowerNibble(u8 value)
+PEXPI u8 GetLowerNibble(u8 value)
 {
 	return ((value & 0x0F) >> 0);
 }
 
-u8 GetHexCharValue(char hexChar)
+PEXPI u8 GetHexCharValue(char hexChar)
 {
 	if (hexChar >= '0' && hexChar <= '9')
 	{
@@ -77,17 +116,17 @@ u8 GetHexCharValue(char hexChar)
 }
 
 
-bool IsCharNumeric(u32 codepoint)
+PEXPI bool IsCharNumeric(u32 codepoint)
 {
 	return (codepoint >= '0' && codepoint <= '9');
 }
-bool IsCharHexadecimal(u32 codepoint)
+PEXPI bool IsCharHexadecimal(u32 codepoint)
 {
 	return ((codepoint >= '0' && codepoint <= '9') ||
 		(codepoint >= 'A' && codepoint <= 'F') ||
 		(codepoint >= 'a' && codepoint <= 'f'));
 }
-bool AreCharsHexidecimal(u64 numChars, char* charsPntr)
+PEXPI bool AreCharsHexidecimal(u64 numChars, char* charsPntr)
 {
 	if (numChars > 0) { Assert(charsPntr != nullptr); }
 	for (u64 cIndex = 0; cIndex < numChars; cIndex++)
@@ -96,21 +135,21 @@ bool AreCharsHexidecimal(u64 numChars, char* charsPntr)
 	}
 	return true;
 }
-bool IsCharAlphabetic(u32 codepoint)
+PEXPI bool IsCharAlphabetic(u32 codepoint)
 {
 	if (codepoint >= 'a' && codepoint <= 'z') { return true; }
 	else if (codepoint >= 'A' && codepoint <= 'Z') { return true; }
 	else { return false; }
 }
-bool IsCharLowercaseAlphabet(u32 codepoint)
+PEXPI bool IsCharLowercaseAlphabet(u32 codepoint)
 {
 	return (codepoint >= 'a' && codepoint <= 'z');
 }
-bool IsCharUppercaseAlphabet(u32 codepoint)
+PEXPI bool IsCharUppercaseAlphabet(u32 codepoint)
 {
 	return (codepoint >= 'A' && codepoint <= 'Z');
 }
-bool IsCharWhitespace(u32 codepoint, bool includeNewLines)
+PEXPI bool IsCharWhitespace(u32 codepoint, bool includeNewLines)
 {
 	if (codepoint == ' ') { return true; }
 	else if (codepoint == '\t') { return true; }
@@ -118,40 +157,36 @@ bool IsCharWhitespace(u32 codepoint, bool includeNewLines)
 	else if (codepoint == '\r' && includeNewLines) { return true; }
 	else { return false; }
 }
-bool IsCharAnsii(u32 codepoint)
+PEXPI bool IsCharAnsii(u32 codepoint)
 {
 	return (codepoint < 128);
 }
-bool IsCharRenderableAnsii(u32 codepoint)
+PEXPI bool IsCharRenderableAnsii(u32 codepoint)
 {
 	return (codepoint >= ' ' && codepoint <= '~');
 }
-bool IsCharExtendedAnsii(u32 codepoint)
+PEXPI bool IsCharExtendedAnsii(u32 codepoint)
 {
 	return (codepoint <= 255);
 }
-#ifdef IsCharAlphaNumeric
-//NOTE: winuser.h defines this macro as an alias for IsCharAlphaNumericA or IsCharAlphaNumericW
-#undef IsCharAlphaNumeric
-#endif
-bool IsCharAlphaNumeric(u32 codepoint)
+PEXPI bool IsCharAlphaNumeric(u32 codepoint)
 {
 	return (IsCharAlphabetic(codepoint) || IsCharNumeric(codepoint));
 }
-bool IsCharSyntax(u32 codepoint)
+PEXPI bool IsCharSyntax(u32 codepoint)
 {
 	return (IsCharRenderableAnsii(codepoint) && !IsCharAlphaNumeric(codepoint));
 }
-bool IsCharPunctuationStart(u32 codepoint)
+PEXPI bool IsCharPunctuationStart(u32 codepoint)
 {
 	return (codepoint == '(' || codepoint == '[' || codepoint == '<' || codepoint == '{' || codepoint == '"');
 }
-bool IsCharPunctuationEnd(u32 codepoint)
+PEXPI bool IsCharPunctuationEnd(u32 codepoint)
 {
 	return (codepoint == ')' || codepoint == ']' || codepoint == '>' || codepoint == '}' || codepoint == '"');
 }
 
-bool IsValidIdentifier(uxx strLength, const char* strPntr, bool allowEmpty, bool allowDashes, bool allowSpaces)
+PEXP bool IsValidIdentifier(uxx strLength, const char* strPntr, bool allowEmpty, bool allowDashes, bool allowSpaces)
 {
 	Assert(strPntr != nullptr || strLength == 0);
 	if (strLength == 0) { return allowEmpty; }
@@ -189,5 +224,7 @@ bool IsValidIdentifier(uxx strLength, const char* strPntr, bool allowEmpty, bool
 	
 	return true;
 }
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _BASE_CHAR_H
