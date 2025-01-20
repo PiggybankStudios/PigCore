@@ -24,6 +24,8 @@ Description:
 #ifndef _BASE_DBG_LEVEL_H
 #define _BASE_DBG_LEVEL_H
 
+#include "base/base_defines_check.h"
+
 typedef enum DbgLevel DbgLevel;
 enum DbgLevel
 {

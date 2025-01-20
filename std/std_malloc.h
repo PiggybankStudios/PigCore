@@ -10,6 +10,7 @@ Description:
 #define _STD_MEMORY_H
 
 #include "base/base_compiler_check.h"
+#include "base/base_defines_check.h"
 #include "std/std_includes.h"
 
 // +--------------------------------------------------------------+

@@ -7,6 +7,7 @@ Date:   01\19\2025
 #ifndef _GFX_ALL_H
 #define _GFX_ALL_H
 
+#include "base/base_defines_check.h" //required by all the other files
 #include "base/base_typedefs.h" //required by gfx_image_loading.h
 #include "struct/struct_vectors.h" //required by gfx_image_loading.h
 #include "misc/misc_result.h" //required by gfx_image_loading.h

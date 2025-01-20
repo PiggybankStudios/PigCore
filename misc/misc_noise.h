@@ -7,6 +7,7 @@ Date:   01\15\2025
 #ifndef _MISC_NOISE_H
 #define _MISC_NOISE_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "struct/struct_vectors.h"
 #include "std/std_trig.h"

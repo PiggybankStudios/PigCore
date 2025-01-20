@@ -7,6 +7,7 @@ Date:   01\05\2025
 #ifndef _STD_BASIC_MATH_H
 #define _STD_BASIC_MATH_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "std/std_includes.h"

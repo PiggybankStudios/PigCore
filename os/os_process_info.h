@@ -10,6 +10,7 @@ Description:
 #ifndef _OS_PROGRAM_H
 #define _OS_PROGRAM_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "misc/misc_result.h"

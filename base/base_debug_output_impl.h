@@ -12,6 +12,7 @@ Description:
 #ifndef _BASE_DEBUG_OUTPUT_IMPL_H
 #define _BASE_DEBUG_OUTPUT_IMPL_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_dbg_level.h"

@@ -10,6 +10,7 @@ Description:
 #ifndef _GFX_IMAGE_LOADING_H
 #define _GFX_IMAGE_LOADING_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "struct/struct_vectors.h"
 #include "misc/misc_result.h"

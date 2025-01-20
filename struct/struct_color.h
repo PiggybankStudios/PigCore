@@ -10,6 +10,9 @@ Description:
 #ifndef _STRUCT_COLOR_H
 #define _STRUCT_COLOR_H
 
+#include "base/base_defines_check.h"
+#include "base/base_typedefs.h"
+
 //NOTE: The name "Color" conflicts with a definition in <windows.h>
 typedef struct Color32 Color32;
 struct Color32

@@ -9,6 +9,7 @@ Description:
 #ifndef _MISC_PRINTING_H
 #define _MISC_PRINTING_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "std/std_printf.h"

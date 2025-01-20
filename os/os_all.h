@@ -11,7 +11,8 @@ Description:
 #ifndef _OS_ALL_H
 #define _OS_ALL_H
 
-#include "base/base_compiler_check.h" //required by os_error.h and os_virtual_mem.h
+#include "base/base_compiler_check.h" //required by all the other files
+#include "base/base_defines_check.h" //required by all the other files
 #include "base/base_typedefs.h" //required by os_error.h, os_virtual_mem.h, os_file.h and os_process_info.h
 #include "base/base_macros.h" //required by os_error.h, os_virtual_mem.h, os_path.h and os_file.h
 #include "std/std_includes.h" //required by os_error.h, os_virtual_mem.h, os_path.h, os_file.h and os_process_info.h

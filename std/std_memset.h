@@ -30,7 +30,11 @@ Description:
 	#define MyWideStrLength32(str)         ((u32)wcslen(str))
 	#define MyWideStrLength64(str)         ((u64)wcslen(str))
 #else
-	PIG_CORE_INLINE size_t MyWideStrLength(const char16_t* str) { size_t result = 0; while (str[result] != 0) { result++; } return result; }
+	#if !PIG_CORE_IMPLEMENTATION
+	size_t MyWideStrLength(const char16_t* str);
+	#else
+	PEXPI size_t MyWideStrLength(const char16_t* str) { size_t result = 0; while (str[result] != 0) { result++; } return result; }
+	#endif
 	#define MyWideStrLength32(str) ((u32)MyWideStrLength(str))
 	#define MyWideStrLength64(str) ((u64)MyWideStrLength(str))
 #endif

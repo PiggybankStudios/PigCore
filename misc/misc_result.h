@@ -21,6 +21,7 @@ Description:
 #ifndef _MISC_RESULT_H
 #define _MISC_RESULT_H
 
+#include "base/base_defines_check.h"
 #include "base/base_macros.h"
 
 typedef enum Result Result;

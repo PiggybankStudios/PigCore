@@ -13,6 +13,7 @@ Description:
 #ifndef _STRUCT_STRING_H
 #define _STRUCT_STRING_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"

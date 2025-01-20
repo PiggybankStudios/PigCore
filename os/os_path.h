@@ -13,6 +13,7 @@ Description:
 #ifndef _OS_PATH_H
 #define _OS_PATH_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "base/base_assert.h"

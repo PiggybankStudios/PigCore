@@ -11,6 +11,7 @@ Other Page: https://peteroupc.github.io/random.html#Existing_RNG_APIs_in_Program
 #ifndef _MISC_RANDOM_H
 #define _MISC_RANDOM_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"

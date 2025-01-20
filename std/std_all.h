@@ -12,6 +12,7 @@ Description:
 #define _STD_ALL_H
 
 #include "base/base_compiler_check.h" //required by all the other files
+#include "base/base_defines_check.h" //required by all the other files
 
 #include "std/std_includes.h"
 

@@ -23,6 +23,7 @@ Description:
 #ifndef _MEM_SCRATCH_H
 #define _MEM_SCRATCH_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"

@@ -10,6 +10,7 @@ Description:
 #define _STD_PRINTF_H
 
 #include "base/base_compiler_check.h"
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 

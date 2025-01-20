@@ -11,6 +11,7 @@ Description:
 #ifndef _MISC_STANDARD_COLORS_H
 #define _MISC_STANDARD_COLORS_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "struct/struct_color.h"
 

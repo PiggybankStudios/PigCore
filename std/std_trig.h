@@ -7,6 +7,7 @@ Date:   01\05\2025
 #ifndef _STD_TRIG_H
 #define _STD_TRIG_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 

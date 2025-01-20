@@ -9,6 +9,7 @@ Description:
 #ifndef _MISC_HASH_H
 #define _MISC_HASH_H
 
+#include "base/base_compiler_check.h"
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 
@@ -44,11 +45,11 @@ union Hash128
 	PIG_CORE_INLINE u16 FnvHashU16(const void* bufferPntr, u64 numBytes);
 	PIG_CORE_INLINE u8 FnvHashU8(const void* bufferPntr, u64 numBytes);
 	#if MEOW_HASH_AVAILABLE
-	PIG_CORE_INLINE Hash128 MeowHash128(const void* bufferPntr, u64 numBytes);
-	PIG_CORE_INLINE u64 MeowHashU64(const void* bufferPntr, u64 numBytes);
-	PIG_CORE_INLINE u32 MeowHashU32(const void* bufferPntr, u64 numBytes);
-	PIG_CORE_INLINE u16 MeowHashU16(const void* bufferPntr, u64 numBytes);
-	PIG_CORE_INLINE u8 MeowHashU8(const void* bufferPntr, u64 numBytes);
+	Hash128 MeowHash128(const void* bufferPntr, u64 numBytes);
+	u64 MeowHashU64(const void* bufferPntr, u64 numBytes);
+	u32 MeowHashU32(const void* bufferPntr, u64 numBytes);
+	u16 MeowHashU16(const void* bufferPntr, u64 numBytes);
+	u8 MeowHashU8(const void* bufferPntr, u64 numBytes);
 	#endif //MEOW_HASH_AVAILABLE
 #endif //!PIG_CORE_IMPLEMENTATION
 
@@ -88,7 +89,7 @@ PEXPI u8 FnvHashU8(const void* bufferPntr, u64 numBytes) { return (u8)FnvHashU64
 
 #include "third_party/meow_hash/meow_hash_x64_aesni.h"
 
-PEXPI Hash128 MeowHash128(const void* bufferPntr, u64 numBytes)
+PEXP Hash128 MeowHash128(const void* bufferPntr, u64 numBytes)
 {
 	Assert(numBytes == 0 || bufferPntr != nullptr);
 	meow_u128 hash128 = MeowHash(MeowDefaultSeed, numBytes, (void*)bufferPntr);
@@ -97,25 +98,25 @@ PEXPI Hash128 MeowHash128(const void* bufferPntr, u64 numBytes)
 	result.halves[1] = MeowU64From(hash128, 1);
 	return result;
 }
-PEXPI u64 MeowHashU64(const void* bufferPntr, u64 numBytes)
+PEXP u64 MeowHashU64(const void* bufferPntr, u64 numBytes)
 {
 	Assert(numBytes == 0 || bufferPntr != nullptr);
 	meow_u128 hash128 = MeowHash(MeowDefaultSeed, numBytes, (void*)bufferPntr);
 	return MeowU64From(hash128, 0);
 }
-PEXPI u32 MeowHashU32(const void* bufferPntr, u64 numBytes)
+PEXP u32 MeowHashU32(const void* bufferPntr, u64 numBytes)
 {
 	Assert(numBytes == 0 || bufferPntr != nullptr);
 	meow_u128 hash128 = MeowHash(MeowDefaultSeed, numBytes, (void*)bufferPntr);
 	return MeowU32From(hash128, 0);
 }
-PEXPI u16 MeowHashU16(const void* bufferPntr, u64 numBytes)
+PEXP u16 MeowHashU16(const void* bufferPntr, u64 numBytes)
 {
 	Assert(numBytes == 0 || bufferPntr != nullptr);
 	meow_u128 hash128 = MeowHash(MeowDefaultSeed, numBytes, (void*)bufferPntr);
 	return (u16)MeowU32From(hash128, 0);
 }
-PEXPI u8 MeowHashU8(const void* bufferPntr, u64 numBytes)
+PEXP u8 MeowHashU8(const void* bufferPntr, u64 numBytes)
 {
 	Assert(numBytes == 0 || bufferPntr != nullptr);
 	meow_u128 hash128 = MeowHash(MeowDefaultSeed, numBytes, (void*)bufferPntr);

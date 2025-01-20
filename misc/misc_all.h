@@ -7,6 +7,7 @@ Date:   01\05\2025
 #ifndef _MISC_ALL_H
 #define _MISC_ALL_H
 
+#include "base/base_defines_check.h" //required by all the other files
 #include "base/base_macros.h" //required by misc_result.h and misc_random.h
 
 #include "misc/misc_result.h"

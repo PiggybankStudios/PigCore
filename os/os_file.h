@@ -9,6 +9,7 @@ Description:
 #ifndef _OS_FILE_H
 #define _OS_FILE_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "struct/struct_string.h"

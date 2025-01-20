@@ -12,6 +12,7 @@ Description:
 #ifndef _STRUCT_QUATERNION_H
 #define _STRUCT_QUATERNION_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "struct/struct_vectors.h"

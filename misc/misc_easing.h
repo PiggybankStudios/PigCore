@@ -13,6 +13,7 @@ Description:
 #ifndef _MISC_EASING_H
 #define _MISC_EASING_H
 
+#include "base/base_defines_check.h"
 #include "std/std_trig.h"
 #include "std/std_basic_math.h"
 

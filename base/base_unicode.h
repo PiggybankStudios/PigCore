@@ -16,6 +16,7 @@ Description:
 #ifndef _BASE_UNICODE_H
 #define _BASE_UNICODE_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
 

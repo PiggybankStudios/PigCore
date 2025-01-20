@@ -14,6 +14,7 @@ Description:
 #ifndef _STD_ANGLES_H
 #define _STD_ANGLES_H
 
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_basic_math.h"
 
