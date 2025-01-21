@@ -92,9 +92,10 @@ set common_clang_flags=%common_clang_flags% -Wno-switch -Wno-unused-function
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths
 :: -lm = Include the math library (required for stuff like sinf, atan, etc.)
+:: -ldl = Needed for dlopen and similar functions
 :: -mssse3 = For MeowHash to work we need sse3 support
 :: -maes = For MeowHash to work we need aes support
-set linux_clang_flags=-lm -I "../%root%" -mssse3 -maes
+set linux_clang_flags=-lm -ldl -I "../%root%" -mssse3 -maes
 :: --target=wasm32 = ?
 :: -mbulk-memory = ?
 :: TODO: -Wl,--export-dynamic ?
@@ -174,25 +175,20 @@ set piggen_bin_path=piggen
 set piggen_cl_args=%common_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
 set piggen_clang_args=%common_clang_flags% %linux_clang_flags% -o %piggen_bin_path% ../%piggen_source_path%
 if "%BUILD_PIGGEN%"=="1" (
-	if "%BUILD_WINDOWS%"=="1" (
-		echo.
-		echo [Building piggen for Windows...]
-		del %piggen_exe_path% > NUL 2> NUL
-		cl %piggen_cl_args%
-		if "%DUMP_PREPROCESSOR%"=="1" (
-			COPY main.i piggen_preprocessed.i > NUL
-		)
-		echo [Built piggen for Windows!]
+	echo.
+	echo [Building piggen...]
+	del %piggen_exe_path% > NUL 2> NUL
+	cl %piggen_cl_args%
+	if "%DUMP_PREPROCESSOR%"=="1" (
+		COPY main.i piggen_preprocessed.i > NUL
 	)
-	if "%BUILD_LINUX%"=="1" (
-		echo.
-		echo [Building piggen for Linux...]
-		if not exist linux mkdir linux
-		pushd linux
-		wsl clang-18 %piggen_clang_args%
-		popd
-		echo [Built piggen for Linux!]
-	)
+	echo [Built piggen!]
+)
+
+if "%RUN_PIGGEN%"=="1" (
+	echo.
+	echo [%piggen_exe_path%]
+	%piggen_exe_path% %root%
 )
 
 :: +--------------------------------------------------------------+
@@ -315,13 +311,6 @@ echo Build took %build_elapsed_seconds_part%.%build_elapsed_hundredths_part% sec
 :: +--------------------------------------------------------------+
 :: |                          Run Things                          |
 :: +--------------------------------------------------------------+
-:: TODO: Move this back up before we build anything since it eventually will be doing code generation that the other builds rely upon
-if "%RUN_PIGGEN%"=="1" (
-	echo.
-	echo [%piggen_exe_path%]
-	%piggen_exe_path% %root%
-)
-
 if "%RUN_TESTS%"=="1" (
 	echo.
 	echo [%tests_exe_path%]

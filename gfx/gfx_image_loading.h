@@ -34,13 +34,18 @@ extern thread_local Arena* StbImageScratchArena;
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	#if !USING_CUSTOM_STDLIB
 	Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut);
+	#endif
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+//TODO: stb_image.h uses strtol which we currently don't have an implementation for in our custom standard library!
+#if !USING_CUSTOM_STDLIB
 
 static void* StbImageMalloc(size_t numBytes)
 {
@@ -132,6 +137,8 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 	
 	return Result_Success;
 }
+
+#endif //!USING_CUSTOM_STDLIB
 
 #endif //PIG_CORE_IMPLEMENTATION
 
