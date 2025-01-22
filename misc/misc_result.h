@@ -38,6 +38,7 @@ enum Result
 	Result_FailedToAllocateMemory,
 	Result_UnsupportedPlatform,
 	Result_ParsingFailure,
+	Result_FailedToReadFile,
 	
 	Result_Count,
 };
@@ -59,6 +60,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_FailedToAllocateMemory: return "FailedToAllocateMemory";
 		case Result_UnsupportedPlatform: return "UnsupportedPlatform";
 		case Result_ParsingFailure: return "ParsingFailure";
+		case Result_FailedToReadFile: return "FailedToReadFile";
 		default: return UNKNOWN_STR;
 	}
 }

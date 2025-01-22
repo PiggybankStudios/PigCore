@@ -1,0 +1,2 @@
+# gfx Folder
+Contains code related to graphics and rendering functionality. This includes abstractions around graphics APIs (like DirectX, OpenGL, Vulkan, etc.) as well as code for loading and parsing various graphics file formats (like .png, .jpeg, .gif, etc.)

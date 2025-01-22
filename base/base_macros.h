@@ -138,6 +138,11 @@ Description:
 // warning for a particular variable but have no actual affect on the variable.
 // NOTE: This does not ensure the variable is not in use, it only satiates the warning
 #define UNUSED(varName)        (void)(varName)
+#if DEBUG_BUILD
+#define DEBUG_USED(varName)    //nothing
+#else
+#define DEBUG_USED(varName)    (void)(varName)
+#endif
 
 // Hiding the curly brackets inside a macro like this helps keep text editors from indenting
 // all our top-level elements in a file while still wrapping the entire file in extern "C"

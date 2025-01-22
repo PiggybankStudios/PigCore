@@ -3,8 +3,8 @@ File:   gfx_image_loading.h
 Author: Taylor Robbins
 Date:   01\19\2025
 Description:
-	** Contains functions that help us load various kinds of image files from disk
-	** and parse them (using stb_image.h for PNGs for now)
+	** Contains functions that help us load various kinds of image files from disk and parse them
+	** We use stb_image.h so we support loading: .jpeg, .png, .bmp, .gif, .tga, and more
 */
 
 #ifndef _GFX_IMAGE_LOADING_H
@@ -24,17 +24,26 @@ struct ImageData
 	u32* pixels;
 };
 
-#if PIG_CORE_IMPLEMENTATION
-thread_local Arena* StbImageScratchArena = nullptr;
+//TODO: stb_image.h uses strtol which we currently don't have an implementation for in our custom standard library!
+#if USING_CUSTOM_STDLIB
+#define PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE 0
 #else
-extern thread_local Arena* StbImageScratchArena;
+#define PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE 1
+#endif
+
+#if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
+	#if PIG_CORE_IMPLEMENTATION
+	thread_local Arena* StbImageScratchArena = nullptr;
+	#else
+	extern thread_local Arena* StbImageScratchArena;
+	#endif
 #endif
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	#if !USING_CUSTOM_STDLIB
+	#if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
 	Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut);
 	#endif
 #endif //!PIG_CORE_IMPLEMENTATION
@@ -44,8 +53,7 @@ extern thread_local Arena* StbImageScratchArena;
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-//TODO: stb_image.h uses strtol which we currently don't have an implementation for in our custom standard library!
-#if !USING_CUSTOM_STDLIB
+#if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
 
 static void* StbImageMalloc(size_t numBytes)
 {
@@ -110,7 +118,6 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 	if (imageData != nullptr)
 	{
 		Assert(imageWidth > 0 && imageHeight > 0);
-		Assert(fileChannelCount == numChannels);
 		PrintLine_D("imageData: %p %dx%d", imageData, imageWidth, imageHeight);
 		
 		ClearPointer(imageDataOut);
@@ -138,8 +145,12 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 	return Result_Success;
 }
 
-#endif //!USING_CUSTOM_STDLIB
+#endif //PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
 
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _GFX_IMAGE_LOADING_H
+
+#if defined(_GFX_IMAGE_LOADING_H) && defined(_OS_FILE_H)
+#include "cross/cross_image_loading_and_file.h"
+#endif

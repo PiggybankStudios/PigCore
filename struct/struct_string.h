@@ -79,6 +79,9 @@ struct Str8Pair
 // +--------------------------------------------------------------+
 #define Str8_Empty       NewStr8(0, nullptr)
 #define Str8_Empty_Const ((Str8)ZEROED)
+	
+#define Slice_Empty       NewStr8(0, nullptr)
+#define Slice_Empty_Const ((Slice)ZEROED)
 
 #define Str16_Empty       NewStr16(0, nullptr)
 #define Str16_Empty_Const ((Str16)ZEROED)
