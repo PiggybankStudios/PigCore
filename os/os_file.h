@@ -16,6 +16,7 @@ Description:
 #include "mem/mem_scratch.h"
 #include "os/os_error.h"
 #include "misc/misc_result.h"
+#include "os/os_path.h"
 
 typedef struct OsFileIter OsFileIter;
 struct OsFileIter
@@ -830,6 +831,11 @@ PEXPI bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart) { return Os
 // +--------------------------------------------------------------+
 // |                         DLL Loading                          |
 // +--------------------------------------------------------------+
+// PEXP void OsCloseDll(OsDll* dll)
+// {
+	
+// }
+
 PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
 {
 	NotNullStr(path);
@@ -876,3 +882,11 @@ PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_FILE_H
+
+#if defined(_GFX_IMAGE_LOADING_H) && defined(_OS_FILE_H)
+#include "cross/cross_image_loading_and_file.h"
+#endif
+
+#if defined(_MISC_ZIP_H) && defined(_OS_FILE_H)
+#include "cross/cross_zip_and_file.h"
+#endif

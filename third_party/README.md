@@ -147,3 +147,19 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 * misc_hash.h depends on meow_hash
 
+---
+
+## miniz 3.0.2
+**URL(s):** [https://github.com/richgel999/miniz](https://github.com/richgel999/miniz) [Release 3.0.2](https://github.com/richgel999/miniz/releases/tag/3.0.2)
+
+**Folder Name:** `miniz`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Release 3.0.2 from Jan 15th 2023
+
+**Fixup Required:** Delete everything besides miniz.h, miniz.c and LICENSE
+
+**Required For:**
+
+* misc_zip.h depends on miniz to parse .zip files

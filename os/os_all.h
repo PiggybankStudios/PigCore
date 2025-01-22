@@ -18,6 +18,7 @@ Description:
 #include "std/std_includes.h" //required by os_error.h, os_virtual_mem.h, os_path.h, os_file.h and os_process_info.h
 #include "base/base_assert.h" //required by os_virtual_mem.h, os_path.h and os_file.h
 
+#include "os/os_time.h"
 #include "os/os_error.h" //required by os_virtual_mem.h and os_file.h
 #include "os/os_virtual_mem.h"
 

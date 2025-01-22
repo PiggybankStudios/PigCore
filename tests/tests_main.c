@@ -254,8 +254,15 @@ int main(int argc, char* argv[])
 	#if 1
 	RandomSeries random;
 	InitRandomSeriesDefault(&random);
-	SeedRandomSeriesU64(&random, 42); //TODO: Actually seed the random number generator!
+	SeedRandomSeriesU64(&random, OsGetCurrentTimestamp(false)); //TODO: Actually seed the random number generator!
 	mainRandom = &random;
+	#endif
+	
+	#if BUILD_WITH_RAYLIB
+	InitWindow(800, 600, "Tests (PigCore)");
+	SetWindowMinSize(400, 200);
+	SetWindowState(FLAG_WINDOW_RESIZABLE);
+	SetTargetFPS(60);
 	#endif
 	
 	// +==============================+
@@ -517,6 +524,46 @@ int main(int argc, char* argv[])
 	}
 	#endif
 	
+	// +==============================+
+	// |      Zip Archive Tests       |
+	// +==============================+
+	#if 1
+	#if BUILD_WITH_RAYLIB
+	v2i zipTextureSize = V2i_Zero;
+	Texture2D zipTexture = ZEROED;
+	#endif
+	{
+		ScratchBegin(scratch);
+		FilePath zipPath = FilePathLit("images.zip");
+		ZipArchive archive = ZEROED;
+		Result parseResult = OpenZipArchivePath(scratch, zipPath, &archive);
+		Assert(parseResult == Result_Success);
+		PrintLine_I("\"%.*s\" has %llu files inside it", StrPrint(zipPath), (u64)archive.numFiles);
+		uxx fileIndex = (uxx)GetRandU32Range(mainRandom, 0, (u32)archive.numFiles);
+		Str8 fileName1 = GetZipArchiveFilePath(&archive, scratch, fileIndex);
+		Slice fileContents1 = ReadZipArchiveFileAtIndex(&archive, scratch, fileIndex);
+		PrintLine_I("\tFile[%llu] = \"%.*s\" %llu bytes: %02X %02X %02X %02X", (u64)fileIndex, StrPrint(fileName1), (u64)fileContents1.length, fileContents1.bytes[0], fileContents1.bytes[1], fileContents1.bytes[2], fileContents1.bytes[3]);
+		#if BUILD_WITH_RAYLIB
+		ImageData zipImageData;
+		Result loadImageResult = TryParseImageFile(fileContents1, &stdHeap, &zipImageData);
+		if (loadImageResult != Result_Success) { PrintLine_E("Failed to parse \"%.*s\" texture: %s", StrPrint(fileName1), GetResultStr(loadImageResult)); }
+		else
+		{
+			Image zipImage = ZEROED;
+			zipImage.data = zipImageData.pixels;
+			zipImage.width = zipImageData.size.Width;
+			zipImage.height = zipImageData.size.Height;
+			zipImage.mipmaps = 1; //aka no mipmaps
+			zipImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+			zipTexture = LoadTextureFromImage(zipImage);
+			zipTextureSize = zipImageData.size;
+		}
+		#endif //BUILD_WITH_RAYLIB
+		CloseZipArchive(&archive);
+		ScratchEnd(scratch);
+	}
+	#endif
+	
 	#if USING_CUSTOM_STDLIB
 	RunWasmStdTests();
 	#endif
@@ -705,10 +752,6 @@ int main(int argc, char* argv[])
 		#endif
 		#if BUILD_WITH_RAYLIB
 		{
-			InitWindow(800, 600, "Tests (PigCore)");
-			SetWindowMinSize(400, 200);
-			SetWindowState(FLAG_WINDOW_RESIZABLE);
-			SetTargetFPS(60);
 			while (!WindowShouldClose())
 			{
 				int windowWidth = GetRenderWidth();
@@ -724,6 +767,14 @@ int main(int argc, char* argv[])
 				UpdateBox2DTest();
 				RenderBox2DTest();
 				#endif
+				
+				r32 textureScale = MinR32((r32)windowWidth / (r32)zipTextureSize.Width, (r32)windowHeight / (r32)zipTextureSize.Height);
+				v2 textureSize = Mul(ToV2Fromi(zipTextureSize), textureScale);
+				Vector2 topLeft = (Vector2){
+					.x = (r32)windowWidth/2 - textureSize.Width/2,
+					.y = (r32)windowHeight/2 - textureSize.Height/2
+				};
+				DrawTextureEx(zipTexture, topLeft, 0.0f, textureScale, WHITE);
 				
 				EndDrawing();
 			}

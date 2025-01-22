@@ -37,4 +37,6 @@ Date:   01\05\2025
 
 #include "misc/misc_noise.h"
 
+#include "misc/misc_zip.h"
+
 #endif //  _MISC_ALL_H
