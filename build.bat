@@ -30,6 +30,7 @@ for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_BOX2D') do set BUILD_WITH_BOX2D=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL') do set BUILD_WITH_SOKOL=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SDL') do set BUILD_WITH_SDL=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_OPENVR') do set BUILD_WITH_OPENVR=%%i
 
 :: +--------------------------------------------------------------+
 :: |                      Init MSVC Compiler                      |
@@ -136,6 +137,35 @@ if "%DEBUG_BUILD%"=="1" (
 	set common_clang_flags=%common_clang_flags%
 )
 
+set tests_libraries=
+set tests__clang_libraries=
+if "%BUILD_WITH_RAYLIB%"=="1" (
+	REM raylib.lib   = ?
+	REM gdi32.lib    = ?
+	REM User32.lib   = ?
+	REM Shell32.lib  = Shlobj.h ? 
+	REM kernel32.lib = ?
+	REM winmm.lib    = ?
+	REM Winhttp.lib  = ?
+	REM Shlwapi.lib  = ?
+	REM Ole32.lib    = Combaseapi.h, CoCreateInstance
+	REM Advapi32.lib = Processthreadsapi.h, OpenProcessToken, GetTokenInformation
+	set tests_libraries=%tests_libraries% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
+	REM NOTE: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
+)
+if "%BUILD_WITH_BOX2D%"=="1" (
+	set tests_libraries=%tests_libraries% box2d.lib
+)
+if "%BUILD_WITH_SDL%"=="1" (
+	set tests_libraries=%tests_libraries% SDL2.lib
+)
+if "%BUILD_WITH_SOKOL%"=="1" (
+	set tests__clang_libraries=%tests__clang_libraries% -lX11 -lXi -lGL -ldl -lXcursor
+)
+if "%BUILD_WITH_OPENVR%"=="1" (
+	set tests_libraries=%tests_libraries% openvr_api.lib
+)
+
 :: -incremental:no = Suppresses warning about doing a full link when it can't find the previous .exe result. We don't need this when doing unity builds
 :: /LIBPATH = Add a library search path
 set common_ld_flags=-incremental:no
@@ -200,35 +230,11 @@ set tests_bin_path=tests
 set tests_wasm_path=app.wasm
 set tests_wat_path=app.wat
 set tests_html_path=index.html
-set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags%
-set tests_clang_args=%common_clang_flags% %linux_clang_flags% -o %tests_bin_path% ../%tests_source_path%
+set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags% %tests_libraries%
+set tests_clang_args=%common_clang_flags% %linux_clang_flags% %tests__clang_libraries% -o %tests_bin_path% ../%tests_source_path%
 if "%ENABLE_AUTO_PROFILE%"=="1" (
 	set tests_clang_args=-finstrument-functions %tests_clang_args%
 )
-if "%BUILD_WITH_RAYLIB%"=="1" (
-	REM raylib.lib   = ?
-	REM gdi32.lib    = ?
-	REM User32.lib   = ?
-	REM Shell32.lib  = Shlobj.h ? 
-	REM kernel32.lib = ?
-	REM winmm.lib    = ?
-	REM Winhttp.lib  = ?
-	REM Shlwapi.lib  = ?
-	REM Ole32.lib    = Combaseapi.h, CoCreateInstance
-	REM Advapi32.lib = Processthreadsapi.h, OpenProcessToken, GetTokenInformation
-	set tests_cl_args=%tests_cl_args% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
-	REM NOTE: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
-)
-if "%BUILD_WITH_BOX2D%"=="1" (
-	set tests_cl_args=%tests_cl_args% box2d.lib
-)
-if "%BUILD_WITH_SDL%"=="1" (
-	set tests_cl_args=%tests_cl_args% SDL2.lib
-)
-if "%BUILD_WITH_SOKOL%"=="1" (
-	set tests_clang_args=%tests_clang_args% -lX11 -lXi -lGL -ldl -lXcursor
-)
-REM 
 set tests_web_args=%common_clang_flags% %wasm_clang_flags% ../%tests_source_path%"
 if "%USE_EMSCRIPTEN%"=="1" (
 	set tests_web_args=-o %tests_html_path% %tests_web_args%

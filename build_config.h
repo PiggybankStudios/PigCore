@@ -34,7 +34,7 @@ Description:
 // Compiles tests/main.c
 #define BUILD_TESTS   1
 // Runs the result of compiling tests/main.c, aka the tests.exe
-#define RUN_TESTS     1
+#define RUN_TESTS     0
 
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
@@ -58,5 +58,7 @@ Description:
 #define BUILD_WITH_SOKOL 0
 // Enables tests.exe being linked with SDL.lib and it's required libraries
 #define BUILD_WITH_SDL 0
+// Enables tests.exe being linked with openvr_api.lib and it's required libraries
+#define BUILD_WITH_OPENVR 0
 
 #endif //  _BUILD_CONFIG_H

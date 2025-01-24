@@ -102,6 +102,7 @@ RandomSeries* mainRandom = nullptr;
 // |                      tests Source Files                      |
 // +--------------------------------------------------------------+
 #include "tests/tests_box2d.c"
+#include "tests/tests_vr.c"
 #include "tests/tests_wasm_std.c"
 #include "tests/tests_auto_profile.c"
 
@@ -267,6 +268,10 @@ int main(int argc, char* argv[])
 	SetWindowMinSize(400, 200);
 	SetWindowState(FLAG_WINDOW_RESIZABLE);
 	SetTargetFPS(60);
+	#endif
+	
+	#if BUILD_WITH_OPENVR
+	InitVrTests();
 	#endif
 	
 	// +==============================+
@@ -745,6 +750,10 @@ int main(int argc, char* argv[])
 		
 		ScratchEnd(scratch);
 	}
+	#endif
+	
+	#if BUILD_WITH_OPENVR
+	RunVrTests();
 	#endif
 	
 	#define RAYLIB_3D 1

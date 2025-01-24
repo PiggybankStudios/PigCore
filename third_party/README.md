@@ -163,3 +163,20 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Required For:**
 
 * misc_zip.h depends on miniz to parse .zip files
+
+---
+
+## OpenVR SDK 2.5.1
+**URL(s):** [https://github.com/ValveSoftware/openvr](https://github.com/ValveSoftware/openvr) [Release 2.5.1](https://github.com/ValveSoftware/openvr/releases/tag/v2.5.1)
+
+**Folder Name:** `openvr`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Release 2.5.1 from Mar 26th 2024
+
+**Fixup Required:** Copy the contents of the `header/` folder and delete everything else (besides the LICENSE)
+
+**Required For:**
+
+* Building tests.exe into a small VR application (only if `BUILD_WITH_VR` is enabled in `build_config.h`)

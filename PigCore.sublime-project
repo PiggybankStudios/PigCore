@@ -77,6 +77,13 @@
 				"Changelog.md",
 			],
 		},
+		{
+			"path": "third_party/openvr",
+			"name": "OpenVR SDK",
+			"file_exclude_patterns": [
+				"LICENSE",
+			],
+		},
 	],
 	"settings":
 	{
@@ -113,6 +120,7 @@
 			"BLUE",
 			"BROWN",
 			"BUILD_WEB",
+			"BUILD_WITH_OPENVR",
 			"BUILD_WITH_RAYLIB",
 			"BUILD_WITH_SOKOL",
 			"CAMERA_CUSTOM",
@@ -927,7 +935,7 @@
 			"PEXP Result OpenZipArchivePath(Arena* arena, FilePath filePath, ZipArchive* archiveOut)",
 			"PEXP Result TryLoadImageFromPath(FilePath path, Arena* arena, ImageData* imageDataOut)",
 			"PEXP Slice OpenZipArchiveAndReadFile(Arena* fileContentsArena, Slice zipFileContents, Str8 fileName)",
-			"PEXP Slice OpenZipArchivePathAndReadFile(Arena* fileContentsArena, FilePath zipFilePath, Str8 archiveFileName)",
+			"PEXP Slice OpenZipArchivePathAndReadFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName, bool convertNewLines)",
 			"PEXP Slice ReadZipArchiveFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex)",
 			"PEXP bool FindZipArchiveFileNamed(ZipArchive* archive, Str8 fileName, uxx* fileIndexOut)",
 			"PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timezoneDoesDstOut) ",
@@ -1606,6 +1614,7 @@
 			"void WaitTime(double seconds)",
 			"void WaveCrop(Wave *wave, int initFrame, int finalFrame)",
 			"void WaveFormat(Wave *wave, int sampleRate, int sampleSize, int channels)",
+			"void* GetVrInterfaceFnTable(const char* interfaceNameAndVersion)",
 			"void* VOID_PNTR_FUNC_DEF()",
 		],
 		"custom_globals":
