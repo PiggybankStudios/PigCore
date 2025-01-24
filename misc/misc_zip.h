@@ -52,6 +52,7 @@ typedef struct ZipArchive ZipArchive;
 struct ZipArchive
 {
 	Arena* arena;
+	bool isWriter;
 	mz_zip_archive zip;
 	uxx numFiles;
 	u64 size;
@@ -65,8 +66,19 @@ struct ZipArchive
 	Result OpenZipArchive(Arena* arena, Slice zipFileContents, ZipArchive* archiveOut);
 	FilePath GetZipArchiveFilePath(ZipArchive* archive, Arena* pathArena, uxx fileIndex);
 	bool FindZipArchiveFileNamed(ZipArchive* archive, Str8 fileName, uxx* fileIndexOut);
-	Slice ReadZipArchiveFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex);
-	PIG_CORE_INLINE Slice ReadZipArchiveFile(ZipArchive* archive, Arena* fileContentsArena, Str8 fileName);
+	Slice ReadZipArchiveFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex, bool convertNewLines);
+	PIG_CORE_INLINE Str8 ReadZipArchiveTextFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex);
+	PIG_CORE_INLINE Slice ReadZipArchiveBinFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex);
+	PIG_CORE_INLINE Slice ReadZipArchiveFile(ZipArchive* archive, Arena* fileContentsArena, Str8 fileName, bool convertNewLines);
+	PIG_CORE_INLINE Str8 ReadZipArchiveTextFile(ZipArchive* archive, Arena* fileContentsArena, Str8 fileName);
+	PIG_CORE_INLINE Slice ReadZipArchiveBinFile(ZipArchive* archive, Arena* fileContentsArena, Str8 fileName);
+	Slice OpenZipArchiveAndReadFile(Arena* fileContentsArena, Slice zipFileContents, Str8 fileName, bool convertNewLines);
+	PIG_CORE_INLINE Str8 OpenZipArchiveAndReadTextFile(Arena* fileContentsArena, Slice zipFileContents, Str8 fileName);
+	PIG_CORE_INLINE Slice OpenZipArchiveAndReadBinFile(Arena* fileContentsArena, Slice zipFileContents, Str8 fileName);
+	void CreateZipArchive(Arena* arena, ZipArchive* archiveOut);
+	Result AddZipArchiveFile(ZipArchive* archive, FilePath fileName, Slice fileContents, bool convertNewLines);
+	PIG_CORE_INLINE Result AddZipArchiveTextFile(ZipArchive* archive, FilePath fileName, Str8 fileContents);
+	PIG_CORE_INLINE Result AddZipArchiveBinFile(ZipArchive* archive, FilePath fileName, Slice fileContents);
 #endif
 
 // +--------------------------------------------------------------+
@@ -213,7 +225,7 @@ PEXP bool FindZipArchiveFileNamed(ZipArchive* archive, Str8 fileName, uxx* fileI
 	return false;
 }
 
-PEXP Slice ReadZipArchiveFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex)
+PEXP Slice ReadZipArchiveFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex, bool convertNewLines)
 {
 	NotNull(archive);
 	NotNull(archive->arena);
@@ -224,38 +236,99 @@ PEXP Slice ReadZipArchiveFileAtIndex(ZipArchive* archive, Arena* fileContentsAre
 	mz_bool readStatSuccess = mz_zip_reader_file_stat(&archive->zip, (mz_uint)fileIndex, &fileStats);
 	Assert(readStatSuccess == MZ_TRUE);
 	
+	ScratchBegin1(scratch, fileContentsArena);
 	Slice result = Slice_Empty;
 	result.length = (uxx)fileStats.m_uncomp_size;
-	result.bytes = AllocArray(u8, fileContentsArena, (uxx)result.length);
+	result.bytes = AllocArray(u8, convertNewLines ? scratch : fileContentsArena, (uxx)result.length);
 	NotNull(result.bytes);
 	mz_bool readFileSuccess = mz_zip_reader_extract_to_mem(&archive->zip, (mz_uint)fileIndex, result.bytes, result.length, 0);
 	if (!readFileSuccess)
 	{
 		//TODO: Take a look at archive->zip.m_last_error to determine the failure reason!
 		FreeStr8(fileContentsArena, &result);
+		ScratchEnd(scratch);
 		return Slice_Empty;
 	}
 	Assert(readFileSuccess);
 	
+	if (convertNewLines) { result = StrReplace(fileContentsArena, result, StrLit("\r\n"), StrLit("\n"), false); }
+	
+	ScratchEnd(scratch);
 	return result;
 }
-PEXPI Slice ReadZipArchiveFile(ZipArchive* archive, Arena* fileContentsArena, Str8 fileName)
+PEXPI Str8 ReadZipArchiveTextFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex) { return ReadZipArchiveFileAtIndex(archive, fileContentsArena, fileIndex, true); }
+PEXPI Slice ReadZipArchiveBinFileAtIndex(ZipArchive* archive, Arena* fileContentsArena, uxx fileIndex) { return ReadZipArchiveFileAtIndex(archive, fileContentsArena, fileIndex, false); }
+
+PEXPI Slice ReadZipArchiveFile(ZipArchive* archive, Arena* fileContentsArena, Str8 fileName, bool convertNewLines)
 {
 	uxx fileIndex = 0;
 	if (!FindZipArchiveFileNamed(archive, fileName, &fileIndex)) { return Slice_Empty; }
-	return ReadZipArchiveFileAtIndex(archive, fileContentsArena, fileIndex);
+	return ReadZipArchiveFileAtIndex(archive, fileContentsArena, fileIndex, convertNewLines);
 }
+PEXPI Str8 ReadZipArchiveTextFile(ZipArchive* archive, Arena* fileContentsArena, Str8 fileName) { return ReadZipArchiveFile(archive, fileContentsArena, fileName, true); }
+PEXPI Slice ReadZipArchiveBinFile(ZipArchive* archive, Arena* fileContentsArena, Str8 fileName) { return ReadZipArchiveFile(archive, fileContentsArena, fileName, false); }
 
-PEXP Slice OpenZipArchiveAndReadFile(Arena* fileContentsArena, Slice zipFileContents, Str8 fileName)
+PEXP Slice OpenZipArchiveAndReadFile(Arena* fileContentsArena, Slice zipFileContents, Str8 fileName, bool convertNewLines)
 {
 	ScratchBegin1(scratch, fileContentsArena);
 	ZipArchive archive = ZEROED;
 	Result openResult = OpenZipArchive(scratch, zipFileContents, &archive);
 	if (openResult != Result_Success) { ScratchEnd(scratch); return Slice_Empty; }
-	Slice result = ReadZipArchiveFile(&archive, fileContentsArena, fileName);
+	Slice result = ReadZipArchiveFile(&archive, fileContentsArena, fileName, convertNewLines);
 	ScratchEnd(scratch);
 	return result;
 }
+PEXPI Str8 OpenZipArchiveAndReadTextFile(Arena* fileContentsArena, Slice zipFileContents, Str8 fileName) { return OpenZipArchiveAndReadFile(fileContentsArena, zipFileContents, fileName, true); }
+PEXPI Slice OpenZipArchiveAndReadBinFile(Arena* fileContentsArena, Slice zipFileContents, Str8 fileName) { return OpenZipArchiveAndReadFile(fileContentsArena, zipFileContents, fileName, false); }
+
+
+size_t ZipFileWriteCallback(void* contextPntr, mz_uint64 fileOffset, const void* bufferPntr, size_t numBytes)
+{
+	PrintLine_D("ZipFileWriteCallback(%p, %llu, %p, %zu)", contextPntr, fileOffset, bufferPntr, numBytes);
+	ZipArchive* archive = (ZipArchive*)contextPntr;
+	if (archive != nullptr)
+	{
+		PrintLine_D("ZipFileWriteCallback archive: %p %s %llu file%s", archive->arena, archive->isWriter ? "Writer" : "Reader", (u64)archive->numFiles, Plural(archive->numFiles, "s"));
+	}
+	//TODO: Implement me!
+	return numBytes;
+}
+
+//NOTE: ZipArchive contains a function pointer, so maintaining an open writable ZipArchive is a bad idea if hot-reloading is happening
+PEXP void CreateZipArchive(Arena* arena, ZipArchive* archiveOut)
+{
+	NotNull(arena);
+	NotNull(archiveOut);
+	ClearPointer(archiveOut);
+	archiveOut->isWriter = true;
+	archiveOut->arena = arena;
+	
+	archiveOut->zip.m_pWrite = ZipFileWriteCallback;
+	archiveOut->zip.m_pIO_opaque = archiveOut;
+	mz_bool initResult = mz_zip_writer_init(&archiveOut->zip, 0);
+	Assert(initResult == MZ_TRUE);
+}
+
+PEXP Result AddZipArchiveFile(ZipArchive* archive, FilePath fileName, Slice fileContents, bool convertNewLines)
+{
+	NotNull(archive);
+	NotNull(archive->arena);
+	NotEmptyStr(fileName);
+	NotNullStr(fileContents);
+	
+	ScratchBegin(scratch);
+	// Allocate a null-terminated version of fileName
+	FilePath fileNameNt = AllocFilePath(scratch, fileName, true);
+	mz_bool addMemSuccess = mz_zip_writer_add_mem(&archive->zip, fileNameNt.chars, fileContents.bytes, (size_t)fileContents.length, (mz_uint)MZ_DEFAULT_COMPRESSION); //TODO: Should we tune this compression level? Maybe choose MZ_BEST_SPEED sometimes?
+	Assert(addMemSuccess); //TODO: Do we want to return a failure result for this? Why would it fail?
+	IncrementUXX(archive->numFiles);
+	
+	ScratchEnd(scratch);
+	
+	return Result_Success;
+}
+PEXPI Result AddZipArchiveTextFile(ZipArchive* archive, FilePath fileName, Str8 fileContents) { return AddZipArchiveFile(archive, fileName, fileContents, true); }
+PEXPI Result AddZipArchiveBinFile(ZipArchive* archive, FilePath fileName, Slice fileContents) { return AddZipArchiveFile(archive, fileName, fileContents, false); }
 
 #endif //PIG_CORE_IMPLEMENTATION
 

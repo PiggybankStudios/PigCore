@@ -9,7 +9,9 @@ Date:   01\21\2025
 
 #if !PIG_CORE_IMPLEMENTATION
 	Result OpenZipArchivePath(Arena* arena, FilePath filePath, ZipArchive* archiveOut);
-	Slice OpenZipArchivePathAndReadFile(Arena* fileContentsArena, FilePath zipFilePath, Str8 archiveFileName);
+	Slice OpenZipArchivePathAndReadFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName, bool convertNewLines);
+	PIG_CORE_INLINE Str8 OpenZipArchivePathAndReadTextFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName);
+	PIG_CORE_INLINE Slice OpenZipArchivePathAndReadBinFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName);
 #endif
 
 #if PIG_CORE_IMPLEMENTATION
@@ -26,16 +28,20 @@ PEXP Result OpenZipArchivePath(Arena* arena, FilePath filePath, ZipArchive* arch
 	return result;
 }
 
-PEXP Slice OpenZipArchivePathAndReadFile(Arena* fileContentsArena, FilePath zipFilePath, Str8 archiveFileName)
+PEXP Slice OpenZipArchivePathAndReadFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName, bool convertNewLines)
 {
 	ScratchBegin1(scratch, fileContentsArena);
 	ZipArchive archive = ZEROED;
 	Result openResult = OpenZipArchivePath(scratch, zipFilePath, &archive);
 	if (openResult != Result_Success) { ScratchEnd(scratch); return Slice_Empty; }
-	Slice result = ReadZipArchiveFile(&archive, fileContentsArena, archiveFileName);
+	Slice result = ReadZipArchiveFile(&archive, fileContentsArena, archiveFileName, convertNewLines);
 	ScratchEnd(scratch);
 	return result;
 }
+PEXPI Str8 OpenZipArchivePathAndReadTextFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName) { return OpenZipArchivePathAndReadFile(fileContentsArena, zipFilePath, archiveFileName, true); }
+PEXPI Slice OpenZipArchivePathAndReadBinFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName) { return OpenZipArchivePathAndReadFile(fileContentsArena, zipFilePath, archiveFileName, false); }
+
+
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _CROSS_ZIP_AND_FILE_H

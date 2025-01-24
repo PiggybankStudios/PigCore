@@ -25,6 +25,7 @@ Description:
 #define _BASE_DBG_LEVEL_H
 
 #include "base/base_defines_check.h"
+#include "base/base_macros.h"
 
 typedef enum DbgLevel DbgLevel;
 enum DbgLevel
