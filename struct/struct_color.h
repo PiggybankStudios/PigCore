@@ -14,8 +14,8 @@ Description:
 #include "base/base_typedefs.h"
 
 //NOTE: The name "Color" conflicts with a definition in <windows.h>
-typedef struct Color32 Color32;
-struct Color32
+typedef union Color32 Color32;
+union Color32
 {
 	u32 valueU32;
 	struct { u8 channel[4]; };
@@ -56,3 +56,7 @@ PEXPI Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_COLOR_H
+
+#if defined(_STRUCT_COLOR_H) && defined(RAYLIB_H)
+#include "cross/cross_color_and_raylib.h"
+#endif

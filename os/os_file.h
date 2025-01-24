@@ -879,6 +879,29 @@ PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
 	return result;
 }
 
+PEXP void* OsFindDllFunc(OsDll* dll, Str8 funcName)
+{
+	NotNull(dll);
+	NotNullStr(funcName);
+	void* result = nullptr;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		ScratchBegin(scratch);
+		Str8 funcNameNt = AllocStrAndCopy(scratch, funcName.length, funcName.chars, true);
+		result = (void*)GetProcAddress(dll->handle, funcNameNt.chars);
+		ScratchEnd(scratch);
+	}
+	#else
+	UNUSED(dll);
+	UNUSED(funcName);
+	AssertMsg(false, "OsFindDllFunc does not support the current platform yet!");
+	#endif
+	
+	return result;
+	
+}
+
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_FILE_H

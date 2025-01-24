@@ -87,3 +87,7 @@ typedef HMM_Quat quat;
 #if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H)
 #include "cross/cross_vectors_quaternion_and_matrices.h"
 #endif
+
+#if defined(_STRUCT_QUATERNION_H) && defined(RAYLIB_H)
+#include "cross/cross_quaternion_and_raylib.h"
+#endif

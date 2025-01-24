@@ -236,3 +236,7 @@ PEXPI mat3 MakeScaleMat3(v3 vec3)
 #if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H)
 #include "cross/cross_vectors_quaternion_and_matrices.h"
 #endif
+
+#if defined(_STRUCT_MATRICES_H) && defined(RAYLIB_H)
+#include "cross/cross_matrices_and_raylib.h"
+#endif

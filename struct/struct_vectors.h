@@ -540,3 +540,7 @@ PEXPI void AlignV4(v4* vectorOut) { AlignV4To(vectorOut, 1.0f); }
 #if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H)
 #include "cross/cross_vectors_quaternion_and_matrices.h"
 #endif
+
+#if defined(_STRUCT_VECTORS_H) && defined(RAYLIB_H)
+#include "cross/cross_vectors_and_raylib.h"
+#endif
