@@ -117,6 +117,7 @@ struct OsDll
 	PIG_CORE_INLINE bool OsWriteToOpenTextFile(OsFile* file, Str8 fileContentsPart);
 	PIG_CORE_INLINE bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart);
 	Result OsLoadDll(FilePath path, OsDll* dllOut);
+	void* OsFindDllFunc(OsDll* dll, Str8 funcName);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+

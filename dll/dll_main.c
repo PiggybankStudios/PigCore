@@ -32,6 +32,14 @@ Description:
 #define PIG_CORE_DLL_INCLUDE_GFX 1
 #endif
 
+#include "base/base_compiler_check.h"
+#include "base/base_defines_check.h"
+
+#if BUILD_WITH_RAYLIB
+#include "third_party/raylib/raylib.h"
+#endif
+
+
 #if PIG_CORE_DLL_INCLUDE_BASE
 #include "base/base_all.h"
 #endif

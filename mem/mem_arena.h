@@ -111,6 +111,7 @@ struct Arena
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	void InitArenaStdHeap(Arena* arenaOut);
+	void InitArenaFuncs(Arena* arenaOut, AllocFunc_f* allocFunc, FreeFunc_f* freeFunc, ReallocFunc_f* reallocFunc);
 	void InitArenaAlias(Arena* arenaOut, Arena* sourceArena);
 	void InitArenaBuffer(Arena* arenaOut, void* bufferPntr, uxx bufferSize);
 	void InitArenaStack(Arena* arenaOut, uxx stackSize, Arena* sourceArena);
@@ -166,6 +167,20 @@ PEXP void InitArenaStdHeap(Arena* arenaOut)
 	#if MEM_ARENA_DEBUG_NAMES
 	arenaOut->debugName = "[std_heap]";
 	#endif
+}
+
+PEXP void InitArenaFuncs(Arena* arenaOut, AllocFunc_f* allocFunc, FreeFunc_f* freeFunc, ReallocFunc_f* reallocFunc)
+{
+	NotNull(arenaOut);
+	NotNull(allocFunc);
+	ClearPointer(arenaOut);
+	arenaOut->type = ArenaType_Funcs;
+	#if MEM_ARENA_DEBUG_NAMES
+	arenaOut->debugName = "[funcs]";
+	#endif
+	arenaOut->allocFunc = allocFunc;
+	arenaOut->freeFunc = freeFunc;
+	arenaOut->reallocFunc = reallocFunc;
 }
 
 PEXP void InitArenaAlias(Arena* arenaOut, Arena* sourceArena)
@@ -317,7 +332,7 @@ PEXP bool CanArenaFree(const Arena* arena)
 		case ArenaType_Alias: DebugNotNull(arena->sourceArena); return CanArenaFree(arena->sourceArena);
 		case ArenaType_StdHeap:      return true;
 		case ArenaType_Buffer:       return true;
-		case ArenaType_Funcs:        return true;
+		case ArenaType_Funcs:        return (arena->freeFunc != nullptr);
 		// case ArenaType_Generic:      return true;
 		// case ArenaType_GenericPaged: return true;
 		case ArenaType_Stack:        return false;
@@ -697,7 +712,7 @@ PEXP void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 		// +=============================+
 		case ArenaType_Funcs:
 		{
-			DebugNotNull(arena->freeFunc);
+			NotNull(arena->freeFunc);
 			arena->freeFunc(allocPntr);
 			arena->used -= allocSize;
 			Decrement(arena->allocCount);
@@ -860,10 +875,25 @@ NODISCARD PEXP void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx 
 		// +==============================+
 		// |  ArenaType_Funcs ReallocMem  |
 		// +==============================+
-		// case ArenaType_Funcs:
-		// {
-		// 	Unimplemented(); //TODO: Implement me!
-		// } break;
+		case ArenaType_Funcs:
+		{
+			if (arena->reallocFunc != nullptr)
+			{
+				result = arena->reallocFunc(allocPntr, newSize);
+			}
+			else
+			{
+				NotNull(arena->freeFunc);
+				void* newSpace = arena->allocFunc(newSize);
+				if (newSpace == nullptr) { break; }
+				Assert(allocPntr == nullptr || oldSize > 0)
+				if (allocPntr != nullptr);
+				{
+					MyMemCopy(newSpace, allocPntr, oldSize);
+				}
+				result = newSpace;
+			}
+		} break;
 		
 		// +==============================+
 		// | ArenaType_Generic ReallocMem |

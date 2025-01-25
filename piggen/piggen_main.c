@@ -8,6 +8,8 @@ Description:
 	** the source file(s) to #include the generated code
 */
 
+#include "build_config.h"
+
 #include "base/base_all.h"
 #include "std/std_all.h"
 #include "os/os_all.h"
