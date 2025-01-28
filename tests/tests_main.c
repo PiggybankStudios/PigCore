@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
 	#endif
 	
 	#if BUILD_WITH_OPENVR
-	InitVrTests();
+	if (!InitVrTests()) { return 1; }
 	#endif
 	
 	// +==============================+
@@ -753,7 +753,10 @@ int main(int argc, char* argv[])
 	#endif
 	
 	#if BUILD_WITH_OPENVR
-	RunVrTests();
+	while (!WindowShouldClose())
+	{
+		RunVrTests();
+	}
 	#endif
 	
 	#define RAYLIB_3D 1
@@ -764,7 +767,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |      RayLib/Box2D Tests      |
 	// +==============================+
-	#if BUILD_WITH_RAYLIB
+	#if BUILD_WITH_RAYLIB && !BUILD_WITH_OPENVR
 	{
 		#if RAYLIB_3D
 		Camera3D camera = ZEROED;
@@ -800,8 +803,8 @@ int main(int argc, char* argv[])
 				BeginMode3D(camera);
 				
 				DrawCube(camera.target, 0.5f, 0.5f, 0.5f, PURPLE);
-                
-                // Draw grid on the ground
+				
+				// Draw grid on the ground
 				for (i32 gridIndex = -100; gridIndex <= 100; gridIndex++)
 				{
 					const r32 gridThickness = 0.01f;

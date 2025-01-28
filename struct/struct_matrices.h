@@ -33,6 +33,8 @@ typedef HMM_Mat4 mat4;
 	PIG_CORE_INLINE mat2 NewMat2(r32 r0c0, r32 r0c1, r32 r1c0, r32 r1c1);
 	PIG_CORE_INLINE mat3 NewMat3(r32 r0c0, r32 r0c1, r32 r0c2, r32 r1c0, r32 r1c1, r32 r1c2, r32 r2c0, r32 r2c1, r32 r2c2);
 	PIG_CORE_INLINE mat4 NewMat4(r32 r0c0, r32 r0c1, r32 r0c2, r32 r0c3, r32 r1c0, r32 r1c1, r32 r1c2, r32 r1c3, r32 r2c0, r32 r2c1, r32 r2c2, r32 r2c3, r32 r3c0, r32 r3c1, r32 r3c2, r32 r3c3);
+	PIG_CORE_INLINE mat3 ToMat3From4(mat4 matrix4);
+	PIG_CORE_INLINE mat4 ToMat4From3(mat3 matrix3);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -95,9 +97,9 @@ typedef HMM_Mat4 mat4;
 //TODO: CofactorM4?
 //TODO: AdjointM4?
 
-#define InverseM2(matrix2) HMM_InvGeneralM2(matrix2)
-#define InverseM3(matrix3) HMM_InvGeneralM3(matrix3)
-#define InverseM4(matrix4) HMM_InvGeneralM4(matrix4)
+#define InverseMat2(matrix2) HMM_InvGeneralM2(matrix2)
+#define InverseMat3(matrix3) HMM_InvGeneralM3(matrix3)
+#define InverseMat4(matrix4) HMM_InvGeneralM4(matrix4)
 
 //TODO: Not entirely sure what this is useful for?
 #define LinearCombineV4Mat4(vec4Left, matrix4Right) HMM_LinearCombineV4M4((vec4Left), (matrix4Right))
@@ -193,6 +195,24 @@ PEXPI mat4 NewMat4(
 	result.Elements[0][2] = r2c0; result.Elements[1][2] = r2c1; result.Elements[2][2] = r2c2; result.Elements[3][2] = r2c3;
 	result.Elements[0][3] = r3c0; result.Elements[1][3] = r3c1; result.Elements[2][3] = r3c2; result.Elements[3][3] = r3c3;
 	return result;
+}
+
+PEXPI mat3 ToMat3From4(mat4 matrix4)
+{
+	return NewMat3(
+		matrix4.Elements[0][0], matrix4.Elements[1][0], matrix4.Elements[2][0],
+		matrix4.Elements[0][1], matrix4.Elements[1][1], matrix4.Elements[2][1],
+		matrix4.Elements[0][2], matrix4.Elements[1][2], matrix4.Elements[2][2]
+	);
+}
+PEXPI mat4 ToMat4From3(mat3 matrix3)
+{
+	return NewMat4(
+		matrix3.Elements[0][0], matrix3.Elements[1][0], matrix3.Elements[2][0], 0,
+		matrix3.Elements[0][1], matrix3.Elements[1][1], matrix3.Elements[2][1], 0,
+		matrix3.Elements[0][2], matrix3.Elements[1][2], matrix3.Elements[2][2], 0,
+		                     0,                      0,                      0, 1
+	);
 }
 
 //TODO: Do we really need this variant where we pass out the W value?

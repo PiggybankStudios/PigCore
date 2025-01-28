@@ -61,6 +61,7 @@ while(0)
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
+//NOTE: This returns a null-terminated string
 PEXP char* PrintInArena(Arena* arena, const char* formatString, ...)
 {
 	NotNull(arena);
@@ -85,6 +86,7 @@ PEXP char* PrintInArena(Arena* arena, const char* formatString, ...)
 	
 	return result;
 }
+//NOTE: This returns a null-terminated string
 PEXP Str8 PrintInArenaStr(Arena* arena, const char* formatString, ...)
 {
 	NotNull(arena);
@@ -115,6 +117,7 @@ PEXP int PrintVa_Measure(const char* formatString, va_list args)
 	int result = MyVaListPrintf(nullptr, 0, formatString, args);
 	return result;
 }
+//NOTE: This returns a null-terminated string
 PEXP void PrintVa_Print(const char* formatString, va_list args, char* allocatedSpace, int previousResult)
 {
 	Assert(previousResult >= 0);
