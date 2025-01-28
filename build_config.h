@@ -20,6 +20,8 @@ Description:
 #define BUILD_LINUX   0
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     0
+// Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h files
+#define BUILD_SHADERS 1
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -51,11 +53,11 @@ Description:
 // | Optional Libraries/Frameworks |
 // +===============================+
 // Enables tests.exe being linked with raylib.lib and it's required libraries
-#define BUILD_WITH_RAYLIB 1
+#define BUILD_WITH_RAYLIB 0
 // Enables tests.exe being linked with box2d.lib and it's required libraries
 #define BUILD_WITH_BOX2D 0
 // Enables tests.exe using sokol header files (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL 0
+#define BUILD_WITH_SOKOL 1
 // Enables tests.exe being linked with SDL.lib and it's required libraries
 #define BUILD_WITH_SDL 0
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries

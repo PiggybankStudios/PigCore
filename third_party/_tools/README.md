@@ -1,0 +1,2 @@
+# `third_party/_tools` Folder
+This folder contains third_party compiled binaries that help us build PigCore (or PigCore projects). For example it contains the sokol-shdc CLI tool that allows us to cross-compile our graphics shader code and use it easily with Sokol.

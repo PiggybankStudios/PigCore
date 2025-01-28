@@ -3,6 +3,8 @@
 if not exist _build mkdir _build
 pushd _build
 set root=..
+set scripts=%root%\_scripts
+set tools=%root%\third_party\_tools\win32
 
 :: +--------------------------------------------------------------+
 :: |                    Scrape build_config.h                     |
@@ -13,9 +15,10 @@ if errorlevel 1 (
 	exit
 )
 
-set extract_define=python ..\_scripts\extract_define.py ../build_config.h
+set extract_define=python %scripts%\extract_define.py ../build_config.h
 for /f "delims=" %%i in ('%extract_define% DEBUG_BUILD') do set DEBUG_BUILD=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN') do set BUILD_PIGGEN=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_SHADERS') do set BUILD_SHADERS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_PIGGEN') do set RUN_PIGGEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_TESTS') do set BUILD_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
@@ -58,6 +61,19 @@ if "%USE_EMSCRIPTEN%"=="1" (
 	call "C:\gamedev\lib\emsdk\emsdk_env.bat" > NUL 2> NUL
 )
 
+:: +--------------------------------------------------------------+
+:: |                        Build Shaders                         |
+:: +--------------------------------------------------------------+
+if "%BUILD_SHADERS%"=="1" (
+	if not exist sokol-shdc.exe (
+		echo "[Copying sokol-shdc.exe from %tools%...]"
+		COPY %tools%\sokol-shdc.exe sokol-shdc.exe
+	)
+	echo.
+	echo [Compiling Shaders...]
+	python %scripts%\find_and_compile_shaders.py "%root%" --exclude="third_party" --exclude=".git" --exclude="_build"
+	echo [Shaders Compiled!]
+)
 
 :: +--------------------------------------------------------------+
 :: |                       Compiler Options                       |
