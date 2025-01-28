@@ -56,35 +56,6 @@ Description:
 #if BUILD_WITH_BOX2D
 #include "third_party/box2d/box2d.h"
 #endif
-#if BUILD_WITH_SOKOL
-#if TARGET_IS_WINDOWS
-#define SOKOL_D3D11
-#elif TARGET_IS_LINUX
-#define SOKOL_GLCORE
-#elif TARGET_IS_WEB
-#define SOKOL_WGPU
-#endif
-#define SOKOL_IMPL
-#if TARGET_IS_WASM
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels [-Wimplicit-fallthrough]
-#endif
-#include "third_party/sokol/sokol_gfx.h"
-#if TARGET_IS_WASM
-#pragma clang diagnostic pop
-#endif
-#if TARGET_IS_LINUX
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
-#endif
-#include "third_party/sokol/sokol_app.h"
-#if TARGET_IS_LINUX
-#pragma clang diagnostic pop
-#endif
-#include "third_party/sokol/sokol_log.h"
-#include "third_party/sokol/sokol_glue.h"
-#endif
-
 #if BUILD_WITH_SDL
 #if COMPILER_IS_EMSCRIPTEN
 #include <SDL/SDL.h>
@@ -101,6 +72,7 @@ RandomSeries* mainRandom = nullptr;
 // +--------------------------------------------------------------+
 // |                      tests Source Files                      |
 // +--------------------------------------------------------------+
+#include "tests/tests_sokol.c"
 #include "tests/tests_box2d.c"
 #include "tests/tests_vr.c"
 #include "tests/tests_wasm_std.c"
@@ -174,15 +146,14 @@ DEBUG_OUTPUT_HANDLER_DEF(TestsDebugOutputCallback)
 // |                             Main                             |
 // +--------------------------------------------------------------+
 #if BUILD_WITH_SOKOL
-int MyMain()
+int MyMain(int argc, char* argv[]) //pre-declared in tests_sokol.c
 #elif (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int main(int argc, char* argv[])
 #endif
 {
-	#if BUILD_WITH_SOKOL
-	#elif (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
+	#if (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 	UNUSED(hInstance);
 	UNUSED(hPrevInstance);
 	UNUSED(lpCmdLine);
@@ -914,63 +885,6 @@ int main(int argc, char* argv[])
 	WriteLine_I("All tests completed successfully!");
 	return 0;
 }
-
-#if BUILD_WITH_SOKOL
-sg_pass_action sokolPassAction;
-
-void AppInit(void)
-{
-	sg_setup(&(sg_desc){
-		.environment = sglue_environment(),
-		.logger.func = slog_func,
-	});
-	sokolPassAction = (sg_pass_action){
-		.colors[0] = {
-			.load_action = SG_LOADACTION_CLEAR,
-			.clear_value = { 1.0f, 0.0f, 0.0f, 1.0f }
-		}
-	};
-}
-
-void AppFrame(void)
-{
-	float newGreen = sokolPassAction.colors[0].clear_value.g + 0.01f;
-	sokolPassAction.colors[0].clear_value.g = (newGreen > 1.0f) ? 0.0f : newGreen;
-	sg_begin_pass(&(sg_pass){ .action = sokolPassAction, .swapchain = sglue_swapchain() });
-	sg_end_pass();
-	sg_commit();
-}
-
-void AppCleanup(void)
-{
-	sg_shutdown();
-}
-
-void AppEvent(const sapp_event* event)
-{
-	UNUSED(event);
-	
-}
-
-
-sapp_desc sokol_main(int argc, char* argv[])
-{
-	UNUSED(argc);
-	UNUSED(argv);
-	MyMain();
-	return (sapp_desc){
-		.init_cb = AppInit,
-		.frame_cb = AppFrame,
-		.cleanup_cb = AppCleanup,
-		.event_cb = AppEvent,
-		.width = 400,
-		.height = 300,
-		.window_title = "Simple Sokol App!",
-		.icon.sokol_default = true,
-		.logger.func = slog_func,
-	};
-}
-#endif
 
 #if TARGET_IS_WASM && !COMPILER_IS_EMSCRIPTEN
 WASM_EXPORTED_FUNC(int, ModuleInit, r32 initializeTimestamp)
