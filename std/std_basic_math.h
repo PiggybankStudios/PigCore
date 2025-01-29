@@ -20,20 +20,24 @@ Date:   01\05\2025
 	PIG_CORE_INLINE u16 MinU16(u16 value1, u16 value2);
 	PIG_CORE_INLINE u32 MinU32(u32 value1, u32 value2);
 	PIG_CORE_INLINE u64 MinU64(u64 value1, u64 value2);
+	PIG_CORE_INLINE uxx MinUXX(uxx value1, uxx value2);
 	PIG_CORE_INLINE i8  MinI8(i8   value1, i8  value2);
 	PIG_CORE_INLINE i16 MinI16(i16 value1, i16 value2);
 	PIG_CORE_INLINE i32 MinI32(i32 value1, i32 value2);
 	PIG_CORE_INLINE i64 MinI64(i64 value1, i64 value2);
+	PIG_CORE_INLINE ixx MinIXX(ixx value1, ixx value2);
 	PIG_CORE_INLINE r32 MinR32(r32 value1, r32 value2);
 	PIG_CORE_INLINE r64 MinR64(r64 value1, r64 value2);
 	PIG_CORE_INLINE u8  MaxU8(u8   value1, u8  value2);
 	PIG_CORE_INLINE u16 MaxU16(u16 value1, u16 value2);
 	PIG_CORE_INLINE u32 MaxU32(u32 value1, u32 value2);
 	PIG_CORE_INLINE u64 MaxU64(u64 value1, u64 value2);
+	PIG_CORE_INLINE uxx MaxUXX(uxx value1, uxx value2);
 	PIG_CORE_INLINE i8  MaxI8(i8   value1, i8  value2);
 	PIG_CORE_INLINE i16 MaxI16(i16 value1, i16 value2);
 	PIG_CORE_INLINE i32 MaxI32(i32 value1, i32 value2);
 	PIG_CORE_INLINE i64 MaxI64(i64 value1, i64 value2);
+	PIG_CORE_INLINE ixx MaxIXX(ixx value1, ixx value2);
 	PIG_CORE_INLINE r32 MaxR32(r32 value1, r32 value2);
 	PIG_CORE_INLINE r64 MaxR64(r64 value1, r64 value2);
 	PIG_CORE_INLINE r32 AbsR32(r32 value);
@@ -81,10 +85,12 @@ Date:   01\05\2025
 	u16: MinU16((value1), (value2)),          \
 	u32: MinU32((value1), (value2)),          \
 	u64: MinU64((value1), (value2)),          \
+	uxx: MinUXX((value1), (value2)),          \
 	i8:  MinI8((value1),  (value2)),          \
 	i16: MinI16((value1), (value2)),          \
 	i32: MinI32((value1), (value2)),          \
 	i64: MinI64((value1), (value2)),          \
+	ixx: MinIXX((value1), (value2)),          \
 	r32: MinR32((value1), (value2)),          \
 	r64: MinR64((value1), (value2))           \
 )
@@ -93,10 +99,12 @@ Date:   01\05\2025
 	u16: MinU16((value1), MinU16((value2), (value3))), \
 	u32: MinU32((value1), MinU32((value2), (value3))), \
 	u64: MinU64((value1), MinU64((value2), (value3))), \
+	uxx: MinUXX((value1), MinUXX((value2), (value3))), \
 	i8:  MinI8((value1),  MinI8((value2),  (value3))), \
 	i16: MinI16((value1), MinI16((value2), (value3))), \
 	i32: MinI32((value1), MinI32((value2), (value3))), \
 	i64: MinI64((value1), MinI64((value2), (value3))), \
+	ixx: MinIXX((value1), MinIXX((value2), (value3))), \
 	r32: MinR32((value1), MinR32((value2), (value3))), \
 	r64: MinR64((value1), MinR64((value2), (value3)))  \
 )
@@ -107,10 +115,12 @@ Date:   01\05\2025
 	u16: MaxU16((value1), (value2)),          \
 	u32: MaxU32((value1), (value2)),          \
 	u64: MaxU64((value1), (value2)),          \
+	uxx: MaxUXX((value1), (value2)),          \
 	i8:  MaxI8((value1),  (value2)),          \
 	i16: MaxI16((value1), (value2)),          \
 	i32: MaxI32((value1), (value2)),          \
 	i64: MaxI64((value1), (value2)),          \
+	ixx: MaxIXX((value1), (value2)),          \
 	r32: MaxR32((value1), (value2)),          \
 	r64: MaxR64((value1), (value2))           \
 )
@@ -119,10 +129,12 @@ Date:   01\05\2025
 	u16: MaxU16((value1), MaxU16((value2), (value3))), \
 	u32: MaxU32((value1), MaxU32((value2), (value3))), \
 	u64: MaxU64((value1), MaxU64((value2), (value3))), \
+	uxx: MaxUXX((value1), MaxUXX((value2), (value3))), \
 	i8:  MaxI8((value1),  MaxI8((value2),  (value3))), \
 	i16: MaxI16((value1), MaxI16((value2), (value3))), \
 	i32: MaxI32((value1), MaxI32((value2), (value3))), \
 	i64: MaxI64((value1), MaxI64((value2), (value3))), \
+	ixx: MaxIXX((value1), MaxIXX((value2), (value3))), \
 	r32: MaxR32((value1), MaxR32((value2), (value3))), \
 	r64: MaxR64((value1), MaxR64((value2), (value3)))  \
 )
@@ -139,10 +151,12 @@ PEXPI u8  MinU8(u8   value1, u8  value2) { return (value1 < value2) ? value1 : v
 PEXPI u16 MinU16(u16 value1, u16 value2) { return (value1 < value2) ? value1 : value2; }
 PEXPI u32 MinU32(u32 value1, u32 value2) { return (value1 < value2) ? value1 : value2; }
 PEXPI u64 MinU64(u64 value1, u64 value2) { return (value1 < value2) ? value1 : value2; }
+PEXPI uxx MinUXX(uxx value1, uxx value2) { return (value1 < value2) ? value1 : value2; }
 PEXPI i8  MinI8(i8   value1, i8  value2) { return (value1 < value2) ? value1 : value2; }
 PEXPI i16 MinI16(i16 value1, i16 value2) { return (value1 < value2) ? value1 : value2; }
 PEXPI i32 MinI32(i32 value1, i32 value2) { return (value1 < value2) ? value1 : value2; }
 PEXPI i64 MinI64(i64 value1, i64 value2) { return (value1 < value2) ? value1 : value2; }
+PEXPI ixx MinIXX(ixx value1, ixx value2) { return (value1 < value2) ? value1 : value2; }
 PEXPI r32 MinR32(r32 value1, r32 value2) { return (value1 < value2) ? value1 : value2; }
 PEXPI r64 MinR64(r64 value1, r64 value2) { return (value1 < value2) ? value1 : value2; }
 
@@ -153,10 +167,12 @@ PEXPI u8  MaxU8(u8   value1, u8  value2) { return (value1 > value2) ? value1 : v
 PEXPI u16 MaxU16(u16 value1, u16 value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI u32 MaxU32(u32 value1, u32 value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI u64 MaxU64(u64 value1, u64 value2) { return (value1 > value2) ? value1 : value2; }
+PEXPI uxx MaxUXX(uxx value1, uxx value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI i8  MaxI8(i8   value1, i8  value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI i16 MaxI16(i16 value1, i16 value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI i32 MaxI32(i32 value1, i32 value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI i64 MaxI64(i64 value1, i64 value2) { return (value1 > value2) ? value1 : value2; }
+PEXPI ixx MaxIXX(ixx value1, ixx value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI r32 MaxR32(r32 value1, r32 value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI r64 MaxR64(r64 value1, r64 value2) { return (value1 > value2) ? value1 : value2; }
 

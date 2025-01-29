@@ -153,6 +153,7 @@ if (len(shaderFilePaths) == 0): print("No shader files found (%d files/folders w
 
 givenNameRegex = re.compile("Shader program: '(.*)':");
 
+
 for shaderFilePath in shaderFilePaths:
 #
 	print("Compiling \"%s\"..." % shaderFilePath, flush=True);
@@ -171,27 +172,69 @@ for shaderFilePath in shaderFilePaths:
 	# print("Command: %s" % " ".join(cmd));
 	subprocess.check_output(cmd);
 	
-	shaderName = os.path.splitext(os.path.basename(shaderFilePath))[0];
+	shaderName = "unknown";
+	foundName = False;
+	shaderAttributes = [];
+	attributeRegex = None;
 	with open(outputHeaderPath, "r") as compiledShaderFile:
 	#
 		lineIndex = 0;
 		for line in compiledShaderFile:
 		#
-			match = givenNameRegex.search(line);
-			if (match != None):
+			if (not foundName):
 			#
-				# print("\"%s\" -> %s" % (line, match.group(1)));
-				shaderName = match.group(1);
-				break;
+				nameMatch = givenNameRegex.search(line);
+				if (nameMatch != None):
+				#
+					# print("\"%s\" -> %s" % (line, nameMatch.group(1)));
+					shaderName = nameMatch.group(1);
+					attributeRegex = re.compile("\\#define\\s+ATTR_%s_(.*)\\s+\\(\\d+\\)" % shaderName);
+					foundName = True;
+				#
+			#
+			else:
+			#
+				attribMatch = attributeRegex.search(line);
+				if (attribMatch != None):
+				#
+					# print("\"%s\" -> %s" % (line, attribMatch.group(1)));
+					shaderAttributes.append(attribMatch.group(1));
+				#
 			#
 			lineIndex += 1;
 		#
 	#
-	defineName = "%s_FILE_PATH" % shaderName;
 	
-	with open(outputHeaderPath, "a") as compiledShaderFile:
+	if (foundName):
 	#
-		compiledShaderFile.write("\n#define %s %s //NOTE: This line is added by find_and_compile_shaders.py\n" % (defineName, EscapeString(fullShaderFilePath, True)));
+		filePathDefineName = "%s_SHADER_FILE_PATH" % shaderName;
+		attributeCountDefineName = "%s_SHADER_ATTR_COUNT" % shaderName;
+		attributeNamesDefineName = "%s_SHADER_ATTR_NAMES" % shaderName;
+		attributeValuesDefineName = "%s_SHADER_ATTRS" % shaderName;
+		with open(outputHeaderPath, "a") as compiledShaderFile:
+		#
+			compiledShaderFile.write("\n//NOTE: These lines were added by find_and_compile_shaders.py\n");
+			compiledShaderFile.write("#define %s %s //NOTE: This line is added by find_and_compile_shaders.py\n" % (filePathDefineName, EscapeString(fullShaderFilePath, True)));
+			attributeNames = "{ ";
+			attributeValues = "{ ";
+			aIndex = 0;
+			for attribute in shaderAttributes:
+			#
+				if (aIndex > 0): attributeNames += ", "; attributeValues += ", ";
+				attributeNames += "\"%s\"" % (attribute);
+				attributeValues += "ATTR_%s_%s" % (shaderName, attribute);
+				aIndex += 1;
+			#
+			attributeNames += " }";
+			attributeValues += " }";
+			compiledShaderFile.write("#define %s %s\n" % (attributeCountDefineName, len(shaderAttributes)));
+			compiledShaderFile.write("#define %s %s\n" % (attributeNamesDefineName, attributeNames));
+			compiledShaderFile.write("#define %s %s\n" % (attributeValuesDefineName, attributeValues));
+		#
+	#
+	else:
+	#
+		print("WARNING: Failed to find given name in generated shader header file. This file will not have the tacked-on defines that we expect! %s" % (outputHeaderPath));
 	#
 	# print("Done!");
 #

@@ -13,6 +13,45 @@ Description:
 #include "base/base_typedefs.h"
 #include "struct/struct_vectors.h"
 
+#define MAX_NUM_VERT_ATTRIBUTES    8
+
+typedef enum VertAttributeType VertAttributeType;
+enum VertAttributeType
+{
+	VertAttributeType_None = 0,
+	VertAttributeType_Position,
+	VertAttributeType_TexCoord,
+	VertAttributeType_Normal,
+	VertAttributeType_Tangent,
+	VertAttributeType_Color,
+	VertAttributeType_Count,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetVertAttributeTypeStr(VertAttributeType enumValue);
+#else
+PEXP const char* GetVertAttributeTypeStr(VertAttributeType enumValue)
+{
+	switch (enumValue)
+	{
+		case VertAttributeType_None:     return "None";
+		case VertAttributeType_Position: return "Position";
+		case VertAttributeType_TexCoord: return "TexCoord";
+		case VertAttributeType_Normal:   return "Normal";
+		case VertAttributeType_Tangent:  return "Tangent";
+		case VertAttributeType_Color:    return "Color";
+		default: return "Unknown";
+	}
+}
+#endif
+
+typedef struct VertAttribute VertAttribute;
+struct VertAttribute
+{
+	VertAttributeType type;
+	u8 size; //in bytes
+	u8 offset; //in bytes
+};
+
 typedef union Vertex2D Vertex2D;
 union Vertex2D
 {
@@ -22,6 +61,12 @@ union Vertex2D
 		v2 position;
 		v2 texCoord;
 		v4r color;
+	};
+	struct
+	{
+		r32 X, Y;
+		r32 tX, tY;
+		r32 R, G, B, A;
 	};
 };
 _Static_assert(sizeof(Vertex2D) == sizeof(r32)*8);
@@ -35,6 +80,12 @@ union Vertex3D
 		v3 position;
 		v2 texCoord;
 		v4r color;
+	};
+	struct
+	{
+		r32 X, Y, Z;
+		r32 tX, tY;
+		r32 R, G, B, A;
 	};
 };
 _Static_assert(sizeof(Vertex3D) == sizeof(r32)*9);

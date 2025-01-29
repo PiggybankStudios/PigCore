@@ -397,4 +397,8 @@ static inline const sg_shader_desc* simple_shader_desc(sg_backend backend) {
     return 0;
 }
 
-#define simple_FILE_PATH "C:\\gamedev\\projects\\PigCoreGameProto\\core\\tests\\simple_shader.glsl" //NOTE: This line is added by find_and_compile_shaders.py
+//NOTE: These lines were added by find_and_compile_shaders.py
+#define simple_SHADER_FILE_PATH "C:\\gamedev\\projects\\PigCoreGameProto\\core\\tests\\simple_shader.glsl" //NOTE: This line is added by find_and_compile_shaders.py
+#define simple_SHADER_ATTR_COUNT 2
+#define simple_SHADER_ATTR_NAMES { "position", "color0" }
+#define simple_SHADER_ATTRS { ATTR_simple_position, ATTR_simple_color0 }

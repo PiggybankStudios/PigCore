@@ -71,7 +71,25 @@ struct Str8Pair
 	PIG_CORE_INLINE bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr);
 	Str8 TrimLeadingWhitespace(Str8 target);
 	Str8 TrimTrailingWhitespace(Str8 target);
-	PIG_CORE_INLINE Str8 TrimWhitespace(Str8 target);
+	PIG_CORE_INLINE bool TrimWhitespace(Str8 target);
+	PIG_CORE_INLINE bool StrSlice(Str8 target, uxx startIndex, uxx endIndex);
+	PIG_CORE_INLINE bool StrSliceFrom(Str8 target, uxx startIndex);
+	PIG_CORE_INLINE bool StrSliceLength(Str8 target, uxx startIndex, uxx length);
+	PIG_CORE_INLINE bool StrExactEquals(Str8 left, Str8 right);
+	PIG_CORE_INLINE bool StrExactEqualsAt(Str8 left, Str8 right, uxx leftIndex);
+	PIG_CORE_INLINE bool StrExactStartsWith(Str8 target, Str8 prefix);
+	PIG_CORE_INLINE bool StrExactEndsWith(Str8 target, Str8 suffix);
+	bool StrExactContains(Str8 haystack, Str8 needle);
+	PIG_CORE_INLINE bool StrAnyCaseEquals(Str8 left, Str8 right);
+	PIG_CORE_INLINE bool StrAnyCaseEqualsAt(Str8 left, Str8 right, uxx leftIndex);
+	PIG_CORE_INLINE bool StrAnyCaseStartsWith(Str8 target, Str8 prefix);
+	PIG_CORE_INLINE bool StrAnyCaseEndsWith(Str8 target, Str8 suffix);
+	PIG_CORE_INLINE bool StrAnyCaseContains(Str8 haystack, Str8 needle);
+	PIG_CORE_INLINE bool StrEquals(Str8 left, Str8 right, bool caseSensitive);
+	PIG_CORE_INLINE bool StrEqualsAt(Str8 left, Str8 right, uxx leftIndex, bool caseSensitive);
+	PIG_CORE_INLINE bool StrStartsWith(Str8 target, Str8 prefix, bool caseSensitive);
+	PIG_CORE_INLINE bool StrEndsWith(Str8 target, Str8 suffix, bool caseSensitive);
+	PIG_CORE_INLINE bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -211,35 +229,112 @@ PEXPI Str8 TrimWhitespace(Str8 target)
 	return result;
 }
 
-//TODO: Str8 StrSubstring(Str8* target, uxx startIndex)
-//TODO: Str8 StrSubstring(Str8* target, uxx startIndex, uxx endIndex)
-//TODO: Str8 StrSubstringLength(Str8* target, uxx startIndex, uxx length)
+PEXPI Str8 StrSlice(Str8 target, uxx startIndex, uxx endIndex)
+{
+	DebugAssert(startIndex <= target.length);
+	DebugAssert(endIndex <= target.length);
+	DebugAssert(startIndex <= endIndex);
+	return NewStr8(endIndex - startIndex, target.chars + startIndex);
+}
+PEXPI Str8 StrSliceFrom(Str8 target, uxx startIndex)
+{
+	return StrSlice(target, startIndex, target.length);
+}
+PEXPI Str8 StrSliceLength(Str8 target, uxx startIndex, uxx length)
+{
+	return StrSlice(target, startIndex, startIndex + length);
+}
+
+PEXPI bool StrExactEquals(Str8 left, Str8 right)
+{
+	if (left.length != right.length) { return false; }
+	if (left.length == 0) { return true; }
+	if (MyMemCompare(left.chars, right.chars, left.length) != 0) { return false; }
+	return true;
+}
+PEXPI bool StrExactEqualsAt(Str8 left, Str8 right, uxx leftIndex)
+{
+	return StrExactEquals(StrSliceLength(left, leftIndex, right.length), right);
+}
+PEXPI bool StrExactStartsWith(Str8 target, Str8 prefix)
+{
+	if (target.length < prefix.length) { return false; }
+	return StrExactEquals(StrSlice(target, 0, prefix.length), prefix);
+}
+PEXPI bool StrExactEndsWith(Str8 target, Str8 suffix)
+{
+	if (target.length < suffix.length) { return false; }
+	return StrExactEquals(StrSlice(target, target.length - suffix.length, target.length), suffix);
+}
+PEXP bool StrExactContains(Str8 haystack, Str8 needle)
+{
+	Assert(needle.length > 0);
+	if (haystack.length < needle.length) { return false; }
+	for (uxx bIndex = 0; bIndex <= haystack.length - needle.length; bIndex++)
+	{
+		if (StrExactEquals(StrSliceLength(haystack, bIndex, needle.length), needle)) { return true; }
+	}
+	return false;
+}
+
+PEXPI bool StrAnyCaseEquals(Str8 left, Str8 right)
+{
+	if (StrExactEquals(left, right)) { return true; }
+	//TODO: Implement me!
+	return false;
+}
+PEXPI bool StrAnyCaseEqualsAt(Str8 left, Str8 right, uxx leftIndex)
+{
+	return StrAnyCaseEquals(StrSliceLength(left, leftIndex, right.length), right);
+}
+PEXPI bool StrAnyCaseStartsWith(Str8 target, Str8 prefix)
+{
+	if (StrExactStartsWith(target, prefix)) { return true; }
+	//TODO: Implement me!
+	return false;
+}
+PEXPI bool StrAnyCaseEndsWith(Str8 target, Str8 suffix)
+{
+	if (StrExactEndsWith(target, suffix)) { return true; }
+	//TODO: Implement me!
+	return false;
+}
+PEXPI bool StrAnyCaseContains(Str8 haystack, Str8 needle)
+{
+	if (StrExactContains(haystack, needle)) { return true; }
+	//TODO: Implement me!
+	return false;
+}
+
+PEXPI bool StrEquals(Str8 left, Str8 right, bool caseSensitive)
+{
+	return (caseSensitive ? StrExactEquals(left, right) : StrAnyCaseEquals(left, right));
+}
+PEXPI bool StrEqualsAt(Str8 left, Str8 right, uxx leftIndex, bool caseSensitive)
+{
+	return (caseSensitive ? StrExactEqualsAt(left, right, leftIndex) : StrAnyCaseEqualsAt(left, right, leftIndex));
+}
+PEXPI bool StrStartsWith(Str8 target, Str8 prefix, bool caseSensitive)
+{
+	return (caseSensitive ? StrExactStartsWith(target, prefix) : StrAnyCaseStartsWith(target, prefix));
+}
+PEXPI bool StrEndsWith(Str8 target, Str8 suffix, bool caseSensitive)
+{
+	return (caseSensitive ? StrExactEndsWith(target, suffix) : StrAnyCaseEndsWith(target, suffix));
+}
+PEXPI bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive)
+{
+	return (caseSensitive ? StrExactContains(haystack, needle) : StrAnyCaseContains(haystack, needle));
+}
+
 //TODO: Str8 CombineStrs(MemArena_t* memArena, Str8 str1, Str8 str2)
 //TODO: Str8 CombineStrs(MemArena_t* memArena, Str8 str1, Str8 str2, Str8 str3)
 //TODO: Str8 CombineStrs(MemArena_t* memArena, Str8 str1, Str8 str2, Str8 str3, Str8 str4)
-//TODO: bool StrEquals(Str8 target, Str8 comparison)
-//TODO: bool StrEquals(Str8 target, const char* comparisonNt)
-//TODO: bool StrEquals(Str8 target, uxx comparisonLength, const char* comparisonPntr)
-//TODO: bool StrEquals(const char* comparisonNt, Str8 target)
-//TODO: bool StrEquals(uxx comparisonLength, const char* comparisonPntr, Str8 target)
 //TODO: i32 StrCompareIgnoreCase(Str8 str1, Str8 str2, uxx compareLength)
 //TODO: i32 StrCompareIgnoreCase(Str8 str1, Str8 str2)
 //TODO: i32 StrCompareIgnoreCase(Str8 str1, const char* nullTermStr, uxx compareLength)
 //TODO: i32 StrCompareIgnoreCase(Str8 str1, const char* nullTermStr)
 //TODO: i32 StrCompareIgnoreCase(const char* str1, const char* str2, uxx compareLength)
-//TODO: bool StrEqualsIgnoreCase(Str8 target, Str8 comparison)
-//TODO: bool StrEqualsIgnoreCase(Str8 target, const char* comparisonNt)
-//TODO: bool StrEqualsIgnoreCase(Str8 target, uxx comparisonLength, const char* comparisonPntr)
-//TODO: bool StrEqualsIgnoreCase(const char* comparisonNt, Str8 target)
-//TODO: bool StrEqualsIgnoreCase(uxx comparisonLength, const char* comparisonPntr, Str8 target)
-//TODO: bool StrStartsWith(Str8 str, Str8 prefix, bool ignoreCase = false)
-//TODO: bool StrStartsWith(Str8 str, const char* nullTermPrefixStr, bool ignoreCase = false)
-//TODO: bool StrStartsWith(const char* nullTermStr, Str8 prefix, bool ignoreCase = false)
-//TODO: bool StrStartsWith(const char* nullTermStr, const char* nullTermPrefixStr, bool ignoreCase = false)
-//TODO: bool StrEndsWith(Str8 str, Str8 suffix, bool ignoreCase = false)
-//TODO: bool StrEndsWith(Str8 str, const char* nullTermSuffix, bool ignoreCase = false)
-//TODO: bool StrEndsWith(const char* nullTermStr, Str8 suffix, bool ignoreCase = false)
-//TODO: bool StrEndsWith(const char* nullTermStr, const char* nullTermSuffix, bool ignoreCase = false)
 //TODO: bool StrStartsWithSlash(Str8 str)
 //TODO: bool StrStartsWithSlash(const char* nullTermStr)
 //TODO: bool StrEndsWithSlash(Str8 str)

@@ -35,6 +35,7 @@ _Static_assert(STRUCT_VAR_OFFSET(Vertex, color) == sizeof(r32)*3);
 // +--------------------------------------------------------------+
 sg_pass_action sokolPassAction;
 Shader simpleShader;
+VertBuffer triangleBuffer;
 sg_bindings bindings;
 sg_pipeline pipeline;
 
@@ -105,40 +106,49 @@ void AppInit(void)
 	
 	ClearStruct(bindings);
 	
-	Vertex vertices[] = {
-		{  0.0f,  0.5f, 0.5f,   1.0f, 0.0f, 0.0f, 1.0f },
-		{  0.5f, -0.5f, 0.5f,   0.0f, 1.0f, 0.0f, 1.0f },
-		{ -0.5f, -0.5f, 0.5f,   0.0f, 0.0f, 1.0f, 1.0f },
+	Vertex2D vertices[] = {
+		{ .X= 0.0f, .Y= 0.5f,   .tX=0.0f, .tY=0.0f,   .R=1.0f, .G=0.0f, .B=0.0f, .A=1.0f },
+		{ .X= 0.5f, .Y=-0.5f,   .tX=1.0f, .tY=1.0f,   .R=0.0f, .G=1.0f, .B=0.0f, .A=1.0f },
+		{ .X=-0.5f, .Y=-0.5f,   .tX=0.0f, .tY=1.0f,   .R=0.0f, .G=0.0f, .B=1.0f, .A=1.0f },
 	};
-	sg_buffer_desc bufferDesc = {
-		.data = SG_RANGE(vertices),
-		.usage = SG_USAGE_IMMUTABLE,
-		.label = "triangle-vertices",
-	};
-	bindings.vertex_buffers[0] = sg_make_buffer(&bufferDesc);
+	triangleBuffer = InitVertBuffer2D(stdHeap, StrLit("triangle"), VertBufferUsage_Static, ArrayCount(vertices), &vertices[0], false);
+	Assert(triangleBuffer.error == Result_Success);
+	BindVertBuffer(&bindings, &triangleBuffer, 0);
 	
-	simpleShader = InitCompiledShader(stdHeap, simple); Assert(simpleShader.error == Result_Success);
+	InitCompiledShader(&simpleShader, stdHeap, simple); Assert(simpleShader.error == Result_Success);
 	
-	sg_pipeline_desc pipelineDesc = {
-		.shader = simpleShader.handle,
-		.layout = {
-			.buffers[0].stride = sizeof(Vertex),
-			.attrs = {
-				[ATTR_simple_position].format = SG_VERTEXFORMAT_FLOAT3,
-				[ATTR_simple_position].offset = STRUCT_VAR_OFFSET(Vertex, position),
-				[ATTR_simple_color0].format = SG_VERTEXFORMAT_FLOAT4,
-				[ATTR_simple_color0].offset = STRUCT_VAR_OFFSET(Vertex, color),
-			},
-		},
-		.label = "triangle-pipeline",
-	};
+	sg_pipeline_desc pipelineDesc = ZEROED;
+	pipelineDesc.label = "triangle-pipeline";
+	FillPipelineDescLayout(&pipelineDesc, &simpleShader, &triangleBuffer);
+	pipelineDesc.depth.pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
+	pipelineDesc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
+	pipelineDesc.depth.write_enabled = true;
+	pipelineDesc.stencil.enabled = false;
+	pipelineDesc.color_count = 1;
+	pipelineDesc.colors[0].pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
+	pipelineDesc.colors[0].write_mask = SG_COLORMASK_RGBA;
+	pipelineDesc.colors[0].blend.enabled = true;
+	pipelineDesc.colors[0].blend.src_factor_rgb = SG_BLENDFACTOR_ONE;
+	pipelineDesc.colors[0].blend.dst_factor_rgb = SG_BLENDFACTOR_ZERO;
+	pipelineDesc.colors[0].blend.op_rgb = SG_BLENDOP_ADD;
+	pipelineDesc.colors[0].blend.src_factor_alpha = SG_BLENDFACTOR_ONE;
+	pipelineDesc.colors[0].blend.dst_factor_alpha = SG_BLENDFACTOR_ZERO;
+	pipelineDesc.colors[0].blend.op_alpha = SG_BLENDOP_ADD;
+	pipelineDesc.primitive_type = SG_PRIMITIVETYPE_TRIANGLES;
+	pipelineDesc.index_type = SG_INDEXTYPE_NONE;
+	pipelineDesc.cull_mode = SG_CULLMODE_BACK;
+	pipelineDesc.face_winding = SG_FACEWINDING_CW;
 	pipeline = sg_make_pipeline(&pipelineDesc);
 	
 	sokolPassAction = (sg_pass_action){
 		.colors[0] = {
 			.load_action = SG_LOADACTION_CLEAR,
 			.clear_value = { 0.75f, 0.8f, 1.0f, 1.0f }
-		}
+		},
+		.depth = {
+			.load_action = SG_LOADACTION_CLEAR,
+			.clear_value = 1.0f,
+		},
 	};
 }
 
