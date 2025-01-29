@@ -14,6 +14,7 @@
 import sys
 import os
 import subprocess
+import re
 
 numArguments = len(sys.argv);
 arguments = sys.argv;
@@ -150,12 +151,13 @@ RecursiveWalk(os.fsencode(targetPath));
 
 if (len(shaderFilePaths) == 0): print("No shader files found (%d files/folders walked)" % numFilesWalked);
 
+givenNameRegex = re.compile("Shader program: '(.*)':");
+
 for shaderFilePath in shaderFilePaths:
 #
 	print("Compiling \"%s\"..." % shaderFilePath, flush=True);
 	fullShaderFilePath = os.path.abspath(shaderFilePath);
 	outputHeaderPath = fullShaderFilePath + ".h";
-	defineName = "%s_FILE_PATH" % os.path.splitext(os.path.basename(shaderFilePath))[0].upper();
 	cmd = ["sokol-shdc.exe"];
 	cmd.append("--format=sokol");
 	cmd.append("--errfmt=msvc");
@@ -168,9 +170,28 @@ for shaderFilePath in shaderFilePaths:
 	#
 	# print("Command: %s" % " ".join(cmd));
 	subprocess.check_output(cmd);
+	
+	shaderName = os.path.splitext(os.path.basename(shaderFilePath))[0];
+	with open(outputHeaderPath, "r") as compiledShaderFile:
+	#
+		lineIndex = 0;
+		for line in compiledShaderFile:
+		#
+			match = givenNameRegex.search(line);
+			if (match != None):
+			#
+				# print("\"%s\" -> %s" % (line, match.group(1)));
+				shaderName = match.group(1);
+				break;
+			#
+			lineIndex += 1;
+		#
+	#
+	defineName = "%s_FILE_PATH" % shaderName;
+	
 	with open(outputHeaderPath, "a") as compiledShaderFile:
 	#
-		compiledShaderFile.write("\n#define %s %s\n" % (defineName, EscapeString(fullShaderFilePath, True)));
+		compiledShaderFile.write("\n#define %s %s //NOTE: This line is added by find_and_compile_shaders.py\n" % (defineName, EscapeString(fullShaderFilePath, True)));
 	#
 	# print("Done!");
 #

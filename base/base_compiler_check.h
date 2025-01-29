@@ -10,6 +10,8 @@ Description:
 #ifndef _BASE_COMPILER_CHECK_H
 #define _BASE_COMPILER_CHECK_H
 
+#include "build_config.h"
+
 // +--------------------------------------------------------------+
 // |                      Determine COMPILER                      |
 // +--------------------------------------------------------------+

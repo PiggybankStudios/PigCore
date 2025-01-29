@@ -26,7 +26,7 @@ Description:
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
-#define DEBUG_BUILD   0
+#define DEBUG_BUILD   1
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0

@@ -39,6 +39,7 @@ enum Result
 	Result_UnsupportedPlatform,
 	Result_ParsingFailure,
 	Result_FailedToReadFile,
+	Result_SokolError,
 	
 	Result_Count,
 };
@@ -61,6 +62,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_UnsupportedPlatform: return "UnsupportedPlatform";
 		case Result_ParsingFailure: return "ParsingFailure";
 		case Result_FailedToReadFile: return "FailedToReadFile";
+		case Result_SokolError: return "SokolError";
 		default: return UNKNOWN_STR;
 	}
 }

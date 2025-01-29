@@ -8,41 +8,6 @@ Description:
 
 #if BUILD_WITH_SOKOL
 
-#define SOKOL_ASSERT(condition) Assert(condition)
-#define SOKOL_UNREACHABLE Assert(false)
-#if DEBUG_BUILD
-#define SOKOL_DEBUG
-#endif
-
-#if TARGET_IS_WINDOWS
-#define SOKOL_D3D11
-// #define SOKOL_GLCORE
-#elif TARGET_IS_LINUX
-#define SOKOL_GLCORE
-#elif TARGET_IS_WEB
-#define SOKOL_WGPU
-#endif
-
-#if TARGET_IS_WASM
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels [-Wimplicit-fallthrough]
-#endif
-#define SOKOL_GFX_IMPL
-#include "third_party/sokol/sokol_gfx.h"
-#if TARGET_IS_WASM
-#pragma clang diagnostic pop
-#endif
-
-#if TARGET_IS_LINUX
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
-#endif
-#define SOKOL_APP_IMPL
-#include "third_party/sokol/sokol_app.h"
-#if TARGET_IS_LINUX
-#pragma clang diagnostic pop
-#endif
-
 #include "tests/simple_shader.glsl.h"
 
 int MyMain(int argc, char* argv[]);
@@ -69,7 +34,7 @@ _Static_assert(STRUCT_VAR_OFFSET(Vertex, color) == sizeof(r32)*3);
 // |                           Globals                            |
 // +--------------------------------------------------------------+
 sg_pass_action sokolPassAction;
-sg_shader simpleShader;
+Shader simpleShader;
 sg_bindings bindings;
 sg_pipeline pipeline;
 
@@ -152,11 +117,10 @@ void AppInit(void)
 	};
 	bindings.vertex_buffers[0] = sg_make_buffer(&bufferDesc);
 	
-	simpleShader = sg_make_shader(simple_shader_desc(sg_query_backend()));
-	Assert(simpleShader.id != 0);
+	simpleShader = InitCompiledShader(stdHeap, simple); Assert(simpleShader.error == Result_Success);
 	
 	sg_pipeline_desc pipelineDesc = {
-		.shader = simpleShader,
+		.shader = simpleShader.handle,
 		.layout = {
 			.buffers[0].stride = sizeof(Vertex),
 			.attrs = {

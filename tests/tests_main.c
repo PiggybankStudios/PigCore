@@ -68,6 +68,10 @@ Description:
 // |                           Globals                            |
 // +--------------------------------------------------------------+
 RandomSeries* mainRandom = nullptr;
+#if !USING_CUSTOM_STDLIB
+Arena stdHeapStruct = ZEROED;
+Arena* stdHeap = nullptr;
+#endif
 
 // +--------------------------------------------------------------+
 // |                      tests Source Files                      |
@@ -204,10 +208,10 @@ int main(int argc, char* argv[])
 	InitArenaStackWasm(&wasmMemory);
 	FlagSet(wasmMemory.flags, ArenaFlag_AssertOnFailedAlloc);
 	#else
-	Arena stdHeap = ZEROED;
-	InitArenaStdHeap(&stdHeap);
+	InitArenaStdHeap(&stdHeapStruct);
+	stdHeap = &stdHeapStruct;
 	Arena stdAlias = ZEROED;
-	InitArenaAlias(&stdAlias, &stdHeap);
+	InitArenaAlias(&stdAlias, stdHeap);
 	#endif
 	u8 arenaBuffer1[256] = ZEROED;
 	Arena bufferArena = ZEROED;
@@ -219,7 +223,7 @@ int main(int argc, char* argv[])
 	#if USING_CUSTOM_STDLIB
 	InitScratchArenas(Megabytes(256), &wasmMemory);
 	#elif TARGET_IS_WASM
-	InitScratchArenas(Megabytes(256), &stdHeap);
+	InitScratchArenas(Megabytes(256), stdHeap);
 	#else
 	InitScratchArenasVirtual(Gigabytes(4));
 	#endif
@@ -251,17 +255,17 @@ int main(int argc, char* argv[])
 	#if 0
 	{
 		#if !TARGET_IS_WASM
-		u32* allocatedInt1 = AllocMem(&stdHeap, sizeof(u32));
+		u32* allocatedInt1 = AllocMem(stdHeap, sizeof(u32));
 		PrintLine_D("allocatedInt1: %p", allocatedInt1);
-		PrintArena(&stdHeap);
+		PrintArena(stdHeap);
 		u32* allocatedInt2 = AllocMem(&stdAlias, sizeof(u32));
 		PrintLine_D("allocatedInt2: %p", allocatedInt2);
-		PrintArena(&stdHeap);
+		PrintArena(stdHeap);
 		FreeMem(&stdAlias, allocatedInt1, sizeof(u32));
-		PrintArena(&stdHeap);
+		PrintArena(stdHeap);
 		u32* allocatedInt3 = AllocMem(&stdAlias, sizeof(u32));
 		PrintLine_D("allocatedInt3: %p", allocatedInt3);
-		PrintArena(&stdHeap);
+		PrintArena(stdHeap);
 		#endif
 		
 		u32* allocatedInt4 = AllocMem(&bufferArena, sizeof(u32));
@@ -525,7 +529,7 @@ int main(int argc, char* argv[])
 		PrintLine_I("\tFile[%llu] = \"%.*s\" %llu bytes: %02X %02X %02X %02X", (u64)fileIndex, StrPrint(fileName1), (u64)fileContents1.length, fileContents1.bytes[0], fileContents1.bytes[1], fileContents1.bytes[2], fileContents1.bytes[3]);
 		#if BUILD_WITH_RAYLIB
 		ImageData zipImageData;
-		Result loadImageResult = TryParseImageFile(fileContents1, &stdHeap, &zipImageData);
+		Result loadImageResult = TryParseImageFile(fileContents1, stdHeap, &zipImageData);
 		if (loadImageResult != Result_Success) { PrintLine_E("Failed to parse \"%.*s\" texture: %s", StrPrint(fileName1), GetResultStr(loadImageResult)); }
 		else
 		{
@@ -558,12 +562,12 @@ int main(int argc, char* argv[])
 	#if 0
 	{
 		VarArray array1;
-		InitVarArrayWithInitial(u32, &array1, &stdHeap, 89);
+		InitVarArrayWithInitial(u32, &array1, stdHeap, 89);
 		PrintVarArray(&array1);
 		PrintNumbers(&array1);
 		
 		VarArray array2;
-		InitVarArray(u32, &array2, &stdHeap);
+		InitVarArray(u32, &array2, stdHeap);
 		PrintVarArray(&array2);
 		PrintNumbers(&array2);
 		array2.maxLength = 3;
@@ -587,7 +591,7 @@ int main(int argc, char* argv[])
 		PrintNumbers(&array2);
 		
 		VarArray array3;
-		VarArrayCopy(&array3, &array2, &stdHeap);
+		VarArrayCopy(&array3, &array2, stdHeap);
 		
 		u32 removedNum = VarArrayGetAndRemoveValueAt(u32, &array2, 2);
 		PrintLine_D("Removed array[2] = %u", removedNum);
