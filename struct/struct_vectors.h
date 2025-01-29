@@ -74,12 +74,46 @@ union Vec4i
 	i32 Elements[4];
 };
 
+//NOTE: Vec4Raw is exactly the same as HMM_Vec4 but it doesn't include the SSE type __m128
+//      which means it's alignment is 4 instead of 16! HMM_Vec4 is the only HMM vector
+//      type that is 16-byte aligned, so this is the only "Raw" variant we have
+typedef union Vec4Raw Vec4Raw;
+union Vec4Raw
+{
+	r32 Elements[4];
+	
+	struct
+	{
+		union
+		{
+			HMM_Vec3 XYZ;
+			struct { r32 X, Y, Z; };
+		};
+		r32 W;
+	};
+	struct
+	{
+		union
+		{
+			HMM_Vec3 RGB;
+			struct { r32 R, G, B; };
+		};
+		r32 A;
+	};
+	
+	struct { HMM_Vec2 XY; r32 _Ignored0; r32 _Ignored1; };
+	struct { r32 _Ignored2; HMM_Vec2 YZ; r32 _Ignored3; };
+	struct { r32 _Ignored4; r32 _Ignored5; HMM_Vec2 ZW; };
+
+};
+
 typedef HMM_Vec2 v2;
 typedef Vec2i v2i;
 typedef HMM_Vec3 v3;
 typedef Vec3i v3i;
 typedef HMM_Vec4 v4;
 typedef Vec4i v4i;
+typedef Vec4Raw v4r;
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -88,6 +122,7 @@ typedef Vec4i v4i;
 	PIG_CORE_INLINE v2i NewV2i(i32 x, i32 y);
 	PIG_CORE_INLINE v3i NewV3i(i32 x, i32 y, i32 z);
 	PIG_CORE_INLINE v4i NewV4i(i32 x, i32 y, i32 z, i32 w);
+	PIG_CORE_INLINE v4r NewV4r(r32 x, r32 y, r32 z, r32 w);
 	PIG_CORE_INLINE v2 ToV2Fromi(v2i vec2i);
 	PIG_CORE_INLINE v2 ToV2From3(v3 vec3);
 	PIG_CORE_INLINE v2 ToV2From3XZ(v3 vec3);
@@ -104,6 +139,8 @@ typedef Vec4i v4i;
 	PIG_CORE_INLINE v3i ToV3iFrom4(v4i vec4i);
 	PIG_CORE_INLINE v4 ToV4Fromi(v4i vec4i);
 	PIG_CORE_INLINE v4i ToV4iFrom3(v3i vec3i, i32 w);
+	PIG_CORE_INLINE v4r ToV4rFrom4(v4 vec4);
+	PIG_CORE_INLINE v4 ToV4Fromr(v4r vec4r);
 	PIG_CORE_INLINE v2i AddV2i(v2i left, v2i right);
 	PIG_CORE_INLINE v3i AddV3i(v3i left, v3i right);
 	PIG_CORE_INLINE v4i AddV4i(v4i left, v4i right);
@@ -345,6 +382,7 @@ typedef Vec4i v4i;
 PEXPI v2i NewV2i(i32 x, i32 y) { v2i result; result.X = x; result.Y = y; return result; }
 PEXPI v3i NewV3i(i32 x, i32 y, i32 z) { v3i result; result.X = x; result.Y = y; result.Z = z; return result; }
 PEXPI v4i NewV4i(i32 x, i32 y, i32 z, i32 w) { v4i result; result.X = x; result.Y = y; result.Z = z; result.W = w; return result; }
+PEXPI v4r NewV4r(r32 x, r32 y, r32 z, r32 w) { v4r result; result.X = x; result.Y = y; result.Z = z; result.W = w; return result; }
 
 // +--------------------------------------------------------------+
 // |                 Simple Conversions and Casts                 |
@@ -367,6 +405,8 @@ PEXPI v3i ToV3iFrom4(v4i vec4i) { return NewV3i(vec4i.X, vec4i.Y, vec4i.Z); }
 
 PEXPI v4 ToV4Fromi(v4i vec4i) { return NewV4((r32)vec4i.X, (r32)vec4i.Y, (r32)vec4i.Z, (r32)vec4i.W); }
 PEXPI v4i ToV4iFrom3(v3i vec3i, i32 w) { return NewV4i(vec3i.X, vec3i.Y, vec3i.Z, w); }
+PEXPI v4r ToV4rFrom4(v4 vec4) { return NewV4r(vec4.X, vec4.Y, vec4.Z, vec4.W); }
+PEXPI v4 ToV4Fromr(v4r vec4r) { return NewV4(vec4r.X, vec4r.Y, vec4r.Z, vec4r.W); }
 
 // +--------------------------------------------------------------+
 // |                Operator Overload Equivalents                 |

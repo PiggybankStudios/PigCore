@@ -50,15 +50,20 @@ int MyMain(int argc, char* argv[]);
 typedef union Vertex Vertex;
 union Vertex
 {
-	r32 values[8];
+	r32 values[7];
 	struct
 	{
 		v3 position;
-		// r32 padding; //TODO: We are having trouble getting v4 (HMM_Vec4) to not align to 16 bytes!
-		v4 color;
+		v4r color;
+	};
+	struct
+	{
+		r32 X, Y, Z;
+		r32 R, G, B, A;
 	};
 };
-_Static_assert(STRUCT_VAR_OFFSET(Vertex, color) == sizeof(r32)*4);
+_Static_assert(sizeof(Vertex) == sizeof(r32)*7);
+_Static_assert(STRUCT_VAR_OFFSET(Vertex, color) == sizeof(r32)*3);
 
 // +--------------------------------------------------------------+
 // |                           Globals                            |
@@ -73,6 +78,9 @@ sg_pipeline pipeline;
 // +--------------------------------------------------------------+
 void SokolLogCallback(const char* tag, uint32_t logLevel, uint32_t logId, const char* message, uint32_t lineNum, const char* filePath, void* userData)
 {
+	UNUSED(tag); //TODO: Should we output the tag?
+	UNUSED(logId); //TODO: Should we output the logId?
+	UNUSED(userData);
 	DbgLevel dbgLevel;
 	switch (logLevel)
 	{
@@ -133,9 +141,9 @@ void AppInit(void)
 	ClearStruct(bindings);
 	
 	Vertex vertices[] = {
-		{  0.0f,  0.5f, 0.5f,  0,  1.0f, 0.0f, 0.0f, 1.0f },
-		{  0.5f, -0.5f, 0.5f,  0,  0.0f, 1.0f, 0.0f, 1.0f },
-		{ -0.5f, -0.5f, 0.5f,  0,  0.0f, 0.0f, 1.0f, 1.0f },
+		{  0.0f,  0.5f, 0.5f,   1.0f, 0.0f, 0.0f, 1.0f },
+		{  0.5f, -0.5f, 0.5f,   0.0f, 1.0f, 0.0f, 1.0f },
+		{ -0.5f, -0.5f, 0.5f,   0.0f, 0.0f, 1.0f, 1.0f },
 	};
 	sg_buffer_desc bufferDesc = {
 		.data = SG_RANGE(vertices),

@@ -41,6 +41,7 @@ Description:
 	#if COMPILER_IS_MSVC
 	#pragma warning(push)
 	#pragma warning(disable: 4132) //'s_tdefl_num_probes': const object should be initialized
+	#pragma warning(disable: 4127) //conditional expression is constant
 	#endif
 	#include "third_party/miniz/miniz.c"
 	#if COMPILER_IS_MSVC
@@ -315,8 +316,13 @@ PEXP Result AddZipArchiveFile(ZipArchive* archive, FilePath fileName, Slice file
 	NotNull(archive->arena);
 	NotEmptyStr(fileName);
 	NotNullStr(fileContents);
-	
 	ScratchBegin(scratch);
+	
+	if (convertNewLines && fileContents.length > 0)
+	{
+		fileContents = StrReplace(scratch, fileContents, StrLit("\n"), StrLit("\r\n"), true);
+		NotNull(fileContents.chars);
+	}
 	// Allocate a null-terminated version of fileName
 	FilePath fileNameNt = AllocFilePath(scratch, fileName, true);
 	mz_bool addMemSuccess = mz_zip_writer_add_mem(&archive->zip, fileNameNt.chars, fileContents.bytes, (size_t)fileContents.length, (mz_uint)MZ_DEFAULT_COMPRESSION); //TODO: Should we tune this compression level? Maybe choose MZ_BEST_SPEED sometimes?
@@ -324,7 +330,6 @@ PEXP Result AddZipArchiveFile(ZipArchive* archive, FilePath fileName, Slice file
 	IncrementUXX(archive->numFiles);
 	
 	ScratchEnd(scratch);
-	
 	return Result_Success;
 }
 PEXPI Result AddZipArchiveTextFile(ZipArchive* archive, FilePath fileName, Str8 fileContents) { return AddZipArchiveFile(archive, fileName, fileContents, true); }
