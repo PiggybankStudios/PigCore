@@ -20,14 +20,15 @@ enum VertAttributeType
 {
 	VertAttributeType_None = 0,
 	VertAttributeType_Position,
-	VertAttributeType_TexCoord,
 	VertAttributeType_Normal,
 	VertAttributeType_Tangent,
 	VertAttributeType_Color,
+	VertAttributeType_TexCoord,
 	VertAttributeType_Count,
 };
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetVertAttributeTypeStr(VertAttributeType enumValue);
+const char* GetVertAttributeMatchStr(VertAttributeType enumValue);
 #else
 PEXP const char* GetVertAttributeTypeStr(VertAttributeType enumValue)
 {
@@ -35,11 +36,24 @@ PEXP const char* GetVertAttributeTypeStr(VertAttributeType enumValue)
 	{
 		case VertAttributeType_None:     return "None";
 		case VertAttributeType_Position: return "Position";
-		case VertAttributeType_TexCoord: return "TexCoord";
 		case VertAttributeType_Normal:   return "Normal";
 		case VertAttributeType_Tangent:  return "Tangent";
 		case VertAttributeType_Color:    return "Color";
-		default: return "Unknown";
+		case VertAttributeType_TexCoord: return "TexCoord";
+		default: return UNKNOWN_STR;
+	}
+}
+//NOTE: This is the string we match against when evaluating the name of an attribute in the shader file to determine it's Type
+PEXP const char* GetVertAttributeMatchStr(VertAttributeType enumValue)
+{
+	switch (enumValue)
+	{
+		case VertAttributeType_Position: return "position";
+		case VertAttributeType_Normal:   return "normal";
+		case VertAttributeType_Tangent:  return "tangent";
+		case VertAttributeType_Color:    return "color";
+		case VertAttributeType_TexCoord: return "tex";
+		default: return UNKNOWN_STR;
 	}
 }
 #endif

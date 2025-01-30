@@ -185,7 +185,12 @@ for shaderFilePath in shaderFilePaths:
 	shaderName = "unknown";
 	foundName = False;
 	shaderAttributes = [];
+	uniformBlocks = [];
+	uniforms = [];
+	insideUniformBlock = None;
 	attributeRegex = None;
+	uniformBlockRegex = None;
+	
 	with open(outputHeaderPath, "r") as compiledShaderFile:
 	#
 		lineIndex = 0;
@@ -199,6 +204,7 @@ for shaderFilePath in shaderFilePaths:
 					# print("\"%s\" -> %s" % (line, nameMatch.group(1)));
 					shaderName = nameMatch.group(1);
 					attributeRegex = re.compile("\\#define\\s+ATTR_%s_(.*)\\s+\\(\\d+\\)" % shaderName);
+					uniformBlockRegex = re.compile("^\\s*C struct\\:\\s+(.*)_t\\s*$");
 					foundName = True;
 				#
 			#
@@ -210,6 +216,40 @@ for shaderFilePath in shaderFilePaths:
 					# print("\"%s\" -> %s" % (line, attribMatch.group(1)));
 					shaderAttributes.append(attribMatch.group(1));
 				#
+				uniformBlockMatch = uniformBlockRegex.search(line);
+				if (uniformBlockMatch != None):
+				#
+					# print("\"%s\" -> %s" % (line, uniformBlockMatch.group(1)));
+					uniformBlocks.append(uniformBlockMatch.group(1));
+				#
+				if (insideUniformBlock == None):
+				#
+					for uniformBlock in uniformBlocks:
+					#
+						uniformBlockStartRegex = re.compile("typedef\\s*struct\\s*%s_t\\s*\\{" % uniformBlock);
+						if (uniformBlockStartRegex.search(line) != None):
+						#
+							# print("\"%s\" -> %s" % (line, uniformBlockStartMatch.group(1)));
+							insideUniformBlock = uniformBlock;
+						#
+					#
+				#
+				else:
+				#
+					uniformBlockEndRegex = re.compile("}\\s*%s_t;" % insideUniformBlock);
+					uniformRegex = re.compile("^\\s*(.*)\\s+(.*);\\s*$");
+					uniformMatch = uniformRegex.search(line);
+					if (uniformBlockEndRegex.search(line) != None):
+					#
+						insideUniformBlock = None;
+					#
+					elif (uniformMatch != None):
+					#
+						# print("\"%s\" -> block=%s type=%s name=%s" % (line, insideUniformBlock, uniformMatch.group(1), uniformMatch.group(2)));
+						uniformTuple = ( insideUniformBlock, uniformMatch.group(1), uniformMatch.group(2) );
+						uniforms.append(uniformTuple);
+					#
+				#
 			#
 			lineIndex += 1;
 		#
@@ -220,27 +260,35 @@ for shaderFilePath in shaderFilePaths:
 		allShaderNames.append(shaderName);
 		filePathDefineName = "%s_SHADER_FILE_PATH" % shaderName;
 		attributeCountDefineName = "%s_SHADER_ATTR_COUNT" % shaderName;
-		attributeNamesDefineName = "%s_SHADER_ATTR_NAMES" % shaderName;
-		attributeValuesDefineName = "%s_SHADER_ATTRS" % shaderName;
+		attributeDefsDefineName = "%s_SHADER_ATTR_DEFS" % shaderName;
+		uniformCountDefineName = "%s_SHADER_UNIFORM_COUNT" % shaderName;
+		uniformDefsDefineName = "%s_SHADER_UNIFORM_DEFS" % shaderName;
 		with open(outputHeaderPath, "a") as compiledShaderFile:
 		#
-			compiledShaderFile.write("\n//NOTE: These lines were added by find_and_compile_shaders.py\n");
+			compiledShaderFile.write("\n\n//NOTE: These lines were added by find_and_compile_shaders.py\n");
 			compiledShaderFile.write("#define %s %s //NOTE: This line is added by find_and_compile_shaders.py\n" % (filePathDefineName, EscapeString(fullShaderFilePath, True)));
-			attributeNames = "{ ";
-			attributeValues = "{ ";
+			attributeDefs = "{ ";
 			aIndex = 0;
 			for attribute in shaderAttributes:
 			#
-				if (aIndex > 0): attributeNames += ", "; attributeValues += ", ";
-				attributeNames += "\"%s\"" % (attribute);
-				attributeValues += "ATTR_%s_%s" % (shaderName, attribute);
+				if (aIndex > 0): attributeDefs += ", ";
+				attributeDefs += "{ .name=\"%s\", .index=ATTR_%s_%s }" % (attribute, shaderName, attribute);
 				aIndex += 1;
 			#
-			attributeNames += " }";
-			attributeValues += " }";
+			attributeDefs += " } // These should match ShaderAttributeDef struct found in gfx_shader.h";
+			uniformDefs = "{ \\\n";
+			for uniformTuple in uniforms:
+			#
+				uniformBlock = uniformTuple[0];
+				uniformType = uniformTuple[1];
+				uniformName = uniformTuple[2];
+				uniformDefs += "\t{ .name=\"%s\", .blockIndex=UB_%s, .offset=STRUCT_VAR_OFFSET(%s_t, %s), .size=STRUCT_VAR_SIZE(%s_t, %s) }, \\\n" % (uniformName, uniformBlock, uniformBlock, uniformName, uniformBlock, uniformName);
+			#
+			uniformDefs += " } // These should match ShaderUniformDef struct found in gfx_shader.h";
 			compiledShaderFile.write("#define %s %s\n" % (attributeCountDefineName, len(shaderAttributes)));
-			compiledShaderFile.write("#define %s %s\n" % (attributeNamesDefineName, attributeNames));
-			compiledShaderFile.write("#define %s %s\n" % (attributeValuesDefineName, attributeValues));
+			compiledShaderFile.write("#define %s %s\n" % (attributeDefsDefineName, attributeDefs));
+			compiledShaderFile.write("#define %s %s\n" % (uniformCountDefineName, 4)); #TODO: fill this out!
+			compiledShaderFile.write("#define %s %s\n" % (uniformDefsDefineName, uniformDefs));
 		#
 	#
 	else:

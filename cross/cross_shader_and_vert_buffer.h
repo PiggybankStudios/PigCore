@@ -41,7 +41,7 @@ PEXP void FillPipelineDescLayout(sg_pipeline_desc* pipelineDesc, const Shader* s
 					case sizeof(r32)*2: sokolFormat = SG_VERTEXFORMAT_FLOAT2; break;
 					case sizeof(r32)*3: sokolFormat = SG_VERTEXFORMAT_FLOAT3; break;
 					case sizeof(r32)*4: sokolFormat = SG_VERTEXFORMAT_FLOAT4; break;
-					default: DebugAssertMsg(false, "Unhandled attribute size in PipelineDescFromShaderAndBuffer!"); break;
+					default: DebugAssertMsg(false, "Unhandled attribute size in FillPipelineDescLayout!"); break;
 				}
 				pipelineDesc->layout.attrs[shaderAttrib->index].buffer_index = 0;
 				pipelineDesc->layout.attrs[shaderAttrib->index].format = sokolFormat;

@@ -143,14 +143,15 @@ void AppCleanup(void)
 	sg_shutdown();
 }
 
-void DrawRectangle(simple_VertParams_t* vertParams, simple_FragParams_t* fragParams, v2 topLeft, v2 size, Color32 color)
+void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 {
-	vertParams->world = Mat4_Identity;
-	TransformMat4(&vertParams->world, MakeScaleXYZMat4(size.Width, size.Height, 1.0f));
-	TransformMat4(&vertParams->world, MakeTranslateXYZMat4(topLeft.X, topLeft.Y, 0.0f));
-	fragParams->tint = ToV4rFromColor32(color);
-	sg_apply_uniforms(UB_simple_VertParams, &(sg_range){vertParams, sizeof(*vertParams)});
-	sg_apply_uniforms(UB_simple_FragParams, &(sg_range){fragParams, sizeof(*fragParams)});
+	NotNull(shader);
+	mat4 worldMat = Mat4_Identity;
+	TransformMat4(&worldMat, MakeScaleXYZMat4(size.Width, size.Height, 1.0f));
+	TransformMat4(&worldMat, MakeTranslateXYZMat4(topLeft.X, topLeft.Y, 0.0f));
+	SetShaderWorldMat(shader, worldMat);
+	SetShaderTintColor(shader, color);
+	ApplyShaderUniforms(shader);
 	sg_draw(0, (int)squareBuffer.numVertices, 1);
 }
 
@@ -169,14 +170,14 @@ void AppFrame(void)
 	sg_begin_pass(&mainPass);
 	sg_apply_pipeline(pipeline);
 	sg_apply_bindings(&bindings);
-	simple_VertParams_t vertParams = ZEROED;
-	simple_FragParams_t fragParams = ZEROED;
-	vertParams.projection = Mat4_Identity;
-	TransformMat4(&vertParams.projection, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
-	TransformMat4(&vertParams.projection, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
-	TransformMat4(&vertParams.projection, MakeScaleYMat4(-1.0f));
-	vertParams.view = Mat4_Identity;
-	vertParams.world = Mat4_Identity;
+	
+	mat4 projMat = Mat4_Identity;
+	TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
+	TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
+	TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
+	SetShaderProjectionMat(&simpleShader, projMat);
+	SetShaderViewMat(&simpleShader, Mat4_Identity);
+	SetShaderWorldMat(&simpleShader, Mat4_Identity);
 	
 	v2 tileSize = NewV2(16, 9);
 	i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
@@ -186,7 +187,7 @@ void AppFrame(void)
 	{
 		for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
 		{
-			DrawRectangle(&vertParams, &fragParams, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, GetPredefPalColorByIndex(colorIndex));
+			DrawRectangle(&simpleShader, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, GetPredefPalColorByIndex(colorIndex));
 			colorIndex++;
 		}
 	}
