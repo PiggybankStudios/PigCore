@@ -22,8 +22,8 @@ out vec4 fragColor;
 
 void main()
 {
-	gl_Position = projection * (view * (world * vec4(position, 0.0f, 1.0f)));
-	fragColor = color0;
+	gl_Position = vec4(1.0f, 1.0f, 1.0f, 1.0f); //projection * (view * (world * vec4(position, 0.0f, 1.0f)));
+	// fragColor = color0;
 }
 @end
 
@@ -42,7 +42,7 @@ out vec4 frag_color;
 
 void main()
 {
-	frag_color = fragColor * tint;
+	frag_color = vec4(1.0f, 0.0f, 0.0f, 1.0f); //fragColor * tint;
 }
 @end
 

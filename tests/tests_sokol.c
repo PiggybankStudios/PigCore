@@ -19,6 +19,7 @@ int MyMain(int argc, char* argv[]);
 sg_pass_action sokolPassAction;
 Shader simpleShader;
 Shader main2dShader;
+Texture gradientTexture;
 VertBuffer squareBuffer;
 sg_bindings bindings;
 sg_pipeline pipeline;
@@ -103,29 +104,23 @@ void AppInit(void)
 	};
 	squareBuffer = InitVertBuffer2D(stdHeap, StrLit("square"), VertBufferUsage_Static, ArrayCount(squareVertices), &squareVertices[0], false);
 	Assert(squareBuffer.error == Result_Success);
-	BindVertBuffer(&bindings, &squareBuffer, 0);
 	
-	v2i imageSize = NewV2i(32, 32);
-	Color32* pixels = AllocArray(Color32, scratch, (uxx)(imageSize.Width * imageSize.Height));
-	for (i32 pixelY = 0; pixelY < imageSize.Height; pixelY++)
+	v2i gradientSize = NewV2i(64, 64);
+	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.Width * gradientSize.Height));
+	for (i32 pixelY = 0; pixelY < gradientSize.Height; pixelY++)
 	{
-		for (i32 pixelX = 0; pixelX < imageSize.Width; pixelX++)
+		for (i32 pixelX = 0; pixelX < gradientSize.Width; pixelX++)
 		{
-			Color32* pixel = &pixels[INDEX_FROM_COORD2D(pixelX, pixelY, imageSize.Width, imageSize.Height)];
-			pixel->r = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelX / (r32)imageSize.Width)));
-			pixel->g = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelY / (r32)imageSize.Height)));
+			Color32* pixel = &gradientPixels[INDEX_FROM_COORD2D(pixelX, pixelY, gradientSize.Width, gradientSize.Height)];
+			pixel->r = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelX / (r32)gradientSize.Width)));
+			pixel->g = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelY / (r32)gradientSize.Height)));
 			pixel->b = pixel->r/2 + pixel->g/2;
 			pixel->a = 255;
 		}
 	}
-	bindings.images[0] = sg_make_image(&(sg_image_desc){
-		.width = imageSize.Width,
-		.height = imageSize.Height,
-		.pixel_format = SG_PIXELFORMAT_BGRA8,
-		.data.subimage[0][0] = (sg_range){pixels, sizeof(u32) * imageSize.Width * imageSize.Height},
-		.label = "test_texture"
-	});
-	bindings.samplers[0] = sg_make_sampler(&(sg_sampler_desc){ .label = "test_sampler" });
+	
+	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating);
+	Assert(gradientTexture.error == Result_Success);
 	
 	InitCompiledShader(&simpleShader, stdHeap, simple); Assert(simpleShader.error == Result_Success);
 	InitCompiledShader(&main2dShader, stdHeap, main2d); Assert(main2dShader.error == Result_Success);
@@ -175,6 +170,11 @@ void AppCleanup(void)
 void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 {
 	NotNull(shader);
+	
+	BindVertBuffer(&bindings, &squareBuffer, 0);
+	BindTextureAtIndex(&bindings, &main2dShader, &gradientTexture, 0, 0);
+	sg_apply_bindings(&bindings);
+	
 	mat4 worldMat = Mat4_Identity;
 	TransformMat4(&worldMat, MakeScaleXYZMat4(size.Width, size.Height, 1.0f));
 	TransformMat4(&worldMat, MakeTranslateXYZMat4(topLeft.X, topLeft.Y, 0.0f));
@@ -198,7 +198,6 @@ void AppFrame(void)
 	};
 	sg_begin_pass(&mainPass);
 	sg_apply_pipeline(pipeline);
-	sg_apply_bindings(&bindings);
 	
 	mat4 projMat = Mat4_Identity;
 	TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
@@ -207,10 +206,10 @@ void AppFrame(void)
 	SetShaderProjectionMat(&main2dShader, projMat);
 	SetShaderViewMat(&main2dShader, Mat4_Identity);
 	SetShaderWorldMat(&main2dShader, Mat4_Identity);
-	SetShaderSourceRec(&main2dShader, NewV4(0, 0, 4, 4));
-	SetShaderUniformByNameV2(&main2dShader, StrLit("main2d_texture0_size"), NewV2(4, 4));
+	SetShaderSourceRec(&main2dShader, NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+	SetShaderUniformByNameV2(&main2dShader, StrLit("main2d_texture0_size"), ToV2Fromi(gradientTexture.size));
 	
-	v2 tileSize = NewV2(48, 27);
+	v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
 	i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
 	i32 numRows = CeilR32i(windowSize.Height / tileSize.Height);
 	u64 colorIndex = 0;

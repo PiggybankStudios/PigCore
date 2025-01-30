@@ -14,6 +14,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "struct/struct_vectors.h"
 #include "mem/mem_arena.h"
+#include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
 #include "misc/misc_result.h"
 #include "gfx/gfx_vertices.h"
@@ -25,16 +26,50 @@ Description:
 #error Somehow sokol_gfx.h was not included properly before gfx_shader.h!
 #endif
 
+#define MAX_NUM_SHADER_IMAGES          8
+#define MAX_NUM_SHADER_SAMPLERS        8
 #define MAX_NUM_SHADER_UNIFORMS        32
 #define MAX_NUM_SHADER_UNIFORM_BLOCKS  2 //NOTE: We currently only have 2 uniform blocks, one for the vertex shader and one for the fragment shader, so 2 is enough
 
 //NOTE: These types are used in the generated shader header files and are passed to
-//      the InitShader function, inside unpack these Def types and fill out the real
-//      types that will live inside the Shader struct at runtime.
+//      the InitShader function, inside we unpack these Def types and fill out the
+//      real types that will live inside the Shader struct at runtime.
+typedef struct ShaderImageDef ShaderImageDef;
+struct ShaderImageDef { const char* name; uxx index; };
+typedef struct ShaderSamplerDef ShaderSamplerDef;
+struct ShaderSamplerDef { const char* name; uxx index; };
 typedef struct ShaderAttributeDef ShaderAttributeDef;
 struct ShaderAttributeDef { const char* name; uxx index; };
 typedef struct ShaderUniformDef ShaderUniformDef;
 struct ShaderUniformDef { const char* name; u8 blockIndex; uxx offset; uxx size; };
+
+typedef struct ShaderMetadata ShaderMetadata;
+struct ShaderMetadata
+{
+	uxx numImages;
+	const ShaderImageDef* imageDefs;
+	uxx numSamplers;
+	const ShaderSamplerDef* samplerDefs;
+	uxx numUniforms;
+	const ShaderUniformDef* uniformDefs;
+	uxx numAttributes;
+	const ShaderAttributeDef* attributeDefs;
+};
+
+typedef struct ShaderImage ShaderImage;
+struct ShaderImage
+{
+	Str8 name;
+	uxx index;
+	uxx sizeUniformIndex;
+};
+
+typedef struct ShaderSampler ShaderSampler;
+struct ShaderSampler
+{
+	Str8 name;
+	uxx index;
+};
 
 typedef struct ShaderAttribute ShaderAttribute;
 struct ShaderAttribute
@@ -127,12 +162,16 @@ struct Shader
 	#if DEBUG_BUILD
 	Str8 filePath;
 	#endif
-	uxx numAttributes;
-	ShaderAttribute attributes[MAX_NUM_VERT_ATTRIBUTES];
+	uxx numImages;
+	ShaderImage images[MAX_NUM_SHADER_IMAGES];
+	uxx numSamplers;
+	ShaderSampler samplers[MAX_NUM_SHADER_SAMPLERS];
 	uxx numUniforms;
 	uxx uniformIndexByType[ShaderUniformType_Count];
 	ShaderUniform uniforms[MAX_NUM_SHADER_UNIFORMS];
 	ShaderUniformBlock uniformBlocks[MAX_NUM_SHADER_UNIFORM_BLOCKS];
+	uxx numAttributes;
+	ShaderAttribute attributes[MAX_NUM_VERT_ATTRIBUTES];
 };
 
 // +--------------------------------------------------------------+
@@ -140,7 +179,7 @@ struct Shader
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	void FreeShader(Shader* shader);
-	Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, uxx numAttributes, const ShaderAttributeDef* attributeDefs, uxx numUniforms, const ShaderUniformDef* uniformDefs);
+	Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const ShaderMetadata* shaderMetadata);
 	PIG_CORE_INLINE void SetShaderFilePath(Shader* shader, Str8 filePath);
 	PIG_CORE_INLINE void ApplyShaderUniforms(Shader* shader);
 	PIG_CORE_INLINE bool SetShaderUniformByType(Shader* shader, ShaderUniformType type, uxx valueSize, const void* valuePntr);
@@ -159,18 +198,22 @@ struct Shader
 	PIG_CORE_INLINE bool SetShaderUniformByNameV4(Shader* shader, Str8 uniformName, v4 vector);
 #endif
 
-#define InitCompiledShader_Internal(outputShaderPntr, arenaPntr, shaderName) do                         \
-{                                                                                                       \
-	ShaderAttributeDef attributeDefs[shaderName##_SHADER_ATTR_COUNT] = shaderName##_SHADER_ATTR_DEFS;   \
-	ShaderUniformDef uniformDefs[shaderName##_SHADER_UNIFORM_COUNT] = shaderName##_SHADER_UNIFORM_DEFS; \
-	*(outputShaderPntr) = InitShader(                                                                   \
-		(arenaPntr),                                                                                    \
-		shaderName##_shader_desc(sg_query_backend()),                                                   \
-		shaderName##_SHADER_ATTR_COUNT,                                                                 \
-		&attributeDefs[0],                                                                              \
-		shaderName##_SHADER_UNIFORM_COUNT,                                                              \
-		&uniformDefs[0]                                                                                 \
-	);                                                                                                  \
+#define InitCompiledShader_Internal(outputShaderPntr, arenaPntr, shaderName) do                                   \
+{                                                                                                                 \
+	ShaderImageDef imageDefs[] = shaderName##_SHADER_IMAGE_DEFS;                                                  \
+	ShaderSamplerDef samplerDefs[] = shaderName##_SHADER_SAMPLER_DEFS;                                            \
+	ShaderUniformDef uniformDefs[] = shaderName##_SHADER_UNIFORM_DEFS;                                            \
+	ShaderAttributeDef attributeDefs[] = shaderName##_SHADER_ATTR_DEFS;                                           \
+	ShaderMetadata shaderMetadata = ZEROED;                                                                       \
+	shaderMetadata.numImages = shaderName##_SHADER_IMAGE_COUNT;                                                   \
+	shaderMetadata.imageDefs = &imageDefs[0];                                                                     \
+	shaderMetadata.numSamplers = shaderName##_SHADER_SAMPLER_COUNT;                                               \
+	shaderMetadata.samplerDefs = &samplerDefs[0];                                                                 \
+	shaderMetadata.numUniforms = shaderName##_SHADER_UNIFORM_COUNT;                                               \
+	shaderMetadata.uniformDefs = &uniformDefs[0];                                                                 \
+	shaderMetadata.numAttributes = shaderName##_SHADER_ATTR_COUNT;                                                \
+	shaderMetadata.attributeDefs = &attributeDefs[0];                                                             \
+	*(outputShaderPntr) = InitShader((arenaPntr), shaderName##_shader_desc(sg_query_backend()), &shaderMetadata); \
 } while(0)
 #if DEBUG_BUILD
 #define InitCompiledShader(outputShaderPntr, arenaPntr, shaderName) do            \
@@ -213,47 +256,71 @@ PEXP void FreeShader(Shader* shader)
 	ClearPointer(shader);
 }
 
-PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, uxx numAttributes, const ShaderAttributeDef* attributeDefs, uxx numUniforms, const ShaderUniformDef* uniformDefs)
+PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const ShaderMetadata* shaderMetadata)
 {
 	NotNull(arena);
 	NotNull(shaderDesc);
-	Assert(numAttributes > 0);
-	Assert(numAttributes <= MAX_NUM_VERT_ATTRIBUTES);
-	NotNull(attributeDefs);
+	NotNull(shaderMetadata);
+	Assert(shaderMetadata->numImages <= MAX_NUM_SHADER_IMAGES);
+	Assert(shaderMetadata->numSamplers <= MAX_NUM_SHADER_SAMPLERS);
+	Assert(shaderMetadata->numUniforms <= MAX_NUM_SHADER_UNIFORMS);
+	Assert(shaderMetadata->numAttributes > 0 && shaderMetadata->numAttributes <= MAX_NUM_VERT_ATTRIBUTES);
+	Assert(shaderMetadata->numImages == 0 || shaderMetadata->imageDefs != nullptr);
+	Assert(shaderMetadata->numSamplers == 0 || shaderMetadata->samplerDefs != nullptr);
+	Assert(shaderMetadata->numUniforms == 0 || shaderMetadata->uniformDefs != nullptr);
+	NotNull(shaderMetadata->attributeDefs);
+	ScratchBegin1(scratch, arena);
+	
 	Shader result = ZEROED;
 	result.arena = arena;
 	result.handle = sg_make_shader(shaderDesc);
 	if (result.handle.id == SG_INVALID_ID)
 	{
 		result.error = Result_SokolError;
+		ScratchEnd(scratch);
 		return result;
 	}
-	Assert(result.handle.id != 0);
 	result.name = AllocStr8(arena, StrLit(shaderDesc->label));
 	NotNull(result.name.chars);
-	result.numAttributes = numAttributes;
-	result.numUniforms = numUniforms;
+	result.numImages = shaderMetadata->numImages;
+	result.numSamplers = shaderMetadata->numSamplers;
+	result.numUniforms = shaderMetadata->numUniforms;
+	result.numAttributes = shaderMetadata->numAttributes;
 	
-	for (uxx aIndex = 0; aIndex < numAttributes; aIndex++)
+	// +==============================+
+	// |        Handle Images         |
+	// +==============================+
+	for (uxx iIndex = 0; iIndex < shaderMetadata->numImages; iIndex++)
 	{
-		const ShaderAttributeDef* attributeDef = &attributeDefs[aIndex];
-		ShaderAttribute* attribute = &result.attributes[aIndex];
-		NotNull(attributeDef->name);
-		attribute->name = AllocStr8Nt(arena, attributeDef->name);
-		NotNull(attribute->name.chars);
-		attribute->index = attributeDef->index;
-		for (uxx tIndex = 1; tIndex < VertAttributeType_Count; tIndex++)
-		{
-			VertAttributeType type = (VertAttributeType)tIndex;
-			if (StrContains(attribute->name, StrLit(GetVertAttributeMatchStr(type)), false)) { attribute->type = type; break; }
-		}
+		const ShaderImageDef* imageDef = &shaderMetadata->imageDefs[iIndex];
+		ShaderImage* image = &result.images[iIndex];
+		NotNull(imageDef->name);
+		image->name = AllocStr8Nt(arena, imageDef->name);
+		NotNull(image->name.chars);
+		image->index = imageDef->index;
 	}
 	
+	// +==============================+
+	// |       Handle Samplers        |
+	// +==============================+
+	for (uxx sIndex = 0; sIndex < shaderMetadata->numSamplers; sIndex++)
+	{
+		const ShaderSamplerDef* samplerDef = &shaderMetadata->samplerDefs[sIndex];
+		ShaderSampler* sampler = &result.samplers[sIndex];
+		NotNull(samplerDef->name);
+		sampler->name = AllocStr8Nt(arena, samplerDef->name);
+		NotNull(sampler->name.chars);
+		sampler->index = samplerDef->index;
+	}
+	
+	// +==============================+
+	// |       Handle Uniforms        |
+	// +==============================+
 	for (uxx tIndex = 0; tIndex < ShaderUniformType_Count; tIndex++) { result.uniformIndexByType[tIndex] = UINTXX_MAX; }
 	
-	for (uxx uIndex = 0; uIndex < numUniforms; uIndex++)
+	for (uxx uIndex = 0; uIndex < shaderMetadata->numUniforms; uIndex++)
 	{
-		const ShaderUniformDef* uniformDef = &uniformDefs[uIndex];
+		const ShaderUniformDef* uniformDef = &shaderMetadata->uniformDefs[uIndex];
 		ShaderUniform* uniform = &result.uniforms[uIndex];
 		NotNull(uniformDef->name);
 		uniform->name = AllocStr8Nt(arena, uniformDef->name);
@@ -293,6 +360,45 @@ PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, uxx numAt
 		}
 	}
 	
+	//Look for a uniform with the same name as each image but with "_size" suffix
+	for (uxx iIndex = 0; iIndex < result.numImages; iIndex++)
+	{
+		ShaderImage* image = &result.images[iIndex];
+		image->sizeUniformIndex = result.numUniforms;
+		if (!IsEmptyStr(image->name))
+		{
+			Str8 sizeUniformName = JoinStringsInArena(scratch, image->name, StrLit("_size"), false);
+			for (uxx uIndex = 0; uIndex < result.numUniforms; uIndex++)
+			{
+				ShaderUniform* uniform = &result.uniforms[uIndex];
+				if (StrExactEquals(uniform->name, sizeUniformName))
+				{
+					image->sizeUniformIndex = uIndex;
+					break;
+				}
+			}
+		}
+	}
+	
+	// +==============================+
+	// |      Handle Attributes       |
+	// +==============================+
+	for (uxx aIndex = 0; aIndex < shaderMetadata->numAttributes; aIndex++)
+	{
+		const ShaderAttributeDef* attributeDef = &shaderMetadata->attributeDefs[aIndex];
+		ShaderAttribute* attribute = &result.attributes[aIndex];
+		NotNull(attributeDef->name);
+		attribute->name = AllocStr8Nt(arena, attributeDef->name);
+		NotNull(attribute->name.chars);
+		attribute->index = attributeDef->index;
+		for (uxx tIndex = 1; tIndex < VertAttributeType_Count; tIndex++)
+		{
+			VertAttributeType type = (VertAttributeType)tIndex;
+			if (StrContains(attribute->name, StrLit(GetVertAttributeMatchStr(type)), false)) { attribute->type = type; break; }
+		}
+	}
+	
+	ScratchEnd(scratch);
 	result.error = Result_Success;
 	return result;
 }
@@ -384,4 +490,8 @@ PEXPI bool SetShaderUniformByNameV4(Shader* shader, Str8 uniformName, v4 vector)
 
 #if defined(_GFX_SHADER_H) && defined(_GFX_VERT_BUFFER_H)
 #include "cross/cross_shader_and_vert_buffer.h"
+#endif
+
+#if defined(_GFX_SHADER_H) && defined(_GFX_TEXTURE_H)
+#include "cross/cross_shader_and_texture.h"
 #endif

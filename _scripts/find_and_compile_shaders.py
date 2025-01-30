@@ -158,7 +158,10 @@ RecursiveWalk(os.fsencode(targetPath));
 
 if (len(shaderFilePaths) == 0): print("No shader files found (%d files/folders walked)" % numFilesWalked);
 
-givenNameRegex = re.compile("Shader program: '(.*)':");
+noEntriesString = "no_entries";
+givenNameRegex = re.compile("Shader program: '([A-Za-z_][A-Za-z0-9_]*)':"); # Shader program: 'main2d':
+imageRegex = re.compile("Image '([A-Za-z_][A-Za-z0-9_]*)':"); # Image 'main2d_texture0':
+samplerRegex = re.compile("Sampler '([A-Za-z_][A-Za-z0-9_]*)':"); # Sampler 'main2d_sampler0':
 allShaderNames = [];
 allShaderSourcePaths = [];
 
@@ -171,6 +174,7 @@ for shaderFilePath in shaderFilePaths:
 	cmd = ["sokol-shdc.exe"];
 	cmd.append("--format=sokol_impl");
 	cmd.append("--errfmt=msvc");
+	# cmd.append("--reflection");
 	cmd.append("--slang=hlsl5:glsl430:metal_macos");
 	cmd.append("--input=%s" % EscapeString(fullShaderFilePath, False));
 	cmd.append("--output=%s" % EscapeString(outputHeaderPath, False));
@@ -184,10 +188,12 @@ for shaderFilePath in shaderFilePaths:
 	
 	shaderName = "unknown";
 	foundName = False;
-	shaderAttributes = [];
+	shaderImages = [];
+	shaderSamplers = [];
 	uniformBlocks = [];
-	uniforms = [];
+	shaderUniforms = [];
 	insideUniformBlock = None;
+	shaderAttributes = [];
 	attributeRegex = None;
 	uniformBlockRegex = None;
 	
@@ -210,6 +216,18 @@ for shaderFilePath in shaderFilePaths:
 			#
 			else:
 			#
+				imageMatch = imageRegex.search(line);
+				if (imageMatch != None):
+				#
+					# print("\"%s\" -> %s" % (line, imageMatch.group(1)));
+					shaderImages.append(imageMatch.group(1));
+				#
+				samplerMatch = samplerRegex.search(line);
+				if (samplerMatch != None):
+				#
+					# print("\"%s\" -> %s" % (line, samplerMatch.group(1)));
+					shaderSamplers.append(samplerMatch.group(1));
+				#
 				attribMatch = attributeRegex.search(line);
 				if (attribMatch != None):
 				#
@@ -247,7 +265,7 @@ for shaderFilePath in shaderFilePaths:
 					#
 						# print("\"%s\" -> block=%s type=%s name=%s" % (line, insideUniformBlock, uniformMatch.group(1), uniformMatch.group(2)));
 						uniformTuple = ( insideUniformBlock, uniformMatch.group(1), uniformMatch.group(2) );
-						uniforms.append(uniformTuple);
+						shaderUniforms.append(uniformTuple);
 					#
 				#
 			#
@@ -255,35 +273,76 @@ for shaderFilePath in shaderFilePaths:
 		#
 	#
 	
+	numImages = len(shaderImages);
+	numSamplers = len(shaderSamplers);
+	numUniforms = len(shaderUniforms);
+	numAttributes = len(shaderAttributes);
+	if (len(shaderImages) == 0): shaderImages.append(noEntriesString);
+	if (len(shaderSamplers) == 0): shaderSamplers.append(noEntriesString);
+	if (len(shaderAttributes) == 0): shaderAttributes.append(noEntriesString);
+	if (len(shaderUniforms) == 0): shaderUniforms.append((noEntriesString, "void", noEntriesString));
+	
 	if (foundName):
 	#
 		allShaderNames.append(shaderName);
 		filePathDefineName = "%s_SHADER_FILE_PATH" % shaderName;
-		attributeCountDefineName = "%s_SHADER_ATTR_COUNT" % shaderName;
-		attributeDefsDefineName = "%s_SHADER_ATTR_DEFS" % shaderName;
+		imageCountDefineName = "%s_SHADER_IMAGE_COUNT" % shaderName;
+		imageDefsDefineName = "%s_SHADER_IMAGE_DEFS" % shaderName;
+		samplerCountDefineName = "%s_SHADER_SAMPLER_COUNT" % shaderName;
+		samplerDefsDefineName = "%s_SHADER_SAMPLER_DEFS" % shaderName;
 		uniformCountDefineName = "%s_SHADER_UNIFORM_COUNT" % shaderName;
 		uniformDefsDefineName = "%s_SHADER_UNIFORM_DEFS" % shaderName;
+		attributeCountDefineName = "%s_SHADER_ATTR_COUNT" % shaderName;
+		attributeDefsDefineName = "%s_SHADER_ATTR_DEFS" % shaderName;
 		with open(outputHeaderPath, "a") as compiledShaderFile:
 		#
-			compiledShaderFile.write("\n\n//NOTE: These lines were added by find_and_compile_shaders.py\n");
-			compiledShaderFile.write("#define %s %s //NOTE: This line is added by find_and_compile_shaders.py\n" % (filePathDefineName, EscapeString(fullShaderFilePath, True)));
+			imageDefs = "{ \\\n";
+			for imageName in shaderImages:
+			#
+				if (imageName == noEntriesString): imageDefs += "\t{ .name=NO_ENTRIES_STR, .index=0 }, \\\n";
+				else: imageDefs += "\t{ .name=\"%s\", .index=IMG_%s }, \\\n" % (imageName, imageName);
+			#
+			imageDefs += "} // These should match ShaderImageDef struct found in gfx_shader.h";
+			
+			samplerDefs = "{ \\\n";
+			for samplerName in shaderSamplers:
+			#
+				if (samplerName == noEntriesString): samplerDefs += "\t{ .name=NO_ENTRIES_STR, .index=0 }, \\\n";
+				else: samplerDefs += "\t{ .name=\"%s\", .index=SMP_%s }, \\\n" % (samplerName, samplerName);
+			#
+			samplerDefs += "} // These should match ShaderSamplerDef struct found in gfx_shader.h";
+			
+			uniformDefs = "{ \\\n";
+			for uniformTuple in shaderUniforms:
+			#
+				uniformBlock = uniformTuple[0]; uniformType = uniformTuple[1]; uniformName = uniformTuple[2];
+				if (uniformName == noEntriesString): uniformDefs += "\t{ .name=NO_ENTRIES_STR, .blockIndex=0, .offset=0, .size=0 }, \\\n";
+				else: uniformDefs += "\t{ .name=\"%s\", .blockIndex=UB_%s, .offset=STRUCT_VAR_OFFSET(%s_t, %s), .size=STRUCT_VAR_SIZE(%s_t, %s) }, \\\n" % (uniformName, uniformBlock, uniformBlock, uniformName, uniformBlock, uniformName);
+			#
+			uniformDefs += "} // These should match ShaderUniformDef struct found in gfx_shader.h";
+			
 			attributeDefs = "{ \\\n";
 			for attribute in shaderAttributes:
 			#
-				attributeDefs += "\t{ .name=\"%s\", .index=ATTR_%s_%s }, \\\n" % (attribute, shaderName, attribute);
+				if (attribute == noEntriesString): attributeDefs += "\t{ .name=NO_ENTRIES_STR, .index=0 }, \\\n";
+				else: attributeDefs += "\t{ .name=\"%s\", .index=ATTR_%s_%s }, \\\n" % (attribute, shaderName, attribute);
 			#
-			attributeDefs += " } // These should match ShaderAttributeDef struct found in gfx_shader.h";
-			uniformDefs = "{ \\\n";
-			for uniformTuple in uniforms:
-			#
-				uniformBlock = uniformTuple[0]; uniformType = uniformTuple[1]; uniformName = uniformTuple[2];
-				uniformDefs += "\t{ .name=\"%s\", .blockIndex=UB_%s, .offset=STRUCT_VAR_OFFSET(%s_t, %s), .size=STRUCT_VAR_SIZE(%s_t, %s) }, \\\n" % (uniformName, uniformBlock, uniformBlock, uniformName, uniformBlock, uniformName);
-			#
-			uniformDefs += " } // These should match ShaderUniformDef struct found in gfx_shader.h";
-			compiledShaderFile.write("#define %s %s\n" % (attributeCountDefineName, len(shaderAttributes)));
-			compiledShaderFile.write("#define %s %s\n" % (attributeDefsDefineName, attributeDefs));
-			compiledShaderFile.write("#define %s %s\n" % (uniformCountDefineName, len(uniforms)));
+			attributeDefs += "} // These should match ShaderAttributeDef struct found in gfx_shader.h";
+			
+			compiledShaderFile.write("\n\n//NOTE: These lines were added by find_and_compile_shaders.py\n");
+			compiledShaderFile.write("//NOTE: Because an empty array is invalid in C, we always add at least one dummy entry to these definition #defines while the corresponding COUNT #define will remain 0\n");
+			compiledShaderFile.write("#ifndef NO_ENTRIES_STR\n");
+			compiledShaderFile.write("#define NO_ENTRIES_STR \"%s\"\n" % noEntriesString);
+			compiledShaderFile.write("#endif\n");
+			compiledShaderFile.write("#define %s %s\n" % (filePathDefineName, EscapeString(fullShaderFilePath, True)));
+			compiledShaderFile.write("#define %s %s\n" % (imageCountDefineName, numImages));
+			compiledShaderFile.write("#define %s %s\n" % (imageDefsDefineName, imageDefs));
+			compiledShaderFile.write("#define %s %s\n" % (samplerCountDefineName, numSamplers));
+			compiledShaderFile.write("#define %s %s\n" % (samplerDefsDefineName, samplerDefs));
+			compiledShaderFile.write("#define %s %s\n" % (uniformCountDefineName, numUniforms));
 			compiledShaderFile.write("#define %s %s\n" % (uniformDefsDefineName, uniformDefs));
+			compiledShaderFile.write("#define %s %s\n" % (attributeCountDefineName, numAttributes));
+			compiledShaderFile.write("#define %s %s\n" % (attributeDefsDefineName, attributeDefs));
 		#
 	#
 	else:

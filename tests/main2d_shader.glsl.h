@@ -713,13 +713,19 @@ const sg_shader_desc* main2d_shader_desc(sg_backend backend) {
 #endif // SOKOL_SHDC_IMPL
 
 //NOTE: These lines were added by find_and_compile_shaders.py
-#define main2d_SHADER_FILE_PATH "C:\\gamedev\\projects\\PigCoreGameProto\\core\\tests\\main2d_shader.glsl" //NOTE: This line is added by find_and_compile_shaders.py
-#define main2d_SHADER_ATTR_COUNT 3
-#define main2d_SHADER_ATTR_DEFS { \
-	{ .name="position", .index=ATTR_main2d_position }, \
-	{ .name="texCoord0", .index=ATTR_main2d_texCoord0 }, \
-	{ .name="color0", .index=ATTR_main2d_color0 }, \
- } // These should match ShaderAttributeDef struct found in gfx_shader.h
+//NOTE: Because an empty array is invalid in C, we always add at least one dummy entry to these definition #defines while the corresponding COUNT #define will remain 0
+#ifndef NO_ENTRIES_STR
+#define NO_ENTRIES_STR "no_entries"
+#endif
+#define main2d_SHADER_FILE_PATH "C:\\gamedev\\projects\\PigCoreGameProto\\core\\tests\\main2d_shader.glsl"
+#define main2d_SHADER_IMAGE_COUNT 1
+#define main2d_SHADER_IMAGE_DEFS { \
+	{ .name="main2d_texture0", .index=IMG_main2d_texture0 }, \
+} // These should match ShaderImageDef struct found in gfx_shader.h
+#define main2d_SHADER_SAMPLER_COUNT 1
+#define main2d_SHADER_SAMPLER_DEFS { \
+	{ .name="main2d_sampler0", .index=SMP_main2d_sampler0 }, \
+} // These should match ShaderSamplerDef struct found in gfx_shader.h
 #define main2d_SHADER_UNIFORM_COUNT 6
 #define main2d_SHADER_UNIFORM_DEFS { \
 	{ .name="world", .blockIndex=UB_main2d_VertParams, .offset=STRUCT_VAR_OFFSET(main2d_VertParams_t, world), .size=STRUCT_VAR_SIZE(main2d_VertParams_t, world) }, \
@@ -728,4 +734,10 @@ const sg_shader_desc* main2d_shader_desc(sg_backend backend) {
 	{ .name="main2d_texture0_size", .blockIndex=UB_main2d_VertParams, .offset=STRUCT_VAR_OFFSET(main2d_VertParams_t, main2d_texture0_size), .size=STRUCT_VAR_SIZE(main2d_VertParams_t, main2d_texture0_size) }, \
 	{ .name="sourceRec0", .blockIndex=UB_main2d_VertParams, .offset=STRUCT_VAR_OFFSET(main2d_VertParams_t, sourceRec0), .size=STRUCT_VAR_SIZE(main2d_VertParams_t, sourceRec0) }, \
 	{ .name="tint", .blockIndex=UB_main2d_FragParams, .offset=STRUCT_VAR_OFFSET(main2d_FragParams_t, tint), .size=STRUCT_VAR_SIZE(main2d_FragParams_t, tint) }, \
- } // These should match ShaderUniformDef struct found in gfx_shader.h
+} // These should match ShaderUniformDef struct found in gfx_shader.h
+#define main2d_SHADER_ATTR_COUNT 3
+#define main2d_SHADER_ATTR_DEFS { \
+	{ .name="position", .index=ATTR_main2d_position }, \
+	{ .name="texCoord0", .index=ATTR_main2d_texCoord0 }, \
+	{ .name="color0", .index=ATTR_main2d_color0 }, \
+} // These should match ShaderAttributeDef struct found in gfx_shader.h

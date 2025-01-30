@@ -18,11 +18,12 @@ Date:   01\19\2025
 #include "misc/misc_result.h" //required by gfx_shader.h, gfx_vert_buffer.h and gfx_image_loading.h
 
 #include "gfx/gfx_sokol_include.h"
-#include "gfx/gfx_shader.h"
 #include "gfx/gfx_vert_buffer.h"
 
-#include "mem/mem_scratch.h" //required by gfx_image_loading.h
+#include "mem/mem_scratch.h" //required by gfx_texture.h, gfx_shader.h and gfx_image_loading.h
 
+#include "gfx/gfx_texture.h"
+#include "gfx/gfx_shader.h"
 #include "gfx/gfx_image_loading.h"
 
 #endif //  _GFX_ALL_H
