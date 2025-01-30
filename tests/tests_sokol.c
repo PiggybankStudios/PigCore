@@ -9,6 +9,7 @@ Description:
 #if BUILD_WITH_SOKOL
 
 #include "tests/simple_shader.glsl.h"
+#include "tests/main2d_shader.glsl.h"
 
 int MyMain(int argc, char* argv[]);
 
@@ -17,6 +18,7 @@ int MyMain(int argc, char* argv[]);
 // +--------------------------------------------------------------+
 sg_pass_action sokolPassAction;
 Shader simpleShader;
+Shader main2dShader;
 VertBuffer squareBuffer;
 sg_bindings bindings;
 sg_pipeline pipeline;
@@ -81,6 +83,8 @@ sg_swapchain CreateSokolSwapchain()
 // +--------------------------------------------------------------+
 void AppInit(void)
 {
+	ScratchBegin(scratch);
+	
 	sg_setup(&(sg_desc){
 		.environment = CreateSokolEnvironment(),
 		.logger.func = SokolLogCallback,
@@ -101,11 +105,34 @@ void AppInit(void)
 	Assert(squareBuffer.error == Result_Success);
 	BindVertBuffer(&bindings, &squareBuffer, 0);
 	
+	v2i imageSize = NewV2i(32, 32);
+	Color32* pixels = AllocArray(Color32, scratch, (uxx)(imageSize.Width * imageSize.Height));
+	for (i32 pixelY = 0; pixelY < imageSize.Height; pixelY++)
+	{
+		for (i32 pixelX = 0; pixelX < imageSize.Width; pixelX++)
+		{
+			Color32* pixel = &pixels[INDEX_FROM_COORD2D(pixelX, pixelY, imageSize.Width, imageSize.Height)];
+			pixel->r = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelX / (r32)imageSize.Width)));
+			pixel->g = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelY / (r32)imageSize.Height)));
+			pixel->b = pixel->r/2 + pixel->g/2;
+			pixel->a = 255;
+		}
+	}
+	bindings.images[0] = sg_make_image(&(sg_image_desc){
+		.width = imageSize.Width,
+		.height = imageSize.Height,
+		.pixel_format = SG_PIXELFORMAT_BGRA8,
+		.data.subimage[0][0] = (sg_range){pixels, sizeof(u32) * imageSize.Width * imageSize.Height},
+		.label = "test_texture"
+	});
+	bindings.samplers[0] = sg_make_sampler(&(sg_sampler_desc){ .label = "test_sampler" });
+	
 	InitCompiledShader(&simpleShader, stdHeap, simple); Assert(simpleShader.error == Result_Success);
+	InitCompiledShader(&main2dShader, stdHeap, main2d); Assert(main2dShader.error == Result_Success);
 	
 	sg_pipeline_desc pipelineDesc = ZEROED;
 	pipelineDesc.label = "triangle-pipeline";
-	FillPipelineDescLayout(&pipelineDesc, &simpleShader, &squareBuffer);
+	FillPipelineDescLayout(&pipelineDesc, &main2dShader, &squareBuffer);
 	pipelineDesc.depth.pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
 	pipelineDesc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
 	pipelineDesc.depth.write_enabled = true;
@@ -136,6 +163,8 @@ void AppInit(void)
 			.clear_value = 1.0f,
 		},
 	};
+	
+	ScratchEnd(scratch);
 }
 
 void AppCleanup(void)
@@ -175,11 +204,13 @@ void AppFrame(void)
 	TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
 	TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
 	TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
-	SetShaderProjectionMat(&simpleShader, projMat);
-	SetShaderViewMat(&simpleShader, Mat4_Identity);
-	SetShaderWorldMat(&simpleShader, Mat4_Identity);
+	SetShaderProjectionMat(&main2dShader, projMat);
+	SetShaderViewMat(&main2dShader, Mat4_Identity);
+	SetShaderWorldMat(&main2dShader, Mat4_Identity);
+	SetShaderSourceRec(&main2dShader, NewV4(0, 0, 4, 4));
+	SetShaderUniformByNameV2(&main2dShader, StrLit("main2d_texture0_size"), NewV2(4, 4));
 	
-	v2 tileSize = NewV2(16, 9);
+	v2 tileSize = NewV2(48, 27);
 	i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
 	i32 numRows = CeilR32i(windowSize.Height / tileSize.Height);
 	u64 colorIndex = 0;
@@ -187,7 +218,7 @@ void AppFrame(void)
 	{
 		for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
 		{
-			DrawRectangle(&simpleShader, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, GetPredefPalColorByIndex(colorIndex));
+			DrawRectangle(&main2dShader, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, White);
 			colorIndex++;
 		}
 	}

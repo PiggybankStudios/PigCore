@@ -115,6 +115,17 @@ Description:
 #define STRINGIFY(text)          #text
 #endif
 
+#define INDEX_FROM_COORD2D(coordX, coordY, arrayWidth, arrayHeight) ( \
+	(coordY) * (arrayWidth) +                                         \
+	(coordX)                                                          \
+)
+#define COORD2D_X_FROM_INDEX(index, arrayWidth, arrayHeight) ((index) % (arrayWidth))
+#define COORD2D_Y_FROM_INDEX(index, arrayWidth, arrayHeight) ((index) / (arrayWidth))
+#define COORD2D_FROM_INDEX(index, arrayWidth, arrayHeight) NewV2i( \
+	COORD2D_X_FROM_INDEX((index), (arrayWidth), (arrayHeight)),    \
+	COORD2D_Y_FROM_INDEX((index), (arrayWidth), (arrayHeight))     \
+)
+
 // When dealing with 3D coordinate systems we often will put a collection of items that are logically
 // part of a 3D grid into a 1-dimensional array. To convert between the 3D coordinates and the index
 // in the array we use these macros which ensure the ordering x/y/z axis is consistent
@@ -128,10 +139,10 @@ Description:
 #define COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth) (((voxelIndex) % ((arrayWidth) * (arrayDepth))) / (arrayWidth))
 //NOTE: This macro relies on NewVec3i. You must include the vectors header file before using it!
 //TODO: This should probably be moved to wherever v3i is defined, and a version of the first macro made that takes a v3i argument
-#define COORD3D_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth) NewVec3i( \
-	(i32)COORD3D_X_FROM_INDEX(voxelIndex, arrayWidth),                                \
-	(i32)COORD3D_Y_FROM_INDEX(voxelIndex, arrayWidth, arrayDepth),                    \
-	(i32)COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)        \
+#define COORD3D_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth) NewV3i( \
+	(i32)COORD3D_X_FROM_INDEX(voxelIndex, arrayWidth),                              \
+	(i32)COORD3D_Y_FROM_INDEX(voxelIndex, arrayWidth, arrayDepth),                  \
+	(i32)COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)      \
 )
 
 // When unused variable warnings are enabled, these macros can help satiate the

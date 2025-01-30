@@ -237,7 +237,7 @@ for shaderFilePath in shaderFilePaths:
 				else:
 				#
 					uniformBlockEndRegex = re.compile("}\\s*%s_t;" % insideUniformBlock);
-					uniformRegex = re.compile("^\\s*(.*)\\s+(.*);\\s*$");
+					uniformRegex = re.compile("^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s+([A-Za-z_][A-Za-z0-9_]*);\\s*$");
 					uniformMatch = uniformRegex.search(line);
 					if (uniformBlockEndRegex.search(line) != None):
 					#
@@ -267,27 +267,22 @@ for shaderFilePath in shaderFilePaths:
 		#
 			compiledShaderFile.write("\n\n//NOTE: These lines were added by find_and_compile_shaders.py\n");
 			compiledShaderFile.write("#define %s %s //NOTE: This line is added by find_and_compile_shaders.py\n" % (filePathDefineName, EscapeString(fullShaderFilePath, True)));
-			attributeDefs = "{ ";
-			aIndex = 0;
+			attributeDefs = "{ \\\n";
 			for attribute in shaderAttributes:
 			#
-				if (aIndex > 0): attributeDefs += ", ";
-				attributeDefs += "{ .name=\"%s\", .index=ATTR_%s_%s }" % (attribute, shaderName, attribute);
-				aIndex += 1;
+				attributeDefs += "\t{ .name=\"%s\", .index=ATTR_%s_%s }, \\\n" % (attribute, shaderName, attribute);
 			#
 			attributeDefs += " } // These should match ShaderAttributeDef struct found in gfx_shader.h";
 			uniformDefs = "{ \\\n";
 			for uniformTuple in uniforms:
 			#
-				uniformBlock = uniformTuple[0];
-				uniformType = uniformTuple[1];
-				uniformName = uniformTuple[2];
+				uniformBlock = uniformTuple[0]; uniformType = uniformTuple[1]; uniformName = uniformTuple[2];
 				uniformDefs += "\t{ .name=\"%s\", .blockIndex=UB_%s, .offset=STRUCT_VAR_OFFSET(%s_t, %s), .size=STRUCT_VAR_SIZE(%s_t, %s) }, \\\n" % (uniformName, uniformBlock, uniformBlock, uniformName, uniformBlock, uniformName);
 			#
 			uniformDefs += " } // These should match ShaderUniformDef struct found in gfx_shader.h";
 			compiledShaderFile.write("#define %s %s\n" % (attributeCountDefineName, len(shaderAttributes)));
 			compiledShaderFile.write("#define %s %s\n" % (attributeDefsDefineName, attributeDefs));
-			compiledShaderFile.write("#define %s %s\n" % (uniformCountDefineName, 4)); #TODO: fill this out!
+			compiledShaderFile.write("#define %s %s\n" % (uniformCountDefineName, len(uniforms)));
 			compiledShaderFile.write("#define %s %s\n" % (uniformDefsDefineName, uniformDefs));
 		#
 	#

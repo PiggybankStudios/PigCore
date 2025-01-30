@@ -22,11 +22,14 @@ Description:
 #define SOKOL_DEBUG
 #endif
 
+//NOTE: Change this over in shader_include.h as well!
 #if TARGET_IS_WINDOWS
 #define SOKOL_D3D11
 // #define SOKOL_GLCORE
 #elif TARGET_IS_LINUX
 #define SOKOL_GLCORE
+#elif TARGET_IS_OSX
+#define SOKOL_METAL
 #elif TARGET_IS_WEB
 #define SOKOL_WGPU
 #endif

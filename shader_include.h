@@ -11,6 +11,18 @@ Description:
 
 #include "build_config.h"
 
+//NOTE: Copy of backend descision from gfx_sokol_include.h
+#if TARGET_IS_WINDOWS
+#define SOKOL_D3D11
+// #define SOKOL_GLCORE
+#elif TARGET_IS_LINUX
+#define SOKOL_GLCORE
+#elif TARGET_IS_OSX
+#define SOKOL_METAL
+#elif TARGET_IS_WEB
+#define SOKOL_WGPU
+#endif
+
 #include "third_party/sokol/sokol_gfx.h"
 
 #define PIG_CORE_IMPLEMENTATION 0

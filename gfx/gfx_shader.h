@@ -52,6 +52,7 @@ enum ShaderUniformType
 	ShaderUniformType_ViewMatrix,
 	ShaderUniformType_WorldMatrix,
 	ShaderUniformType_TintColor,
+	ShaderUniformType_SourceRec,
 	ShaderUniformType_Count,
 };
 #if !PIG_CORE_IMPLEMENTATION
@@ -68,6 +69,7 @@ const char* GetShaderUniformTypeStr(ShaderUniformType enumValue)
 		case ShaderUniformType_ViewMatrix:  return "ViewMatrix";
 		case ShaderUniformType_WorldMatrix: return "WorldMatrix";
 		case ShaderUniformType_TintColor:   return "TintColor";
+		case ShaderUniformType_SourceRec:   return "SourceRec";
 		default: return UNKNOWN_STR;
 	}
 }
@@ -79,6 +81,7 @@ const char* GetShaderUniformMatchStr(ShaderUniformType enumValue)
 		case ShaderUniformType_ViewMatrix:  return "view";
 		case ShaderUniformType_WorldMatrix: return "world";
 		case ShaderUniformType_TintColor:   return "tint";
+		case ShaderUniformType_SourceRec:   return "source";
 		default: return UNKNOWN_STR;
 	}
 }
@@ -90,6 +93,7 @@ uxx GetShaderUniformMatchSize(ShaderUniformType enumValue)
 		case ShaderUniformType_ViewMatrix:  return sizeof(mat4);
 		case ShaderUniformType_WorldMatrix: return sizeof(mat4);
 		case ShaderUniformType_TintColor:   return sizeof(v4r);
+		case ShaderUniformType_SourceRec:   return sizeof(v4r);
 		default: return 0;
 	}
 }
@@ -145,6 +149,14 @@ struct Shader
 	PIG_CORE_INLINE bool SetShaderWorldMat(Shader* shader, mat4 matrix);
 	PIG_CORE_INLINE bool SetShaderTintColorVec(Shader* shader, v4r color);
 	PIG_CORE_INLINE bool SetShaderTintColor(Shader* shader, Color32 color);
+	PIG_CORE_INLINE bool SetShaderSourceRecRaw(Shader* shader, v4r rectangle); //TODO: Change these to rec type!
+	PIG_CORE_INLINE bool SetShaderSourceRec(Shader* shader, v4 rectangle); //TODO: Change these to rec type!
+	PIG_CORE_INLINE bool SetShaderUniformByName(Shader* shader, Str8 uniformName, uxx valueSize, const void* valuePntr);
+	PIG_CORE_INLINE bool SetShaderUniformByNameR32(Shader* shader, Str8 uniformName, r32 value);
+	PIG_CORE_INLINE bool SetShaderUniformByNameMat4(Shader* shader, Str8 uniformName, mat4 matrix);
+	PIG_CORE_INLINE bool SetShaderUniformByNameV2(Shader* shader, Str8 uniformName, v2 vector);
+	PIG_CORE_INLINE bool SetShaderUniformByNameV3(Shader* shader, Str8 uniformName, v3 vector);
+	PIG_CORE_INLINE bool SetShaderUniformByNameV4(Shader* shader, Str8 uniformName, v4 vector);
 #endif
 
 #define InitCompiledShader_Internal(outputShaderPntr, arenaPntr, shaderName) do                         \
@@ -336,6 +348,33 @@ PEXPI bool SetShaderViewMat(Shader* shader, mat4 matrix) { return SetShaderUnifo
 PEXPI bool SetShaderWorldMat(Shader* shader, mat4 matrix) { return SetShaderUniformByType(shader, ShaderUniformType_WorldMatrix, sizeof(matrix), &matrix); }
 PEXPI bool SetShaderTintColorVec(Shader* shader, v4r color) { return SetShaderUniformByType(shader, ShaderUniformType_TintColor, sizeof(color), &color); }
 PEXPI bool SetShaderTintColor(Shader* shader, Color32 color) { return SetShaderTintColorVec(shader, ToV4rFromColor32(color)); }
+PEXPI bool SetShaderSourceRecRaw(Shader* shader, v4r rectangle) { return SetShaderUniformByType(shader, ShaderUniformType_SourceRec, sizeof(rectangle), &rectangle); } //TODO: Change these to rec type!
+PEXPI bool SetShaderSourceRec(Shader* shader, v4 rectangle) { return SetShaderSourceRecRaw(shader, ToV4rFrom4(rectangle)); } //TODO: Change these to rec type!
+
+PEXPI bool SetShaderUniformByName(Shader* shader, Str8 uniformName, uxx valueSize, const void* valuePntr)
+{
+	for (uxx uIndex = 0; uIndex < shader->numUniforms; uIndex++)
+	{
+		ShaderUniform* uniform = &shader->uniforms[uIndex];
+		if (StrExactEquals(uniform->name, uniformName))
+		{
+			Assert(uniform->size == valueSize);
+			Assert(uniform->blockIndex < MAX_NUM_SHADER_UNIFORM_BLOCKS);
+			ShaderUniformBlock* uniformBlock = &shader->uniformBlocks[uniform->blockIndex];
+			NotNull(uniformBlock->value.bytes);
+			Assert(uniform->offset + uniform->size <= uniformBlock->value.length);
+			MyMemCopy(&uniformBlock->value.bytes[uniform->offset], valuePntr, valueSize);
+			uniformBlock->valueChanged = true;
+			return true;
+		}
+	}
+	return false;
+}
+PEXPI bool SetShaderUniformByNameMat4(Shader* shader, Str8 uniformName, mat4 matrix) { return SetShaderUniformByName(shader, uniformName, sizeof(matrix), &matrix); }
+PEXPI bool SetShaderUniformByNameR32(Shader* shader, Str8 uniformName, r32 value) { return SetShaderUniformByName(shader, uniformName, sizeof(value), &value); }
+PEXPI bool SetShaderUniformByNameV2(Shader* shader, Str8 uniformName, v2 vector) { return SetShaderUniformByName(shader, uniformName, sizeof(vector), &vector); }
+PEXPI bool SetShaderUniformByNameV3(Shader* shader, Str8 uniformName, v3 vector) { return SetShaderUniformByName(shader, uniformName, sizeof(vector), &vector); }
+PEXPI bool SetShaderUniformByNameV4(Shader* shader, Str8 uniformName, v4 vector) { return SetShaderUniformByName(shader, uniformName, sizeof(vector), &vector); }
 
 #endif //PIG_CORE_IMPLEMENTATION
 

@@ -524,7 +524,10 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
 //NOTE: These lines were added by find_and_compile_shaders.py
 #define simple_SHADER_FILE_PATH "C:\\gamedev\\projects\\PigCoreGameProto\\core\\tests\\simple_shader.glsl" //NOTE: This line is added by find_and_compile_shaders.py
 #define simple_SHADER_ATTR_COUNT 2
-#define simple_SHADER_ATTR_DEFS { { .name="position", .index=ATTR_simple_position }, { .name="color0", .index=ATTR_simple_color0 } } // These should match ShaderAttributeDef struct found in gfx_shader.h
+#define simple_SHADER_ATTR_DEFS { \
+	{ .name="position", .index=ATTR_simple_position }, \
+	{ .name="color0", .index=ATTR_simple_color0 }, \
+ } // These should match ShaderAttributeDef struct found in gfx_shader.h
 #define simple_SHADER_UNIFORM_COUNT 4
 #define simple_SHADER_UNIFORM_DEFS { \
 	{ .name="world", .blockIndex=UB_simple_VertParams, .offset=STRUCT_VAR_OFFSET(simple_VertParams_t, world), .size=STRUCT_VAR_SIZE(simple_VertParams_t, world) }, \
