@@ -12,30 +12,12 @@ Description:
 
 int MyMain(int argc, char* argv[]);
 
-typedef union Vertex Vertex;
-union Vertex
-{
-	r32 values[7];
-	struct
-	{
-		v3 position;
-		v4r color;
-	};
-	struct
-	{
-		r32 X, Y, Z;
-		r32 R, G, B, A;
-	};
-};
-_Static_assert(sizeof(Vertex) == sizeof(r32)*7);
-_Static_assert(STRUCT_VAR_OFFSET(Vertex, color) == sizeof(r32)*3);
-
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
 sg_pass_action sokolPassAction;
 Shader simpleShader;
-VertBuffer triangleBuffer;
+VertBuffer squareBuffer;
 sg_bindings bindings;
 sg_pipeline pipeline;
 
@@ -106,20 +88,24 @@ void AppInit(void)
 	
 	ClearStruct(bindings);
 	
-	Vertex2D vertices[] = {
-		{ .X= 0.0f, .Y= 0.5f,   .tX=0.0f, .tY=0.0f,   .R=1.0f, .G=0.0f, .B=0.0f, .A=1.0f },
-		{ .X= 0.5f, .Y=-0.5f,   .tX=1.0f, .tY=1.0f,   .R=0.0f, .G=1.0f, .B=0.0f, .A=1.0f },
-		{ .X=-0.5f, .Y=-0.5f,   .tX=0.0f, .tY=1.0f,   .R=0.0f, .G=0.0f, .B=1.0f, .A=1.0f },
+	Vertex2D squareVertices[] = {
+		{ .X=0.0f, .Y=0.0f,   .tX=0.0f, .tY=0.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
+		{ .X=1.0f, .Y=0.0f,   .tX=1.0f, .tY=0.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
+		{ .X=0.0f, .Y=1.0f,   .tX=0.0f, .tY=1.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
+		
+		{ .X=1.0f, .Y=1.0f,   .tX=1.0f, .tY=1.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
+		{ .X=0.0f, .Y=1.0f,   .tX=0.0f, .tY=1.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
+		{ .X=1.0f, .Y=0.0f,   .tX=1.0f, .tY=0.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
 	};
-	triangleBuffer = InitVertBuffer2D(stdHeap, StrLit("triangle"), VertBufferUsage_Static, ArrayCount(vertices), &vertices[0], false);
-	Assert(triangleBuffer.error == Result_Success);
-	BindVertBuffer(&bindings, &triangleBuffer, 0);
+	squareBuffer = InitVertBuffer2D(stdHeap, StrLit("square"), VertBufferUsage_Static, ArrayCount(squareVertices), &squareVertices[0], false);
+	Assert(squareBuffer.error == Result_Success);
+	BindVertBuffer(&bindings, &squareBuffer, 0);
 	
 	InitCompiledShader(&simpleShader, stdHeap, simple); Assert(simpleShader.error == Result_Success);
 	
 	sg_pipeline_desc pipelineDesc = ZEROED;
 	pipelineDesc.label = "triangle-pipeline";
-	FillPipelineDescLayout(&pipelineDesc, &simpleShader, &triangleBuffer);
+	FillPipelineDescLayout(&pipelineDesc, &simpleShader, &squareBuffer);
 	pipelineDesc.depth.pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
 	pipelineDesc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
 	pipelineDesc.depth.write_enabled = true;
@@ -157,11 +143,23 @@ void AppCleanup(void)
 	sg_shutdown();
 }
 
+void DrawRectangle(simple_VertParams_t* vertParams, simple_FragParams_t* fragParams, v2 topLeft, v2 size, Color32 color)
+{
+	vertParams->world = Mat4_Identity;
+	TransformMat4(&vertParams->world, MakeScaleXYZMat4(size.Width, size.Height, 1.0f));
+	TransformMat4(&vertParams->world, MakeTranslateXYZMat4(topLeft.X, topLeft.Y, 0.0f));
+	fragParams->tint = ToV4rFromColor32(color);
+	sg_apply_uniforms(UB_simple_VertParams, &(sg_range){vertParams, sizeof(*vertParams)});
+	sg_apply_uniforms(UB_simple_FragParams, &(sg_range){fragParams, sizeof(*fragParams)});
+	sg_draw(0, (int)squareBuffer.numVertices, 1);
+}
+
 // +--------------------------------------------------------------+
 // |                            Update                            |
 // +--------------------------------------------------------------+
 void AppFrame(void)
 {
+	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	// float newGreen = sokolPassAction.colors[0].clear_value.g + 0.01f;
 	// sokolPassAction.colors[0].clear_value.g = (newGreen > 1.0f) ? 0.0f : newGreen;
 	sg_pass mainPass = {
@@ -171,7 +169,28 @@ void AppFrame(void)
 	sg_begin_pass(&mainPass);
 	sg_apply_pipeline(pipeline);
 	sg_apply_bindings(&bindings);
-	sg_draw(0, 3, 1);
+	simple_VertParams_t vertParams = ZEROED;
+	simple_FragParams_t fragParams = ZEROED;
+	vertParams.projection = Mat4_Identity;
+	TransformMat4(&vertParams.projection, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
+	TransformMat4(&vertParams.projection, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
+	TransformMat4(&vertParams.projection, MakeScaleYMat4(-1.0f));
+	vertParams.view = Mat4_Identity;
+	vertParams.world = Mat4_Identity;
+	
+	v2 tileSize = NewV2(16, 9);
+	i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
+	i32 numRows = CeilR32i(windowSize.Height / tileSize.Height);
+	u64 colorIndex = 0;
+	for (i32 yIndex = 0; yIndex < numRows; yIndex++)
+	{
+		for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
+		{
+			DrawRectangle(&vertParams, &fragParams, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, GetPredefPalColorByIndex(colorIndex));
+			colorIndex++;
+		}
+	}
+	
 	sg_end_pass();
 	sg_commit();
 }
@@ -190,8 +209,8 @@ void AppEvent(const sapp_event* event)
 		case SAPP_EVENTTYPE_MOUSE_UP:          WriteLine_D("Event: MOUSE_UP");          break;
 		case SAPP_EVENTTYPE_MOUSE_SCROLL:      WriteLine_D("Event: MOUSE_SCROLL");      break;
 		case SAPP_EVENTTYPE_MOUSE_MOVE:        /*WriteLine_D("Event: MOUSE_MOVE");*/    break;
-		case SAPP_EVENTTYPE_MOUSE_ENTER:       WriteLine_D("Event: MOUSE_ENTER");       break;
-		case SAPP_EVENTTYPE_MOUSE_LEAVE:       WriteLine_D("Event: MOUSE_LEAVE");       break;
+		case SAPP_EVENTTYPE_MOUSE_ENTER:       /*WriteLine_D("Event: MOUSE_ENTER");*/   break;
+		case SAPP_EVENTTYPE_MOUSE_LEAVE:       /*WriteLine_D("Event: MOUSE_LEAVE");*/   break;
 		case SAPP_EVENTTYPE_TOUCHES_BEGAN:     WriteLine_D("Event: TOUCHES_BEGAN");     break;
 		case SAPP_EVENTTYPE_TOUCHES_MOVED:     WriteLine_D("Event: TOUCHES_MOVED");     break;
 		case SAPP_EVENTTYPE_TOUCHES_ENDED:     WriteLine_D("Event: TOUCHES_ENDED");     break;

@@ -193,7 +193,7 @@ PEXPI void BindVertBuffer(sg_bindings* bindings, VertBuffer* buffer, uxx bufferI
 	NotNull(bindings);
 	NotNull(buffer);
 	Assert(buffer->handle.id != SG_INVALID_ID);
-	bindings->vertex_buffers[0] = buffer->handle;
+	bindings->vertex_buffers[bufferIndex] = buffer->handle;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

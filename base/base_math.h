@@ -55,6 +55,7 @@ Description:
 	PIG_CORE_INLINE i32 ClampCastU32ToI32(u32 value);
 	PIG_CORE_INLINE u64 ClampCastI64ToU64(i64 value);
 	PIG_CORE_INLINE i64 ClampCastU64ToI64(u64 value);
+	PIG_CORE_INLINE u8 ClampCastI32ToU8(i32 value);
 	PIG_CORE_INLINE i8 ReinterpretCastU8ToI8(u8 value);
 	PIG_CORE_INLINE u8 ReinterpretCastI8ToU8(i8 value);
 	PIG_CORE_INLINE i16 ReinterpretCastU16ToI16(u16 value);
@@ -149,6 +150,7 @@ PEXPI u32 ClampCastI32ToU32(i32 value) { return (value >= 0) ? (u32)value : 0; }
 PEXPI i32 ClampCastU32ToI32(u32 value) { return (value <= INT32_MAX) ? (i32)value : INT32_MAX; }
 PEXPI u64 ClampCastI64ToU64(i64 value) { return (value >= 0) ? (u64)value : 0; }
 PEXPI i64 ClampCastU64ToI64(u64 value) { return (value <= INT64_MAX) ? (i64)value : INT64_MAX; }
+PEXPI u8 ClampCastI32ToU8(i32 value) { return ((value <= UINT8_MAX) ? (value >= 0 ? (u8)value : (u8)0) : UINT8_MAX); }
 
 //TODO: Do we want ClampCast variants for differently sized integers? Like I32ToI8?
 

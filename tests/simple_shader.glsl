@@ -1,25 +1,49 @@
-@vs vertex
+@ctype mat4 mat4
+@ctype vec2 v2
+@ctype vec3 v3
+@ctype vec4 v4r
+
+// +--------------------------------------------------------------+
+// |                        Vertex Shader                         |
+// +--------------------------------------------------------------+
+@vs vertex_shader
+
+layout(binding=0) uniform simple_VertParams
+{
+	uniform mat4 world;
+	uniform mat4 view;
+	uniform mat4 projection;
+};
 
 in vec2 position;
 in vec4 color0;
 
-out vec4 color;
+out vec4 fragColor;
 
 void main()
 {
-	gl_Position = vec4(position, 0.0f, 1.0f);
-	color = color0;
+	gl_Position = projection * (view * (world * vec4(position, 0.0f, 1.0f)));
+	fragColor = color0;
 }
 @end
 
-@fs pixel
-in vec4 color;
+// +--------------------------------------------------------------+
+// |                       Fragment Shader                        |
+// +--------------------------------------------------------------+
+@fs fragment_shader
+
+layout(binding=1) uniform simple_FragParams
+{
+	uniform vec4 tint;
+};
+
+in vec4 fragColor;
 out vec4 frag_color;
 
 void main()
 {
-	frag_color = vec4(sin(color.r*12)*0.5f+0.5f, sin(color.g*6)*0.5f+0.5f, sin(color.b*5)*0.5f+0.5f, color.a);
+	frag_color = fragColor * tint;
 }
 @end
 
-@program simple vertex pixel
+@program simple vertex_shader fragment_shader
