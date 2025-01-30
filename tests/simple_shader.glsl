@@ -1,4 +1,5 @@
 @vs vertex
+
 in vec2 position;
 in vec4 color0;
 

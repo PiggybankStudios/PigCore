@@ -33,6 +33,7 @@ unhandledArguments = arguments.copy();
 
 excludePatterns = [];
 targetPath = None;
+listOutputPath = None;
 
 def UnescapeString(strMaybeWithQuotes):
 #
@@ -67,6 +68,11 @@ for arg in arguments:
 		if (argumentName == "exclude"):
 		#
 			excludePatterns.append(argumentValue);
+			unhandledArguments.remove(arg);
+		#
+		elif (argumentName == "list_file"):
+		#
+			listOutputPath = argumentValue;
 			unhandledArguments.remove(arg);
 		#
 		# else: print("Unknown argument name \"%s\"" % argumentName);
@@ -147,20 +153,23 @@ def RecursiveWalk(pathEncoded):
 	#
 #
 
+absTargetPath = os.path.abspath(targetPath)
 RecursiveWalk(os.fsencode(targetPath));
 
 if (len(shaderFilePaths) == 0): print("No shader files found (%d files/folders walked)" % numFilesWalked);
 
 givenNameRegex = re.compile("Shader program: '(.*)':");
-
+allShaderNames = [];
+allShaderSourcePaths = [];
 
 for shaderFilePath in shaderFilePaths:
 #
 	print("Compiling \"%s\"..." % shaderFilePath, flush=True);
 	fullShaderFilePath = os.path.abspath(shaderFilePath);
 	outputHeaderPath = fullShaderFilePath + ".h";
+	outputSourcePath = fullShaderFilePath + ".c";
 	cmd = ["sokol-shdc.exe"];
-	cmd.append("--format=sokol");
+	cmd.append("--format=sokol_impl");
 	cmd.append("--errfmt=msvc");
 	cmd.append("--slang=hlsl5:glsl430:metal_macos");
 	cmd.append("--input=%s" % EscapeString(fullShaderFilePath, False));
@@ -171,6 +180,7 @@ for shaderFilePath in shaderFilePaths:
 	#
 	# print("Command: %s" % " ".join(cmd));
 	subprocess.check_output(cmd);
+	allShaderSourcePaths.append(outputSourcePath);
 	
 	shaderName = "unknown";
 	foundName = False;
@@ -207,6 +217,7 @@ for shaderFilePath in shaderFilePaths:
 	
 	if (foundName):
 	#
+		allShaderNames.append(shaderName);
 		filePathDefineName = "%s_SHADER_FILE_PATH" % shaderName;
 		attributeCountDefineName = "%s_SHADER_ATTR_COUNT" % shaderName;
 		attributeNamesDefineName = "%s_SHADER_ATTR_NAMES" % shaderName;
@@ -236,5 +247,27 @@ for shaderFilePath in shaderFilePaths:
 	#
 		print("WARNING: Failed to find given name in generated shader header file. This file will not have the tacked-on defines that we expect! %s" % (outputHeaderPath));
 	#
-	# print("Done!");
+	
+	headerIncludePath = outputHeaderPath.replace("\\", "/").split("/")[-1];
+	with open(outputSourcePath, "w") as shaderSourceFile:
+	#
+		shaderSourceFile.write("\n");
+		shaderSourceFile.write("#include \"shader_include.h\"\n");
+		shaderSourceFile.write("\n");
+		shaderSourceFile.write("#include \"%s\"\n" % headerIncludePath);
+	#
+#
+
+if (listOutputPath != None):
+#
+	with open(listOutputPath, "w") as listFile:
+	#
+		headerIndex = 0;
+		for headerPath in allShaderSourcePaths:
+		#
+			if (headerIndex > 0): listFile.write(",");
+			listFile.write("%s" % headerPath);
+			headerIndex += 1;
+		#
+	#
 #

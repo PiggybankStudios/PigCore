@@ -1,5 +1,7 @@
 @echo off
 
+setlocal enabledelayedexpansion
+
 if not exist _build mkdir _build
 pushd _build
 set root=..
@@ -59,20 +61,6 @@ if "%BUILD_WINDOWS%"=="1" ( echo VsDevCmd.bat took %vsdevcmd_elapsed_seconds_par
 
 if "%USE_EMSCRIPTEN%"=="1" (
 	call "C:\gamedev\lib\emsdk\emsdk_env.bat" > NUL 2> NUL
-)
-
-:: +--------------------------------------------------------------+
-:: |                        Build Shaders                         |
-:: +--------------------------------------------------------------+
-if "%BUILD_SHADERS%"=="1" (
-	if not exist sokol-shdc.exe (
-		echo "[Copying sokol-shdc.exe from %tools%...]"
-		COPY %tools%\sokol-shdc.exe sokol-shdc.exe
-	)
-	echo.
-	echo [Compiling Shaders...]
-	python %scripts%\find_and_compile_shaders.py "%root%" --exclude="third_party" --exclude=".git" --exclude="_build"
-	echo [Shaders Compiled!]
 )
 
 :: +--------------------------------------------------------------+
@@ -141,6 +129,7 @@ if "%DEBUG_BUILD%"=="1" (
 	REM /wd4189 = Local variable is initialized but not referenced [W4]
 	REM /wd4702 = Unreachable code [W4]
 	set common_cl_flags=%common_cl_flags% /MDd /Od /Zi /wd4065 /wd4100 /wd4101 /wd4127 /wd4189 /wd4702
+	set shader_cl_flags=%shader_cl_flags% /MDd /Od /Zi
 	REM -Wno-unused-parameter = warning: unused parameter 'numBytes'
 	set common_clang_flags=%common_clang_flags% -Wno-unused-parameter -Wno-unused-variable
 ) else (
@@ -150,6 +139,7 @@ if "%DEBUG_BUILD%"=="1" (
 	REM /O2 = Optimization level 2: Creates fast code
 	REM /Zi = Generate complete debugging information [optional]
 	set common_cl_flags=%common_cl_flags% /MD /Ot /Oy /O2
+	set shader_cl_flags=%shader_cl_flags% /MD /Ot /Oy /O2
 	set common_clang_flags=%common_clang_flags%
 )
 
@@ -205,11 +195,39 @@ set wasm_js_files=%wasm_js_files% ..\%root%\wasm\std\include\internal\wasm_std_j
 set wasm_js_files=%wasm_js_files% ..\%root%\wasm\wasm_app_js_api.js
 set wasm_js_files=%wasm_js_files% ..\%root%\wasm\wasm_main.js
 
-
-
 for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
 	set /A "build_start_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
 )
+
+:: +--------------------------------------------------------------+
+:: |                        Build Shaders                         |
+:: +--------------------------------------------------------------+
+set shader_list_file=shader_list_source.txt
+if "%BUILD_SHADERS%"=="1" (
+	if not exist sokol-shdc.exe (
+		echo "[Copying sokol-shdc.exe from %tools%...]"
+		COPY %tools%\sokol-shdc.exe sokol-shdc.exe
+	)
+	echo.
+	echo [Compiling Shaders...]
+	python %scripts%\find_and_compile_shaders.py "%root%" --exclude="third_party" --exclude=".git" --exclude="_build" --list_file=%shader_list_file%
+)
+
+:: Read the list file into %shader_list% variable
+for /f "delims=" %%x in (%shader_list_file%) do set shader_list=%%x
+
+set shader_object_files=
+REM Separate list by commas, for each item compile to .obj file, add output path to %shader_object_files%
+for %%y in ("%shader_list:,=" "%") do (
+	set object_name=%%~ny%.obj
+	if "%BUILD_SHADERS%"=="1" (
+		set shader_file_dir=%%y:~0,-1%
+		cl /c %common_cl_flags% /I"!shader_file_dir!" /Fo"!object_name!" %%~y
+	)
+	set shader_object_files=!shader_object_files! !object_name!
+)
+if "%BUILD_SHADERS%"=="1" ( echo [Shaders Compiled!] )
+rem echo shader_object_files %shader_object_files%
 
 :: +--------------------------------------------------------------+
 :: |                       Build piggen.exe                       |
@@ -246,7 +264,7 @@ set tests_bin_path=tests
 set tests_wasm_path=app.wasm
 set tests_wat_path=app.wat
 set tests_html_path=index.html
-set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% /link %common_ld_flags% %tests_libraries%
+set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% %shader_object_files% /link %common_ld_flags% %tests_libraries%
 set tests_clang_args=%common_clang_flags% %linux_clang_flags% %tests__clang_libraries% -o %tests_bin_path% ../%tests_source_path%
 if "%ENABLE_AUTO_PROFILE%"=="1" (
 	set tests_clang_args=-finstrument-functions %tests_clang_args%

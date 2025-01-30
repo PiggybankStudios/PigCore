@@ -9,6 +9,8 @@
 			],
 			"file_exclude_patterns": [
 				"*.rdbg",
+				"*.glsl.h",
+				"*.glsl.c",
 			],
 		},
 		{
