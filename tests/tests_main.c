@@ -734,7 +734,7 @@ int main(int argc, char* argv[])
 	}
 	#endif
 	
-	#define RAYLIB_3D 1
+	#define RAYLIB_3D 0
 	#if BUILD_WITH_BOX2D && !RAYLIB_3D
 	InitBox2DTest();
 	#endif

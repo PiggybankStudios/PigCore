@@ -261,6 +261,7 @@ typedef Vec4Raw v4r;
 #define AreEqualV2(left, right) HMM_EqV2((left), (right))
 #define AreEqualV3(left, right) HMM_EqV3((left), (right))
 #define AreEqualV4(left, right) HMM_EqV4((left), (right))
+#define AreEqualV4r(left, right) ((left).X == (right).X && (left).Y == (right).Y && (left).Z == (right).Z && (left).W == (right).W)
 #define AreEqualV2i(left, right) ((left).X == (right).X && (left).Y == (right).Y)
 #define AreEqualV3i(left, right) ((left).X == (right).X && (left).Y == (right).Y && (left).Z == (right).Z)
 #define AreEqualV4i(left, right) ((left).X == (right).X && (left).Y == (right).Y && (left).Z == (right).Z && (left).W == (right).W)

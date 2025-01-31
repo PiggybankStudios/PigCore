@@ -83,6 +83,10 @@ typedef HMM_Mat4 mat4;
 #define MulMat3AndV3(matrix3, vec3) HMM_MulM3V3((matrix3), (vec3))
 #define MulMat4AndV4(matrix4, vec4) HMM_MulM4V4((matrix4), (vec4))
 
+#define AreEqualMat2(leftPntr, rightPntr) (HMM_EqV2((leftPntr)->Columns[0], (rightPntr)->Columns[0]) && HMM_EqV2((leftPntr)->Columns[1], (rightPntr)->Columns[1]))
+#define AreEqualMat3(leftPntr, rightPntr) (HMM_EqV3((leftPntr)->Columns[0], (rightPntr)->Columns[0]) && HMM_EqV3((leftPntr)->Columns[1], (rightPntr)->Columns[1]) && HMM_EqV3((leftPntr)->Columns[2], (rightPntr)->Columns[2]))
+#define AreEqualMat4(leftPntr, rightPntr) (HMM_EqV4((leftPntr)->Columns[0], (rightPntr)->Columns[0]) && HMM_EqV4((leftPntr)->Columns[1], (rightPntr)->Columns[1]) && HMM_EqV4((leftPntr)->Columns[2], (rightPntr)->Columns[2]) && HMM_EqV4((leftPntr)->Columns[3], (rightPntr)->Columns[3]))
+
 //a.k.a. Apply a new transform matrix from the LEFT side
 #define TransformMat4(mat4Pntr, matrix4) *(mat4Pntr) = MulMat4((matrix4), *(mat4Pntr))
 

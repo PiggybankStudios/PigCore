@@ -122,8 +122,8 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 #define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
 #define InitVarArray(type, arrayPntr, arena) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
 #else
-#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), _Alignof(type), (initialCountNeeded))
-#define InitVarArray(type, arrayPntr, arena) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), _Alignof(type), 0)
+#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
+#define InitVarArray(type, arrayPntr, arena) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
 #endif
 
 #define VarArrayContains(type, arrayPntr, itemPntrInQuestion) VarArrayContains_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntrInQuestion))

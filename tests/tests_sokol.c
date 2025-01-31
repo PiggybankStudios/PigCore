@@ -17,12 +17,11 @@ int MyMain(int argc, char* argv[]);
 // |                           Globals                            |
 // +--------------------------------------------------------------+
 sg_pass_action sokolPassAction;
+GfxSystem gfx;
 Shader simpleShader;
 Shader main2dShader;
 Texture gradientTexture;
 VertBuffer squareBuffer;
-sg_bindings bindings;
-sg_pipeline pipeline;
 
 // +--------------------------------------------------------------+
 // |                    Callbacks and Helpers                     |
@@ -58,27 +57,6 @@ sg_environment CreateSokolEnvironment()
 	return result;
 }
 
-sg_swapchain CreateSokolSwapchain()
-{
-	sg_swapchain result = ZEROED;
-	result.width = sapp_width();
-	result.height = sapp_height();
-	result.sample_count = sapp_sample_count();
-	result.color_format = (sg_pixel_format)sapp_color_format();
-	result.depth_format = (sg_pixel_format)sapp_depth_format();
-	result.metal.current_drawable = sapp_metal_get_current_drawable();
-	result.metal.depth_stencil_texture = sapp_metal_get_depth_stencil_texture();
-	result.metal.msaa_color_texture = sapp_metal_get_msaa_color_texture();
-	result.d3d11.render_view = sapp_d3d11_get_render_view();
-	result.d3d11.resolve_view = sapp_d3d11_get_resolve_view();
-	result.d3d11.depth_stencil_view = sapp_d3d11_get_depth_stencil_view();
-	result.wgpu.render_view = sapp_wgpu_get_render_view();
-	result.wgpu.resolve_view = sapp_wgpu_get_resolve_view();
-	result.wgpu.depth_stencil_view = sapp_wgpu_get_depth_stencil_view();
-	result.gl.framebuffer = sapp_gl_get_framebuffer();
-	return result;
-}
-
 // +--------------------------------------------------------------+
 // |                          Initialize                          |
 // +--------------------------------------------------------------+
@@ -91,7 +69,7 @@ void AppInit(void)
 		.logger.func = SokolLogCallback,
 	});
 	
-	ClearStruct(bindings);
+	InitGfxSystem(stdHeap, &gfx);
 	
 	Vertex2D squareVertices[] = {
 		{ .X=0.0f, .Y=0.0f,   .tX=0.0f, .tY=0.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
@@ -125,40 +103,6 @@ void AppInit(void)
 	InitCompiledShader(&simpleShader, stdHeap, simple); Assert(simpleShader.error == Result_Success);
 	InitCompiledShader(&main2dShader, stdHeap, main2d); Assert(main2dShader.error == Result_Success);
 	
-	sg_pipeline_desc pipelineDesc = ZEROED;
-	pipelineDesc.label = "triangle-pipeline";
-	FillPipelineDescLayout(&pipelineDesc, &main2dShader, &squareBuffer);
-	pipelineDesc.depth.pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
-	pipelineDesc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
-	pipelineDesc.depth.write_enabled = true;
-	pipelineDesc.stencil.enabled = false;
-	pipelineDesc.color_count = 1;
-	pipelineDesc.colors[0].pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
-	pipelineDesc.colors[0].write_mask = SG_COLORMASK_RGBA;
-	pipelineDesc.colors[0].blend.enabled = true;
-	pipelineDesc.colors[0].blend.src_factor_rgb = SG_BLENDFACTOR_ONE;
-	pipelineDesc.colors[0].blend.dst_factor_rgb = SG_BLENDFACTOR_ZERO;
-	pipelineDesc.colors[0].blend.op_rgb = SG_BLENDOP_ADD;
-	pipelineDesc.colors[0].blend.src_factor_alpha = SG_BLENDFACTOR_ONE;
-	pipelineDesc.colors[0].blend.dst_factor_alpha = SG_BLENDFACTOR_ZERO;
-	pipelineDesc.colors[0].blend.op_alpha = SG_BLENDOP_ADD;
-	pipelineDesc.primitive_type = SG_PRIMITIVETYPE_TRIANGLES;
-	pipelineDesc.index_type = SG_INDEXTYPE_NONE;
-	pipelineDesc.cull_mode = SG_CULLMODE_BACK;
-	pipelineDesc.face_winding = SG_FACEWINDING_CW;
-	pipeline = sg_make_pipeline(&pipelineDesc);
-	
-	sokolPassAction = (sg_pass_action){
-		.colors[0] = {
-			.load_action = SG_LOADACTION_CLEAR,
-			.clear_value = { 0.75f, 0.8f, 1.0f, 1.0f }
-		},
-		.depth = {
-			.load_action = SG_LOADACTION_CLEAR,
-			.clear_value = 1.0f,
-		},
-	};
-	
 	ScratchEnd(scratch);
 }
 
@@ -171,17 +115,14 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 {
 	NotNull(shader);
 	
-	BindVertBuffer(&bindings, &squareBuffer, 0);
-	BindTextureAtIndex(&bindings, &main2dShader, &gradientTexture, 0, 0);
-	sg_apply_bindings(&bindings);
-	
 	mat4 worldMat = Mat4_Identity;
 	TransformMat4(&worldMat, MakeScaleXYZMat4(size.Width, size.Height, 1.0f));
 	TransformMat4(&worldMat, MakeTranslateXYZMat4(topLeft.X, topLeft.Y, 0.0f));
-	SetShaderWorldMat(shader, worldMat);
-	SetShaderTintColor(shader, color);
-	ApplyShaderUniforms(shader);
-	sg_draw(0, (int)squareBuffer.numVertices, 1);
+	SetSystemWorldMat(&gfx, worldMat);
+	SetSystemTintColor(&gfx, color);
+	
+	BindSystemVertBuffer(&gfx, &squareBuffer);
+	DrawSystemVertices(&gfx);
 }
 
 // +--------------------------------------------------------------+
@@ -192,22 +133,19 @@ void AppFrame(void)
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	// float newGreen = sokolPassAction.colors[0].clear_value.g + 0.01f;
 	// sokolPassAction.colors[0].clear_value.g = (newGreen > 1.0f) ? 0.0f : newGreen;
-	sg_pass mainPass = {
-		.action = sokolPassAction,
-		.swapchain = CreateSokolSwapchain(),
-	};
-	sg_begin_pass(&mainPass);
-	sg_apply_pipeline(pipeline);
+	BeginSystemFrame(&gfx, MonokaiBack, 1.0f);
+	BindSystemShader(&gfx, &main2dShader);
+	BindSystemTexture(&gfx, &gradientTexture);
 	
 	mat4 projMat = Mat4_Identity;
 	TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
 	TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
 	TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
-	SetShaderProjectionMat(&main2dShader, projMat);
-	SetShaderViewMat(&main2dShader, Mat4_Identity);
-	SetShaderWorldMat(&main2dShader, Mat4_Identity);
-	SetShaderSourceRec(&main2dShader, NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
-	SetShaderUniformByNameV2(&main2dShader, StrLit("main2d_texture0_size"), ToV2Fromi(gradientTexture.size));
+	SetSystemProjectionMat(&gfx, projMat);
+	SetSystemViewMat(&gfx, Mat4_Identity);
+	SetSystemWorldMat(&gfx, Mat4_Identity);
+	SetSystemSourceRec(&gfx, NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+	// SetSystemUniformByNameV2(&gfx, StrLit("main2d_texture0_size"), ToV2Fromi(gradientTexture.size));
 	
 	v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
 	i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
@@ -222,8 +160,15 @@ void AppFrame(void)
 		}
 	}
 	
-	sg_end_pass();
+	EndSystemFrame(&gfx);
 	sg_commit();
+	
+	// PrintLine_D("numPipelineChanges: %llu", gfx.numPipelineChanges);
+	// PrintLine_D("numBindingChanges: %llu", gfx.numBindingChanges);
+	// PrintLine_D("numDrawCalls: %llu", gfx.numDrawCalls);
+	gfx.numPipelineChanges = 0;
+	gfx.numBindingChanges = 0;
+	gfx.numDrawCalls = 0;
 }
 
 // +--------------------------------------------------------------+
