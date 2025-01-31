@@ -35,6 +35,13 @@ typedef HMM_Mat4 mat4;
 	PIG_CORE_INLINE mat4 NewMat4(r32 r0c0, r32 r0c1, r32 r0c2, r32 r0c3, r32 r1c0, r32 r1c1, r32 r1c2, r32 r1c3, r32 r2c0, r32 r2c1, r32 r2c2, r32 r2c3, r32 r3c0, r32 r3c1, r32 r3c2, r32 r3c3);
 	PIG_CORE_INLINE mat3 ToMat3From4(mat4 matrix4);
 	PIG_CORE_INLINE mat4 ToMat4From3(mat3 matrix3);
+	PIG_CORE_INLINE bool AreEqualMat2(mat2 left, mat2 right);
+	PIG_CORE_INLINE bool AreEqualMat3(mat3 left, mat3 right);
+	PIG_CORE_INLINE bool AreEqualMat4(mat4 left, mat4 right);
+	PIG_CORE_INLINE v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut);
+	PIG_CORE_INLINE v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation);
+	PIG_CORE_INLINE mat3 MakeTranslateMat3(v2 vec2);
+	PIG_CORE_INLINE mat3 MakeScaleMat3(v3 vec3);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -82,10 +89,6 @@ typedef HMM_Mat4 mat4;
 #define MulMat2AndV2(matrix2, vec2) HMM_MulM2V2((matrix2), (vec2))
 #define MulMat3AndV3(matrix3, vec3) HMM_MulM3V3((matrix3), (vec3))
 #define MulMat4AndV4(matrix4, vec4) HMM_MulM4V4((matrix4), (vec4))
-
-#define AreEqualMat2(leftPntr, rightPntr) (HMM_EqV2((leftPntr)->Columns[0], (rightPntr)->Columns[0]) && HMM_EqV2((leftPntr)->Columns[1], (rightPntr)->Columns[1]))
-#define AreEqualMat3(leftPntr, rightPntr) (HMM_EqV3((leftPntr)->Columns[0], (rightPntr)->Columns[0]) && HMM_EqV3((leftPntr)->Columns[1], (rightPntr)->Columns[1]) && HMM_EqV3((leftPntr)->Columns[2], (rightPntr)->Columns[2]))
-#define AreEqualMat4(leftPntr, rightPntr) (HMM_EqV4((leftPntr)->Columns[0], (rightPntr)->Columns[0]) && HMM_EqV4((leftPntr)->Columns[1], (rightPntr)->Columns[1]) && HMM_EqV4((leftPntr)->Columns[2], (rightPntr)->Columns[2]) && HMM_EqV4((leftPntr)->Columns[3], (rightPntr)->Columns[3]))
 
 //a.k.a. Apply a new transform matrix from the LEFT side
 #define TransformMat4(mat4Pntr, matrix4) *(mat4Pntr) = MulMat4((matrix4), *(mat4Pntr))
@@ -219,6 +222,10 @@ PEXPI mat4 ToMat4From3(mat3 matrix3)
 	);
 }
 
+PEXPI bool AreEqualMat2(mat2 left, mat2 right) { return (HMM_EqV2(left.Columns[0], right.Columns[0]) && HMM_EqV2(left.Columns[1], right.Columns[1])); }
+PEXPI bool AreEqualMat3(mat3 left, mat3 right) { return (HMM_EqV3(left.Columns[0], right.Columns[0]) && HMM_EqV3(left.Columns[1], right.Columns[1]) && HMM_EqV3(left.Columns[2], right.Columns[2])); }
+PEXPI bool AreEqualMat4(mat4 left, mat4 right) { return (HMM_EqV4(left.Columns[0], right.Columns[0]) && HMM_EqV4(left.Columns[1], right.Columns[1]) && HMM_EqV4(left.Columns[2], right.Columns[2]) && HMM_EqV4(left.Columns[3], right.Columns[3])); }
+
 //TODO: Do we really need this variant where we pass out the W value?
 PEXPI v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut)
 {
@@ -257,8 +264,8 @@ PEXPI mat3 MakeScaleMat3(v3 vec3)
 #include "cross/cross_quaternion_and_matrices.h"
 #endif
 
-#if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H)
-#include "cross/cross_vectors_quaternion_and_matrices.h"
+#if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H) && defined(_STRUCT_RECTANGLES_H)
+#include "cross/cross_vectors_quaternion_matrices_and_rectangles.h"
 #endif
 
 #if defined(_STRUCT_MATRICES_H) && defined(RAYLIB_H)

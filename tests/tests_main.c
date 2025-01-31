@@ -408,6 +408,60 @@ int main(int argc, char* argv[])
 	#endif
 	
 	// +==============================+
+	// |       Rectangle Tests        |
+	// +==============================+
+	#if 1
+	{
+		rec rec1 = NewRec(1, 2, 10, 20);
+		rec rec2 = Rec_Default_Const;
+		// rec rec3 = Add(
+		// 	Mul(rec1, 0.5f),
+		// 	NewV2(Pi32, -1.5f)
+		// );
+		rec rec3 = Mul(rec1, 0.5f);
+		PrintLine_D("rec1 = (%f, %f, %f, %f)", rec1.X, rec1.Y, rec1.Width, rec1.Height);
+		PrintLine_D("rec2 = (%f, %f, %f, %f)", rec2.X, rec2.Y, rec2.Width, rec2.Height);
+		PrintLine_D("rec3 = (%f, %f, %f, %f)", rec3.X, rec3.Y, rec3.Width, rec3.Height);
+		
+		reci reci1 = NewReci(1, 2, 10, 20);
+		reci reci2 = Reci_Zero;
+		reci reci3 = Reci_Default_Const;
+		PrintLine_D("reci1 = (%d, %d, %d, %d)", reci1.X, reci1.Y, reci1.Width, reci1.Height);
+		PrintLine_D("reci2 = (%d, %d, %d, %d)", reci2.X, reci2.Y, reci2.Width, reci2.Height);
+		PrintLine_D("reci3 = (%d, %d, %d, %d)", reci3.X, reci3.Y, reci3.Width, reci3.Height);
+		
+		box box1 = NewBox(1, 2, 3, 10, 20, 30);
+		box box2 = Box_Default_Const;
+		box box3 = Add(Mul(box1, 0.5f), NewV3(Pi32, -1.5f, 101.2f));
+		PrintLine_D("box1 = (%f, %f, %f, %f, %f, %f)", box1.X, box1.Y, box1.Z, box1.Width, box1.Height, box1.Depth);
+		PrintLine_D("box2 = (%f, %f, %f, %f, %f, %f)", box2.X, box2.Y, box2.Z, box2.Width, box2.Height, box2.Depth);
+		PrintLine_D("box3 = (%f, %f, %f, %f, %f, %f)", box3.X, box3.Y, box3.Z, box3.Width, box3.Height, box3.Depth);
+		
+		boxi boxi1 = NewBoxi(1, 2, 3, 10, 20, 30);
+		boxi boxi2 = Boxi_Zero;
+		boxi boxi3 = Boxi_Default_Const;
+		PrintLine_D("boxi1 = (%d, %d, %d, %d, %d, %d)", boxi1.X, boxi1.Y, boxi1.Z, boxi1.Width, boxi1.Height, boxi1.Depth);
+		PrintLine_D("boxi2 = (%d, %d, %d, %d, %d, %d)", boxi2.X, boxi2.Y, boxi2.Z, boxi2.Width, boxi2.Height, boxi2.Depth);
+		PrintLine_D("boxi3 = (%d, %d, %d, %d, %d, %d)", boxi3.X, boxi3.Y, boxi3.Z, boxi3.Width, boxi3.Height, boxi3.Depth);
+		
+		obb2 obb2_1 = NewObb2(1, 2, 10, 20, QuarterPi32);
+		obb2 obb2_2 = Obb2_Zero;
+		obb2 obb2_3 = Obb2_Default_Const;
+		PrintLine_D("obb2_1 = (%f, %f, %f, %f, %f)", obb2_1.X, obb2_1.Y, obb2_1.Width, obb2_1.Height, ToDegrees32(obb2_1.Rotation));
+		PrintLine_D("obb2_2 = (%f, %f, %f, %f, %f)", obb2_2.X, obb2_2.Y, obb2_2.Width, obb2_2.Height, ToDegrees32(obb2_2.Rotation));
+		PrintLine_D("obb2_3 = (%f, %f, %f, %f, %f)", obb2_3.X, obb2_3.Y, obb2_3.Width, obb2_3.Height, ToDegrees32(obb2_3.Rotation));
+		
+		obb3 obb3_1 = NewObb3(1, 2, 3, 10, 20, 30, Quat_Identity);
+		obb3 obb3_2 = Obb3_Zero;
+		obb3 obb3_3 = Obb3_Default_Const;
+		PrintLine_D("obb3_1 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_1.X, obb3_1.Y, obb3_1.Z, obb3_1.Width, obb3_1.Height, obb3_1.Depth, obb3_1.Rotation.X, obb3_1.Rotation.Y, obb3_1.Rotation.Z, obb3_1.Rotation.W);
+		PrintLine_D("obb3_2 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_2.X, obb3_2.Y, obb3_2.Z, obb3_2.Width, obb3_2.Height, obb3_2.Depth, obb3_2.Rotation.X, obb3_2.Rotation.Y, obb3_2.Rotation.Z, obb3_2.Rotation.W);
+		PrintLine_D("obb3_3 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_3.X, obb3_3.Y, obb3_3.Z, obb3_3.Width, obb3_3.Height, obb3_3.Depth, obb3_3.Rotation.X, obb3_3.Rotation.Y, obb3_3.Rotation.Z, obb3_3.Rotation.W);
+		
+	}
+	#endif
+	
+	// +==============================+
 	// |        Printing Tests        |
 	// +==============================+
 	#if 0

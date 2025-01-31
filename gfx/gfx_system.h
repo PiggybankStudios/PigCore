@@ -292,7 +292,7 @@ PEXPI void SetSystemProjectionMat(GfxSystem* system, mat4 matrix)
 {
 	NotNull(system);
 	NotNull(system->arena);
-	if (!AreEqualMat4(&matrix, &system->state.projectionMat))
+	if (!AreEqualMat4(matrix, system->state.projectionMat))
 	{
 		if (system->state.shader != nullptr) { SetShaderProjectionMat(system->state.shader, matrix); }
 		system->state.projectionMat = matrix;
@@ -304,7 +304,7 @@ PEXPI void SetSystemViewMat(GfxSystem* system, mat4 matrix)
 {
 	NotNull(system);
 	NotNull(system->arena);
-	if (!AreEqualMat4(&matrix, &system->state.viewMat))
+	if (!AreEqualMat4(matrix, system->state.viewMat))
 	{
 		if (system->state.shader != nullptr) { SetShaderViewMat(system->state.shader, matrix); }
 		system->state.viewMat = matrix;
@@ -316,7 +316,7 @@ PEXPI void SetSystemWorldMat(GfxSystem* system, mat4 matrix)
 {
 	NotNull(system);
 	NotNull(system->arena);
-	if (!AreEqualMat4(&matrix, &system->state.worldMat))
+	if (!AreEqualMat4(matrix, system->state.worldMat))
 	{
 		if (system->state.shader != nullptr) { SetShaderWorldMat(system->state.shader, matrix); }
 		system->state.worldMat = matrix;

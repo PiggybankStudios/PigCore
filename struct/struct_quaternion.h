@@ -28,7 +28,7 @@ typedef HMM_Quat quat;
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	//NOTE: There are no actual functions in this file yet
+	PIG_CORE_INLINE bool AreEqualQuat(quat left, quat right);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -74,7 +74,7 @@ typedef HMM_Quat quat;
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-//NOTE: There are no actual functions in this file yet
+PEXPI bool AreEqualQuat(quat left, quat right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.W == right.W); }
 
 #endif //PIG_CORE_IMPLEMENTATION
 
@@ -84,8 +84,8 @@ typedef HMM_Quat quat;
 #include "cross/cross_quaternion_and_matrices.h"
 #endif
 
-#if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H)
-#include "cross/cross_vectors_quaternion_and_matrices.h"
+#if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H) && defined(_STRUCT_RECTANGLES_H)
+#include "cross/cross_vectors_quaternion_matrices_and_rectangles.h"
 #endif
 
 #if defined(_STRUCT_QUATERNION_H) && defined(RAYLIB_H)

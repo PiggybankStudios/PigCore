@@ -11,9 +11,13 @@ Description:
 #ifndef _STRUCT_ALL_H
 #define _STRUCT_ALL_H
 
-#include "base/base_typedefs.h" //Needed by struct_color.h and struct_var_array.h
+#include "base/base_defines_check.h" //Needed by all other files
+#include "base/base_typedefs.h" //Needed by all other files
 
 #include "struct/struct_color.h"
+
+#include "std/std_basic_math.h" //Needed by struct_directions.h
+
 #include "struct/struct_directions.h"
 
 #include "base/base_macros.h" //Needed by struct_string.h and struct_var_array.h
@@ -31,6 +35,7 @@ Description:
 
 #include "struct/struct_vectors.h"
 #include "struct/struct_quaternion.h"
+#include "struct/struct_rectangles.h"
 #include "struct/struct_matrices.h"
 
 #endif //  _STRUCT_ALL_H
