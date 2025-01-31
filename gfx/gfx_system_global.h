@@ -3,10 +3,52 @@ File:   gfx_system_global.h
 Author: Taylor Robbins
 Date:   01\30\2025
 Description: 
-	** This file defines a single global GfxSystem named "gfx" and makes a bunch
-	** of macros that implicitly reference that global when calling GfxSystem functions
+	** This file defines a single global GfxSystem named "gfx" and makes shortened
+	** alias macros that implicitly pass this global gfx as the first parameter
+	** This might seem simply and possibly ugly but it allows for very smooth flow when
+	** doing single-threaded rendering in an application. We don't have to keep typing
+	** &gfx all over the place. We also basically never have more than one GfxSystem
+	** instance so the only case where we don't want this file is when we are doing
+	** threaded rendering or we want to be more careful about globals for some reason.
+	**
 	** NOTE: This file is NOT included in gfx_all.h and is explitly opt-in since not all
-	** applications want a non-thread-local global variable tied in to all their rendering calls
+	** applications want a non-thread-local global variable tied in to all their rendering calls.
+	** This file can be included in PigCore.dll if PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL is enabled
+Example:
+Without this file:
+	BeginSystemFrame(&gfx, MonokaiBack, 1.0f);
+	{
+		BindSystemShader(&gfx, &main2dShader);
+		BindSystemTexture(&gfx, &gradientTexture);
+		SetSystemProjectionMat(&gfx, MakeScaleYMat4(-1.0f));
+		SetSystemViewMat(&gfx, Mat4_Identity);
+		SetSystemSourceRec(&gfx, NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+		mat4 worldMat = Mat4_Identity;
+		TransformMat4(&worldMat, MakeScaleXYZMat4(recSize.Width, recSize.Height, 1.0f));
+		TransformMat4(&worldMat, MakeTranslateXYZMat4(recPos.X, recPos.Y, 0.0f));
+		SetSystemWorldMat(&gfx, worldMat);
+		SetSystemTintColor(&gfx, color);
+		BindSystemVertBuffer(&gfx, &squareBuffer);
+		DrawSystemVertices(&gfx, );
+	}
+	EndSystemFrame(&gfx, );
+With this file:
+	BeginFrame(MonokaiBack, 1.0f);
+	{
+		BindShader(&main2dShader);
+		BindTexture(&gradientTexture);
+		SetProjectionMat(MakeScaleYMat4(-1.0f));
+		SetViewMat(Mat4_Identity);
+		SetSourceRec(NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+		mat4 worldMat = Mat4_Identity;
+		TransformMat4(&worldMat, MakeScaleXYZMat4(recSize.Width, recSize.Height, 1.0f));
+		TransformMat4(&worldMat, MakeTranslateXYZMat4(recPos.X, recPos.Y, 0.0f));
+		SetWorldMat(worldMat);
+		SetTintColor(color);
+		BindVertBuffer(&squareBuffer);
+		DrawVertices();
+	}
+	EndFrame();
 */
 
 #ifndef _GFX_SYSTEM_GLOBAL_H

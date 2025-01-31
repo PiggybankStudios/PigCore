@@ -17,6 +17,7 @@ Description:
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
+#include "struct/struct_color.h"
 #include "struct/struct_var_array.h"
 #include "misc/misc_result.h"
 #include "gfx/gfx_vertices.h"

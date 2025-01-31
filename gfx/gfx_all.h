@@ -9,7 +9,7 @@ Date:   01\19\2025
 
 #include "base/base_defines_check.h" //required by all the other files
 #include "base/base_typedefs.h" //required by all other files
-#include "struct/struct_vectors.h" //required by gfx_image_loading.h and gfx_vertices.h
+#include "struct/struct_vectors.h" //required by all other files
 
 #include "gfx/gfx_vertices.h"
 
@@ -28,6 +28,7 @@ Date:   01\19\2025
 #include "gfx/gfx_pipeline.h"
 
 #include "struct/struct_var_array.h" //required by gfx_system.h
+#include "struct/struct_color.h" //required by gfx_system.h
 
 #include "gfx/gfx_system.h"
 
