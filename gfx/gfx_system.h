@@ -79,7 +79,7 @@ struct GfxSystem
 	void FlushSystemPipelineGen(GfxSystem* system);
 	void FlushSystemBindings(GfxSystem* system);
 	PIG_CORE_INLINE sg_swapchain CreateSokolSappSwapchain();
-	PIG_CORE_INLINE void BeginSystemFrame(GfxSystem* system);
+	PIG_CORE_INLINE void BeginSystemFrame(GfxSystem* system, Color32 clearColor, r32 clearDepth);
 	PIG_CORE_INLINE void EndSystemFrame(GfxSystem* system);
 	PIG_CORE_INLINE void DrawSystemVerticesEx(GfxSystem* system, uxx startVertex, uxx numVertices);
 	PIG_CORE_INLINE void DrawSystemVertices(GfxSystem* system);

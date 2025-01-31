@@ -1417,7 +1417,7 @@
 			"void BeginScissorMode(int x, int y, int width, int height)",
 			"void BeginShaderMode(Shader shader)",
 			"void BeginSystemFrame(GfxSystem* system)",
-			"void BeginSystemFrame(GfxSystem* system)",
+			"void BeginSystemFrame(GfxSystem* system, Color32 clearColor, r32 clearDepth)",
 			"void BeginTextureMode(RenderTexture2D target)",
 			"void BeginVrStereoMode(VrStereoConfig config)",
 			"void BindSystemShader(GfxSystem* system, Shader* shader)",

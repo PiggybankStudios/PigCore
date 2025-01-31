@@ -41,6 +41,7 @@ Description:
 #include "struct/struct_all.h"
 #include "misc/misc_all.h"
 #include "gfx/gfx_all.h"
+#include "gfx/gfx_system_global.h"
 
 #if BUILD_WITH_SOKOL && BUILD_WITH_RAYLIB
 #error SOKOL and RAYLIB are not meant to be enabled at the same time. Use one or the other!

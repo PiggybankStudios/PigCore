@@ -31,6 +31,9 @@ Description:
 #ifndef PIG_CORE_DLL_INCLUDE_GFX
 #define PIG_CORE_DLL_INCLUDE_GFX 1
 #endif
+#ifndef PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL
+#define PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL 0
+#endif
 
 #include "base/base_compiler_check.h"
 #include "base/base_defines_check.h"
@@ -74,6 +77,10 @@ Description:
 
 #if PIG_CORE_DLL_INCLUDE_GFX
 #include "gfx/gfx_all.h"
+#endif
+
+#if PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL
+#include "gfx/gfx_system_global.h"
 #endif
 
 //TODO: Do we want a DllMain for any reason?

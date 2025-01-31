@@ -17,7 +17,6 @@ int MyMain(int argc, char* argv[]);
 // |                           Globals                            |
 // +--------------------------------------------------------------+
 sg_pass_action sokolPassAction;
-GfxSystem gfx;
 Shader simpleShader;
 Shader main2dShader;
 Texture gradientTexture;
@@ -118,11 +117,11 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 	mat4 worldMat = Mat4_Identity;
 	TransformMat4(&worldMat, MakeScaleXYZMat4(size.Width, size.Height, 1.0f));
 	TransformMat4(&worldMat, MakeTranslateXYZMat4(topLeft.X, topLeft.Y, 0.0f));
-	SetSystemWorldMat(&gfx, worldMat);
-	SetSystemTintColor(&gfx, color);
+	SetWorldMat(worldMat);
+	SetTintColor(color);
 	
-	BindSystemVertBuffer(&gfx, &squareBuffer);
-	DrawSystemVertices(&gfx);
+	BindVertBuffer(&squareBuffer);
+	DrawVertices();
 }
 
 // +--------------------------------------------------------------+
@@ -131,36 +130,37 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 void AppFrame(void)
 {
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
-	// float newGreen = sokolPassAction.colors[0].clear_value.g + 0.01f;
-	// sokolPassAction.colors[0].clear_value.g = (newGreen > 1.0f) ? 0.0f : newGreen;
-	BeginSystemFrame(&gfx, MonokaiBack, 1.0f);
-	BindSystemShader(&gfx, &main2dShader);
-	BindSystemTexture(&gfx, &gradientTexture);
 	
-	mat4 projMat = Mat4_Identity;
-	TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
-	TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
-	TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
-	SetSystemProjectionMat(&gfx, projMat);
-	SetSystemViewMat(&gfx, Mat4_Identity);
-	SetSystemWorldMat(&gfx, Mat4_Identity);
-	SetSystemSourceRec(&gfx, NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
-	// SetSystemUniformByNameV2(&gfx, StrLit("main2d_texture0_size"), ToV2Fromi(gradientTexture.size));
-	
-	v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
-	i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
-	i32 numRows = CeilR32i(windowSize.Height / tileSize.Height);
-	u64 colorIndex = 0;
-	for (i32 yIndex = 0; yIndex < numRows; yIndex++)
+	BeginFrame(MonokaiBack, 1.0f);
 	{
-		for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
+		BindShader(&main2dShader);
+		BindTexture(&gradientTexture);
+		
+		mat4 projMat = Mat4_Identity;
+		TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
+		TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
+		TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
+		SetProjectionMat(projMat);
+		SetViewMat(Mat4_Identity);
+		SetWorldMat(Mat4_Identity);
+		SetSourceRec(NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+		// SetUniformByNameV2(StrLit("main2d_texture0_size"), ToV2Fromi(gradientTexture.size));
+		
+		v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
+		i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
+		i32 numRows = CeilR32i(windowSize.Height / tileSize.Height);
+		u64 colorIndex = 0;
+		for (i32 yIndex = 0; yIndex < numRows; yIndex++)
 		{
-			DrawRectangle(&main2dShader, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, White);
-			colorIndex++;
+			for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
+			{
+				DrawRectangle(&main2dShader, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, White);
+				colorIndex++;
+			}
 		}
 	}
+	EndFrame();
 	
-	EndSystemFrame(&gfx);
 	sg_commit();
 	
 	// PrintLine_D("numPipelineChanges: %llu", gfx.numPipelineChanges);
