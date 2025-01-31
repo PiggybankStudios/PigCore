@@ -77,10 +77,10 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 			DebugAssertMsg(timezoneResult != TIME_ZONE_ID_INVALID, "GetTimeZoneInformation failed and gave TIME_ZONE_ID_INVALID");
 			DEBUG_USED(timezoneResult);
 			i64 localTimezoneOffset = -((i64)timezoneInfo.Bias * NUM_SEC_PER_MINUTE);
-			if (timezoneOffsetOut != nullptr) { *timezoneOffsetOut = localTimezoneOffset; }
+			SetOptionalOutPntr(timezoneOffsetOut, localTimezoneOffset);
 			result = unixTimestamp + localTimezoneOffset;
 			bool localTimezoneDoesDst = (timezoneInfo.DaylightBias != 0); //TODO: It's possible that DaylightBias isn't -60 minutes. Should we handle that?
-			if (timezoneDoesDstOut != nullptr) { *timezoneDoesDstOut = localTimezoneDoesDst; }
+			SetOptionalOutPntr(timezoneDoesDstOut, localTimezoneDoesDst);
 			// if (timezoneNameOut != nullptr)
 			// {
 			// 	*timezoneNameOut = ConvertUcs2StrToUtf8(timezoneNameArena, Str16Lit(&timezoneInfo.StandardName[0]), false);
@@ -98,6 +98,24 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 			//      We want number of seconds since Jan 1st 1970 UTC so divide by 10,000,000 and subtract off 369 years
 			result = (u64)(systemLargeIntegerTime.QuadPart/10000000ULL);
 			if (result >= WIN32_FILETIME_SEC_OFFSET) { result -= WIN32_FILETIME_SEC_OFFSET; }
+		}
+	}
+	#elif TARGET_IS_LINUX
+	{
+		if (local)
+		{
+			u64 utcTimestamp = OsGetCurrentTimestampEx(false, nullptr, nullptr);
+			AssertMsg(false, "Local timestamp calculation not yet implemented on LINUX!");
+			result = utcTimestamp;
+			SetOptionalOutPntr(timezoneOffsetOut, 0);
+			SetOptionalOutPntr(timezoneDoesDstOut, false);
+		}
+		else
+		{
+			struct timeval currentTimeVal = ZEROED;
+			int getTimeResult = gettimeofday(&currentTimeVal, NULL);
+			result = (u64)currentTimeVal.tv_sec;
+			//TODO: tv_usec is also available from currentTimeVal
 		}
 	}
 	#else

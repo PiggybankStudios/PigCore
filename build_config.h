@@ -21,7 +21,7 @@ Description:
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     0
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 0
+#define BUILD_SHADERS 1
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.

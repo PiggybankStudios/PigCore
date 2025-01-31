@@ -368,7 +368,7 @@ if (listOutputPath != None):
 		for headerPath in allShaderSourcePaths:
 		#
 			if (headerIndex > 0): listFile.write(",");
-			listFile.write("%s" % headerPath);
+			listFile.write("%s" % os.path.relpath(headerPath));
 			headerIndex += 1;
 		#
 	#

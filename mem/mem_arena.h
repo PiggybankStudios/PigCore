@@ -887,10 +887,7 @@ NODISCARD PEXP void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx 
 				void* newSpace = arena->allocFunc(newSize);
 				if (newSpace == nullptr) { break; }
 				Assert(allocPntr == nullptr || oldSize > 0)
-				if (allocPntr != nullptr);
-				{
-					MyMemCopy(newSpace, allocPntr, oldSize);
-				}
+				if (allocPntr != nullptr) { MyMemCopy(newSpace, allocPntr, oldSize); }
 				result = newSpace;
 			}
 		} break;

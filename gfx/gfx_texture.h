@@ -131,9 +131,9 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		if (newPixels == nullptr) { result.error = Result_FailedToAllocateMemory; ScratchEnd(scratch); return result; }
 		const u8* readPntr = (const u8*)pixelsPntr;
 		u8* writePntr = newPixels;
-		for (uxx yIndex = 0; yIndex < size.Height; yIndex++)
+		for (uxx yIndex = 0; yIndex < (uxx)size.Height; yIndex++)
 		{
-			for (uxx xIndex = 0; xIndex < size.Width; xIndex++)
+			for (uxx xIndex = 0; xIndex < (uxx)size.Width; xIndex++)
 			{
 				MyMemCopy(writePntr, readPntr, inputPixelSize);
 				readPntr += inputPixelSize;

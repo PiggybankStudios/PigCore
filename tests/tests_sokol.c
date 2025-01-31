@@ -149,13 +149,11 @@ void AppFrame(void)
 		v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
 		i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
 		i32 numRows = CeilR32i(windowSize.Height / tileSize.Height);
-		u64 colorIndex = 0;
 		for (i32 yIndex = 0; yIndex < numRows; yIndex++)
 		{
 			for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
 			{
 				DrawRectangle(&main2dShader, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, White);
-				colorIndex++;
 			}
 		}
 	}

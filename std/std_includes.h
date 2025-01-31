@@ -39,6 +39,7 @@ Descriptions:
 	#include <unistd.h>
 	// Gives us mmap
 	#include <sys/mman.h>
+	#include <sys/time.h>
 	#include <errno.h>
 	#include <dlfcn.h> //needed for dlopen
 #endif

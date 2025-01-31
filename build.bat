@@ -96,11 +96,12 @@ set common_clang_flags=%common_clang_flags% -Wno-switch -Wno-unused-function
 :: /I = Adds an include directory to search in when resolving #includes
 set common_cl_flags=%common_cl_flags% /I"%root%"
 :: -I = Add directory to the end of the list of include search paths
-:: -lm = Include the math library (required for stuff like sinf, atan, etc.)
-:: -ldl = Needed for dlopen and similar functions
 :: -mssse3 = For MeowHash to work we need sse3 support
 :: -maes = For MeowHash to work we need aes support
-set linux_clang_flags=-lm -ldl -I "../%root%" -mssse3 -maes
+set linux_clang_flags=-I "../%root%" -mssse3 -maes
+:: -lm = Include the math library (required for stuff like sinf, atan, etc.)
+:: -ldl = Needed for dlopen and similar functions
+set linux_linker_flags=-lm -ldl
 :: --target=wasm32 = ?
 :: -mbulk-memory = ?
 :: TODO: -Wl,--export-dynamic ?
@@ -217,17 +218,31 @@ if "%BUILD_SHADERS%"=="1" (
 for /f "delims=" %%x in (%shader_list_file%) do set shader_list=%%x
 
 set shader_object_files=
+set shader_linux_object_files=
 REM Separate list by commas, for each item compile to .obj file, add output path to %shader_object_files%
 for %%y in ("%shader_list:,=" "%") do (
 	set object_name=%%~ny%.obj
+	set linux_object_name=%%~ny%.o
 	if "%BUILD_SHADERS%"=="1" (
+		set shader_file_path=%%~y%
+		set shader_file_path_fw_slash=!shader_file_path:\=/!
 		set shader_file_dir=%%y:~0,-1%
-		cl /c %common_cl_flags% /I"!shader_file_dir!" /Fo"!object_name!" %%~y
+		if "%BUILD_WINDOWS%"=="1" (
+			cl /c %common_cl_flags% /I"!shader_file_dir!" /Fo"!object_name!" !shader_file_path!
+		)
+		if "%BUILD_LINUX%"=="1" (
+			if not exist linux mkdir linux
+			pushd linux
+			wsl clang-18 -c %common_clang_flags% %linux_clang_flags% -I "../!shader_file_dir!" -o "!linux_object_name!" ../!shader_file_path_fw_slash!
+			popd
+		)
 	)
 	set shader_object_files=!shader_object_files! !object_name!
+	set shader_linux_object_files=!shader_linux_object_files! !linux_object_name!
 )
 if "%BUILD_SHADERS%"=="1" ( echo [Shaders Compiled!] )
 rem echo shader_object_files %shader_object_files%
+rem echo shader_linux_object_files %shader_linux_object_files%
 
 :: +--------------------------------------------------------------+
 :: |                       Build piggen.exe                       |
@@ -237,7 +252,7 @@ set piggen_source_path=%root%/piggen/piggen_main.c
 set piggen_exe_path=piggen.exe
 set piggen_bin_path=piggen
 set piggen_cl_args=%common_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
-set piggen_clang_args=%common_clang_flags% %linux_clang_flags% -o %piggen_bin_path% ../%piggen_source_path%
+set piggen_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% -o %piggen_bin_path% ../%piggen_source_path%
 if "%BUILD_PIGGEN%"=="1" (
 	echo.
 	echo [Building piggen...]
@@ -265,7 +280,7 @@ set tests_wasm_path=app.wasm
 set tests_wat_path=app.wat
 set tests_html_path=index.html
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% %shader_object_files% /link %common_ld_flags% %tests_libraries%
-set tests_clang_args=%common_clang_flags% %linux_clang_flags% %tests__clang_libraries% -o %tests_bin_path% ../%tests_source_path%
+set tests_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% %tests__clang_libraries% -o %tests_bin_path% ../%tests_source_path% %shader_linux_object_files%
 if "%ENABLE_AUTO_PROFILE%"=="1" (
 	set tests_clang_args=-finstrument-functions %tests_clang_args%
 )

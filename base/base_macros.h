@@ -197,9 +197,9 @@ Description:
 // Finds the one's compliment value for a particular u32 value
 #define OnesComplimentU32(variable) (variable ^ 0xFFFFFFFFL)
 
-#define STRUCT_VAR_SIZE(structureName, variableName) sizeof(((const structureName*)0)->variableName)
-#define STRUCT_VAR_OFFSET(structureName, variableName) (u32)((const u8*)&((const structureName*)0)->variableName - (const u8*)((const structureName*)0))
-#define STRUCT_VAR_END_OFFSET(structureName, variableName) (u32)(((const u8*)&((const structureName*)0)->variableName + sizeof(((const structureName*)0)->variableName)) - (const u8*)((const structureName*)0))
+#define STRUCT_VAR_SIZE(structureName, variableName) sizeof(((const structureName*)1)->variableName)
+#define STRUCT_VAR_OFFSET(structureName, variableName) (u32)((const u8*)&((const structureName*)1)->variableName - (const u8*)((const structureName*)1))
+#define STRUCT_VAR_END_OFFSET(structureName, variableName) (u32)(((const u8*)&((const structureName*)1)->variableName + sizeof(((const structureName*)1)->variableName)) - (const u8*)((const structureName*)1))
 #define IS_VAR_IN_X_BYTES_OF_STRUCT(structureName, numBytes, variableName) ((numBytes) >= STRUCT_VAR_END_OFFSET(structureName, variableName))
 
 #define SwapVariables(varType, var1, var2) do { varType tempVarWithLongNameThatWontConflict = (var2); (var2) = (var1); (var1) = tempVarWithLongNameThatWontConflict; } while(0)
