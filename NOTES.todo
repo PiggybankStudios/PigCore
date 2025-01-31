@@ -1,10 +1,31 @@
 # Notes
 This file is a dumping ground for all kinds of textual notes that we take while we work on the project
 
-# TODO List
+# General TODO List
 	[ ] Figure out why inline is causing problems
+	[ ] C based replacement for "extract_define.py"
+	[ ] C based replacement for "combine_files.py"
+	[ ] Implement basic piggen.exe functionality
+	[?] Program that zips up all resources into the build folder (and then makes an object file?)
+	[?] Add support for SQLite
+	[ ] 
+
+# Next Things TODO
+	[ ] Bring in more of GyLib (esp. rectangles, strings, and string_builder/buffer)
+	[ ] Add support for parsing GLTF files (maybe a third_party library?)
+	[ ] Get compiling on Android
+	[ ] Get compiling on Playdate
+	[ ] Get Sokol working in the browser (w/ Emscripten first, then custom stdlib)
 
 # GyLib Conversions
+	[!] gy_rectangles.h
+	[!] gy_string.h //TODO: There are a lot of helper functions that haven't been moved over here yet but the basics are here
+	[!] gy_string_buffer.h
+	[!] gy_string_builder.h
+	[!] gy_simple_parsers.h
+	[!] gy_parsing.h
+	[!] gy_memory.h //TODO: Bring in StaticHeap and PagedHeap implemenations
+	[!] gy_threading.h
 	[X] gy_intrinsics.h
 	[X] gy_directions.h
 	[X] gy_easing.h
@@ -12,16 +33,13 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] gy_extras.h
 	[X] gy_hash.h (+add meowhash?)
 	[X] gy_unicode.h
-	[x] gy_string.h //NOTE: There are a lot of helper functions that haven't been moved over here yet but the basics are here
 	[X] gy_result.h
-	[!] gy_parsing.h
 	[!] gy_ip.h
 	[!] gy_math.h (std_math_ex.h)
 	[!] gy_noise.h
 	[X] gy_os.h
 	[!] gy_performance.h
 	[!] gy_performance_sections.h
-	[!] gy_simple_parsers.h
 	[!] gy_sorting.h
 	[!] gy_standard_names.h
 	[!] gy_time.h
@@ -48,7 +66,6 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] gy_linked_list.h
 	[-] gy_lookup.h
 	[X] gy_matrices.h
-	[?] gy_memory.h
 	[ ] gy_network_bus.h
 	[ ] gy_orca_aliases.h
 	[ ] gy_orca_overloads.h
@@ -58,10 +75,9 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] gy_process_log.h
 	[X] gy_quaternions.h
 	[ ] gy_rays.h
-	[ ] gy_rectangles.h
 	[ ] gy_resource_manifest.h
-	[ ] gy_scratch_arenas.cpp
-	[ ] gy_scratch_arenas.h
+	[X] gy_scratch_arenas.cpp
+	[X] gy_scratch_arenas.h
 	[ ] gy_serializable.h
 	[ ] gy_serialization_helpers.h
 	[ ] gy_socket.h
@@ -69,12 +85,9 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[x] gy_std.h
 	[ ] gy_str_hash_dictionary.h
 	[ ] gy_stream.h
-	[ ] gy_string_buffer.h
-	[ ] gy_string_builder.h
 	[ ] gy_string_fifo.h
 	[-] gy_temp_memory.cpp
 	[ ] gy_test_floatscan.h
-	[-] gy_threading.h
 	[ ] gy_triangulation.h
 	[x] gy_types.h
 	[x] gy_variable_array.h

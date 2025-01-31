@@ -13,7 +13,7 @@ set tools=%root%\third_party\_tools\win32
 :: +--------------------------------------------------------------+
 python --version > NUL 2> NUL
 if errorlevel 1 (
-	echo WARNING: Python isn't installed on this computer. Defines cannot be extracted from build_config.h! And build numbers won't be incremented
+	echo WARNING: Python isn't installed on this computer. Defines cannot be extracted from build_config.h, and shaders cant be found and compiled!
 	exit
 )
 
@@ -22,6 +22,7 @@ for /f "delims=" %%i in ('%extract_define% DEBUG_BUILD') do set DEBUG_BUILD=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN') do set BUILD_PIGGEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_SHADERS') do set BUILD_SHADERS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_PIGGEN') do set RUN_PIGGEN=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_PIG_CORE_DLL') do set BUILD_PIG_CORE_DLL=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_TESTS') do set BUILD_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% DUMP_PREPROCESSOR') do set DUMP_PREPROCESSOR=%%i
@@ -145,7 +146,8 @@ if "%DEBUG_BUILD%"=="1" (
 )
 
 set tests_libraries=
-set tests__clang_libraries=
+set tests_clang_libraries=
+set pig_core_dll_libraries=
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM raylib.lib   = ?
 	REM gdi32.lib    = ?
@@ -159,18 +161,22 @@ if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM Advapi32.lib = Processthreadsapi.h, OpenProcessToken, GetTokenInformation
 	set tests_libraries=%tests_libraries% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
 	REM NOTE: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
+	set pig_core_dll_libraries=%pig_core_dll_libraries% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
 )
 if "%BUILD_WITH_BOX2D%"=="1" (
 	set tests_libraries=%tests_libraries% box2d.lib
+	set pig_core_dll_libraries=%pig_core_dll_libraries% box2d.lib
 )
 if "%BUILD_WITH_SDL%"=="1" (
 	set tests_libraries=%tests_libraries% SDL2.lib
+	set pig_core_dll_libraries=%pig_core_dll_libraries% SDL2.lib
 )
 if "%BUILD_WITH_SOKOL%"=="1" (
-	set tests__clang_libraries=%tests__clang_libraries% -lX11 -lXi -lGL -ldl -lXcursor
+	set tests_clang_libraries=%tests_clang_libraries% -lX11 -lXi -lGL -ldl -lXcursor
 )
 if "%BUILD_WITH_OPENVR%"=="1" (
 	set tests_libraries=%tests_libraries% openvr_api.lib
+	set pig_core_dll_libraries=%pig_core_dll_libraries% openvr_api.lib
 )
 
 :: -incremental:no = Suppresses warning about doing a full link when it can't find the previous .exe result. We don't need this when doing unity builds
@@ -271,6 +277,38 @@ if "%RUN_PIGGEN%"=="1" (
 )
 
 :: +--------------------------------------------------------------+
+:: |                      Build pig_core.dll                      |
+:: +--------------------------------------------------------------+
+set pig_core_dll_source_path=%root%/dll/dll_main.c
+set pig_core_dll_path=pig_core.dll
+set pig_core_lib_path=pig_core.lib
+set pig_core_so_path=libpig_core.so
+set pig_core_dll_args=%common_cl_flags% /Fe%pig_core_dll_path% %pig_core_dll_source_path% /link /DLL %common_ld_flags% %pig_core_dll_libraries%
+set pig_core_so_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% -fPIC -shared -o %pig_core_so_path% ../%pig_core_dll_source_path%
+if "%BUILD_PIG_CORE_DLL%"=="1" (
+	if "%BUILD_WINDOWS%"=="1" (
+		echo.
+		echo [Building %pig_core_dll_path% for Windows...]
+		
+		del %pig_core_dll_path% > NUL 2> NUL
+		cl %pig_core_dll_args%
+		
+		echo [Built %pig_core_dll_path% for Windows!]
+	)
+	if "%BUILD_LINUX%"=="1" (
+		echo.
+		echo [Building %pig_core_so_path% for Linux...]
+		if not exist linux mkdir linux
+		pushd linux
+		
+		wsl clang-18 %pig_core_so_clang_args%
+		
+		popd
+		echo [Built %pig_core_so_path% for Linux!]
+	)
+)
+
+:: +--------------------------------------------------------------+
 :: |                       Build tests.exe                        |
 :: +--------------------------------------------------------------+
 set tests_source_path=%root%/tests/tests_main.c
@@ -280,7 +318,7 @@ set tests_wasm_path=app.wasm
 set tests_wat_path=app.wat
 set tests_html_path=index.html
 set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% %shader_object_files% /link %common_ld_flags% %tests_libraries%
-set tests_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% %tests__clang_libraries% -o %tests_bin_path% ../%tests_source_path% %shader_linux_object_files%
+set tests_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% %tests_clang_libraries% -o %tests_bin_path% ../%tests_source_path% %shader_linux_object_files%
 if "%ENABLE_AUTO_PROFILE%"=="1" (
 	set tests_clang_args=-finstrument-functions %tests_clang_args%
 )

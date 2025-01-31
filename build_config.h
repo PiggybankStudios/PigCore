@@ -17,7 +17,7 @@ Description:
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS 1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   0
+#define BUILD_LINUX   1
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     0
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
@@ -32,6 +32,9 @@ Description:
 #define BUILD_PIGGEN   0
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN     0
+
+// Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
+#define BUILD_PIG_CORE_DLL 1
 
 // Compiles tests/main.c
 #define BUILD_TESTS   1

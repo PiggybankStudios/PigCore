@@ -67,26 +67,26 @@ GfxSystem gfx = ZEROED;
 
 //NOTE: You should call InitGfxSystem(arena, &gfx) like normal, no implicit alias is made for this function or FreeGfxSystem
 
-#define FlushPipelineGen()                        FlushSystemPipelineGen(&gfx)
-#define FlushBindings()                           FlushSystemBindings(&gfx)
+#define FlushPipelineGen()                            FlushSystemPipelineGen(&gfx)
+#define FlushBindings()                               FlushSystemBindings(&gfx)
 
-#define BeginFrame(clearColor, clearDepth)        BeginSystemFrame(&gfx, (clearColor), (clearDepth))
-#define EndFrame()                                EndSystemFrame(&gfx)
+#define BeginFrame(swapchain, clearColor, clearDepth) BeginSystemFrame(&gfx, (swapchain), (clearColor), (clearDepth))
+#define EndFrame()                                    EndSystemFrame(&gfx)
 
-#define DrawVerticesEx(startVertex, numVertices)  DrawSystemVerticesEx(&gfx, (startVertex), (numVertices))
-#define DrawVertices()                            DrawSystemVertices(&gfx)
+#define DrawVerticesEx(startVertex, numVertices)      DrawSystemVerticesEx(&gfx, (startVertex), (numVertices))
+#define DrawVertices()                                DrawSystemVertices(&gfx)
 
-#define BindShader(shaderPntr)                    BindSystemShader(&gfx, (shaderPntr))
-#define BindVertBuffer(bufferPntr)                BindSystemVertBuffer(&gfx, (bufferPntr))
-#define BindTexture(texturePntr)                  BindSystemTexture(&gfx, (texturePntr))
+#define BindShader(shaderPntr)                        BindSystemShader(&gfx, (shaderPntr))
+#define BindVertBuffer(bufferPntr)                    BindSystemVertBuffer(&gfx, (bufferPntr))
+#define BindTexture(texturePntr)                      BindSystemTexture(&gfx, (texturePntr))
 
-#define SetProjectionMat(matrix)                  SetSystemProjectionMat(&gfx, (matrix))
-#define SetViewMat(matrix)                        SetSystemViewMat(&gfx, (matrix))
-#define SetWorldMat(matrix)                       SetSystemWorldMat(&gfx, (matrix))
-#define SetTintColorRaw(colorVec)                 SetSystemTintColorRaw(&gfx, (colorVec))
-#define SetTintColor(color)                       SetSystemTintColor(&gfx, (color))
-#define SetSourceRecRaw(rectangle)                SetSystemSourceRecRaw(&gfx, (rectangle))
-#define SetSourceRec(rectangle)                   SetSystemSourceRec(&gfx, (rectangle))
+#define SetProjectionMat(matrix)                      SetSystemProjectionMat(&gfx, (matrix))
+#define SetViewMat(matrix)                            SetSystemViewMat(&gfx, (matrix))
+#define SetWorldMat(matrix)                           SetSystemWorldMat(&gfx, (matrix))
+#define SetTintColorRaw(colorVec)                     SetSystemTintColorRaw(&gfx, (colorVec))
+#define SetTintColor(color)                           SetSystemTintColor(&gfx, (color))
+#define SetSourceRecRaw(rectangle)                    SetSystemSourceRecRaw(&gfx, (rectangle))
+#define SetSourceRec(rectangle)                       SetSystemSourceRec(&gfx, (rectangle))
 
 #endif //BUILD_WITH_SOKOL
 

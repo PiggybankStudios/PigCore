@@ -8,6 +8,16 @@ Description:
 
 #if BUILD_WITH_SOKOL
 
+#define SOKOL_APP_IMPL
+#if TARGET_IS_LINUX
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
+#endif
+#include "third_party/sokol/sokol_app.h"
+#if TARGET_IS_LINUX
+#pragma clang diagnostic pop
+#endif
+
 #include "tests/simple_shader.glsl.h"
 #include "tests/main2d_shader.glsl.h"
 
@@ -53,6 +63,27 @@ sg_environment CreateSokolEnvironment()
 	result.d3d11.device = sapp_d3d11_get_device();
 	result.d3d11.device_context = sapp_d3d11_get_device_context();
 	result.wgpu.device = sapp_wgpu_get_device();
+	return result;
+}
+
+PEXPI sg_swapchain CreateSokolSappSwapchain()
+{
+	sg_swapchain result = ZEROED;
+	result.width = sapp_width();
+	result.height = sapp_height();
+	result.sample_count = sapp_sample_count();
+	result.color_format = (sg_pixel_format)sapp_color_format();
+	result.depth_format = (sg_pixel_format)sapp_depth_format();
+	result.metal.current_drawable = sapp_metal_get_current_drawable();
+	result.metal.depth_stencil_texture = sapp_metal_get_depth_stencil_texture();
+	result.metal.msaa_color_texture = sapp_metal_get_msaa_color_texture();
+	result.d3d11.render_view = sapp_d3d11_get_render_view();
+	result.d3d11.resolve_view = sapp_d3d11_get_resolve_view();
+	result.d3d11.depth_stencil_view = sapp_d3d11_get_depth_stencil_view();
+	result.wgpu.render_view = sapp_wgpu_get_render_view();
+	result.wgpu.resolve_view = sapp_wgpu_get_resolve_view();
+	result.wgpu.depth_stencil_view = sapp_wgpu_get_depth_stencil_view();
+	result.gl.framebuffer = sapp_gl_get_framebuffer();
 	return result;
 }
 
@@ -131,7 +162,7 @@ void AppFrame(void)
 {
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	
-	BeginFrame(MonokaiBack, 1.0f);
+	BeginFrame(CreateSokolSappSwapchain(), MonokaiBack, 1.0f);
 	{
 		BindShader(&main2dShader);
 		BindTexture(&gradientTexture);

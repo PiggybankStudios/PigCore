@@ -46,18 +46,6 @@ Description:
 #pragma clang diagnostic pop
 #endif
 
-#if PIG_CORE_IMPLEMENTATION
-#define SOKOL_APP_IMPL
-#endif
-#if TARGET_IS_LINUX
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
-#endif
-#include "third_party/sokol/sokol_app.h"
-#if TARGET_IS_LINUX
-#pragma clang diagnostic pop
-#endif
-
 #endif //BUILD_WITH_SOKOL
 
 #endif //  _GFX_SOKOL_INCLUDE_H

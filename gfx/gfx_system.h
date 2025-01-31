@@ -80,7 +80,7 @@ struct GfxSystem
 	void FlushSystemPipelineGen(GfxSystem* system);
 	void FlushSystemBindings(GfxSystem* system);
 	PIG_CORE_INLINE sg_swapchain CreateSokolSappSwapchain();
-	PIG_CORE_INLINE void BeginSystemFrame(GfxSystem* system, Color32 clearColor, r32 clearDepth);
+	PIG_CORE_INLINE void BeginSystemFrame(GfxSystem* system, sg_swapchain swapchain, Color32 clearColor, r32 clearDepth);
 	PIG_CORE_INLINE void EndSystemFrame(GfxSystem* system);
 	PIG_CORE_INLINE void DrawSystemVerticesEx(GfxSystem* system, uxx startVertex, uxx numVertices);
 	PIG_CORE_INLINE void DrawSystemVertices(GfxSystem* system);
@@ -175,28 +175,7 @@ PEXP void FlushSystemBindings(GfxSystem* system)
 	}
 }
 
-PEXPI sg_swapchain CreateSokolSappSwapchain()
-{
-	sg_swapchain result = ZEROED;
-	result.width = sapp_width();
-	result.height = sapp_height();
-	result.sample_count = sapp_sample_count();
-	result.color_format = (sg_pixel_format)sapp_color_format();
-	result.depth_format = (sg_pixel_format)sapp_depth_format();
-	result.metal.current_drawable = sapp_metal_get_current_drawable();
-	result.metal.depth_stencil_texture = sapp_metal_get_depth_stencil_texture();
-	result.metal.msaa_color_texture = sapp_metal_get_msaa_color_texture();
-	result.d3d11.render_view = sapp_d3d11_get_render_view();
-	result.d3d11.resolve_view = sapp_d3d11_get_resolve_view();
-	result.d3d11.depth_stencil_view = sapp_d3d11_get_depth_stencil_view();
-	result.wgpu.render_view = sapp_wgpu_get_render_view();
-	result.wgpu.resolve_view = sapp_wgpu_get_resolve_view();
-	result.wgpu.depth_stencil_view = sapp_wgpu_get_depth_stencil_view();
-	result.gl.framebuffer = sapp_gl_get_framebuffer();
-	return result;
-}
-
-PEXPI void BeginSystemFrame(GfxSystem* system, Color32 clearColor, r32 clearDepth)
+PEXPI void BeginSystemFrame(GfxSystem* system, sg_swapchain swapchain, Color32 clearColor, r32 clearDepth)
 {
 	NotNull(system);
 	
@@ -212,7 +191,7 @@ PEXPI void BeginSystemFrame(GfxSystem* system, Color32 clearColor, r32 clearDept
 				.clear_value = clearDepth,
 			},
 		},
-		.swapchain = CreateSokolSappSwapchain(),
+		.swapchain = swapchain,
 	};
 	sg_begin_pass(&mainPass);
 	
