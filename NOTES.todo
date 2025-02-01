@@ -18,14 +18,14 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Get Sokol working in the browser (w/ Emscripten first, then custom stdlib)
 
 # GyLib Conversions
-	[!] gy_rectangles.h
-	[!] gy_string.h //TODO: There are a lot of helper functions that haven't been moved over here yet but the basics are here
-	[!] gy_string_buffer.h
+	[X] gy_string_buffer.h
 	[!] gy_string_builder.h
+	[!] gy_string.h //TODO: There are a lot of helper functions that haven't been moved over here yet but the basics are here
 	[!] gy_simple_parsers.h
 	[!] gy_parsing.h
 	[!] gy_memory.h //TODO: Bring in StaticHeap and PagedHeap implemenations
 	[!] gy_threading.h
+	[ ] gy_rectangles.h //TODO: There are a lot of helper functions that haven't been moved over here yet but the basics are here
 	[X] gy_intrinsics.h
 	[X] gy_directions.h
 	[X] gy_easing.h

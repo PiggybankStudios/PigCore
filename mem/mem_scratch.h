@@ -62,11 +62,11 @@ struct ScratchArena
 #if !PIG_CORE_IMPLEMENTATION
 	void InitScratchArenas(uxx stackSizePerArena, Arena* sourceArena);
 	void InitScratchArenasVirtual(uxx virtualSizePerArena);
-	PIG_CORE_INLINE Arena* GetScratch2(Arena* conflict1, Arena* conflict2, uxx* markOut);
-	PIG_CORE_INLINE Arena* GetScratch1(Arena* conflict1, uxx* markOut);
+	PIG_CORE_INLINE Arena* GetScratch2(const Arena* conflict1, const Arena* conflict2, uxx* markOut);
+	PIG_CORE_INLINE Arena* GetScratch1(const Arena* conflict1, uxx* markOut);
 	PIG_CORE_INLINE Arena* GetScratch(uxx* markOut);
-	PIG_CORE_INLINE ScratchArena GetScratchArena2(Arena* conflict1, Arena* conflict2);
-	PIG_CORE_INLINE ScratchArena GetScratchArena1(Arena* conflict1);
+	PIG_CORE_INLINE ScratchArena GetScratchArena2(const Arena* conflict1, const Arena* conflict2);
+	PIG_CORE_INLINE ScratchArena GetScratchArena1(const Arena* conflict1);
 	PIG_CORE_INLINE ScratchArena GetScratchArena();
 	PIG_CORE_INLINE void ReleaseScratchArena(ScratchArena* scratchArena);
 #endif //!PIG_CORE_IMPLEMENTATION
@@ -102,7 +102,7 @@ PEXP void InitScratchArenasVirtual(uxx virtualSizePerArena)
 	}
 }
 
-PEXPI Arena* GetScratch2(Arena* conflict1, Arena* conflict2, uxx* markOut)
+PEXPI Arena* GetScratch2(const Arena* conflict1, const Arena* conflict2, uxx* markOut)
 {
 	Arena* result = (conflict1 != &scratchArenasArray[0] && conflict2 != &scratchArenasArray[0])
 		? &scratchArenasArray[0]
@@ -112,16 +112,16 @@ PEXPI Arena* GetScratch2(Arena* conflict1, Arena* conflict2, uxx* markOut)
 	SetOptionalOutPntr(markOut, ArenaGetMark(result));
 	return result;
 }
-PEXPI Arena* GetScratch1(Arena* conflict1, uxx* markOut) { return GetScratch2(conflict1, nullptr, markOut); }
+PEXPI Arena* GetScratch1(const Arena* conflict1, uxx* markOut) { return GetScratch2(conflict1, nullptr, markOut); }
 PEXPI Arena* GetScratch(uxx* markOut) { return GetScratch2(nullptr, nullptr, markOut); }
 
-PEXPI ScratchArena GetScratchArena2(Arena* conflict1, Arena* conflict2)
+PEXPI ScratchArena GetScratchArena2(const Arena* conflict1, const Arena* conflict2)
 {
 	ScratchArena result;
 	result.arena = GetScratch2(conflict1, conflict2, &result.mark);
 	return result;
 }
-PEXPI ScratchArena GetScratchArena1(Arena* conflict1) { return GetScratchArena2(conflict1, nullptr); }
+PEXPI ScratchArena GetScratchArena1(const Arena* conflict1) { return GetScratchArena2(conflict1, nullptr); }
 PEXPI ScratchArena GetScratchArena() { return GetScratchArena2(nullptr, nullptr); }
 
 PEXPI void ReleaseScratchArena(ScratchArena* scratchArena)
@@ -134,3 +134,7 @@ PEXPI void ReleaseScratchArena(ScratchArena* scratchArena)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MEM_SCRATCH_H
+
+#if defined(_MEM_SCRATCH_H) && defined(_STRUCT_STRING_BUFFER_H)
+#include "cross/cross_mem_scratch_and_string_buffer.h"
+#endif

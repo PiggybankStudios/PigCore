@@ -18,6 +18,7 @@ Description:
 #include "base/base_macros.h"
 #include "base/base_assert.h"
 #include "base/base_char.h"
+#include "std/std_memset.h"
 
 // +--------------------------------------------------------------+
 // |                       String Structure                       |

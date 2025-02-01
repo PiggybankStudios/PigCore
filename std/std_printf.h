@@ -60,3 +60,7 @@ Description:
 #define MyStrToFloat(nullTermStr) atof(nullTermStr)
 
 #endif //  _STD_PRINTF_H
+
+#if defined(_STD_PRINTF_H) && defined(_STRUCT_STRING_BUFFER_H)
+#include "cross/cross_printf_and_string_buffer.h"
+#endif

@@ -1115,6 +1115,10 @@ PEXP bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure)
 #include "cross/cross_mem_arena_and_string.h"
 #endif
 
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_STRING_BUFFER_H)
+#include "cross/cross_mem_arena_and_string_buffer.h"
+#endif
+
 #if defined(_MEM_ARENA_H) && defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
 #include "cross/cross_mem_arena_string_and_unicode.h"
 #endif

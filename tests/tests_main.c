@@ -410,7 +410,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |       Rectangle Tests        |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		rec rec1 = NewRec(1, 2, 10, 20);
 		rec rec2 = Rec_Default_Const;
@@ -458,6 +458,56 @@ int main(int argc, char* argv[])
 		PrintLine_D("obb3_2 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_2.X, obb3_2.Y, obb3_2.Z, obb3_2.Width, obb3_2.Height, obb3_2.Depth, obb3_2.Rotation.X, obb3_2.Rotation.Y, obb3_2.Rotation.Z, obb3_2.Rotation.W);
 		PrintLine_D("obb3_3 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_3.X, obb3_3.Y, obb3_3.Z, obb3_3.Width, obb3_3.Height, obb3_3.Depth, obb3_3.Rotation.X, obb3_3.Rotation.Y, obb3_3.Rotation.Z, obb3_3.Rotation.W);
 		
+	}
+	#endif
+	
+	// +==============================+
+	// |      StringBuffer Tests      |
+	// +==============================+
+	#if 1
+	{
+		// NewStrBuffEx(sb1, 37);
+		NewStrBuff(sb1);
+		FlagUnset(sb1.flags, StrBuffFlag_AssertOnOverflow);
+		SetStrBuff(&sb1, "Hello String Buffer!");
+		AppendToStrBuff(&sb1, " (This is a great example...)");
+		ReplaceInStrBuff(&sb1, "i", "-");
+		ReplaceInStrBuff(&sb1, "g", "ggg");
+		RemoveFromStrBuff(&sb1, "ll");
+		ReplaceInStrBuff(&sb1, "ff", "f");
+		InsertIntoStrBuff(&sb1, 10, "INSERT");
+		InsertIntoStrBuff(&sb1, sb1.length, "-END");
+		PrintLine_D("sb1.str = [%llu/%llu]\"%.*s\"%s%s", (u64)sb1.length, (u64)sb1.maxLength, StrPrint(sb1.str), IsFlagSet(sb1.flags, StrBuffFlag_Overflowed) ? " (OVERFLOWED!)" : "", sb1.chars[sb1.length] == '\0' ? "" : " (NOT NULL-TERMINATED!)");
+		
+		NewStrBuffEx(sb2, 37);
+		// NewStrBuff(sb2);
+		FlagUnset(sb2.flags, StrBuffFlag_AssertOnOverflow);
+		AppendPrintToStrBuff(&sb2, "[Line is %llu char%s]", (u64)sb2.length, Plural(sb2.length, "s"));
+		AppendPrintToStrBuff(&sb2, "[Line is %llu char%s]", (u64)sb2.length, Plural(sb2.length, "s"));
+		AppendPrintToStrBuff(&sb2, "");
+		// AppendPrintToStrBuff(&sb2, "[Line is %llu char%s]", (u64)sb2.length, Plural(sb2.length, "s"));
+		PrintLine_D("sb2.str = [%llu/%llu]\"%.*s\"%s%s", (u64)sb2.length, (u64)sb2.maxLength, StrPrint(sb2.str), IsFlagSet(sb2.flags, StrBuffFlag_Overflowed) ? " (OVERFLOWED!)" : "", sb2.chars[sb2.length] == '\0' ? "" : " (NOT NULL-TERMINATED!)");
+		
+		StringBuffer sb3 = NewScratchStrBuff(Kilobytes(64));
+		for (uxx wIndex = 0; wIndex < 20; wIndex++)
+		{
+			if (wIndex > 0) { AppendToStrBuffChar(&sb3, ' '); }
+			AppendToStrBuffChar(&sb3, (wIndex > 0) ? 'h' : 'H');
+			AppendToStrBuff(&sb3, "ello");
+		}
+		PrintLine_D("sb3.str = [%llu/%llu]\"%.*s\"%s%s", (u64)sb3.length, (u64)sb3.maxLength, StrPrint(sb3.str), IsFlagSet(sb3.flags, StrBuffFlag_Overflowed) ? " (OVERFLOWED!)" : "", sb3.chars[sb3.length] == '\0' ? "" : " (NOT NULL-TERMINATED!)");
+		Str8 slice2 = StrBuffSlice(&sb3, 10, 20);
+		PrintLine_D("StrBuffSlice(sb3, 10, 20) = \"%.*s\"", StrPrint(slice2));
+		
+		StringBuffer sb4 = NewStrBuffFromArena(stdHeap, 100);
+		FlagUnset(sb4.flags, StrBuffFlag_AssertOnOverflow);
+		for (uxx wIndex = 0; wIndex < 20; wIndex++)
+		{
+			if (wIndex > 0) { AppendToStrBuffChar(&sb4, ' '); }
+			AppendToStrBuffChar(&sb4, (wIndex > 0) ? 'h' : 'H');
+			AppendToStrBuff(&sb4, "ello");
+		}
+		PrintLine_D("sb4.str = [%llu/%llu]\"%.*s\"%s%s", (u64)sb4.length, (u64)sb4.maxLength, StrPrint(sb4.str), IsFlagSet(sb4.flags, StrBuffFlag_Overflowed) ? " (OVERFLOWED!)" : "", sb4.chars[sb4.length] == '\0' ? "" : " (NOT NULL-TERMINATED!)");
 	}
 	#endif
 	
