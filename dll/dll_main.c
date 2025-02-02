@@ -10,6 +10,8 @@ Description:
 
 #define PIG_CORE_BUILDING_AS_DLL 1
 
+#include "build_config.h"
+
 #ifndef PIG_CORE_DLL_INCLUDE_BASE
 #define PIG_CORE_DLL_INCLUDE_BASE 1
 #endif
