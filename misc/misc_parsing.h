@@ -319,7 +319,6 @@ PEXPI bool TryParseI8(Str8 str, i8* valueOut, Result* errorOut)
 // +==============================+
 // |         Parse Float          |
 // +==============================+
-//TODO: Move away from using atof to parse floating point numbers
 PEXP bool TryParseR64Ex(Str8 str, r64* valueOut, Result* errorOut, bool allowInfinityOrNan)
 {
 	NotNullStr(str);
@@ -331,38 +330,113 @@ PEXP bool TryParseR64Ex(Str8 str, r64* valueOut, Result* errorOut, bool allowInf
 	}
 	if (str.length == 0)
 	{
-		SetOptionalOutPntr(errorOut, Result_NoNumbers);
+		SetOptionalOutPntr(errorOut, Result_EmptyString);
 		return false;
 	}
 	
-	//We need a local buffer to ensure the string is null-terminated (a requirement of atof)
-	char localBuffer[MAX_FLOAT_PARSE_LENGTH+1];
-	MyMemCopy(&localBuffer[0], str.chars, str.length);
-	localBuffer[str.length] = '\0';
-	Str8 tempStr = NewStr8(str.length, &localBuffer[0]);
+	r64 result = 0.0;
 	
-	r64 result = MyStrToFloat(tempStr.chars);
-	if (!allowInfinityOrNan && IsInfiniteOrNanR64(result))
+	if (StrAnyCaseEquals(str, StrLit("nan"))) { if (allowInfinityOrNan) { result = NAN; } else { SetOptionalOutPntr(errorOut, Result_InfinityOrNan); return false; } }
+	else if (StrAnyCaseEquals(str, StrLit("inf"))) {  if (allowInfinityOrNan) { result = INFINITY; } else { SetOptionalOutPntr(errorOut, Result_InfinityOrNan); return false; } }
+	else if (StrAnyCaseEquals(str, StrLit("+inf"))) {  if (allowInfinityOrNan) { result = INFINITY; } else { SetOptionalOutPntr(errorOut, Result_InfinityOrNan); return false; } }
+	else if (StrAnyCaseEquals(str, StrLit("-inf"))) {  if (allowInfinityOrNan) { result = -INFINITY; } else { SetOptionalOutPntr(errorOut, Result_InfinityOrNan); return false; } }
+	else if (StrAnyCaseEquals(str, StrLit("infinity"))) {  if (allowInfinityOrNan) { result = INFINITY; } else { SetOptionalOutPntr(errorOut, Result_InfinityOrNan); return false; } }
+	else if (StrAnyCaseEquals(str, StrLit("+infinity"))) {  if (allowInfinityOrNan) { result = INFINITY; } else { SetOptionalOutPntr(errorOut, Result_InfinityOrNan); return false; } }
+	else if (StrAnyCaseEquals(str, StrLit("-infinity"))) {  if (allowInfinityOrNan) { result = -INFINITY; } else { SetOptionalOutPntr(errorOut, Result_InfinityOrNan); return false; } }
+	else
 	{
-		SetOptionalOutPntr(errorOut, Result_InfinityOrNan);
-		return false;
-	}
-	//atof doesn't really give us errors. When it fails it gives us 0.0.
-	//We are going to do some sanity checks to try and tell between a failed parse and an actual parse of 0.0
-	if (result == 0.0)
-	{
-		bool containsZero = false;
-		bool containsOtherNumbers = false;
-		for (u64 cIndex = 0; cIndex < tempStr.length; cIndex++)
+		u64 bIndex = 0;
+		
+		bool isNegative = false;
+		if (bIndex < str.length && str.chars[bIndex] == '+') { bIndex++; isNegative = false; }
+		else if (bIndex < str.length && str.chars[bIndex] == '-') { bIndex++; isNegative = true; }
+		
+		bool foundNumbersBeforePeriod = false;
+		for (; bIndex < str.length; bIndex++)
 		{
-			if (tempStr.chars[cIndex] == '0') { containsZero = true; break; }
-			if (tempStr.chars[cIndex] >= '1' && tempStr.chars[cIndex] <= '9') { containsOtherNumbers = true; break; }
+			char nextChar = str.chars[bIndex];
+			if (!IsCharNumeric(nextChar)) { break; }
+			foundNumbersBeforePeriod = true;
+			result = (result * 10.0) + (r64)GetNumericCharValue(nextChar);
 		}
-		if (!containsZero || containsOtherNumbers)
+		
+		bool foundPeriod = false;
+		bool foundNumbersAfterPeriod = false;
+		if (bIndex < str.length && str.chars[bIndex] == '.')
 		{
-			SetOptionalOutPntr(errorOut, Result_FloatParseFailure);
+			bIndex++;
+			foundPeriod = true;
+			
+			r64 digitInvPower = 10.0;
+			for (; bIndex < str.length; bIndex++)
+			{
+				char nextChar = str.chars[bIndex];
+				if (!IsCharNumeric(nextChar)) { break; }
+				foundNumbersAfterPeriod = true;
+				result = result + ((r64)GetNumericCharValue(nextChar) / digitInvPower);
+				digitInvPower *= 10.0;
+			}
+		}
+		
+		bool foundScientificNotation = false;
+		bool negativeExponent = false;
+		r64 exponentMultiplier = 1.0;
+		if (bIndex < str.length && (str.chars[bIndex] == 'e' || str.chars[bIndex] == 'E'))
+		{
+			bIndex++;
+			foundScientificNotation = true;
+			
+			if (bIndex < str.length && str.chars[bIndex] == '+') { bIndex++; negativeExponent = false; }
+			else if (bIndex < str.length && str.chars[bIndex] == '-') { bIndex++; negativeExponent = true; }
+			
+			bool foundExponentNumbers = false;
+			r64 exponent = 0.0;
+			for (; bIndex < str.length; bIndex++)
+			{
+				char nextChar = str.chars[bIndex];
+				if (!IsCharNumeric(nextChar)) { break; }
+				foundExponentNumbers = true;
+				exponent = (exponent * 10.0) + (r64)GetNumericCharValue(nextChar);
+			}
+			if (exponent > 308.0) { exponent = 308.0; }
+			
+			if (!foundExponentNumbers)
+			{
+				if (bIndex >= str.length)
+				{
+					SetOptionalOutPntr(errorOut, Result_MissingExponent);
+					return false;
+				}
+				else
+				{
+					//NOTE: If we didn't make it to the end, there is some non-numeric
+					//      character that prevented the loop from continuing. We can
+					//      consider it an invalid character no matter what it is at this point.
+					SetOptionalOutPntr(errorOut, Result_InvalidCharacter);
+					return false;
+				}
+			}
+			
+			while (exponent >= 50.0) { exponentMultiplier *= 1e50; exponent -= 50.0; }
+			while (exponent >= 8.0)  { exponentMultiplier *= 1e8;  exponent -= 8.0;  }
+			while (exponent >  0.0)  { exponentMultiplier *= 10.0; exponent -= 1.0;  }
+		}
+		
+		// If we haven't made it to the end of the string then there must be some
+		// invalid character that blocked the loops above from continuing
+		if (bIndex < str.length)
+		{
+			SetOptionalOutPntr(errorOut, Result_InvalidCharacter);
 			return false;
 		}
+		
+		if (!foundNumbersBeforePeriod && !foundNumbersAfterPeriod)
+		{
+			SetOptionalOutPntr(errorOut, Result_NoNumbers);
+			return false;
+		}
+		
+		result = (isNegative ? -1.0 : 1.0) * (negativeExponent ? (result / exponentMultiplier) : (result * exponentMultiplier));
 	}
 	
 	SetOptionalOutPntr(valueOut, result);

@@ -62,7 +62,7 @@ Description:
 #if USING_CUSTOM_STDLIB
 r64 atof(const char* str)
 {
-	//TODO: Implement me!
+	//TODO: Implement me
 	return 0.0;
 }
 #endif

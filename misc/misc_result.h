@@ -38,6 +38,7 @@ enum Result
 	Result_InvalidType,
 	Result_TooShort,
 	Result_TooLong,
+	Result_EmptyString,
 	Result_EmptyPath,
 	Result_ExePathTooLong,
 	Result_FailedToAllocateMemory,
@@ -58,6 +59,7 @@ enum Result
 	Result_Nullptr,
 	Result_MismatchedParenthesis,
 	Result_CharactersAfterParenthesis,
+	Result_MissingExponent,
 	
 	Result_Count,
 };
@@ -79,6 +81,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_InvalidType: return "InvalidType";
 		case Result_TooShort: return "TooShort";
 		case Result_TooLong: return "TooLong";
+		case Result_EmptyString: return "EmptyString";
 		case Result_EmptyPath: return "EmptyPath";
 		case Result_ExePathTooLong: return "ExePathTooLong";
 		case Result_FailedToAllocateMemory: return "FailedToAllocateMemory";
@@ -99,6 +102,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_Nullptr: return "Nullptr";
 		case Result_MismatchedParenthesis: return "MismatchedParenthesis";
 		case Result_CharactersAfterParenthesis: return "CharactersAfterParenthesis";
+		case Result_MissingExponent: return "MissingExponent";
 		default: return UNKNOWN_STR;
 	}
 }

@@ -3,11 +3,42 @@ File:   struct_string.h
 Author: Taylor Robbins
 Date:   01\06\2025
 Description:
-	** TODO:
+	** Contains the super important data structure called Str8 (as well as Str16 and Str8Pair which we occassionally use)
+	** Str8 simply is the pairing of a length and a pointer and is often used to store
+	** string (or substring) data without the need for a null-terminating character
+	** to determine it's length. Str8 also can be used for non-character data and
+	** as such has an alias "Slice" which should be preferred in those cases. (NOTE: FilePath is also an alias of Str8)
+	** The 8 in Str8 indicates it holds single-byte encodings such as UTF-8 or ASCII.
+	** The exact encoding in a Str8 is not guaranteed by the data structure, it's up
+	** to the usage code to remember what is stored in a Str8, and functions taking
+	** Str8 with specific kinds of encodings should be clearly documented as to what
+	** kind of data they expect to injest. Generally in this codebase we assume usage
+	** of UTF-8 encoding wherever possible. Any robust function that takes a Str8 and
+	** deals with unicode codepoints that are encoded as multibyte sequences should
+	** use functions from base_unicode.h to convert the bytes to characters as it loops
+	** over the data. However, most functions that deal with strings are only operating
+	** on characters that are single-byte encoded and are the same as ASCII so they 
+	** may choose to iterate over the bytes individually, treating them as ASCII
+	** characters. This only works because all multi-byte characters in UTF-8 have
+	** bytes that are ALL above value 128 meaning they will never be confused for
+	** a valid single-byte encoded character.
 	** NOTE: Str8 does not care about const. It converts const pointers to non-const.
 	** It's up to the usage code to track whether a string holding a particular
 	** address is allowed to be written to. Similarly, it's up to the usage code
 	** to know if a string is null-terminated or not
+	** NOTE: To make a Str8 from a string literal like "hello" wrap the literal with StrLit("hello")
+	** This will call strlen on the pointer to fill the length of the Str8 struct.
+	** Note this can also be used any string that has null-terminator not just string literals
+	** NOTE: Any Str8 that has a non-zero length is required to have a non-null pointer value.
+	** Many functions will check for this degenerate case with NotNullStr(...).
+	** However a Str8 with 0 length is allowed to have a null pointer value.
+	** A 0 length Str8 can have a valid pointer if it was allocated with a null-terminating
+	** char but basically no function will touch the pointer if the length is 0
+	** besides something like FreeStr8WithNt.
+	** NOTE: This file does not directly depend on base_unicode.h or mem_arena.h
+	** allowing it to be used it more limited scenarios (like embedded systems).
+	** There are "cross" files that extend the API when those other files are
+	** included alongside this one.
 */
 
 #ifndef _STRUCT_STRING_H
@@ -86,7 +117,7 @@ struct Str8Pair
 	bool StrExactContains(Str8 haystack, Str8 needle);
 	uxx StrExactFind(Str8 haystack, Str8 needle);
 	PIG_CORE_INLINE bool StrTryExactFind(Str8 haystack, Str8 needle, uxx* indexOut);
-	PIG_CORE_INLINE bool StrAnyCaseEquals(Str8 left, Str8 right);
+	bool StrAnyCaseEquals(Str8 left, Str8 right);
 	PIG_CORE_INLINE bool StrAnyCaseEqualsAt(Str8 left, Str8 right, uxx leftIndex);
 	PIG_CORE_INLINE bool StrAnyCaseStartsWith(Str8 target, Str8 prefix);
 	PIG_CORE_INLINE bool StrAnyCaseEndsWith(Str8 target, Str8 suffix);
@@ -319,7 +350,7 @@ PEXP bool StrExactContains(Str8 haystack, Str8 needle)
 	if (haystack.length < needle.length) { return false; }
 	for (uxx bIndex = 0; bIndex <= haystack.length - needle.length; bIndex++)
 	{
-		if (StrExactEquals(StrSliceLength(haystack, bIndex, needle.length), needle)) { return true; }
+		if (StrExactEqualsAt(haystack, needle, bIndex)) { return true; }
 	}
 	return false;
 }
@@ -329,7 +360,7 @@ PEXP uxx StrExactFind(Str8 haystack, Str8 needle)
 	if (haystack.length < needle.length) { return haystack.length; }
 	for (uxx bIndex = 0; bIndex <= haystack.length - needle.length; bIndex++)
 	{
-		if (StrExactEquals(StrSliceLength(haystack, bIndex, needle.length), needle)) { return bIndex; }
+		if (StrExactEqualsAt(haystack, needle, bIndex)) { return bIndex; }
 	}
 	return haystack.length;
 }
@@ -340,11 +371,15 @@ PEXPI bool StrTryExactFind(Str8 haystack, Str8 needle, uxx* indexOut)
 	return (index < haystack.length);
 }
 
-PEXPI bool StrAnyCaseEquals(Str8 left, Str8 right)
+PEXP bool StrAnyCaseEquals(Str8 left, Str8 right)
 {
 	if (StrExactEquals(left, right)) { return true; }
-	//TODO: Implement me!
-	return false;
+	if (left.length != right.length) { return false; }
+	for (uxx bIndex = 0; bIndex < left.length; bIndex++)
+	{
+		if (ToLowerChar(left.chars[bIndex]) != ToLowerChar(right.chars[bIndex])) { return false; }
+	}
+	return true;
 }
 PEXPI bool StrAnyCaseEqualsAt(Str8 left, Str8 right, uxx leftIndex)
 {
@@ -353,32 +388,41 @@ PEXPI bool StrAnyCaseEqualsAt(Str8 left, Str8 right, uxx leftIndex)
 PEXPI bool StrAnyCaseStartsWith(Str8 target, Str8 prefix)
 {
 	if (StrExactStartsWith(target, prefix)) { return true; }
-	//TODO: Implement me!
-	return false;
+	if (target.length < prefix.length) { return false; }
+	return StrAnyCaseEquals(StrSlice(target, 0, prefix.length), prefix);
 }
 PEXPI bool StrAnyCaseEndsWith(Str8 target, Str8 suffix)
 {
 	if (StrExactEndsWith(target, suffix)) { return true; }
-	//TODO: Implement me!
-	return false;
+	if (target.length < suffix.length) { return false; }
+	return StrAnyCaseEquals(StrSliceFrom(target, target.length - suffix.length), suffix);
 }
 PEXPI bool StrAnyCaseContains(Str8 haystack, Str8 needle)
 {
+	Assert(needle.length > 0);
 	if (StrExactContains(haystack, needle)) { return true; }
-	//TODO: Implement me!
+	if (needle.length > haystack.length) { return false; }
+	for (uxx bIndex = 0; bIndex <= haystack.length - needle.length; bIndex++)
+	{
+		if (StrAnyCaseEqualsAt(haystack, needle, bIndex)) { return true; }
+	}
 	return false;
 }
 PEXPI uxx StrAnyCaseFind(Str8 haystack, Str8 needle)
 {
-	uxx exactIndex = StrExactFind(haystack, needle);
-	//TODO: Implement me!
-	return exactIndex;
+	Assert(needle.length > 0);
+	if (needle.length > haystack.length) { return haystack.length; }
+	for (uxx bIndex = 0; bIndex <= haystack.length - needle.length; bIndex++)
+	{
+		if (StrAnyCaseEqualsAt(haystack, needle, bIndex)) { return bIndex; }
+	}
+	return haystack.length;
 }
 PEXPI bool StrTryAnyCaseFind(Str8 haystack, Str8 needle, uxx* indexOut)
 {
-	bool found = StrTryExactFind(haystack, needle, indexOut);
-	//TODO: Implement me!
-	return found;
+	uxx index = StrAnyCaseFind(haystack, needle);
+	SetOptionalOutPntr(indexOut, index);
+	return (index < haystack.length);
 }
 
 PEXPI bool StrEquals(Str8 left, Str8 right, bool caseSensitive)

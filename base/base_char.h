@@ -42,6 +42,7 @@ Description:
 	PIG_CORE_INLINE u8 GetUpperNibble(u8 value);
 	PIG_CORE_INLINE u8 GetLowerNibble(u8 value);
 	PIG_CORE_INLINE u8 GetHexCharValue(char hexChar);
+	PIG_CORE_INLINE u8 GetNumericCharValue(char hexChar);
 	PIG_CORE_INLINE bool IsCharNumeric(u32 codepoint);
 	PIG_CORE_INLINE bool IsCharHexadecimal(u32 codepoint);
 	PIG_CORE_INLINE bool AreCharsHexidecimal(u64 numChars, char* charsPntr);
@@ -103,15 +104,24 @@ PEXPI u8 GetHexCharValue(char hexChar)
 {
 	if (hexChar >= '0' && hexChar <= '9')
 	{
-		return (u8)(hexChar - '0');
+		return CharToU8(hexChar - '0');
 	}
 	else if (hexChar >= 'A' && hexChar <= 'F')
 	{
-		return (u8)(hexChar - 'A') + 10;
+		return CharToU8(hexChar - 'A') + 10;
 	}
 	else if (hexChar >= 'a' && hexChar <= 'f')
 	{
-		return (u8)(hexChar - 'a') + 10;
+		return CharToU8(hexChar - 'a') + 10;
+	}
+	else { return 0; }
+}
+
+PEXPI u8 GetNumericCharValue(char hexChar)
+{
+	if (hexChar >= '0' && hexChar <= '9')
+	{
+		return CharToU8(hexChar - '0');
 	}
 	else { return 0; }
 }
