@@ -180,3 +180,20 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Required For:**
 
 * Building tests.exe into a small VR application (only if `BUILD_WITH_VR` is enabled in `build_config.h`)
+
+---
+
+## Super Light Regular Expression libraru (SLRE)
+**URL(s):** [https://github.com/cesanta/slre](https://github.com/cesanta/slre)
+
+**Folder Name:** `slre`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Commit `9075c67cad47d62ba4a4f8f452ae46bb21124f7b` from Oct 26th 2020
+
+**Fixup Required:** Delete everything besides slre.h, slre.c and LICENSE
+
+**Required For:**
+
+* misc_regex.h depends upon this library

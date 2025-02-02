@@ -44,4 +44,8 @@ Date:   01\05\2025
 
 #include "misc/misc_parsing.h"
 
+#include "mem/mem_scratch.h" //required for misc_regex.h
+
+#include "misc/misc_regex.h"
+
 #endif //  _MISC_ALL_H

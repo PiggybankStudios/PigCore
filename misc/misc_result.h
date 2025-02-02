@@ -60,6 +60,12 @@ enum Result
 	Result_MismatchedParenthesis,
 	Result_CharactersAfterParenthesis,
 	Result_MissingExponent,
+	Result_NoMatch,
+	Result_UnexpectedQuantifier,
+	Result_UnbalancedBrackets,
+	Result_NotEnoughSpace,
+	Result_TooManyBranches,
+	Result_TooManyBrackets,
 	
 	Result_Count,
 };
@@ -103,6 +109,12 @@ PEXP const char* GetResultStr(Result result)
 		case Result_MismatchedParenthesis: return "MismatchedParenthesis";
 		case Result_CharactersAfterParenthesis: return "CharactersAfterParenthesis";
 		case Result_MissingExponent: return "MissingExponent";
+		case Result_NoMatch: return "NoMatch";
+		case Result_UnexpectedQuantifier: return "UnexpectedQuantifier";
+		case Result_UnbalancedBrackets: return "UnbalancedBrackets";
+		case Result_NotEnoughSpace: return "NotEnoughSpace";
+		case Result_TooManyBranches: return "TooManyBranches";
+		case Result_TooManyBrackets: return "TooManyBrackets";
 		default: return UNKNOWN_STR;
 	}
 }

@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
 	if (!InitVrTests()) { return 1; }
 	#endif
 	
-	TestParsingFunctions();
+	// TestParsingFunctions();
 	
 	// +==============================+
 	// |         Arena Tests          |
@@ -684,6 +684,30 @@ int main(int argc, char* argv[])
 				default: PrintLine_D("Token[%llu]: %s \"%.*s\"", tokenIndex, GetParsingTokenTypeStr(token.type), StrPrint(token.str)); break;
 			}
 			tokenIndex++;
+		}
+	}
+	#endif
+	
+	// +==============================+
+	// |         Regex Tests          |
+	// +==============================+
+	#if 1
+	{
+		Str8 targetStr = StrLit("Hello World!");
+		PrintLine_O("Searching \"%.*s\"", StrPrint(targetStr));
+		
+		RegexResult result = StrRegexFind(targetStr, StrLit("([^e]+)\\s+([Worl]+)"), true);
+		if (result.result == Result_Success)
+		{
+			PrintLine_D("Regex Matches, %llu capture%s (ending at %llu)", result.numCaptures, Plural(result.numCaptures, "s"), (u64)result.matchEndIndex);
+			for (uxx cIndex = 0; cIndex < result.numCaptures; cIndex++)
+			{
+				PrintLine_D("\tCapture[%llu]: %llu \"%.*s\" (at index %llu)", cIndex, (uxx)result.captures[cIndex].length, StrPrint(result.captures[cIndex]), (u64)result.captureIndices[cIndex]);
+			}
+		}
+		else
+		{
+			PrintLine_D("Regex did not match: %s", GetResultStr(result.result));
 		}
 	}
 	#endif
