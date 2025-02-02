@@ -13,6 +13,7 @@ Date:   01\05\2025
 #include "misc/misc_result.h"
 
 #include "base/base_typedefs.h" //required by everyone below
+#include "base/base_assert.h" //required by everyone below
 
 #include "misc/misc_hash.h"
 #include "misc/misc_random.h"
@@ -31,6 +32,7 @@ Date:   01\05\2025
 #include "std/std_printf.h" //required by misc_printing.h
 #include "mem/mem_arena.h" //required by misc_printing.h
 
+#include "misc/misc_simple_parsers.h"
 #include "misc/misc_printing.h"
 
 #include "struct/struct_vectors.h" //required by misc_noise.h

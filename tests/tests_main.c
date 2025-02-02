@@ -464,7 +464,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |      StringBuffer Tests      |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		// NewStrBuffEx(sb1, 37);
 		NewStrBuff(sb1);
@@ -650,6 +650,38 @@ int main(int argc, char* argv[])
 		#endif //BUILD_WITH_RAYLIB
 		CloseZipArchive(&archive);
 		ScratchEnd(scratch);
+	}
+	#endif
+	
+	// +==============================+
+	// |     Simple Parsers Tests     |
+	// +==============================+
+	#if 1
+	{
+		Str8 testFileContents = OsReadTextFileScratch(FilePathLit("test.txt"));
+		
+		LineParser lineParser = NewLineParser(testFileContents);
+		Str8 line = Str8_Empty;
+		while (LineParserGetLine(&lineParser, &line))
+		{
+			PrintLine_D("%llu: \"%.*s\"", lineParser.lineIndex, StrPrint(line));
+		}
+		PrintLine_D("There were %llu lines in the file", lineParser.lineIndex);
+		
+		TextParser textParser = NewTextParser(testFileContents);
+		ParsingToken token = ZEROED;
+		u64 tokenIndex = 0;
+		while (TextParserGetToken(&textParser, &token))
+		{
+			switch (token.type)
+			{
+				case ParsingTokenType_FilePrefix: PrintLine_D("Token[%llu]: FilePrefix \"%.*s\"", tokenIndex, StrPrint(token.value)); break;
+				case ParsingTokenType_Directive: PrintLine_D("Token[%llu]: Directive \"%.*s\"", tokenIndex, StrPrint(token.value)); break;
+				case ParsingTokenType_KeyValuePair: PrintLine_D("Token[%llu]: KeyValuePair \"%.*s\" = \"%.*s\"", tokenIndex, StrPrint(token.key), StrPrint(token.value)); break;
+				default: PrintLine_D("Token[%llu]: %s \"%.*s\"", tokenIndex, GetParsingTokenTypeStr(token.type), StrPrint(token.str)); break;
+			}
+			tokenIndex++;
+		}
 	}
 	#endif
 	

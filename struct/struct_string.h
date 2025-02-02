@@ -72,7 +72,7 @@ struct Str8Pair
 	PIG_CORE_INLINE bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr);
 	Str8 TrimLeadingWhitespace(Str8 target);
 	Str8 TrimTrailingWhitespace(Str8 target);
-	PIG_CORE_INLINE bool TrimWhitespace(Str8 target);
+	PIG_CORE_INLINE Str8 TrimWhitespace(Str8 target);
 	PIG_CORE_INLINE bool StrSlice(Str8 target, uxx startIndex, uxx endIndex);
 	PIG_CORE_INLINE bool StrSliceFrom(Str8 target, uxx startIndex);
 	PIG_CORE_INLINE bool StrSliceLength(Str8 target, uxx startIndex, uxx length);
@@ -81,16 +81,22 @@ struct Str8Pair
 	PIG_CORE_INLINE bool StrExactStartsWith(Str8 target, Str8 prefix);
 	PIG_CORE_INLINE bool StrExactEndsWith(Str8 target, Str8 suffix);
 	bool StrExactContains(Str8 haystack, Str8 needle);
+	uxx StrExactFind(Str8 haystack, Str8 needle);
+	PIG_CORE_INLINE bool StrTryExactFind(Str8 haystack, Str8 needle, uxx* indexOut);
 	PIG_CORE_INLINE bool StrAnyCaseEquals(Str8 left, Str8 right);
 	PIG_CORE_INLINE bool StrAnyCaseEqualsAt(Str8 left, Str8 right, uxx leftIndex);
 	PIG_CORE_INLINE bool StrAnyCaseStartsWith(Str8 target, Str8 prefix);
 	PIG_CORE_INLINE bool StrAnyCaseEndsWith(Str8 target, Str8 suffix);
 	PIG_CORE_INLINE bool StrAnyCaseContains(Str8 haystack, Str8 needle);
+	PIG_CORE_INLINE uxx StrAnyCaseFind(Str8 haystack, Str8 needle);
+	PIG_CORE_INLINE bool StrTryAnyCaseFind(Str8 haystack, Str8 needle, uxx* indexOut);
 	PIG_CORE_INLINE bool StrEquals(Str8 left, Str8 right, bool caseSensitive);
 	PIG_CORE_INLINE bool StrEqualsAt(Str8 left, Str8 right, uxx leftIndex, bool caseSensitive);
 	PIG_CORE_INLINE bool StrStartsWith(Str8 target, Str8 prefix, bool caseSensitive);
 	PIG_CORE_INLINE bool StrEndsWith(Str8 target, Str8 suffix, bool caseSensitive);
 	PIG_CORE_INLINE bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive);
+	PIG_CORE_INLINE bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut);
+	PIG_CORE_INLINE uxx StrFind(Str8 haystack, Str8 needle, bool caseSensitive);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -277,6 +283,22 @@ PEXP bool StrExactContains(Str8 haystack, Str8 needle)
 	}
 	return false;
 }
+PEXP uxx StrExactFind(Str8 haystack, Str8 needle)
+{
+	Assert(needle.length > 0);
+	if (haystack.length < needle.length) { return haystack.length; }
+	for (uxx bIndex = 0; bIndex <= haystack.length - needle.length; bIndex++)
+	{
+		if (StrExactEquals(StrSliceLength(haystack, bIndex, needle.length), needle)) { return bIndex; }
+	}
+	return haystack.length;
+}
+PEXPI bool StrTryExactFind(Str8 haystack, Str8 needle, uxx* indexOut)
+{
+	uxx index = StrExactFind(haystack, needle);
+	SetOptionalOutPntr(indexOut, index);
+	return (index < haystack.length);
+}
 
 PEXPI bool StrAnyCaseEquals(Str8 left, Str8 right)
 {
@@ -306,6 +328,18 @@ PEXPI bool StrAnyCaseContains(Str8 haystack, Str8 needle)
 	//TODO: Implement me!
 	return false;
 }
+PEXPI uxx StrAnyCaseFind(Str8 haystack, Str8 needle)
+{
+	uxx exactIndex = StrExactFind(haystack, needle);
+	//TODO: Implement me!
+	return exactIndex;
+}
+PEXPI bool StrTryAnyCaseFind(Str8 haystack, Str8 needle, uxx* indexOut)
+{
+	bool found = StrTryExactFind(haystack, needle, indexOut);
+	//TODO: Implement me!
+	return found;
+}
 
 PEXPI bool StrEquals(Str8 left, Str8 right, bool caseSensitive)
 {
@@ -326,6 +360,16 @@ PEXPI bool StrEndsWith(Str8 target, Str8 suffix, bool caseSensitive)
 PEXPI bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive)
 {
 	return (caseSensitive ? StrExactContains(haystack, needle) : StrAnyCaseContains(haystack, needle));
+}
+PEXPI uxx StrFind(Str8 haystack, Str8 needle, bool caseSensitive)
+{
+	return (caseSensitive ? StrExactFind(haystack, needle) : StrAnyCaseFind(haystack, needle));
+}
+PEXPI bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut)
+{
+	uxx index = (caseSensitive ? StrExactFind(haystack, needle) : StrAnyCaseFind(haystack, needle));
+	SetOptionalOutPntr(indexOut, index);
+	return (index < haystack.length);
 }
 
 //TODO: Str8 CombineStrs(MemArena_t* memArena, Str8 str1, Str8 str2)
