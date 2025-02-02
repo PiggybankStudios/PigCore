@@ -178,6 +178,7 @@ struct Shader
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	sg_backend GetSokolBackend();
 	void FreeShader(Shader* shader);
 	Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const ShaderMetadata* shaderMetadata);
 	PIG_CORE_INLINE void SetShaderFilePath(Shader* shader, Str8 filePath);
@@ -198,22 +199,22 @@ struct Shader
 	PIG_CORE_INLINE bool SetShaderUniformByNameV4(Shader* shader, Str8 uniformName, v4 vector);
 #endif
 
-#define InitCompiledShader_Internal(outputShaderPntr, arenaPntr, shaderName) do                                   \
-{                                                                                                                 \
-	ShaderImageDef imageDefs[] = shaderName##_SHADER_IMAGE_DEFS;                                                  \
-	ShaderSamplerDef samplerDefs[] = shaderName##_SHADER_SAMPLER_DEFS;                                            \
-	ShaderUniformDef uniformDefs[] = shaderName##_SHADER_UNIFORM_DEFS;                                            \
-	ShaderAttributeDef attributeDefs[] = shaderName##_SHADER_ATTR_DEFS;                                           \
-	ShaderMetadata shaderMetadata = ZEROED;                                                                       \
-	shaderMetadata.numImages = shaderName##_SHADER_IMAGE_COUNT;                                                   \
-	shaderMetadata.imageDefs = &imageDefs[0];                                                                     \
-	shaderMetadata.numSamplers = shaderName##_SHADER_SAMPLER_COUNT;                                               \
-	shaderMetadata.samplerDefs = &samplerDefs[0];                                                                 \
-	shaderMetadata.numUniforms = shaderName##_SHADER_UNIFORM_COUNT;                                               \
-	shaderMetadata.uniformDefs = &uniformDefs[0];                                                                 \
-	shaderMetadata.numAttributes = shaderName##_SHADER_ATTR_COUNT;                                                \
-	shaderMetadata.attributeDefs = &attributeDefs[0];                                                             \
-	*(outputShaderPntr) = InitShader((arenaPntr), shaderName##_shader_desc(sg_query_backend()), &shaderMetadata); \
+#define InitCompiledShader_Internal(outputShaderPntr, arenaPntr, shaderName) do                                  \
+{                                                                                                                \
+	ShaderImageDef imageDefs[] = shaderName##_SHADER_IMAGE_DEFS;                                                 \
+	ShaderSamplerDef samplerDefs[] = shaderName##_SHADER_SAMPLER_DEFS;                                           \
+	ShaderUniformDef uniformDefs[] = shaderName##_SHADER_UNIFORM_DEFS;                                           \
+	ShaderAttributeDef attributeDefs[] = shaderName##_SHADER_ATTR_DEFS;                                          \
+	ShaderMetadata shaderMetadata = ZEROED;                                                                      \
+	shaderMetadata.numImages = shaderName##_SHADER_IMAGE_COUNT;                                                  \
+	shaderMetadata.imageDefs = &imageDefs[0];                                                                    \
+	shaderMetadata.numSamplers = shaderName##_SHADER_SAMPLER_COUNT;                                              \
+	shaderMetadata.samplerDefs = &samplerDefs[0];                                                                \
+	shaderMetadata.numUniforms = shaderName##_SHADER_UNIFORM_COUNT;                                              \
+	shaderMetadata.uniformDefs = &uniformDefs[0];                                                                \
+	shaderMetadata.numAttributes = shaderName##_SHADER_ATTR_COUNT;                                               \
+	shaderMetadata.attributeDefs = &attributeDefs[0];                                                            \
+	*(outputShaderPntr) = InitShader((arenaPntr), shaderName##_shader_desc(GetSokolBackend()), &shaderMetadata); \
 } while(0)
 #if DEBUG_BUILD
 #define InitCompiledShader(outputShaderPntr, arenaPntr, shaderName) do            \
@@ -229,6 +230,11 @@ struct Shader
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXP sg_backend GetSokolBackend()
+{
+	return sg_query_backend();
+}
 
 PEXP void FreeShader(Shader* shader)
 {

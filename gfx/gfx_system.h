@@ -73,6 +73,8 @@ struct GfxSystem
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	void ShutdownSokolGraphics();
+	void InitSokolGraphics(sg_desc sokolGraphicsDesc);
 	void FreeGfxSystem(GfxSystem* system);
 	void InitGfxSystem(Arena* arena, GfxSystem* systemOut);
 	PIG_CORE_INLINE GfxPipeline* FindSystemPipelineWithOptions(GfxSystem* system, const GfxPipelineOptions* options);
@@ -100,6 +102,15 @@ struct GfxSystem
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXP void ShutdownSokolGraphics()
+{
+	sg_shutdown();
+}
+PEXP void InitSokolGraphics(sg_desc sokolGraphicsDesc)
+{
+	sg_setup(&sokolGraphicsDesc);
+}
 
 PEXP void FreeGfxSystem(GfxSystem* system)
 {

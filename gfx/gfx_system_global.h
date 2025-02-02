@@ -59,10 +59,11 @@ With this file:
 
 #if BUILD_WITH_SOKOL
 
+//TODO: Change __declspec stuff to work when compiling with Clang!
 #if !PIG_CORE_IMPLEMENTATION
-extern GfxSystem gfx;
+extern __declspec(dllimport) GfxSystem gfx;
 #else
-GfxSystem gfx = ZEROED;
+__declspec(dllexport) GfxSystem gfx = ZEROED;
 #endif
 
 //NOTE: You should call InitGfxSystem(arena, &gfx) like normal, no implicit alias is made for this function or FreeGfxSystem
