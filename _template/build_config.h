@@ -82,7 +82,10 @@ Description:
 #define PROJECT_EXE_NAME      new_project
 
 #ifndef STRINGIFY_DEFINE
-
+#define STRINGIFY_DEFINE(define) STRINGIFY(define)
+#endif
+#ifndef STRINGIFY
+#define STRINGIFY(text)          #text
 #endif
 #define PROJECT_READABLE_NAME_STR  STRINGIFY_DEFINE(PROJECT_READABLE_NAME)
 #define PROJECT_FOLDER_NAME_STR    STRINGIFY_DEFINE(PROJECT_FOLDER_NAME)
