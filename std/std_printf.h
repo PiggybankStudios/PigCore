@@ -59,6 +59,14 @@ Description:
 #define MyNetworkToHostByteOrderU32(integer) ntohl(integer)
 #define MyStrToFloat(nullTermStr) atof(nullTermStr)
 
+#if USING_CUSTOM_STDLIB
+r64 atof(const char* str)
+{
+	//TODO: Implement me!
+	return 0.0;
+}
+#endif
+
 #endif //  _STD_PRINTF_H
 
 #if defined(_STD_PRINTF_H) && defined(_STRUCT_STRING_BUFFER_H)

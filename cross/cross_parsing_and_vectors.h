@@ -31,7 +31,7 @@ PEXP bool TryParseV2i(Str8 str, v2i* valueOut, Result* errorOut)
 	NotNullStr(str);
 	if (StrExactStartsWith(str, StrLit("("))) { str = StrSliceFrom(str, 1); }
 	if (StrExactEndsWith(str, StrLit(")"))) { str = StrSlice(str, 0, str.length-1); }
-	u64 commaIndex = 0;
+	uxx commaIndex = 0;
 	bool strContainsComma = StrTryExactFind(str, StrLit(","), &commaIndex);
 	if (!strContainsComma)
 	{
@@ -51,7 +51,7 @@ PEXP bool TryParseV2(Str8 str, v2* valueOut, Result* errorOut)
 	NotNullStr(str);
 	if (StrExactStartsWith(str, StrLit("("))) { str = StrSliceFrom(str, 1); }
 	if (StrExactEndsWith(str, StrLit(")"))) { str = StrSlice(str, 0, str.length-1); }
-	u64 commaIndex = 0;
+	uxx commaIndex = 0;
 	bool strContainsComma = StrTryExactFind(str, StrLit(","), &commaIndex);
 	if (!strContainsComma)
 	{
@@ -72,14 +72,14 @@ PEXP bool TryParseV3i(Str8 str, v3i* valueOut, Result* errorOut)
 	NotNullStr(str);
 	if (StrExactStartsWith(str, StrLit("("))) { str = StrSliceFrom(str, 1); }
 	if (StrExactEndsWith(str, StrLit(")"))) { str = StrSlice(str, 0, str.length-1); }
-	u64 commaIndex1 = 0;
+	uxx commaIndex1 = 0;
 	bool strContainsComma1 = StrTryExactFind(str, StrLit(","), &commaIndex1);
 	if (!strContainsComma1)
 	{
 		SetOptionalOutPntr(errorOut, Result_NotEnoughCommas);
 		return false;
 	}
-	u64 commaIndex2 = 0;
+	uxx commaIndex2 = 0;
 	bool strContainsComma2 = StrTryExactFind(StrSliceFrom(str, commaIndex1+1), StrLit(","), &commaIndex2);
 	commaIndex2 += commaIndex1+1;
 	if (!strContainsComma2)
@@ -102,14 +102,14 @@ PEXP bool TryParseV3(Str8 str, v3* valueOut, Result* errorOut)
 	NotNullStr(str);
 	if (StrExactStartsWith(str, StrLit("("))) { str = StrSliceFrom(str, 1); }
 	if (StrExactEndsWith(str, StrLit(")"))) { str = StrSlice(str, 0, str.length-1); }
-	u64 commaIndex1 = 0;
+	uxx commaIndex1 = 0;
 	bool strContainsComma1 = StrTryExactFind(str, StrLit(","), &commaIndex1);
 	if (!strContainsComma1)
 	{
 		SetOptionalOutPntr(errorOut, Result_NotEnoughCommas);
 		return false;
 	}
-	u64 commaIndex2 = 0;
+	uxx commaIndex2 = 0;
 	bool strContainsComma2 = StrTryExactFind(StrSliceFrom(str, commaIndex1+1), StrLit(","), &commaIndex2);
 	commaIndex2 += commaIndex1+1;
 	if (!strContainsComma2)
