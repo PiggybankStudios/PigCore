@@ -70,8 +70,11 @@ struct Str8Pair
 	PIG_CORE_INLINE bool IsNullStr(Str8 string) { return (string.length > 0 && string.pntr == nullptr); };
 	PIG_CORE_INLINE bool IsNullTerminated(Str8 string) { return (string.pntr != nullptr && string.chars[string.length] == '\0'); };
 	PIG_CORE_INLINE bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr);
+	Str8 TrimLeadingWhitespaceAndNewLines(Str8 target);
+	Str8 TrimTrailingWhitespaceAndNewLines(Str8 target);
 	Str8 TrimLeadingWhitespace(Str8 target);
 	Str8 TrimTrailingWhitespace(Str8 target);
+	PIG_CORE_INLINE Str8 TrimWhitespaceAndNewLines(Str8 target);
 	PIG_CORE_INLINE Str8 TrimWhitespace(Str8 target);
 	PIG_CORE_INLINE bool StrSlice(Str8 target, uxx startIndex, uxx endIndex);
 	PIG_CORE_INLINE bool StrSliceFrom(Str8 target, uxx startIndex);
@@ -197,6 +200,35 @@ PEXPI bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr)
 // +--------------------------------------------------------------+
 // |                 String Manipulation Helpers                  |
 // +--------------------------------------------------------------+
+PEXP Str8 TrimLeadingWhitespaceAndNewLines(Str8 target)
+{
+	NotNullStr(target);
+	Str8 result = target;
+	while (result.length > 0)
+	{
+		if (IsCharWhitespace(result.chars[0], true))
+		{
+			result.length--;
+			result.chars++;
+		}
+		else { break; }
+	}
+	return result;
+}
+PEXP Str8 TrimTrailingWhitespaceAndNewLines(Str8 target)
+{
+	NotNullStr(target);
+	Str8 result = target;
+	while (result.length > 0)
+	{
+		if (IsCharWhitespace(result.chars[result.length-1], true))
+		{
+			result.length--;
+		}
+		else { break; }
+	}
+	return result;
+}
 PEXP Str8 TrimLeadingWhitespace(Str8 target)
 {
 	NotNullStr(target);
@@ -227,6 +259,14 @@ PEXP Str8 TrimTrailingWhitespace(Str8 target)
 	return result;
 }
 
+PEXPI Str8 TrimWhitespaceAndNewLines(Str8 target)
+{
+	NotNullStr(target);
+	Str8 result = target;
+	result = TrimLeadingWhitespaceAndNewLines(result);
+	result = TrimTrailingWhitespaceAndNewLines(result);
+	return result;
+}
 PEXPI Str8 TrimWhitespace(Str8 target)
 {
 	NotNullStr(target);

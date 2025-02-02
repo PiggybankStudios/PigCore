@@ -565,6 +565,10 @@ PEXPI bool AreEqualObb3(obb3 left, obb3 right) { return (left.X == right.X && le
 
 #endif //  _STRUCT_RECTANGLES_H
 
+#if defined(_MISC_PARSING_H) && defined(_STRUCT_RECTANGLES_H)
+#include "cross/cross_parsing_and_rectangles.h"
+#endif
+
 #if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H) && defined(_STRUCT_RECTANGLES_H)
 #include "cross/cross_vectors_quaternion_matrices_and_rectangles.h"
 #endif

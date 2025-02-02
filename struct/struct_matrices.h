@@ -26,6 +26,9 @@ typedef HMM_Mat2 mat2;
 typedef HMM_Mat3 mat3;
 typedef HMM_Mat4 mat4;
 
+//NOTE: When accessing these using Elements 2D array, first index is column, second index is row
+//      matrix.Elements[Column][Row] = ...
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -259,6 +262,10 @@ PEXPI mat3 MakeScaleMat3(v3 vec3)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_MATRICES_H
+
+#if defined(_MISC_PARSING_H) && defined(_STRUCT_MATRICES_H)
+#include "cross/cross_parsing_and_matrices.h"
+#endif
 
 #if defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H)
 #include "cross/cross_quaternion_and_matrices.h"

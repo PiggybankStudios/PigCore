@@ -72,8 +72,8 @@ Date:   01\05\2025
 	PIG_CORE_INLINE r64 CbrtR64(r64 value);
 	PIG_CORE_INLINE r32 ModR32(r32 numerator, r32 denominator);
 	PIG_CORE_INLINE r64 ModR64(r64 numerator, r64 denominator);
-	PIG_CORE_INLINE bool IsInfiniteR32(r32 value);
-	PIG_CORE_INLINE bool IsInfiniteR64(r64 value);
+	PIG_CORE_INLINE bool IsInfiniteOrNanR32(r32 value);
+	PIG_CORE_INLINE bool IsInfiniteOrNanR64(r64 value);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -218,8 +218,8 @@ PEXPI r32 ModR32(r32 numerator, r32 denominator) { return fmodf(numerator, denom
 PEXPI r64 ModR64(r64 numerator, r64 denominator) { return fmod(numerator, denominator); }
 
 //TODO: math.h doesn't have isinff or isnanf?? But this site claims they do? https://linux.die.net/man/3/isinff
-PEXPI bool IsInfiniteR32(r32 value) { return (isinf(value) || isnan(value)); }
-PEXPI bool IsInfiniteR64(r64 value) { return (isinf(value) || isnan(value)); }
+PEXPI bool IsInfiniteOrNanR32(r32 value) { return (isinf(value) || isnan(value)); }
+PEXPI bool IsInfiniteOrNanR64(r64 value) { return (isinf(value) || isnan(value)); }
 
 #endif //PIG_CORE_IMPLEMENTATION
 

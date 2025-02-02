@@ -77,6 +77,7 @@ Arena* stdHeap = nullptr;
 // +--------------------------------------------------------------+
 // |                      tests Source Files                      |
 // +--------------------------------------------------------------+
+#include "tests/tests_parsing.c"
 #include "tests/tests_sokol.c"
 #include "tests/tests_box2d.c"
 #include "tests/tests_vr.c"
@@ -249,6 +250,8 @@ int main(int argc, char* argv[])
 	#if BUILD_WITH_OPENVR
 	if (!InitVrTests()) { return 1; }
 	#endif
+	
+	TestParsingFunctions();
 	
 	// +==============================+
 	// |         Arena Tests          |
@@ -656,7 +659,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |     Simple Parsers Tests     |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		Str8 testFileContents = OsReadTextFileScratch(FilePathLit("test.txt"));
 		

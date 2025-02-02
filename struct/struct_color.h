@@ -61,6 +61,10 @@ PEXPI Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
 #include "cross/cross_color_and_vectors.h"
 #endif
 
+#if defined(_MISC_PARSING_H) && defined(_STRUCT_COLOR_H)
+#include "cross/cross_parsing_and_color.h"
+#endif
+
 #if defined(_STRUCT_COLOR_H) && defined(RAYLIB_H)
 #include "cross/cross_color_and_raylib.h"
 #endif

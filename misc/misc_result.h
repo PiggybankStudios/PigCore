@@ -33,6 +33,11 @@ enum Result
 	Result_Unknown, //TODO: This name conflicts with UNKNOWN_STR macro thats returned from the GetResultStr function!
 	Result_Finished,
 	
+	Result_InvalidCharacter,
+	Result_InvalidUtf8,
+	Result_InvalidType,
+	Result_TooShort,
+	Result_TooLong,
 	Result_EmptyPath,
 	Result_ExePathTooLong,
 	Result_FailedToAllocateMemory,
@@ -40,6 +45,19 @@ enum Result
 	Result_ParsingFailure,
 	Result_FailedToReadFile,
 	Result_SokolError,
+	Result_Underflow,
+	Result_Overflow,
+	Result_NoNumbers,
+	Result_StringOverflow,
+	Result_InfinityOrNan,
+	Result_FloatParseFailure,
+	Result_UnknownString,
+	Result_NotEnoughCommas,
+	Result_TooManyCommas,
+	Result_WrongNumCharacters,
+	Result_Nullptr,
+	Result_MismatchedParenthesis,
+	Result_CharactersAfterParenthesis,
 	
 	Result_Count,
 };
@@ -56,6 +74,11 @@ PEXP const char* GetResultStr(Result result)
 		case Result_Failure: return "Failure";
 		case Result_Unknown: return "Unknown";
 		case Result_Finished: return "Finished";
+		case Result_InvalidCharacter: return "InvalidCharacter";
+		case Result_InvalidUtf8: return "InvalidUtf8";
+		case Result_InvalidType: return "InvalidType";
+		case Result_TooShort: return "TooShort";
+		case Result_TooLong: return "TooLong";
 		case Result_EmptyPath: return "EmptyPath";
 		case Result_ExePathTooLong: return "ExePathTooLong";
 		case Result_FailedToAllocateMemory: return "FailedToAllocateMemory";
@@ -63,6 +86,19 @@ PEXP const char* GetResultStr(Result result)
 		case Result_ParsingFailure: return "ParsingFailure";
 		case Result_FailedToReadFile: return "FailedToReadFile";
 		case Result_SokolError: return "SokolError";
+		case Result_Underflow: return "Underflow";
+		case Result_Overflow: return "Overflow";
+		case Result_NoNumbers: return "NoNumbers";
+		case Result_StringOverflow: return "StringOverflow";
+		case Result_InfinityOrNan: return "InfinityOrNan";
+		case Result_FloatParseFailure: return "FloatParseFailure";
+		case Result_UnknownString: return "UnknownString";
+		case Result_NotEnoughCommas: return "NotEnoughCommas";
+		case Result_TooManyCommas: return "TooManyCommas";
+		case Result_WrongNumCharacters: return "WrongNumCharacters";
+		case Result_Nullptr: return "Nullptr";
+		case Result_MismatchedParenthesis: return "MismatchedParenthesis";
+		case Result_CharactersAfterParenthesis: return "CharactersAfterParenthesis";
 		default: return UNKNOWN_STR;
 	}
 }

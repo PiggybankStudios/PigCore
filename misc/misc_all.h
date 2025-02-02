@@ -29,7 +29,7 @@ Date:   01\05\2025
 
 #include "std/std_includes.h" //required by misc_printing.h
 #include "struct/struct_string.h" //required by misc_printing.h
-#include "std/std_printf.h" //required by misc_printing.h
+#include "std/std_printf.h" //required by misc_printing.h and misc_parsing.h
 #include "mem/mem_arena.h" //required by misc_printing.h
 
 #include "misc/misc_simple_parsers.h"
@@ -38,7 +38,10 @@ Date:   01\05\2025
 #include "struct/struct_vectors.h" //required by misc_noise.h
 
 #include "misc/misc_noise.h"
-
 #include "misc/misc_zip.h"
+
+#include "base/base_char.h" //required by misc_parsing.h
+
+#include "misc/misc_parsing.h"
 
 #endif //  _MISC_ALL_H

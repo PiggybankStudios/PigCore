@@ -1260,3 +1260,7 @@ PEXPI i32 Vec3iAmountInDir(v3i vector, Dir3 direction)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_DIRECTIONS_H
+
+#if defined(_MISC_PARSING_H) && defined(_STRUCT_DIRECTIONS_H)
+#include "cross/cross_parsing_and_directions.h"
+#endif

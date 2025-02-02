@@ -43,7 +43,7 @@ Description:
 
 PEXPI r32 AngleFixR32(r32 angle)
 {
-	if (IsInfiniteR32(angle)) { return angle; }
+	if (IsInfiniteOrNanR32(angle)) { return angle; }
 	r32 result = angle;
 	if (result >= TwoPi32) { result = ModR32(result, TwoPi32); }
 	if (result < 0) { result = TwoPi32 - ModR32(-result, TwoPi32); }
@@ -51,7 +51,7 @@ PEXPI r32 AngleFixR32(r32 angle)
 }
 PEXPI r64 AngleFixR64(r64 angle)
 {
-	if (IsInfiniteR64(angle)) { return angle; }
+	if (IsInfiniteOrNanR64(angle)) { return angle; }
 	r64 result = angle;
 	if (result >= TwoPi64) { result = ModR64(result, TwoPi64); }
 	if (result < 0) { result = TwoPi64 - ModR64(-result, TwoPi64); }
