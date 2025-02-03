@@ -39,6 +39,7 @@ Description:
 #include "struct/struct_quaternion.h"
 #include "struct/struct_rectangles.h"
 #include "struct/struct_matrices.h"
+#include "struct/struct_lines.h"
 #include "struct/struct_circles.h"
 #include "struct/struct_faces.h"
 

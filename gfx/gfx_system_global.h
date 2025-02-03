@@ -79,6 +79,7 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 
 #define BindShader(shaderPntr)                        BindSystemShader(&gfx, (shaderPntr))
 #define BindVertBuffer(bufferPntr)                    BindSystemVertBuffer(&gfx, (bufferPntr))
+#define BindTextureAtIndex(texturePntr, textureIndex) BindSystemTextureAtIndex(&gfx, (texturePntr), (textureIndex))
 #define BindTexture(texturePntr)                      BindSystemTexture(&gfx, (texturePntr))
 
 #define SetProjectionMat(matrix)                      SetSystemProjectionMat(&gfx, (matrix))

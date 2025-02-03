@@ -37,7 +37,7 @@ struct GfxSystemState
 	bool cullingEnabled;
 	
 	Shader* shader;
-	Texture* texture;
+	Texture* textures[MAX_NUM_SHADER_IMAGES];
 	VertBuffer* vertBuffer;
 	
 	//This gets cleared whenever something that would need a different pipeline is changed
@@ -88,6 +88,7 @@ struct GfxSystem
 	PIG_CORE_INLINE void DrawSystemVertices(GfxSystem* system);
 	PIG_CORE_INLINE void BindSystemShader(GfxSystem* system, Shader* shader);
 	PIG_CORE_INLINE void BindSystemVertBuffer(GfxSystem* system, VertBuffer* buffer);
+	PIG_CORE_INLINE void BindSystemTextureAtIndex(GfxSystem* system, Texture* texture, uxx textureIndex);
 	PIG_CORE_INLINE void BindSystemTexture(GfxSystem* system, Texture* texture);
 	PIG_CORE_INLINE void SetSystemProjectionMat(GfxSystem* system, mat4 matrix);
 	PIG_CORE_INLINE void SetSystemViewMat(GfxSystem* system, mat4 matrix);
@@ -275,10 +276,12 @@ PEXPI void BindSystemShader(GfxSystem* system, Shader* shader)
 			SetShaderWorldMat(shader, system->state.worldMat);
 			SetShaderTintColorRaw(shader, system->state.tintColor);
 			SetShaderSourceRecRaw(shader, system->state.sourceRec);
-			if (system->state.texture != nullptr)
+			for (uxx tIndex = 0; tIndex < MAX_NUM_SHADER_IMAGES; tIndex++)
 			{
-				BindTextureAtIndex(&system->bindings, shader, system->state.texture, 0, 0);
-				system->bindingsChanged = true;
+				if (system->state.textures[tIndex] != nullptr)
+				{
+					BindTextureAtIndex(&system->bindings, shader, system->state.textures[tIndex], tIndex, tIndex);
+				}
 			}
 			for (uxx bIndex = 0; bIndex < MAX_NUM_SHADER_UNIFORM_BLOCKS; bIndex++)
 			{
@@ -287,6 +290,7 @@ PEXPI void BindSystemShader(GfxSystem* system, Shader* shader)
 					shader->uniformBlocks[bIndex].valueChanged = true;
 				}
 			}
+			system->bindingsChanged = true;
 		}
 		system->state.shader = shader;
 		system->uniformsChanged = true;
@@ -305,19 +309,24 @@ PEXPI void BindSystemVertBuffer(GfxSystem* system, VertBuffer* buffer)
 		system->state.pipeline = nullptr; //TODO: We don't always need to invalidate the pipeline. We should probably only do this if the attributes are different between current and new VertBuffer!
 	}
 }
-PEXPI void BindSystemTexture(GfxSystem* system, Texture* texture)
+PEXPI void BindSystemTextureAtIndex(GfxSystem* system, Texture* texture, uxx textureIndex)
 {
 	NotNull(system);
-	if (system->state.texture != texture)
+	Assert(textureIndex < MAX_NUM_SHADER_IMAGES);
+	if (system->state.textures[textureIndex] != texture)
 	{
 		if (system->state.shader != nullptr)
 		{
-			if (texture != nullptr) { BindTextureAtIndex(&system->bindings, system->state.shader, texture, 0, 0); }
-			else { system->bindings.images[0].id = SG_INVALID_ID; system->bindings.samplers[0].id = SG_INVALID_ID; }
+			if (texture != nullptr) { BindTextureAtIndex(&system->bindings, system->state.shader, texture, textureIndex, textureIndex); }
+			else { system->bindings.images[textureIndex].id = SG_INVALID_ID; system->bindings.samplers[textureIndex].id = SG_INVALID_ID; }
 			system->bindingsChanged = true;
 		}
-		system->state.texture = texture;
+		system->state.textures[textureIndex] = texture;
 	}
+}
+PEXPI void BindSystemTexture(GfxSystem* system, Texture* texture)
+{
+	BindSystemTextureAtIndex(system, texture, 0);
 }
 
 // +--------------------------------------------------------------+
