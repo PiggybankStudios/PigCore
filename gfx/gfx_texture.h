@@ -175,7 +175,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	imageDesc.num_mipmaps = 1; //TODO: Will change once we generate mipmaps
 	imageDesc.pixel_format = IsFlagSet(flags, TextureFlag_IsHdr)
 		? (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R32F : SG_PIXELFORMAT_RGBA32F)
-		: (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R8 : SG_PIXELFORMAT_BGRA8);
+		: (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R8 : SG_PIXELFORMAT_RGBA8);
 	imageDesc.data.subimage[0][0] = (sg_range){ pixelsPntr, result.totalSize };
 	Str8 nameNt = AllocStrAndCopy(scratch, name.length, name.chars, true); NotNull(nameNt.chars); //allocate to ensure null-term char
 	imageDesc.label = nameNt.chars;

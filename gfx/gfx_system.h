@@ -134,6 +134,14 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	ClearPointer(systemOut);
 	systemOut->arena = arena;
 	InitVarArray(GfxPipeline, &systemOut->pipelines, arena);
+	systemOut->state.depthTestEnabled = true;
+	systemOut->state.depthWriteEnabled = true;
+	systemOut->state.cullingEnabled = true;
+	systemOut->state.projectionMat = Mat4_Identity;
+	systemOut->state.viewMat = Mat4_Identity;
+	systemOut->state.worldMat = Mat4_Identity;
+	systemOut->state.tintColor = NewV4r(1.0f, 1.0f, 1.0f, 1.0f);
+	systemOut->state.sourceRec = NewV4r(0.0f, 0.0f, 1.0f, 1.0f);
 }
 
 PEXPI GfxPipeline* FindSystemPipelineWithOptions(GfxSystem* system, const GfxPipelineOptions* options)
@@ -250,18 +258,22 @@ PEXPI void BindSystemShader(GfxSystem* system, Shader* shader)
 	{
 		if (shader != nullptr)
 		{
+			SetShaderProjectionMat(shader, system->state.projectionMat);
+			SetShaderViewMat(shader, system->state.viewMat);
+			SetShaderWorldMat(shader, system->state.worldMat);
+			SetShaderTintColorRaw(shader, system->state.tintColor);
+			SetShaderSourceRecRaw(shader, system->state.sourceRec);
+			if (system->state.texture != nullptr)
+			{
+				BindTextureAtIndex(&system->bindings, shader, system->state.texture, 0, 0);
+				system->bindingsChanged = true;
+			}
 			for (uxx bIndex = 0; bIndex < MAX_NUM_SHADER_UNIFORM_BLOCKS; bIndex++)
 			{
 				if (shader->uniformBlocks[bIndex].value.length > 0)
 				{
 					shader->uniformBlocks[bIndex].valueChanged = true;
 				}
-			}
-			
-			if (system->state.texture != nullptr)
-			{
-				BindTextureAtIndex(&system->bindings, shader, system->state.texture, 0, 0);
-				system->bindingsChanged = true;
 			}
 		}
 		system->state.shader = shader;
