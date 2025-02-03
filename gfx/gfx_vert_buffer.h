@@ -175,11 +175,12 @@ PEXPI VertBuffer InitVertBuffer2D(Arena* arena, Str8 name, VertBufferUsage usage
 }
 PEXPI VertBuffer InitVertBuffer3D(Arena* arena, Str8 name, VertBufferUsage usage, uxx numVertices, const Vertex3D* verticesPntr, bool makeCopy)
 {
-	_Static_assert(sizeof(Vertex3D) == sizeof(r32)*9);
-	VertAttribute attributes[3] = {
+	_Static_assert(sizeof(Vertex3D) == sizeof(r32)*12);
+	VertAttribute attributes[4] = {
 		{ .type = VertAttributeType_Position, .size = sizeof(r32)*3, .offset = sizeof(r32)*0 },
-		{ .type = VertAttributeType_TexCoord, .size = sizeof(r32)*2, .offset = sizeof(r32)*3 },
-		{ .type = VertAttributeType_Color,    .size = sizeof(r32)*4, .offset = sizeof(r32)*5 },
+		{ .type = VertAttributeType_Normal,   .size = sizeof(r32)*3, .offset = sizeof(r32)*3 },
+		{ .type = VertAttributeType_TexCoord, .size = sizeof(r32)*2, .offset = sizeof(r32)*6 },
+		{ .type = VertAttributeType_Color,    .size = sizeof(r32)*4, .offset = sizeof(r32)*8 },
 	};
 	return InitVertBufferEx(arena, name, usage, numVertices * sizeof(Vertex3D), verticesPntr, ArrayCount(attributes), &attributes[0], makeCopy);
 }

@@ -180,6 +180,18 @@ PEXP void FlushSystemPipelineGen(GfxSystem* system)
 		NotNull(system->state.pipeline);
 		sg_apply_pipeline(system->state.pipeline->handle);
 		IncrementUXX(system->numPipelineChanges);
+		system->bindingsChanged = true;
+		system->uniformsChanged = true;
+		if (system->state.shader != nullptr)
+		{
+			for (uxx bIndex = 0; bIndex < MAX_NUM_SHADER_UNIFORM_BLOCKS; bIndex++)
+			{
+				if (system->state.shader->uniformBlocks[bIndex].value.length > 0)
+				{
+					system->state.shader->uniformBlocks[bIndex].valueChanged = true;
+				}
+			}
+		}
 	}
 }
 

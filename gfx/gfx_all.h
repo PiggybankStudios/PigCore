@@ -13,7 +13,11 @@ Date:   01\19\2025
 
 #include "gfx/gfx_vertices.h"
 
-#include "mem/mem_arena.h" //required by gfx_shader.h, gfx_vert_buffer.h and gfx_pipeline.h
+#include "struct/struct_circles.h" //required by gfx_mesh_generation.h
+#include "mem/mem_arena.h" //required by gfx_mesh_generation.h, gfx_shader.h, gfx_vert_buffer.h and gfx_pipeline.h
+
+#include "gfx/gfx_mesh_generation.h"
+
 #include "struct/struct_string.h" //required by gfx_shader.h, gfx_vert_buffer.h and gfx_pipeline.h
 #include "misc/misc_result.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_image_loading.h and gfx_pipeline.h
 

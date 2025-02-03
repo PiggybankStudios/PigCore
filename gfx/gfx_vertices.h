@@ -88,28 +88,30 @@ _Static_assert(sizeof(Vertex2D) == sizeof(r32)*8);
 typedef union Vertex3D Vertex3D;
 union Vertex3D
 {
-	r32 values[9];
+	r32 values[12];
 	struct
 	{
 		v3 position;
+		v3 normal;
 		v2 texCoord;
 		v4r color;
 	};
 	struct
 	{
 		r32 X, Y, Z;
+		r32 nX, nY, nZ;
 		r32 tX, tY;
 		r32 R, G, B, A;
 	};
 };
-_Static_assert(sizeof(Vertex3D) == sizeof(r32)*9);
+_Static_assert(sizeof(Vertex3D) == sizeof(r32)*12);
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE Vertex2D NewVertex2D(v2 position, v2 texCoord, v4 color);
-	PIG_CORE_INLINE Vertex3D NewVertex3D(v3 position, v2 texCoord, v4 color);
+	PIG_CORE_INLINE Vertex3D NewVertex3D(v3 position, v3 normal, v2 texCoord, v4 color);
 #endif
 
 #define Vertex2D_Size       sizeof(Vertex2D)
@@ -119,8 +121,8 @@ _Static_assert(sizeof(Vertex3D) == sizeof(r32)*9);
 
 #define Vertex3D_Size       sizeof(Vertex3D)
 #define Vertex3D_NumFloats  (sizeof(Vertex3D)/sizeof(r32))
-#define Vertex3D_Zero       NewVertex3D(V3_Zero_Const, V2_Zero_Const, V4_Zero_Const)
-#define Vertex3D_Zero_Const { .position = V3_Zero_Const, .texCoord = V2_Zero_Const, .color = V4_Zero_Const }
+#define Vertex3D_Zero       NewVertex3D(V3_Zero_Const, V3_Zero_Const, V2_Zero_Const, V4_Zero_Const)
+#define Vertex3D_Zero_Const { .position = V3_Zero_Const, .normal = V3_Zero_Const, .texCoord = V2_Zero_Const, .color = V4_Zero_Const }
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -136,10 +138,11 @@ PEXPI Vertex2D NewVertex2D(v2 position, v2 texCoord, v4 color)
 	return result;
 }
 
-PEXPI Vertex3D NewVertex3D(v3 position, v2 texCoord, v4 color)
+PEXPI Vertex3D NewVertex3D(v3 position, v3 normal, v2 texCoord, v4 color)
 {
 	Vertex3D result;
 	result.position = position;
+	result.normal = normal;
 	result.texCoord = texCoord;
 	result.color = ToV4rFrom4(color);
 	return result;
