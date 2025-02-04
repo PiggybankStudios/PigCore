@@ -1,0 +1,2 @@
+# input Folder
+This folder contains files related to monitoring and processing input from the keyboard, mouse, controllers, touch screens, VR devices, and any other kind of input hardware we want to support.

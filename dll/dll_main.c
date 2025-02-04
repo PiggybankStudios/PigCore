@@ -30,6 +30,9 @@ Description:
 #ifndef PIG_CORE_DLL_INCLUDE_STRUCT
 #define PIG_CORE_DLL_INCLUDE_STRUCT 1
 #endif
+#ifndef PIG_CORE_DLL_INCLUDE_INPUT
+#define PIG_CORE_DLL_INCLUDE_INPUT 1
+#endif
 #ifndef PIG_CORE_DLL_INCLUDE_GFX
 #define PIG_CORE_DLL_INCLUDE_GFX 1
 #endif
@@ -74,6 +77,10 @@ Description:
 
 #if PIG_CORE_DLL_INCLUDE_STRUCT
 #include "struct/struct_all.h"
+#endif
+
+#if PIG_CORE_DLL_INCLUDE_INPUT
+#include "struct/input_all.h"
 #endif
 
 #if PIG_CORE_DLL_INCLUDE_GFX
