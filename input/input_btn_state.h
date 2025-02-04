@@ -33,7 +33,7 @@ struct BtnState
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void InitBtnState(BtnState* state, bool startedDown);
 	PIG_CORE_INLINE void RefreshBtnState(BtnState* state);
-	PIG_CORE_INLINE bool UpdateBtnState(BtnState* state, u64 currentTime, bool pressed);
+	PIG_CORE_INLINE bool UpdateBtnState(BtnState* state, u64 currentTime, bool isDown);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -58,15 +58,15 @@ PEXPI void RefreshBtnState(BtnState* state)
 	state->wasReleased = false;
 }
 
-PEXPI bool UpdateBtnState(BtnState* state, u64 currentTime, bool pressed)
+PEXPI bool UpdateBtnState(BtnState* state, u64 currentTime, bool isDown)
 {
 	NotNull(state);
-	if (state->isDown != pressed)
+	if (state->isDown != isDown)
 	{
 		IncrementU8(state->transitionCount);
 		state->lastTransitionTime = currentTime;
-		state->isDown = pressed;
-		if (pressed) { state->wasPressed = true; }
+		state->isDown = isDown;
+		if (isDown) { state->wasPressed = true; }
 		else { state->wasReleased = true; }
 		return true;
 	}

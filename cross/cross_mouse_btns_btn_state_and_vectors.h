@@ -12,9 +12,11 @@ struct MouseState
 {
 	v2 position;
 	v2 prevPosition;
+	v2 lockedPosDelta;
 	u64 lastMoveTime;
-	bool isMouseOverWindow;
-	bool wasMouseOverWindow;
+	bool isOverWindow;
+	bool wasOverWindow;
+	bool isLocked;
 	v2 scrollValue;
 	v2 scrollDelta;
 	BtnState btns[MouseBtn_Count];
@@ -26,10 +28,11 @@ struct MouseState
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void InitMouseState(MouseState* mouse);
-	PIG_CORE_INLINE void RefreshMouseState(MouseState* mouse);
+	PIG_CORE_INLINE void RefreshMouseState(MouseState* mouse, bool isMouseLocked, v2i screenSize);
 	PIG_CORE_INLINE void UpdateMousePosition(MouseState* mouse, u64 currentTime, v2 newPosition);
+	PIG_CORE_INLINE void UpdateMouseLockedDelta(MouseState* mouse, u64 currentTime, v2 lockedPosDelta);
 	PIG_CORE_INLINE void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta);
-	PIG_CORE_INLINE void UpdateMouseOverWindow(MouseState* mouse, u64 currentTime, bool isMouseOverWindow);
+	PIG_CORE_INLINE void UpdateMouseOverWindow(MouseState* mouse, u64 currentTime, bool isOverWindow);
 	PIG_CORE_INLINE void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool pressed);
 	PIG_CORE_INLINE bool IsMouseBtnDown(MouseState* mouse, MouseBtn btn);
 	PIG_CORE_INLINE bool IsMouseBtnUp(MouseState* mouse, MouseBtn btn);
@@ -54,12 +57,15 @@ PEXPI void InitMouseState(MouseState* mouse)
 	}
 }
 
-PEXPI void RefreshMouseState(MouseState* mouse)
+PEXPI void RefreshMouseState(MouseState* mouse, bool isMouseLocked, v2 lockedMouseAbsolutePosition)
 {
 	NotNull(mouse);
+	mouse->isLocked = isMouseLocked;
+	if (isMouseLocked) { mouse->position = lockedMouseAbsolutePosition; }
 	mouse->prevPosition = mouse->position;
+	mouse->lockedPosDelta = V2_Zero;
 	mouse->scrollDelta = V2_Zero;
-	mouse->wasMouseOverWindow = mouse->isMouseOverWindow;
+	mouse->wasOverWindow = mouse->isOverWindow;
 	for (uxx btnIndex = 0; btnIndex < MouseBtn_Count; btnIndex++)
 	{
 		RefreshBtnState(&mouse->btns[btnIndex]);
@@ -75,6 +81,15 @@ PEXPI void UpdateMousePosition(MouseState* mouse, u64 currentTime, v2 newPositio
 		mouse->lastMoveTime = currentTime;
 	}
 }
+PEXPI void UpdateMouseLockedDelta(MouseState* mouse, u64 currentTime, v2 lockedPosDelta)
+{
+	NotNull(mouse);
+	if (!AreEqualV2(lockedPosDelta, V2_Zero))
+	{
+		mouse->lockedPosDelta = Add(mouse->lockedPosDelta, lockedPosDelta);
+		mouse->lastMoveTime = currentTime;
+	}
+}
 
 PEXPI void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta)
 {
@@ -86,12 +101,12 @@ PEXPI void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta)
 	}
 }
 
-PEXPI void UpdateMouseOverWindow(MouseState* mouse, u64 currentTime, bool isMouseOverWindow)
+PEXPI void UpdateMouseOverWindow(MouseState* mouse, u64 currentTime, bool isOverWindow)
 {
 	NotNull(mouse);
-	if (mouse->isMouseOverWindow != isMouseOverWindow)
+	if (mouse->isOverWindow != isOverWindow)
 	{
-		mouse->isMouseOverWindow = isMouseOverWindow;
+		mouse->isOverWindow = isOverWindow;
 	}
 }
 
@@ -121,13 +136,13 @@ PEXPI bool IsMouseBtnPressed(MouseState* mouse, MouseBtn btn)
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
-	return !mouse->btns[btn].wasPressed;
+	return mouse->btns[btn].wasPressed;
 }
 PEXPI bool IsMouseBtnReleased(MouseState* mouse, MouseBtn btn)
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
-	return !mouse->btns[btn].wasReleased;
+	return mouse->btns[btn].wasReleased;
 }
 PEXPI bool IsMouseBtnPressedRepeating(MouseState* mouse, u64 prevTime, u64 currentTime, MouseBtn btn, u64 repeatDelay, u64 repeatPeriod)
 {

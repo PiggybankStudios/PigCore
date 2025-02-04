@@ -75,13 +75,13 @@ PEXPI bool IsKeyboardKeyPressed(KeyboardState* keyboard, Key key)
 {
 	NotNull(keyboard);
 	Assert(key < Key_Count);
-	return !keyboard->keys[key].wasPressed;
+	return keyboard->keys[key].wasPressed;
 }
 PEXPI bool IsKeyboardKeyReleased(KeyboardState* keyboard, Key key)
 {
 	NotNull(keyboard);
 	Assert(key < Key_Count);
-	return !keyboard->keys[key].wasReleased;
+	return keyboard->keys[key].wasReleased;
 }
 PEXPI bool IsKeyboardKeyPressedRepeating(KeyboardState* keyboard, u64 prevTime, u64 currentTime, Key key, u64 repeatDelay, u64 repeatPeriod)
 {

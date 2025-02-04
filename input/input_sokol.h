@@ -24,7 +24,7 @@ Date:   02\03\2025
 	Key GetKeyFromSokolKeycodeEx(sapp_keycode keycode, u8 alternateIndex);
 	PIG_CORE_INLINE Key GetKeyFromSokolKeycode(sapp_keycode keycode);
 	MouseBtn GetMouseBtnFromSokolMouseButton(sapp_mousebutton mouseButton);
-	bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, KeyboardState* keyboard, MouseState* mouse);
+	bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked);
 #endif
 
 // +--------------------------------------------------------------+
@@ -216,7 +216,7 @@ PEXP MouseBtn GetMouseBtnFromSokolMouseButton(sapp_mousebutton mouseButton)
 	}
 }
 
-PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, KeyboardState* keyboard, MouseState* mouse)
+PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked)
 {
 	NotNull(event);
 	NotNull(keyboard);
@@ -252,7 +252,14 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 		
 		case SAPP_EVENTTYPE_MOUSE_MOVE:
 		{
-			UpdateMousePosition(mouse, currentTime, NewV2(event->mouse_x, event->mouse_y));
+			if (isMouseLocked)
+			{
+				UpdateMouseLockedDelta(mouse, currentTime, NewV2(event->mouse_dx, event->mouse_dy));
+			}
+			else
+			{
+				UpdateMousePosition(mouse, currentTime, NewV2(event->mouse_x, event->mouse_y));
+			}
 			handled = true;
 		} break;
 		
