@@ -18,7 +18,7 @@ Description:
 #include "struct/struct_string.h"
 #include "misc/misc_result.h"
 #include "gfx/gfx_vertices.h"
-#include "gfx/gfx_sokol_include.h"
+#include "misc/misc_sokol_gfx_include.h"
 
 #if BUILD_WITH_SOKOL
 

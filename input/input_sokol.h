@@ -13,7 +13,7 @@ Date:   02\03\2025
 #include "input/input_keys.h"
 #include "input/input_mouse_btns.h"
 #include "input/input_controller_btns.h"
-#include "input/input_sokol_include.h"
+#include "misc/misc_sokol_app_include.h"
 
 #if BUILD_WITH_SOKOL
 
@@ -23,6 +23,7 @@ Date:   02\03\2025
 #if !PIG_CORE_IMPLEMENTATION
 	Key GetKeyFromSokolKeycodeEx(sapp_keycode keycode, u8 alternateIndex);
 	PIG_CORE_INLINE Key GetKeyFromSokolKeycode(sapp_keycode keycode);
+	Key GetNonAltKeyForKey(Key key, u8 primaryIndex);
 	MouseBtn GetMouseBtnFromSokolMouseButton(sapp_mousebutton mouseButton);
 	bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked);
 #endif
@@ -205,6 +206,29 @@ PEXPI Key GetKeyFromSokolKeycode(sapp_keycode keycode)
 	return GetKeyFromSokolKeycodeEx(keycode, 0);
 }
 
+PEXP Key GetNonAltKeyForKey(Key key, u8 primaryIndex)
+{
+	switch (key)
+	{
+		case Key_Enter: return (primaryIndex == 0) ? Key_PrimaryEnter : ((primaryIndex == 1) ? Key_NumpadEnter : Key_None);
+		case Key_0: return (primaryIndex == 0) ? Key_Digit0 : ((primaryIndex == 1) ? Key_Numpad0 : Key_None);
+		case Key_1: return (primaryIndex == 0) ? Key_Digit1 : ((primaryIndex == 1) ? Key_Numpad1 : Key_None);
+		case Key_2: return (primaryIndex == 0) ? Key_Digit2 : ((primaryIndex == 1) ? Key_Numpad2 : Key_None);
+		case Key_3: return (primaryIndex == 0) ? Key_Digit3 : ((primaryIndex == 1) ? Key_Numpad3 : Key_None);
+		case Key_4: return (primaryIndex == 0) ? Key_Digit4 : ((primaryIndex == 1) ? Key_Numpad4 : Key_None);
+		case Key_5: return (primaryIndex == 0) ? Key_Digit5 : ((primaryIndex == 1) ? Key_Numpad5 : Key_None);
+		case Key_6: return (primaryIndex == 0) ? Key_Digit6 : ((primaryIndex == 1) ? Key_Numpad6 : Key_None);
+		case Key_7: return (primaryIndex == 0) ? Key_Digit7 : ((primaryIndex == 1) ? Key_Numpad7 : Key_None);
+		case Key_8: return (primaryIndex == 0) ? Key_Digit8 : ((primaryIndex == 1) ? Key_Numpad8 : Key_None);
+		case Key_9: return (primaryIndex == 0) ? Key_Digit9 : ((primaryIndex == 1) ? Key_Numpad9 : Key_None);
+		case Key_Shift: return (primaryIndex == 0) ? Key_LeftShift : ((primaryIndex == 1) ? Key_RightShift : Key_None); 
+		case Key_Control: return (primaryIndex == 0) ? Key_LeftControl : ((primaryIndex == 1) ? Key_RightControl : Key_None); 
+		case Key_Alt: return (primaryIndex == 0) ? Key_LeftAlt : ((primaryIndex == 1) ? Key_RightAlt : Key_None); 
+		case Key_Command: return (primaryIndex == 0) ? Key_LeftCommand : ((primaryIndex == 1) ? Key_RightCommand : Key_None); 
+		default: return Key_None;
+	}
+}
+
 PEXP MouseBtn GetMouseBtnFromSokolMouseButton(sapp_mousebutton mouseButton)
 {
 	switch (mouseButton)
@@ -216,6 +240,7 @@ PEXP MouseBtn GetMouseBtnFromSokolMouseButton(sapp_mousebutton mouseButton)
 	}
 }
 
+// Returns true if the event is handled as a change to KeyboardState or MouseState
 PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked)
 {
 	NotNull(event);
@@ -228,11 +253,22 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 		case SAPP_EVENTTYPE_KEY_UP:
 		{
 			_Static_assert(MAX_ALT_KEY_MAPPINGS == 2);
-			//TODO: When two keycodes are mapped to one Key, we will get an early release when both are held down and then one is released!
-			Key key1 = GetKeyFromSokolKeycodeEx(event->key_code, 0);
-			Key key2 = GetKeyFromSokolKeycodeEx(event->key_code, 1);
-			if (key1 != Key_None) { UpdateKeyboardKey(keyboard, currentTime, key1, (event->type == SAPP_EVENTTYPE_KEY_DOWN)); }
-			if (key2 != Key_None) { UpdateKeyboardKey(keyboard, currentTime, key2, (event->type == SAPP_EVENTTYPE_KEY_DOWN)); }
+			bool isKeyDown = (event->type == SAPP_EVENTTYPE_KEY_DOWN);
+			Key primaryKey = GetKeyFromSokolKeycodeEx(event->key_code, 0);
+			Key altKey = GetKeyFromSokolKeycodeEx(event->key_code, 1);
+			if (primaryKey != Key_None) { UpdateKeyboardKey(keyboard, currentTime, primaryKey, isKeyDown); }
+			if (altKey != Key_None)
+			{
+				// When two keycodes are mapped to one Key, we have to avoid producing an early release event if both keys were
+				// held down at the same time and then only one key was released. The GetNonAltKeyForKey function helps us find
+				// any other keys that feed into this shared alt key and track them back to a Key enum value that is not shared
+				// and therefore holds the value for whether that other key is being held currently.
+				Key otherPrimaryKey = GetNonAltKeyForKey(altKey, 0);
+				if (otherPrimaryKey == primaryKey) { otherPrimaryKey = GetNonAltKeyForKey(altKey, 1); }
+				bool isOtherPrimaryKeyDown = false;
+				if (otherPrimaryKey != Key_None) { isOtherPrimaryKeyDown = keyboard->keys[otherPrimaryKey].isDown; }
+				UpdateKeyboardKey(keyboard, currentTime, altKey, isKeyDown || isOtherPrimaryKeyDown);
+			}
 			handled = true;
 		} break;
 		

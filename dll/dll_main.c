@@ -80,7 +80,7 @@ Description:
 #endif
 
 #if PIG_CORE_DLL_INCLUDE_INPUT
-#include "struct/input_all.h"
+#include "input/input_all.h"
 #endif
 
 #if PIG_CORE_DLL_INCLUDE_GFX

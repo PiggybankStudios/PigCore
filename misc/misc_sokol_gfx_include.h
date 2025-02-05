@@ -1,21 +1,20 @@
 /*
-File:   input_sokol_include.h
+File:   misc_sokol_gfx_include.h
 Author: Taylor Robbins
-Date:   02\03\2025
+Date:   01\28\2025
 Description:
-	** If sokol_app.h has not been included by the application before including
-	** something like input_sokol.h then this file serves as the include site
-	** for the HEADER ONLY version of sokol_app.h (i.e. we can only use types, not function calls)
+	** If sokol_gfx.h has not been included by the application before including
+	** something like gfx_shader.h then this file serves as the include site
 */
 
-#ifndef _INPUT_SOKOL_INCLUDE_H
-#define _INPUT_SOKOL_INCLUDE_H
+#ifndef _MISC_SOKOL_GFX_INCLUDE_H
+#define _MISC_SOKOL_GFX_INCLUDE_H
 
 #include "build_config.h"
 #include "base/base_defines_check.h"
 #include "base/base_assert.h"
 
-#if BUILD_WITH_SOKOL && !defined(SOKOL_APP_INCLUDED)
+#if BUILD_WITH_SOKOL && !defined(SOKOL_GFX_INCLUDED)
 
 #ifndef SOKOL_ASSERT
 #define SOKOL_ASSERT(condition) Assert(condition)
@@ -54,16 +53,18 @@ Description:
 	#endif
 #endif
 
-//NOTE: We are NOT defining SOKOL_APP_IMPL here!
-#if TARGET_IS_LINUX
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
+#if PIG_CORE_IMPLEMENTATION
+#define SOKOL_GFX_IMPL
 #endif
-#include "third_party/sokol/sokol_app.h"
-#if TARGET_IS_LINUX
+#if TARGET_IS_WASM
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels [-Wimplicit-fallthrough]
+#endif
+#include "third_party/sokol/sokol_gfx.h"
+#if TARGET_IS_WASM
 #pragma clang diagnostic pop
 #endif
 
 #endif //BUILD_WITH_SOKOL
 
-#endif //  _INPUT_SOKOL_INCLUDE_H
+#endif //  _MISC_SOKOL_GFX_INCLUDE_H

@@ -28,7 +28,7 @@ struct MouseState
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void InitMouseState(MouseState* mouse);
-	PIG_CORE_INLINE void RefreshMouseState(MouseState* mouse, bool isMouseLocked, v2i screenSize);
+	PIG_CORE_INLINE void RefreshMouseState(MouseState* mouse, bool isMouseLocked, v2 lockedMouseAbsolutePosition);
 	PIG_CORE_INLINE void UpdateMousePosition(MouseState* mouse, u64 currentTime, v2 newPosition);
 	PIG_CORE_INLINE void UpdateMouseLockedDelta(MouseState* mouse, u64 currentTime, v2 lockedPosDelta);
 	PIG_CORE_INLINE void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta);

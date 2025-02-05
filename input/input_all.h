@@ -20,7 +20,8 @@ Date:   02\03\2025
 
 #include "input/input_btn_state.h"
 
-#include "input/input_sokol_include.h"
+#include "misc/misc_sokol_app_include.h" //required by input_sokol.h
+
 #include "input/input_sokol.h"
 
 #endif //  _INPUT_ALL_H

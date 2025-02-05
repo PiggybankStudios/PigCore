@@ -20,8 +20,8 @@ Date:   01\19\2025
 
 #include "struct/struct_string.h" //required by gfx_shader.h, gfx_vert_buffer.h and gfx_pipeline.h
 #include "misc/misc_result.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_image_loading.h and gfx_pipeline.h
+#include "misc/misc_sokol_gfx_include.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_pipeline.h and gfx_system.h
 
-#include "gfx/gfx_sokol_include.h"
 #include "gfx/gfx_vert_buffer.h"
 
 #include "mem/mem_scratch.h" //required by gfx_texture.h, gfx_shader.h, gfx_image_loading.h and gfx_pipeline.h

@@ -17,7 +17,7 @@ Description:
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
 #include "misc/misc_result.h"
-#include "gfx/gfx_sokol_include.h"
+#include "misc/misc_sokol_gfx_include.h"
 #include "gfx/gfx_shader.h"
 #include "gfx/gfx_texture.h"
 #include "gfx/gfx_vert_buffer.h"
