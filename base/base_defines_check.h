@@ -63,8 +63,12 @@ Description:
 #define BUILD_WITH_BOX2D 0
 #endif
 
-#ifndef BUILD_WITH_SOKOL
-#define BUILD_WITH_SOKOL 0
+#ifndef BUILD_WITH_SOKOL_GFX
+#define BUILD_WITH_SOKOL_GFX 0
+#endif
+
+#ifndef BUILD_WITH_SOKOL_APP
+#define BUILD_WITH_SOKOL_APP 0
 #endif
 
 #ifndef BUILD_WITH_SDL

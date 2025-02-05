@@ -11,10 +11,10 @@ Description:
 
 #include "build_config.h"
 
-#ifdef BUILD_WITH_SOKOL
-#undef BUILD_WITH_SOKOL
+#ifdef BUILD_WITH_SOKOL_GFX
+#undef BUILD_WITH_SOKOL_GFX
 #endif
-#define BUILD_WITH_SOKOL 1
+#define BUILD_WITH_SOKOL_GFX 1
 #define PIG_CORE_IMPLEMENTATION 0
 #include "misc/misc_sokol_gfx_include.h"
 #include "struct/struct_vectors.h"

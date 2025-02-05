@@ -15,7 +15,7 @@ Date:   02\03\2025
 #include "input/input_controller_btns.h"
 #include "misc/misc_sokol_app_include.h"
 
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_APP
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -313,7 +313,7 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_SOKOL
+#endif //BUILD_WITH_SOKOL_APP
 
 #endif //  _INPUT_SOKOL_H
  

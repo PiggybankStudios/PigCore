@@ -22,7 +22,7 @@ Description:
 #include "gfx/gfx_texture.h"
 #include "gfx/gfx_vert_buffer.h"
 
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_GFX
 
 typedef struct GfxPipelineOptions GfxPipelineOptions;
 struct GfxPipelineOptions
@@ -31,6 +31,7 @@ struct GfxPipelineOptions
 	uxx vertexSize;
 	uxx numVertAttributes;
 	VertAttribute vertAttributes[MAX_NUM_VERT_ATTRIBUTES];
+	bool colorWriteEnabled;
 	bool depthWriteEnabled;
 	bool depthTestEnabled;
 	bool cullingEnabled;
@@ -148,7 +149,7 @@ PEXP GfxPipeline InitGfxPipeline(Arena* arena, Str8 name, const GfxPipelineOptio
 	pipelineDesc.stencil.enabled = false;
 	pipelineDesc.color_count = 1;
 	pipelineDesc.colors[0].pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
-	pipelineDesc.colors[0].write_mask = SG_COLORMASK_RGBA;
+	pipelineDesc.colors[0].write_mask = options->colorWriteEnabled ? SG_COLORMASK_RGBA : SG_COLORMASK_NONE;
 	//TODO: Add blend options
 	pipelineDesc.colors[0].blend.enabled = true;
 	pipelineDesc.colors[0].blend.src_factor_rgb = SG_BLENDFACTOR_ONE;
@@ -178,6 +179,6 @@ PEXP GfxPipeline InitGfxPipeline(Arena* arena, Str8 name, const GfxPipelineOptio
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_SOKOL
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_PIPELINE_H

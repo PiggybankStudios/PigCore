@@ -14,7 +14,7 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_assert.h"
 
-#if BUILD_WITH_SOKOL && !defined(SOKOL_GFX_INCLUDED)
+#if BUILD_WITH_SOKOL_GFX && !defined(SOKOL_GFX_INCLUDED)
 
 #ifndef SOKOL_ASSERT
 #define SOKOL_ASSERT(condition) Assert(condition)
@@ -65,6 +65,6 @@ Description:
 #pragma clang diagnostic pop
 #endif
 
-#endif //BUILD_WITH_SOKOL
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _MISC_SOKOL_GFX_INCLUDE_H

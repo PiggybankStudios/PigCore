@@ -7,7 +7,7 @@ Date:   01\30\2025
 #ifndef _CROSS_SHADER_AND_TEXTURE_H
 #define _CROSS_SHADER_AND_TEXTURE_H
 
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_GFX
 
 #if !PIG_CORE_IMPLEMENTATION
 	bool BindTextureAtIndex(sg_bindings* bindings, Shader* shader, Texture* texture, uxx imageIndex, uxx samplerIndex);
@@ -74,6 +74,6 @@ PEXPI bool BindTextureByName(sg_bindings* bindings, Shader* shader, Texture* tex
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_SOKOL
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _CROSS_SHADER_AND_TEXTURE_H

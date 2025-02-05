@@ -20,7 +20,7 @@ Description:
 #include "gfx/gfx_vertices.h"
 #include "misc/misc_sokol_gfx_include.h"
 
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_GFX
 
 #ifndef SOKOL_GFX_INCLUDED
 #error Somehow sokol_gfx.h was not included properly before gfx_shader.h!
@@ -490,7 +490,7 @@ PEXPI bool SetShaderUniformByNameV4(Shader* shader, Str8 uniformName, v4 vector)
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_SOKOL
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_SHADER_H
 

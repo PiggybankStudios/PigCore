@@ -57,7 +57,7 @@ With this file:
 #include "base/base_defines_check.h"
 #include "gfx/gfx_system.h"
 
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_GFX
 
 //TODO: Change __declspec stuff to work when compiling with Clang!
 #if !PIG_CORE_IMPLEMENTATION
@@ -68,28 +68,44 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 
 //NOTE: You should call InitGfxSystem(arena, &gfx) like normal, no implicit alias is made for this function or FreeGfxSystem
 
-#define FlushPipelineGen()                            FlushSystemPipelineGen(&gfx)
-#define FlushBindings()                               FlushSystemBindings(&gfx)
+#define FlushPipelineGen()  GfxSystem_FlushPipelineGen(&gfx)
+#define FlushBindings()     GfxSystem_FlushBindings(&gfx)
 
-#define BeginFrame(swapchain, clearColor, clearDepth) BeginSystemFrame(&gfx, (swapchain), (clearColor), (clearDepth))
-#define EndFrame()                                    EndSystemFrame(&gfx)
+#define BeginFrame(swapchain, clearColor, clearDepth) GfxSystem_BeginFrame(&gfx, (swapchain), (clearColor), (clearDepth))
+#define EndFrame()                                    GfxSystem_EndFrame(&gfx)
 
-#define DrawVerticesEx(startVertex, numVertices)      DrawSystemVerticesEx(&gfx, (startVertex), (numVertices))
-#define DrawVertices()                                DrawSystemVertices(&gfx)
+#define DrawVerticesEx(startVertex, numVertices)  GfxSystem_DrawVerticesEx(&gfx, (startVertex), (numVertices))
+#define DrawVertices()                            GfxSystem_DrawVertices(&gfx)
 
-#define BindShader(shaderPntr)                        BindSystemShader(&gfx, (shaderPntr))
-#define BindVertBuffer(bufferPntr)                    BindSystemVertBuffer(&gfx, (bufferPntr))
-#define BindTextureAtIndex(texturePntr, textureIndex) BindSystemTextureAtIndex(&gfx, (texturePntr), (textureIndex))
-#define BindTexture(texturePntr)                      BindSystemTexture(&gfx, (texturePntr))
+#define BindShader(shaderPntr)                        GfxSystem_BindShader(&gfx, (shaderPntr))
+#define BindVertBuffer(bufferPntr)                    GfxSystem_BindVertBuffer(&gfx, (bufferPntr))
+#define BindTextureAtIndex(texturePntr, textureIndex) GfxSystem_BindTextureAtIndex(&gfx, (texturePntr), (textureIndex))
+#define BindTexture(texturePntr)                      GfxSystem_BindTexture(&gfx, (texturePntr))
 
-#define SetProjectionMat(matrix)                      SetSystemProjectionMat(&gfx, (matrix))
-#define SetViewMat(matrix)                            SetSystemViewMat(&gfx, (matrix))
-#define SetWorldMat(matrix)                           SetSystemWorldMat(&gfx, (matrix))
-#define SetTintColorRaw(colorVec)                     SetSystemTintColorRaw(&gfx, (colorVec))
-#define SetTintColor(color)                           SetSystemTintColor(&gfx, (color))
-#define SetSourceRecRaw(rectangle)                    SetSystemSourceRecRaw(&gfx, (rectangle))
-#define SetSourceRec(rectangle)                       SetSystemSourceRec(&gfx, (rectangle))
+#define SetDepthTestEnabled(depthTestEnabled)    GfxSystem_SetDepthTestEnabled(&gfx, (depthTestEnabled))
+#define SetDepthWriteEnabled(depthWriteEnabled)  GfxSystem_SetDepthWriteEnabled(&gfx, (depthWriteEnabled))
+#define SetColorWriteEnabled(colorWriteEnabled)  GfxSystem_SetColorWriteEnabled(&gfx, (colorWriteEnabled))
+#define SetCullingEnabled(cullingEnabled)        GfxSystem_SetCullingEnabled(&gfx, (cullingEnabled))
 
-#endif //BUILD_WITH_SOKOL
+#define SetDepth(depth)  GfxSystem_SetDepth(&gfx, (depth))
+
+#define SetProjectionMat(matrix)    GfxSystem_SetProjectionMat(&gfx, (matrix))
+#define SetViewMat(matrix)          GfxSystem_SetViewMat(&gfx, (matrix))
+#define SetWorldMat(matrix)         GfxSystem_SetWorldMat(&gfx, (matrix))
+#define SetTintColorRaw(colorVec)   GfxSystem_SetTintColorRaw(&gfx, (colorVec))
+#define SetTintColor(color)         GfxSystem_SetTintColor(&gfx, (color))
+#define SetSourceRecRaw(rectangle)  GfxSystem_SetSourceRecRaw(&gfx, (rectangle))
+#define SetSourceRec(rectangle)     GfxSystem_SetSourceRec(&gfx, (rectangle))
+
+#define DrawTexturedRectangleEx(rectangle, color, texture, sourceRec) GfxSystem_DrawTexturedRectangleEx(&gfx, (rectangle), (color), (texture), (sourceRec))
+#define DrawTexturedRectangle(rectangle, color, texture)              GfxSystem_DrawTexturedRectangle(&gfx, (rectangle), (color), (texture))
+#define DrawRectangle(rectangle, color)                               GfxSystem_DrawRectangle(&gfx, (rectangle), (color))
+#define DrawTexturedObb2Ex(boundingBox, color, texture, sourceRec)    GfxSystem_DrawTexturedObb2Ex(&gfx, (boundingBox), (color), (texture), (sourceRec))
+#define DrawTexturedObb2(boundingBox, color, texture)                 GfxSystem_DrawTexturedObb2(&gfx, (boundingBox), (color), (texture))
+#define DrawObb2(boundingBox, color)                                  GfxSystem_DrawObb2(&gfx, (boundingBox), (color))
+
+#define ClearDepthBuffer(clearDepth)  GfxSystem_ClearDepthBuffer(&gfx, (clearDepth))
+
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_SYSTEM_GLOBAL_H

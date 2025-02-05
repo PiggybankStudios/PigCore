@@ -16,7 +16,7 @@ Date:   01\30\2025
 #include "misc/misc_result.h"
 #include "misc/misc_sokol_gfx_include.h"
 
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_GFX
 
 #ifndef SOKOL_GFX_INCLUDED
 #error Somehow sokol_gfx.h was not included properly before gfx_texture.h!
@@ -246,7 +246,7 @@ PEXPI void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_SOKOL
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_TEXTURE_H
 

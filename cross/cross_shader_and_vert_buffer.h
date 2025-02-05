@@ -7,7 +7,7 @@ Date:   01\29\2025
 #ifndef _CROSS_SHADER_AND_VERT_BUFFER_H
 #define _CROSS_SHADER_AND_VERT_BUFFER_H
 
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_GFX
 
 #if !PIG_CORE_IMPLEMENTATION
 	void FillPipelineDescLayout(sg_pipeline_desc* pipelineDesc, const Shader* shader, const VertBuffer* bufferRef);
@@ -53,6 +53,6 @@ PEXP void FillPipelineDescLayout(sg_pipeline_desc* pipelineDesc, const Shader* s
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_SOKOL
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _CROSS_SHADER_AND_VERT_BUFFER_H
