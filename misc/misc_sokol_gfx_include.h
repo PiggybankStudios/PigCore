@@ -28,30 +28,21 @@ Description:
 #define SOKOL_DEBUG
 #endif
 
-//NOTE: Change this over in shader_include.h as well!
+#if !defined(SOKOL_D3D11) && !defined(SOKOL_GLCORE) && !defined(SOKOL_GLES3) && !defined(SOKOL_METAL) && !defined(SOKOL_WGPU) && !defined(SOKOL_DUMMY_BACKEND)
 #if TARGET_IS_WINDOWS
 	#if 1
-	#ifndef SOKOL_D3D11
 	#define SOKOL_D3D11
-	#endif
 	#else
-	#ifndef SOKOL_GLCORE
 	#define SOKOL_GLCORE
-	#endif
 	#endif
 #elif TARGET_IS_LINUX
-	#ifndef SOKOL_GLCORE
 	#define SOKOL_GLCORE
-	#endif
 #elif TARGET_IS_OSX
-	#ifndef SOKOL_METAL
 	#define SOKOL_METAL
-	#endif
 #elif TARGET_IS_WEB
-	#ifndef SOKOL_WGPU
 	#define SOKOL_WGPU
-	#endif
 #endif
+#endif //!defined(SOKOL_D3D11) && !defined(SOKOL_GLCORE) && !defined(SOKOL_GLES3) && !defined(SOKOL_METAL) && !defined(SOKOL_WGPU) && !defined(SOKOL_DUMMY_BACKEND)
 
 #if PIG_CORE_IMPLEMENTATION
 #define SOKOL_GFX_IMPL

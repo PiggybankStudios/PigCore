@@ -34,5 +34,6 @@ Description:
 #include "mem/mem_scratch.h" //required by os_process_info.h
 
 #include "os/os_process_info.h"
+#include "os/os_font.h"
 
 #endif //  _OS_ALL_H
