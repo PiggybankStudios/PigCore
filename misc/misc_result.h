@@ -40,6 +40,7 @@ enum Result
 	Result_TooLong,
 	Result_EmptyString,
 	Result_EmptyPath,
+	Result_EmptyFile,
 	Result_ExePathTooLong,
 	Result_FailedToAllocateMemory,
 	Result_UnsupportedPlatform,
@@ -66,6 +67,9 @@ enum Result
 	Result_NotEnoughSpace,
 	Result_TooManyBranches,
 	Result_TooManyBrackets,
+	Result_NotFound,
+	Result_NoForegroundWindow,
+	Result_NoDeviceContext,
 	
 	Result_Count,
 };
@@ -89,6 +93,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_TooLong: return "TooLong";
 		case Result_EmptyString: return "EmptyString";
 		case Result_EmptyPath: return "EmptyPath";
+		case Result_EmptyFile: return "EmptyFile";
 		case Result_ExePathTooLong: return "ExePathTooLong";
 		case Result_FailedToAllocateMemory: return "FailedToAllocateMemory";
 		case Result_UnsupportedPlatform: return "UnsupportedPlatform";
@@ -115,6 +120,9 @@ PEXP const char* GetResultStr(Result result)
 		case Result_NotEnoughSpace: return "NotEnoughSpace";
 		case Result_TooManyBranches: return "TooManyBranches";
 		case Result_TooManyBrackets: return "TooManyBrackets";
+		case Result_NotFound: return "NotFound";
+		case Result_NoForegroundWindow: return "NoForegroundWindow";
+		case Result_NoDeviceContext: return "NoDeviceContext";
 		default: return UNKNOWN_STR;
 	}
 }
