@@ -24,6 +24,32 @@ Description:
 
 #if BUILD_WITH_SOKOL_GFX
 
+typedef enum GfxPipelineBlendMode GfxPipelineBlendMode;
+enum GfxPipelineBlendMode
+{
+	GfxPipelineBlendMode_None = 0,
+	GfxPipelineBlendMode_Opaque,
+	GfxPipelineBlendMode_Normal,
+	GfxPipelineBlendMode_PremultipliedNormal,
+	GfxPipelineBlendMode_Count,
+};
+
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetGfxPipelineBlendModeStr(GfxPipelineBlendMode enumValue);
+#else
+PEXP const char* GetGfxPipelineBlendModeStr(GfxPipelineBlendMode enumValue)
+{
+	switch (enumValue)
+	{
+		case GfxPipelineBlendMode_None:                return "None";
+		case GfxPipelineBlendMode_Opaque:              return "Opaque";
+		case GfxPipelineBlendMode_Normal:              return "Normal";
+		case GfxPipelineBlendMode_PremultipliedNormal: return "PremultipliedNormal";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
 typedef struct GfxPipelineOptions GfxPipelineOptions;
 struct GfxPipelineOptions
 {
@@ -35,7 +61,7 @@ struct GfxPipelineOptions
 	bool depthWriteEnabled;
 	bool depthTestEnabled;
 	bool cullingEnabled;
-	//TODO: Add blend mode
+	GfxPipelineBlendMode blendMode;
 	//TODO: Add primitive type option?
 	//TODO: Add indexed buffer options?
 };
@@ -150,10 +176,10 @@ PEXP GfxPipeline InitGfxPipeline(Arena* arena, Str8 name, const GfxPipelineOptio
 	pipelineDesc.color_count = 1;
 	pipelineDesc.colors[0].pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
 	pipelineDesc.colors[0].write_mask = options->colorWriteEnabled ? SG_COLORMASK_RGBA : SG_COLORMASK_NONE;
-	//TODO: Add blend options
-	pipelineDesc.colors[0].blend.enabled = true;
-	pipelineDesc.colors[0].blend.src_factor_rgb = SG_BLENDFACTOR_ONE;
-	pipelineDesc.colors[0].blend.dst_factor_rgb = SG_BLENDFACTOR_ZERO;
+	//TODO: We should do some more testing to make sure these options work for pre-multiplied alpha!
+	pipelineDesc.colors[0].blend.enabled = (options->blendMode != GfxPipelineBlendMode_Opaque);
+	pipelineDesc.colors[0].blend.src_factor_rgb = (options->blendMode == GfxPipelineBlendMode_PremultipliedNormal) ? SG_BLENDFACTOR_ONE : SG_BLENDFACTOR_SRC_ALPHA;
+	pipelineDesc.colors[0].blend.dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
 	pipelineDesc.colors[0].blend.op_rgb = SG_BLENDOP_ADD;
 	pipelineDesc.colors[0].blend.src_factor_alpha = SG_BLENDFACTOR_ONE;
 	pipelineDesc.colors[0].blend.dst_factor_alpha = SG_BLENDFACTOR_ZERO;

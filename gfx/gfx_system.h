@@ -36,6 +36,7 @@ struct GfxSystemState
 	bool depthWriteEnabled;
 	bool depthTestEnabled;
 	bool cullingEnabled;
+	GfxPipelineBlendMode blendMode;
 	r32 depth; //for 2D rendering functions
 	
 	Shader* shader;
@@ -101,6 +102,7 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_SetDepthTestEnabled(GfxSystem* system, bool depthTestEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthWriteEnabled(GfxSystem* system, bool depthWriteEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetCullingEnabled(GfxSystem* system, bool cullingEnabled);
+	PIG_CORE_INLINE void GfxSystem_SetBlendMode(GfxSystem* system, GfxPipelineBlendMode blendMode);
 	PIG_CORE_INLINE void GfxSystem_SetDepth(GfxSystem* system, r32 depth);
 	PIG_CORE_INLINE void GfxSystem_SetProjectionMat(GfxSystem* system, mat4 matrix);
 	PIG_CORE_INLINE void GfxSystem_SetViewMat(GfxSystem* system, mat4 matrix);
@@ -160,6 +162,7 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	systemOut->state.depthWriteEnabled = true;
 	systemOut->state.depthTestEnabled = true;
 	systemOut->state.cullingEnabled = true;
+	systemOut->state.blendMode = GfxPipelineBlendMode_Normal;
 	systemOut->state.depth = 1.0f;
 	systemOut->state.projectionMat = Mat4_Identity;
 	systemOut->state.viewMat = Mat4_Identity;
@@ -216,6 +219,7 @@ PEXP void GfxSystem_FlushPipelineGen(GfxSystem* system)
 		pipelineOptions.depthWriteEnabled = system->state.depthWriteEnabled;
 		pipelineOptions.depthTestEnabled = system->state.depthTestEnabled;
 		pipelineOptions.cullingEnabled = system->state.cullingEnabled;
+		pipelineOptions.blendMode = system->state.blendMode;
 		system->state.pipeline = GfxSystem_FindOrAddPipelineWithOptions(system, &pipelineOptions);
 		NotNull(system->state.pipeline);
 		sg_apply_pipeline(system->state.pipeline->handle);
@@ -416,6 +420,16 @@ PEXPI void GfxSystem_SetCullingEnabled(GfxSystem* system, bool cullingEnabled)
 	if (cullingEnabled != system->state.cullingEnabled)
 	{
 		system->state.cullingEnabled = cullingEnabled;
+		system->state.pipeline = nullptr;
+	}
+}
+PEXPI void GfxSystem_SetBlendMode(GfxSystem* system, GfxPipelineBlendMode blendMode)
+{
+	NotNull(system);
+	NotNull(system->arena);
+	if (blendMode != system->state.blendMode)
+	{
+		system->state.blendMode = blendMode;
 		system->state.pipeline = nullptr;
 	}
 }

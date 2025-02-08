@@ -105,6 +105,7 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 	PIG_CORE_INLINE void VarArrayVisit(VarArray* array, ArrayVisitFunc_f* visitFunc);
 	PIG_CORE_INLINE void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array, uxx index, bool assertOnFailure);
 	void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array);
+	void* VarArrayAddMulti_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx numItems);
 	void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index);
 	void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index);
 	PIG_CORE_INLINE void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemToRemove);
@@ -171,6 +172,8 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 } while(0)
 // This is simply an alias of VarArrayAddValue, but it's here to match the name of VarArrayPop below
 #define VarArrayPush(type, arrayPntr, value) VarArrayAddValue(type, (arrayPntr), (value))
+
+#define VarArrayAddMulti(type, arrayPntr, numItems) VarArrayAddMulti_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (numItems))
 
 #define VarArrayInsert(type, arrayPntr, index) (type*)VarArrayInsert_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
 //NOTE: The (value) portion is evaluated AFTER the Insert occurs, it's meaning may change if it's accessing the array or using a pointer from the array!
@@ -274,7 +277,7 @@ PEXP bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared a
 	NotNull(array);
 	NotNull(array->arena);
 	Assert(array->itemSize > 0);
-	if (array->allocLength >= capacityRequired) { return false; }
+	if (array->allocLength >= capacityRequired) { return true; }
 	if (array->maxLength > 0 && capacityRequired > array->maxLength) { return false; }
 	
 	uxx newLength = 0;
@@ -419,6 +422,36 @@ PEXP void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array)
 	MyMemSet(result, VAR_ARRAY_CLEAR_ITEM_BYTE_VALUE, array->itemSize);
 	#endif
 	array->length++;
+	
+	return result;
+}
+
+PEXP void* VarArrayAddMulti_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx numItems)
+{
+	#if DEBUG_BUILD
+	NotNull(array);
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to VarArrayAddMulti. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to VarArrayAddMulti. Make sure you're accessing the VarArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
+	
+	if (numItems == 0) { return nullptr; }
+	if (!VarArrayExpand(array, array->length+numItems)) { return nullptr; }
+	
+	void* result = nullptr;
+	uxx numItemsBefore = array->length;
+	for (uxx iIndex = 0; iIndex < numItems; iIndex++)
+	{
+		void* newItem = VarArrayAdd_(itemSize, itemAlignment, array);
+		if (newItem == nullptr)
+		{
+			array->length = numItemsBefore;
+			return nullptr;
+		}
+		else if (result == nullptr) { result = newItem; }
+	}
 	
 	return result;
 }
