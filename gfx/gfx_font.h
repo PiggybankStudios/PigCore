@@ -110,6 +110,12 @@ struct Font
 	PIG_CORE_INLINE void RemoveAttachedTtfFile(Font* font);
 	void AttachTtfFileToFont(Font* font, Slice ttfFileContents);
 	Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges);
+	PIG_CORE_INLINE FontAtlas* GetDefaultFontAtlas(Font* font);
+	PIG_CORE_INLINE r32 GetDefaultFontSize(const Font* font);
+	PIG_CORE_INLINE u8 GetDefaultFontStyleFlags(const Font* font);
+	PIG_CORE_INLINE bool DoesFontAtlasContainCodepointEx(const FontAtlas* atlas, u32 codepoint, uxx* glyphIndexOut);
+	PIG_CORE_INLINE bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint);
+	FontGlyph* GetFontGlyphForCodepoint(Font* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut);
 #endif
 
 // +--------------------------------------------------------------+
@@ -250,7 +256,7 @@ PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atla
 		MyMemSet(stbRange->chardata_for_range, 0xCC, sizeof(stbtt_packedchar) * numGlyphsInCharRange);
 		#endif
 		minCodepoint = MinU32(minCodepoint, charRange->startCodepoint);
-		maxCodepoint = MinU32(maxCodepoint, charRange->endCodepoint);
+		maxCodepoint = MaxU32(maxCodepoint, charRange->endCodepoint);
 		numGlyphs += numGlyphsInCharRange;
 	}
 	
@@ -336,6 +342,118 @@ PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atla
 	ScratchEnd(scratch);
 	
 	return Result_Success;
+}
+
+PEXPI FontAtlas* GetDefaultFontAtlas(Font* font)
+{
+	NotNull(font);
+	NotNull(font->arena);
+	if (font->atlases.length > 0) { return VarArrayGetFirst(FontAtlas, &font->atlases); }
+	else { return nullptr; }
+}
+PEXPI r32 GetDefaultFontSize(const Font* font)
+{
+	FontAtlas* defaultAtlas = GetDefaultFontAtlas((Font*)font);
+	return (defaultAtlas != nullptr) ? defaultAtlas->fontSize : 0.0f;
+}
+PEXPI u8 GetDefaultFontStyleFlags(const Font* font)
+{
+	FontAtlas* defaultAtlas = GetDefaultFontAtlas((Font*)font);
+	return (defaultAtlas != nullptr) ? defaultAtlas->styleFlags : FontStyleFlag_None;
+}
+
+PEXPI bool DoesFontAtlasContainCodepointEx(const FontAtlas* atlas, u32 codepoint, uxx* glyphIndexOut)
+{
+	if (atlas->glyphRange.startCodepoint <= codepoint && atlas->glyphRange.endCodepoint >= codepoint)
+	{
+		VarArrayLoop(&atlas->charRanges, rIndex)
+		{
+			VarArrayLoopGet(FontCharRange, charRange, &atlas->charRanges, rIndex);
+			if (charRange->startCodepoint <= codepoint && charRange->endCodepoint >= codepoint)
+			{
+				SetOptionalOutPntr(glyphIndexOut, charRange->glyphArrayStartIndex + (uxx)(codepoint - charRange->startCodepoint));
+				return true;
+			}
+		}
+	}
+	return false;
+}
+PEXPI bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint)
+{
+	return DoesFontAtlasContainCodepointEx(atlas, codepoint, nullptr);
+}
+
+PEXP FontGlyph* GetFontGlyphForCodepoint(Font* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut)
+{
+	NotNull(font);
+	
+	bool multipleMatches = false;
+	FontAtlas* matchingAtlas = nullptr;
+	r32 matchingSizeDiff = 0.0f;
+	FontGlyph* result = nullptr;
+	VarArrayLoop(&font->atlases, aIndex)
+	{
+		VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
+		r32 sizeDiff = AbsR32(atlas->fontSize - fontSize);
+		if (matchingAtlas == nullptr || sizeDiff <= matchingSizeDiff)
+		{
+			uxx glyphIndex = 0;
+			if (DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
+			{
+				multipleMatches = (matchingAtlas != nullptr && AreSimilarR32(sizeDiff, matchingSizeDiff, DEFAULT_R32_TOLERANCE));
+				matchingSizeDiff = sizeDiff;
+				matchingAtlas = atlas;
+				result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex);
+			}
+		}
+	}
+	
+	if (matchingAtlas == nullptr) { return nullptr; }
+	
+	if (multipleMatches)
+	{
+		//TODO: If we find more than one bake with the same fontSize, we should differentiate based on which one has closer style flags
+		multipleMatches = false;
+		matchingAtlas = nullptr;
+		result = nullptr;
+		uxx matchingStyleDiffs = 0;
+		
+		VarArrayLoop(&font->atlases, aIndex)
+		{
+			VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
+			r32 sizeDiff = AbsR32(atlas->fontSize - fontSize);
+			if (AreSimilarR32(sizeDiff, matchingSizeDiff, DEFAULT_R32_TOLERANCE))
+			{
+				uxx styleDiffs = 0;
+				if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Inverted) != IsFlagSet(styleFlags, FontStyleFlag_Inverted)) { styleDiffs += 4; }
+				if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiffs += 1; }
+				if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiffs += 1; }
+				//TODO: Should we care about Underline, Strikethrough or Outline?
+				
+				if (matchingAtlas == nullptr || styleDiffs <= matchingStyleDiffs)
+				{
+					uxx glyphIndex = 0;
+					if (DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
+					{
+						multipleMatches = (matchingAtlas != nullptr && styleDiffs == matchingStyleDiffs);
+						matchingStyleDiffs = styleDiffs;
+						matchingAtlas = atlas;
+						result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex);
+					}
+				}
+			}
+		}
+		
+		NotNull(result);
+	}
+	
+	if (multipleMatches)
+	{
+		//TODO: If we still find more than one match, is there any other criteria we should check?
+	}
+	
+	SetOptionalOutPntr(atlasOut, matchingAtlas);
+	return result;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

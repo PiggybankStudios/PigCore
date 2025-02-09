@@ -25,6 +25,8 @@ Description:
 #include "gfx/gfx_vert_buffer.h"
 #include "gfx/gfx_texture.h"
 #include "gfx/gfx_shader.h"
+#include "gfx/gfx_font.h"
+#include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_pipeline.h"
 
 #if BUILD_WITH_SOKOL_GFX
@@ -42,6 +44,11 @@ struct GfxSystemState
 	Shader* shader;
 	Texture* textures[MAX_NUM_SHADER_IMAGES];
 	VertBuffer* vertBuffer;
+	
+	Font* font;
+	r32 fontSize;
+	u8 fontStyleFlags;
+	v2 alignPixelSize;
 	
 	//This gets cleared whenever something that would need a different pipeline is changed
 	//It then gets refilled with an existing or new pipeline when GfxSystem_FlushPipelineGen() is called
@@ -68,6 +75,7 @@ struct GfxSystem
 	
 	Texture pixelTexture;
 	VertBuffer squareBuffer;
+	FontFlow prevFontFlow;
 	
 	bool frameStarted;
 	sg_swapchain swapchain; //given to us in GfxSystem_BeginFrame
@@ -98,6 +106,9 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_BindVertBuffer(GfxSystem* system, VertBuffer* buffer);
 	PIG_CORE_INLINE void GfxSystem_BindTextureAtIndex(GfxSystem* system, Texture* texture, uxx textureIndex);
 	PIG_CORE_INLINE void GfxSystem_BindTexture(GfxSystem* system, Texture* texture);
+	PIG_CORE_INLINE void GfxSystem_BindFontEx(GfxSystem* system, Font* font, r32 fontSize, u8 fontStyleFlags);
+	PIG_CORE_INLINE void GfxSystem_BindFontAtSize(GfxSystem* system, Font* font, r32 fontSize);
+	PIG_CORE_INLINE void GfxSystem_BindFont(GfxSystem* system, Font* font);
 	PIG_CORE_INLINE void GfxSystem_SetColorWriteEnabled(GfxSystem* system, bool colorWriteEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthTestEnabled(GfxSystem* system, bool depthTestEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthWriteEnabled(GfxSystem* system, bool depthWriteEnabled);
@@ -120,6 +131,11 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth);
+	Result GfxSystem_DrawTextWithFont(GfxSystem* system, Font* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color);
+	PIG_CORE_INLINE Result GfxSystem_DrawTextAtSize(GfxSystem* system, r32 fontSize, Str8 text, v2 position, Color32 color);
+	PIG_CORE_INLINE Result GfxSystem_DrawTextBold(GfxSystem* system, Str8 text, v2 position, Color32 color);
+	PIG_CORE_INLINE Result GfxSystem_DrawTextItalic(GfxSystem* system, Str8 text, v2 position, Color32 color);
+	PIG_CORE_INLINE Result GfxSystem_DrawText(GfxSystem* system, Str8 text, v2 position, Color32 color);
 #endif
 
 // +--------------------------------------------------------------+
@@ -166,6 +182,7 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	systemOut->state.cullingEnabled = true;
 	systemOut->state.blendMode = GfxPipelineBlendMode_Normal;
 	systemOut->state.depth = 1.0f;
+	systemOut->state.alignPixelSize = V2_One;
 	systemOut->state.projectionMat = Mat4_Identity;
 	systemOut->state.viewMat = Mat4_Identity;
 	systemOut->state.worldMat = Mat4_Identity;
@@ -276,9 +293,12 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, Color
 	sg_begin_pass(&mainPass);
 	
 	system->state.shader = nullptr;
+	system->state.vertBuffer = nullptr;
+	for (uxx tIndex = 0; tIndex < MAX_NUM_SHADER_IMAGES; tIndex++) { system->state.textures[tIndex] = nullptr; }
+	system->state.font = nullptr;
+	system->state.pipeline = nullptr;
 	system->bindingsChanged = true;
 	system->uniformsChanged = true;
-	system->state.pipeline = nullptr;
 	
 	system->frameStarted = true;
 }
@@ -380,6 +400,37 @@ PEXPI void GfxSystem_BindTextureAtIndex(GfxSystem* system, Texture* texture, uxx
 PEXPI void GfxSystem_BindTexture(GfxSystem* system, Texture* texture)
 {
 	GfxSystem_BindTextureAtIndex(system, texture, 0);
+}
+
+PEXPI void GfxSystem_BindFontEx(GfxSystem* system, Font* font, r32 fontSize, u8 fontStyleFlags)
+{
+	NotNull(system);
+	if (system->state.font != font) { system->state.font = font; }
+	if (system->state.fontSize != fontSize) { system->state.fontSize = fontSize; }
+	if (system->state.fontStyleFlags != fontStyleFlags) { system->state.fontStyleFlags = fontStyleFlags; }
+}
+PEXPI void GfxSystem_BindFontAtSize(GfxSystem* system, Font* font, r32 fontSize)
+{
+	u8 fontStyleFlags = FontStyleFlag_None;
+	if (font != nullptr && font->atlases.length > 0)
+	{
+		//TODO: This logic is wrong for choosing the styleFlags, we really should find the closest match similar to how GetFontGlyphForCodepoint works
+		FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
+		fontStyleFlags = firstAtlas->styleFlags;
+	}
+	GfxSystem_BindFontEx(system, font, fontSize, fontStyleFlags);
+}
+PEXPI void GfxSystem_BindFont(GfxSystem* system, Font* font)
+{
+	r32 fontSize = 16.0f;
+	u8 fontStyleFlags = FontStyleFlag_None;
+	if (font != nullptr && font->atlases.length > 0)
+	{
+		FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
+		fontSize = firstAtlas->fontSize;
+		fontStyleFlags = firstAtlas->styleFlags;
+	}
+	GfxSystem_BindFontEx(system, font, fontSize, fontStyleFlags);
 }
 
 // +--------------------------------------------------------------+
@@ -553,10 +604,20 @@ PEXPI void GfxSystem_DrawRectangle(GfxSystem* system, rec rectangle, Color32 col
 
 PEXPI void GfxSystem_DrawRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside)
 {
-	GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y - borderThickness, rectangle.Width, borderThickness), color);
-	GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + rectangle.Height, rectangle.Width, borderThickness), color);
-	GfxSystem_DrawRectangle(system, NewRec(rectangle.X - borderThickness, rectangle.Y, borderThickness, rectangle.Height), color);
-	GfxSystem_DrawRectangle(system, NewRec(rectangle.X + rectangle.Width, rectangle.Y, borderThickness, rectangle.Height), color);
+	if (outside)
+	{
+		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y - borderThickness, rectangle.Width, borderThickness), color); //top
+		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + rectangle.Height, rectangle.Width, borderThickness), color); //bottom
+		GfxSystem_DrawRectangle(system, NewRec(rectangle.X - borderThickness, rectangle.Y - borderThickness, borderThickness, rectangle.Height + 2*borderThickness), color); //left
+		GfxSystem_DrawRectangle(system, NewRec(rectangle.X + rectangle.Width, rectangle.Y - borderThickness, borderThickness, rectangle.Height + 2*borderThickness), color); //right
+	}
+	else
+	{
+		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y, rectangle.Width, borderThickness), color); //top
+		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + rectangle.Height - borderThickness, rectangle.Width, borderThickness), color); //bottom
+		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + borderThickness, borderThickness, rectangle.Height - 2*borderThickness), color); //left
+		GfxSystem_DrawRectangle(system, NewRec(rectangle.X + rectangle.Width - borderThickness, rectangle.Y + borderThickness, borderThickness, rectangle.Height - 2*borderThickness), color); //right
+	}
 }
 PEXPI void GfxSystem_DrawRectangleOutline(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color)
 {
@@ -629,6 +690,67 @@ PEXPI void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth)
 	GfxSystem_SetDepthWriteEnabled(system, oldDepthTestEnabled);
 	GfxSystem_SetProjectionMat(system, oldProjectionMat);
 	GfxSystem_SetViewMat(system, oldViewMat);
+}
+
+// +====================================+
+// | GfxSystem_FontFlowDrawCharCallback |
+// +====================================+
+// void GfxSystem_FontFlowDrawCharCallback(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
+FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
+{
+	NotNull(state);
+	NotNull(state->contextPntr);
+	NotNull(atlas);
+	NotNull(glyph);
+	GfxSystem* system = (GfxSystem*)state->contextPntr;
+	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, state->color, &atlas->texture, ToRecFromi(glyph->atlasSourceRec));
+}
+
+PEXP Result GfxSystem_DrawTextWithFont(GfxSystem* system, Font* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color)
+{
+	NotNull(system);
+	NotNull(font);
+	NotNullStr(text);
+	
+	FontFlowState state = ZEROED;
+	state.contextPntr = (void*)system;
+	state.font = font;
+	state.text = text;
+	state.fontSize = fontSize;
+	state.styleFlags = styleFlags;
+	state.alignPixelSize = system->state.alignPixelSize;
+	state.color = color;
+	state.position = position;
+	FontFlowCallbacks callbacks = ZEROED;
+	callbacks.drawChar = GfxSystem_FontFlowDrawCharCallback;
+	
+	Result result = DoFontFlow(&state, &callbacks, &system->prevFontFlow);
+	
+	return result;
+}
+PEXPI Result GfxSystem_DrawTextAtSize(GfxSystem* system, r32 fontSize, Str8 text, v2 position, Color32 color)
+{
+	NotNull(system);
+	NotNull(system->state.font);
+	return GfxSystem_DrawTextWithFont(system, system->state.font, fontSize, system->state.fontStyleFlags, text, position, color);
+}
+PEXPI Result GfxSystem_DrawTextBold(GfxSystem* system, Str8 text, v2 position, Color32 color)
+{
+	NotNull(system);
+	NotNull(system->state.font);
+	return GfxSystem_DrawTextWithFont(system, system->state.font, system->state.fontSize, (system->state.fontStyleFlags | FontStyleFlag_Bold), text, position, color);
+}
+PEXPI Result GfxSystem_DrawTextItalic(GfxSystem* system, Str8 text, v2 position, Color32 color)
+{
+	NotNull(system);
+	NotNull(system->state.font);
+	return GfxSystem_DrawTextWithFont(system, system->state.font, system->state.fontSize, (system->state.fontStyleFlags | FontStyleFlag_Italic), text, position, color);
+}
+PEXPI Result GfxSystem_DrawText(GfxSystem* system, Str8 text, v2 position, Color32 color)
+{
+	NotNull(system);
+	NotNull(system->state.font);
+	return GfxSystem_DrawTextWithFont(system, system->state.font, system->state.fontSize, system->state.fontStyleFlags, text, position, color);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

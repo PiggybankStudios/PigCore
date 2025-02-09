@@ -172,6 +172,10 @@ typedef Obb3D obb3;
 	PIG_CORE_INLINE bool AreEqualBoxi(boxi left, boxi right);
 	PIG_CORE_INLINE bool AreEqualObb2(obb2 left, obb2 right);
 	PIG_CORE_INLINE bool AreEqualObb3(obb3 left, obb3 right);
+	PIG_CORE_INLINE rec BothRec(rec left, rec right);
+	PIG_CORE_INLINE reci BothReci(reci left, reci right);
+	PIG_CORE_INLINE box BothBox(box left, box right);
+	PIG_CORE_INLINE boxi BothBoxi(boxi left, boxi right);
 #endif
 
 // +--------------------------------------------------------------+
@@ -549,7 +553,13 @@ PEXPI bool AreEqualObb3(obb3 left, obb3 right) { return (left.X == right.X && le
 //TODO: ExpandRightRec/ExpandLeftRec/ExpandUpRec/ExpandDownRec?
 //TODO: RetractRightRec/RetractLeftRec/RetractUpRec/RetractDownRec?
 //TODO: SquarifyRec/CubifyBox?
-//TODO: BothRec/ExpandRecToV2?
+
+PEXPI rec BothRec(rec left, rec right) { r32 minX = MinR32(left.X, right.X); r32 minY = MinR32(left.Y, right.Y); return NewRec(minX, minY, MaxR32(left.X + left.Width, right.X + right.Width) - minX, MaxR32(left.Y + left.Height, right.Y + right.Height) - minY); }
+PEXPI reci BothReci(reci left, reci right) { i32 minX = MinI32(left.X, right.X); i32 minY = MinI32(left.Y, right.Y); return NewReci(minX, minY, MaxI32(left.X + left.Width, right.X + right.Width) - minX, MaxI32(left.Y + left.Height, right.Y + right.Height) - minY); }
+PEXPI box BothBox(box left, box right) { r32 minX = MinR32(left.X, right.X); r32 minY = MinR32(left.Y, right.Y); r32 minZ = MinR32(left.Z, right.Z); return NewBox(minX, minY, minZ, MaxR32(left.X + left.Width, right.X + right.Width) - minX, MaxR32(left.Y + left.Height, right.Y + right.Height) - minY, MaxR32(left.Z + left.Depth, right.Z + right.Depth) - minZ); }
+PEXPI boxi BothBoxi(boxi left, boxi right) { i32 minX = MinI32(left.X, right.X); i32 minY = MinI32(left.Y, right.Y); i32 minZ = MinI32(left.Z, right.Z); return NewBoxi(minX, minY, minZ, MaxI32(left.X + left.Width, right.X + right.Width) - minX, MaxI32(left.Y + left.Height, right.Y + right.Height) - minY, MaxI32(left.Z + left.Depth, right.Z + right.Depth) - minZ); }
+
+//TODO: ExpandRecToV2/ExpandReciToV2i?
 //TODO: IsInsideRec/IsRecInsideRec?
 //TODO: DoesOverlapRec?
 //TODO: GetObb2AlignedBounds?

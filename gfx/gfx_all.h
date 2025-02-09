@@ -19,7 +19,7 @@ Date:   01\19\2025
 
 #include "gfx/gfx_mesh_generation.h"
 
-#include "struct/struct_string.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_pipeline.h and gfx_font.h
+#include "struct/struct_string.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_pipeline.h, gfx_font.h and gfx_font_flow.h
 #include "misc/misc_result.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_image_loading.h and gfx_pipeline.h
 #include "misc/misc_sokol_gfx_include.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_pipeline.h and gfx_system.h
 
@@ -38,8 +38,11 @@ Date:   01\19\2025
 
 #include "gfx/gfx_font.h"
 
-#include "struct/struct_color.h" //required by gfx_system.h
+#include "base/base_unicode.h" //required by gfx_font_flow.h
+#include "struct/struct_rectangles.h" //required by gfx_font_flow.h
+#include "struct/struct_color.h" //required by gfx_font_flow.h and gfx_system.h
 
+#include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_system.h"
 
 #endif //  _GFX_ALL_H

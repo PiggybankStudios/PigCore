@@ -82,6 +82,10 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 #define BindTextureAtIndex(texturePntr, textureIndex) GfxSystem_BindTextureAtIndex(&gfx, (texturePntr), (textureIndex))
 #define BindTexture(texturePntr)                      GfxSystem_BindTexture(&gfx, (texturePntr))
 
+#define BindFontEx(fontPntr, fontSize, fontStyleFlags) GfxSystem_BindFontEx(&gfx, (fontPntr), (fontSize), (fontStyleFlags))
+#define BindFontAtSize(fontPntr, fontSize)             GfxSystem_BindFontAtSize(&gfx, (fontPntr), (fontSize))
+#define BindFont(fontPntr)                             GfxSystem_BindFont(&gfx, (fontPntr))
+
 #define SetDepthTestEnabled(depthTestEnabled)    GfxSystem_SetDepthTestEnabled(&gfx, (depthTestEnabled))
 #define SetDepthWriteEnabled(depthWriteEnabled)  GfxSystem_SetDepthWriteEnabled(&gfx, (depthWriteEnabled))
 #define SetColorWriteEnabled(colorWriteEnabled)  GfxSystem_SetColorWriteEnabled(&gfx, (colorWriteEnabled))
@@ -107,6 +111,16 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 #define DrawObb2(boundingBox, color)                                       GfxSystem_DrawObb2(&gfx, (boundingBox), (color))
 
 #define ClearDepthBuffer(clearDepth)  GfxSystem_ClearDepthBuffer(&gfx, (clearDepth))
+
+//NOTE: Windows.h defines a DrawText define but we don't really need it so we #undef it here
+#if TARGET_IS_WINDOWS && defined(DrawText)
+#undef DrawText
+#endif
+
+#define DrawTextAtSize(fontSize, text, position, color) GfxSystem_DrawTextAtSize(&gfx, (fontSize), (text), (position), (color))
+#define DrawTextBold(text, position, color)             GfxSystem_DrawTextBold(&gfx, (text), (position), (color))
+#define DrawTextItalic(text, position, color)           GfxSystem_DrawTextItalic(&gfx, (text), (position), (color))
+#define DrawText(text, position, color)                 GfxSystem_DrawText(&gfx, (text), (position), (color))
 
 #endif //BUILD_WITH_SOKOL_GFX
 

@@ -16,6 +16,10 @@ Description:
 #include "std/std_basic_math.h"
 #include "std/std_trig.h"
 
+//NOTE: A fixed tolerance is never a perfect solution. But it's usually good enough for our purposes when a float value is within a "reasonable" range
+#define DEFAULT_R32_TOLERANCE 0.001f
+#define DEFAULT_R64_TOLERANCE 0.001 //TODO: Choose a different tolerance for R64!
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -101,10 +105,6 @@ PEXPI r64 ConvertSampleI32ToR64(i32 sampleI32) { return ((r64)sampleI32 / (r64)I
 // +--------------------------------------------------------------+
 // |                  Float Comparison Functions                  |
 // +--------------------------------------------------------------+
-//NOTE: A fixed tolerance is never a perfect solution. But it's usually good enough for our purposes when a float value is within a "reasonable" range
-#define DEFAULT_R32_TOLERANCE 0.001f
-#define DEFAULT_R64_TOLERANCE 0.001 //TODO: Choose a different tolerance for R64!
-
 PEXPI bool AreSimilarR32(r32 value1, r32 value2, r32 tolerance) { return (AbsR32(value1 - value2) <= tolerance); }
 PEXPI bool AreSimilarR64(r64 value1, r64 value2, r64 tolerance) { return (AbsR64(value1 - value2) <= tolerance); }
 
