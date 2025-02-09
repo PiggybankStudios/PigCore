@@ -155,3 +155,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_FONT_H
+
+#if defined(_OS_FONT_H) && defined(_GFX_FONT_H)
+#include "cross/cross_os_font_and_gfx_font.h"
+#endif

@@ -80,7 +80,7 @@ typedef struct FontAtlas FontAtlas;
 struct FontAtlas
 {
 	r32 fontSize;
-	u8 fontStyleFlags;
+	u8 styleFlags;
 	VarArray charRanges; //FontCharRange
 	FontCharRange glyphRange;
 	VarArray glyphs;
@@ -93,6 +93,7 @@ struct Font
 	Arena* arena;
 	Str8 name;
 	Slice ttfFile;
+	u8 ttfStyleFlags;
 	VarArray atlases; //FontAtlas
 };
 
@@ -100,19 +101,31 @@ struct Font
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	void FreeFontAtlas(Font* font, FontAtlas* atlas);
 	void FreeFont(Font* font);
+	void ClearFontAtlases(Font* font);
 	Font InitFont(Arena* arena, Str8 name);
 	PIG_CORE_INLINE FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint);
 	PIG_CORE_INLINE FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints);
 	PIG_CORE_INLINE void RemoveAttachedTtfFile(Font* font);
 	void AttachTtfFileToFont(Font* font, Slice ttfFileContents);
-	Result BakeFontAtlas(Font* font, r32 fontSize, u8 fontStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges);
+	Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges);
 #endif
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXP void FreeFontAtlas(Font* font, FontAtlas* atlas)
+{
+	NotNull(font);
+	NotNull(atlas);
+	FreeVarArray(&atlas->charRanges);
+	FreeVarArray(&atlas->glyphs);
+	FreeTexture(&atlas->texture);
+	ClearPointer(atlas);
+}
 
 PEXP void FreeFont(Font* font)
 {
@@ -124,13 +137,23 @@ PEXP void FreeFont(Font* font)
 		VarArrayLoop(&font->atlases, aIndex)
 		{
 			VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
-			FreeVarArray(&atlas->charRanges);
-			FreeVarArray(&atlas->glyphs);
-			FreeTexture(&atlas->texture);
+			FreeFontAtlas(font, atlas);
 		}
 		FreeVarArray(&font->atlases);
 	}
 	ClearPointer(font);
+}
+
+PEXP void ClearFontAtlases(Font* font)
+{
+	NotNull(font);
+	NotNull(font->arena);
+	VarArrayLoop(&font->atlases, aIndex)
+	{
+		VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
+		FreeFontAtlas(font, atlas);
+	}
+	VarArrayClear(&font->atlases);
 }
 
 PEXP Font InitFont(Arena* arena, Str8 name)
@@ -167,7 +190,7 @@ PEXPI void RemoveAttachedTtfFile(Font* font)
 	}
 }
 
-PEXP void AttachTtfFileToFont(Font* font, Slice ttfFileContents)
+PEXP void AttachTtfFileToFont(Font* font, Slice ttfFileContents, u8 ttfStyleFlags)
 {
 	NotNull(font);
 	NotNullStr(ttfFileContents);
@@ -177,9 +200,10 @@ PEXP void AttachTtfFileToFont(Font* font, Slice ttfFileContents)
 	font->ttfFile.chars = AllocMem(font->arena, ttfFileContents.length);
 	NotNull(font->ttfFile.chars);
 	MyMemCopy(font->ttfFile.chars, ttfFileContents.chars, ttfFileContents.length);
+	font->ttfStyleFlags = ttfStyleFlags;
 }
 
-PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 fontStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -266,7 +290,8 @@ PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 fontStyleFlags, v2i atlas
 		return newAtlas->texture.error;
 	}
 	
-	newAtlas->fontStyleFlags = fontStyleFlags;
+	newAtlas->fontSize = fontSize;
+	newAtlas->styleFlags = (font->ttfStyleFlags | extraStyleFlags);
 	newAtlas->glyphRange.startCodepoint = minCodepoint;
 	newAtlas->glyphRange.endCodepoint = maxCodepoint;
 	
@@ -316,3 +341,7 @@ PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 fontStyleFlags, v2i atlas
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _GFX_FONT_H
+
+#if defined(_OS_FONT_H) && defined(_GFX_FONT_H)
+#include "cross/cross_os_font_and_gfx_font.h"
+#endif

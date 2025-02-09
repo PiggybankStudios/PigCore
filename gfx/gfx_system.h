@@ -114,6 +114,8 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedRectangleEx(GfxSystem* system, rec rectangle, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedRectangle(GfxSystem* system, rec rectangle, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawRectangle(GfxSystem* system, rec rectangle, Color32 color);
+	PIG_CORE_INLINE void GfxSystem_DrawRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside);
+	PIG_CORE_INLINE void GfxSystem_DrawRectangleOutline(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color);
@@ -547,6 +549,18 @@ PEXPI void GfxSystem_DrawTexturedRectangle(GfxSystem* system, rec rectangle, Col
 PEXPI void GfxSystem_DrawRectangle(GfxSystem* system, rec rectangle, Color32 color)
 {
 	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, nullptr, Rec_Default_Const);
+}
+
+PEXPI void GfxSystem_DrawRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside)
+{
+	GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y - borderThickness, rectangle.Width, borderThickness), color);
+	GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + rectangle.Height, rectangle.Width, borderThickness), color);
+	GfxSystem_DrawRectangle(system, NewRec(rectangle.X - borderThickness, rectangle.Y, borderThickness, rectangle.Height), color);
+	GfxSystem_DrawRectangle(system, NewRec(rectangle.X + rectangle.Width, rectangle.Y, borderThickness, rectangle.Height), color);
+}
+PEXPI void GfxSystem_DrawRectangleOutline(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color)
+{
+	GfxSystem_DrawRectangleOutlineEx(system, rectangle, borderThickness, color, true);
 }
 
 PEXPI void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture, rec sourceRec)

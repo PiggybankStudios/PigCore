@@ -97,12 +97,14 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 #define SetSourceRecRaw(rectangle)  GfxSystem_SetSourceRecRaw(&gfx, (rectangle))
 #define SetSourceRec(rectangle)     GfxSystem_SetSourceRec(&gfx, (rectangle))
 
-#define DrawTexturedRectangleEx(rectangle, color, texture, sourceRec) GfxSystem_DrawTexturedRectangleEx(&gfx, (rectangle), (color), (texture), (sourceRec))
-#define DrawTexturedRectangle(rectangle, color, texture)              GfxSystem_DrawTexturedRectangle(&gfx, (rectangle), (color), (texture))
-#define DrawRectangle(rectangle, color)                               GfxSystem_DrawRectangle(&gfx, (rectangle), (color))
-#define DrawTexturedObb2Ex(boundingBox, color, texture, sourceRec)    GfxSystem_DrawTexturedObb2Ex(&gfx, (boundingBox), (color), (texture), (sourceRec))
-#define DrawTexturedObb2(boundingBox, color, texture)                 GfxSystem_DrawTexturedObb2(&gfx, (boundingBox), (color), (texture))
-#define DrawObb2(boundingBox, color)                                  GfxSystem_DrawObb2(&gfx, (boundingBox), (color))
+#define DrawTexturedRectangleEx(rectangle, color, texture, sourceRec)      GfxSystem_DrawTexturedRectangleEx(&gfx, (rectangle), (color), (texture), (sourceRec))
+#define DrawTexturedRectangle(rectangle, color, texture)                   GfxSystem_DrawTexturedRectangle(&gfx, (rectangle), (color), (texture))
+#define DrawRectangle(rectangle, color)                                    GfxSystem_DrawRectangle(&gfx, (rectangle), (color))
+#define DrawRectangleOutlineEx(rectangle, borderThickness, color, outside) GfxSystem_DrawRectangleOutlineEx(&gfx, (rectangle), (borderThickness), (color), (outside))
+#define DrawRectangleOutline(rectangle, borderThickness, color)            GfxSystem_DrawRectangleOutline(&gfx, (rectangle), (borderThickness), (color))
+#define DrawTexturedObb2Ex(boundingBox, color, texture, sourceRec)         GfxSystem_DrawTexturedObb2Ex(&gfx, (boundingBox), (color), (texture), (sourceRec))
+#define DrawTexturedObb2(boundingBox, color, texture)                      GfxSystem_DrawTexturedObb2(&gfx, (boundingBox), (color), (texture))
+#define DrawObb2(boundingBox, color)                                       GfxSystem_DrawObb2(&gfx, (boundingBox), (color))
 
 #define ClearDepthBuffer(clearDepth)  GfxSystem_ClearDepthBuffer(&gfx, (clearDepth))
 
