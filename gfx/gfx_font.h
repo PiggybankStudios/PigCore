@@ -70,6 +70,7 @@ typedef struct FontGlyph FontGlyph;
 struct FontGlyph
 {
 	u32 codepoint;
+	i32 ttfGlyphIndex;
 	reci atlasSourceRec;
 	r32 advanceX;
 	v2 renderOffset;
@@ -80,6 +81,7 @@ typedef struct FontAtlas FontAtlas;
 struct FontAtlas
 {
 	r32 fontSize;
+	r32 fontScale; //only used when asking stbtt for size-independent metrics
 	u8 styleFlags;
 	VarArray charRanges; //FontCharRange
 	FontCharRange glyphRange;
@@ -87,28 +89,50 @@ struct FontAtlas
 	Texture texture;
 };
 
+typedef struct FontKerningTableEntry FontKerningTableEntry;
+struct FontKerningTableEntry
+{
+	u32 leftTtfGlyphIndex;
+	u32 rightTtfGlyphIndex;
+	r32 value; //must be multipled by fontScale
+};
+
+typedef struct FontKerningTable FontKerningTable;
+struct FontKerningTable
+{
+	uxx numEntries;
+	FontKerningTableEntry* entries;
+};
+
 typedef struct Font Font;
 struct Font
 {
 	Arena* arena;
 	Str8 name;
+	
 	Slice ttfFile;
 	u8 ttfStyleFlags;
+	stbtt_fontinfo ttfInfo;
+	
 	VarArray atlases; //FontAtlas
+	FontKerningTable kerningTable;
 };
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	void FreeFontAtlas(Font* font, FontAtlas* atlas);
+	PIG_CORE_INLINE void FreeFontAtlas(Font* font, FontAtlas* atlas);
+	PIG_CORE_INLINE void FreeFontKerningTable(Arena* arena, FontKerningTable* kerningTable);
 	void FreeFont(Font* font);
 	void ClearFontAtlases(Font* font);
 	Font InitFont(Arena* arena, Str8 name);
 	PIG_CORE_INLINE FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint);
 	PIG_CORE_INLINE FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints);
 	PIG_CORE_INLINE void RemoveAttachedTtfFile(Font* font);
+	PIG_CORE_INLINE void InitFontTtfInfo(Font* font);
 	void AttachTtfFileToFont(Font* font, Slice ttfFileContents);
+	void FillFontKerningTable(Font* font);
 	Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges);
 	PIG_CORE_INLINE FontAtlas* GetDefaultFontAtlas(Font* font);
 	PIG_CORE_INLINE r32 GetDefaultFontSize(const Font* font);
@@ -116,14 +140,25 @@ struct Font
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepointEx(const FontAtlas* atlas, u32 codepoint, uxx* glyphIndexOut);
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint);
 	FontGlyph* GetFontGlyphForCodepoint(Font* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut);
+	r32 GetFontKerningBetweenGlyphs(const Font* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph);
+	r32 GetFontKerningBetweenCodepoints(const Font* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint);
 #endif
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#define FontCharRange_ASCII    NewFontCharRange(0x20, 0x7E)
+#define FontCharRange_LatinExt NewFontCharRangeLength(0xA0, 96)
+#define FontCharRange_Cyrillic NewFontCharRangeLength(0x400, 256)
+#define FontCharRange_Hiragana NewFontCharRangeLength(0x3041, 95)
+#define FontCharRange_Katakana NewFontCharRangeLength(0x30A0, 95)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP void FreeFontAtlas(Font* font, FontAtlas* atlas)
+PEXPI void FreeFontAtlas(Font* font, FontAtlas* atlas)
 {
 	NotNull(font);
 	NotNull(atlas);
@@ -131,6 +166,17 @@ PEXP void FreeFontAtlas(Font* font, FontAtlas* atlas)
 	FreeVarArray(&atlas->glyphs);
 	FreeTexture(&atlas->texture);
 	ClearPointer(atlas);
+}
+
+PEXPI void FreeFontKerningTable(Arena* arena, FontKerningTable* kerningTable)
+{
+	NotNull(arena);
+	NotNull(kerningTable);
+	if (kerningTable->entries != nullptr)
+	{
+		FreeMem(arena, kerningTable->entries, sizeof(FontKerningTableEntry) * kerningTable->numEntries);
+	}
+	ClearPointer(kerningTable);
 }
 
 PEXP void FreeFont(Font* font)
@@ -146,6 +192,7 @@ PEXP void FreeFont(Font* font)
 			FreeFontAtlas(font, atlas);
 		}
 		FreeVarArray(&font->atlases);
+		FreeFontKerningTable(font->arena, &font->kerningTable);
 	}
 	ClearPointer(font);
 }
@@ -194,6 +241,17 @@ PEXPI void RemoveAttachedTtfFile(Font* font)
 	{
 		FreeStr8(font->arena, &font->ttfFile);
 	}
+	ClearStruct(font->ttfInfo);
+}
+
+PEXPI void InitFontTtfInfo(Font* font)
+{
+	NotNull(font);
+	NotEmptyStr(font->ttfFile);
+	int firstFontOffset = stbtt_GetFontOffsetForIndex(font->ttfFile.bytes, 0);
+	Assert(firstFontOffset >= 0);
+	int initFontResult = stbtt_InitFont(&font->ttfInfo, font->ttfFile.bytes, firstFontOffset);
+	Assert(initFontResult != 0);
 }
 
 PEXP void AttachTtfFileToFont(Font* font, Slice ttfFileContents, u8 ttfStyleFlags)
@@ -207,13 +265,52 @@ PEXP void AttachTtfFileToFont(Font* font, Slice ttfFileContents, u8 ttfStyleFlag
 	NotNull(font->ttfFile.chars);
 	MyMemCopy(font->ttfFile.chars, ttfFileContents.chars, ttfFileContents.length);
 	font->ttfStyleFlags = ttfStyleFlags;
+	InitFontTtfInfo(font);
+}
+
+PEXP void FillFontKerningTable(Font* font)
+{
+	NotNull(font);
+	NotNull(font->arena);
+	NotEmptyStr(font->ttfFile);
+	
+	FreeFontKerningTable(font->arena, &font->kerningTable);
+	
+	int tableLength = stbtt_GetKerningTableLength(&font->ttfInfo);
+	Assert(tableLength >= 0);
+	if (tableLength == 0) { return; }
+	
+	ScratchBegin1(scratch, font->arena);
+	
+	stbtt_kerningentry* stbEntries = AllocArray(stbtt_kerningentry, scratch, (uxx)tableLength);
+	NotNull(stbEntries);
+	int getResult = stbtt_GetKerningTable(&font->ttfInfo, stbEntries, tableLength);
+	Assert(getResult >= 0);
+	Assert(getResult <= tableLength);
+	if (getResult == 0) { ScratchEnd(scratch); return; }
+	
+	font->kerningTable.numEntries = (uxx)getResult;
+	font->kerningTable.entries = AllocArray(FontKerningTableEntry, font->arena, font->kerningTable.numEntries);
+	NotNull(font->kerningTable.entries);
+	for (uxx eIndex = 0; eIndex < font->kerningTable.numEntries; eIndex++)
+	{
+		const stbtt_kerningentry* stbEntry = &stbEntries[eIndex];
+		FontKerningTableEntry* kerningEntry = &font->kerningTable.entries[eIndex];
+		Assert(stbEntry->glyph1 >= 0);
+		Assert(stbEntry->glyph2 >= 0);
+		kerningEntry->leftTtfGlyphIndex = (u32)stbEntry->glyph1;
+		kerningEntry->rightTtfGlyphIndex = (u32)stbEntry->glyph2;
+		kerningEntry->value = (r32)stbEntry->advance;
+	}
+	
+	ScratchEnd(scratch);
 }
 
 PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges)
 {
 	NotNull(font);
 	NotNull(font->arena);
-	Assert(!IsEmptyStr(font->ttfFile));
+	NotEmptyStr(font->ttfFile);
 	Assert(atlasSize.Width > 0 && atlasSize.Height > 0);
 	Assert(numCharRanges > 0);
 	NotNull(charRanges);
@@ -297,6 +394,7 @@ PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atla
 	}
 	
 	newAtlas->fontSize = fontSize;
+	newAtlas->fontScale = stbtt_ScaleForPixelHeight(&font->ttfInfo, fontSize);
 	newAtlas->styleFlags = (font->ttfStyleFlags | extraStyleFlags);
 	newAtlas->glyphRange.startCodepoint = minCodepoint;
 	newAtlas->glyphRange.endCodepoint = maxCodepoint;
@@ -320,6 +418,8 @@ PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atla
 			const stbtt_packedchar* stbCharInfo = &stbRange->chardata_for_range[gIndex];
 			FontGlyph* glyph = &newGlyphs[gIndex];
 			glyph->codepoint = charRange->startCodepoint + (u32)gIndex;
+			glyph->ttfGlyphIndex = stbtt_FindGlyphIndex(&font->ttfInfo, glyph->codepoint);
+			// if (glyph->ttfGlyphIndex < 0) { PrintLine_D("Codepoint 0x%08X has ttfGlyphIndex %d", glyph->codepoint, glyph->ttfGlyphIndex); }
 			DebugAssert(stbCharInfo->x0 <= stbCharInfo->x1);
 			DebugAssert(stbCharInfo->y0 <= stbCharInfo->y1);
 			DebugAssert(stbCharInfo->x0 >= 0);
@@ -454,6 +554,44 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(Font* font, u32 codepoint, r32 fontSize
 	
 	SetOptionalOutPntr(atlasOut, matchingAtlas);
 	return result;
+}
+
+PEXP r32 GetFontKerningBetweenGlyphs(const Font* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph)
+{
+	NotNull(font);
+	NotNull(leftGlyph);
+	NotNull(rightGlyph);
+	if (font->kerningTable.numEntries == 0) { return 0.0f; }
+	if (leftGlyph->ttfGlyphIndex < 0 || rightGlyph->ttfGlyphIndex < 0) { return 0.0f; }
+	
+	//TODO: We should do a binary search here to speed things up!
+	for (uxx eIndex = 0; eIndex < font->kerningTable.numEntries; eIndex++)
+	{
+		const FontKerningTableEntry* entry = &font->kerningTable.entries[eIndex];
+		if (entry->leftTtfGlyphIndex == (uxx)leftGlyph->ttfGlyphIndex && entry->rightTtfGlyphIndex == (uxx)rightGlyph->ttfGlyphIndex)
+		{
+			return entry->value * fontScale;
+		}
+	}
+	
+	return 0.0f;
+}
+PEXP r32 GetFontKerningBetweenCodepoints(const Font* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint)
+{
+	NotNull(font);
+	
+	FontAtlas* leftGlyphAtlas = nullptr;
+	FontGlyph* leftGlyph = GetFontGlyphForCodepoint((Font*)font, leftCodepoint, fontSize, styleFlags, &leftGlyphAtlas);
+	if (leftGlyph == nullptr || leftGlyphAtlas == nullptr) { return 0.0f; }
+	if (leftGlyph->ttfGlyphIndex < 0) { return 0.0f; }
+	
+	FontAtlas* rightGlyphAtlas = nullptr;
+	FontGlyph* rightGlyph = GetFontGlyphForCodepoint((Font*)font, rightCodepoint, fontSize, styleFlags, &rightGlyphAtlas);
+	if (rightGlyph == nullptr || rightGlyphAtlas == nullptr) { return 0.0f; }
+	if (rightGlyph->ttfGlyphIndex < 0) { return 0.0f; }
+	
+	if (leftGlyphAtlas->fontScale != rightGlyphAtlas->fontScale) { return 0.0f; }
+	return GetFontKerningBetweenGlyphs(font, leftGlyphAtlas->fontScale, leftGlyph, rightGlyph);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

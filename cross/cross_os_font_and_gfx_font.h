@@ -39,6 +39,8 @@ PEXP Result AttachOsTtfFileToFont(Font* font, Str8 fontName, r32 fontSize, u8 tt
 	font->ttfFile = fileContents;
 	font->ttfStyleFlags = ttfStyleFlags;
 	
+	InitFontTtfInfo(font);
+	
 	return Result_Success;
 }
 

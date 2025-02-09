@@ -66,6 +66,8 @@ struct FontFlowState
 	v2 strikethroughStartPos;
 	v2 alignPixelSize;
 	Color32 color;
+	FontAtlas* prevGlyphAtlas;
+	FontGlyph* prevGlyph;
 };
 
 typedef struct TextMeasure TextMeasure;
@@ -85,7 +87,7 @@ typedef FONT_FLOW_BEFORE_CHAR_DEF(FontFlowBeforeChar_f);
 #define FONT_FLOW_DRAW_CHAR_DEF(functionName)   void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
 typedef FONT_FLOW_DRAW_CHAR_DEF(FontFlowDrawChar_f);
 
-#define FONT_FLOW_AFTER_CHAR_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
+#define FONT_FLOW_AFTER_CHAR_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
 typedef FONT_FLOW_AFTER_CHAR_DEF(FontFlowAfterChar_f);
 
 typedef struct FontFlowCallbacks FontFlowCallbacks;
@@ -142,12 +144,19 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		if (callbacks != nullptr && callbacks->beforeChar != nullptr) { callbacks->beforeChar(state, flowOut, codepoint); }
 		if (state->byteIndex >= state->text.length) { break; }
 		
+		r32 kerning = 0.0f;
 		rec glyphDrawRec = Rec_Zero;
-		
 		FontAtlas* fontAtlas = nullptr;
 		FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, codepoint, state->fontSize, state->styleFlags, &fontAtlas);
 		if (fontGlyph != nullptr)
 		{
+			if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->fontScale == fontAtlas->fontScale) //TODO: Should we check the style flags match?
+			{
+				kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->fontScale, state->prevGlyph, fontGlyph);
+				state->position.X += kerning;
+				// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
+			}
+			
 			glyphDrawRec = NewRecV(Add(state->position, fontGlyph->renderOffset), ToV2Fromi(fontGlyph->atlasSourceRec.Size));
 			if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
 			if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
@@ -200,7 +209,13 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		state->charIndex++;
 		state->byteIndex += utf8ByteSize;
 		
-		if (callbacks != nullptr && callbacks->afterChar != nullptr) { callbacks->afterChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph); }
+		if (callbacks != nullptr && callbacks->afterChar != nullptr) { callbacks->afterChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph, kerning); }
+		
+		if (fontGlyph != nullptr)
+		{
+			state->prevGlyphAtlas = fontAtlas;
+			state->prevGlyph = fontGlyph;
+		}
 	}
 	
 	return result;

@@ -55,7 +55,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 			false,                      //underline TODO: Should we ask for this?
 			false,                      //strikeout TODO: Should we ask for this?
 			ANSI_CHARSET,               //charset
-			OUT_DEFAULT_PRECIS,         //output precision
+			OUT_TT_ONLY_PRECIS,         //output precision (only give us ttf type fonts)
 			CLIP_DEFAULT_PRECIS,        //clipping precision
 			DEFAULT_QUALITY,            //quality
 			DEFAULT_PITCH|FF_DONTCARE,  //pitch and family
