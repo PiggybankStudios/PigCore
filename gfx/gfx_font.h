@@ -331,6 +331,7 @@ PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atla
 		1, //padding (between chars)
 		scratch //alloc_context
 	);
+	Assert(beginResult != 0);
 	
 	stbtt_pack_range* stbRanges = AllocArray(stbtt_pack_range, scratch, numCharRanges);
 	NotNull(stbRanges);

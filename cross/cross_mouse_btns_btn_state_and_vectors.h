@@ -93,6 +93,7 @@ PEXPI void UpdateMouseLockedDelta(MouseState* mouse, u64 currentTime, v2 lockedP
 
 PEXPI void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta)
 {
+	UNUSED(currentTime);
 	NotNull(mouse);
 	if (!AreEqualV2(mouse->scrollDelta, V2_Zero))
 	{
@@ -103,6 +104,7 @@ PEXPI void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta)
 
 PEXPI void UpdateMouseOverWindow(MouseState* mouse, u64 currentTime, bool isOverWindow)
 {
+	UNUSED(currentTime);
 	NotNull(mouse);
 	if (mouse->isOverWindow != isOverWindow)
 	{

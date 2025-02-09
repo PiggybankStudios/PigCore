@@ -679,7 +679,7 @@ PEXPI void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth)
 	GfxSystem_SetDepthTestEnabled(system, false);
 	GfxSystem_SetDepthWriteEnabled(system, true);
 	GfxSystem_SetCullingEnabled(system, false);
-	GfxSystem_SetDepth(system, 1.0f);
+	GfxSystem_SetDepth(system, clearDepth);
 	
 	GfxSystem_DrawRectangle(system, NewRec(-1, -1, 2, 2), MonokaiPurple);
 	
@@ -702,6 +702,8 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 	NotNull(state->contextPntr);
 	NotNull(atlas);
 	NotNull(glyph);
+	UNUSED(flow);
+	UNUSED(codepoint);
 	GfxSystem* system = (GfxSystem*)state->contextPntr;
 	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, state->color, &atlas->texture, ToRecFromi(glyph->atlasSourceRec));
 }
