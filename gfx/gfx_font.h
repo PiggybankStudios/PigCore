@@ -125,7 +125,7 @@ struct PigFont
 };
 
 #if !BUILD_WITH_RAYLIB
-typedef PigFont PigFont;
+typedef PigFont Font;
 #endif
 
 // +--------------------------------------------------------------+
@@ -262,6 +262,8 @@ PEXPI void InitFontTtfInfo(PigFont* font)
 	Assert(firstFontOffset >= 0);
 	int initFontResult = stbtt_InitFont(&font->ttfInfo, font->ttfFile.bytes, firstFontOffset);
 	Assert(initFontResult != 0);
+	// int numOfFontsInTtf = stbtt_GetNumberOfFonts(font->ttfFile.bytes);
+	// PrintLine_D("There %s %d font%s in this ttf file", PluralEx(numOfFontsInTtf, "is", "are"), numOfFontsInTtf, Plural(numOfFontsInTtf, "s"));
 }
 
 PEXP void AttachTtfFileToFont(PigFont* font, Slice ttfFileContents, u8 ttfStyleFlags)
