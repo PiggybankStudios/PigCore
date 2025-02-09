@@ -10,8 +10,23 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[?] Add support for SQLite
 	[ ] 
 
+# Font Flow TODO:
+	[ ] Add lineHeight, maxAscend/maxDescend, verticalCenterOffset? to FontAtlas
+	[ ] Add support for horizontal alignment
+	[ ] Add support for word wrapping and character wrapping at some max width
+	[ ] Add support for sprite fonts
+	[ ] Add support for rendering selected text
+	[ ] Add support for baking a font with an outline?
+	[ ] Add rendering of strikethrough and underline
+	[ ] Add RichText which is made of some number of strings each with their own styling
+	[ ] Add support for rendering a TextLayout without needing to do flow again
+	[ ] Add support for rendering some text to a texture
+	[ ] Add support for post processing effects when rendering text to a texture (outline, drop shadow, etc.)
+	[ ] Measure performance of Baking, KerningTableGen, Flowing, Measuring, etc.
+	[ ] Add support for calculating mouse hover position over some text
+
 # Next Things TODO
-	[ ] Bring in more of GyLib (esp. rectangles, strings, and string_builder/buffer)
+	[X] Bring in more of GyLib (esp. rectangles, strings, and string_builder/buffer)
 	[ ] Add support for parsing GLTF files (maybe a third_party library?)
 	[ ] Get compiling on Android
 	[ ] Get compiling on Playdate
