@@ -7,6 +7,8 @@ Date:   02\09\2025
 #ifndef _CROSS_FONT_FLOW_AND_MEM_ARENA_H
 #define _CROSS_FONT_FLOW_AND_MEM_ARENA_H
 
+#if BUILD_WITH_SOKOL_GFX
+
 typedef struct TextLayout TextLayout;
 struct TextLayout
 {
@@ -84,5 +86,7 @@ PEXP Result DoTextLayoutInArena(Arena* arena, FontFlowState* state, TextLayout* 
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _CROSS_FONT_FLOW_AND_MEM_ARENA_H

@@ -7,11 +7,13 @@ Date:   02\08\2025
 #ifndef _CROSS_OS_FONT_AND_GFX_FONT_H
 #define _CROSS_OS_FONT_AND_GFX_FONT_H
 
+#if BUILD_WITH_SOKOL_GFX
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	Result AttachOsTtfFileToFont(Font* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags);
+	Result AttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags);
 #endif
 
 // +--------------------------------------------------------------+
@@ -19,7 +21,7 @@ Date:   02\08\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP Result AttachOsTtfFileToFont(Font* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags)
+PEXP Result AttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -45,5 +47,7 @@ PEXP Result AttachOsTtfFileToFont(Font* font, Str8 fontName, r32 fontSize, u8 tt
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _CROSS_OS_FONT_AND_GFX_FONT_H

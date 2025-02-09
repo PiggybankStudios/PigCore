@@ -138,7 +138,7 @@ PEXP GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32*
 	result.vertices[vIndex++] = NewVertex3D(vertPositions[brfIndex], V3_Down, NewV2(1, 1), colorsV4[BOX_MESH_BOTTOM_FACE_INDEX]);
 	result.vertices[vIndex++] = NewVertex3D(vertPositions[blfIndex], V3_Down, NewV2(0, 1), colorsV4[BOX_MESH_BOTTOM_FACE_INDEX]);
 	
-	DebugAssert(vIndex == result.numVertices);
+	DebugAssert((uxx)vIndex == result.numVertices);
 	
 	//top face
 	result.indices[iIndex++] = topStartIndex+0;
@@ -235,7 +235,7 @@ PEXP GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRi
 		{
 			r32 segmentAngle = (sIndex * segmentStep);
 			i32 ringVertIndex = (i32)(1 + (rIndex * numSegments) + sIndex);
-			Assert(ringVertIndex < result.numVertices);
+			Assert((uxx)ringVertIndex < result.numVertices);
 			result.vertices[ringVertIndex].position = NewV3(sphere.X + CosR32(segmentAngle) * ringRadius, ringY, sphere.Z + SinR32(segmentAngle) * ringRadius);
 			result.vertices[ringVertIndex].normal = Normalize(Sub(result.vertices[ringVertIndex].position, sphere.Center));
 			result.vertices[ringVertIndex].texCoord = NewV2(1.0f - ((r32)sIndex * texCoordStepX), 1.0f - ((r32)rIndex * texCoordStepY));

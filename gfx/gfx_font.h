@@ -3,7 +3,7 @@ File:   gfx_font.h
 Author: Taylor Robbins
 Date:   02\05\2025
 Description:
-	** A "Font" is a data structure built on top of possibly multiple Texture atlases
+	** A "PigFont" is a data structure built on top of possibly multiple Texture atlases
 	** which are packed with rasterized glyphs by stb_truetype.h
 */
 
@@ -20,6 +20,9 @@ Description:
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
 #include "gfx/gfx_texture.h"
+
+//TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
+#if BUILD_WITH_SOKOL_GFX
 
 #if PIG_CORE_IMPLEMENTATION
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -104,8 +107,11 @@ struct FontKerningTable
 	FontKerningTableEntry* entries;
 };
 
-typedef struct Font Font;
-struct Font
+//NOTE: We have a naming conflict with raylib.h if we name this "PigFont" so we are
+// naming it PigFont, but typedefing PigFont in non-raylib projects so anything outside
+// PigCore that doesn't plan to use Raylib can still use the name "PigFont"
+typedef struct PigFont PigFont;
+struct PigFont
 {
 	Arena* arena;
 	Str8 name;
@@ -118,30 +124,34 @@ struct Font
 	FontKerningTable kerningTable;
 };
 
+#if !BUILD_WITH_RAYLIB
+typedef PigFont PigFont;
+#endif
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE void FreeFontAtlas(Font* font, FontAtlas* atlas);
+	PIG_CORE_INLINE void FreeFontAtlas(PigFont* font, FontAtlas* atlas);
 	PIG_CORE_INLINE void FreeFontKerningTable(Arena* arena, FontKerningTable* kerningTable);
-	void FreeFont(Font* font);
-	void ClearFontAtlases(Font* font);
-	Font InitFont(Arena* arena, Str8 name);
+	void FreeFont(PigFont* font);
+	void ClearFontAtlases(PigFont* font);
+	PigFont InitFont(Arena* arena, Str8 name);
 	PIG_CORE_INLINE FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint);
 	PIG_CORE_INLINE FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints);
-	PIG_CORE_INLINE void RemoveAttachedTtfFile(Font* font);
-	PIG_CORE_INLINE void InitFontTtfInfo(Font* font);
-	void AttachTtfFileToFont(Font* font, Slice ttfFileContents);
-	void FillFontKerningTable(Font* font);
-	Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges);
-	PIG_CORE_INLINE FontAtlas* GetDefaultFontAtlas(Font* font);
-	PIG_CORE_INLINE r32 GetDefaultFontSize(const Font* font);
-	PIG_CORE_INLINE u8 GetDefaultFontStyleFlags(const Font* font);
+	PIG_CORE_INLINE void RemoveAttachedTtfFile(PigFont* font);
+	PIG_CORE_INLINE void InitFontTtfInfo(PigFont* font);
+	void AttachTtfFileToFont(PigFont* font, Slice ttfFileContents);
+	void FillFontKerningTable(PigFont* font);
+	Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges);
+	PIG_CORE_INLINE FontAtlas* GetDefaultFontAtlas(PigFont* font);
+	PIG_CORE_INLINE r32 GetDefaultFontSize(const PigFont* font);
+	PIG_CORE_INLINE u8 GetDefaultFontStyleFlags(const PigFont* font);
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepointEx(const FontAtlas* atlas, u32 codepoint, uxx* glyphIndexOut);
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint);
-	FontGlyph* GetFontGlyphForCodepoint(Font* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut);
-	r32 GetFontKerningBetweenGlyphs(const Font* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph);
-	r32 GetFontKerningBetweenCodepoints(const Font* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint);
+	FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut);
+	r32 GetFontKerningBetweenGlyphs(const PigFont* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph);
+	r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint);
 #endif
 
 // +--------------------------------------------------------------+
@@ -158,7 +168,7 @@ struct Font
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI void FreeFontAtlas(Font* font, FontAtlas* atlas)
+PEXPI void FreeFontAtlas(PigFont* font, FontAtlas* atlas)
 {
 	NotNull(font);
 	NotNull(atlas);
@@ -179,7 +189,7 @@ PEXPI void FreeFontKerningTable(Arena* arena, FontKerningTable* kerningTable)
 	ClearPointer(kerningTable);
 }
 
-PEXP void FreeFont(Font* font)
+PEXP void FreeFont(PigFont* font)
 {
 	NotNull(font);
 	if (font->arena != nullptr)
@@ -197,7 +207,7 @@ PEXP void FreeFont(Font* font)
 	ClearPointer(font);
 }
 
-PEXP void ClearFontAtlases(Font* font)
+PEXP void ClearFontAtlases(PigFont* font)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -209,11 +219,11 @@ PEXP void ClearFontAtlases(Font* font)
 	VarArrayClear(&font->atlases);
 }
 
-PEXP Font InitFont(Arena* arena, Str8 name)
+PEXP PigFont InitFont(Arena* arena, Str8 name)
 {
 	NotNull(arena);
 	NotNullStr(name);
-	Font result = ZEROED;
+	PigFont result = ZEROED;
 	result.arena = arena;
 	InitVarArray(FontAtlas, &result.atlases, arena);
 	result.name = AllocStr8(arena, name);
@@ -233,7 +243,7 @@ PEXPI FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints
 	return NewFontCharRange(startCodepoint, startCodepoint + numCodepoints-1);
 }
 
-PEXPI void RemoveAttachedTtfFile(Font* font)
+PEXPI void RemoveAttachedTtfFile(PigFont* font)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -244,7 +254,7 @@ PEXPI void RemoveAttachedTtfFile(Font* font)
 	ClearStruct(font->ttfInfo);
 }
 
-PEXPI void InitFontTtfInfo(Font* font)
+PEXPI void InitFontTtfInfo(PigFont* font)
 {
 	NotNull(font);
 	NotEmptyStr(font->ttfFile);
@@ -254,7 +264,7 @@ PEXPI void InitFontTtfInfo(Font* font)
 	Assert(initFontResult != 0);
 }
 
-PEXP void AttachTtfFileToFont(Font* font, Slice ttfFileContents, u8 ttfStyleFlags)
+PEXP void AttachTtfFileToFont(PigFont* font, Slice ttfFileContents, u8 ttfStyleFlags)
 {
 	NotNull(font);
 	NotNullStr(ttfFileContents);
@@ -268,7 +278,7 @@ PEXP void AttachTtfFileToFont(Font* font, Slice ttfFileContents, u8 ttfStyleFlag
 	InitFontTtfInfo(font);
 }
 
-PEXP void FillFontKerningTable(Font* font)
+PEXP void FillFontKerningTable(PigFont* font)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -306,7 +316,7 @@ PEXP void FillFontKerningTable(Font* font)
 	ScratchEnd(scratch);
 }
 
-PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+PEXP Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -445,21 +455,21 @@ PEXP Result BakeFontAtlas(Font* font, r32 fontSize, u8 extraStyleFlags, v2i atla
 	return Result_Success;
 }
 
-PEXPI FontAtlas* GetDefaultFontAtlas(Font* font)
+PEXPI FontAtlas* GetDefaultFontAtlas(PigFont* font)
 {
 	NotNull(font);
 	NotNull(font->arena);
 	if (font->atlases.length > 0) { return VarArrayGetFirst(FontAtlas, &font->atlases); }
 	else { return nullptr; }
 }
-PEXPI r32 GetDefaultFontSize(const Font* font)
+PEXPI r32 GetDefaultFontSize(const PigFont* font)
 {
-	FontAtlas* defaultAtlas = GetDefaultFontAtlas((Font*)font);
+	FontAtlas* defaultAtlas = GetDefaultFontAtlas((PigFont*)font);
 	return (defaultAtlas != nullptr) ? defaultAtlas->fontSize : 0.0f;
 }
-PEXPI u8 GetDefaultFontStyleFlags(const Font* font)
+PEXPI u8 GetDefaultFontStyleFlags(const PigFont* font)
 {
-	FontAtlas* defaultAtlas = GetDefaultFontAtlas((Font*)font);
+	FontAtlas* defaultAtlas = GetDefaultFontAtlas((PigFont*)font);
 	return (defaultAtlas != nullptr) ? defaultAtlas->styleFlags : FontStyleFlag_None;
 }
 
@@ -484,7 +494,7 @@ PEXPI bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint)
 	return DoesFontAtlasContainCodepointEx(atlas, codepoint, nullptr);
 }
 
-PEXP FontGlyph* GetFontGlyphForCodepoint(Font* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut)
+PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut)
 {
 	NotNull(font);
 	
@@ -557,7 +567,7 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(Font* font, u32 codepoint, r32 fontSize
 	return result;
 }
 
-PEXP r32 GetFontKerningBetweenGlyphs(const Font* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph)
+PEXP r32 GetFontKerningBetweenGlyphs(const PigFont* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph)
 {
 	NotNull(font);
 	NotNull(leftGlyph);
@@ -577,17 +587,17 @@ PEXP r32 GetFontKerningBetweenGlyphs(const Font* font, r32 fontScale, const Font
 	
 	return 0.0f;
 }
-PEXP r32 GetFontKerningBetweenCodepoints(const Font* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint)
+PEXP r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint)
 {
 	NotNull(font);
 	
 	FontAtlas* leftGlyphAtlas = nullptr;
-	FontGlyph* leftGlyph = GetFontGlyphForCodepoint((Font*)font, leftCodepoint, fontSize, styleFlags, &leftGlyphAtlas);
+	FontGlyph* leftGlyph = GetFontGlyphForCodepoint((PigFont*)font, leftCodepoint, fontSize, styleFlags, &leftGlyphAtlas);
 	if (leftGlyph == nullptr || leftGlyphAtlas == nullptr) { return 0.0f; }
 	if (leftGlyph->ttfGlyphIndex < 0) { return 0.0f; }
 	
 	FontAtlas* rightGlyphAtlas = nullptr;
-	FontGlyph* rightGlyph = GetFontGlyphForCodepoint((Font*)font, rightCodepoint, fontSize, styleFlags, &rightGlyphAtlas);
+	FontGlyph* rightGlyph = GetFontGlyphForCodepoint((PigFont*)font, rightCodepoint, fontSize, styleFlags, &rightGlyphAtlas);
 	if (rightGlyph == nullptr || rightGlyphAtlas == nullptr) { return 0.0f; }
 	if (rightGlyph->ttfGlyphIndex < 0) { return 0.0f; }
 	
@@ -596,6 +606,8 @@ PEXP r32 GetFontKerningBetweenCodepoints(const Font* font, r32 fontSize, u8 styl
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_FONT_H
 

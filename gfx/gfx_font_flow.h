@@ -3,7 +3,7 @@ File:   gfx_font_flow.h
 Author: Taylor Robbins
 Date:   02\08\2025
 Description:
-	** This file acts as the API for using the Font structure that
+	** This file acts as the API for using the PigFont structure that
 	** is defined in gfx_font.h to layout rastered glyphs from the
 	** atlases in the font based on information that was extracted
 	** from the ttf for how place each glyph relative to the one before.
@@ -26,6 +26,9 @@ Description:
 #include "struct/struct_string.h"
 #include "gfx/gfx_font.h"
 
+//TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
+#if BUILD_WITH_SOKOL_GFX
+
 typedef struct FontFlowGlyph FontFlowGlyph;
 struct FontFlowGlyph
 {
@@ -41,7 +44,7 @@ struct FontFlowGlyph
 typedef struct FontFlow FontFlow;
 struct FontFlow
 {
-	Font* font;
+	PigFont* font;
 	v2 startPos;
 	rec visualRec;
 	rec logicalRec;
@@ -54,7 +57,7 @@ typedef struct FontFlowState FontFlowState;
 struct FontFlowState
 {
 	void* contextPntr;
-	Font* font;
+	PigFont* font;
 	v2 position;
 	r32 fontSize;
 	u8 styleFlags;
@@ -103,8 +106,8 @@ struct FontFlowCallbacks
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut);
-	PIG_CORE_INLINE TextMeasure MeasureTextEx(const Font* font, r32 fontSize, u8 styleFlags, Str8 text);
-	PIG_CORE_INLINE TextMeasure MeasureText(const Font* font, Str8 text);
+	PIG_CORE_INLINE TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text);
+	PIG_CORE_INLINE TextMeasure MeasureText(const PigFont* font, Str8 text);
 #endif
 
 // +--------------------------------------------------------------+
@@ -221,10 +224,10 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	return result;
 }
 
-PEXPI TextMeasure MeasureTextEx(const Font* font, r32 fontSize, u8 styleFlags, Str8 text)
+PEXPI TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
 {
 	FontFlowState state = ZEROED;
-	state.font = (Font*)font;
+	state.font = (PigFont*)font;
 	state.position = V2_Zero_Const;
 	state.fontSize = fontSize;
 	state.styleFlags = styleFlags;
@@ -240,7 +243,7 @@ PEXPI TextMeasure MeasureTextEx(const Font* font, r32 fontSize, u8 styleFlags, S
 	result.logicalRec = flow.logicalRec;
 	return result;
 }
-PEXPI TextMeasure MeasureText(const Font* font, Str8 text)
+PEXPI TextMeasure MeasureText(const PigFont* font, Str8 text)
 {
 	Assert(font->atlases.length > 0);
 	FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
@@ -248,6 +251,8 @@ PEXPI TextMeasure MeasureText(const Font* font, Str8 text)
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_FONT_FLOW_H
 

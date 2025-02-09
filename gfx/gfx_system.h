@@ -45,7 +45,7 @@ struct GfxSystemState
 	Texture* textures[MAX_NUM_SHADER_IMAGES];
 	VertBuffer* vertBuffer;
 	
-	Font* font;
+	PigFont* font;
 	r32 fontSize;
 	u8 fontStyleFlags;
 	v2 alignPixelSize;
@@ -106,9 +106,9 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_BindVertBuffer(GfxSystem* system, VertBuffer* buffer);
 	PIG_CORE_INLINE void GfxSystem_BindTextureAtIndex(GfxSystem* system, Texture* texture, uxx textureIndex);
 	PIG_CORE_INLINE void GfxSystem_BindTexture(GfxSystem* system, Texture* texture);
-	PIG_CORE_INLINE void GfxSystem_BindFontEx(GfxSystem* system, Font* font, r32 fontSize, u8 fontStyleFlags);
-	PIG_CORE_INLINE void GfxSystem_BindFontAtSize(GfxSystem* system, Font* font, r32 fontSize);
-	PIG_CORE_INLINE void GfxSystem_BindFont(GfxSystem* system, Font* font);
+	PIG_CORE_INLINE void GfxSystem_BindFontEx(GfxSystem* system, PigFont* font, r32 fontSize, u8 fontStyleFlags);
+	PIG_CORE_INLINE void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSize);
+	PIG_CORE_INLINE void GfxSystem_BindFont(GfxSystem* system, PigFont* font);
 	PIG_CORE_INLINE void GfxSystem_SetColorWriteEnabled(GfxSystem* system, bool colorWriteEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthTestEnabled(GfxSystem* system, bool depthTestEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthWriteEnabled(GfxSystem* system, bool depthWriteEnabled);
@@ -131,7 +131,7 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth);
-	Result GfxSystem_DrawTextWithFont(GfxSystem* system, Font* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color);
+	Result GfxSystem_DrawTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextAtSize(GfxSystem* system, r32 fontSize, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextBold(GfxSystem* system, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextItalic(GfxSystem* system, Str8 text, v2 position, Color32 color);
@@ -402,14 +402,14 @@ PEXPI void GfxSystem_BindTexture(GfxSystem* system, Texture* texture)
 	GfxSystem_BindTextureAtIndex(system, texture, 0);
 }
 
-PEXPI void GfxSystem_BindFontEx(GfxSystem* system, Font* font, r32 fontSize, u8 fontStyleFlags)
+PEXPI void GfxSystem_BindFontEx(GfxSystem* system, PigFont* font, r32 fontSize, u8 fontStyleFlags)
 {
 	NotNull(system);
 	if (system->state.font != font) { system->state.font = font; }
 	if (system->state.fontSize != fontSize) { system->state.fontSize = fontSize; }
 	if (system->state.fontStyleFlags != fontStyleFlags) { system->state.fontStyleFlags = fontStyleFlags; }
 }
-PEXPI void GfxSystem_BindFontAtSize(GfxSystem* system, Font* font, r32 fontSize)
+PEXPI void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSize)
 {
 	u8 fontStyleFlags = FontStyleFlag_None;
 	if (font != nullptr && font->atlases.length > 0)
@@ -420,7 +420,7 @@ PEXPI void GfxSystem_BindFontAtSize(GfxSystem* system, Font* font, r32 fontSize)
 	}
 	GfxSystem_BindFontEx(system, font, fontSize, fontStyleFlags);
 }
-PEXPI void GfxSystem_BindFont(GfxSystem* system, Font* font)
+PEXPI void GfxSystem_BindFont(GfxSystem* system, PigFont* font)
 {
 	r32 fontSize = 16.0f;
 	u8 fontStyleFlags = FontStyleFlag_None;
@@ -708,7 +708,7 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, state->color, &atlas->texture, ToRecFromi(glyph->atlasSourceRec));
 }
 
-PEXP Result GfxSystem_DrawTextWithFont(GfxSystem* system, Font* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color)
+PEXP Result GfxSystem_DrawTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color)
 {
 	NotNull(system);
 	NotNull(font);

@@ -360,12 +360,12 @@ PEXP bool TryParseR64Ex(Str8 str, r64* valueOut, Result* errorOut, bool allowInf
 			result = (result * 10.0) + (r64)GetNumericCharValue(nextChar);
 		}
 		
-		bool foundPeriod = false;
+		// bool foundPeriod = false;
 		bool foundNumbersAfterPeriod = false;
 		if (bIndex < str.length && str.chars[bIndex] == '.')
 		{
 			bIndex++;
-			foundPeriod = true;
+			// foundPeriod = true;
 			
 			r64 digitInvPower = 10.0;
 			for (; bIndex < str.length; bIndex++)
@@ -378,13 +378,13 @@ PEXP bool TryParseR64Ex(Str8 str, r64* valueOut, Result* errorOut, bool allowInf
 			}
 		}
 		
-		bool foundScientificNotation = false;
+		// bool foundScientificNotation = false;
 		bool negativeExponent = false;
 		r64 exponentMultiplier = 1.0;
 		if (bIndex < str.length && (str.chars[bIndex] == 'e' || str.chars[bIndex] == 'E'))
 		{
 			bIndex++;
-			foundScientificNotation = true;
+			// foundScientificNotation = true;
 			
 			if (bIndex < str.length && str.chars[bIndex] == '+') { bIndex++; negativeExponent = false; }
 			else if (bIndex < str.length && str.chars[bIndex] == '-') { bIndex++; negativeExponent = true; }
