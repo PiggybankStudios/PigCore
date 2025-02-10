@@ -33,7 +33,8 @@ for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH_RAYLIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_BOX2D') do set BUILD_WITH_BOX2D=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL') do set BUILD_WITH_SOKOL=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_GFX') do set BUILD_WITH_SOKOL_GFX=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_APP') do set BUILD_WITH_SOKOL_APP=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SDL') do set BUILD_WITH_SDL=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_OPENVR') do set BUILD_WITH_OPENVR=%%i
 
@@ -144,13 +145,13 @@ if "%DEBUG_BUILD%"=="1" (
 	set common_clang_flags=%common_clang_flags%
 )
 
-set tests_libraries=
+:: Gdi32.lib = Needed for CreateFontA and other Windows graphics functions
+:: User32.lib = Needed for GetForegroundWindow, GetDC, etc.
+set tests_libraries=Gdi32.lib User32.lib
 set tests_clang_libraries=
-set pig_core_dll_libraries=
+set pig_core_dll_libraries=Gdi32.lib User32.lib
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM raylib.lib   = ?
-	REM gdi32.lib    = ?
-	REM User32.lib   = ?
 	REM Shell32.lib  = Shlobj.h ? 
 	REM kernel32.lib = ?
 	REM winmm.lib    = ?
@@ -158,7 +159,7 @@ if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM Shlwapi.lib  = ?
 	REM Ole32.lib    = Combaseapi.h, CoCreateInstance
 	REM Advapi32.lib = Processthreadsapi.h, OpenProcessToken, GetTokenInformation
-	set tests_libraries=%tests_libraries% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
+	set tests_libraries=%tests_libraries% raylib.lib Shell32.lib kernel32.lib winmm.lib
 	REM NOTE: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
 	set pig_core_dll_libraries=%pig_core_dll_libraries% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
 )
@@ -170,8 +171,11 @@ if "%BUILD_WITH_SDL%"=="1" (
 	set tests_libraries=%tests_libraries% SDL2.lib
 	set pig_core_dll_libraries=%pig_core_dll_libraries% SDL2.lib
 )
-if "%BUILD_WITH_SOKOL%"=="1" (
-	set tests_clang_libraries=%tests_clang_libraries% -lX11 -lXi -lGL -ldl -lXcursor
+if "%BUILD_WITH_SOKOL_GFX%"=="1" (
+	set tests_clang_libraries=%tests_clang_libraries% -lGL
+)
+if "%BUILD_WITH_SOKOL_APP%"=="1" (
+	set tests_clang_libraries=%tests_clang_libraries% -lX11 -lXi -ldl -lXcursor
 )
 if "%BUILD_WITH_OPENVR%"=="1" (
 	set tests_libraries=%tests_libraries% openvr_api.lib

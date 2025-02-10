@@ -6,7 +6,7 @@ Description:
 	** None
 */
 
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_APP
 
 #define SOKOL_APP_IMPL
 #if TARGET_IS_LINUX
@@ -18,8 +18,15 @@ Description:
 #pragma clang diagnostic pop
 #endif
 
+#include "misc/misc_sokol_app_helpers.c"
+
+#endif //BUILD_WITH_SOKOL_APP
+
+#if BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP
+
 #include "tests/simple_shader.glsl.h"
 #include "tests/main2d_shader.glsl.h"
+
 
 int MyMain(int argc, char* argv[]);
 
@@ -30,62 +37,6 @@ sg_pass_action sokolPassAction;
 Shader simpleShader;
 Shader main2dShader;
 Texture gradientTexture;
-VertBuffer squareBuffer;
-
-// +--------------------------------------------------------------+
-// |                    Callbacks and Helpers                     |
-// +--------------------------------------------------------------+
-void SokolLogCallback(const char* tag, uint32_t logLevel, uint32_t logId, const char* message, uint32_t lineNum, const char* filePath, void* userData)
-{
-	UNUSED(tag); //TODO: Should we output the tag?
-	UNUSED(logId); //TODO: Should we output the logId?
-	UNUSED(userData);
-	DbgLevel dbgLevel;
-	switch (logLevel)
-	{
-		case 0: dbgLevel = DbgLevel_Error; break;
-		case 1: dbgLevel = DbgLevel_Error; break;
-		case 2: dbgLevel = DbgLevel_Warning; break;
-		case 3: dbgLevel = DbgLevel_Other; break;
-		default: dbgLevel = DbgLevel_None; break;
-	}
-	DebugOutputRouter(filePath, lineNum, __func__, dbgLevel, true, message);
-	if (logLevel == 0) { Assert(false); }
-}
-
-sg_environment CreateSokolEnvironment()
-{
-	sg_environment result = ZEROED;
-	result.defaults.color_format = (sg_pixel_format)sapp_color_format();
-	result.defaults.depth_format = (sg_pixel_format)sapp_depth_format();
-	result.defaults.sample_count = sapp_sample_count();
-	result.metal.device = sapp_metal_get_device();
-	result.d3d11.device = sapp_d3d11_get_device();
-	result.d3d11.device_context = sapp_d3d11_get_device_context();
-	result.wgpu.device = sapp_wgpu_get_device();
-	return result;
-}
-
-PEXPI sg_swapchain CreateSokolSappSwapchain()
-{
-	sg_swapchain result = ZEROED;
-	result.width = sapp_width();
-	result.height = sapp_height();
-	result.sample_count = sapp_sample_count();
-	result.color_format = (sg_pixel_format)sapp_color_format();
-	result.depth_format = (sg_pixel_format)sapp_depth_format();
-	result.metal.current_drawable = sapp_metal_get_current_drawable();
-	result.metal.depth_stencil_texture = sapp_metal_get_depth_stencil_texture();
-	result.metal.msaa_color_texture = sapp_metal_get_msaa_color_texture();
-	result.d3d11.render_view = sapp_d3d11_get_render_view();
-	result.d3d11.resolve_view = sapp_d3d11_get_resolve_view();
-	result.d3d11.depth_stencil_view = sapp_d3d11_get_depth_stencil_view();
-	result.wgpu.render_view = sapp_wgpu_get_render_view();
-	result.wgpu.resolve_view = sapp_wgpu_get_resolve_view();
-	result.wgpu.depth_stencil_view = sapp_wgpu_get_depth_stencil_view();
-	result.gl.framebuffer = sapp_gl_get_framebuffer();
-	return result;
-}
 
 // +--------------------------------------------------------------+
 // |                          Initialize                          |
@@ -93,25 +44,12 @@ PEXPI sg_swapchain CreateSokolSappSwapchain()
 void AppInit(void)
 {
 	ScratchBegin(scratch);
-	
-	sg_setup(&(sg_desc){
-		.environment = CreateSokolEnvironment(),
+	InitSokolGraphics((sg_desc){
+		.environment = CreateSokolAppEnvironment(),
 		.logger.func = SokolLogCallback,
 	});
 	
 	InitGfxSystem(stdHeap, &gfx);
-	
-	Vertex2D squareVertices[] = {
-		{ .X=0.0f, .Y=0.0f,   .tX=0.0f, .tY=0.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
-		{ .X=1.0f, .Y=0.0f,   .tX=1.0f, .tY=0.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
-		{ .X=0.0f, .Y=1.0f,   .tX=0.0f, .tY=1.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
-		
-		{ .X=1.0f, .Y=1.0f,   .tX=1.0f, .tY=1.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
-		{ .X=0.0f, .Y=1.0f,   .tX=0.0f, .tY=1.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
-		{ .X=1.0f, .Y=0.0f,   .tX=1.0f, .tY=0.0f,   .R=1.0f, .G=1.0f, .B=1.0f, .A=1.0f },
-	};
-	squareBuffer = InitVertBuffer2D(stdHeap, StrLit("square"), VertBufferUsage_Static, ArrayCount(squareVertices), &squareVertices[0], false);
-	Assert(squareBuffer.error == Result_Success);
 	
 	v2i gradientSize = NewV2i(64, 64);
 	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.Width * gradientSize.Height));
@@ -141,6 +79,7 @@ void AppCleanup(void)
 	sg_shutdown();
 }
 
+#if 0
 void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 {
 	NotNull(shader);
@@ -154,6 +93,7 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 	BindVertBuffer(&squareBuffer);
 	DrawVertices();
 }
+#endif
 
 // +--------------------------------------------------------------+
 // |                            Update                            |
@@ -162,8 +102,9 @@ void AppFrame(void)
 {
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	
-	BeginFrame(CreateSokolSappSwapchain(), MonokaiBack, 1.0f);
+	BeginFrame(GetSokolAppSwapchain(), MonokaiBack, 1.0f);
 	{
+		SetDepth(1.0f);
 		BindShader(&main2dShader);
 		BindTexture(&gradientTexture);
 		
@@ -174,17 +115,17 @@ void AppFrame(void)
 		SetProjectionMat(projMat);
 		SetViewMat(Mat4_Identity);
 		SetWorldMat(Mat4_Identity);
-		SetSourceRec(NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+		SetSourceRec(NewRec(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
 		// SetUniformByNameV2(StrLit("main2d_texture0_size"), ToV2Fromi(gradientTexture.size));
 		
 		v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
-		i32 numColumns = CeilR32i(windowSize.Width / tileSize.Width);
-		i32 numRows = CeilR32i(windowSize.Height / tileSize.Height);
+		i32 numColumns = FloorR32i(windowSize.Width / tileSize.Width);
+		i32 numRows = FloorR32i(windowSize.Height / tileSize.Height);
 		for (i32 yIndex = 0; yIndex < numRows; yIndex++)
 		{
 			for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
 			{
-				DrawRectangle(&main2dShader, NewV2(tileSize.Width * xIndex, tileSize.Height * yIndex), tileSize, White);
+				DrawRectangle(NewRec(tileSize.Width * xIndex, tileSize.Height * yIndex, tileSize.Width, tileSize.Height), White);
 			}
 		}
 	}
@@ -258,4 +199,4 @@ sapp_desc sokol_main(int argc, char* argv[])
 	};
 }
 
-#endif //BUILD_WITH_SOKOL
+#endif //BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP

@@ -44,7 +44,7 @@ Description:
 #include "gfx/gfx_all.h"
 #include "gfx/gfx_system_global.h"
 
-#if BUILD_WITH_SOKOL && BUILD_WITH_RAYLIB
+#if (BUILD_WITH_SOKOL_APP && BUILD_WITH_RAYLIB) || (BUILD_WITH_SOKOL_GFX && BUILD_WITH_RAYLIB)
 #error SOKOL and RAYLIB are not meant to be enabled at the same time. Use one or the other!
 #endif
 
@@ -152,7 +152,7 @@ DEBUG_OUTPUT_HANDLER_DEF(TestsDebugOutputCallback)
 // +--------------------------------------------------------------+
 // |                             Main                             |
 // +--------------------------------------------------------------+
-#if BUILD_WITH_SOKOL
+#if BUILD_WITH_SOKOL_APP
 int MyMain(int argc, char* argv[]) //pre-declared in tests_sokol.c
 #elif (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -692,7 +692,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |         Regex Tests          |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		Str8 targetStr = StrLit("Hello World!");
 		PrintLine_O("Searching \"%.*s\"", StrPrint(targetStr));
