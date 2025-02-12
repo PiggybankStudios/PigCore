@@ -13,6 +13,17 @@ Description:
 #include "build_config.h"
 
 // +--------------------------------------------------------------+
+// |                      Determine LANGUAGE                      |
+// +--------------------------------------------------------------+
+#ifdef __cplusplus
+#define LANGUAGE_IS_C   0
+#define LANGUAGE_IS_CPP 1
+#else
+#define LANGUAGE_IS_C   1
+#define LANGUAGE_IS_CPP 0
+#endif
+
+// +--------------------------------------------------------------+
 // |                      Determine COMPILER                      |
 // +--------------------------------------------------------------+
 //NOTE: Clang lies a bunch, it gives __GNUC__ and _MSC_VER defines even though it is neither! Thus we check it first and preclude the others if we find __clang__
@@ -124,6 +135,30 @@ Description:
 #define USING_CUSTOM_STDLIB 1
 #else
 #define USING_CUSTOM_STDLIB 0
+#endif
+
+// +--------------------------------------------------------------+
+// |                      Extern C Handling                       |
+// +--------------------------------------------------------------+
+//NOTE: winnt.h already defines EXTERN_C on Windows
+#if !TARGET_IS_WINDOWS
+#define EXTERN_C  extern "C"
+#endif
+
+// Hiding the curly brackets inside a macro like this helps keep text editors from indenting
+// all our top-level elements in a file while still wrapping the entire file in extern "C"
+// NOTE: EXTERN_C_START and EXTERN_C_END are already defined by winnt.h (included by windows.h) so we had to change the name of our version slightly
+#define START_EXTERN_C extern "C" {
+#define END_EXTERN_C   }
+
+#if LANGUAGE_IS_CPP
+#define MAYBE_EXTERN_C       EXTERN_C
+#define MAYBE_START_EXTERN_C START_EXTERN_C
+#define MAYBE_END_EXTERN_C   END_EXTERN_C
+#else
+#define MAYBE_EXTERN_C       //nothing
+#define MAYBE_START_EXTERN_C //nothing
+#define MAYBE_END_EXTERN_C   //nothing
 #endif
 
 #endif //  _BASE_COMPILER_CHECK_H

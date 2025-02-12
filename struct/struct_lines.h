@@ -19,7 +19,9 @@ union Line2D
 	v2 Points[2];
 	struct { v2 Start; v2 End; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Line2D) == sizeof(r32)*4);
+#endif
 
 typedef union Line3D Line3D;
 union Line3D
@@ -28,7 +30,9 @@ union Line3D
 	v3 Points[2];
 	struct { v3 Start; v3 End; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Line3D) == sizeof(r32)*6);
+#endif
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

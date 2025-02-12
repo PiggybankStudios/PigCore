@@ -28,7 +28,9 @@ union Rectanglef
 	struct { r32 Left, Top, Unused1, Unused2; };
 	struct { v2 TopLeft, Size; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Rectanglef) == sizeof(r32) * 4);
+#endif
 
 typedef union Rectanglei Rectanglei;
 union Rectanglei
@@ -38,7 +40,9 @@ union Rectanglei
 	struct { i32 Left, Top, Unused1, Unused2; };
 	struct { v2i TopLeft, Size; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Rectanglei) == sizeof(i32) * 4);
+#endif
 
 typedef union Box Box;
 union Box
@@ -48,7 +52,9 @@ union Box
 	struct { r32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
 	struct { v3 BottomLeftBack, Size; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Box) == sizeof(r32) * 6);
+#endif
 
 typedef union Boxi Boxi;
 union Boxi
@@ -58,7 +64,9 @@ union Boxi
 	struct { i32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
 	struct { v3i BottomLeftBack, Size; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Boxi) == sizeof(i32) * 6);
+#endif
 
 typedef union Obb2D Obb2D;
 union Obb2D
@@ -68,7 +76,9 @@ union Obb2D
 	struct { r32 CenterX, CenterY, Unused1, Unused2, Angle; };
 	struct { v2 Center, Size; r32 Unused3; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Obb2D) == sizeof(r32) * 5);
+#endif
 
 //NOTE: quat is HMM_Vec4 which has an SSE intrinsic that forces it to be 16-byte aligned
 //      thus we need a of padding between center/size and rotation
@@ -80,7 +90,9 @@ union Obb3D
 	struct { r32 CenterX, CenterY, CenterZ, Unused1, Unused2, Unused3, Padding3, Padding4; quat Unused4; };
 	struct { v3 Center, Size; r32 Padding5, Padding6; quat Unused5; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Obb3D) == sizeof(r32) * 12);
+#endif
 
 typedef Rectanglef rec;
 typedef Rectanglei reci;

@@ -144,10 +144,35 @@ struct Arena
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)_Alignof(type))
 #define AllocTypeUnaligned(type, arenaPntr)         (type*)AllocMem(       (arenaPntr), (uxx)sizeof(type))
-#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
 #define AllocArrayUnaligned(type, arenaPntr, count) (type*)AllocMem(       (arenaPntr), (uxx)(sizeof(type) * (count)))
+#if LANGUAGE_IS_C
+#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)_Alignof(type))
+#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
+#else
+#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)std::alignment_of<type>())
+#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)std::alignment_of<type>())
+#define AllocAndNewWithArgs(classPntrVarName, arenaPntr, classType, ...) do \
+{                                                                           \
+	classPntrVarName = AllocType(classType, (arenaPntr));                   \
+	new(classPntrVarName) classType(__VA_ARGS__);                           \
+} while(0)
+#define AllocAndNew(classPntrVarName, arenaPntr, classType) do \
+{                                                              \
+	classPntrVarName = AllocType(classType, (arenaPntr));      \
+	new(classPntrVarName) classType;                           \
+} while(0)
+#define DeclareAllocAndNewWithArgs(classPntrVarName, arenaPntr, classType, ...) classType* classPntrVarName; do \
+{                                                                                                               \
+	classPntrVarName = AllocType(classType, (arenaPntr));                                                       \
+	new(classPntrVarName) classType(__VA_ARGS__);                                                               \
+} while(0)
+#define DeclareAllocAndNew(classPntrVarName, arenaPntr, classType) classType* classPntrVarName; do \
+{                                                                                                  \
+	classPntrVarName = AllocType(classType, (arenaPntr));                                          \
+	new(classPntrVarName) classType;                                                               \
+} while(0)
+#endif
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |

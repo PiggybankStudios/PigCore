@@ -24,14 +24,18 @@ typedef int8_t      i8;
 typedef int16_t     i16;
 typedef int32_t     i32;
 typedef long long   i64;
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(i64) == 8); //TODO: Change to StaticAssert once we diangose that
+#endif
 
 // We use a "u" to distinguish these as only holding unsigned numbers (they are still integers, but "i" is already taken)
 typedef uint8_t     u8;
 typedef uint16_t    u16;
 typedef uint32_t    u32;
 typedef unsigned long long u64;
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(u64) == 8); //TODO: Change to StaticAssert once we diangose that
+#endif
 
 // We use an "r" to indicate it can hold real numbers
 typedef float       r32;
@@ -59,7 +63,9 @@ typedef r64 rxx;
 #error Unsupported PLATFORM_XBIT define!
 #endif
 
+#if LANGUAGE_IS_C
 #define nullptr ((void*)0)
+#endif
 
 #define VOID_FUNC_DEF(functionName) void functionName()
 typedef VOID_FUNC_DEF(void_func_f);

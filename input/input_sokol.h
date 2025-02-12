@@ -35,7 +35,9 @@ Date:   02\03\2025
 
 PEXP Key GetKeyFromSokolKeycodeEx(sapp_keycode keycode, u8 alternateIndex)
 {
+	#if LANGUAGE_IS_C
 	_Static_assert(MAX_ALT_KEY_MAPPINGS == 2);
+	#endif
 	if (alternateIndex == 0)
 	{
 		switch (keycode)
@@ -252,7 +254,9 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 		case SAPP_EVENTTYPE_KEY_DOWN: [[fallthrough]];
 		case SAPP_EVENTTYPE_KEY_UP:
 		{
+			#if LANGUAGE_IS_C
 			_Static_assert(MAX_ALT_KEY_MAPPINGS == 2);
+			#endif
 			bool isKeyDown = (event->type == SAPP_EVENTTYPE_KEY_DOWN);
 			Key primaryKey = GetKeyFromSokolKeycodeEx(event->key_code, 0);
 			Key altKey = GetKeyFromSokolKeycodeEx(event->key_code, 1);

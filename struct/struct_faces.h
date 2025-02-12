@@ -22,7 +22,9 @@ union Triangle2D
 	v2 Verts[3];
 	struct { v2 Vert0, Vert1, Vert2; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Triangle2D) == sizeof(r32)*6);
+#endif
 
 typedef union Triangle3D Triangle3D;
 union Triangle3D
@@ -31,7 +33,9 @@ union Triangle3D
 	v3 Verts[3];
 	struct { v3 Vert0, Vert1, Vert2; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Triangle3D) == sizeof(r32)*9);
+#endif
 
 typedef union Quad2D Quad2D;
 union Quad2D
@@ -40,7 +44,9 @@ union Quad2D
 	v2 Verts[4];
 	struct { v2 Vert0, Vert1, Vert2, Vert3; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Quad2D) == sizeof(r32)*8);
+#endif
 
 typedef union Quad3D Quad3D;
 union Quad3D
@@ -49,7 +55,9 @@ union Quad3D
 	v3 Verts[4];
 	struct { v3 Vert0, Vert1, Vert2, Vert3; };
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Quad3D) == sizeof(r32)*12);
+#endif
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

@@ -18,6 +18,7 @@ Description:
 #include "std/std_includes.h"
 
 //TODO: Why can't we use a #define around _Static_assert????
+//TODO: _Static_assert is not available when compiling in C++ mode!
 #define StaticAssert(condition) _Static_assert(condition)
 #if USING_CUSTOM_STDLIB
 #define AssertMsg(condition, message) if (!(condition)) { assert_msg(condition, (message)); }

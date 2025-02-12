@@ -155,12 +155,6 @@ Description:
 #define DEBUG_USED(varName)    (void)(varName)
 #endif
 
-// Hiding the curly brackets inside a macro like this helps keep text editors from indenting
-// all our top-level elements in a file while still wrapping the entire file in extern "C"
-// NOTE: EXTERN_C_START and EXTERN_C_END are already defined by winnt.h (included by windows.h) so we had to change the name of our version slightly
-#define START_EXTERN_C extern "C" {
-#define END_EXTERN_C }
-
 // Often in a program we will have a running integer counter (say ms) that we will take copies of
 // and then compare later to see how long it's been since we took that copy. It's a simple
 // mathematically operation but making a macro makes it way more readable what we are doing

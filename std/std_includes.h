@@ -43,12 +43,15 @@ Descriptions:
 	#include <errno.h>
 	#include <dlfcn.h> //needed for dlopen
 #endif
-#if COMPILER_IS_MSVC
+#if COMPILER_IS_MSVC && LANGUAGE_IS_C
 	#pragma warning(push)
 	#pragma warning(disable: 5262) //error C5262: implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
 	// Gives us things like atomic_int type
 	#include <stdatomic.h>
 	#pragma warning(pop)
+#endif
+#if LANGUAGE_IS_CPP
+	#include <type_traits> //needed for stuff like std::alignment_of<T>()
 #endif
 #if COMPILER_IS_MSVC
 	// Needed for _beginthread/_endthread

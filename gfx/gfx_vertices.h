@@ -83,7 +83,9 @@ union Vertex2D
 		r32 R, G, B, A;
 	};
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Vertex2D) == sizeof(r32)*8);
+#endif
 
 typedef union Vertex3D Vertex3D;
 union Vertex3D
@@ -104,7 +106,9 @@ union Vertex3D
 		r32 R, G, B, A;
 	};
 };
+#if LANGUAGE_IS_C
 _Static_assert(sizeof(Vertex3D) == sizeof(r32)*12);
+#endif
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
