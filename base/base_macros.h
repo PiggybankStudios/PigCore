@@ -47,7 +47,11 @@ Description:
 
 // Used to specific an initial value for a structure that is entirely cleared to 0
 // NOTE: The 0 is required when compiling in C mode in MSVC compiler since it doesn't support C23 empty {} syntax
+#if LANGUAGE_IS_C
 #define ZEROED {0}
+#else
+#define ZEROED {}
+#endif
 
 // +--------------------------------------------------------------+
 // |                     Function Like Macros                     |

@@ -25,6 +25,9 @@ Description:
 
 //TODO: MaxUsed limitation
 
+#define ARENA_DEBUG_PADDING_SIZE  32 //bytes
+#define ARENA_DEBUG_PADDING_VALUE 0xDA //bytes
+
 #define ALLOC_FUNC_DEF(functionName)   void* functionName(uxx numBytes)
 typedef ALLOC_FUNC_DEF(AllocFunc_f);
 #define REALLOC_FUNC_DEF(functionName) void* functionName(void* allocPntr, uxx newSize)
@@ -40,6 +43,7 @@ enum ArenaFlag
 	ArenaFlag_AssertOnFailedAlloc  = 0x02,
 	ArenaFlag_SingleAlloc          = 0x04,
 	ArenaFlag_AllowNullptrFree     = 0x08,
+	ArenaFlag_AddPaddingForDebug   = 0x10,
 };
 
 typedef enum ArenaType ArenaType;
@@ -139,6 +143,7 @@ struct Arena
 	void ArenaSoftGrowEnd(Arena* arena, void* allocPntr, uxx allocSize, uxx newSpaceUsed);
 	PIG_CORE_INLINE void ArenaSoftGrowEndNoSize(Arena* arena, void* allocPntr, uxx newSpaceUsed);
 	bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure);
+	PIG_CORE_INLINE bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr, uxx allocSize, bool assertOnFailure)
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -471,6 +476,11 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 	void* result = nullptr;
 	uxx alignment = (alignmentOverride != UINTXX_MAX) ? alignmentOverride : arena->alignment;
 	
+	if (IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug) && numBytes > 0)
+	{
+		numBytes += ARENA_DEBUG_PADDING_SIZE*2;
+	}
+	
 	switch (arena->type)
 	{
 		// +==============================+
@@ -668,6 +678,13 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 		} break;
 	}
 	
+	if (IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug) && result != nullptr)
+	{
+		MyMemSet(result, ARENA_DEBUG_PADDING_VALUE, ARENA_DEBUG_PADDING_SIZE);
+		MyMemSet(((u8*)result) + numBytes - ARENA_DEBUG_PADDING_SIZE, ARENA_DEBUG_PADDING_VALUE, ARENA_DEBUG_PADDING_SIZE);
+		result = ((u8*)result) + ARENA_DEBUG_PADDING_SIZE;
+	}
+	
 	return result;
 }
 NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes) //pre-declared at top of file
@@ -684,6 +701,12 @@ PEXP void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 	if (allocPntr == nullptr && !IsFlagSet(arena->flags, ArenaFlag_AllowNullptrFree)) { AssertMsg(allocPntr != nullptr, "Tried to free nullptr from Arena!"); return; }
 	if (allocSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize)) { AssertMsg(allocSize != 0, "Tried to free from Arena without size!"); return; }
 	DebugNotNull(allocPntr);
+	
+	if (IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug) && allocSize > 0)
+	{
+		allocSize += ARENA_DEBUG_PADDING_SIZE*2;
+		allocPntr = ((u8*)allocPntr) - ARENA_DEBUG_PADDING_SIZE;
+	}
 	
 	switch (arena->type)
 	{
@@ -862,6 +885,13 @@ NODISCARD PEXP void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx 
 	
 	if (oldSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize)) { AssertMsg(oldSize != 0, "Tried to Realloc in Arena without oldSize!"); return nullptr; }
 	
+	if (IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug))
+	{
+		oldSize += ARENA_DEBUG_PADDING_SIZE*2;
+		allocPntr = ((u8*)allocPntr) - ARENA_DEBUG_PADDING_SIZE;
+		newSize += ARENA_DEBUG_PADDING_SIZE*2;
+	}
+	
 	switch (arena->type)
 	{
 		// +==============================+
@@ -1021,6 +1051,13 @@ NODISCARD PEXP void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx 
 		} break;
 	}
 	
+	if (IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug) && result != nullptr)
+	{
+		MyMemSet(result, ARENA_DEBUG_PADDING_VALUE, ARENA_DEBUG_PADDING_SIZE);
+		MyMemSet(((u8*)result) + newSize - ARENA_DEBUG_PADDING_SIZE, ARENA_DEBUG_PADDING_VALUE, ARENA_DEBUG_PADDING_SIZE);
+		result = ((u8*)result) + ARENA_DEBUG_PADDING_SIZE;
+	}
+	
 	return result;
 }
 NODISCARD PEXP void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize)
@@ -1130,6 +1167,33 @@ PEXP bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure)
 	UNUSED(assertOnFailure);
 	//TODO: Implement me!
 	return false;
+}
+
+PEXPI bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr, uxx allocSize, bool assertOnFailure)
+{
+	NotNull(arena);
+	NotNull(allocPntr);
+	Assert(allocSize > 0);
+	Assert(IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug));
+	
+	u8 expectedPaddingValues[ARENA_DEBUG_PADDING_SIZE];
+	for (uxx bIndex = 0; bIndex < ARENA_DEBUG_PADDING_SIZE; bIndex++) { expectedPaddingValues[bIndex] = ARENA_DEBUG_PADDING_VALUE; }
+	
+	u8* beforePadding = ((u8*)allocPntr) - ARENA_DEBUG_PADDING_SIZE;
+	if (!MyMemEquals(beforePadding, &expectedPaddingValues[0], ARENA_DEBUG_PADDING_SIZE))
+	{
+		if (assertOnFailure) { AssertMsg(MyMemEquals(beforePadding, &expectedPaddingValues[0], ARENA_DEBUG_PADDING_SIZE), "Allocation leading padding as corrupted!"); }
+		return false;
+	}
+	
+	u8* afterPadding = ((u8*)allocPntr) + allocSize;
+	if (!MyMemEquals(afterPadding, &expectedPaddingValues[0], ARENA_DEBUG_PADDING_SIZE))
+	{
+		if (assertOnFailure) { AssertMsg(MyMemEquals(afterPadding, &expectedPaddingValues[0], ARENA_DEBUG_PADDING_SIZE), "Allocation trailing padding as corrupted!"); }
+		return false;
+	}
+	
+	return true;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

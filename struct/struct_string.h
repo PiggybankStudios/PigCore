@@ -198,7 +198,7 @@ PEXPI Str8 NewStr8(uxx length, const void* pntr)
 PEXPI Str16 Str16Lit(const char16_t* nullTermStr)
 {
 	Str16 result;
-	result.length = ((nullTermStr != nullptr) ? (uxx)MyWideStrLength(nullTermStr) : 0);
+	result.length = ((nullTermStr != nullptr) ? (uxx)MyWideStrLength((const wchar_t*)nullTermStr) : 0);
 	result.chars = (char16_t*)nullTermStr;
 	return result;
 }
