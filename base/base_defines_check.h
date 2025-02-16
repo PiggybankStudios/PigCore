@@ -75,4 +75,8 @@ Description:
 #define BUILD_WITH_SDL 0
 #endif
 
+#ifndef BUILD_WITH_CLAY
+#define BUILD_WITH_CLAY 0
+#endif
+
 #endif //  _BASE_DEFINES_CHECK_H

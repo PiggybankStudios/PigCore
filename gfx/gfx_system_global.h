@@ -71,8 +71,8 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 #define FlushPipelineGen()  GfxSystem_FlushPipelineGen(&gfx)
 #define FlushBindings()     GfxSystem_FlushBindings(&gfx)
 
-#define BeginFrame(swapchain, clearColor, clearDepth) GfxSystem_BeginFrame(&gfx, (swapchain), (clearColor), (clearDepth))
-#define EndFrame()                                    GfxSystem_EndFrame(&gfx)
+#define BeginFrame(swapchain, screenSize, clearColor, clearDepth) GfxSystem_BeginFrame(&gfx, (swapchain), (screenSize), (clearColor), (clearDepth))
+#define EndFrame()                                                GfxSystem_EndFrame(&gfx)
 
 #define DrawVerticesEx(startVertexOrIndex, numVerticesOrIndices)  GfxSystem_DrawVerticesEx(&gfx, (startVertexOrIndex), (numVerticesOrIndices))
 #define DrawVertices()                                            GfxSystem_DrawVertices(&gfx)
@@ -86,6 +86,8 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 #define BindFontAtSize(fontPntr, fontSize)             GfxSystem_BindFontAtSize(&gfx, (fontPntr), (fontSize))
 #define BindFont(fontPntr)                             GfxSystem_BindFont(&gfx, (fontPntr))
 
+#define SetClipRec(clipRec)                      GfxSystem_SetClipRec(&gfx, (clipRec))
+#define DisableClipRec()                         GfxSystem_DisableClipRec(&gfx)
 #define SetDepthTestEnabled(depthTestEnabled)    GfxSystem_SetDepthTestEnabled(&gfx, (depthTestEnabled))
 #define SetDepthWriteEnabled(depthWriteEnabled)  GfxSystem_SetDepthWriteEnabled(&gfx, (depthWriteEnabled))
 #define SetColorWriteEnabled(colorWriteEnabled)  GfxSystem_SetColorWriteEnabled(&gfx, (colorWriteEnabled))

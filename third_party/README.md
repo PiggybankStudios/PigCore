@@ -214,3 +214,20 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Required For:**
 
 * file_fmt_gltf.h depends upon this library
+
+---
+
+## Clay UI v0.13
+**URL(s):** [https://github.com/nicbarker/clay](https://github.com/nicbarker/clay) [v0.13](https://github.com/nicbarker/clay/releases/tag/v0.13)
+
+**Folder Name:** `clay`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Version 0.13 from Feb 11th 2025
+
+**Fixup Required:** Delete everything besides clay.h and LICENSE.md. Add CLAY_DECOR optional macro and use it before all functions that need to be called from other binaries. Fix CLAY__DEFAULT_STRUCT to always be {0}, not {}
+
+**Required For:**
+
+* ui_clay.h depends upon this library

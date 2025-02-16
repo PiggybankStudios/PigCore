@@ -41,6 +41,7 @@ struct GfxSystemState
 	uxx indexedVerticesSize;
 	GfxPipelineBlendMode blendMode;
 	r32 depth; //for 2D rendering functions
+	reci clipRec;
 	
 	Shader* shader;
 	Texture* textures[MAX_NUM_SHADER_IMAGES];
@@ -79,6 +80,7 @@ struct GfxSystem
 	FontFlow prevFontFlow;
 	
 	bool frameStarted;
+	v2i screenSize;
 	sg_swapchain swapchain; //given to us in GfxSystem_BeginFrame
 	
 	uxx numPipelineChanges;
@@ -99,7 +101,7 @@ struct GfxSystem
 	PIG_CORE_INLINE GfxPipeline* GfxSystem_FindOrAddPipelineWithOptions(GfxSystem* system, const GfxPipelineOptions* options);
 	void GfxSystem_FlushPipelineGen(GfxSystem* system);
 	void GfxSystem_FlushBindings(GfxSystem* system);
-	PIG_CORE_INLINE void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, Color32 clearColor, r32 clearDepth);
+	PIG_CORE_INLINE void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i screenSize, Color32 clearColor, r32 clearDepth);
 	PIG_CORE_INLINE void GfxSystem_EndFrame(GfxSystem* system);
 	PIG_CORE_INLINE void GfxSystem_DrawVerticesEx(GfxSystem* system, uxx startVertexOrIndex, uxx numVerticesOrIndices);
 	PIG_CORE_INLINE void GfxSystem_DrawVertices(GfxSystem* system);
@@ -110,6 +112,8 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_BindFontEx(GfxSystem* system, PigFont* font, r32 fontSize, u8 fontStyleFlags);
 	PIG_CORE_INLINE void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSize);
 	PIG_CORE_INLINE void GfxSystem_BindFont(GfxSystem* system, PigFont* font);
+	PIG_CORE_INLINE void GfxSystem_SetClipRec(GfxSystem* system, reci clipRec);
+	PIG_CORE_INLINE void GfxSystem_DisableClipRec(GfxSystem* system);
 	PIG_CORE_INLINE void GfxSystem_SetColorWriteEnabled(GfxSystem* system, bool colorWriteEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthTestEnabled(GfxSystem* system, bool depthTestEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthWriteEnabled(GfxSystem* system, bool depthWriteEnabled);
@@ -184,6 +188,7 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	systemOut->state.indexedVerticesSize = 0;
 	systemOut->state.blendMode = GfxPipelineBlendMode_Normal;
 	systemOut->state.depth = 1.0f;
+	systemOut->state.clipRec = Reci_Default;
 	systemOut->state.alignPixelSize = V2_One;
 	systemOut->state.projectionMat = Mat4_Identity;
 	systemOut->state.viewMat = Mat4_Identity;
@@ -272,7 +277,7 @@ PEXP void GfxSystem_FlushBindings(GfxSystem* system)
 	}
 }
 
-PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, Color32 clearColor, r32 clearDepth)
+PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i screenSize, Color32 clearColor, r32 clearDepth)
 {
 	NotNull(system);
 	Assert(!system->frameStarted);
@@ -294,6 +299,9 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, Color
 		.label = "mainPass",
 	};
 	sg_begin_pass(&mainPass);
+	
+	system->state.clipRec = NewReciV(V2i_Zero, screenSize);
+	system->screenSize = screenSize;
 	
 	system->state.shader = nullptr;
 	system->state.vertBuffer = nullptr;
@@ -452,6 +460,17 @@ PEXPI void GfxSystem_BindFont(GfxSystem* system, PigFont* font)
 // +--------------------------------------------------------------+
 // |               Change Pipeline Option Functions               |
 // +--------------------------------------------------------------+
+PEXPI void GfxSystem_SetClipRec(GfxSystem* system, reci clipRec)
+{
+	NotNull(system);
+	if (!AreEqual(system->state.clipRec, clipRec))
+	{
+		sg_apply_scissor_rect(clipRec.X, clipRec.Y, clipRec.Width, clipRec.Height, true);
+		system->state.clipRec = clipRec;
+	}
+}
+PEXPI void GfxSystem_DisableClipRec(GfxSystem* system) { GfxSystem_SetClipRec(system, NewReciV(V2i_Zero, system->screenSize)); }
+
 PEXPI void GfxSystem_SetColorWriteEnabled(GfxSystem* system, bool colorWriteEnabled)
 {
 	NotNull(system);

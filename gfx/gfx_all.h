@@ -32,7 +32,7 @@ Date:   01\19\2025
 #include "gfx/gfx_image_loading.h"
 #include "gfx/gfx_pipeline.h"
 
-#include "struct/struct_var_array.h" //required by gfx_font.h and gfx_system.h
+#include "struct/struct_var_array.h" //required by gfx_font.h, gfx_system.h and gfx_clay_renderer.h
 #include "std/std_basic_math.h" //required by gfx_font.h
 #include "std/std_memset.h" //required by gfx_font.h
 
@@ -44,5 +44,9 @@ Date:   01\19\2025
 
 #include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_system.h"
+
+#include "ui/ui_clay.h" //required by gfx_clay_renderer.h
+
+#include "gfx/gfx_clay_renderer.h"
 
 #endif //  _GFX_ALL_H

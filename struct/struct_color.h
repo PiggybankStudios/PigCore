@@ -68,3 +68,7 @@ PEXPI Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
 #if defined(_STRUCT_COLOR_H) && defined(RAYLIB_H)
 #include "cross/cross_color_and_raylib.h"
 #endif
+
+#if defined(_STRUCT_COLOR_H) && defined(_UI_CLAY_H)
+#include "cross/cross_color_and_clay.h"
+#endif
