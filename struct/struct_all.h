@@ -20,16 +20,16 @@ Description:
 
 #include "struct/struct_directions.h"
 
-#include "base/base_macros.h" //Needed by struct_string.h and struct_var_array.h
-#include "base/base_assert.h" //Needed by struct_string.h and struct_var_array.h
+#include "base/base_macros.h" //Needed by many of the files below
+#include "base/base_assert.h" //Needed by many of the files below
 #include "base/base_char.h" //Needed by struct_string.h
 #include "std/std_memset.h" //Needed by struct_string.h and struct_string_buffer.h
 
 #include "struct/struct_string.h"
 #include "struct/struct_string_buffer.h"
 
-#include "mem/mem_arena.h" //Needed by struct_var_array.h
-#include "std/std_memset.h" //Needed by struct_var_array.h
+#include "mem/mem_arena.h" //Needed by many of the files below
+#include "std/std_memset.h" //Needed by many of the files below
 
 #include "struct/struct_var_array.h"
 
@@ -42,5 +42,6 @@ Description:
 #include "struct/struct_lines.h"
 #include "struct/struct_circles.h"
 #include "struct/struct_faces.h"
+#include "struct/struct_image_data.h"
 
 #endif //  _STRUCT_ALL_H

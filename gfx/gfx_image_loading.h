@@ -7,6 +7,8 @@ Description:
 	** We use stb_image.h so we support loading: .jpeg, .png, .bmp, .gif, .tga, and more
 */
 
+//TODO: We should probably move this file to file_fmt folder!
+
 #ifndef _GFX_IMAGE_LOADING_H
 #define _GFX_IMAGE_LOADING_H
 
@@ -15,14 +17,7 @@ Description:
 #include "struct/struct_vectors.h"
 #include "misc/misc_result.h"
 #include "mem/mem_scratch.h"
-
-typedef struct ImageData ImageData;
-struct ImageData
-{
-	v2i size;
-	uxx numPixels;
-	u32* pixels;
-};
+#include "struct/struct_image_data.h"
 
 //TODO: stb_image.h uses strtol which we currently don't have an implementation for in our custom standard library!
 #if USING_CUSTOM_STDLIB
@@ -118,7 +113,7 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 	if (imageData != nullptr)
 	{
 		Assert(imageWidth > 0 && imageHeight > 0);
-		PrintLine_D("imageData: %p %dx%d", imageData, imageWidth, imageHeight);
+		// PrintLine_D("imageData: %p %dx%d", imageData, imageWidth, imageHeight);
 		
 		ClearPointer(imageDataOut);
 		imageDataOut->size = NewV2i(imageWidth, imageHeight);
@@ -126,6 +121,7 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 		imageDataOut->pixels = AllocArray(u32, arena, imageDataOut->numPixels);
 		if (imageDataOut->pixels == nullptr)
 		{
+			ScratchEnd(scratch);
 			return Result_FailedToAllocateMemory;
 		}
 		MyMemCopy(imageDataOut->pixels, imageData, sizeof(u32) * imageDataOut->numPixels);
