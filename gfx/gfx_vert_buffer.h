@@ -60,6 +60,7 @@ struct VertBuffer
 	Arena* arena;
 	Result error;
 	sg_buffer handle;
+	sg_buffer indicesHandle;
 	Str8 name;
 	VertBufferUsage usage;
 	uxx numAttributes;
@@ -83,6 +84,11 @@ struct VertBuffer
 	VertBuffer InitVertBufferEx(Arena* arena, Str8 name, VertBufferUsage usage, uxx verticesSize, const void* verticesPntr, uxx numAttributes, const VertAttribute* attributes, bool makeCopy);
 	PIG_CORE_INLINE VertBuffer InitVertBuffer2D(Arena* arena, Str8 name, VertBufferUsage usage, uxx numVertices, const Vertex2D* verticesPntr, bool makeCopy);
 	PIG_CORE_INLINE VertBuffer InitVertBuffer3D(Arena* arena, Str8 name, VertBufferUsage usage, uxx numVertices, const Vertex3D* verticesPntr, bool makeCopy);
+	void AddIndicesToVertBufferEx(VertBuffer* buffer, uxx indexSize, uxx numIndices, const void* indicesPntr, bool makeCopy);
+	PIG_CORE_INLINE void AddIndicesToVertBufferU8(VertBuffer* buffer, uxx numIndices, const u8* indicesPntr, bool makeCopy);
+	PIG_CORE_INLINE void AddIndicesToVertBufferU16(VertBuffer* buffer, uxx numIndices, const u16* indicesPntr, bool makeCopy);
+	PIG_CORE_INLINE void AddIndicesToVertBufferU32(VertBuffer* buffer, uxx numIndices, const u32* indicesPntr, bool makeCopy);
+	PIG_CORE_INLINE void AddIndicesToVertBufferU64(VertBuffer* buffer, uxx numIndices, const u64* indicesPntr, bool makeCopy);
 #endif
 
 // +--------------------------------------------------------------+
@@ -127,6 +133,7 @@ PEXP VertBuffer InitVertBufferEx(Arena* arena, Str8 name, VertBufferUsage usage,
 		case VertBufferUsage_Streaming: sokolUsage = SG_USAGE_STREAM; break;
 	}
 	sg_buffer_desc bufferDesc = {
+		.type = SG_BUFFERTYPE_VERTEXBUFFER,
 		.data = (sg_range){verticesPntr, verticesSize},
 		.usage = sokolUsage,
 		.label = result.name.chars,
@@ -165,6 +172,7 @@ PEXP VertBuffer InitVertBufferEx(Arena* arena, Str8 name, VertBufferUsage usage,
 	result.error = Result_Success;
 	return result;
 }
+
 PEXPI VertBuffer InitVertBuffer2D(Arena* arena, Str8 name, VertBufferUsage usage, uxx numVertices, const Vertex2D* verticesPntr, bool makeCopy)
 {
 	#if LANGUAGE_IS_C
@@ -191,6 +199,48 @@ PEXPI VertBuffer InitVertBuffer3D(Arena* arena, Str8 name, VertBufferUsage usage
 	return InitVertBufferEx(arena, name, usage, numVertices * sizeof(Vertex3D), verticesPntr, ArrayCount(attributes), &attributes[0], makeCopy);
 }
 
+PEXP void AddIndicesToVertBufferEx(VertBuffer* buffer, uxx indexSize, uxx numIndices, const void* indicesPntr, bool makeCopy)
+{
+	NotNull(buffer);
+	NotNull(buffer->arena);
+	Assert(buffer->hasIndices == false);
+	if (numIndices > 0)
+	{
+		buffer->hasIndices = true;
+		buffer->indexSize = indexSize;
+		buffer->numIndices = numIndices;
+		sg_buffer_desc bufferDesc = {
+			.type = SG_BUFFERTYPE_INDEXBUFFER,
+			.data = (sg_range){indicesPntr, (indexSize * numIndices)},
+			.usage = SG_USAGE_IMMUTABLE, //TODO: Should this be an option for indices?
+			.label = buffer->name.chars, //TODO: Should we append like "_indices" or something to the name?
+		};
+		buffer->indicesHandle = sg_make_buffer(&bufferDesc);
+		if (makeCopy)
+		{
+			buffer->indicesPntr = AllocMem(buffer->arena, indexSize * numIndices);
+			NotNull(buffer->indicesPntr);
+			MyMemCopy(buffer->indicesPntr, indicesPntr, indexSize * numIndices);
+		}
+	}
+}
+PEXPI void AddIndicesToVertBufferU8(VertBuffer* buffer, uxx numIndices, const u8* indicesPntr, bool makeCopy)
+{
+	AddIndicesToVertBufferEx(buffer, sizeof(u8), numIndices, indicesPntr, makeCopy);
+}
+PEXPI void AddIndicesToVertBufferU16(VertBuffer* buffer, uxx numIndices, const u16* indicesPntr, bool makeCopy)
+{
+	AddIndicesToVertBufferEx(buffer, sizeof(u16), numIndices, indicesPntr, makeCopy);
+}
+PEXPI void AddIndicesToVertBufferU32(VertBuffer* buffer, uxx numIndices, const u32* indicesPntr, bool makeCopy)
+{
+	AddIndicesToVertBufferEx(buffer, sizeof(u32), numIndices, indicesPntr, makeCopy);
+}
+PEXPI void AddIndicesToVertBufferU64(VertBuffer* buffer, uxx numIndices, const u64* indicesPntr, bool makeCopy)
+{
+	AddIndicesToVertBufferEx(buffer, sizeof(u64), numIndices, indicesPntr, makeCopy);
+}
+
 //TODO: Implement InitVertIndexedBufferEx
 //TODO: Implement InitVertIndexedBuffer2D
 //TODO: Implement InitVertIndexedBuffer3D
@@ -201,6 +251,16 @@ PEXPI void BindVertBuffer(sg_bindings* bindings, VertBuffer* buffer, uxx bufferI
 	NotNull(buffer);
 	Assert(buffer->handle.id != SG_INVALID_ID);
 	bindings->vertex_buffers[bufferIndex] = buffer->handle;
+	if (buffer->hasIndices)
+	{
+		Assert(bufferIndex == 0);
+		bindings->index_buffer = buffer->indicesHandle;
+		//TODO: Should we ever change bindings->index_buffer_offset?
+	}
+	else
+	{
+		bindings->index_buffer.id = SG_INVALID_ID;
+	}
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

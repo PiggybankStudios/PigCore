@@ -61,6 +61,7 @@ struct GfxPipelineOptions
 	bool depthWriteEnabled;
 	bool depthTestEnabled;
 	bool cullingEnabled;
+	uxx indexedVerticesSize;
 	GfxPipelineBlendMode blendMode;
 	//TODO: Add primitive type option?
 	//TODO: Add indexed buffer options?
@@ -185,7 +186,13 @@ PEXP GfxPipeline InitGfxPipeline(Arena* arena, Str8 name, const GfxPipelineOptio
 	pipelineDesc.colors[0].blend.dst_factor_alpha = SG_BLENDFACTOR_ZERO;
 	pipelineDesc.colors[0].blend.op_alpha = SG_BLENDOP_ADD;
 	pipelineDesc.primitive_type = SG_PRIMITIVETYPE_TRIANGLES; //TODO: Add primitive type option?
-	pipelineDesc.index_type = SG_INDEXTYPE_NONE; //TODO: Add indexed buffer options
+	switch (options->indexedVerticesSize)
+	{
+		case 0: pipelineDesc.index_type = SG_INDEXTYPE_NONE; break;
+		case sizeof(u16): pipelineDesc.index_type = SG_INDEXTYPE_UINT16; break;
+		case sizeof(u32): pipelineDesc.index_type = SG_INDEXTYPE_UINT32; break;
+		default: AssertMsg(options->indexedVerticesSize == sizeof(u16) || options->indexedVerticesSize == sizeof(u32) || options->indexedVerticesSize == 0, "Invalid indices size!"); break;
+	}
 	pipelineDesc.cull_mode = options->cullingEnabled ? SG_CULLMODE_BACK : SG_CULLMODE_NONE;
 	pipelineDesc.face_winding = SG_FACEWINDING_CW;
 	

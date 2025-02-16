@@ -143,7 +143,7 @@ struct Arena
 	void ArenaSoftGrowEnd(Arena* arena, void* allocPntr, uxx allocSize, uxx newSpaceUsed);
 	PIG_CORE_INLINE void ArenaSoftGrowEndNoSize(Arena* arena, void* allocPntr, uxx newSpaceUsed);
 	bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure);
-	PIG_CORE_INLINE bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr, uxx allocSize, bool assertOnFailure)
+	PIG_CORE_INLINE bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr, uxx allocSize, bool assertOnFailure);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+

@@ -74,8 +74,8 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 #define BeginFrame(swapchain, clearColor, clearDepth) GfxSystem_BeginFrame(&gfx, (swapchain), (clearColor), (clearDepth))
 #define EndFrame()                                    GfxSystem_EndFrame(&gfx)
 
-#define DrawVerticesEx(startVertex, numVertices)  GfxSystem_DrawVerticesEx(&gfx, (startVertex), (numVertices))
-#define DrawVertices()                            GfxSystem_DrawVertices(&gfx)
+#define DrawVerticesEx(startVertexOrIndex, numVerticesOrIndices)  GfxSystem_DrawVerticesEx(&gfx, (startVertexOrIndex), (numVerticesOrIndices))
+#define DrawVertices()                                            GfxSystem_DrawVertices(&gfx)
 
 #define BindShader(shaderPntr)                        GfxSystem_BindShader(&gfx, (shaderPntr))
 #define BindVertBuffer(bufferPntr)                    GfxSystem_BindVertBuffer(&gfx, (bufferPntr))

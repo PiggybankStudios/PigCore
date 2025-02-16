@@ -110,6 +110,7 @@ struct Str8Pair
 	PIG_CORE_INLINE bool StrSlice(Str8 target, uxx startIndex, uxx endIndex);
 	PIG_CORE_INLINE bool StrSliceFrom(Str8 target, uxx startIndex);
 	PIG_CORE_INLINE bool StrSliceLength(Str8 target, uxx startIndex, uxx length);
+	PIG_CORE_INLINE Str8 StrSliceMaxLength(Str8 target, uxx startIndex, uxx maxLength);
 	PIG_CORE_INLINE bool StrExactEquals(Str8 left, Str8 right);
 	PIG_CORE_INLINE bool StrExactEqualsAt(Str8 left, Str8 right, uxx leftIndex);
 	PIG_CORE_INLINE bool StrExactStartsWith(Str8 target, Str8 prefix);
@@ -321,6 +322,10 @@ PEXPI Str8 StrSliceFrom(Str8 target, uxx startIndex)
 PEXPI Str8 StrSliceLength(Str8 target, uxx startIndex, uxx length)
 {
 	return StrSlice(target, startIndex, startIndex + length);
+}
+PEXPI Str8 StrSliceMaxLength(Str8 target, uxx startIndex, uxx maxLength)
+{
+	return StrSlice(target, startIndex, (startIndex + maxLength) < target.length ? (startIndex + maxLength) : target.length);
 }
 
 PEXPI bool StrExactEquals(Str8 left, Str8 right)

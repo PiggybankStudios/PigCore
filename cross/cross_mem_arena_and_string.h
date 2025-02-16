@@ -22,6 +22,7 @@ Description:
 	PIG_CORE_INLINE void FreeStr8(Arena* arena, Str8* stringPntr);
 	PIG_CORE_INLINE void FreeStr8WithNt(Arena* arena, Str8* stringPntr);
 	Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm);
+	Str8 JoinStringsInArenaWithChar(Arena* arena, Str8 left, char sepChar, Str8 right, bool addNullTerm);
 	Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addNullTerm);
 #endif //!PIG_CORE_IMPLEMENTATION
 
@@ -62,22 +63,19 @@ PEXPI char* AllocAndCopyChars(Arena* arena, uxx numChars, const char* charsToCop
 PEXPI char* AllocAndCopyCharsNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
 {
 	DebugNotNull(arena);
-	DebugNotNull(nullTermStr);
-	uxx numChars = MyStrLength64(nullTermStr);
+	uxx numChars = (nullTermStr != nullptr) ? MyStrLength64(nullTermStr) : 0;
 	return AllocAndCopyChars(arena, numChars, nullTermStr, addNullTerm);
 }
 PEXPI Str8 AllocStrAndCopy(Arena* arena, uxx numChars, const char* charsToCopy, bool addNullTerm)
 {
 	DebugNotNull(arena);
-	DebugNotNull(charsToCopy);
 	char* allocatedChars = AllocAndCopyChars(arena, numChars, charsToCopy, addNullTerm);
 	return (allocatedChars != nullptr) ? NewStr8(numChars, allocatedChars) : Str8_Empty;
 }
 PEXPI Str8 AllocStrAndCopyNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
 {
 	DebugNotNull(arena);
-	DebugNotNull(nullTermStr);
-	uxx numChars = MyStrLength64(nullTermStr);
+	uxx numChars = (nullTermStr != nullptr) ? MyStrLength64(nullTermStr) : 0;
 	char* allocatedChars = AllocAndCopyChars(arena, numChars, nullTermStr, addNullTerm);
 	return (allocatedChars != nullptr) ? NewStr8(numChars, allocatedChars) : Str8_Empty;
 }
@@ -113,7 +111,18 @@ PEXP Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTe
 	if (addNullTerm) { result.chars[result.length] = '\0'; }
 	return result;
 }
-//TODO: Add JoinStringsInArenaWithChar that takes left, sepChar, and right
+PEXP Str8 JoinStringsInArenaWithChar(Arena* arena, Str8 left, char sepChar, Str8 right, bool addNullTerm)
+{
+	Str8 result;
+	result.length = left.length + 1 + right.length;
+	result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
+	if (result.chars == nullptr) { return Str8_Empty; }
+	if (left.length  > 0) { MyMemCopy(result.chars + 0,               left.chars,  left.length);  }
+	if (right.length > 0) { MyMemCopy(result.chars + left.length + 1, right.chars, right.length); }
+	result.chars[left.length] = sepChar;
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	return result;
+}
 //TODO: Add JoinStringsInArena3 that takes left, middle, and right
 
 PEXP Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addNullTerm)

@@ -38,6 +38,7 @@ struct GfxSystemState
 	bool depthWriteEnabled;
 	bool depthTestEnabled;
 	bool cullingEnabled;
+	uxx indexedVerticesSize;
 	GfxPipelineBlendMode blendMode;
 	r32 depth; //for 2D rendering functions
 	
@@ -100,7 +101,7 @@ struct GfxSystem
 	void GfxSystem_FlushBindings(GfxSystem* system);
 	PIG_CORE_INLINE void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, Color32 clearColor, r32 clearDepth);
 	PIG_CORE_INLINE void GfxSystem_EndFrame(GfxSystem* system);
-	PIG_CORE_INLINE void GfxSystem_DrawVerticesEx(GfxSystem* system, uxx startVertex, uxx numVertices);
+	PIG_CORE_INLINE void GfxSystem_DrawVerticesEx(GfxSystem* system, uxx startVertexOrIndex, uxx numVerticesOrIndices);
 	PIG_CORE_INLINE void GfxSystem_DrawVertices(GfxSystem* system);
 	PIG_CORE_INLINE void GfxSystem_BindShader(GfxSystem* system, Shader* shader);
 	PIG_CORE_INLINE void GfxSystem_BindVertBuffer(GfxSystem* system, VertBuffer* buffer);
@@ -180,6 +181,7 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	systemOut->state.depthWriteEnabled = true;
 	systemOut->state.depthTestEnabled = true;
 	systemOut->state.cullingEnabled = true;
+	systemOut->state.indexedVerticesSize = 0;
 	systemOut->state.blendMode = GfxPipelineBlendMode_Normal;
 	systemOut->state.depth = 1.0f;
 	systemOut->state.alignPixelSize = V2_One;
@@ -238,6 +240,7 @@ PEXP void GfxSystem_FlushPipelineGen(GfxSystem* system)
 		pipelineOptions.depthWriteEnabled = system->state.depthWriteEnabled;
 		pipelineOptions.depthTestEnabled = system->state.depthTestEnabled;
 		pipelineOptions.cullingEnabled = system->state.cullingEnabled;
+		pipelineOptions.indexedVerticesSize = system->state.indexedVerticesSize;
 		pipelineOptions.blendMode = system->state.blendMode;
 		system->state.pipeline = GfxSystem_FindOrAddPipelineWithOptions(system, &pipelineOptions);
 		NotNull(system->state.pipeline);
@@ -312,7 +315,7 @@ PEXPI void GfxSystem_EndFrame(GfxSystem* system)
 	system->frameStarted = false;
 }
 
-PEXPI void GfxSystem_DrawVerticesEx(GfxSystem* system, uxx startVertex, uxx numVertices)
+PEXPI void GfxSystem_DrawVerticesEx(GfxSystem* system, uxx startVertexOrIndex, uxx numVerticesOrIndices)
 {
 	NotNull(system->state.shader);
 	NotNull(system->state.vertBuffer);
@@ -323,13 +326,20 @@ PEXPI void GfxSystem_DrawVerticesEx(GfxSystem* system, uxx startVertex, uxx numV
 		ApplyShaderUniforms(system->state.shader);
 		system->uniformsChanged = false;
 	}
-	sg_draw((int)startVertex, (int)numVertices, 1);
+	sg_draw((int)startVertexOrIndex, (int)numVerticesOrIndices, 1);
 	IncrementUXX(system->numDrawCalls);
 }
 PEXPI void GfxSystem_DrawVertices(GfxSystem* system)
 {
 	NotNull(system->state.vertBuffer);
-	GfxSystem_DrawVerticesEx(system, 0, system->state.vertBuffer->numVertices);
+	if (system->state.vertBuffer->hasIndices)
+	{
+		GfxSystem_DrawVerticesEx(system, 0, system->state.vertBuffer->numIndices);
+	}
+	else
+	{
+		GfxSystem_DrawVerticesEx(system, 0, system->state.vertBuffer->numVertices);
+	}
 }
 
 //TODO: 
@@ -378,6 +388,12 @@ PEXPI void GfxSystem_BindVertBuffer(GfxSystem* system, VertBuffer* buffer)
 		if (buffer != nullptr) { BindVertBuffer(&system->bindings, buffer, 0); }
 		else { system->bindings.vertex_buffers[0].id = SG_INVALID_ID; }
 		system->bindingsChanged = true;
+		uxx newIndexedVerticesSize = (buffer->hasIndices ? buffer->indexSize : 0);
+		if (system->state.indexedVerticesSize != newIndexedVerticesSize)
+		{
+			system->state.indexedVerticesSize = newIndexedVerticesSize;
+			system->state.pipeline = nullptr;
+		}
 		system->state.vertBuffer = buffer;
 		system->state.pipeline = nullptr; //TODO: We don't always need to invalidate the pipeline. We should probably only do this if the attributes are different between current and new VertBuffer!
 	}
