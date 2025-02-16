@@ -914,3 +914,7 @@ PEXP void* OsFindDllFunc(OsDll* dll, Str8 funcName)
 #if defined(_MISC_ZIP_H) && defined(_OS_FILE_H)
 #include "cross/cross_zip_and_file.h"
 #endif
+
+#if defined(_FILE_FMT_GLTF_H) && defined(_OS_FILE_H)
+#include "cross/cross_gltf_and_os_file.h"
+#endif

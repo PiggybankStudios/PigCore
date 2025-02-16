@@ -44,4 +44,8 @@ Description:
 #include "struct/struct_faces.h"
 #include "struct/struct_image_data.h"
 
+#include "gfx/gfx_vertices.h" //Needed by struct_model_data.h
+
+#include "struct/struct_model_data.h"
+
 #endif //  _STRUCT_ALL_H

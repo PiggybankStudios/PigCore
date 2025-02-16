@@ -45,6 +45,7 @@ enum Result
 	Result_FailedToAllocateMemory,
 	Result_UnsupportedPlatform,
 	Result_ParsingFailure,
+	Result_FileNotFound,
 	Result_FailedToReadFile,
 	Result_SokolError,
 	Result_Underflow,
@@ -70,6 +71,10 @@ enum Result
 	Result_NotFound,
 	Result_NoForegroundWindow,
 	Result_NoDeviceContext,
+	Result_MissingFileHeader,
+	Result_InvalidSyntax,
+	Result_InvalidOptions,
+	Result_Deprecated,
 	
 	Result_Count,
 };
@@ -98,6 +103,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_FailedToAllocateMemory: return "FailedToAllocateMemory";
 		case Result_UnsupportedPlatform: return "UnsupportedPlatform";
 		case Result_ParsingFailure: return "ParsingFailure";
+		case Result_FileNotFound: return "FileNotFound";
 		case Result_FailedToReadFile: return "FailedToReadFile";
 		case Result_SokolError: return "SokolError";
 		case Result_Underflow: return "Underflow";
@@ -123,6 +129,10 @@ PEXP const char* GetResultStr(Result result)
 		case Result_NotFound: return "NotFound";
 		case Result_NoForegroundWindow: return "NoForegroundWindow";
 		case Result_NoDeviceContext: return "NoDeviceContext";
+		case Result_MissingFileHeader: return "MissingFileHeader";
+		case Result_InvalidSyntax: return "InvalidSyntax";
+		case Result_InvalidOptions: return "InvalidOptions";
+		case Result_Deprecated: return "Deprecated";
 		default: return UNKNOWN_STR;
 	}
 }

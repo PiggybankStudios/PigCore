@@ -33,6 +33,9 @@ Description:
 #ifndef PIG_CORE_DLL_INCLUDE_INPUT
 #define PIG_CORE_DLL_INCLUDE_INPUT 1
 #endif
+#ifndef PIG_CORE_DLL_INCLUDE_FILE_FMT
+#define PIG_CORE_DLL_INCLUDE_FILE_FMT 1
+#endif
 #ifndef PIG_CORE_DLL_INCLUDE_GFX
 #define PIG_CORE_DLL_INCLUDE_GFX 1
 #endif
@@ -81,6 +84,10 @@ Description:
 
 #if PIG_CORE_DLL_INCLUDE_INPUT
 #include "input/input_all.h"
+#endif
+
+#if PIG_CORE_DLL_INCLUDE_FILE_FMT
+#include "file_fmt/file_fmt_all.h"
 #endif
 
 #if PIG_CORE_DLL_INCLUDE_GFX

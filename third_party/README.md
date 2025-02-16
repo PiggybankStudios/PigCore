@@ -197,3 +197,20 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Required For:**
 
 * misc_regex.h depends upon this library
+
+---
+
+## CglTF v1.15
+**URL(s):** [https://github.com/jkuhlmann/cgltf](https://github.com/jkuhlmann/cgltf) [v1.15](https://github.com/jkuhlmann/cgltf/releases/tag/v1.15)
+
+**Folder Name:** `cgltf`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Version 1.15 from Feb 9th 2025
+
+**Fixup Required:** Delete everything besides cgltf.h and LICENSE
+
+**Required For:**
+
+* file_fmt_gltf.h depends upon this library
