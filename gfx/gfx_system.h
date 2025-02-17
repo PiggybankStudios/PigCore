@@ -31,6 +31,8 @@ Description:
 
 #if BUILD_WITH_SOKOL_GFX
 
+#define GFX_SYSTEM_CIRCLE_NUM_SIDES 36 // aka 10 degree increments
+
 typedef struct GfxSystemState GfxSystemState;
 struct GfxSystemState
 {
@@ -77,6 +79,7 @@ struct GfxSystem
 	
 	Texture pixelTexture;
 	VertBuffer squareBuffer;
+	VertBuffer circleBuffer;
 	FontFlow prevFontFlow;
 	
 	bool frameStarted;
@@ -127,14 +130,26 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_SetTintColor(GfxSystem* system, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_SetSourceRecRaw(GfxSystem* system, v4r rectangle);
 	PIG_CORE_INLINE void GfxSystem_SetSourceRec(GfxSystem* system, rec rectangle);
-	PIG_CORE_INLINE void GfxSystem_DrawTexturedRectangleEx(GfxSystem* system, rec rectangle, Color32 color, Texture* texture, rec sourceRec);
+	void GfxSystem_DrawTexturedRectangleEx(GfxSystem* system, rec rectangle, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedRectangle(GfxSystem* system, rec rectangle, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawRectangle(GfxSystem* system, rec rectangle, Color32 color);
+	PIG_CORE_INLINE void GfxSystem_DrawRectangleOutlineSidesEx(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color, bool outside);
+	PIG_CORE_INLINE void GfxSystem_DrawRectangleOutlineSides(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_DrawRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside);
 	PIG_CORE_INLINE void GfxSystem_DrawRectangleOutline(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color);
+	void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture, rec sourceRec);
+	PIG_CORE_INLINE void GfxSystem_DrawTexturedCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture);
+	PIG_CORE_INLINE void GfxSystem_DrawTexturedCircleEx(GfxSystem* system, Circle circle, Color32 color, Texture* texture, rec sourceRec);
+	PIG_CORE_INLINE void GfxSystem_DrawTexturedCircle(GfxSystem* system, Circle circle, Color32 color, Texture* texture);
+	PIG_CORE_INLINE void GfxSystem_DrawCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color);
+	PIG_CORE_INLINE void GfxSystem_DrawCircle(GfxSystem* system, Circle circle, Color32 color);
+	void GfxSystem_DrawTexturedRoundedRectangleEx(GfxSystem* system, rec rectangle, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color, Texture* texture, rec sourceRec);
+	PIG_CORE_INLINE void GfxSystem_DrawTexturedRoundedRectangle(GfxSystem* system, rec rectangle, r32 radius, Color32 color, Texture* texture, rec sourceRec);
+	PIG_CORE_INLINE void GfxSystem_DrawRoundedRectangleEx(GfxSystem* system, rec rectangle, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color);
+	PIG_CORE_INLINE void GfxSystem_DrawRoundedRectangle(GfxSystem* system, rec rectangle, r32 radius, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth);
 	Result GfxSystem_DrawTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextAtSize(GfxSystem* system, r32 fontSize, Str8 text, v2 position, Color32 color);
@@ -170,6 +185,7 @@ PEXP void FreeGfxSystem(GfxSystem* system)
 		FreeVarArray(&system->pipelines);
 		FreeTexture(&system->pixelTexture);
 		FreeVertBuffer(&system->squareBuffer);
+		FreeVertBuffer(&system->circleBuffer);
 	}
 	ClearPointer(system);
 }
@@ -210,6 +226,20 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	};
 	systemOut->squareBuffer = InitVertBuffer2D(arena, StrLit("square"), VertBufferUsage_Static, ArrayCount(squareVertices), &squareVertices[0], false);
 	Assert(systemOut->squareBuffer.error == Result_Success);
+	
+	Vertex2D circleVertices[GFX_SYSTEM_CIRCLE_NUM_SIDES*3];
+	for (uxx sIndex = 0; sIndex < GFX_SYSTEM_CIRCLE_NUM_SIDES; sIndex++)
+	{
+		r32 angle0 = (r32)(sIndex+0) * (TwoPi32 / GFX_SYSTEM_CIRCLE_NUM_SIDES);
+		r32 angle1 = (r32)(sIndex+1) * (TwoPi32 / GFX_SYSTEM_CIRCLE_NUM_SIDES);
+		v2 positionAndTexCoord0 = NewV2(0.5f + CosR32(angle0)*0.5f, 0.5f + SinR32(angle0)*0.5f);
+		v2 positionAndTexCoord1 = NewV2(0.5f + CosR32(angle1)*0.5f, 0.5f + SinR32(angle1)*0.5f);
+		circleVertices[sIndex*3 + 0] = NewVertex2D(positionAndTexCoord0, positionAndTexCoord0, NewV4(1, 1, 1, 1));
+		circleVertices[sIndex*3 + 1] = NewVertex2D(positionAndTexCoord1, positionAndTexCoord1, NewV4(1, 1, 1, 1));
+		circleVertices[sIndex*3 + 2] = NewVertex2D(V2_Half, V2_Half, NewV4(1, 1, 1, 1));
+	}
+	systemOut->circleBuffer = InitVertBuffer2D(arena, StrLit("circle"), VertBufferUsage_Static, ArrayCount(circleVertices), &circleVertices[0], false);
+	Assert(systemOut->circleBuffer.error == Result_Success);
 }
 
 PEXPI GfxPipeline* GfxSystem_FindPipelineWithOptions(GfxSystem* system, const GfxPipelineOptions* options)
@@ -604,7 +634,7 @@ PEXPI void GfxSystem_SetSourceRec(GfxSystem* system, rec rectangle) { GfxSystem_
 // +--------------------------------------------------------------+
 // |                      Drawing Functions                       |
 // +--------------------------------------------------------------+
-PEXPI void GfxSystem_DrawTexturedRectangleEx(GfxSystem* system, rec rectangle, Color32 color, Texture* texture, rec sourceRec)
+PEXP void GfxSystem_DrawTexturedRectangleEx(GfxSystem* system, rec rectangle, Color32 color, Texture* texture, rec sourceRec)
 {
 	if (texture != nullptr)
 	{
@@ -637,26 +667,34 @@ PEXPI void GfxSystem_DrawRectangle(GfxSystem* system, rec rectangle, Color32 col
 	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, nullptr, Rec_Default_Const);
 }
 
-PEXPI void GfxSystem_DrawRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside)
+PEXPI void GfxSystem_DrawRectangleOutlineSidesEx(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color, bool outside)
 {
 	if (outside)
 	{
-		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y - borderThickness, rectangle.Width, borderThickness), color); //top
-		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + rectangle.Height, rectangle.Width, borderThickness), color); //bottom
-		GfxSystem_DrawRectangle(system, NewRec(rectangle.X - borderThickness, rectangle.Y - borderThickness, borderThickness, rectangle.Height + 2*borderThickness), color); //left
-		GfxSystem_DrawRectangle(system, NewRec(rectangle.X + rectangle.Width, rectangle.Y - borderThickness, borderThickness, rectangle.Height + 2*borderThickness), color); //right
+		if (topThickness > 0) { GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y - topThickness, rectangle.Width, topThickness), color); } //top 
+		if (bottomThickness > 0) { GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + rectangle.Height, rectangle.Width, bottomThickness), color); } //bottom
+		if (leftThickness > 0) { GfxSystem_DrawRectangle(system, NewRec(rectangle.X - leftThickness, rectangle.Y - topThickness, leftThickness, rectangle.Height + topThickness+bottomThickness), color); } //left
+		if (rightThickness > 0) { GfxSystem_DrawRectangle(system, NewRec(rectangle.X + rectangle.Width, rectangle.Y - topThickness, rightThickness, rectangle.Height + topThickness+bottomThickness), color); } //right
 	}
 	else
 	{
-		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y, rectangle.Width, borderThickness), color); //top
-		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + rectangle.Height - borderThickness, rectangle.Width, borderThickness), color); //bottom
-		GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + borderThickness, borderThickness, rectangle.Height - 2*borderThickness), color); //left
-		GfxSystem_DrawRectangle(system, NewRec(rectangle.X + rectangle.Width - borderThickness, rectangle.Y + borderThickness, borderThickness, rectangle.Height - 2*borderThickness), color); //right
+		if (topThickness > 0) { GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y, rectangle.Width, topThickness), color); } //top
+		if (bottomThickness > 0) { GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + rectangle.Height - bottomThickness, rectangle.Width, bottomThickness), color); } //bottom
+		if (leftThickness > 0) { GfxSystem_DrawRectangle(system, NewRec(rectangle.X, rectangle.Y + topThickness, leftThickness, rectangle.Height - (topThickness+bottomThickness)), color); } //left
+		if (rightThickness > 0) { GfxSystem_DrawRectangle(system, NewRec(rectangle.X + rectangle.Width - rightThickness, rectangle.Y + topThickness, rightThickness, rectangle.Height - (topThickness+bottomThickness)), color); } //right
 	}
+}
+PEXPI void GfxSystem_DrawRectangleOutlineSides(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color)
+{
+	GfxSystem_DrawRectangleOutlineSidesEx(system, rectangle, leftThickness, rightThickness, topThickness, bottomThickness, color, true);
+}
+PEXPI void GfxSystem_DrawRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside)
+{
+	GfxSystem_DrawRectangleOutlineSidesEx(system, rectangle, borderThickness, borderThickness, borderThickness, borderThickness, color, outside);
 }
 PEXPI void GfxSystem_DrawRectangleOutline(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color)
 {
-	GfxSystem_DrawRectangleOutlineEx(system, rectangle, borderThickness, color, true);
+	GfxSystem_DrawRectangleOutlineSidesEx(system, rectangle, borderThickness, borderThickness, borderThickness, borderThickness, color, true);
 }
 
 PEXPI void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture, rec sourceRec)
@@ -692,6 +730,130 @@ PEXPI void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color
 PEXPI void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color)
 {
 	GfxSystem_DrawTexturedObb2Ex(system, boundingBox, color, nullptr, Rec_Default_Const);
+}
+
+PEXP void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture, rec sourceRec)
+{
+	NotNull(system);
+	
+	uxx startSideIndex = (uxx)RoundR32i((AngleFixR32(angleMin) / TwoPi32) * GFX_SYSTEM_CIRCLE_NUM_SIDES);
+	uxx endSideIndex = (uxx)RoundR32i((AngleFixR32(angleMax) / TwoPi32) * GFX_SYSTEM_CIRCLE_NUM_SIDES);
+	if (endSideIndex == startSideIndex) { return; } //TODO: Should we render anything when the angle is too small? Maybe always render a segment?
+	if (endSideIndex < startSideIndex)
+	{
+		//NOTE: To draw an arc that passes over 0/TwoPi angle, we really need to do two draw calls for either side. So we just recurse one level to accomplish this cleanly
+		GfxSystem_DrawTexturedCirclePieceEx(system, circle, angleMin, TwoPi32-DEFAULT_R32_TOLERANCE, color, texture, sourceRec);
+		GfxSystem_DrawTexturedCirclePieceEx(system, circle, 0, angleMax, color, texture, sourceRec);
+		return;
+	}
+	
+	if (texture != nullptr)
+	{
+		GfxSystem_BindTexture(system, texture);
+		GfxSystem_SetSourceRec(system, sourceRec);
+	}
+	else
+	{
+		GfxSystem_BindTexture(system, &system->pixelTexture);
+		GfxSystem_SetSourceRec(system, Rec_Default);
+	}
+	
+	mat4 worldMat = Mat4_Identity;
+	TransformMat4(&worldMat, MakeScaleXYZMat4(circle.R*2.0f, circle.R*2.0f, 1.0f));
+	TransformMat4(&worldMat, MakeTranslateXYZMat4(circle.X - circle.R, circle.Y - circle.R, system->state.depth));
+	GfxSystem_SetWorldMat(system, worldMat);
+	
+	GfxSystem_SetTintColor(system, color);
+	
+	GfxSystem_BindVertBuffer(system, &system->circleBuffer);
+	GfxSystem_DrawVerticesEx(system, startSideIndex*3, (endSideIndex - startSideIndex)*3);
+}
+PEXPI void GfxSystem_DrawTexturedCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture)
+{
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	GfxSystem_DrawTexturedCirclePieceEx(system, circle, angleMin, angleMax, color, texture, sourceRec);
+}
+PEXPI void GfxSystem_DrawTexturedCircleEx(GfxSystem* system, Circle circle, Color32 color, Texture* texture, rec sourceRec)
+{
+	GfxSystem_DrawTexturedCirclePieceEx(system, circle, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, texture, sourceRec);
+}
+PEXPI void GfxSystem_DrawTexturedCircle(GfxSystem* system, Circle circle, Color32 color, Texture* texture)
+{
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	GfxSystem_DrawTexturedCirclePieceEx(system, circle, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, texture, sourceRec);
+}
+PEXPI void GfxSystem_DrawCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color)
+{
+	GfxSystem_DrawTexturedCirclePieceEx(system, circle, angleMin, angleMax, color, nullptr, Rec_Default_Const);
+}
+PEXPI void GfxSystem_DrawCircle(GfxSystem* system, Circle circle, Color32 color)
+{
+	GfxSystem_DrawTexturedCirclePieceEx(system, circle, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, nullptr, Rec_Default_Const);
+}
+
+PEXP void GfxSystem_DrawTexturedRoundedRectangleEx(GfxSystem* system, rec rectangle, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color, Texture* texture, rec sourceRec)
+{
+	NotNull(system);
+	if (radiusTL + radiusBL > rectangle.Height) { radiusTL = rectangle.Height/2; radiusBL = rectangle.Height/2; }
+	if (radiusTR + radiusBR > rectangle.Height) { radiusTR = rectangle.Height/2; radiusBR = rectangle.Height/2; }
+	if (radiusTL + radiusTR > rectangle.Width) { radiusTL = rectangle.Width/2; radiusTR = rectangle.Width/2; }
+	if (radiusBL + radiusBR > rectangle.Width) { radiusBL = rectangle.Width/2; radiusBR = rectangle.Width/2; }
+	//TODO: We need to manipulate sourceRec properly for each section we are drawing here!
+	if (radiusTL != 0 || radiusTR != 0 || radiusBL != 0 || radiusBR != 0)
+	{
+		if (radiusTL > 0 || radiusTR > 0) //Top Rec
+		{
+			GfxSystem_DrawTexturedRectangleEx(system, NewRec(rectangle.X + radiusTL, rectangle.Y, rectangle.Width - radiusTR - radiusTL, MaxR32(radiusTR, radiusTL)), color, texture, sourceRec);
+		}
+		if (radiusBL > 0 || radiusBR > 0) //Bottom Rec
+		{
+			GfxSystem_DrawTexturedRectangleEx(system, NewRec(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - MaxR32(radiusBL, radiusBR), rectangle.Width - radiusBR - radiusBL, MaxR32(radiusBL, radiusBR)), color, texture, sourceRec);
+		}
+		if (radiusTL > 0 || radiusBL > 0) //Left Rec
+		{
+			GfxSystem_DrawTexturedRectangleEx(system, NewRec(rectangle.X, rectangle.Y + radiusTL, MaxR32(radiusTL, radiusBL), rectangle.Height - radiusBL - radiusTL), color, texture, sourceRec);
+		}
+		if (radiusTR > 0 || radiusBR > 0) //Right Rec
+		{
+			GfxSystem_DrawTexturedRectangleEx(system, NewRec(rectangle.X + rectangle.Width - MaxR32(radiusTR, radiusBR), rectangle.Y + radiusTR, MaxR32(radiusTR, radiusBR), rectangle.Height - radiusBR - radiusTR), color, texture, sourceRec);
+		}
+		
+		//Center Rec
+		GfxSystem_DrawTexturedRectangleEx(system, NewRec(rectangle.X + MaxR32(radiusTL, radiusBL), rectangle.Y + MaxR32(radiusTL, radiusTR), rectangle.Width - MaxR32(radiusTL, radiusBL) - MaxR32(radiusTR, radiusBR), rectangle.Height - MaxR32(radiusTL, radiusTR) - MaxR32(radiusBL, radiusBR)), color, texture, sourceRec);
+		
+		if (radiusBR > 0) //BottomRight Circle Piece
+		{
+			GfxSystem_DrawTexturedCirclePieceEx(system, NewCircle(rectangle.X + rectangle.Width - radiusBR, rectangle.Y + rectangle.Height - radiusBR, radiusBR), 0, HalfPi32, color, texture, sourceRec);
+		}
+		if (radiusBL > 0) //BottomLeft Circle Piece
+		{
+			GfxSystem_DrawTexturedCirclePieceEx(system, NewCircle(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - radiusBL, radiusBL), HalfPi32, Pi32, color, texture, sourceRec);
+		}
+		if (radiusTL > 0) //TopLeft Circle Piece
+		{
+			GfxSystem_DrawTexturedCirclePieceEx(system, NewCircle(rectangle.X + radiusTL, rectangle.Y + radiusTL, radiusTL), Pi32, ThreeHalfsPi32, color, texture, sourceRec);
+		}
+		if (radiusTR > 0) //TopRight Circle Piece
+		{
+			GfxSystem_DrawTexturedCirclePieceEx(system, NewCircle(rectangle.X + rectangle.Width - radiusTR, rectangle.Y + radiusTR, radiusTR), ThreeHalfsPi32, TwoPi32, color, texture, sourceRec);
+		}
+	}
+	else
+	{
+		GfxSystem_DrawRectangle(system, rectangle, color);
+	}
+}
+PEXPI void GfxSystem_DrawTexturedRoundedRectangle(GfxSystem* system, rec rectangle, r32 radius, Color32 color, Texture* texture, rec sourceRec)
+{
+	GfxSystem_DrawTexturedRoundedRectangleEx(system, rectangle, radius, radius, radius, radius, color, texture, sourceRec);
+}
+PEXPI void GfxSystem_DrawRoundedRectangleEx(GfxSystem* system, rec rectangle, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color)
+{
+	GfxSystem_DrawTexturedRoundedRectangleEx(system, rectangle, radiusTL, radiusTR, radiusBR, radiusBL, color, nullptr, Rec_Default_Const);
+}
+PEXPI void GfxSystem_DrawRoundedRectangle(GfxSystem* system, rec rectangle, r32 radius, Color32 color)
+{
+	GfxSystem_DrawTexturedRoundedRectangleEx(system, rectangle, radius, radius, radius, radius, color, nullptr, Rec_Default_Const);
 }
 
 PEXPI void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth)
