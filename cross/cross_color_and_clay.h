@@ -24,8 +24,8 @@ Date:   02\16\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI Color32 ToColorFromClay(Clay_Color clayColor) { return ToColor32FromV4(NewV4(clayColor.r, clayColor.g, clayColor.b, clayColor.a)); }
-PEXPI Clay_Color ToClayColor(Color32 color) { v4 colorVec = ToV4FromColor32(color); return (Clay_Color){ .r = colorVec.R, .g = colorVec.G, .b = colorVec.B, .a = colorVec.A }; }
+PEXPI Color32 ToColorFromClay(Clay_Color clayColor) { return ToColor32FromV4(NewV4(clayColor.r/255.0f, clayColor.g/255.0f, clayColor.b/255.0f, clayColor.a/255.0f)); }
+PEXPI Clay_Color ToClayColor(Color32 color) { v4 colorVec = ToV4FromColor32(color); return (Clay_Color){ .r = colorVec.R*255.0f, .g = colorVec.G*255.0f, .b = colorVec.B*255.0f, .a = colorVec.A*255.0f }; }
 
 #endif //PIG_CORE_IMPLEMENTATION
 

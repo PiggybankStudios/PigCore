@@ -28,7 +28,6 @@ struct ClayUIRendererFont
 {
 	u16 id;
 	PigFont* pntr;
-	r32 size;
 	u8 styleFlags;
 };
 
@@ -46,8 +45,8 @@ struct ClayUIRenderer
 #if !PIG_CORE_IMPLEMENTATION
 	CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText);
 	void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut);
-	PIG_CORE_INLINE u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, r32 fontSize, u8 styleFlags);
-	PIG_CORE_INLINE u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, r32 fontSize, u8 styleFlags);
+	PIG_CORE_INLINE u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags);
+	PIG_CORE_INLINE u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags);
 	void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, Clay_RenderCommandArray* commands);
 #endif
 
@@ -67,7 +66,8 @@ PEXP CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	Str8 textStr = NewStr8((uxx)text.length, text.chars);
 	Assert(config->fontId < renderer->fonts.length);
 	ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)config->fontId);
-	TextMeasure measure = MeasureTextEx(font->pntr, font->size, font->styleFlags, textStr);
+	r32 fontSize = (r32)config->fontSize;
+	TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, textStr);
 	return (Clay_Dimensions){ .width = measure.Width, .height = measure.Height };
 }
 
@@ -82,7 +82,7 @@ PEXP void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* render
 	InitClayUI(arena, windowSize, ClayUIRendererMeasureText, rendererOut, &rendererOut->clay);
 }
 
-PEXPI u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, r32 fontSize, u8 styleFlags)
+PEXPI u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags)
 {
 	NotNull(renderer);
 	NotNull(renderer->arena);
@@ -94,12 +94,11 @@ PEXPI u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, r32
 	ClearPointer(newFont);
 	newFont->id = newId;
 	newFont->pntr = fontPntr;
-	newFont->size = fontSize;
 	newFont->styleFlags = styleFlags;
 	return newId;
 }
 
-PEXPI u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, r32 fontSize, u8 styleFlags)
+PEXPI u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags)
 {
 	NotNull(renderer);
 	NotNull(renderer->arena);
@@ -107,7 +106,7 @@ PEXPI u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, r
 	VarArrayLoop(&renderer->fonts, fIndex)
 	{
 		VarArrayLoopGet(ClayUIRendererFont, font, &renderer->fonts, fIndex);
-		if (font->pntr == fontPntr && font->size == fontSize && font->styleFlags == styleFlags) { return font->id; }
+		if (font->pntr == fontPntr && font->styleFlags == styleFlags) { return font->id; }
 	}
 	return UINT16_MAX;
 }
@@ -130,12 +129,14 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			{
 				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
 				u16 fontId = command->renderData.text.fontId;
+				r32 fontSize = (r32)command->renderData.text.fontSize;
 				Assert(fontId < renderer->fonts.length);
 				Color32 drawColor = ToColorFromClay(command->renderData.text.textColor);
 				ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)fontId);
-				TextMeasure measure = MeasureTextEx(font->pntr, font->size, font->styleFlags, text);
-				v2 textPos = Sub(drawRec.TopLeft, measure.logicalRec.TopLeft);
-				Result drawResult = GfxSystem_DrawTextWithFont(system, font->pntr, font->size, font->styleFlags, text, textPos, drawColor);
+				TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
+				v2 textPos = drawRec.TopLeft;
+				textPos.Y += drawRec.Height/2 - measure.logicalRec.Height/2 - measure.logicalRec.Y;
+				Result drawResult = GfxSystem_DrawTextWithFont(system, font->pntr, fontSize, font->styleFlags, text, textPos, drawColor);
 				Assert(drawResult == Result_Success);
 			} break;
 			
@@ -159,16 +160,40 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
 			{
 				Color32 drawColor = ToColorFromClay(command->renderData.rectangle.backgroundColor);
-				// r32 cornerRadius = command->renderData.rectangle.cornerRadius.topLeft; //TODO: Add support for rounded rectangles!
-				GfxSystem_DrawRectangle(system, drawRec, drawColor);
+				GfxSystem_DrawRoundedRectangleEx(system,
+					drawRec,
+					command->renderData.rectangle.cornerRadius.topLeft,
+					command->renderData.rectangle.cornerRadius.topRight,
+					command->renderData.rectangle.cornerRadius.bottomLeft,
+					command->renderData.rectangle.cornerRadius.bottomRight,
+					drawColor
+				);
 			} break;
 			
 			case CLAY_RENDER_COMMAND_TYPE_BORDER:
 			{
 				Color32 drawColor = ToColorFromClay(command->renderData.border.color);
 				r32 borderThickness = command->renderData.border.width.top; //TODO: Add support for thickness option for each side!
-				// r32 cornerRadius = command->renderData.border.cornerRadius.topLeft; //TODO: Add support for rounded rectangles!
-				GfxSystem_DrawRectangleOutline(system, drawRec, borderThickness, drawColor);
+				if (command->renderData.border.cornerRadius.topLeft != 0 ||
+					command->renderData.border.cornerRadius.topRight != 0 ||
+					command->renderData.border.cornerRadius.bottomLeft != 0 ||
+					command->renderData.border.cornerRadius.bottomRight != 0)
+				{
+					//TODO: Implement me!
+					GfxSystem_DrawRectangleOutlineSides(system,
+						drawRec,
+						command->renderData.border.width.left, command->renderData.border.width.right, command->renderData.border.width.top, command->renderData.border.width.bottom,
+						drawColor
+					);
+				}
+				else
+				{
+					GfxSystem_DrawRectangleOutlineSides(system,
+						drawRec,
+						command->renderData.border.width.left, command->renderData.border.width.right, command->renderData.border.width.top, command->renderData.border.width.bottom,
+						drawColor
+					);
+				}
 			} break;
 			
 			case CLAY_RENDER_COMMAND_TYPE_CUSTOM:

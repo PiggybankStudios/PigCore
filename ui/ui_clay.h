@@ -126,3 +126,11 @@ PEXPI Clay_RenderCommandArray EndClayUIRender(ClayUI* clay)
 #if defined(_STRUCT_COLOR_H) && defined(_UI_CLAY_H)
 #include "cross/cross_color_and_clay.h"
 #endif
+
+#if defined(_STRUCT_STRING_H) && defined(_UI_CLAY_H)
+#include "cross/cross_string_and_clay.h"
+#endif
+
+#if defined(_STRUCT_STRING_H) && defined(_MEM_SCRATCH_H) && defined(_UI_CLAY_H)
+#include "cross/cross_string_scratch_and_clay.h"
+#endif
