@@ -190,3 +190,7 @@ PEXP void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MISC_PRINTING_H
+
+#if defined(_MEM_SCRATCH_H) && defined(_MISC_PRINTING_H)
+#include "cross/cross_scratch_and_printing.h"
+#endif
