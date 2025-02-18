@@ -164,8 +164,8 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					drawRec,
 					command->renderData.rectangle.cornerRadius.topLeft,
 					command->renderData.rectangle.cornerRadius.topRight,
-					command->renderData.rectangle.cornerRadius.bottomLeft,
 					command->renderData.rectangle.cornerRadius.bottomRight,
+					command->renderData.rectangle.cornerRadius.bottomLeft,
 					drawColor
 				);
 			} break;
@@ -173,25 +173,34 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			case CLAY_RENDER_COMMAND_TYPE_BORDER:
 			{
 				Color32 drawColor = ToColorFromClay(command->renderData.border.color);
-				r32 borderThickness = command->renderData.border.width.top; //TODO: Add support for thickness option for each side!
 				if (command->renderData.border.cornerRadius.topLeft != 0 ||
 					command->renderData.border.cornerRadius.topRight != 0 ||
 					command->renderData.border.cornerRadius.bottomLeft != 0 ||
 					command->renderData.border.cornerRadius.bottomRight != 0)
 				{
-					//TODO: Implement me!
-					GfxSystem_DrawRectangleOutlineSides(system,
+					//TODO: Should we just assert that all the widths are the same? We probably don't need to support variable side widths AND corner radius at the same time, right?
+					r32 borderThickness = MaxR32(MaxR32(command->renderData.border.width.left, command->renderData.border.width.right), MaxR32(command->renderData.border.width.top, command->renderData.border.width.bottom));
+					GfxSystem_DrawRoundedRectangleOutlineEx(system,
 						drawRec,
-						command->renderData.border.width.left, command->renderData.border.width.right, command->renderData.border.width.top, command->renderData.border.width.bottom,
-						drawColor
+						borderThickness,
+						command->renderData.border.cornerRadius.topLeft,
+						command->renderData.border.cornerRadius.topRight,
+						command->renderData.border.cornerRadius.bottomRight,
+						command->renderData.border.cornerRadius.bottomLeft,
+						drawColor,
+						false
 					);
 				}
 				else
 				{
-					GfxSystem_DrawRectangleOutlineSides(system,
+					GfxSystem_DrawRectangleOutlineSidesEx(system,
 						drawRec,
-						command->renderData.border.width.left, command->renderData.border.width.right, command->renderData.border.width.top, command->renderData.border.width.bottom,
-						drawColor
+						command->renderData.border.width.left,
+						command->renderData.border.width.right,
+						command->renderData.border.width.top,
+						command->renderData.border.width.bottom,
+						drawColor,
+						false
 					);
 				}
 			} break;
