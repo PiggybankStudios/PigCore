@@ -29,6 +29,7 @@ union Color32
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE Color32 NewColorU32(u32 valueU32);
 	PIG_CORE_INLINE Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha);
+	PIG_CORE_INLINE Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -51,6 +52,20 @@ PEXPI Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
 	result.blue = blue;
 	result.alpha = alpha;
 	return result;
+}
+
+// +--------------------------------------------------------------+
+// |                     Basic Math Functions                     |
+// +--------------------------------------------------------------+
+//"Simple" meaning we don't do lerp in linear color space, we lerp in Gamma sRGB space, which is innaccurate but simple to do
+PEXPI Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount)
+{
+	return NewColor(
+		ClampCastI32ToU8(RoundR32i((r32)start.r + (r32)(end.r - start.r) * amount)),
+		ClampCastI32ToU8(RoundR32i((r32)start.g + (r32)(end.g - start.g) * amount)),
+		ClampCastI32ToU8(RoundR32i((r32)start.b + (r32)(end.b - start.b) * amount)),
+		ClampCastI32ToU8(RoundR32i((r32)start.a + (r32)(end.a - start.a) * amount))
+	);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

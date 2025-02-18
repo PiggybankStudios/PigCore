@@ -188,6 +188,8 @@ typedef Obb3D obb3;
 	PIG_CORE_INLINE reci BothReci(reci left, reci right);
 	PIG_CORE_INLINE box BothBox(box left, box right);
 	PIG_CORE_INLINE boxi BothBoxi(boxi left, boxi right);
+	PIG_CORE_INLINE rec RelativeRec(rec reference, rec subReference, rec other);
+	PIG_CORE_INLINE box RelativeBox(box reference, box subReference, box other);
 #endif
 
 // +--------------------------------------------------------------+
@@ -557,6 +559,10 @@ PEXPI bool AreEqualObb2(obb2 left, obb2 right) { return (left.X == right.X && le
 PEXPI bool AreEqualObb3(obb3 left, obb3 right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.Width == right.Width && left.Height == right.Height && left.Depth == right.Depth && AreEqualQuat(left.Rotation, right.Rotation)); }
 
 //TODO: AreSimilarRec?
+
+// +--------------------------------------------------------------+
+// |            Basic Manipulation and Math Functions             |
+// +--------------------------------------------------------------+
 //TODO: InvertRec/InvertXRec/InvertYRec?
 //TODO: LerpRec?
 //TODO: RotateObb2Clockwise(uxx numQuarterTurns)/RotateObb2CounterClockwise(uxx numQuarterTurns)
@@ -588,6 +594,34 @@ PEXPI boxi BothBoxi(boxi left, boxi right) { i32 minX = MinI32(left.X, right.X);
 //TODO: v2 GetObb2DTopRight(obb2 boundingBox);
 //TODO: v2 GetObb2DBottomLeft(obb2 boundingBox);
 //TODO: v2 GetObb2DBottomRight(obb2 boundingBox);
+
+// +--------------------------------------------------------------+
+// |           Advanced Manipulation and Math Functions           |
+// +--------------------------------------------------------------+
+//TODO: Can we come up with better names for the parameters? Or maybe a better name for the function?
+// Produces a rectangle that is a subset of other that is proportionally to the relationship between reference and subReference
+// This is most commonly used to find a texture sourceRec when drawing a larger shape in pieces, where other is sourceRec, and reference/subReference are the total rectangle and piece rectangle on screen
+// This is similar to solving for X when you have two equivalent fractions and know 3/4 values: A/B = X/C => X = (A * C)/B
+PEXPI rec RelativeRec(rec reference, rec subReference, rec other)
+{
+	return NewRec(
+		other.X + other.Width * InverseLerpR32(reference.X, reference.X + reference.Width, subReference.X),
+		other.Y + other.Height * InverseLerpR32(reference.Y, reference.Y + reference.Height, subReference.Y),
+		other.Width * InverseLerpR32(0, reference.Width, subReference.Width),
+		other.Height * InverseLerpR32(0, reference.Height, subReference.Height)
+	);
+}
+PEXPI box RelativeBox(box reference, box subReference, box other)
+{
+	return NewBox(
+		other.X + other.Width * InverseLerpR32(reference.X, reference.X + reference.Width, subReference.X),
+		other.Y + other.Height * InverseLerpR32(reference.Y, reference.Y + reference.Height, subReference.Y),
+		other.Z + other.Depth * InverseLerpR32(reference.Z, reference.Z + reference.Depth, subReference.Z),
+		other.Width * InverseLerpR32(0, reference.Width, subReference.Width),
+		other.Height * InverseLerpR32(0, reference.Height, subReference.Height),
+		other.Depth * InverseLerpR32(0, reference.Depth, subReference.Depth)
+	);
+}
 
 #endif //PIG_CORE_IMPLEMENTATION
 
