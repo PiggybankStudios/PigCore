@@ -1,3 +1,14 @@
 _build/
 *.sublime-workspace
 .DS_Store
+third_party/bullet/
+third_party/_lib_debug/Bullet*.lib
+third_party/_lib_debug/Bullet*.pdb
+third_party/_lib_debug/Bullet*.txt
+third_party/_lib_debug/LinearMath*.lib
+third_party/_lib_debug/LinearMath*.pdb
+third_party/_lib_release/Bullet*.lib
+third_party/_lib_release/Bullet*.pdb
+third_party/_lib_release/Bullet*.txt
+third_party/_lib_release/LinearMath*.lib
+third_party/_lib_release/LinearMath*.pdb
