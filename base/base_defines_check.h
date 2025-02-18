@@ -79,4 +79,21 @@ Description:
 #define BUILD_WITH_CLAY 0
 #endif
 
+#ifndef BUILD_WITH_IMGUI
+#define BUILD_WITH_IMGUI 0
+#endif
+
+// +--------------------------------------------------------------+
+// |                       Check Conflicts                        |
+// +--------------------------------------------------------------+
+#if BUILD_WITH_RAYLIB && (BUILD_WITH_SOKOL_APP || BUILD_WITH_SOKOL_GFX)
+#error Raylib and Sokol are not meant to be used together!
+#endif
+#if BUILD_WITH_RAYLIB && BUILD_WITH_SDL
+#error Raylib and SDL are not meant to be used together!
+#endif
+#if BUILD_WITH_SDL && (BUILD_WITH_SOKOL_APP || BUILD_WITH_SOKOL_GFX)
+#error SDL and Sokol are not meant to be used together!
+#endif
+
 #endif //  _BASE_DEFINES_CHECK_H

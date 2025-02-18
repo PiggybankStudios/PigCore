@@ -13,5 +13,6 @@ Date:   02\16\2025
 #include "base/base_assert.h"
 
 #include "ui/ui_clay.h"
+#include "ui/ui_imgui.h"
 
 #endif //  _UI_ALL_H
