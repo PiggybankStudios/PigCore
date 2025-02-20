@@ -105,14 +105,20 @@ struct OsDll
 	OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, bool includeFolders);
 	bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath);
 	PIG_CORE_INLINE bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOutArena, bool giveFullPath);
-	bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* contentsOut);
+	bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* contentsOut);
+	PIG_CORE_INLINE bool OsReadTextFile(FilePath path, Arena* arena, Str8* contentsOut);
+	PIG_CORE_INLINE bool OsReadBinFile(FilePath path, Arena* arena, Slice* contentsOut);
+	PIG_CORE_INLINE Slice OsReadFileScratch(FilePath path, bool convertNewLines);
 	PIG_CORE_INLINE Str8 OsReadTextFileScratch(FilePath path);
-	PIG_CORE_INLINE Str8 OsReadBinFileScratch(FilePath path);
+	PIG_CORE_INLINE Slice OsReadBinFileScratch(FilePath path);
 	bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines);
 	PIG_CORE_INLINE bool OsWriteTextFile(FilePath path, Str8 fileContents);
 	PIG_CORE_INLINE bool OsWriteBinFile(FilePath path, Str8 fileContents);
 	void OsCloseFile(OsFile* file);
 	bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut);
+	Result OsReadFromOpenFile(OsFile* file, uxx numBytes, bool convertNewLines, void* bufferOut, uxx* numBytesReadOut);
+	PIG_CORE_INLINE Result OsReadFromOpenTextFile(OsFile* file, uxx numBytes, void* bufferOut, uxx* numBytesReadOut);
+	PIG_CORE_INLINE Result OsReadFromOpenBinFile(OsFile* file, uxx numBytes, void* bufferOut, uxx* numBytesReadOut);
 	bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines);
 	PIG_CORE_INLINE bool OsWriteToOpenTextFile(OsFile* file, Str8 fileContentsPart);
 	PIG_CORE_INLINE bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart);
@@ -391,8 +397,8 @@ PEXPI bool OsIterFileStep(OsFileIter* fileIter, FilePath* pathOut, Arena* pathOu
 // +--------------------------------------------------------------+
 //NOTE: Passing nullptr for arena will output a Str8 that has length set but no chars pointer
 // NOTE: The contentsOut is always null-terminated
-//TODO: Return Result instead of bool!
-PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* contentsOut)
+//TODO: Convert this to return Result!
+PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* contentsOut)
 {
 	//NOTE: This function should be multi-thread safe!
 	NotNullStr(path);
@@ -452,7 +458,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* co
 		uxx fileSize = (uxx)fileSizeLargeInt.QuadPart;
 		u8* fileData = AllocArray(u8, arena, fileSize+1); //+1 for null-term
 		AssertMsg(fileData != nullptr, "Failed to allocate space to hold file contents. The application probably tried to open a massive file");
-		Str8 result = NewStr8(fileSize, (char*)fileData);
+		Slice result = NewStr8(fileSize, fileData);
 		
 		if (fileSize > 0)
 		{
@@ -518,28 +524,26 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Str8* co
 	ScratchEnd(scratch);
 	return true;
 }
-PEXPI Str8 OsReadTextFileScratch(FilePath path)
+PEXPI bool OsReadTextFile(FilePath path, Arena* arena, Str8* contentsOut) { return OsReadFile(path, arena, true, contentsOut); }
+PEXPI bool OsReadBinFile(FilePath path, Arena* arena, Slice* contentsOut) { return OsReadFile(path, arena, false, contentsOut); }
+
+PEXPI Slice OsReadFileScratch(FilePath path, bool convertNewLines)
 {
 	Arena* scratch = GetScratch(nullptr); //Intentionally throwing away the mark here
-	Str8 fileContents = Str8_Empty;
-	bool readSuccess = OsReadFile(path, scratch, true, &fileContents);
+	Slice fileContents = Slice_Empty;
+	bool readSuccess = OsReadFile(path, scratch, convertNewLines, &fileContents);
 	// Assert(readSuccess); //NOTE: Enable me if you want to break on failure to read!
-	return readSuccess ? fileContents : Str8_Empty;
+	return (readSuccess ? fileContents : Slice_Empty);
 }
-PEXPI Str8 OsReadBinFileScratch(FilePath path)
-{
-	Arena* scratch = GetScratch(nullptr); //Intentionally throwing away the mark here
-	Str8 fileContents = Str8_Empty;
-	bool readSuccess = OsReadFile(path, scratch, false, &fileContents);
-	// Assert(readSuccess); //NOTE: Enable me if you want to break on failure to read!
-	return readSuccess ? fileContents : Str8_Empty;
-}
+PEXPI Str8 OsReadTextFileScratch(FilePath path) { return OsReadFileScratch(path, true); }
+PEXPI Slice OsReadBinFileScratch(FilePath path) { return OsReadFileScratch(path, false); }
 
 //TODO: Can we do some sort of asynchronous file read? Like kick off the read and get a callback later?
 
 // +--------------------------------------------------------------+
 // |                      Write Entire File                       |
 // +--------------------------------------------------------------+
+//TODO: Convert this to return Result!
 //NOTE: If convertNewLines is true, you should not be passing \r\n instances in your file contents, only \n
 PEXP bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 {
@@ -647,6 +651,7 @@ PEXP void OsCloseFile(OsFile* file)
 	ClearPointer(file);
 }
 
+//TODO: Convert this to return Result!
 PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut)
 {
 	NotNullStr(path);
@@ -753,6 +758,70 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 	return result;
 }
 
+PEXP Result OsReadFromOpenFile(OsFile* file, uxx numBytes, bool convertNewLines, void* bufferOut, uxx* numBytesReadOut)
+{
+	NotNull(file);
+	NotNull(file->arena);
+	NotNull(bufferOut);
+	Result result = Result_None;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		Assert(!file->isKnownSize || file->cursorIndex <= file->fileSize);
+		//TODO: Assert numBytes <= max of DWORD
+		DWORD numBytesToRead = (DWORD)numBytes;
+		if (file->isKnownSize && file->cursorIndex + numBytes > file->fileSize)
+		{
+			numBytesToRead = (DWORD)(file->fileSize - file->cursorIndex);
+		}
+		
+		DWORD numBytesRead = 0;
+		if (numBytesToRead > 0)
+		{
+			BOOL readResult = ReadFile(
+				file->handle, //hFile
+				bufferOut, //lpBuffer
+				numBytesToRead, //nNumberOfBytesToRead
+				&numBytesRead, //lpNumberOfBytesRead
+				NULL //lpOverlapped
+			);
+			if (readResult == 0)
+			{
+				// DWORD errorCode = GetLastError(); //TODO: Use this to fill with proper Result
+				return Result_FailedToReadFile;
+			}
+			Assert(numBytesRead < numBytesToRead);
+		}
+		
+		if (numBytesRead == 0) { return Result_NoMoreBytes; }
+		
+		file->cursorIndex += (uxx)numBytesRead;
+		bool partialRead = ((uxx)numBytesRead < numBytes);
+		SetOptionalOutPntr(numBytesReadOut, (uxx)numBytesRead);
+		
+		if (convertNewLines)
+		{
+			ScratchBegin(scratch);
+			Str8 scratchStr = StrReplace(scratch, NewStr8((uxx)numBytesRead, bufferOut), StrLit("\r\n"), StrLit("\n"), false);
+			DebugAssert(scratchStr.length <= (uxx)numBytesRead);
+			MyMemCopy(bufferOut, scratchStr.bytes, scratchStr.length);
+			SetOptionalOutPntr(numBytesReadOut, scratchStr.length);
+			ScratchEnd(scratch);
+		}
+		
+		result = (partialRead ? Result_Partial : Result_Success);
+	}
+	#else
+	AssertMsg(false, "OsReadFromOpenFile does not support the current platform yet!");
+	result = Result_UnsupportedPlatform;
+	#endif
+	
+	return result;
+}
+PEXPI Result OsReadFromOpenTextFile(OsFile* file, uxx numBytes, void* bufferOut, uxx* numBytesReadOut) { return OsReadFromOpenFile(file, numBytes, true, bufferOut, numBytesReadOut); }
+PEXPI Result OsReadFromOpenBinFile(OsFile* file, uxx numBytes, void* bufferOut, uxx* numBytesReadOut) { return OsReadFromOpenFile(file, numBytes, false, bufferOut, numBytesReadOut); }
+
+//TODO: Convert this to return Result!
 //NOTE: If convertNewLines is true, you should not be passing \r\n instances in your file contents, only \n
 PEXP bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines)
 {

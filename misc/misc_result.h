@@ -75,6 +75,8 @@ enum Result
 	Result_InvalidSyntax,
 	Result_InvalidOptions,
 	Result_Deprecated,
+	Result_NoMoreBytes,
+	Result_Partial,
 	
 	Result_Count,
 };
@@ -133,6 +135,8 @@ PEXP const char* GetResultStr(Result result)
 		case Result_InvalidSyntax: return "InvalidSyntax";
 		case Result_InvalidOptions: return "InvalidOptions";
 		case Result_Deprecated: return "Deprecated";
+		case Result_NoMoreBytes: return "NoMoreBytes";
+		case Result_Partial: return "Partial";
 		default: return UNKNOWN_STR;
 	}
 }

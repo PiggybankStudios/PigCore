@@ -17,6 +17,20 @@ Description:
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 
+#if (TARGET_IS_WINDOWS || TARGET_IS_WEB)
+#define MyBreakMsg(message) __debugbreak()
+#define MyBreak()           MyBreakMsg("")
+#elif (TARGET_IS_OSX || TARGET_IS_LINUX)
+#define MyBreakMsg(message) raise(SIGINT)
+#define MyBreak()           MyBreakMsg("")
+#elif TARGET_IS_ORCA
+#define MyBreakMsg(message) OC_AbortExt(__FILE__, __FUNCTION__, __LINE__, message)
+#define MyBreak()           MyBreakMsg("MyBreak()")
+#else
+#define MyBreakMsg(message) //nothing
+#define MyBreak() //nothing
+#endif
+
 //TODO: Why can't we use a #define around _Static_assert????
 //TODO: _Static_assert is not available when compiling in C++ mode!
 #define StaticAssert(condition) _Static_assert(condition)
