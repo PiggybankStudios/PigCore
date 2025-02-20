@@ -4,11 +4,11 @@
 //with imgui_freetype.h api
 //docking branch
 
-#include "third_party/imgui/imgui.h"
+#include "imgui.h"
 #ifdef IMGUI_ENABLE_FREETYPE
-#include "third_party/imgui/misc/freetype/imgui_freetype.h"
+#include "misc/freetype/imgui_freetype.h"
 #endif
-#include "third_party/imgui/imgui_internal.h"
+#include "imgui_internal.h"
 #include "third_party/cimgui/cimgui.h"
 
 

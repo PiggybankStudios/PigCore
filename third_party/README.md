@@ -234,6 +234,23 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 ---
 
+## Dear ImGui v1.91.8
+**URL(s):** [https://github.com/ocornut/imgui/](https://github.com/ocornut/imgui/) [v1.91.8](https://github.com/ocornut/imgui/tree/11b3a7c8ca23201294464c7f368614a9106af2a1)
+
+**Folder Name:** `imgui`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Version 1.91.8 from Jan 31st 2025
+
+**Fixup Required:** Make custom imconfig.h with just an include for ui/ui_imconfig.h. Delete everything besides: imgui.cpp, imgui.h, imgui_demo.cpp, imgui_draw.cpp, imgui_internal.h, imgui_tables.cpp, imgui_widgets.cpp, imstb_rectpack.h, imstb_textedit.h, imstb_truetype.h, and LICENSE.txt.
+
+**Required For:**
+
+* ui_imgui.h depends upon this library
+
+---
+
 ## cImGui for Dear ImGui v1.91.8
 **URL(s):** [https://github.com/cimgui/cimgui](https://github.com/cimgui/cimgui) [Dear ImGui v1.91.8](https://github.com/ocornut/imgui/tree/11b3a7c8ca23201294464c7f368614a9106af2a1)
 
@@ -243,7 +260,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Current Version:** cImGui commit `2e5db87e996af08b8b4162ca324ab0d7964abbf8` from from Feb 5th 2025 which is generated from Dear ImGui Version 1.91.8 from Jan 31st 2025
 
-**Fixup Required:** Compile using CMake or Make and put static libraries in `_lib_debug/` and `_lib_release/`. Delete everything besides cimgui.h and LICENSE.
+**Fixup Required:** Delete everything besides cimgui.h, cimgui.cpp and LICENSE.
 
 **Required For:**
 
