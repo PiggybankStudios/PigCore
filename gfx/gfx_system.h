@@ -51,6 +51,7 @@ struct GfxSystemState
 	Shader* shader;
 	Texture* textures[MAX_NUM_SHADER_IMAGES];
 	VertBuffer* vertBuffer;
+	uxx vertexOffset;
 	
 	PigFont* font;
 	r32 fontSize;
@@ -114,6 +115,7 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawVertices(GfxSystem* system);
 	PIG_CORE_INLINE void GfxSystem_BindShader(GfxSystem* system, Shader* shader);
 	PIG_CORE_INLINE void GfxSystem_BindVertBuffer(GfxSystem* system, VertBuffer* buffer);
+	PIG_CORE_INLINE void GfxSystem_SetVertexOffset(GfxSystem* system, uxx vertexOffset);
 	PIG_CORE_INLINE void GfxSystem_BindTextureAtIndex(GfxSystem* system, Texture* texture, uxx textureIndex);
 	PIG_CORE_INLINE void GfxSystem_BindTexture(GfxSystem* system, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_BindFontEx(GfxSystem* system, PigFont* font, r32 fontSize, u8 fontStyleFlags);
@@ -390,7 +392,9 @@ PEXPI void GfxSystem_EndFrame(GfxSystem* system)
 {
 	NotNull(system);
 	Assert(system->frameStarted);
+	
 	sg_end_pass();
+	sg_commit();
 	
 	system->frameStarted = false;
 }
@@ -476,6 +480,17 @@ PEXPI void GfxSystem_BindVertBuffer(GfxSystem* system, VertBuffer* buffer)
 		}
 		system->state.vertBuffer = buffer;
 		system->state.pipeline = nullptr; //TODO: We don't always need to invalidate the pipeline. We should probably only do this if the attributes are different between current and new VertBuffer!
+	}
+}
+PEXPI void GfxSystem_SetVertexOffset(GfxSystem* system, uxx vertexOffset)
+{
+	NotNull(system);
+	if (system->state.vertexOffset != vertexOffset)
+	{
+		DebugAssert(vertexOffset <= INT_MAX);
+		system->bindings.vertex_buffer_offsets[0] = (int)vertexOffset;
+		system->state.vertexOffset = vertexOffset;
+		system->bindingsChanged = true;
 	}
 }
 PEXPI void GfxSystem_BindTextureAtIndex(GfxSystem* system, Texture* texture, uxx textureIndex)
@@ -1210,3 +1225,7 @@ PEXPI Result GfxSystem_DrawText(GfxSystem* system, Str8 text, v2 position, Color
 #endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_SYSTEM_H
+
+#if defined(_UI_IMGUI_H) && defined(_GFX_SYSTEM_H)
+#include "cross/cross_imgui_and_gfx_system.h"
+#endif

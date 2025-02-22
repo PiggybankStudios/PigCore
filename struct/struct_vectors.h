@@ -595,6 +595,10 @@ PEXPI void AlignV4(v4* vectorOut) { AlignV4To(vectorOut, 1.0f); }
 #include "cross/cross_color_and_vectors.h"
 #endif
 
+#if defined(_INPUT_BTN_STATE_H) && defined(_INPUT_MOUSE_BTNS_H) && defined(_STRUCT_VECTORS_H)
+#include "cross/cross_mouse_btns_btn_state_and_vectors.h"
+#endif
+
 #if defined(_STRUCT_VECTORS_H) && defined(RAYLIB_H)
 #include "cross/cross_vectors_and_raylib.h"
 #endif

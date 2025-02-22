@@ -79,6 +79,7 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 
 #define BindShader(shaderPntr)                        GfxSystem_BindShader(&gfx, (shaderPntr))
 #define BindVertBuffer(bufferPntr)                    GfxSystem_BindVertBuffer(&gfx, (bufferPntr))
+#define SetVertexOffset(vertexOffset)                 GfxSystem_SetVertexOffset(&gfx, (vertexOffset))
 #define BindTextureAtIndex(texturePntr, textureIndex) GfxSystem_BindTextureAtIndex(&gfx, (texturePntr), (textureIndex))
 #define BindTexture(texturePntr)                      GfxSystem_BindTexture(&gfx, (texturePntr))
 

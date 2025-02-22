@@ -84,3 +84,7 @@ PEXPI bool UpdateBtnState(BtnState* state, u64 currentTime, bool isDown)
 #if defined(_INPUT_BTN_STATE_H) && defined(_INPUT_MOUSE_BTNS_H) && defined(_STRUCT_VECTORS_H)
 #include "cross/cross_mouse_btns_btn_state_and_vectors.h"
 #endif
+
+#if defined(_UI_IMGUI_H) && defined(_INPUT_SOKOL_H) && defined(_INPUT_BTN_STATE_H)
+#include "cross/cross_imgui_input_sokol_and_btn_state.h"
+#endif

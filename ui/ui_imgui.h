@@ -16,10 +16,12 @@ Description:
 #include "base/base_macros.h"
 #include "mem/mem_arena.h"
 #include "std/std_memset.h"
+#include "struct/struct_vectors.h"
 #include "os/os_file.h"
 #include "gfx/gfx_texture.h"
+#include "gfx/gfx_vert_buffer.h"
 
-#if BUILD_WITH_IMGUI //TODO: Change me back!
+#if BUILD_WITH_IMGUI
 
 extern Arena* imguiArena; //defined in ui_imgui_main.cpp
 
@@ -35,12 +37,16 @@ struct ImguiUI
 	ImGuiPlatformIO* platformIo;
 	ImGuiViewport* viewport;
 	Texture fontTexture;
+	bool frameStarted;
+	VertBuffer vertBuffer;
 };
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE v2 ToV2FromImgui(ImVec2 vector);
+	PIG_CORE_INLINE ImVec2 ToImVec2(v2 vector);
 	ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr);
 #endif
 
@@ -52,6 +58,15 @@ struct ImguiUI
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXPI v2 ToV2FromImgui(ImVec2 vector)
+{
+	return NewV2(vector.x, vector.y);
+}
+PEXPI ImVec2 ToImVec2(v2 vector)
+{
+	return (ImVec2){ .x = vector.X, .y = vector.Y };
+}
 
 static void* ImguiAllocCallback(size_t numBytes, void* userData)
 {
@@ -115,6 +130,9 @@ PEXP ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr)
 	result->io->BackendRendererName = AllocAndCopyCharsNt(arena, "PigCore", true);
 	result->io->BackendPlatformUserData = (void*)result;
 	result->io->BackendRendererUserData = (void*)result;
+	// FlagSet(result->io->BackendFlags, ImGuiBackendFlags_RendererHasVtxOffset); //TODO: Test this!
+	// FlagSet(result->io->BackendFlags, ImGuiBackendFlags_HasMouseCursors);
+	// FlagSet(result->io->BackendFlags, ImGuiBackendFlags_HasSetMousePos);
 	result->io->ConfigDebugIsDebuggerPresent = DEBUG_BUILD; //TODO: Can we detect this better?
 	result->io->IniFilename = AllocAndCopyCharsNt(arena, IMGUI_INI_FILE_NAME, true);
 	result->io->LogFilename = AllocAndCopyCharsNt(arena, IMGUI_LOG_FILE_NAME, true);
@@ -145,3 +163,15 @@ PEXP ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr)
 #endif //BUILD_WITH_IMGUI
 
 #endif //  _UI_IMGUI_H
+
+#if defined(_UI_IMGUI_H) && defined(_GFX_SYSTEM_H)
+#include "cross/cross_imgui_and_gfx_system.h"
+#endif
+
+#if defined(_UI_IMGUI_H) && defined(_INPUT_KEYS_H)
+#include "cross/cross_imgui_and_keys.h"
+#endif
+
+#if defined(_UI_IMGUI_H) && defined(_INPUT_SOKOL_H) && defined(_INPUT_BTN_STATE_H)
+#include "cross/cross_imgui_input_sokol_and_btn_state.h"
+#endif

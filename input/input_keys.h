@@ -348,3 +348,7 @@ PEXP const char* GetKeyStr(Key key)
 #if defined(_INPUT_BTN_STATE_H) && defined(_INPUT_KEYS_H)
 #include "cross/cross_keys_and_btn_state.h"
 #endif
+
+#if defined(_UI_IMGUI_H) && defined(_INPUT_KEYS_H)
+#include "cross/cross_imgui_and_keys.h"
+#endif

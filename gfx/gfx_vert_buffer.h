@@ -89,6 +89,14 @@ struct VertBuffer
 	PIG_CORE_INLINE void AddIndicesToVertBufferU16(VertBuffer* buffer, uxx numIndices, const u16* indicesPntr, bool makeCopy);
 	PIG_CORE_INLINE void AddIndicesToVertBufferU32(VertBuffer* buffer, uxx numIndices, const u32* indicesPntr, bool makeCopy);
 	PIG_CORE_INLINE void AddIndicesToVertBufferU64(VertBuffer* buffer, uxx numIndices, const u64* indicesPntr, bool makeCopy);
+	void ChangeVerticesInVertBufferEx(VertBuffer* buffer, uxx numVertices, uxx vertexSize, const void* verticesPntr);
+	PIG_CORE_INLINE void ChangeVerticesInVertBuffer2D(VertBuffer* buffer, uxx numVertices, const Vertex2D* verticesPntr);
+	PIG_CORE_INLINE void ChangeVerticesInVertBuffer3D(VertBuffer* buffer, uxx numVertices, const Vertex3D* verticesPntr);
+	void ChangeIndicesInVertBufferEx(VertBuffer* buffer, uxx numIndices, uxx indexSize, const void* indicesPntr);
+	PIG_CORE_INLINE void ChangeIndicesInVertBufferU8(VertBuffer* buffer, uxx numIndices, const u8* indicesPntr);
+	PIG_CORE_INLINE void ChangeIndicesInVertBufferU16(VertBuffer* buffer, uxx numIndices, const u16* indicesPntr);
+	PIG_CORE_INLINE void ChangeIndicesInVertBufferU32(VertBuffer* buffer, uxx numIndices, const u32* indicesPntr);
+	PIG_CORE_INLINE void ChangeIndicesInVertBufferU64(VertBuffer* buffer, uxx numIndices, const u64* indicesPntr);
 #endif
 
 // +--------------------------------------------------------------+
@@ -120,11 +128,11 @@ PEXP VertBuffer InitVertBufferEx(Arena* arena, Str8 name, VertBufferUsage usage,
 	NotNull(arena);
 	NotNullStr(name);
 	Assert(verticesSize > 0);
-	NotNull(verticesPntr);
 	VertBuffer result = ZEROED;
 	result.arena = arena;
 	result.name = AllocStrAndCopy(arena, name.length, name.chars, true);
 	NotNull(result.name.chars);
+	result.usage = usage;
 	sg_usage sokolUsage = SG_USAGE_IMMUTABLE;
 	switch (usage)
 	{
@@ -134,10 +142,11 @@ PEXP VertBuffer InitVertBufferEx(Arena* arena, Str8 name, VertBufferUsage usage,
 	}
 	sg_buffer_desc bufferDesc = {
 		.type = SG_BUFFERTYPE_VERTEXBUFFER,
-		.data = (sg_range){verticesPntr, verticesSize},
 		.usage = sokolUsage,
 		.label = result.name.chars,
 	};
+	if (verticesPntr != nullptr) { bufferDesc.data = (sg_range){verticesPntr, verticesSize}; }
+	else { bufferDesc.size = verticesSize; }
 	result.handle = sg_make_buffer(&bufferDesc);
 	if (result.handle.id == SG_INVALID_ID)
 	{
@@ -167,7 +176,7 @@ PEXP VertBuffer InitVertBufferEx(Arena* arena, Str8 name, VertBufferUsage usage,
 			result.error = Result_FailedToAllocateMemory;
 			return result;
 		}
-		MyMemCopy(result.verticesPntr, verticesPntr, verticesSize);
+		if (verticesPntr != nullptr) { MyMemCopy(result.verticesPntr, verticesPntr, verticesSize); }
 	}
 	result.error = Result_Success;
 	return result;
@@ -206,21 +215,29 @@ PEXP void AddIndicesToVertBufferEx(VertBuffer* buffer, uxx indexSize, uxx numInd
 	Assert(buffer->hasIndices == false);
 	if (numIndices > 0)
 	{
+		sg_usage sokolUsage = SG_USAGE_IMMUTABLE;
+		switch (buffer->usage)
+		{
+			case VertBufferUsage_Static: sokolUsage = SG_USAGE_IMMUTABLE; break;
+			case VertBufferUsage_Dynamic: sokolUsage = SG_USAGE_DYNAMIC; break;
+			case VertBufferUsage_Streaming: sokolUsage = SG_USAGE_STREAM; break;
+		}
 		buffer->hasIndices = true;
 		buffer->indexSize = indexSize;
 		buffer->numIndices = numIndices;
 		sg_buffer_desc bufferDesc = {
 			.type = SG_BUFFERTYPE_INDEXBUFFER,
-			.data = (sg_range){indicesPntr, (indexSize * numIndices)},
-			.usage = SG_USAGE_IMMUTABLE, //TODO: Should this be an option for indices?
+			.usage = sokolUsage,
 			.label = buffer->name.chars, //TODO: Should we append like "_indices" or something to the name?
 		};
+		if (indicesPntr != nullptr) { bufferDesc.data = (sg_range){indicesPntr, (indexSize * numIndices)}; }
+		else { bufferDesc.size = (indexSize * numIndices); }
 		buffer->indicesHandle = sg_make_buffer(&bufferDesc);
 		if (makeCopy)
 		{
 			buffer->indicesPntr = AllocMem(buffer->arena, indexSize * numIndices);
 			NotNull(buffer->indicesPntr);
-			MyMemCopy(buffer->indicesPntr, indicesPntr, indexSize * numIndices);
+			if (indicesPntr != nullptr) { MyMemCopy(buffer->indicesPntr, indicesPntr, indexSize * numIndices); }
 		}
 	}
 }
@@ -244,6 +261,91 @@ PEXPI void AddIndicesToVertBufferU64(VertBuffer* buffer, uxx numIndices, const u
 //TODO: Implement InitVertIndexedBufferEx
 //TODO: Implement InitVertIndexedBuffer2D
 //TODO: Implement InitVertIndexedBuffer3D
+
+//NOTE: Sokol does not allow us to change a subset of the vertices, we have to change all the vertices at once!
+PEXP void ChangeVerticesInVertBufferEx(VertBuffer* buffer, uxx numVertices, uxx vertexSize, const void* verticesPntr)
+{
+	NotNull(buffer);
+	NotNull(buffer->arena);
+	Assert(buffer->usage == VertBufferUsage_Dynamic || buffer->usage == VertBufferUsage_Streaming);
+	Assert(numVertices <= buffer->numVertices);
+	Assert(vertexSize == buffer->vertexSize);
+	if (numVertices == 0) { return; }
+	NotNull(verticesPntr);
+	
+	ScratchBegin1(scratch, buffer->arena);
+	uxx allVerticesSize = buffer->vertexSize * buffer->numVertices;
+	u8* allVerticesPntr = AllocArray(u8, scratch, allVerticesSize);
+	NotNull(allVerticesPntr);
+	MyMemCopy(allVerticesPntr, verticesPntr, vertexSize * numVertices);
+	if (numVertices < buffer->numVertices) { MyMemSet(&allVerticesPntr[vertexSize * numVertices], 0x00, vertexSize * (buffer->numVertices - numVertices)); }
+	
+	//TODO: Maybe we don't have to update the entire buffer? Maybe we can just update the beginning? Is that more performant since we don't have to pass potentially a lot of zeroes?
+	sg_range verticesRange = (sg_range){verticesPntr, allVerticesSize};
+	sg_update_buffer(buffer->handle, &verticesRange);
+	
+	ScratchEnd(scratch);
+	
+	if (buffer->verticesPntr != nullptr)
+	{
+		MyMemCopy(buffer->verticesPntr, verticesPntr, vertexSize * numVertices);
+	}
+}
+PEXPI void ChangeVerticesInVertBuffer2D(VertBuffer* buffer, uxx numVertices, const Vertex2D* verticesPntr)
+{
+	ChangeVerticesInVertBufferEx(buffer, numVertices, sizeof(Vertex2D), verticesPntr);
+}
+PEXPI void ChangeVerticesInVertBuffer3D(VertBuffer* buffer, uxx numVertices, const Vertex3D* verticesPntr)
+{
+	ChangeVerticesInVertBufferEx(buffer, numVertices, sizeof(Vertex3D), verticesPntr);
+}
+
+//NOTE: Sokol does not allow us to change a subset of the indices, we have to change all the indices at once!
+PEXP void ChangeIndicesInVertBufferEx(VertBuffer* buffer, uxx numIndices, uxx indexSize, const void* indicesPntr)
+{
+	NotNull(buffer);
+	NotNull(buffer->arena);
+	Assert(buffer->hasIndices);
+	Assert(buffer->usage == VertBufferUsage_Dynamic || buffer->usage == VertBufferUsage_Streaming);
+	Assert(numIndices <= buffer->numIndices);
+	Assert(indexSize == buffer->indexSize);
+	if (numIndices == 0) { return; }
+	NotNull(indicesPntr);
+	
+	ScratchBegin1(scratch, buffer->arena);
+	uxx allIndicesSize = buffer->indexSize * buffer->numIndices;
+	u8* allIndicesPntr = AllocArray(u8, scratch, allIndicesSize);
+	NotNull(allIndicesPntr);
+	MyMemCopy(allIndicesPntr, indicesPntr, indexSize * numIndices);
+	if (numIndices < buffer->numIndices) { MyMemSet(&allIndicesPntr[indexSize * numIndices], 0x00, indexSize * (buffer->numIndices - numIndices)); }
+	
+	//TODO: Maybe we don't have to update the entire buffer? Maybe we can just update the beginning? Is that more performant since we don't have to pass potentially a lot of zeroes?
+	sg_range indicesRange = (sg_range){indicesPntr, allIndicesSize};
+	sg_update_buffer(buffer->indicesHandle, &indicesRange);
+	
+	ScratchEnd(scratch);
+	
+	if (buffer->indicesPntr != nullptr)
+	{
+		MyMemCopy(buffer->indicesPntr, indicesPntr, indexSize * numIndices);
+	}
+}
+PEXPI void ChangeIndicesInVertBufferU8(VertBuffer* buffer, uxx numIndices, const u8* indicesPntr)
+{
+	ChangeIndicesInVertBufferEx(buffer, numIndices, sizeof(u8), indicesPntr);
+}
+PEXPI void ChangeIndicesInVertBufferU16(VertBuffer* buffer, uxx numIndices, const u16* indicesPntr)
+{
+	ChangeIndicesInVertBufferEx(buffer, numIndices, sizeof(u16), indicesPntr);
+}
+PEXPI void ChangeIndicesInVertBufferU32(VertBuffer* buffer, uxx numIndices, const u32* indicesPntr)
+{
+	ChangeIndicesInVertBufferEx(buffer, numIndices, sizeof(u32), indicesPntr);
+}
+PEXPI void ChangeIndicesInVertBufferU64(VertBuffer* buffer, uxx numIndices, const u64* indicesPntr)
+{
+	ChangeIndicesInVertBufferEx(buffer, numIndices, sizeof(u64), indicesPntr);
+}
 
 PEXPI void BindVertBuffer(sg_bindings* bindings, VertBuffer* buffer, uxx bufferIndex)
 {

@@ -321,3 +321,6 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 
 #endif //  _INPUT_SOKOL_H
  
+#if defined(_UI_IMGUI_H) && defined(_INPUT_SOKOL_H) && defined(_INPUT_BTN_STATE_H)
+#include "cross/cross_imgui_input_sokol_and_btn_state.h"
+#endif
