@@ -47,6 +47,9 @@ struct ImguiUI
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE v2 ToV2FromImgui(ImVec2 vector);
 	PIG_CORE_INLINE ImVec2 ToImVec2(v2 vector);
+	PIG_CORE_INLINE v4 ToV4FromImgui(ImVec4 vector);
+	PIG_CORE_INLINE ImVec4 ToImVec4(v4 vector);
+	PIG_CORE_INLINE ImVec4 ToImVec4FromColor(Color32 color);
 	ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr);
 #endif
 
@@ -66,6 +69,20 @@ PEXPI v2 ToV2FromImgui(ImVec2 vector)
 PEXPI ImVec2 ToImVec2(v2 vector)
 {
 	return (ImVec2){ .x = vector.X, .y = vector.Y };
+}
+
+PEXPI v4 ToV4FromImgui(ImVec4 vector)
+{
+	return NewV4(vector.x, vector.y, vector.z, vector.w);
+}
+PEXPI ImVec4 ToImVec4(v4 vector)
+{
+	return (ImVec4){ .x = vector.X, .y = vector.Y, .z = vector.Z, .w = vector.W };
+}
+PEXPI ImVec4 ToImVec4FromColor(Color32 color)
+{
+	v4 colorVec = ToV4FromColor32(color);
+	return (ImVec4){ .x = colorVec.X, .y = colorVec.Y, .z = colorVec.Z, .w = colorVec.W };
 }
 
 static void* ImguiAllocCallback(size_t numBytes, void* userData)
