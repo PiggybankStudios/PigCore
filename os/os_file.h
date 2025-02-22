@@ -643,12 +643,19 @@ PEXPI bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile
 PEXP void OsCloseFile(OsFile* file)
 {
 	NotNull(file);
-	if (file->arena != nullptr && CanArenaFree(file->arena))
+	#if TARGET_IS_WINDOWS
 	{
-		FreeFilePathWithNt(file->arena, &file->path);
-		FreeFilePathWithNt(file->arena, &file->fullPath);
+		if (file->handle != INVALID_HANDLE_VALUE) { CloseHandle(file->handle); }
+		if (file->arena != nullptr && CanArenaFree(file->arena))
+		{
+			FreeFilePathWithNt(file->arena, &file->path);
+			FreeFilePathWithNt(file->arena, &file->fullPath);
+		}
+		ClearPointer(file);
 	}
-	ClearPointer(file);
+	#else
+	AssertMsg(false, "OsCloseFile does not support the current platform yet!");
+	#endif
 }
 
 //TODO: Convert this to return Result!
@@ -790,7 +797,7 @@ PEXP Result OsReadFromOpenFile(OsFile* file, uxx numBytes, bool convertNewLines,
 				// DWORD errorCode = GetLastError(); //TODO: Use this to fill with proper Result
 				return Result_FailedToReadFile;
 			}
-			Assert(numBytesRead < numBytesToRead);
+			Assert(numBytesRead <= numBytesToRead);
 		}
 		
 		if (numBytesRead == 0) { return Result_NoMoreBytes; }

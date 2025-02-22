@@ -112,6 +112,6 @@ u64 ImFileWrite(const void* data, u64 size, u64 count, ImFileHandle file)
 	NotNull(file);
 	NotNull(file->arena);
 	NotNull(file->file.arena);
-	bool writeResult = OsWriteToOpenFile(&file->file, NewStr8(size, data), file->convertNewLines);
-	return (writeResult ? count : 0);
+	bool writeResult = OsWriteToOpenFile(&file->file, NewStr8((size * count), data), file->convertNewLines);
+	return (writeResult ? (size * count) : 0);
 }
