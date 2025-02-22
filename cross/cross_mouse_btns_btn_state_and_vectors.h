@@ -95,7 +95,7 @@ PEXPI void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta)
 {
 	UNUSED(currentTime);
 	NotNull(mouse);
-	if (!AreEqualV2(mouse->scrollDelta, V2_Zero))
+	if (!AreEqualV2(scrollDelta, V2_Zero))
 	{
 		mouse->scrollDelta = Add(mouse->scrollDelta, scrollDelta);
 		mouse->scrollValue = Add(mouse->scrollValue, scrollDelta);

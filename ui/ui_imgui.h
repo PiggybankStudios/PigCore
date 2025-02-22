@@ -130,9 +130,22 @@ PEXP ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr)
 	result->io->BackendRendererName = AllocAndCopyCharsNt(arena, "PigCore", true);
 	result->io->BackendPlatformUserData = (void*)result;
 	result->io->BackendRendererUserData = (void*)result;
-	// FlagSet(result->io->BackendFlags, ImGuiBackendFlags_RendererHasVtxOffset); //TODO: Test this!
-	// FlagSet(result->io->BackendFlags, ImGuiBackendFlags_HasMouseCursors);
+	FlagSet(result->io->BackendFlags, ImGuiBackendFlags_RendererHasVtxOffset); //TODO: Test this!
+	FlagSet(result->io->BackendFlags, ImGuiBackendFlags_HasMouseCursors);
 	// FlagSet(result->io->BackendFlags, ImGuiBackendFlags_HasSetMousePos);
+	FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_NavEnableKeyboard);
+	FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_NavEnableGamepad);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_NoMouse);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_NoMouseCursorChange);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_NoKeyboard);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_DockingEnable);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_ViewportsEnable);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_DpiEnableScaleViewports);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_DpiEnableScaleFonts);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_IsSRGB);
+	// FlagSet(result->io->ConfigFlags, ImGuiConfigFlags_IsTouchScreen);
+	PrintLine_D("ConfigFlags flags: 0x%X", result->io->ConfigFlags);
+	PrintLine_D("Backend flags: 0x%X", result->io->BackendFlags);
 	result->io->ConfigDebugIsDebuggerPresent = DEBUG_BUILD; //TODO: Can we detect this better?
 	result->io->IniFilename = AllocAndCopyCharsNt(arena, IMGUI_INI_FILE_NAME, true);
 	result->io->LogFilename = AllocAndCopyCharsNt(arena, IMGUI_LOG_FILE_NAME, true);

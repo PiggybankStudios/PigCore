@@ -11,6 +11,8 @@ Date:   02\21\2025
 
 #if BUILD_WITH_IMGUI
 
+#define IMGUI_MOUSE_SCROLL_SCALE 0.25f
+
 typedef struct ImguiInput ImguiInput;
 struct ImguiInput
 {
@@ -58,16 +60,17 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 	ImGuiIO_AddMousePosEvent(imgui->io, input->mouse->position.X, input->mouse->position.Y);
 	if (!input->isMouseOverOther)
 	{
+		if (input->mouse->scrollDelta.X != 0 || input->mouse->scrollDelta.Y != 0)
+		{
+			ImGuiIO_AddMouseWheelEvent(imgui->io, input->mouse->scrollDelta.X * IMGUI_MOUSE_SCROLL_SCALE, input->mouse->scrollDelta.Y * IMGUI_MOUSE_SCROLL_SCALE);
+		}
+		
 		if (IsMouseBtnPressed(input->mouse, MouseBtn_Left)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 0, true); }
 		if (IsMouseBtnReleased(input->mouse, MouseBtn_Left)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 0, false); }
 		if (IsMouseBtnPressed(input->mouse, MouseBtn_Right)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 1, true); }
 		if (IsMouseBtnReleased(input->mouse, MouseBtn_Right)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 1, false); }
 		if (IsMouseBtnPressed(input->mouse, MouseBtn_Middle)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 2, true); }
 		if (IsMouseBtnReleased(input->mouse, MouseBtn_Middle)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 2, false); }
-		if (input->mouse->scrollDelta.X != 0 || input->mouse->scrollDelta.Y != 0)
-		{
-			ImGuiIO_AddMouseWheelEvent(imgui->io, input->mouse->scrollDelta.X, input->mouse->scrollDelta.Y);
-		}
 	}
 	
 	if (!input->isTyping)
@@ -87,7 +90,11 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 			}
 		}
 		
-		//TODO: ImGuiIO_AddInputCharacter(imgui->io, unsigned int c)
+		for (uxx cIndex = 0; cIndex < input->keyboard->numCharInputs; cIndex++)
+		{
+			const KeyboardCharInput* charInput = &input->keyboard->charInputs[cIndex];
+			ImGuiIO_AddInputCharacter(imgui->io, charInput->codepoint);
+		}
 	}
 	
 	if (input->windowFocusedChanged) { ImGuiIO_AddFocusEvent(imgui->io, input->isWindowFocused); }

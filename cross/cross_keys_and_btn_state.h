@@ -7,10 +7,21 @@ Date:   02\03\2025
 #ifndef _CROSS_KEYS_AND_BTN_STATE_H
 #define _CROSS_KEYS_AND_BTN_STATE_H
 
+#define KEYBOARD_MAX_CHAR_INPUTS_PER_FRAME 256
+
+typedef struct KeyboardCharInput KeyboardCharInput;
+struct KeyboardCharInput
+{
+	u32 codepoint;
+	u8 modifierKeys;
+};
+
 typedef struct KeyboardState KeyboardState;
 struct KeyboardState
 {
 	BtnState keys[Key_Count];
+	uxx numCharInputs;
+	KeyboardCharInput charInputs[KEYBOARD_MAX_CHAR_INPUTS_PER_FRAME];
 };
 
 // +--------------------------------------------------------------+
@@ -20,6 +31,7 @@ struct KeyboardState
 	PIG_CORE_INLINE void InitKeyboardState(KeyboardState* keyboard);
 	PIG_CORE_INLINE void RefreshKeyboardState(KeyboardState* keyboard);
 	PIG_CORE_INLINE void UpdateKeyboardKey(KeyboardState* keyboard, u64 currentTime, Key key, bool pressed);
+	PIG_CORE_INLINE void AddKeyboardCharInput(KeyboardState* keyboard, u32 codepoint, u8 modifierKeys);
 	PIG_CORE_INLINE bool IsKeyboardKeyDown(KeyboardState* keyboard, Key key);
 	PIG_CORE_INLINE bool IsKeyboardKeyUp(KeyboardState* keyboard, Key key);
 	PIG_CORE_INLINE bool IsKeyboardKeyPressed(KeyboardState* keyboard, Key key);
@@ -50,6 +62,7 @@ PEXPI void RefreshKeyboardState(KeyboardState* keyboard)
 	{
 		RefreshBtnState(&keyboard->keys[keyIndex]);
 	}
+	keyboard->numCharInputs = 0;
 }
 
 PEXPI void UpdateKeyboardKey(KeyboardState* keyboard, u64 currentTime, Key key, bool pressed)
@@ -57,6 +70,17 @@ PEXPI void UpdateKeyboardKey(KeyboardState* keyboard, u64 currentTime, Key key, 
 	NotNull(keyboard);
 	Assert(key < Key_Count);
 	UpdateBtnState(&keyboard->keys[key], currentTime, pressed);
+}
+
+PEXPI void AddKeyboardCharInput(KeyboardState* keyboard, u32 codepoint, u8 modifierKeys)
+{
+	if (keyboard->numCharInputs < KEYBOARD_MAX_CHAR_INPUTS_PER_FRAME)
+	{
+		KeyboardCharInput* charInput = &keyboard->charInputs[keyboard->numCharInputs];
+		charInput->codepoint = codepoint;
+		charInput->modifierKeys = modifierKeys;
+		keyboard->numCharInputs++;
+	}
 }
 
 PEXPI bool IsKeyboardKeyDown(KeyboardState* keyboard, Key key)
