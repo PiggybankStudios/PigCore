@@ -30,6 +30,8 @@ union Color32
 	PIG_CORE_INLINE Color32 NewColorU32(u32 valueU32);
 	PIG_CORE_INLINE Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha);
 	PIG_CORE_INLINE Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount);
+	PIG_CORE_INLINE Color32 ColorWithAlphaU8(Color32 rgbColor, u8 alpha);
+	PIG_CORE_INLINE Color32 ColorWithAlpha(Color32 rgbColor, r32 alpha);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -66,6 +68,15 @@ PEXPI Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount)
 		ClampCastI32ToU8(RoundR32i((r32)start.b + (r32)(end.b - start.b) * amount)),
 		ClampCastI32ToU8(RoundR32i((r32)start.a + (r32)(end.a - start.a) * amount))
 	);
+}
+
+PEXPI Color32 ColorWithAlphaU8(Color32 rgbColor, u8 alpha)
+{
+	return NewColor(rgbColor.r, rgbColor.g, rgbColor.b, alpha);
+}
+PEXPI Color32 ColorWithAlpha(Color32 rgbColor, r32 alpha)
+{
+	return ColorWithAlphaU8(rgbColor, ClampCastI32ToU8(RoundR32i(alpha * 255)));
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

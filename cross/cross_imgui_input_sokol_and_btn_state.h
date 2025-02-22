@@ -103,7 +103,6 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 	if (input->isMouseOverOther)
 	{
 		output->cursorType = SAPP_MOUSECURSOR_DEFAULT;
-		if (igGetMouseCursor() != ImGuiMouseCursor_Arrow) { MyBreak(); }
 		switch (igGetMouseCursor())
 		{
 			case ImGuiMouseCursor_Arrow:      output->cursorType = SAPP_MOUSECURSOR_ARROW; break;
@@ -116,7 +115,6 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 			case ImGuiMouseCursor_Hand:       output->cursorType = SAPP_MOUSECURSOR_POINTING_HAND; break;
 			case ImGuiMouseCursor_NotAllowed: output->cursorType = SAPP_MOUSECURSOR_NOT_ALLOWED; break;
 		}
-		if (output->cursorType != SAPP_MOUSECURSOR_DEFAULT) { MyBreak(); }
 	}
 	#endif
 	

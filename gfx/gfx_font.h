@@ -90,6 +90,10 @@ struct FontAtlas
 	FontCharRange glyphRange;
 	VarArray glyphs;
 	Texture texture;
+	r32 lineHeight;
+	r32 maxAscend;
+	r32 maxDescend;
+	r32 centerOffset;
 };
 
 typedef struct FontKerningTableEntry FontKerningTableEntry;
@@ -150,6 +154,7 @@ typedef PigFont Font;
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepointEx(const FontAtlas* atlas, u32 codepoint, uxx* glyphIndexOut);
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint);
 	FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut);
+	PIG_CORE_INLINE FontAtlas* GetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags);
 	r32 GetFontKerningBetweenGlyphs(const PigFont* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph);
 	r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint);
 #endif
@@ -412,6 +417,25 @@ PEXP Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i a
 	newAtlas->glyphRange.startCodepoint = minCodepoint;
 	newAtlas->glyphRange.endCodepoint = maxCodepoint;
 	
+	int ascent, descent, lineGap;
+	stbtt_GetFontVMetrics(&font->ttfInfo, &ascent, &descent, &lineGap);
+	newAtlas->maxAscend = (r32)ascent * newAtlas->fontScale;
+	newAtlas->maxDescend = (r32)(-descent) * newAtlas->fontScale;
+	
+	//The ascent value returned by GetFontVMetrics is often way higher than all the characters we normally print
+	//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
+	//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
+	bool foundWChar = false;
+	int wBoxX0, wBoxY0, wBoxX1, wBoxY1;
+	int getBoxResult = stbtt_GetCodepointBox(&font->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
+	if (getBoxResult > 0)
+	{
+		newAtlas->maxAscend = MinR32(newAtlas->maxAscend, (r32)wBoxY1 * newAtlas->fontScale);
+	}
+	
+	newAtlas->lineHeight = newAtlas->maxAscend + newAtlas->maxDescend + ((r32)lineGap * newAtlas->fontScale);
+	newAtlas->centerOffset = newAtlas->maxAscend / 2.0f;
+	
 	InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges);
 	InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numGlyphs);
 	for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
@@ -446,8 +470,11 @@ PEXP Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i a
 			glyph->atlasSourceRec = NewReci((i32)stbCharInfo->x0, (i32)stbCharInfo->y0, (i32)(stbCharInfo->x1 - stbCharInfo->x0), (i32)(stbCharInfo->y1 - stbCharInfo->y0));
 			glyph->advanceX = stbCharInfo->xadvance;
 			glyph->renderOffset = NewV2(stbCharInfo->xoff, stbCharInfo->yoff);
-			//TODO: Logical rec maybe should be a different size than the renderable glyph?
-			glyph->logicalRec = NewRec(-stbCharInfo->xoff, -stbCharInfo->yoff, (r32)glyph->atlasSourceRec.Width, (r32)glyph->atlasSourceRec.Height);
+			glyph->logicalRec = NewRec(stbCharInfo->xoff, -newAtlas->maxAscend, (r32)glyph->atlasSourceRec.Width, newAtlas->maxAscend);
+			if (glyph->logicalRec.Width == 0)
+			{
+				glyph->logicalRec.Width = glyph->advanceX;
+			}
 			// TODO: What are these floats for? stbCharInfo->xoff2 stbCharInfo->yoff2
 		}
 	}
@@ -496,6 +523,7 @@ PEXPI bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint)
 	return DoesFontAtlasContainCodepointEx(atlas, codepoint, nullptr);
 }
 
+//Pass 0 for codepoint to lookup and atlas without a particular glyph in mind
 PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontAtlas** atlasOut)
 {
 	NotNull(font);
@@ -511,12 +539,12 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 		if (matchingAtlas == nullptr || sizeDiff <= matchingSizeDiff)
 		{
 			uxx glyphIndex = 0;
-			if (DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
+			if (codepoint == 0 || DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
 			{
 				multipleMatches = (matchingAtlas != nullptr && AreSimilarR32(sizeDiff, matchingSizeDiff, DEFAULT_R32_TOLERANCE));
 				matchingSizeDiff = sizeDiff;
 				matchingAtlas = atlas;
-				result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex);
+				if (codepoint != 0) { result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex); }
 			}
 		}
 	}
@@ -546,18 +574,18 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 				if (matchingAtlas == nullptr || styleDiffs <= matchingStyleDiffs)
 				{
 					uxx glyphIndex = 0;
-					if (DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
+					if (codepoint == 0 || DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
 					{
 						multipleMatches = (matchingAtlas != nullptr && styleDiffs == matchingStyleDiffs);
 						matchingStyleDiffs = styleDiffs;
 						matchingAtlas = atlas;
-						result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex);
+						if (codepoint != 0) { result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex); }
 					}
 				}
 			}
 		}
 		
-		NotNull(result);
+		NotNull(matchingAtlas);
 	}
 	
 	if (multipleMatches)
@@ -566,6 +594,13 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 	}
 	
 	SetOptionalOutPntr(atlasOut, matchingAtlas);
+	return result;
+}
+
+PEXPI FontAtlas* GetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags)
+{
+	FontAtlas* result = nullptr;
+	GetFontGlyphForCodepoint(font, 0, fontSize, styleFlags, &result);
 	return result;
 }
 

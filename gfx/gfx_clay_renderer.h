@@ -67,7 +67,10 @@ PEXP CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	Assert(config->fontId < renderer->fonts.length);
 	ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)config->fontId);
 	r32 fontSize = (r32)config->fontSize;
+	FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
+	//NOTE: Clay has no way of knowing the lineHeight, so if we don't tell it otherwise it will place text a little too close to each other vertically
 	TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, textStr);
+	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
 	return (Clay_Dimensions){ .width = measure.Width, .height = measure.Height };
 }
 
@@ -125,6 +128,9 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 		rec drawRec = ToRecFromClay(command->boundingBox);
 		switch (command->commandType)
 		{
+			// +===============================+
+			// | CLAY_RENDER_COMMAND_TYPE_TEXT |
+			// +===============================+
 			case CLAY_RENDER_COMMAND_TYPE_TEXT:
 			{
 				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
@@ -133,13 +139,18 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				Assert(fontId < renderer->fonts.length);
 				Color32 drawColor = ToColorFromClay(command->renderData.text.textColor);
 				ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)fontId);
-				TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
-				v2 textPos = drawRec.TopLeft;
-				textPos.Y += drawRec.Height/2 - measure.logicalRec.Height/2 - measure.logicalRec.Y;
+				FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
+				NotNull(fontAtlas);
+				// TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
+				v2 textPos = NewV2(drawRec.X, drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset);
+				// GfxSystem_DrawRectangleOutlineEx(system, drawRec, 1, MonokaiPurple, false);
 				Result drawResult = GfxSystem_DrawTextWithFont(system, font->pntr, fontSize, font->styleFlags, text, textPos, drawColor);
 				Assert(drawResult == Result_Success);
 			} break;
 			
+			// +================================+
+			// | CLAY_RENDER_COMMAND_TYPE_IMAGE |
+			// +================================+
 			case CLAY_RENDER_COMMAND_TYPE_IMAGE:
 			{
 				Texture* texturePntr = (Texture*)command->renderData.image.imageData;
@@ -147,16 +158,25 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				GfxSystem_DrawTexturedRectangle(system, drawRec, drawColor, texturePntr);
 			} break;
 			
+			// +========================================+
+			// | CLAY_RENDER_COMMAND_TYPE_SCISSOR_START |
+			// +========================================+
 			case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
 			{
 				GfxSystem_SetClipRec(system, ToReciFromf(drawRec));
 			} break;
 			
+			// +======================================+
+			// | CLAY_RENDER_COMMAND_TYPE_SCISSOR_END |
+			// +======================================+
 			case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
 			{
 				GfxSystem_DisableClipRec(system);
 			} break;
 			
+			// +====================================+
+			// | CLAY_RENDER_COMMAND_TYPE_RECTANGLE |
+			// +====================================+
 			case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
 			{
 				Color32 drawColor = ToColorFromClay(command->renderData.rectangle.backgroundColor);
@@ -170,6 +190,9 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				);
 			} break;
 			
+			// +==================================+
+			// | CLAY_RENDER_COMMAND_TYPE_BORDER  |
+			// +==================================+
 			case CLAY_RENDER_COMMAND_TYPE_BORDER:
 			{
 				Color32 drawColor = ToColorFromClay(command->renderData.border.color);
@@ -205,6 +228,9 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				}
 			} break;
 			
+			// +==================================+
+			// | CLAY_RENDER_COMMAND_TYPE_CUSTOM  |
+			// +==================================+
 			case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
 			{
 				//TODO: Implement me!

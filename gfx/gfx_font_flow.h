@@ -90,7 +90,7 @@ typedef FONT_FLOW_BEFORE_CHAR_DEF(FontFlowBeforeChar_f);
 #define FONT_FLOW_DRAW_CHAR_DEF(functionName)   void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
 typedef FONT_FLOW_DRAW_CHAR_DEF(FontFlowDrawChar_f);
 
-#define FONT_FLOW_AFTER_CHAR_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
+#define FONT_FLOW_AFTER_CHAR_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, rec glyphLogicalRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
 typedef FONT_FLOW_AFTER_CHAR_DEF(FontFlowAfterChar_f);
 
 typedef struct FontFlowCallbacks FontFlowCallbacks;
@@ -129,6 +129,12 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		flowOut->startPos = state->position;
 		flowOut->visualRec = NewRecV(state->position, V2_Zero);
 		flowOut->logicalRec = NewRecV(state->position, V2_Zero);
+		FontAtlas* firstAtlas = GetFontAtlas(state->font, state->fontSize, state->styleFlags);
+		if (firstAtlas != nullptr)
+		{
+			flowOut->logicalRec.Y -= firstAtlas->maxAscend;
+			flowOut->logicalRec.Height = firstAtlas->maxAscend;
+		}
 		flowOut->numGlyphs = 0;
 	}
 	
@@ -149,6 +155,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		
 		r32 kerning = 0.0f;
 		rec glyphDrawRec = Rec_Zero;
+		rec glyphLogicalRec = Rec_Zero;
 		FontAtlas* fontAtlas = nullptr;
 		FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, codepoint, state->fontSize, state->styleFlags, &fontAtlas);
 		if (fontGlyph != nullptr)
@@ -161,6 +168,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			}
 			
 			glyphDrawRec = NewRecV(Add(state->position, fontGlyph->renderOffset), ToV2Fromi(fontGlyph->atlasSourceRec.Size));
+			glyphLogicalRec = NewRecV(Add(state->position, fontGlyph->logicalRec.TopLeft), fontGlyph->logicalRec.Size);
 			if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
 			if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
 			
@@ -188,16 +196,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					flowGlyph->color = state->color;
 				}
 				
-				if (flowOut->numGlyphs == 0)
-				{
-					flowOut->visualRec = glyphDrawRec;
-					flowOut->logicalRec = glyphDrawRec;
-				}
-				else
-				{
-					flowOut->visualRec = BothRec(flowOut->visualRec, glyphDrawRec);
-					flowOut->logicalRec = BothRec(flowOut->logicalRec, glyphDrawRec);
-				}
+				flowOut->logicalRec = BothRec(flowOut->logicalRec, glyphLogicalRec);
+				if (flowOut->numGlyphs == 0) { flowOut->visualRec = glyphDrawRec; }
+				else { flowOut->visualRec = BothRec(flowOut->visualRec, glyphDrawRec); }
 				flowOut->numGlyphs++;
 			}
 			
@@ -212,7 +213,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		state->charIndex++;
 		state->byteIndex += utf8ByteSize;
 		
-		if (callbacks != nullptr && callbacks->afterChar != nullptr) { callbacks->afterChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph, kerning); }
+		if (callbacks != nullptr && callbacks->afterChar != nullptr) { callbacks->afterChar(state, flowOut, glyphDrawRec, glyphLogicalRec, codepoint, fontAtlas, fontGlyph, kerning); }
 		
 		if (fontGlyph != nullptr)
 		{
