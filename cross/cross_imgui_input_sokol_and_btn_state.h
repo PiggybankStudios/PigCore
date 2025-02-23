@@ -16,7 +16,7 @@ Date:   02\21\2025
 typedef struct ImguiInput ImguiInput;
 struct ImguiInput
 {
-	r32 deltaTimeMs;
+	r32 elapsedMs;
 	KeyboardState* keyboard;
 	MouseState* mouse;
 	bool isMouseOverOther;
@@ -55,7 +55,7 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 	NotNull(output);
 	ClearPointer(output);
 	
-	imgui->io->DeltaTime = (input->deltaTimeMs / 1000.0f);
+	imgui->io->DeltaTime = (input->elapsedMs / 1000.0f);
 	
 	ImGuiIO_AddMousePosEvent(imgui->io, input->mouse->position.X, input->mouse->position.Y);
 	if (!input->isMouseOverOther)

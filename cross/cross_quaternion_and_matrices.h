@@ -22,7 +22,8 @@ PEXP quat QuatFromMat3(mat3 matrix3)
 	// (For matrix notation on the site: https://www.euclideanspace.com/maths/algebra/matrix/index.htm)
 	quat result = ZEROED;
 	r32 trace = matrix3.Elements[0][0] + matrix3.Elements[1][1] + matrix3.Elements[2][2];
-	Assert(trace >= -1);
+	Assert(trace >= -1.001f);
+	if (trace < -1.0f) { trace = -1.0f; }
 	if (trace > 0)
 	{
 		result.W = SqrtR32(1 + trace) / 2.0f;
