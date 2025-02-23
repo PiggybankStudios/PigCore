@@ -83,6 +83,10 @@ Description:
 #define BUILD_WITH_IMGUI 0
 #endif
 
+#ifndef BUILD_WITH_ODE
+#define BUILD_WITH_ODE 0
+#endif
+
 // +--------------------------------------------------------------+
 // |                       Check Conflicts                        |
 // +--------------------------------------------------------------+

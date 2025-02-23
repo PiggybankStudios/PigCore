@@ -12,3 +12,7 @@ third_party/_lib_release/Bullet*.pdb
 third_party/_lib_release/Bullet*.txt
 third_party/_lib_release/LinearMath*.lib
 third_party/_lib_release/LinearMath*.pdb
+third_party/ode/
+third_party/_lib_debug/ode.pdb
+third_party/_lib_debug/ode_singled.lib
+third_party/_lib_debug/ode_singled.pdb
