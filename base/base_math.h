@@ -33,8 +33,8 @@ Description:
 	PIG_CORE_INLINE i16 SignOfI16(i16 value);
 	PIG_CORE_INLINE i32 SignOfI32(i32 value);
 	PIG_CORE_INLINE i64 SignOfI64(i64 value);
-	PIG_CORE_INLINE r32 SignOfR32(r32 value);
-	PIG_CORE_INLINE r64 SignOfR64(r64 value);
+	r32 SignOfR32(r32 value);
+	r64 SignOfR64(r64 value);
 	PIG_CORE_INLINE u8  ClampU8(u8   value, u8  min, u8  max);
 	PIG_CORE_INLINE u16 ClampU16(u16 value, u16 min, u16 max);
 	PIG_CORE_INLINE u32 ClampU32(u32 value, u32 min, u32 max);
@@ -125,8 +125,8 @@ PEXPI i8  SignOfI8(i8   value) { return (value < 0) ? -1 : ((value > 0) ? 1 : 0)
 PEXPI i16 SignOfI16(i16 value) { return (value < 0) ? -1 : ((value > 0) ? 1 : 0); }
 PEXPI i32 SignOfI32(i32 value) { return (value < 0) ? -1 : ((value > 0) ? 1 : 0); }
 PEXPI i64 SignOfI64(i64 value) { return (value < 0) ? -1 : ((value > 0) ? 1 : 0); }
-PEXPI r32 SignOfR32(r32 value) { return (value < 0.0f) ? -1.0f : ((value > 0.0f) ? 1.0f : 0.0f); }
-PEXPI r64 SignOfR64(r64 value) { return (value < 0.0) ? -1.0 : ((value > 0.0) ? 1.0 : 0.0); }
+PEXP r32 SignOfR32(r32 value) { return (value < 0.0f) ? -1.0f : ((value > 0.0f) ? 1.0f : 0.0f); }
+PEXP r64 SignOfR64(r64 value) { return (value < 0.0) ? -1.0 : ((value > 0.0) ? 1.0 : 0.0); }
 
 PEXPI u8  ClampU8(u8   value, u8  min, u8  max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI u16 ClampU16(u16 value, u16 min, u16 max) { return (value < min) ? min : ((value > max) ? max : value); }

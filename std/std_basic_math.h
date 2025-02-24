@@ -40,11 +40,11 @@ Date:   01\05\2025
 	PIG_CORE_INLINE ixx MaxIXX(ixx value1, ixx value2);
 	PIG_CORE_INLINE r32 MaxR32(r32 value1, r32 value2);
 	PIG_CORE_INLINE r64 MaxR64(r64 value1, r64 value2);
-	PIG_CORE_INLINE r32 AbsR32(r32 value);
-	PIG_CORE_INLINE r64 AbsR64(r64 value);
+	r32 AbsR32(r32 value);
+	r64 AbsR64(r64 value);
 	PIG_CORE_INLINE i8 AbsI8(i8 value);
 	PIG_CORE_INLINE i16 AbsI16(i16 value);
-	PIG_CORE_INLINE i32 AbsI32(i32 value);
+	i32 AbsI32(i32 value);
 	PIG_CORE_INLINE i64 AbsI64(i64 value);
 	PIG_CORE_INLINE r32 RoundR32(r32 value);
 	PIG_CORE_INLINE i32 RoundR32i(r32 value);
@@ -54,23 +54,23 @@ Date:   01\05\2025
 	PIG_CORE_INLINE i32 FloorR32i(r32 value);
 	PIG_CORE_INLINE r64 FloorR64(r64 value);
 	PIG_CORE_INLINE i64 FloorR64i(r64 value);
-	PIG_CORE_INLINE r32 CeilR32(r32 value);
+	r32 CeilR32(r32 value);
 	PIG_CORE_INLINE i32 CeilR32i(r32 value);
 	PIG_CORE_INLINE r64 CeilR64(r64 value);
 	PIG_CORE_INLINE i64 CeilR64i(r64 value);
-	PIG_CORE_INLINE r32 PowR32(r32 value, r32 power);
-	PIG_CORE_INLINE r64 PowR64(r64 value, r64 power);
+	r32 PowR32(r32 value, r32 power);
+	r64 PowR64(r64 value, r64 power);
 	PIG_CORE_INLINE r32 LnR32(r32 value);
 	PIG_CORE_INLINE r64 LnR64(r64 value);
-	PIG_CORE_INLINE r32 Log2R32(r32 value);
-	PIG_CORE_INLINE r64 Log2R64(r64 value);
+	r32 Log2R32(r32 value);
+	r64 Log2R64(r64 value);
 	PIG_CORE_INLINE r32 Log10R32(r32 value);
 	PIG_CORE_INLINE r64 Log10R64(r64 value);
-	PIG_CORE_INLINE r32 SqrtR32(r32 value);
-	PIG_CORE_INLINE r64 SqrtR64(r64 value);
+	r32 SqrtR32(r32 value);
+	r64 SqrtR64(r64 value);
 	PIG_CORE_INLINE r32 CbrtR32(r32 value);
 	PIG_CORE_INLINE r64 CbrtR64(r64 value);
-	PIG_CORE_INLINE r32 ModR32(r32 numerator, r32 denominator);
+	r32 ModR32(r32 numerator, r32 denominator);
 	PIG_CORE_INLINE r64 ModR64(r64 numerator, r64 denominator);
 	PIG_CORE_INLINE bool IsInfiniteOrNanR32(r32 value);
 	PIG_CORE_INLINE bool IsInfiniteOrNanR64(r64 value);
@@ -176,11 +176,11 @@ PEXPI ixx MaxIXX(ixx value1, ixx value2) { return (value1 > value2) ? value1 : v
 PEXPI r32 MaxR32(r32 value1, r32 value2) { return (value1 > value2) ? value1 : value2; }
 PEXPI r64 MaxR64(r64 value1, r64 value2) { return (value1 > value2) ? value1 : value2; }
 
-PEXPI r32 AbsR32(r32 value) { return fabsf(value); }
-PEXPI r64 AbsR64(r64 value) { return fabs(value); }
+PEXP r32 AbsR32(r32 value) { return fabsf(value); }
+PEXP r64 AbsR64(r64 value) { return fabs(value); }
 PEXPI i8 AbsI8(i8 value) { return (value < 0) ? -value : value; }
 PEXPI i16 AbsI16(i16 value) { return (value < 0) ? -value : value; }
-PEXPI i32 AbsI32(i32 value) { return (value < 0 ? -value : value); }
+PEXP i32 AbsI32(i32 value) { return (value < 0 ? -value : value); }
 PEXPI i64 AbsI64(i64 value) { return (value < 0 ? -value : value); }
 
 PEXPI r32 RoundR32(r32 value) { return roundf(value); }
@@ -193,28 +193,28 @@ PEXPI i32 FloorR32i(r32 value) { return (i32)floorf(value); }
 PEXPI r64 FloorR64(r64 value) { return floor(value); }
 PEXPI i64 FloorR64i(r64 value) { return (i64)floor(value); }
 
-PEXPI r32 CeilR32(r32 value) { return ceilf(value); }
+PEXP r32 CeilR32(r32 value) { return ceilf(value); }
 PEXPI i32 CeilR32i(r32 value) { return (i32)ceilf(value); }
 PEXPI r64 CeilR64(r64 value) { return ceil(value); }
 PEXPI i64 CeilR64i(r64 value) { return (i64)ceil(value); }
 
-PEXPI r32 PowR32(r32 value, r32 power) { return powf(value, power); }
-PEXPI r64 PowR64(r64 value, r64 power) { return pow(value, power); }
+PEXP r32 PowR32(r32 value, r32 power) { return powf(value, power); }
+PEXP r64 PowR64(r64 value, r64 power) { return pow(value, power); }
 
 PEXPI r32 LnR32(r32 value) { return logf(value); }
 PEXPI r64 LnR64(r64 value) { return log(value); }
-PEXPI r32 Log2R32(r32 value) { return log2f(value); }
-PEXPI r64 Log2R64(r64 value) { return log2(value); }
+PEXP r32 Log2R32(r32 value) { return log2f(value); }
+PEXP r64 Log2R64(r64 value) { return log2(value); }
 PEXPI r32 Log10R32(r32 value) { return log10f(value); }
 PEXPI r64 Log10R64(r64 value) { return log10(value); }
 
-PEXPI r32 SqrtR32(r32 value) { return sqrtf(value); }
-PEXPI r64 SqrtR64(r64 value) { return sqrt(value); }
+PEXP r32 SqrtR32(r32 value) { return sqrtf(value); }
+PEXP r64 SqrtR64(r64 value) { return sqrt(value); }
 
 PEXPI r32 CbrtR32(r32 value) { return cbrtf(value); }
 PEXPI r64 CbrtR64(r64 value) { return cbrt(value); }
 
-PEXPI r32 ModR32(r32 numerator, r32 denominator) { return fmodf(numerator, denominator); }
+PEXP r32 ModR32(r32 numerator, r32 denominator) { return fmodf(numerator, denominator); }
 PEXPI r64 ModR64(r64 numerator, r64 denominator) { return fmod(numerator, denominator); }
 
 //TODO: math.h doesn't have isinff or isnanf?? But this site claims they do? https://linux.die.net/man/3/isinff

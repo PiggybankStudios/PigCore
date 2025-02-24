@@ -15,19 +15,19 @@ Date:   01\05\2025
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE r32 SinR32(r32 angle);
+	r32 SinR32(r32 angle);
 	PIG_CORE_INLINE r64 SinR64(r64 angle);
-	PIG_CORE_INLINE r32 CosR32(r32 angle);
+	r32 CosR32(r32 angle);
 	PIG_CORE_INLINE r64 CosR64(r64 angle);
 	PIG_CORE_INLINE r32 TanR32(r32 angle);
 	PIG_CORE_INLINE r64 TanR64(r64 angle);
 	PIG_CORE_INLINE r32 AsinR32(r32 value);
 	PIG_CORE_INLINE r64 AsinR64(r64 value);
-	PIG_CORE_INLINE r32 AcosR32(r32 value);
+	r32 AcosR32(r32 value);
 	PIG_CORE_INLINE r64 AcosR64(r64 value);
 	PIG_CORE_INLINE r32 AtanJoinedR32(r32 value);
 	PIG_CORE_INLINE r64 AtanJoinedR64(r64 value);
-	PIG_CORE_INLINE r32 AtanR32(r32 y, r32 x);
+	r32 AtanR32(r32 y, r32 x);
 	PIG_CORE_INLINE r64 AtanR64(r64 y, r64 x);
 #endif //!PIG_CORE_IMPLEMENTATION
 
@@ -36,10 +36,10 @@ Date:   01\05\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI r32 SinR32(r32 angle) { return sinf(angle); }
+PEXP r32 SinR32(r32 angle) { return sinf(angle); }
 PEXPI r64 SinR64(r64 angle) { return sin(angle); }
 
-PEXPI r32 CosR32(r32 angle) { return cosf(angle); }
+PEXP r32 CosR32(r32 angle) { return cosf(angle); }
 PEXPI r64 CosR64(r64 angle) { return cos(angle); }
 
 PEXPI r32 TanR32(r32 angle) { return tanf(angle); }
@@ -48,12 +48,12 @@ PEXPI r64 TanR64(r64 angle) { return tan(angle); }
 PEXPI r32 AsinR32(r32 value) { return asinf(value); }
 PEXPI r64 AsinR64(r64 value) { return asin(value); }
 
-PEXPI r32 AcosR32(r32 value) { return acosf(value); }
+PEXP r32 AcosR32(r32 value) { return acosf(value); }
 PEXPI r64 AcosR64(r64 value) { return acos(value); }
 
 PEXPI r32 AtanJoinedR32(r32 value) { return atanf(value); }
 PEXPI r64 AtanJoinedR64(r64 value) { return atan(value); }
-PEXPI r32 AtanR32(r32 y, r32 x) { return atan2f(y, x); }
+PEXP r32 AtanR32(r32 y, r32 x) { return atan2f(y, x); }
 PEXPI r64 AtanR64(r64 y, r64 x) { return atan2(y, x); }
 
 #endif //PIG_CORE_IMPLEMENTATION
