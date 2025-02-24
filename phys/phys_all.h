@@ -16,5 +16,6 @@ Date:   02\22\2025
 #include "struct/struct_var_array.h" //required by phys_ode.h
 
 #include "phys/phys_ode.h"
+#include "phys/phys_physx.h"
 
 #endif //  _PHYS_ALL_H

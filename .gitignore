@@ -16,3 +16,11 @@ third_party/ode/
 third_party/_lib_debug/ode.pdb
 third_party/_lib_debug/ode_singled.lib
 third_party/_lib_debug/ode_singled.pdb
+# TODO: Remove PhysX related ignores!
+third_party/physx/
+third_party/_lib_debug/PhysX*
+third_party/_lib_debug/LowLevelAABB_*
+third_party/_lib_debug/LowLevelDynamics_*
+third_party/_lib_debug/LowLevel_*
+third_party/_lib_debug/SceneQuery_*
+third_party/_lib_debug/SimulationController_*
