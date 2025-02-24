@@ -104,7 +104,7 @@ PEXP Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTe
 	Str8 result;
 	result.length = left.length + right.length;
 	if (result.length == 0 && !addNullTerm) { return Str8_Empty; }
-	result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
+	result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
 	if (result.chars == nullptr) { return Str8_Empty; }
 	if (left.length  > 0) { MyMemCopy(result.chars + 0,           left.chars,  left.length);  }
 	if (right.length > 0) { MyMemCopy(result.chars + left.length, right.chars, right.length); }
@@ -115,7 +115,7 @@ PEXP Str8 JoinStringsInArenaWithChar(Arena* arena, Str8 left, char sepChar, Str8
 {
 	Str8 result;
 	result.length = left.length + 1 + right.length;
-	result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
+	result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
 	if (result.chars == nullptr) { return Str8_Empty; }
 	if (left.length  > 0) { MyMemCopy(result.chars + 0,               left.chars,  left.length);  }
 	if (right.length > 0) { MyMemCopy(result.chars + left.length + 1, right.chars, right.length); }
@@ -176,7 +176,7 @@ PEXP Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool
 		{
 			result.length = numBytesNeeded;
 			if (arena == nullptr) { return result; }
-			result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
+			result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
 			NotNull(result.chars);
 		}
 		else

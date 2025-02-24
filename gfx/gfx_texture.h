@@ -154,7 +154,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	
 	if (IsFlagSet(flags, TextureFlag_HasCopy))
 	{
-		result.pixelsU8 = AllocArray(u8, arena, result.totalSize);
+		result.pixelsU8 = (u8*)AllocMem(arena, result.totalSize);
 		if (result.pixelsU8 == nullptr)
 		{
 			result.error = Result_FailedToAllocateMemory;

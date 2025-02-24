@@ -121,7 +121,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		}
 		
 		fileContentsOut->length = (uxx)getFontDataResult;
-		fileContentsOut->bytes = AllocArray(u8, arena, fileContentsOut->length);
+		fileContentsOut->bytes = (u8*)AllocMem(arena, fileContentsOut->length);
 		if (fileContentsOut->bytes == nullptr)
 		{
 			// PrintLine_E("Failed to allocate space to store font file data for font \"%s\": %llu bytes", fontNameNt.pntr, fontDataSize);

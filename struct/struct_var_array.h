@@ -120,24 +120,47 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 // |                            Macros                            |
 // +--------------------------------------------------------------+
 #if VAR_ARRAY_DEBUG_INFO
-#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
-#define InitVarArray(type, arrayPntr, arena) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
+	#if LANGUAGE_IS_C
+	#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
+	#define InitVarArray(type, arrayPntr, arena) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
+	#else
+	#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (arena), (initialCountNeeded))
+	#define InitVarArray(type, arrayPntr, arena) InitVarArray_(__FILE__, __LINE__, __func__, (uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (arena), 0)
+	#endif
 #else
-#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
-#define InitVarArray(type, arrayPntr, arena) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
+	#if LANGUAGE_IS_C
+	#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), (initialCountNeeded))
+	#define InitVarArray(type, arrayPntr, arena) InitVarArray_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (arena), 0)
+	#else
+	#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded) InitVarArray_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (arena), (initialCountNeeded))
+	#define InitVarArray(type, arrayPntr, arena) InitVarArray_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (arena), 0)
+	#endif
 #endif
 
+#if LANGUAGE_IS_C
 #define VarArrayContains(type, arrayPntr, itemPntrInQuestion) VarArrayContains_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntrInQuestion))
+#else
+#define VarArrayContains(type, arrayPntr, itemPntrInQuestion) VarArrayContains_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (itemPntrInQuestion))
+#endif
 
+#if LANGUAGE_IS_C
 #define VarArrayGetIndexOf(type, arrayPntr, itemInQuestion, indexOut) VarArrayGetIndexOf_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemInQuestion), (indexOut))
+#else
+#define VarArrayGetIndexOf(type, arrayPntr, itemInQuestion, indexOut) VarArrayGetIndexOf_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (itemInQuestion), (indexOut))
+#endif
 
 #define VarArrayLoop(arrayPntr, indexVarName) for (uxx indexVarName = 0; indexVarName < (arrayPntr)->length; indexVarName++)
 #define VarArrayLoopGet(type, varName, arrayPntr, indexVarName) type* varName = (((type*)(arrayPntr)->items) + (indexVarName));
 #define VarArrayLoopGetValue(type, varName, arrayPntr, indexVarName) type varName = *(((type*)(arrayPntr)->items) + (indexVarName));
 
 //Hard indicates we want to assertOnFailure, opposed to Soft which will return nullptr. Not specifying leads to implicitly using Hard variant
+#if LANGUAGE_IS_C
 #define VarArrayGetHard(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index), true))
 #define VarArrayGetSoft(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index), false))
+#else
+#define VarArrayGetHard(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (index), true))
+#define VarArrayGetSoft(type, arrayPntr, index) ((type*)VarArrayGet_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (index), false))
+#endif
 #define VarArrayGet(type, arrayPntr, index) VarArrayGetHard(type, (arrayPntr), (index))
 
 //Shorthand for passing 0 for index
@@ -160,7 +183,11 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 #define VarArrayGetLastValueHard(type, arrayPntr) *VarArrayGetHard(type, (arrayPntr), (arrayPntr)->length-1)
 #define VarArrayGetLastValue(type, arrayPntr) VarArrayGetLastValueHard(type, (arrayPntr))
 
+#if LANGUAGE_IS_C
 #define VarArrayAdd(type, arrayPntr) (type*)VarArrayAdd_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr))
+#else
+#define VarArrayAdd(type, arrayPntr) (type*)VarArrayAdd_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr))
+#endif
 #define VarArrayAddValue(type, arrayPntr, value) do                  \
 {                                                                    \
 	/* We must evaluate (value) before manipulating the array */     \
@@ -173,9 +200,17 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 // This is simply an alias of VarArrayAddValue, but it's here to match the name of VarArrayPop below
 #define VarArrayPush(type, arrayPntr, value) VarArrayAddValue(type, (arrayPntr), (value))
 
+#if LANGUAGE_IS_C
 #define VarArrayAddMulti(type, arrayPntr, numItems) VarArrayAddMulti_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (numItems))
+#else
+#define VarArrayAddMulti(type, arrayPntr, numItems) VarArrayAddMulti_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (numItems))
+#endif
 
+#if LANGUAGE_IS_C
 #define VarArrayInsert(type, arrayPntr, index) (type*)VarArrayInsert_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
+#else
+#define VarArrayInsert(type, arrayPntr, index) (type*)VarArrayInsert_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (index))
+#endif
 //NOTE: The (value) portion is evaluated AFTER the Insert occurs, it's meaning may change if it's accessing the array or using a pointer from the array!
 #define VarArrayInsertValue(type, arrayPntr, index, value) do                       \
 {                                                                                   \
@@ -187,13 +222,21 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 	*insertedItemPntr_NOCONFLICT = valueBeforeInsert_NOCONFLICT;                    \
 } while(0)
 
+#if LANGUAGE_IS_C
 #define VarArrayRemoveAt(type, arrayPntr, index) VarArrayRemoveAt_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
+#else
+#define VarArrayRemoveAt(type, arrayPntr, index) VarArrayRemoveAt_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (index))
+#endif
 #define VarArrayGetAndRemoveValueAt(type, arrayPntr, index) VarArrayGetValue(type, (arrayPntr), (index)); VarArrayRemoveAt(type, (arrayPntr), (index))
 #define VarArrayPop(type, arrayPntr) VarArrayGetValue(type, (arrayPntr), (arrayPntr)->length-1); VarArrayRemoveAt(type, (arrayPntr), (arrayPntr)->length-1)
 #define VarArrayRemoveFirst(type, arrayPntr) VarArrayRemoveAt(type, (arrayPntr), 0)
 #define VarArrayRemoveLast(type, arrayPntr) VarArrayRemoveAt(type, (arrayPntr), (arrayPntr)->length-1)
 
+#if LANGUAGE_IS_C
 #define VarArrayRemove(type, arrayPntr, itemPntr) VarArrayRemove_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (itemPntr))
+#else
+#define VarArrayRemove(type, arrayPntr, itemPntr) VarArrayRemove_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (itemPntr))
+#endif
 
 #if VAR_ARRAY_DEBUG_INFO
 #define VarArrayCopy(destArray, sourceArray, arenaPntr) VarArrayCopy_(__FILE__, __LINE__, __func__, (destArray), (sourceArray), (arenaPntr))
@@ -247,7 +290,14 @@ PEXP void FreeVarArray(VarArray* array)
 	if (array->allocLength > 0)
 	{
 		NotNull(array->items);
-		FreeMem(array->arena, array->items, array->itemSize * array->allocLength);
+		if (CanArenaAllocAligned(array->arena))
+		{
+			FreeMemAligned(array->arena, array->items, array->itemSize * array->allocLength, array->itemAlignment);
+		}
+		else
+		{
+			FreeMem(array->arena, array->items, array->itemSize * array->allocLength);
+		}
 	}
 	ClearPointer(array);
 }
@@ -261,7 +311,14 @@ PEXP void VarArrayClearEx(VarArray* array, bool deallocate)
 	if (deallocate && array->allocLength > 0)
 	{
 		DebugNotNull(array->arena);
-		FreeMem(array->arena, array->items, array->allocLength * array->itemSize);
+		if (CanArenaAllocAligned(array->arena))
+		{
+			FreeMemAligned(array->arena, array->items, array->itemSize * array->allocLength, array->itemAlignment);
+		}
+		else
+		{
+			FreeMem(array->arena, array->items, array->itemSize * array->allocLength);
+		}
 		array->items = nullptr;
 		array->allocLength = 0;
 	}
@@ -314,7 +371,14 @@ PEXP bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared a
 	}
 	if (array->items != nullptr)
 	{
-		FreeMem(array->arena, array->items, array->allocLength * array->itemSize);
+		if (CanArenaAllocAligned(array->arena))
+		{
+			FreeMemAligned(array->arena, array->items, array->itemSize * array->allocLength, array->itemAlignment);
+		}
+		else
+		{
+			FreeMem(array->arena, array->items, array->itemSize * array->allocLength);
+		}
 	}
 	
 	array->items = newSpace;

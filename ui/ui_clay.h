@@ -88,7 +88,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayUiMeasureText_f* measureTe
 	
 	u32 minMemory = Clay_MinMemorySize();
 	Assert(minMemory > 0);
-	u8* clayMemory = AllocArray(u8, arena, minMemory);
+	u8* clayMemory = (u8*)AllocMem(arena, minMemory);
 	NotNull(clayMemory);
 	clayOut->clayArena = Clay_CreateArenaWithCapacityAndMemory(minMemory, clayMemory);
 	

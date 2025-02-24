@@ -28,7 +28,7 @@ PEXPI void FreeStrBuffFromArena(StringBuffer* buffer, Arena* arena)
 	NotNull(buffer);
 	if (buffer->chars != nullptr)
 	{
-		FreeMem(arena, buffer->chars, buffer->maxLength);
+		FreeArray(char, arena, buffer->maxLength, buffer->chars);
 	}
 	ClearPointer(buffer);
 }

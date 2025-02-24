@@ -36,7 +36,7 @@ PEXPI void FreeTextLayout(TextLayout* layout)
 {
 	if (layout->arena != nullptr)
 	{
-		if (layout->glyphs != nullptr) { FreeMem(layout->arena, layout->glyphs, sizeof(FontFlowGlyph) * layout->numGlyphsAlloc); }
+		if (layout->glyphs != nullptr) { FreeArray(FontFlowGlyph, layout->arena, layout->numGlyphsAlloc, layout->glyphs); }
 	}
 	ClearPointer(layout);
 }

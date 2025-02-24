@@ -42,6 +42,7 @@ struct GeneratedMesh
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE void FreeGeneratedMesh(GeneratedMesh* mesh);
 	GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32* colors);
 	PIG_CORE_INLINE GeneratedMesh GenerateVertsForBox(Arena* arena, Box boundingBox, Color32 color);
 	GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRings, uxx numSegments, Color32 color);
@@ -52,6 +53,17 @@ struct GeneratedMesh
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXPI void FreeGeneratedMesh(GeneratedMesh* mesh)
+{
+	NotNull(mesh);
+	if (mesh->arena != nullptr)
+	{
+		FreeArray(Vertex3D, mesh->arena, mesh->numVertices, mesh->vertices);
+		FreeArray(i32, mesh->arena, mesh->numIndices, mesh->indices);
+	}
+	ClearPointer(mesh);
+}
 
 PEXP GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32* colors)
 {

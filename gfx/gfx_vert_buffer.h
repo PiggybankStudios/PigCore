@@ -275,7 +275,7 @@ PEXP void ChangeVerticesInVertBufferEx(VertBuffer* buffer, uxx numVertices, uxx 
 	
 	ScratchBegin1(scratch, buffer->arena);
 	uxx allVerticesSize = buffer->vertexSize * buffer->numVertices;
-	u8* allVerticesPntr = AllocArray(u8, scratch, allVerticesSize);
+	u8* allVerticesPntr = (u8*)AllocMem(scratch, allVerticesSize);
 	NotNull(allVerticesPntr);
 	MyMemCopy(allVerticesPntr, verticesPntr, vertexSize * numVertices);
 	if (numVertices < buffer->numVertices) { MyMemSet(&allVerticesPntr[vertexSize * numVertices], 0x00, vertexSize * (buffer->numVertices - numVertices)); }
@@ -314,7 +314,7 @@ PEXP void ChangeIndicesInVertBufferEx(VertBuffer* buffer, uxx numIndices, uxx in
 	
 	ScratchBegin1(scratch, buffer->arena);
 	uxx allIndicesSize = buffer->indexSize * buffer->numIndices;
-	u8* allIndicesPntr = AllocArray(u8, scratch, allIndicesSize);
+	u8* allIndicesPntr = (u8*)AllocMem(scratch, allIndicesSize);
 	NotNull(allIndicesPntr);
 	MyMemCopy(allIndicesPntr, indicesPntr, indexSize * numIndices);
 	if (numIndices < buffer->numIndices) { MyMemSet(&allIndicesPntr[indexSize * numIndices], 0x00, indexSize * (buffer->numIndices - numIndices)); }

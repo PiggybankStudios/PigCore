@@ -255,7 +255,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 					return GetResultFromCgltfResult(readFileResult);
 				}
 				newTexture->imageFileContents.length = (uxx)dataSize;
-				newTexture->imageFileContents.bytes = AllocArray(u8, arena, newTexture->imageFileContents.length);
+				newTexture->imageFileContents.bytes = (u8*)AllocMem(arena, newTexture->imageFileContents.length);
 				NotNull(newTexture->imageFileContents.bytes);
 				MyMemCopy(newTexture->imageFileContents.bytes, dataPntr, (uxx)dataSize);
 				ArenaResetToMark(scratch, scratchMark);

@@ -41,7 +41,7 @@ PEXPI void FreeImageData(Arena* arena, ImageData* imageData)
 	NotNull(imageData);
 	if (imageData->pixels != nullptr)
 	{
-		FreeMem(arena, imageData->pixels, sizeof(u32) * imageData->numPixels);
+		FreeArray(u32, arena, imageData->numPixels, imageData->pixels);
 	}
 	ClearPointer(imageData);
 }

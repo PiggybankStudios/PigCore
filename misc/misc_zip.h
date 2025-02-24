@@ -127,7 +127,7 @@ PEXP Result OpenZipArchive(Arena* arena, Slice zipFileContents, ZipArchive* arch
 		mz_uint fileNameByteLength = mz_zip_reader_get_filename(&archiveOut->zip, (mz_uint)fIndex, nullptr, 0);
 		Str8 fileName;
 		fileName.length = fileNameByteLength-1;
-		fileName.chars = AllocArray(char, scratch, fileNameByteLength);
+		fileName.chars = (char*)AllocMem(scratch, fileNameByteLength);
 		NotNull(fileName.chars);
 		mz_zip_reader_get_filename(&archiveOut->zip, (mz_uint)fIndex, fileName.chars, (mz_uint)(fileName.length+1));
 		
@@ -167,7 +167,7 @@ PEXP Result OpenZipArchive(Arena* arena, Slice zipFileContents, ZipArchive* arch
 		{
 			Slice fileMemory;
 			fileMemory.length = (uxx)fileStats.m_uncomp_size;
-			fileMemory.bytes = AllocArray(u8, scratch, (uxx)fileStats.m_uncomp_size);
+			fileMemory.bytes = (u8*)AllocMem(scratch, (uxx)fileStats.m_uncomp_size);
 			NotNull(fileMemory.bytes);
 			mz_bool readFileSuccess = mz_zip_reader_extract_to_mem(&archiveOut->zip, (mz_uint)fIndex, fileMemory.bytes, fileMemory.length, 0);
 			Assert(readFileSuccess);
@@ -195,7 +195,7 @@ PEXP FilePath GetZipArchiveFilePath(ZipArchive* archive, Arena* pathArena, uxx f
 	
 	Str8 result;
 	result.length = fileNameByteLength-1;
-	result.chars = AllocArray(char, pathArena, fileNameByteLength);
+	result.chars = (char*)AllocMem(pathArena, fileNameByteLength);
 	if (result.chars == nullptr) { return FilePath_Empty; }
 	mz_uint secondFileNameResult = mz_zip_reader_get_filename(&archive->zip, (mz_uint)fileIndex, result.chars, (mz_uint)(result.length+1));
 	Assert(secondFileNameResult == fileNameByteLength);
@@ -240,7 +240,7 @@ PEXP Slice ReadZipArchiveFileAtIndex(ZipArchive* archive, Arena* fileContentsAre
 	ScratchBegin1(scratch, fileContentsArena);
 	Slice result = Slice_Empty;
 	result.length = (uxx)fileStats.m_uncomp_size;
-	result.bytes = AllocArray(u8, convertNewLines ? scratch : fileContentsArena, (uxx)result.length);
+	result.bytes = (u8*)AllocMem(convertNewLines ? scratch : fileContentsArena, (uxx)result.length);
 	NotNull(result.bytes);
 	mz_bool readFileSuccess = mz_zip_reader_extract_to_mem(&archive->zip, (mz_uint)fileIndex, result.bytes, result.length, 0);
 	if (!readFileSuccess)

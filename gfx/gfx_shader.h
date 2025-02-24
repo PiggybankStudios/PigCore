@@ -361,7 +361,7 @@ PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const Sha
 		ShaderUniformBlock* uniformBlock = &result.uniformBlocks[bIndex];
 		if (uniformBlock->value.length > 0)
 		{
-			uniformBlock->value.bytes = AllocArray(u8, arena, uniformBlock->value.length);
+			uniformBlock->value.bytes = (u8*)AllocMem(arena, uniformBlock->value.length);
 			MyMemSet(uniformBlock->value.bytes, 0x00, uniformBlock->value.length);
 		}
 	}

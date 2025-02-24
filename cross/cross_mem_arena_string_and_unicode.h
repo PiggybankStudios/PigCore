@@ -56,7 +56,7 @@ PEXP Str8 ConvertUcs2StrToUtf8(Arena* arena, Str16 usc2Str, bool addNullTerm)
 		{
 			result.length = byteIndex;
 			if (arena == nullptr) { return result; }
-			result.chars = AllocArray(char, arena, result.length + (addNullTerm ? 1 : 0));
+			result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
 			NotNull(result.chars);
 		}
 		else
@@ -96,7 +96,7 @@ PEXP Str16 ConvertUtf8StrToUcs2(Arena* arena, Str8 utf8Str, bool addNullTerm)
 		{
 			result.length = wordIndex;
 			if (arena == nullptr) { return result; }
-			result.chars = AllocArray(char16_t, arena, result.length + (addNullTerm ? 1 : 0));
+			result.chars = (char16_t*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
 			NotNull(result.chars);
 		}
 		else

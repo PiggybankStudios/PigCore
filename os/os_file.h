@@ -161,7 +161,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 		result = NewFilePath((uxx)getPathResult1-1, nullptr);
 		if (arena == nullptr) { ScratchEnd(scratch); return result; }
 		
-		result.chars = AllocArray(char, arena, result.length+1);
+		result.chars = (char*)AllocMem(arena, result.length+1);
 		if (result.chars == nullptr) { ScratchEnd(scratch); return Str8_Empty; }
 		
 		// Returns the length of the string (not +1) when nBufferLength is large enough
@@ -456,7 +456,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		
 		Assert(fileSizeLargeInt.QuadPart <= UINTXX_MAX);
 		uxx fileSize = (uxx)fileSizeLargeInt.QuadPart;
-		u8* fileData = AllocArray(u8, arena, fileSize+1); //+1 for null-term
+		u8* fileData = (u8*)AllocMem(arena, fileSize+1); //+1 for null-term
 		AssertMsg(fileData != nullptr, "Failed to allocate space to hold file contents. The application probably tried to open a massive file");
 		Slice result = NewStr8(fileSize, fileData);
 		

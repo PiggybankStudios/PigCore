@@ -36,7 +36,7 @@ PEXPI Str8 ScratchPrintStr(const char* formatString, ...)
 	AssertMsg(length >= 0, "ScratchPrintStr format failed!");
 	va_end(args);
 	
-	result = AllocArray(char, scratch, length+1); //Allocate
+	result = (char*)AllocMem(scratch, length+1); //Allocate
 	if (result == nullptr) { return Str8_Empty; }
 	
 	va_start(args, formatString);
@@ -62,7 +62,7 @@ PEXPI char* ScratchPrint(const char* formatString, ...)
 	AssertMsg(length >= 0, "ScratchPrint format failed!");
 	va_end(args);
 	
-	result = AllocArray(char, scratch, length+1); //Allocate
+	result = (char*)AllocMem(scratch, length+1); //Allocate
 	if (result == nullptr) { return nullptr; }
 	
 	va_start(args, formatString);

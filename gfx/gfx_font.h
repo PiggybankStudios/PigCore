@@ -189,7 +189,7 @@ PEXPI void FreeFontKerningTable(Arena* arena, FontKerningTable* kerningTable)
 	NotNull(kerningTable);
 	if (kerningTable->entries != nullptr)
 	{
-		FreeMem(arena, kerningTable->entries, sizeof(FontKerningTableEntry) * kerningTable->numEntries);
+		FreeArray(FontKerningTableEntry, arena, kerningTable->numEntries, kerningTable->entries);
 	}
 	ClearPointer(kerningTable);
 }
@@ -335,7 +335,7 @@ PEXP Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i a
 	
 	uxx stbOutPixelSize = sizeof(u8);
 	uxx numPixels = (uxx)(atlasSize.Width * atlasSize.Height);
-	Color32* pixelsPntr = AllocArray(Color32, font->arena, numPixels); //NOTE: We allocate Color32 size so we can expand the 1-byte output from stb_truetype into a 4-channel pixel
+	Color32* pixelsPntr = AllocArray(Color32, scratch, numPixels); //NOTE: We allocate Color32 size so we can expand the 1-byte output from stb_truetype into a 4-channel pixel
 	NotNull(pixelsPntr);
 	MyMemSet(pixelsPntr, 0x00, sizeof(u32) * numPixels);
 	

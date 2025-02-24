@@ -75,7 +75,7 @@ ImFileHandle ImFileOpen(const char* filename, const char* mode)
 	else if (StrExactContains(modeStr, StrLit("w"))) { openMode = OsOpenFileMode_Write; }
 	else if (StrExactContains(modeStr, StrLit("r"))) { openMode = OsOpenFileMode_Read; }
 	bool openResult = OsOpenFile(imguiArena, FilePathLit(filename), openMode, (openMode != OsOpenFileMode_Write), &result->file);
-	if (!openResult) { if (CanArenaFree(imguiArena)) { FreeMem(imguiArena, result, sizeof(ImGuiFile)); } return nullptr; }
+	if (!openResult) { if (CanArenaFree(imguiArena)) { FreeType(ImGuiFile, imguiArena, result); } return nullptr; }
 	return result;
 }
 bool ImFileClose(ImFileHandle file)
@@ -84,7 +84,7 @@ bool ImFileClose(ImFileHandle file)
 	NotNull(file->arena);
 	NotNull(file->file.arena);
 	OsCloseFile(&file->file);
-	FreeMem(file->arena, file, sizeof(ImGuiFile));
+	if (CanArenaFree(file->arena)) { FreeType(ImGuiFile, file->arena, file); }
 	return true;
 }
 u64 ImFileGetSize(ImFileHandle file)

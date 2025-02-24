@@ -44,7 +44,7 @@ PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 		//TODO: Should we use _pgmptr global variable instead of calling GetModuleFileNameA(NULL, ...)
 		
 		ScratchBegin1(scratch, arena);
-		char* tempBuffer = AllocArray(char, scratch, MAX_EXECUTABLE_PATH_LENGTH);
+		char* tempBuffer = (char*)AllocMem(scratch, MAX_EXECUTABLE_PATH_LENGTH);
 		NotNull(tempBuffer);
 		DWORD pathLength = GetModuleFileNameA(
 			NULL, //hModule
@@ -66,7 +66,7 @@ PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 			return FilePath_Empty;
 		}
 		
-		char* resultBuffer = AllocArray(char, arena, (uxx)(pathLength+1));
+		char* resultBuffer = (char*)AllocMem(arena, (uxx)(pathLength+1));
 		if (resultBuffer == nullptr)
 		{
 			SetOptionalOutPntr(resultOut, Result_FailedToAllocateMemory);
@@ -131,7 +131,7 @@ PEXP FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
 		}
 		
 		ScratchBegin1(scratch, arena);
-		char* scratchBuffer = AllocArray(char, scratch, (uxx)bufferSizeNeeded);
+		char* scratchBuffer = (char*)AllocMem(scratch, (uxx)bufferSizeNeeded);
 		if (scratchBuffer == nullptr)
 		{
 			SetOptionalOutPntr(resultOut, Result_FailedToAllocateMemory);

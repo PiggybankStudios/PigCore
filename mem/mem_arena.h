@@ -132,8 +132,9 @@ struct Arena
 	uxx GetAllocSize(const Arena* arena, const void* allocPntr);
 	NODISCARD void* AllocMem(Arena* arena, uxx numBytes);
 	NODISCARD void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverride);
-	void FreeMem(Arena* arena, void* allocPntr, uxx allocSize);
-	void FreeMemNoSize(Arena* arena, void* allocPntr);
+	void FreeMemAligned(Arena* arena, void* allocPntr, uxx allocSize, uxx alignmentOverride);
+	PIG_CORE_INLINE void FreeMem(Arena* arena, void* allocPntr, uxx allocSize);
+	PIG_CORE_INLINE void FreeMemNoSize(Arena* arena, void* allocPntr);
 	NODISCARD void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSize);
 	NODISCARD void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize);
 	NODISCARD PIG_CORE_INLINE uxx ArenaGetMark(Arena* arena);
@@ -152,11 +153,15 @@ struct Arena
 #define AllocTypeUnaligned(type, arenaPntr)         (type*)AllocMem(       (arenaPntr), (uxx)sizeof(type))
 #define AllocArrayUnaligned(type, arenaPntr, count) (type*)AllocMem(       (arenaPntr), (uxx)(sizeof(type) * (count)))
 #if LANGUAGE_IS_C
-#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)_Alignof(type))
-#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
+#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr),              (uxx)sizeof(type),             (uxx)_Alignof(type))
+#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr),              (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
+#define FreeArray(type, arenaPntr, count, allocPntr)       FreeMemAligned((arenaPntr),  (allocPntr), (uxx)(sizeof(type) * (count)), (uxx)_Alignof(type))
+#define FreeType(type, arenaPntr, allocPntr)               FreeMemAligned((arenaPntr),  (allocPntr), (uxx)sizeof(type),             (uxx)_Alignof(type))
 #else
-#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr), (uxx)sizeof(type),             (uxx)std::alignment_of<type>())
-#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr), (uxx)(sizeof(type) * (count)), (uxx)std::alignment_of<type>())
+#define AllocType(type, arenaPntr)                  (type*)AllocMemAligned((arenaPntr),              (uxx)sizeof(type),             (uxx)std::alignment_of<type>())
+#define AllocArray(type, arenaPntr, count)          (type*)AllocMemAligned((arenaPntr),              (uxx)(sizeof(type) * (count)), (uxx)std::alignment_of<type>())
+#define FreeArray(type, arenaPntr, count, allocPntr)       FreeMemAligned((arenaPntr),  (allocPntr), (uxx)(sizeof(type) * (count)), (uxx)std::alignment_of<type>())
+#define FreeType(type, arenaPntr, allocPntr)               FreeMemAligned((arenaPntr),  (allocPntr), (uxx)sizeof(type),             (uxx)std::alignment_of<type>())
 #define AllocAndNewWithArgs(classPntrVarName, arenaPntr, classType, ...) do \
 {                                                                           \
 	classPntrVarName = AllocType(classType, (arenaPntr));                   \
@@ -504,24 +509,39 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 		case ArenaType_StdHeap:
 		{
 			if (IsFlagSet(arena->flags, ArenaFlag_SingleAlloc) && arena->allocCount >= 1) { AssertMsg(false, "Second allocation attempted from Buffer Arena with SingleAlloc flag!"); break; }
-			uxx alignedNumBytes = numBytes + (alignment > 1 ? alignment-1 : 0);
-			result = MyMalloc(alignedNumBytes);
-			if (result == nullptr)
+			#if MALLOC_ALIGNED_AVAILABLE
 			{
-				if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in StdHeap Arena!"); }
-				break;
-			}
-			arena->used += alignedNumBytes;
-			IncrementUXX(arena->allocCount);
-			if (alignment > 1)
-			{
-				uxx misalignment = (uxx)(((size_t)result) % (size_t)alignment);
-				if (misalignment > 0)
+				result = (alignment > 1) ? MyMallocAligned(numBytes, alignment) : MyMalloc(numBytes);
+				if (result == nullptr)
 				{
-					DebugAssert(numBytes + (alignment - misalignment) <= alignedNumBytes); //TODO: Remove me once we verify the math is working out like we want
-					result = (void*)((u8*)result + (alignment - misalignment));
+					if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in StdHeap Arena!"); }
+					break;
+				}
+				arena->used += numBytes;
+				IncrementUXX(arena->allocCount);
+			}
+			#else
+			{
+				uxx alignedNumBytes = numBytes + (alignment > 1 ? alignment-1 : 0);
+				result = MyMalloc(alignedNumBytes);
+				if (result == nullptr)
+				{
+					if (IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to allocate in StdHeap Arena!"); }
+					break;
+				}
+				arena->used += alignedNumBytes;
+				IncrementUXX(arena->allocCount);
+				if (alignment > 1)
+				{
+					uxx misalignment = (uxx)(((size_t)result) % (size_t)alignment);
+					if (misalignment > 0)
+					{
+						DebugAssert(numBytes + (alignment - misalignment) <= alignedNumBytes); //TODO: Remove me once we verify the math is working out like we want
+						result = (void*)((u8*)result + (alignment - misalignment));
+					}
 				}
 			}
+			#endif
 		} break;
 		
 		// +==============================+
@@ -695,12 +715,14 @@ NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes) //pre-declared at top 
 // +--------------------------------------------------------------+
 // |                  Arena Free Implementations                  |
 // +--------------------------------------------------------------+
-PEXP void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
+PEXP void FreeMemAligned(Arena* arena, void* allocPntr, uxx allocSize, uxx alignmentOverride)
 {
 	DebugNotNull(arena);
 	if (allocPntr == nullptr && !IsFlagSet(arena->flags, ArenaFlag_AllowNullptrFree)) { AssertMsg(allocPntr != nullptr, "Tried to free nullptr from Arena!"); return; }
 	if (allocSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize)) { AssertMsg(allocSize != 0, "Tried to free from Arena without size!"); return; }
 	DebugNotNull(allocPntr);
+	
+	uxx alignment = (alignmentOverride != UINTXX_MAX) ? alignmentOverride : arena->alignment;
 	
 	if (IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug) && allocSize > 0)
 	{
@@ -716,7 +738,7 @@ PEXP void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 		case ArenaType_Alias:
 		{
 			DebugNotNull(arena->sourceArena);
-			FreeMem(arena->sourceArena, allocPntr, allocSize);
+			FreeMemAligned(arena->sourceArena, allocPntr, allocSize, alignmentOverride);
 			arena->used = arena->sourceArena->used;
 			arena->committed = arena->sourceArena->committed;
 			arena->size = arena->sourceArena->size;
@@ -728,8 +750,12 @@ PEXP void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 		// +=============================+
 		case ArenaType_StdHeap:
 		{
-			//TODO: Is this going to complain for aligned allocations??
+			#if MALLOC_ALIGNED_AVAILABLE
+			if (alignment > 1) { MyFreeAligned(allocPntr); }
+			else { MyFree(allocPntr); }
+			#else
 			MyFree(allocPntr);
+			#endif
 			arena->used -= allocSize;
 			Decrement(arena->allocCount);
 		} break;
@@ -855,9 +881,13 @@ PEXP void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 		} break;
 	}
 }
-PEXP void FreeMemNoSize(Arena* arena, void* allocPntr)
+PEXPI void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 {
-	FreeMem(arena, allocPntr, 0);
+	FreeMemAligned(arena, allocPntr, allocSize, UINTXX_MAX);
+}
+PEXPI void FreeMemNoSize(Arena* arena, void* allocPntr)
+{
+	FreeMemAligned(arena, allocPntr, 0, UINTXX_MAX);
 }
 
 // +--------------------------------------------------------------+

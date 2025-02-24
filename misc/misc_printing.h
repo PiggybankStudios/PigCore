@@ -47,7 +47,7 @@ do                                                                              
 	va_end(resultName##_args);                                                          \
 	if (resultLengthName >= 0)                                                          \
 	{                                                                                   \
-		resultName = AllocArray(char, (arena), resultLengthName+1);                     \
+		resultName = (char*)AllocMem((arena), resultLengthName+1);                      \
 		if (resultName == nullptr) { break; }                                           \
 		va_start(resultName##_args, formatString);                                      \
 		PrintVa_Print((formatString), resultName##_args, resultName, resultLengthName); \
@@ -75,7 +75,7 @@ PEXP char* PrintInArena(Arena* arena, const char* formatString, ...)
 	Assert(length >= 0);
 	va_end(args);
 	
-	result = AllocArray(char, arena, length+1); //Allocate
+	result = (char*)AllocMem(arena, length+1); //Allocate
 	if (result == nullptr) { return result; }
 	
 	va_start(args, formatString);
@@ -100,7 +100,7 @@ PEXP Str8 PrintInArenaStr(Arena* arena, const char* formatString, ...)
 	Assert(length >= 0);
 	va_end(args);
 	
-	result = AllocArray(char, arena, length+1); //Allocate
+	result = (char*)AllocMem(arena, length+1); //Allocate
 	if (result == nullptr) { return Str8_Empty; }
 	
 	va_start(args, formatString);
@@ -142,7 +142,7 @@ PEXP void PrintVa_Print(const char* formatString, va_list args, char* allocatedS
 // 			VarArrayLoopGet(Str8, str, &stringArray, sIndex);
 // 			TwoPassPrint(result.chars, result.length, &charIndex, "%s%.*s", (sIndex > 0) ? "-" : "", StrPrint(str));
 // 		}
-// 		if (pass == 0) { result.chars = AllocArray(char, memArena, charIndex+1); result.length = charIndex; }
+// 		if (pass == 0) { result.chars = (char*)AllocMem(memArena, charIndex+1); result.length = charIndex; }
 // 		else { Assert(charIndex == result.length); result.chars[result.length] = '\0'; }
 // 	}
 PEXP void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex, const char* formatString, ...)
