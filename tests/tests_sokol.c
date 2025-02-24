@@ -100,9 +100,10 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 // +--------------------------------------------------------------+
 void AppFrame(void)
 {
+	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	
-	BeginFrame(GetSokolAppSwapchain(), MonokaiBack, 1.0f);
+	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiBack, 1.0f);
 	{
 		SetDepth(1.0f);
 		BindShader(&main2dShader);
@@ -114,9 +115,6 @@ void AppFrame(void)
 		TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
 		SetProjectionMat(projMat);
 		SetViewMat(Mat4_Identity);
-		SetWorldMat(Mat4_Identity);
-		SetSourceRec(NewRec(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
-		// SetUniformByNameV2(StrLit("main2d_texture0_size"), ToV2Fromi(gradientTexture.size));
 		
 		v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
 		i32 numColumns = FloorR32i(windowSize.Width / tileSize.Width);
@@ -125,7 +123,7 @@ void AppFrame(void)
 		{
 			for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
 			{
-				DrawRectangle(NewRec(tileSize.Width * xIndex, tileSize.Height * yIndex, tileSize.Width, tileSize.Height), White);
+				DrawTexturedRectangle(NewRec(tileSize.Width * xIndex, tileSize.Height * yIndex, tileSize.Width, tileSize.Height), White, &gradientTexture);
 			}
 		}
 	}
