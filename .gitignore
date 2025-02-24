@@ -2,25 +2,6 @@ _build/
 *.sublime-workspace
 .DS_Store
 third_party/bullet/
-third_party/_lib_debug/Bullet*.lib
-third_party/_lib_debug/Bullet*.pdb
-third_party/_lib_debug/Bullet*.txt
-third_party/_lib_debug/LinearMath*.lib
-third_party/_lib_debug/LinearMath*.pdb
-third_party/_lib_release/Bullet*.lib
-third_party/_lib_release/Bullet*.pdb
-third_party/_lib_release/Bullet*.txt
-third_party/_lib_release/LinearMath*.lib
-third_party/_lib_release/LinearMath*.pdb
 third_party/ode/
-third_party/_lib_debug/ode.pdb
-third_party/_lib_debug/ode_singled.lib
-third_party/_lib_debug/ode_singled.pdb
-# TODO: Remove PhysX related ignores!
-third_party/physx/
-third_party/_lib_debug/PhysX*
-third_party/_lib_debug/LowLevelAABB_*
-third_party/_lib_debug/LowLevelDynamics_*
-third_party/_lib_debug/LowLevel_*
-third_party/_lib_debug/SceneQuery_*
-third_party/_lib_debug/SimulationController_*
+third_party/_lib_debug/old
+third_party/_lib_release/old

@@ -107,7 +107,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Current Version:** Release 2.30.11 from Jan 1st 2025
 
-**Fixup Required:** Add contents of include folder to SDL folder. Compile SDL in both Debug and Release x64 modes and copy both `SDL2.lib` versions to `_lib_debug/` and `_lib_release/` folders (also copy `SDL2.pdb` for debug). Copy SDL2.dll to `_build` folder
+**Fixup Required:** Add contents of include folder to SDL folder. Compile SDL in both Debug and Release x64 modes and copy both `SDL2.lib` versions to `_lib_debug/` and `_lib_release/` folders (also copy `SDL2.pdb` for debug). Copy `SDL2.dll` to `_build` folder
 
 **Required For:**
 
@@ -128,7 +128,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Required For:**
 
-* struct_vectors.h, struct_matrices.h, and struct_quaternion.h depend on HandmadeMath.h
+* `struct_vectors.h`, `struct_matrices.h`, and `struct_quaternion.h` depend on `HandmadeMath.h`
 
 
 
@@ -141,11 +141,11 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Current Version:** Commit `b080caa7e51576fe3151c8976110df7966fa6a38` from Jul 2nd 2021
 
-**Fixup Required:** Delete everything besides meow_hash_x64_aesni.h, LICENSE, and README.md
+**Fixup Required:** Delete everything besides `meow_hash_x64_aesni.h`, `LICENSE`, and `README.md`
 
 **Required For:**
 
-* misc_hash.h depends on meow_hash
+* `misc_hash.h` depends on meow_hash
 
 ---
 
@@ -158,11 +158,11 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Current Version:** Release 3.0.2 from Jan 15th 2023
 
-**Fixup Required:** Delete everything besides miniz.h, miniz.c and LICENSE
+**Fixup Required:** Delete everything besides `miniz.h`, `miniz.c` and `LICENSE`
 
 **Required For:**
 
-* misc_zip.h depends on miniz to parse .zip files
+* `misc_zip.h` depends on miniz to parse `.zip` files
 
 ---
 
@@ -179,11 +179,11 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Required For:**
 
-* Building tests.exe into a small VR application (only if `BUILD_WITH_VR` is enabled in `build_config.h`)
+* Building `tests.exe` into a small VR application (only if `BUILD_WITH_VR` is enabled in `build_config.h`)
 
 ---
 
-## Super Light Regular Expression libraru (SLRE)
+## Super Light Regular Expression library (SLRE)
 **URL(s):** [https://github.com/cesanta/slre](https://github.com/cesanta/slre)
 
 **Folder Name:** `slre`
@@ -192,11 +192,11 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Current Version:** Commit `9075c67cad47d62ba4a4f8f452ae46bb21124f7b` from Oct 26th 2020
 
-**Fixup Required:** Delete everything besides slre.h, slre.c and LICENSE
+**Fixup Required:** Delete everything besides `slre.h`, `slre.c` and `LICENSE`
 
 **Required For:**
 
-* misc_regex.h depends upon this library
+* `misc_regex.h` depends upon this library
 
 ---
 
@@ -209,11 +209,11 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Current Version:** Version 1.15 from Feb 9th 2025
 
-**Fixup Required:** Delete everything besides cgltf.h and LICENSE
+**Fixup Required:** Delete everything besides `cgltf.h` and `LICENSE`
 
 **Required For:**
 
-* file_fmt_gltf.h depends upon this library
+* `file_fmt_gltf.h` depends upon this library
 
 ---
 
@@ -230,7 +230,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Required For:**
 
-* ui_clay.h depends upon this library
+* `ui_clay.h` depends upon this library (only if `BUILD_WITH_CLAY` is enabled)
 
 ---
 
@@ -243,11 +243,11 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Current Version:** Version 1.91.8 from Jan 31st 2025
 
-**Fixup Required:** Make custom imconfig.h with just an include for ui/ui_imconfig.h. Delete everything besides: imgui.cpp, imgui.h, imgui_demo.cpp, imgui_draw.cpp, imgui_internal.h, imgui_tables.cpp, imgui_widgets.cpp, imstb_rectpack.h, imstb_textedit.h, imstb_truetype.h, and LICENSE.txt.
+**Fixup Required:** Make custom `imconfig.h` with just an include for `ui/ui_imconfig.h`. Delete everything besides: `imgui.cpp`, `imgui.h`, `imgui_demo.cpp`, `imgui_draw.cpp`, `imgui_internal.h`, `imgui_tables.cpp`, `imgui_widgets.cpp`, `imstb_rectpack.h`, `imstb_textedit.h`, `imstb_truetype.h`, and `LICENSE.txt`.
 
 **Required For:**
 
-* ui_imgui.h depends upon this library
+* `ui_imgui.h` depends upon this library (only if `BUILD_WITH_IMGUI` is enabled)
 
 ---
 
@@ -260,8 +260,25 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 **Current Version:** cImGui commit `2e5db87e996af08b8b4162ca324ab0d7964abbf8` from from Feb 5th 2025 which is generated from Dear ImGui Version 1.91.8 from Jan 31st 2025
 
-**Fixup Required:** Delete everything besides cimgui.h, cimgui.cpp and LICENSE.
+**Fixup Required:** Delete everything besides `cimgui.h`, `cimgui.cpp` and `LICENSE`.
 
 **Required For:**
 
-* ui_imgui.h depends upon this library
+* `ui_imgui.h` depends upon this library (only if `BUILD_WITH_IMGUI` is enabled)
+
+---
+
+## PhysX v5.5.0.e41b928f
+**URL(s):** [https://github.com/NVIDIA-Omniverse/PhysX](https://github.com/NVIDIA-Omniverse/PhysX) [v5.5.0](https://github.com/NVIDIA-Omniverse/PhysX/releases/tag/106.4-physx-5.5.0)
+
+**Folder Name:** `physx`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** PhysX SDK Version 5.5.0.e41b928f from Dec 16th 2024
+
+**Fixup Required:** Copy the contents of `physx/include` into `third_party/physx`. Copy build.bat and build_config.h over to root folder of downloaded PhysX SDK source and run build.bat once with DEBUG_BUILD 1 (in build_config.h), copy the `_build/PhysX_static_64.lib/pdb` to `third_party/_lib_debug`, and then once with DEBUG_BUILD 0 (and copy to `third_party/_lib_release`). Our build.bat will take longer than the regular build process with VS, but it helps us ensure the PhysX gets compiled exactly how want it.
+
+**Required For:**
+
+* `phys_physx.h` depends upon this library (only if `BUILD_WITH_PHYSX` is enabled)
