@@ -28,6 +28,14 @@ START_EXTERN_C
 #include "mem/mem_arena.h"
 END_EXTERN_C
 
+#define PX_PHYSX_STATIC_LIB
+#if DEBUG_BUILD
+#ifndef _DEBUG
+#define _DEBUG
+#endif
+#else
+#define NDEBUG
+#endif
 #include "third_party/physx/PxPhysicsAPI.h"
 #include "third_party/physx/extensions/PxExtensionsAPI.h"
 
@@ -156,7 +164,7 @@ PEXP void CreatePhysicsTest(PhysicsWorld* world)
 	physx::PxShape* boxShape = world->physics->createShape(physx::PxBoxGeometry(1.0f/2.0f, 1.0f/2.0f, 1.0f/2.0f), *world->defaultMaterial);
 	for (uxx bIndex = 0; bIndex < 10; bIndex++)
 	{
-		physx::PxTransform boxTransform(physx::PxVec3(physx::PxReal(bIndex*0.5f), physx::PxReal(bIndex*2.0f), physx::PxReal(0)));
+		physx::PxTransform boxTransform(physx::PxVec3(physx::PxReal(bIndex*0.0f), physx::PxReal(bIndex*2.0f), physx::PxReal(0)));
 		physx::PxRigidDynamic* dynamicBody = world->physics->createRigidDynamic(boxTransform);
 		dynamicBody->attachShape(*boxShape);
 		physx::PxRigidBodyExt::updateMassAndInertia(*dynamicBody, 10.0f);
@@ -165,7 +173,7 @@ PEXP void CreatePhysicsTest(PhysicsWorld* world)
 	boxShape->release();
 }
 
-PEXPI void UpdatePhysicsWorld(PhysicsWorld* world, r32 elapsedMs)
+PEXP void UpdatePhysicsWorld(PhysicsWorld* world, r32 elapsedMs)
 {
 	NotNull(world);
 	NotNull(world->scene);
@@ -173,7 +181,7 @@ PEXPI void UpdatePhysicsWorld(PhysicsWorld* world, r32 elapsedMs)
 	world->scene->fetchResults(true);
 }
 
-PEXPI PhysicsBodyTransform GetPhysicsBodyTransform(PhysicsBody* body)
+PEXP PhysicsBodyTransform GetPhysicsBodyTransform(PhysicsBody* body)
 {
 	physx::PxTransform transform = body->actorHandle->getGlobalPose();
 	PhysicsBodyTransform result = ZEROED;

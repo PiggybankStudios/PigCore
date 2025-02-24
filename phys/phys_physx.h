@@ -35,8 +35,8 @@ MAYBE_END_EXTERN_C
 
 
 //NOTE: The PxAllocatorCallback does not provide a way for the caller to request alignment
-// We are going to assume they want at most 8 bytes of alignment
-#define PHYSX_ALLOCATOR_ALIGNMENT 8 //bytes
+// We are going to assume they want at most 16 bytes of alignment
+#define PHYSX_ALLOCATOR_ALIGNMENT 16 //bytes
 
 // +--------------------------------------------------------------+
 // |                      Class Declarations                      |
@@ -124,12 +124,10 @@ struct PhysicsBodyTransform
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
-#if !PIG_CORE_IMPLEMENTATION
-	PEXP PhysicsWorld* InitPhysicsPhysX(Arena* arena);
-	PEXP void CreatePhysicsTest(PhysicsWorld* world);
-	PEXPI void UpdatePhysicsWorld(PhysicsWorld* world, r32 elapsedMs);
-	PEXPI PhysicsBodyTransform GetPhysicsBodyTransform(PhysicsBody* body);
-#endif
+PEXP PhysicsWorld* InitPhysicsPhysX(Arena* arena);
+PEXP void CreatePhysicsTest(PhysicsWorld* world);
+PEXP void UpdatePhysicsWorld(PhysicsWorld* world, r32 elapsedMs);
+PEXP PhysicsBodyTransform GetPhysicsBodyTransform(PhysicsBody* body);
 
 //NOTE: Implementations are in phys_physx_capi_main.cpp, they are not in here inside a #if PIG_CORE_IMPLEMENTATION block because they must be compiled in C++ mode
 

@@ -19,19 +19,22 @@ Description:
 #undef Min
 #undef Max
 
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable:4100) //unreferenced formal parameter
+#pragma warning(disable:5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#endif
+
 // #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS //TODO: Should we be defining this?
 // #include "third_party/cimgui/cimgui.h"
 #include "third_party/cimgui/cimgui.cpp"
 
-#if TARGET_IS_WINDOWS
-#pragma warning(push)
-#pragma warning(disable:5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
-#endif
 #include "imgui.cpp"
 #include "imgui_demo.cpp"
 #include "imgui_draw.cpp"
 #include "imgui_tables.cpp"
 #include "imgui_widgets.cpp"
+
 #if TARGET_IS_WINDOWS
 #pragma warning(pop)
 #endif

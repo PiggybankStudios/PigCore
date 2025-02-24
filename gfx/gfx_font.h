@@ -425,7 +425,6 @@ PEXP Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i a
 	//The ascent value returned by GetFontVMetrics is often way higher than all the characters we normally print
 	//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
 	//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
-	bool foundWChar = false;
 	int wBoxX0, wBoxY0, wBoxX1, wBoxY1;
 	int getBoxResult = stbtt_GetCodepointBox(&font->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
 	if (getBoxResult > 0)

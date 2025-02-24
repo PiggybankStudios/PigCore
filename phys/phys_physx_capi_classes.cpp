@@ -19,6 +19,11 @@ PigCorePhysXErrorCallback::~PigCorePhysXErrorCallback()
 
 void PigCorePhysXErrorCallback::reportError(physx::PxErrorCode::Enum e, const char* message, const char* file, int line)
 {
+	UNUSED(e);
+	UNUSED(message);
+	UNUSED(file);
+	UNUSED(line);
+	PrintLine_E("PhysX Error: code=%d \"%s\" in %s:%d", e, message, file, line);
 	AssertMsg(false, "PhysX Error Reported!");
 }
 
