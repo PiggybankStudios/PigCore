@@ -142,8 +142,9 @@ if "%DEBUG_BUILD%"=="1" (
 
 :: -incremental:no = Suppresses warning about doing a full link when it can't find the previous .exe result. We don't need this when doing unity builds
 :: /LIBPATH = Add a library search path
-:: Gdi32.lib = Needed for os_font.h
-set common_ld_flags=-incremental:no /NOLOGO Gdi32.lib
+:: User32.lib = Needed for os_font.h for CreateFontA, etc.
+:: Gdi32.lib = Needed for os_font.h for GetForegroundWindow and GetDC
+set common_ld_flags=-incremental:no /NOLOGO User32.lib Gdi32.lib
 set pig_core_ld_flags=
 set platform_ld_flags=
 
@@ -154,7 +155,7 @@ if "%BUILD_WITH_RAYLIB%"=="1" (
 		REM Shell32.lib  = Shlobj.h ? 
 		REM kernel32.lib = ?
 		REM winmm.lib    = ?
-		set common_ld_flags=raylib.lib %common_ld_flags% gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
+		set common_ld_flags=raylib.lib %common_ld_flags% Shell32.lib kernel32.lib winmm.lib
 		REM TODO:: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
 	) else (
 		set common_ld_flags=raylibdll.lib %common_ld_flags%

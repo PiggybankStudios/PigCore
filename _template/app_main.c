@@ -46,6 +46,7 @@ static Arena* stdHeap = nullptr;
 // +--------------------------------------------------------------+
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
+#include "app_helpers.c"
 //TODO: Add source files here!
 
 // +==============================+
@@ -104,7 +105,8 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
 	#if BUILD_WITH_SOKOL_APP
-	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME));
+	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
+	LoadWindowIcon();
 	#endif
 	
 	InitRandomSeriesDefault(&app->random);

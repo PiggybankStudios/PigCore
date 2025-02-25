@@ -9,6 +9,18 @@ Description:
 */
 
 #include "build_config.h"
+#ifdef BUILD_WITH_RAYLIB
+#undef BUILD_WITH_RAYLIB
+#endif
+#define BUILD_WITH_RAYLIB 0
+#ifdef BUILD_WITH_SOKOL_GFX
+#undef BUILD_WITH_SOKOL_GFX
+#endif
+#define BUILD_WITH_SOKOL_GFX 0
+#ifdef BUILD_WITH_SOKOL_APP
+#undef BUILD_WITH_SOKOL_APP
+#endif
+#define BUILD_WITH_SOKOL_APP 0
 
 #include "base/base_all.h"
 #include "std/std_all.h"

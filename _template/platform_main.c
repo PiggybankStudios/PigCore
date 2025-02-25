@@ -53,6 +53,8 @@ Description:
 // +--------------------------------------------------------------+
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
+#include "platform_interface.h"
+#include "platform_main.h"
 // TODO: Add header files here
 
 #if BUILD_INTO_SINGLE_UNIT
@@ -121,7 +123,7 @@ void RaylibLogCallback(int logLevel, const char* text, va_list args)
 }
 #endif //BUILD_WITH_RAYLIB
 
-void DoUpdate(void)
+void PlatDoUpdate(void)
 {
 	//TODO: Check for dll changes, reload it!
 	
@@ -175,7 +177,7 @@ void DoUpdate(void)
 // |                       Main Entry Point                       |
 // +--------------------------------------------------------------+
 #if BUILD_WITH_SOKOL_APP
-void PlatSappInit()
+void PlatSappInit(void)
 #else
 int main()
 #endif
@@ -299,7 +301,7 @@ int main()
 		ScratchBegin1(scratch2, scratch1);
 		ScratchBegin2(scratch3, scratch1, scratch2);
 		
-		DoUpdate();
+		PlatDoUpdate();
 		
 		ScratchEnd(scratch1);
 		ScratchEnd(scratch2);
@@ -395,7 +397,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 	UNUSED(argv);
 	return (sapp_desc){
 		.init_cb = PlatSappInit,
-		.frame_cb = DoUpdate,
+		.frame_cb = PlatDoUpdate,
 		.cleanup_cb = PlatSappCleanup,
 		.event_cb = PlatSappEvent,
 		.width = 800,
