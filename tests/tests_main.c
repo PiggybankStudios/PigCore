@@ -41,8 +41,11 @@ Description:
 #include "struct/struct_all.h"
 #include "misc/misc_all.h"
 #include "input/input_all.h"
+#include "file_fmt/file_fmt_all.h"
+#include "ui/ui_all.h"
 #include "gfx/gfx_all.h"
 #include "gfx/gfx_system_global.h"
+#include "phys/phys_all.h"
 
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/raylib.h"

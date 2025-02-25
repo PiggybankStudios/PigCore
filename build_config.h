@@ -75,7 +75,7 @@ Description:
 // Enables tests.exe using clay.h to render UI elements
 #define BUILD_WITH_CLAY      1
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
-#define BUILD_WITH_IMGUI     0
+#define BUILD_WITH_IMGUI     1
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib
 #define BUILD_WITH_PHYSX     0
 

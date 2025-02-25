@@ -72,13 +72,17 @@ if "%USE_EMSCRIPTEN%"=="1" (
 :: +--------------------------------------------------------------+
 :: |                       Compiler Options                       |
 :: +--------------------------------------------------------------+
+:: /std:clatest = Use latest C language spec features
+:: /experimental:c11atomics = Enables _Atomic types
+set c_cl_flags=/std:clatest /experimental:c11atomics
+:: /wd4471 = a forward declaration of an unscoped enumeration must have an underlying type
+:: /wd5054 = operator '|': deprecated between enumerations of different types
+set cpp_cl_flags=/std:c++20 /wd4471 /wd5054
 :: /FC = Full path for error messages
 :: /nologo = Suppress the startup banner
 :: /W4 = Warning level 4 [just below /Wall]
 :: /WX = Treat warnings as errors
-:: /std:clatest = Use latest C language spec features
-:: /experimental:c11atomics = Enables _Atomic types
-set common_cl_flags=/FC /nologo /W4 /WX /std:clatest /experimental:c11atomics
+set common_cl_flags=/FC /nologo /W4 /WX
 :: -fdiagnostics-absolute-paths = Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 :: -std=gnu2x = Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
 :: NOTE: Clang Warning Options: https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
@@ -166,7 +170,7 @@ if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM Advapi32.lib = Processthreadsapi.h, OpenProcessToken, GetTokenInformation
 	set tests_libraries=raylib.lib %tests_libraries% Shell32.lib kernel32.lib winmm.lib
 	REM NOTE: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
-	set pig_core_dll_libraries=%pig_core_dll_libraries% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
+	set pig_core_dll_libraries=raylib.lib %pig_core_dll_libraries% gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
 )
 if "%BUILD_WITH_BOX2D%"=="1" (
 	set tests_libraries=%tests_libraries% box2d.lib
@@ -265,7 +269,7 @@ rem echo shader_linux_object_files %shader_linux_object_files%
 set piggen_source_path=%root%/piggen/piggen_main.c
 set piggen_exe_path=piggen.exe
 set piggen_bin_path=piggen
-set piggen_cl_args=%common_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
+set piggen_cl_args=%common_cl_flags% %c_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
 set piggen_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% -o %piggen_bin_path% ../%piggen_source_path%
 if "%BUILD_PIGGEN%"=="1" (
 	echo.
@@ -285,14 +289,34 @@ if "%RUN_PIGGEN%"=="1" (
 )
 
 :: +--------------------------------------------------------------+
+:: |                       Build imgui.obj                        |
+:: +--------------------------------------------------------------+
+set imgui_source_path=%root%/ui/ui_imgui_main.cpp
+set imgui_obj_path=imgui.obj
+set imgui_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%root%\third_party\imgui" /Fo%imgui_obj_path% %imgui_source_path%
+if "%BUILD_IMGUI_OBJ%"=="1" (
+	if "%BUILD_WINDOWS%"=="1" (
+		del "%imgui_obj_path%" > NUL 2> NUL
+		
+		echo.
+		echo [Building %imgui_obj_path% for Windows...]
+		cl %imgui_cl_args%
+		echo [Built %imgui_obj_path% for Windows!]
+	)
+)
+
+:: +--------------------------------------------------------------+
 :: |                      Build pig_core.dll                      |
 :: +--------------------------------------------------------------+
 set pig_core_dll_source_path=%root%/dll/dll_main.c
 set pig_core_dll_path=pig_core.dll
 set pig_core_lib_path=pig_core.lib
 set pig_core_so_path=libpig_core.so
-set pig_core_dll_args=%common_cl_flags% /Fe%pig_core_dll_path% %pig_core_dll_source_path% /link /DLL %common_ld_flags% %pig_core_dll_libraries%
+set pig_core_dll_args=%common_cl_flags% %c_cl_flags% /Fe%pig_core_dll_path% %pig_core_dll_source_path% /link /DLL %common_ld_flags% %pig_core_dll_libraries%
 set pig_core_so_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% -fPIC -shared -o %pig_core_so_path% ../%pig_core_dll_source_path%
+if "%BUILD_WITH_IMGUI%"=="1" (
+	set pig_core_dll_args=%pig_core_dll_args% %imgui_obj_path%
+)
 if "%BUILD_PIG_CORE_DLL%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo.
@@ -325,10 +349,13 @@ set tests_bin_path=tests
 set tests_wasm_path=app.wasm
 set tests_wat_path=app.wat
 set tests_html_path=index.html
-set tests_cl_args=%common_cl_flags% /Fe%tests_exe_path% %tests_source_path% %shader_object_files% /link %common_ld_flags% %tests_libraries%
+set tests_cl_args=%common_cl_flags% %c_cl_flags% /Fe%tests_exe_path% %tests_source_path% %shader_object_files% /link %common_ld_flags% %tests_libraries%
 set tests_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% %tests_clang_libraries% -o %tests_bin_path% ../%tests_source_path% %shader_linux_object_files%
 if "%ENABLE_AUTO_PROFILE%"=="1" (
 	set tests_clang_args=-finstrument-functions %tests_clang_args%
+)
+if "%BUILD_WITH_IMGUI%"=="1" (
+	set tests_cl_args=%tests_cl_args% %imgui_obj_path%
 )
 set tests_web_args=%common_clang_flags% %wasm_clang_flags% ../%tests_source_path%"
 if "%USE_EMSCRIPTEN%"=="1" (

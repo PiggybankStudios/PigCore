@@ -45,6 +45,10 @@ ClayUIRenderer clay = ZEROED;
 u16 clayFont = 0;
 bool isFileMenuOpen = false;
 #endif
+#if BUILD_WITH_IMGUI
+ImguiUI* imgui = nullptr;
+bool isImguiDemoWindowOpen = false;
+#endif
 
 #if BUILD_WITH_CLAY
 //Call Clay__CloseElement once if false, three times if true (i.e. twicfe inside the if statement and once after)
@@ -192,6 +196,16 @@ void AppInit(void)
 	clayFont = AddClayUIRendererFont(&clay, &testFont, GetDefaultFontStyleFlags(&testFont));
 	#endif
 	
+	#if BUILD_WITH_IMGUI
+	FlagSet(stdHeap->flags, ArenaFlag_AllowFreeWithoutSize);
+	#if TARGET_IS_WINDOWS
+	const void* nativeWindowHandle = sapp_win32_get_hwnd();
+	#else
+	#error We need to figure out how to get the name window handle from sokol_app on this TARGET!
+	#endif
+	imgui = InitImguiUI(stdHeap, nativeWindowHandle);
+	#endif
+	
 	InitMouseState(&mouse);
 	InitKeyboardState(&keyboard);
 	
@@ -241,6 +255,24 @@ void AppFrame(void)
 	}
 	#endif
 	
+	#if BUILD_WITH_IMGUI
+	{
+		ImguiInput imguiInput = ZEROED;
+		imguiInput.elapsedMs = NUM_MS_PER_SECOND/60.0f; //TODO: Actually get deltaTime from appInput
+		imguiInput.keyboard = &keyboard;
+		imguiInput.mouse = &mouse;
+		imguiInput.isMouseOverOther = false;
+		imguiInput.isWindowFocused = true;
+		imguiInput.windowFocusedChanged = false;
+		imguiInput.isTyping = false;
+		ImguiOutput imguiOutput = ZEROED;
+		UpdateImguiInput(imgui, &imguiInput, &imguiOutput);
+		// platform->SetMouseCursorType(imguiOutput.cursorType);
+		// if (!isTyping && imguiOutput.isImguiTypingFocused) { isTyping = true; }
+		// if (!isMouseOverUi && imguiOutput.isMouseOverImgui) { isMouseOverUi = true; }
+	}
+	#endif
+	
 	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
 	{
 		SetDepth(1.0f);
@@ -269,7 +301,6 @@ void AppFrame(void)
 		UpdateBox2DTest();
 		RenderBox2DTest();
 		#endif
-		
 		
 		#if BUILD_WITH_CLAY
 		BeginClayUIRender(&clay.clay, windowSize, 16.6f, false, mouse.position, IsMouseBtnDown(&mouse, MouseBtn_Left), mouse.scrollDelta);
@@ -316,6 +347,27 @@ void AppFrame(void)
 		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&clay.clay);
 		RenderClayCommandArray(&clay, &gfx, &clayRenderCommands);
 		#endif //BUILD_WITH_CLAY
+		
+		#if BUILD_WITH_IMGUI
+		GfxSystem_ImguiBeginFrame(&gfx, imgui);
+		if (igBeginMainMenuBar())
+		{
+			if (igBeginMenu("Menu", true))
+			{
+				igMenuItem_BoolPtr("Demo Window", nullptr, &isImguiDemoWindowOpen, true);
+				if (igMenuItem_Bool("Close", "Alt+F4", false, true)) { sapp_request_quit(); }
+				igEndMenu();
+			}
+			// igSameLine(igGetWindowWidth() - 120, 0);
+			// igTextColored(ToImVec4FromColor(MonokaiGray1), "(%s to Toggle)", GetKeyStr(IMGUI_TOPBAR_TOGGLE_HOTKEY));
+			igEndMainMenuBar();
+		}
+		if (isImguiDemoWindowOpen)
+		{
+			igShowDemoWindow(&isImguiDemoWindowOpen);
+		}
+		GfxSystem_ImguiEndFrame(&gfx, imgui);
+		#endif
 	}
 	EndFrame();
 	
