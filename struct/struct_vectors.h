@@ -326,7 +326,7 @@ typedef Vec4Raw v4r;
 #define V3_Up            NewV3( 0.0f,  1.0f,  0.0f)
 #define V3_Backward      NewV3( 0.0f,  0.0f, -1.0f)
 #define V3_Forward       NewV3( 0.0f,  0.0f,  1.0f)
-#define V3_Zero_Const    (v3){{ 0.0f,  0.0f,  0.0f}}
+#define V3_Zero_Const    {{ 0.0f,  0.0f,  0.0f}}
 
 #define V3i_Zero          NewV3i( 0,  0,  0)
 #define V3i_One           NewV3i( 1,  1,  1)

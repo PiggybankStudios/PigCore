@@ -19,15 +19,19 @@ if errorlevel 1 (
 )
 
 set extract_define=python %scripts%\extract_define.py ../build_config.h
+for /f "delims=" %%i in ('%extract_define% DEBUG_BUILD') do set DEBUG_BUILD=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_INTO_SINGLE_UNIT') do set BUILD_INTO_SINGLE_UNIT=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_SHADERS') do set BUILD_SHADERS=%%i
-for /f "delims=" %%i in ('%extract_define% DEBUG_BUILD') do set DEBUG_BUILD=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_IMGUI_OBJ') do set BUILD_IMGUI_OBJ=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_IMGUI_OBJ_IF_NEEDED') do set BUILD_IMGUI_OBJ_IF_NEEDED=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_PHYSX_OBJ') do set BUILD_PHYSX_OBJ=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_PHYSX_OBJ_IF_NEEDED') do set BUILD_PHYSX_OBJ_IF_NEEDED=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN') do set BUILD_PIGGEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN_IF_NEEDED') do set BUILD_PIGGEN_IF_NEEDED=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_PIGGEN') do set RUN_PIGGEN=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_INTO_SINGLE_UNIT') do set BUILD_INTO_SINGLE_UNIT=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIG_CORE_LIB') do set BUILD_PIG_CORE_LIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIG_CORE_LIB_IF_NEEDED') do set BUILD_PIG_CORE_LIB_IF_NEEDED=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_APP_EXE') do set BUILD_APP_EXE=%%i
@@ -40,9 +44,11 @@ for /f "delims=" %%i in ('%extract_define% USE_EMSCRIPTEN') do set USE_EMSCRIPTE
 for /f "delims=" %%i in ('%extract_define% ENABLE_AUTO_PROFILE') do set ENABLE_AUTO_PROFILE=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH_RAYLIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_BOX2D') do set BUILD_WITH_BOX2D=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL') do set BUILD_WITH_SOKOL=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_GFX') do set BUILD_WITH_SOKOL_GFX=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_APP') do set BUILD_WITH_SOKOL_APP=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SDL') do set BUILD_WITH_SDL=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_OPENVR') do set BUILD_WITH_OPENVR=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_PHYSX') do set BUILD_WITH_OPENVR=%%i
 for /f "delims=" %%i in ('%extract_define% PROJECT_DLL_NAME') do set PROJECT_DLL_NAME=%%i
 for /f "delims=" %%i in ('%extract_define% PROJECT_EXE_NAME') do set PROJECT_EXE_NAME=%%i
 
@@ -71,13 +77,18 @@ if "%BUILD_WINDOWS%"=="1" ( echo VsDevCmd.bat took %vsdevcmd_elapsed_seconds_par
 :: +--------------------------------------------------------------+
 :: |                       Compiler Options                       |
 :: +--------------------------------------------------------------+
+:: /std:clatest = Use latest C language spec features
+:: /experimental:c11atomics = Enables _Atomic types
+set c_cl_flags=/std:clatest /experimental:c11atomics
+:: /wd4471 = a forward declaration of an unscoped enumeration must have an underlying type
+:: /wd5054 = operator '|': deprecated between enumerations of different types
+set cpp_cl_flags=/std:c++20 /wd4471 /wd5054
 :: /FC = Full path for error messages
 :: /nologo = Suppress the startup banner
 :: /W4 = Warning level 4 [just below /Wall]
 :: /WX = Treat warnings as errors
-:: /std:clatest = Use latest C language spec features
-:: /experimental:c11atomics = Enables _Atomic types
-set common_cl_flags=/FC /nologo /W4 /WX /std:clatest /experimental:c11atomics
+:: /Gd = Use __cdecl calling convention (this is the default)
+set common_cl_flags=/FC /nologo /W4 /WX /Gd
 :: -fdiagnostics-absolute-paths = Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 :: -std=gnu2x = Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
 :: NOTE: Clang Warning Options: https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
@@ -131,7 +142,10 @@ if "%DEBUG_BUILD%"=="1" (
 
 :: -incremental:no = Suppresses warning about doing a full link when it can't find the previous .exe result. We don't need this when doing unity builds
 :: /LIBPATH = Add a library search path
-set common_ld_flags=-incremental:no
+:: Gdi32.lib = Needed for os_font.h
+set common_ld_flags=-incremental:no /NOLOGO Gdi32.lib
+set pig_core_ld_flags=
+set platform_ld_flags=
 
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	if "%BUILD_INTO_SINGLE_UNIT%"=="1" (
@@ -140,13 +154,15 @@ if "%BUILD_WITH_RAYLIB%"=="1" (
 		REM Shell32.lib  = Shlobj.h ? 
 		REM kernel32.lib = ?
 		REM winmm.lib    = ?
-		set common_ld_flags=%common_ld_flags% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
+		set common_ld_flags=raylib.lib %common_ld_flags% gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
 		REM TODO:: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
 	) else (
-		set common_ld_flags=%common_ld_flags% raylibdll.lib
+		set common_ld_flags=raylibdll.lib %common_ld_flags%
 	)
 )
-
+if "%BUILD_WITH_PHYSX%"=="1" (
+	set pig_core_ld_flags=%pig_core_ld_flags% PhysX_static_64.lib
+)
 if "%DEBUG_BUILD%"=="1" (
 	set common_ld_flags=%common_ld_flags% /LIBPATH:"%root%\third_party\_lib_debug" /LIBPATH:"%core%\third_party\_lib_debug"
 ) else (
@@ -195,7 +211,7 @@ for %%y in ("%shader_list:,=" "%") do (
 		set shader_file_path_fw_slash=!shader_file_path:\=/!
 		set shader_file_dir=%%y:~0,-1%
 		if "%BUILD_WINDOWS%"=="1" (
-			cl /c %common_cl_flags% /I"!shader_file_dir!" /Fo"!object_name!" !shader_file_path!
+			cl /c %common_cl_flags% %c_cl_flags% /I"!shader_file_dir!" /Fo"!object_name!" !shader_file_path!
 		)
 		if "%BUILD_LINUX%"=="1" (
 			if not exist linux mkdir linux
@@ -217,7 +233,7 @@ rem echo shader_linux_object_files %shader_linux_object_files%
 :: /Fe = Set the output exe file name
 set piggen_source_path=%core%/piggen/piggen_main.c
 set piggen_exe_path=piggen.exe
-set piggen_cl_args=%common_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
+set piggen_cl_args=%common_cl_flags% %c_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
 
 if "%BUILD_PIGGEN_IF_NEEDED%"=="1" (
 	if not exist %piggen_exe_path% (
@@ -241,13 +257,71 @@ if "%RUN_PIGGEN%"=="1" (
 )
 
 :: +--------------------------------------------------------------+
+:: |                       Build imgui.obj                        |
+:: +--------------------------------------------------------------+
+set imgui_source_path=%core%/ui/ui_imgui_main.cpp
+set imgui_obj_path=imgui.obj
+set imgui_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%core%\third_party\imgui" /Fo%imgui_obj_path% %imgui_source_path%
+if "%BUILD_WITH_IMGUI%"=="1" (
+	set pig_core_ld_flags=%pig_core_ld_flags% %imgui_obj_path%
+)
+
+if "%BUILD_IMGUI_OBJ_IF_NEEDED%"=="1" (
+	if "%BUILD_WINDOWS%"=="1" (
+		if not exist %imgui_obj_path% (
+			set BUILD_IMGUI_OBJ=1
+		)
+	)
+)
+
+if "%BUILD_IMGUI_OBJ%"=="1" (
+	if "%BUILD_WINDOWS%"=="1" (
+		del "%imgui_obj_path%" > NUL 2> NUL
+		
+		echo.
+		echo [Building %imgui_obj_path% for Windows...]
+		cl %imgui_cl_args%
+		echo [Built %imgui_obj_path% for Windows!]
+	)
+)
+
+:: +--------------------------------------------------------------+
+:: |                     Build physx_capi.obj                     |
+:: +--------------------------------------------------------------+
+set physx_source_path=%core%/phys/phys_physx_capi_main.cpp
+set physx_obj_path=physx_capi.obj
+set physx_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%core%\third_party\physx" /Fo%physx_obj_path% %physx_source_path%
+if "%BUILD_WITH_PHYSX%"=="1" (
+	set pig_core_ld_flags=%pig_core_ld_flags% %physx_obj_path%
+)
+
+if "%BUILD_PHYSX_OBJ_IF_NEEDED%"=="1" (
+	if "%BUILD_WINDOWS%"=="1" (
+		if not exist %physx_obj_path% (
+			set BUILD_PHYSX_OBJ=1
+		)
+	)
+)
+
+if "%BUILD_PHYSX_OBJ%"=="1" (
+	if "%BUILD_WINDOWS%"=="1" (
+		del "%physx_obj_path%" > NUL 2> NUL
+		
+		echo.
+		echo [Building %physx_obj_path% for Windows...]
+		cl %physx_cl_args%
+		echo [Built %physx_obj_path% for Windows!]
+	)
+)
+
+:: +--------------------------------------------------------------+
 :: |                      Build pig_core.dll                      |
 :: +--------------------------------------------------------------+
 set pig_core_source_path=%core%/dll/dll_main.c
 set pig_core_dll_path=pig_core.dll
 set pig_core_lib_path=pig_core.lib
 set pig_core_so_path=libpig_core.so
-set pig_core_cl_args=%common_cl_flags% %pig_core_defines% /Fe%pig_core_dll_path% %pig_core_source_path% /link %common_ld_flags% /DLL
+set pig_core_cl_args=%common_cl_flags% %c_cl_flags% %pig_core_defines% /Fe%pig_core_dll_path% %pig_core_source_path% /link %common_ld_flags% %pig_core_ld_flags% /DLL
 :: -fPIC = "Position Independent Code" (Required for globals to work properly?)
 :: -shared = ?
 set pig_core_clang_args=%common_clang_flags% %linux_clang_flags% -fPIC -shared -o %pig_core_so_path% ../%pig_core_source_path%
@@ -307,12 +381,14 @@ if "%BUILD_INTO_SINGLE_UNIT%"=="1" (
 :: |                 Build %PROJECT_EXE_NAME%.exe                 |
 :: +--------------------------------------------------------------+
 set platform_source_path=%app%/platform_main.c
+set resources_rc_path=%app%\win_resources.rc
+set resources_res_path=win_resources.res
 set platform_exe_path=%PROJECT_EXE_NAME%.exe
 set platform_bin_path=%PROJECT_EXE_NAME%
-set platform_cl_args=%common_cl_flags% /Fe%platform_exe_path% %platform_source_path% /link %common_ld_flags%
+set platform_cl_args=%common_cl_flags% %c_cl_flags% /Fe%platform_exe_path% %platform_source_path% /link %common_ld_flags% %platform_ld_flags% %resources_res_path%
 set platform_clang_args=%common_clang_flags% %linux_clang_flags% -o %platform_bin_path% ../%platform_source_path%
 if "%BUILD_INTO_SINGLE_UNIT%"=="1" (
-	set platform_cl_args=%platform_cl_args% %shader_object_files%
+	set platform_cl_args=%platform_cl_args% %pig_core_ld_flags% %shader_object_files%
 	set platform_clang_args=%platform_clang_args% %shader_linux_object_files%
 ) else (
 	REM -rpath = Add to RPATH so that libpig_core.so can be found in this folder (it doesn't need to be copied to any system folder)
@@ -326,6 +402,7 @@ if "%BUILD_APP_EXE%"=="1" (
 		
 		echo.
 		echo [Building %platform_exe_path% for Windows...]
+		rc /nologo /Fo%resources_res_path% %resources_rc_path%
 		cl %platform_cl_args%
 		echo [Built %platform_exe_path% for Windows!]
 		
@@ -368,7 +445,7 @@ if "%BUILD_APP_EXE%"=="1" (
 set app_source_path=%app%/app_main.c
 set app_dll_path=%PROJECT_DLL_NAME%.dll
 set app_so_path=%PROJECT_DLL_NAME%.so
-set app_dll_cl_args=%common_cl_flags% /Fe%app_dll_path% %app_source_path% /link %common_ld_flags% %pig_core_lib_path% /DLL %shader_object_files%
+set app_dll_cl_args=%common_cl_flags% %c_cl_flags% /Fe%app_dll_path% %app_source_path% /link %common_ld_flags% %pig_core_lib_path% %shader_object_files% /DLL
 set app_dll_clang_args=%common_clang_flags% %linux_clang_flags% -shared -lpig_core  -o %app_so_path% ../%app_source_path% %shader_linux_object_files%
 
 if "%BUILD_INTO_SINGLE_UNIT%"=="1" (

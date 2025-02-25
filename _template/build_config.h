@@ -14,6 +14,14 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define _BUILD_CONFIG_H
 
+// Controls whether we are making a build that we want to run with a Debugger.
+// This often sacrifices runtime speed or code size for extra debug information.
+// Debug builds often take less time to compile as well.
+#define DEBUG_BUILD  1
+
+// This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
+#define BUILD_INTO_SINGLE_UNIT  0
+
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS 1
 // Build binaries for Linux platform(s)
@@ -23,11 +31,6 @@ Description:
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 1
 
-// Controls whether we are making a build that we want to run with a Debugger.
-// This often sacrifices runtime speed or code size for extra debug information.
-// Debug builds often take less time to compile as well.
-#define DEBUG_BUILD  1
-
 // Compiles core/piggen/main.c
 #define BUILD_PIGGEN            0
 // Same as above but only compiles if piggen.exe doesn't already exist in the _build folder
@@ -35,8 +38,15 @@ Description:
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN              1
 
-// This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
-#define BUILD_INTO_SINGLE_UNIT  0
+// Builds imgui.obj from imgui.cpp and cimgui.cpp (really it's building core/ui/ui_imgui_main.cpp which includes those)
+#define BUILD_IMGUI_OBJ           0
+// Same as above but only compiles if the obj doesn't already exist in the _build folder
+#define BUILD_IMGUI_OBJ_IF_NEEDED 1
+
+// Builds physx_capi.obj from core/phys/phys_physx_capi_main.cpp
+#define BUILD_PHYSX_OBJ           0
+// Same as above but only compiles if the obj doesn't already exist in the _build folder
+#define BUILD_PHYSX_OBJ_IF_NEEDED 1
 
 // Compiles piggen/main.c to either dynamic or static library
 #define BUILD_PIG_CORE_LIB            0
@@ -66,15 +76,23 @@ Description:
 #define ENABLE_AUTO_PROFILE 0
 
 // Enables being linked with raylib.lib and it's required libraries
-#define BUILD_WITH_RAYLIB 1
+#define BUILD_WITH_RAYLIB 0
 // Enables being linked with box2d.lib and it's required libraries
-#define BUILD_WITH_BOX2D 0
-// Enables using sokol header files (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL 0
+#define BUILD_WITH_BOX2D  0
+// Enables using sokol_gfx.h header files (and on non-windows OS' adds required libraries for Sokol to work)
+#define BUILD_WITH_SOKOL_GFX  1
+// Enables using sokol_app.h header files (and on non-windows OS' adds required libraries for Sokol to work)
+#define BUILD_WITH_SOKOL_APP  1
 // Enables being linked with SDL.lib and it's required libraries
-#define BUILD_WITH_SDL 0
+#define BUILD_WITH_SDL    0
 // Enables being linked with openvr_api.lib and it's required libraries
 #define BUILD_WITH_OPENVR 0
+// Enables using Clay header files
+#define BUILD_WITH_CLAY   0
+// Enables using Dear ImGui through cimgui.h/cpp
+#define BUILD_WITH_IMGUI  0
+// Enables being linked with PhysX_static_64.lib as well as physx_capi.obj
+#define BUILD_WITH_PHYSX  0
 
 #define PROJECT_READABLE_NAME New Pig Core Project
 #define PROJECT_FOLDER_NAME   NewPigCoreProject

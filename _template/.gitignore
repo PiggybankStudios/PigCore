@@ -4,3 +4,4 @@ _data/resources/
 _build/
 _data/*.exe
 _data/*.dll
+_data/*.ini

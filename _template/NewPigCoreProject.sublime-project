@@ -2,13 +2,17 @@
 	"folders":
 	[
 		{
-			"name": "Game",
+			"name": "Root",
 			"path": ".",
 			"folder_exclude_patterns": [
 				"_build",
 				"_data",
 				"core",
 				"third_party",
+			],
+			"file_exclude_patterns": [
+				"*.glsl.h",
+				"*.glsl.c",
 			],
 		},
 		{
@@ -17,7 +21,9 @@
 			"folder_exclude_patterns": [
 				"_build",
 				"_media",
+				"_template",
 				"third_party",
+				"wasm",
 				"tests",
 			],
 			"file_exclude_patterns": [
@@ -89,6 +95,43 @@
 				"LICENSE",
 				"README.md",
 			],
+		},
+		{
+			"name": "cgltf",
+			"path": "core/third_party/cgltf",
+			"folder_exclude_patterns": [
+				".github",
+				"fuzz",
+				"test",
+			],
+			"file_exclude_patterns": [
+				"LICENSE",
+				"README.md",
+			],
+		},
+		{
+			"name": "Clay",
+			"path": "core/third_party/clay",
+			"folder_exclude_patterns": [
+				".github",
+				"bindings",
+				"cmake",
+			],
+			"file_exclude_patterns": [
+				".dockerignore",
+				".gitignore",
+				"CMakeLists.txt",
+				"LICENSE.md",
+				"README.md",
+			],
+		},
+		{
+			"name": "cimgui",
+			"path": "core/third_party/cimgui",
+		},
+		{
+			"name": "Dear ImGui",
+			"path": "core/third_party/imgui",
 		},
 	],
 	"settings":
