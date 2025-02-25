@@ -29,7 +29,7 @@ void GetPhysPosFromRenderPos(i32 inX, i32 inY, r32* outX, r32* outY)
 	*outY = ((r32)inY - PHYS_WORLD_OFFSET_Y) / PHYS_WORLD_SCALE_Y;
 }
 
-#include "tests/tests_raylib_box2d_render.c"
+#include "tests/tests_box2d_renderers.c"
 
 void SpawnBox(r32 x, r32 y, r32 width, r32 height)
 {
@@ -68,6 +68,8 @@ void InitBox2DTest()
 	
 	#if BUILD_WITH_RAYLIB
 	InitRaylibBox2DRender();
+	#elif BUILD_WITH_SOKOL_GFX
+	InitSokolBox2DRender();
 	#endif
 }
 
@@ -91,7 +93,7 @@ void UpdateBox2DTest()
 
 void RenderBox2DTest()
 {
-	#if BUILD_WITH_RAYLIB
+	#if BUILD_WITH_RAYLIB || BUILD_WITH_SOKOL_GFX
 	b2World_Draw(physWorld, &physDebugDraw);
 	#endif //BUILD_WITH_RAYLIB
 }

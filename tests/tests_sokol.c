@@ -27,7 +27,6 @@ Description:
 #include "tests/simple_shader.glsl.h"
 #include "tests/main2d_shader.glsl.h"
 
-
 int MyMain(int argc, char* argv[]);
 
 // +--------------------------------------------------------------+
@@ -37,6 +36,111 @@ sg_pass_action sokolPassAction;
 Shader simpleShader;
 Shader main2dShader;
 Texture gradientTexture;
+Font testFont;
+u64 programTime = 0;
+MouseState mouse = ZEROED;
+KeyboardState keyboard = ZEROED;
+#if BUILD_WITH_CLAY
+ClayUIRenderer clay = ZEROED;
+u16 clayFont = 0;
+bool isFileMenuOpen = false;
+#endif
+
+#if BUILD_WITH_CLAY
+//Call Clay__CloseElement once if false, three times if true (i.e. twicfe inside the if statement and once after)
+bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color32 textColor, r32 dropDownWidth)
+{
+	ScratchBegin(scratch);
+	Color32 highlightColor = ColorLerpSimple(backColor, White, 0.3f);
+	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopBtn", btnText);
+	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopBtnMenu", btnText);
+	Clay_ElementId btnId = ToClayId(btnIdStr);
+	Clay_ElementId menuId = ToClayId(menuIdStr);
+	bool isBtnHoveredOrMenuOpen = (Clay_PointerOver(btnId) || *isOpenPntr);
+	Clay__OpenElement();
+	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+		.id = btnId,
+		.layout = { .padding = { 12, 12, 8, 8 } },
+		.backgroundColor = ToClayColor(isBtnHoveredOrMenuOpen ? highlightColor : backColor),
+		.cornerRadius = CLAY_CORNER_RADIUS(5),
+	});
+	CLAY_TEXT(
+		ToClayString(StrLit(btnText)),
+		CLAY_TEXT_CONFIG({
+			.fontId = clayFont,
+			.fontSize = 18,
+			.textColor = ToClayColor(textColor),
+		})
+	);
+	bool isHovered = (Clay_PointerOver(btnId) || Clay_PointerOver(menuId));
+	if (Clay_PointerOver(btnId) && IsMouseBtnPressed(&mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
+	if (*isOpenPntr == true && !isHovered) { *isOpenPntr = false; }
+	if (*isOpenPntr)
+	{
+		Clay__OpenElement();
+		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+			.id = menuId,
+			.floating = {
+				.attachTo = CLAY_ATTACH_TO_PARENT,
+				.attachPoints = {
+					.parent = CLAY_ATTACH_POINT_LEFT_BOTTOM,
+				},
+			},
+			.layout = {
+				.padding = { 0, 0, 0, 0 },
+			}
+		});
+		
+		Clay__OpenElement();
+		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+			.layout = {
+				.layoutDirection = CLAY_TOP_TO_BOTTOM,
+				.sizing = {
+					.width = CLAY_SIZING_FIXED(dropDownWidth),
+				},
+				.childGap = 2,
+			},
+			.backgroundColor = ToClayColor(MonokaiBack),
+			.cornerRadius = CLAY_CORNER_RADIUS(8),
+		});
+	}
+	ScratchEnd(scratch);
+	return *isOpenPntr;
+}
+
+//Call Clay__CloseElement once after if statement
+bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
+{
+	ScratchBegin(scratch);
+	Color32 hoverColor = ColorLerpSimple(backColor, White, 0.3f);
+	Color32 pressColor = ColorLerpSimple(backColor, White, 0.1f);
+	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_Btn", btnText);
+	Clay_ElementId btnId = ToClayId(btnIdStr);
+	bool isHovered = Clay_PointerOver(btnId);
+	bool isPressed = (isHovered && IsMouseBtnDown(&mouse, MouseBtn_Left));
+	Clay__OpenElement();
+	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+		.id = btnId,
+		.layout = {
+			.padding = CLAY_PADDING_ALL(8),
+			.sizing = { .width = CLAY_SIZING_GROW(0), },
+		},
+		.backgroundColor = ToClayColor(isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
+		.cornerRadius = CLAY_CORNER_RADIUS(8),
+	});
+	CLAY_TEXT(
+		ToClayString(StrLit(btnText)),
+		CLAY_TEXT_CONFIG({
+			.fontId = clayFont,
+			.fontSize = 18,
+			.textColor = ToClayColor(textColor),
+		})
+	);
+	ScratchEnd(scratch);
+	return (isHovered && IsMouseBtnPressed(&mouse, MouseBtn_Left));
+}
+
+#endif //BUILD_WITH_CLAY
 
 // +--------------------------------------------------------------+
 // |                          Initialize                          |
@@ -68,8 +172,32 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating);
 	Assert(gradientTexture.error == Result_Success);
 	
+	testFont = InitFont(stdHeap, StrLit("testFont"));
+	Result attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold);
+	Assert(attachResult == Result_Success);
+	// OsWriteBinFile(FilePathLit("Default.ttf"), testFont.ttfFile);
+	FontCharRange charRanges[] = {
+		FontCharRange_ASCII,
+		FontCharRange_LatinExt,
+	};
+	Result bakeResult = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+	Assert(bakeResult == Result_Success);
+	FillFontKerningTable(&testFont);
+	
 	InitCompiledShader(&simpleShader, stdHeap, simple); Assert(simpleShader.error == Result_Success);
 	InitCompiledShader(&main2dShader, stdHeap, main2d); Assert(main2dShader.error == Result_Success);
+	
+	#if BUILD_WITH_CLAY
+	InitClayUIRenderer(stdHeap, V2_Zero, &clay);
+	clayFont = AddClayUIRendererFont(&clay, &testFont, GetDefaultFontStyleFlags(&testFont));
+	#endif
+	
+	InitMouseState(&mouse);
+	InitKeyboardState(&keyboard);
+	
+	#if BUILD_WITH_BOX2D
+	InitBox2DTest();
+	#endif
 	
 	ScratchEnd(scratch);
 }
@@ -100,10 +228,20 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 // +--------------------------------------------------------------+
 void AppFrame(void)
 {
+	programTime += 16; //TODO: Calculate this!
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	
-	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiBack, 1.0f);
+	#if BUILD_WITH_BOX2D
+	if (IsMouseBtnPressed(&mouse, MouseBtn_Left))
+	{
+		r32 physMouseX, physMouseY;
+		GetPhysPosFromRenderPos((i32)mouse.position.X, (i32)mouse.position.Y, &physMouseX, &physMouseY);
+		SpawnBox(physMouseX, physMouseY, GetRandR32Range(mainRandom, 0.3f, 1.0f), GetRandR32Range(mainRandom, 0.3f, 1.0f));
+	}
+	#endif
+	
+	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
 	{
 		SetDepth(1.0f);
 		BindShader(&main2dShader);
@@ -126,6 +264,58 @@ void AppFrame(void)
 				DrawTexturedRectangle(NewRec(tileSize.Width * xIndex, tileSize.Height * yIndex, tileSize.Width, tileSize.Height), White, &gradientTexture);
 			}
 		}
+		
+		#if BUILD_WITH_BOX2D
+		UpdateBox2DTest();
+		RenderBox2DTest();
+		#endif
+		
+		
+		#if BUILD_WITH_CLAY
+		BeginClayUIRender(&clay.clay, windowSize, 16.6f, false, mouse.position, IsMouseBtnDown(&mouse, MouseBtn_Left), mouse.scrollDelta);
+		{
+			CLAY({ .id = CLAY_ID("FullscreenContainer"),
+				.layout = {
+					.layoutDirection = CLAY_TOP_TO_BOTTOM,
+					.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+				},
+			})
+			{
+				CLAY({ .id = CLAY_ID("Topbar"),
+					.layout = {
+						.sizing = {
+							.height = CLAY_SIZING_FIXED(30),
+							.width = CLAY_SIZING_GROW(0),
+						},
+						.padding = { 0, 0, 0, 0 },
+						.childGap = 2,
+						.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+					},
+					.backgroundColor = ToClayColor(MonokaiBack),
+				})
+				{
+					if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
+					{
+						if (ClayBtn("Open", Transparent, MonokaiWhite))
+						{
+							//TODO: Implement me!
+						} Clay__CloseElement();
+						
+						if (ClayBtn("Close Program", Transparent, MonokaiWhite))
+						{
+							sapp_request_quit();
+						} Clay__CloseElement();
+						
+						Clay__CloseElement();
+						Clay__CloseElement();
+					}
+					Clay__CloseElement();
+				}
+			}
+		}
+		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&clay.clay);
+		RenderClayCommandArray(&clay, &gfx, &clayRenderCommands);
+		#endif //BUILD_WITH_CLAY
 	}
 	EndFrame();
 	
@@ -137,6 +327,8 @@ void AppFrame(void)
 	gfx.numPipelineChanges = 0;
 	gfx.numBindingChanges = 0;
 	gfx.numDrawCalls = 0;
+	RefreshMouseState(&mouse, sapp_mouse_locked(), NewV2(sapp_widthf()/2.0f, sapp_heightf()/2.0f));
+	RefreshKeyboardState(&keyboard);
 }
 
 // +--------------------------------------------------------------+
@@ -144,32 +336,28 @@ void AppFrame(void)
 // +--------------------------------------------------------------+
 void AppEvent(const sapp_event* event)
 {
-	switch (event->type)
+	bool handledEvent = HandleSokolKeyboardAndMouseEvents(event, programTime, &keyboard, &mouse, sapp_mouse_locked());
+	
+	if (!handledEvent)
 	{
-		case SAPP_EVENTTYPE_KEY_DOWN:          WriteLine_D("Event: KEY_DOWN");          break;
-		case SAPP_EVENTTYPE_KEY_UP:            WriteLine_D("Event: KEY_UP");            break;
-		case SAPP_EVENTTYPE_CHAR:              WriteLine_D("Event: CHAR");              break;
-		case SAPP_EVENTTYPE_MOUSE_DOWN:        WriteLine_D("Event: MOUSE_DOWN");        break;
-		case SAPP_EVENTTYPE_MOUSE_UP:          WriteLine_D("Event: MOUSE_UP");          break;
-		case SAPP_EVENTTYPE_MOUSE_SCROLL:      WriteLine_D("Event: MOUSE_SCROLL");      break;
-		case SAPP_EVENTTYPE_MOUSE_MOVE:        /*WriteLine_D("Event: MOUSE_MOVE");*/    break;
-		case SAPP_EVENTTYPE_MOUSE_ENTER:       /*WriteLine_D("Event: MOUSE_ENTER");*/   break;
-		case SAPP_EVENTTYPE_MOUSE_LEAVE:       /*WriteLine_D("Event: MOUSE_LEAVE");*/   break;
-		case SAPP_EVENTTYPE_TOUCHES_BEGAN:     WriteLine_D("Event: TOUCHES_BEGAN");     break;
-		case SAPP_EVENTTYPE_TOUCHES_MOVED:     WriteLine_D("Event: TOUCHES_MOVED");     break;
-		case SAPP_EVENTTYPE_TOUCHES_ENDED:     WriteLine_D("Event: TOUCHES_ENDED");     break;
-		case SAPP_EVENTTYPE_TOUCHES_CANCELLED: WriteLine_D("Event: TOUCHES_CANCELLED"); break;
-		case SAPP_EVENTTYPE_RESIZED:           PrintLine_D("Event: RESIZED %dx%d / %dx%d", event->window_width, event->window_height, event->framebuffer_width, event->framebuffer_height); break;
-		case SAPP_EVENTTYPE_ICONIFIED:         WriteLine_D("Event: ICONIFIED");         break;
-		case SAPP_EVENTTYPE_RESTORED:          WriteLine_D("Event: RESTORED");          break;
-		case SAPP_EVENTTYPE_FOCUSED:           WriteLine_D("Event: FOCUSED");           break;
-		case SAPP_EVENTTYPE_UNFOCUSED:         WriteLine_D("Event: UNFOCUSED");         break;
-		case SAPP_EVENTTYPE_SUSPENDED:         WriteLine_D("Event: SUSPENDED");         break;
-		case SAPP_EVENTTYPE_RESUMED:           WriteLine_D("Event: RESUMED");           break;
-		case SAPP_EVENTTYPE_QUIT_REQUESTED:    WriteLine_D("Event: QUIT_REQUESTED");    break;
-		case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  WriteLine_D("Event: CLIPBOARD_PASTED");  break;
-		case SAPP_EVENTTYPE_FILES_DROPPED:     WriteLine_D("Event: FILES_DROPPED");     break;
-		default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
+		switch (event->type)
+		{
+			case SAPP_EVENTTYPE_TOUCHES_BEGAN:     WriteLine_D("Event: TOUCHES_BEGAN");     break;
+			case SAPP_EVENTTYPE_TOUCHES_MOVED:     WriteLine_D("Event: TOUCHES_MOVED");     break;
+			case SAPP_EVENTTYPE_TOUCHES_ENDED:     WriteLine_D("Event: TOUCHES_ENDED");     break;
+			case SAPP_EVENTTYPE_TOUCHES_CANCELLED: WriteLine_D("Event: TOUCHES_CANCELLED"); break;
+			case SAPP_EVENTTYPE_RESIZED:           PrintLine_D("Event: RESIZED %dx%d / %dx%d", event->window_width, event->window_height, event->framebuffer_width, event->framebuffer_height); break;
+			case SAPP_EVENTTYPE_ICONIFIED:         WriteLine_D("Event: ICONIFIED");         break;
+			case SAPP_EVENTTYPE_RESTORED:          WriteLine_D("Event: RESTORED");          break;
+			case SAPP_EVENTTYPE_FOCUSED:           WriteLine_D("Event: FOCUSED");           break;
+			case SAPP_EVENTTYPE_UNFOCUSED:         WriteLine_D("Event: UNFOCUSED");         break;
+			case SAPP_EVENTTYPE_SUSPENDED:         WriteLine_D("Event: SUSPENDED");         break;
+			case SAPP_EVENTTYPE_RESUMED:           WriteLine_D("Event: RESUMED");           break;
+			case SAPP_EVENTTYPE_QUIT_REQUESTED:    WriteLine_D("Event: QUIT_REQUESTED");    break;
+			case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  WriteLine_D("Event: CLIPBOARD_PASTED");  break;
+			case SAPP_EVENTTYPE_FILES_DROPPED:     WriteLine_D("Event: FILES_DROPPED");     break;
+			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
+		}
 	}
 }
 

@@ -21,6 +21,8 @@ for /f "delims=" %%i in ('%extract_define% DEBUG_BUILD') do set DEBUG_BUILD=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN') do set BUILD_PIGGEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_SHADERS') do set BUILD_SHADERS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_PIGGEN') do set RUN_PIGGEN=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_IMGUI_OBJ') do set BUILD_IMGUI_OBJ=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_PHYSX_OBJ') do set BUILD_PHYSX_OBJ=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIG_CORE_DLL') do set BUILD_PIG_CORE_DLL=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_TESTS') do set BUILD_TESTS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_TESTS') do set RUN_TESTS=%%i
@@ -37,6 +39,9 @@ for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_GFX') do set BUILD_W
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_APP') do set BUILD_WITH_SOKOL_APP=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SDL') do set BUILD_WITH_SDL=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_OPENVR') do set BUILD_WITH_OPENVR=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_CLAY') do set BUILD_WITH_CLAY=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_IMGUI') do set BUILD_WITH_IMGUI=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_WITH_PHYSX') do set BUILD_WITH_PHYSX=%%i
 
 :: +--------------------------------------------------------------+
 :: |                      Init MSVC Compiler                      |
@@ -151,7 +156,7 @@ set tests_libraries=Gdi32.lib User32.lib
 set tests_clang_libraries=
 set pig_core_dll_libraries=Gdi32.lib User32.lib
 if "%BUILD_WITH_RAYLIB%"=="1" (
-	REM raylib.lib   = ?
+	REM raylib.lib   = Raylib (NOTE: It has to come BEFORE User32.lib otherwise CloseWindow will conflict)
 	REM Shell32.lib  = Shlobj.h ? 
 	REM kernel32.lib = ?
 	REM winmm.lib    = ?
@@ -159,7 +164,7 @@ if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM Shlwapi.lib  = ?
 	REM Ole32.lib    = Combaseapi.h, CoCreateInstance
 	REM Advapi32.lib = Processthreadsapi.h, OpenProcessToken, GetTokenInformation
-	set tests_libraries=%tests_libraries% raylib.lib Shell32.lib kernel32.lib winmm.lib
+	set tests_libraries=raylib.lib %tests_libraries% Shell32.lib kernel32.lib winmm.lib
 	REM NOTE: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
 	set pig_core_dll_libraries=%pig_core_dll_libraries% raylib.lib gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
 )
