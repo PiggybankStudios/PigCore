@@ -26,6 +26,7 @@ Description:
 
 #include "tests/simple_shader.glsl.h"
 #include "tests/main2d_shader.glsl.h"
+#include "tests/main3d_shader.glsl.h"
 
 int MyMain(int argc, char* argv[]);
 
@@ -35,11 +36,16 @@ int MyMain(int argc, char* argv[]);
 sg_pass_action sokolPassAction;
 Shader simpleShader;
 Shader main2dShader;
+Shader main3dShader;
 Texture gradientTexture;
 Font testFont;
+VertBuffer cubeBuffer;
+VertBuffer sphereBuffer;
 u64 programTime = 0;
 MouseState mouse = ZEROED;
 KeyboardState keyboard = ZEROED;
+v3 cameraPos = V3_Zero_Const;
+v3 cameraLookDir = V3_Zero_Const;
 #if BUILD_WITH_CLAY
 ClayUIRenderer clay = ZEROED;
 u16 clayFont = 0;
@@ -48,6 +54,9 @@ bool isFileMenuOpen = false;
 #if BUILD_WITH_IMGUI
 ImguiUI* imgui = nullptr;
 bool isImguiDemoWindowOpen = false;
+#endif
+#if BUILD_WITH_PHYSX
+PhysicsWorld* physWorld = nullptr;
 #endif
 
 #if BUILD_WITH_CLAY
@@ -143,8 +152,40 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 	ScratchEnd(scratch);
 	return (isHovered && IsMouseBtnPressed(&mouse, MouseBtn_Left));
 }
-
 #endif //BUILD_WITH_CLAY
+
+void DrawBox(box boundingBox, Color32 color)
+{
+	mat4 worldMat = Mat4_Identity;
+	TransformMat4(&worldMat, MakeScaleMat4(boundingBox.Size));
+	TransformMat4(&worldMat, MakeTranslateMat4(boundingBox.BottomLeftBack));
+	SetWorldMat(worldMat);
+	SetTintColor(color);
+	BindVertBuffer(&cubeBuffer);
+	DrawVertices();
+}
+void DrawObb3(obb3 boundingBox, Color32 color)
+{
+	mat4 worldMat = Mat4_Identity;
+	TransformMat4(&worldMat, MakeTranslateMat4(FillV3(-0.5f)));
+	TransformMat4(&worldMat, MakeScaleMat4(boundingBox.Size));
+	TransformMat4(&worldMat, ToMat4FromQuat(boundingBox.Rotation));
+	TransformMat4(&worldMat, MakeTranslateMat4(boundingBox.Center));
+	SetWorldMat(worldMat);
+	SetTintColor(color);
+	BindVertBuffer(&cubeBuffer);
+	DrawVertices();
+}
+void DrawSphere(Sphere sphere, Color32 color)
+{
+	mat4 worldMat = Mat4_Identity;
+	TransformMat4(&worldMat, MakeScaleMat4(FillV3(sphere.Radius)));
+	TransformMat4(&worldMat, MakeTranslateMat4(sphere.Center));
+	SetWorldMat(worldMat);
+	SetTintColor(color);
+	BindVertBuffer(&sphereBuffer);
+	DrawVertices();
+}
 
 // +--------------------------------------------------------------+
 // |                          Initialize                          |
@@ -188,8 +229,27 @@ void AppInit(void)
 	Assert(bakeResult == Result_Success);
 	FillFontKerningTable(&testFont);
 	
+	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
+	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
+	for (uxx iIndex = 0; iIndex < cubeMesh.numIndices; iIndex++)
+	{
+		MyMemCopy(&cubeVertices[iIndex], &cubeMesh.vertices[cubeMesh.indices[iIndex]], sizeof(Vertex3D));
+	}
+	cubeBuffer = InitVertBuffer3D(stdHeap, StrLit("cube"), VertBufferUsage_Static, cubeMesh.numIndices, cubeVertices, false);
+	Assert(cubeBuffer.error == Result_Success);
+	
+	GeneratedMesh sphereMesh = GenerateVertsForSphere(scratch, NewSphereV(V3_Zero, 1.0f), 12, 20, White);
+	Vertex3D* sphereVertices = AllocArray(Vertex3D, scratch, sphereMesh.numIndices);
+	for (uxx iIndex = 0; iIndex < sphereMesh.numIndices; iIndex++)
+	{
+		MyMemCopy(&sphereVertices[iIndex], &sphereMesh.vertices[sphereMesh.indices[iIndex]], sizeof(Vertex3D));
+	}
+	sphereBuffer = InitVertBuffer3D(stdHeap, StrLit("sphere"), VertBufferUsage_Static, sphereMesh.numIndices, sphereVertices, false);
+	Assert(sphereBuffer.error == Result_Success);
+	
 	InitCompiledShader(&simpleShader, stdHeap, simple); Assert(simpleShader.error == Result_Success);
 	InitCompiledShader(&main2dShader, stdHeap, main2d); Assert(main2dShader.error == Result_Success);
+	InitCompiledShader(&main3dShader, stdHeap, main3d); Assert(main3dShader.error == Result_Success);
 	
 	#if BUILD_WITH_CLAY
 	InitClayUIRenderer(stdHeap, V2_Zero, &clay);
@@ -208,9 +268,16 @@ void AppInit(void)
 	
 	InitMouseState(&mouse);
 	InitKeyboardState(&keyboard);
+	cameraLookDir = V3_Right;
 	
 	#if BUILD_WITH_BOX2D
 	InitBox2DTest();
+	#endif
+	
+	#if BUILD_WITH_PHYSX
+	FlagSet(stdHeap->flags, ArenaFlag_AllowFreeWithoutSize);
+	physWorld = InitPhysicsPhysX(stdHeap);
+	CreatePhysicsTest(physWorld);
 	#endif
 	
 	ScratchEnd(scratch);
@@ -246,6 +313,28 @@ void AppFrame(void)
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	
+	if (IsKeyboardKeyPressed(&keyboard, Key_F)) { sapp_lock_mouse(!sapp_mouse_locked()); }
+	if (IsKeyboardKeyPressed(&keyboard, Key_Escape) && sapp_mouse_locked()) { sapp_lock_mouse(false); }
+	if (sapp_mouse_locked())
+	{
+		r32 cameraHoriRot = AtanR32(cameraLookDir.Z, cameraLookDir.X);
+		r32 cameraVertRot = AtanR32(cameraLookDir.Y, Length(NewV2(cameraLookDir.X, cameraLookDir.Z)));
+		cameraHoriRot = AngleFixR32(cameraHoriRot - mouse.lockedPosDelta.X / 500.0f);
+		cameraVertRot = ClampR32(cameraVertRot - mouse.lockedPosDelta.Y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
+		r32 horizontalRadius = CosR32(cameraVertRot);
+		cameraLookDir = NewV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
+		
+		v3 horizontalForwardVec = Normalize(NewV3(cameraLookDir.X, 0.0f, cameraLookDir.Z));
+		v3 horizontalRightVec = Normalize(NewV3(cameraLookDir.Z, 0.0f, -cameraLookDir.X));
+		const r32 moveSpeed = IsKeyboardKeyDown(&keyboard, Key_Shift) ? 0.08f : 0.02f;
+		if (IsKeyboardKeyDown(&keyboard, Key_W)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, Key_A)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, -moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, Key_S)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, -moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, Key_D)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, Key_E)) { cameraPos = Add(cameraPos, Mul(V3_Up, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, Key_Q)) { cameraPos = Add(cameraPos, Mul(V3_Down, moveSpeed)); }
+	}
+	
 	#if BUILD_WITH_BOX2D
 	if (IsMouseBtnPressed(&mouse, MouseBtn_Left))
 	{
@@ -253,6 +342,12 @@ void AppFrame(void)
 		GetPhysPosFromRenderPos((i32)mouse.position.X, (i32)mouse.position.Y, &physMouseX, &physMouseY);
 		SpawnBox(physMouseX, physMouseY, GetRandR32Range(mainRandom, 0.3f, 1.0f), GetRandR32Range(mainRandom, 0.3f, 1.0f));
 	}
+	UpdateBox2DTest();
+	#endif
+	
+	#if BUILD_WITH_PHYSX
+	UpdatePhysicsWorld(physWorld, 16.6f);
+	if (IsKeyboardKeyDown(&keyboard, Key_R)) { CreatePhysicsTest(physWorld); }
 	#endif
 	
 	#if BUILD_WITH_IMGUI
@@ -275,99 +370,144 @@ void AppFrame(void)
 	
 	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
 	{
-		SetDepth(1.0f);
-		BindShader(&main2dShader);
-		BindTexture(&gradientTexture);
-		
-		mat4 projMat = Mat4_Identity;
-		TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
-		TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
-		TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
-		SetProjectionMat(projMat);
-		SetViewMat(Mat4_Identity);
-		
-		v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
-		i32 numColumns = FloorR32i(windowSize.Width / tileSize.Width);
-		i32 numRows = FloorR32i(windowSize.Height / tileSize.Height);
-		for (i32 yIndex = 0; yIndex < numRows; yIndex++)
+		// +==============================+
+		// |         3D Rendering         |
+		// +==============================+
 		{
-			for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
+			BindShader(&main3dShader);
+			#if defined(SOKOL_GLCORE)
+			mat4 projMat = MakePerspectiveMat4Gl(ToRadians32(45), windowSize.Width/windowSize.Height, 0.05f, 400);
+			#else
+			mat4 projMat = MakePerspectiveMat4Dx(ToRadians32(45), windowSize.Width/windowSize.Height, 0.05f, 400);
+			#endif
+			SetProjectionMat(projMat);
+			mat4 viewMat = MakeLookAtMat4(cameraPos, Add(cameraPos, cameraLookDir), V3_Up);
+			SetViewMat(viewMat);
+			
+			BindTexture(&gfx.pixelTexture);
+			DrawBox(NewBox(3, 0.5f, 0, 1, 1, 1), MonokaiPurple);
+			DrawSphere(NewSphere(2.5f, 0, 0.8f, 1.0f), MonokaiGreen);
+			
+			#if BUILD_WITH_PHYSX
+			VarArrayLoop(&physWorld->bodies, bIndex)
 			{
-				DrawTexturedRectangle(NewRec(tileSize.Width * xIndex, tileSize.Height * yIndex, tileSize.Width, tileSize.Height), White, &gradientTexture);
-			}
-		}
-		
-		#if BUILD_WITH_BOX2D
-		UpdateBox2DTest();
-		RenderBox2DTest();
-		#endif
-		
-		#if BUILD_WITH_CLAY
-		BeginClayUIRender(&clay.clay, windowSize, 16.6f, false, mouse.position, IsMouseBtnDown(&mouse, MouseBtn_Left), mouse.scrollDelta);
-		{
-			CLAY({ .id = CLAY_ID("FullscreenContainer"),
-				.layout = {
-					.layoutDirection = CLAY_TOP_TO_BOTTOM,
-					.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-				},
-			})
-			{
-				CLAY({ .id = CLAY_ID("Topbar"),
-					.layout = {
-						.sizing = {
-							.height = CLAY_SIZING_FIXED(30),
-							.width = CLAY_SIZING_GROW(0),
-						},
-						.padding = { 0, 0, 0, 0 },
-						.childGap = 2,
-						.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
-					},
-					.backgroundColor = ToClayColor(MonokaiBack),
-				})
+				VarArrayLoopGet(PhysicsBody, body, &physWorld->bodies, bIndex);
+				PhysicsBodyTransform transform = GetPhysicsBodyTransform(body);
+				v3 position = NewV3(transform.position.X, transform.position.Y, transform.position.Z);
+				quat rotation = NewQuat(transform.rotation.X, transform.rotation.Y, transform.rotation.Z, transform.rotation.W);
+				if (body->index == physWorld->groundPlaneBodyIndex)
 				{
-					if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
-					{
-						if (ClayBtn("Open", Transparent, MonokaiWhite))
-						{
-							//TODO: Implement me!
-						} Clay__CloseElement();
-						
-						if (ClayBtn("Close Program", Transparent, MonokaiWhite))
-						{
-							sapp_request_quit();
-						} Clay__CloseElement();
-						
-						Clay__CloseElement();
-						Clay__CloseElement();
-					}
-					Clay__CloseElement();
+					//TODO: Figure out how PhysX want's us to intepret rotation/position on a Plane when drawing it
+					DrawObb3(NewObb3V(position, NewV3(100.0f, 0.0001f, 100.0f), Quat_Identity), PalGreenDarker);
+				}
+				else
+				{
+					DrawObb3(NewObb3V(position, NewV3(1.0f, 1.0f, 1.0f), rotation), GetPredefPalColorByIndex(bIndex));
 				}
 			}
+			#endif
 		}
-		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&clay.clay);
-		RenderClayCommandArray(&clay, &gfx, &clayRenderCommands);
-		#endif //BUILD_WITH_CLAY
 		
-		#if BUILD_WITH_IMGUI
-		GfxSystem_ImguiBeginFrame(&gfx, imgui);
-		if (igBeginMainMenuBar())
+		// +==============================+
+		// |         2D Rendering         |
+		// +==============================+
 		{
-			if (igBeginMenu("Menu", true))
+			SetDepth(1.0f);
+			BindShader(&main2dShader);
+			ClearDepthBuffer(1.0f);
+			BindTexture(&gradientTexture);
+			
+			mat4 projMat = Mat4_Identity;
+			TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
+			TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
+			TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
+			SetProjectionMat(projMat);
+			SetViewMat(Mat4_Identity);
+			
+			#if 0
+			v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
+			i32 numColumns = FloorR32i(windowSize.Width / tileSize.Width);
+			i32 numRows = FloorR32i(windowSize.Height / tileSize.Height);
+			for (i32 yIndex = 0; yIndex < numRows; yIndex++)
 			{
-				igMenuItem_BoolPtr("Demo Window", nullptr, &isImguiDemoWindowOpen, true);
-				if (igMenuItem_Bool("Close", "Alt+F4", false, true)) { sapp_request_quit(); }
-				igEndMenu();
+				for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
+				{
+					DrawTexturedRectangle(NewRec(tileSize.Width * xIndex, tileSize.Height * yIndex, tileSize.Width, tileSize.Height), White, &gradientTexture);
+				}
 			}
-			// igSameLine(igGetWindowWidth() - 120, 0);
-			// igTextColored(ToImVec4FromColor(MonokaiGray1), "(%s to Toggle)", GetKeyStr(IMGUI_TOPBAR_TOGGLE_HOTKEY));
-			igEndMainMenuBar();
+			#endif
+			
+			#if BUILD_WITH_BOX2D
+			RenderBox2DTest();
+			#endif
+			
+			#if BUILD_WITH_CLAY
+			BeginClayUIRender(&clay.clay, windowSize, 16.6f, false, mouse.position, IsMouseBtnDown(&mouse, MouseBtn_Left), mouse.scrollDelta);
+			{
+				CLAY({ .id = CLAY_ID("FullscreenContainer"),
+					.layout = {
+						.layoutDirection = CLAY_TOP_TO_BOTTOM,
+						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+					},
+				})
+				{
+					CLAY({ .id = CLAY_ID("Topbar"),
+						.layout = {
+							.sizing = {
+								.height = CLAY_SIZING_FIXED(30),
+								.width = CLAY_SIZING_GROW(0),
+							},
+							.padding = { 0, 0, 0, 0 },
+							.childGap = 2,
+							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+						},
+						.backgroundColor = ToClayColor(MonokaiBack),
+					})
+					{
+						if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
+						{
+							if (ClayBtn("Open", Transparent, MonokaiWhite))
+							{
+								//TODO: Implement me!
+							} Clay__CloseElement();
+							
+							if (ClayBtn("Close Program", Transparent, MonokaiWhite))
+							{
+								sapp_request_quit();
+							} Clay__CloseElement();
+							
+							Clay__CloseElement();
+							Clay__CloseElement();
+						}
+						Clay__CloseElement();
+					}
+				}
+			}
+			Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&clay.clay);
+			RenderClayCommandArray(&clay, &gfx, &clayRenderCommands);
+			#endif //BUILD_WITH_CLAY
+			
+			#if BUILD_WITH_IMGUI
+			GfxSystem_ImguiBeginFrame(&gfx, imgui);
+			if (igBeginMainMenuBar())
+			{
+				if (igBeginMenu("Menu", true))
+				{
+					igMenuItem_BoolPtr("Demo Window", nullptr, &isImguiDemoWindowOpen, true);
+					if (igMenuItem_Bool("Close", "Alt+F4", false, true)) { sapp_request_quit(); }
+					igEndMenu();
+				}
+				// igSameLine(igGetWindowWidth() - 120, 0);
+				// igTextColored(ToImVec4FromColor(MonokaiGray1), "(%s to Toggle)", GetKeyStr(IMGUI_TOPBAR_TOGGLE_HOTKEY));
+				igEndMainMenuBar();
+			}
+			if (isImguiDemoWindowOpen)
+			{
+				igShowDemoWindow(&isImguiDemoWindowOpen);
+			}
+			GfxSystem_ImguiEndFrame(&gfx, imgui);
+			#endif
 		}
-		if (isImguiDemoWindowOpen)
-		{
-			igShowDemoWindow(&isImguiDemoWindowOpen);
-		}
-		GfxSystem_ImguiEndFrame(&gfx, imgui);
-		#endif
 	}
 	EndFrame();
 	
@@ -394,6 +534,15 @@ void AppEvent(const sapp_event* event)
 	{
 		switch (event->type)
 		{
+    		case SAPP_EVENTTYPE_KEY_DOWN:          /* do nothing */                         break;
+    		case SAPP_EVENTTYPE_KEY_UP:            /* do nothing */                         break;
+    		case SAPP_EVENTTYPE_CHAR:              /* do nothing */                         break;
+    		case SAPP_EVENTTYPE_MOUSE_DOWN:        /* do nothing */                         break;
+    		case SAPP_EVENTTYPE_MOUSE_UP:          /* do nothing */                         break;
+    		case SAPP_EVENTTYPE_MOUSE_SCROLL:      /* do nothing */                         break;
+    		case SAPP_EVENTTYPE_MOUSE_MOVE:        /* do nothing */                         break;
+    		case SAPP_EVENTTYPE_MOUSE_ENTER:       /* do nothing */                         break;
+    		case SAPP_EVENTTYPE_MOUSE_LEAVE:       /* do nothing */                         break;
 			case SAPP_EVENTTYPE_TOUCHES_BEGAN:     WriteLine_D("Event: TOUCHES_BEGAN");     break;
 			case SAPP_EVENTTYPE_TOUCHES_MOVED:     WriteLine_D("Event: TOUCHES_MOVED");     break;
 			case SAPP_EVENTTYPE_TOUCHES_ENDED:     WriteLine_D("Event: TOUCHES_ENDED");     break;

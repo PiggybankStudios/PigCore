@@ -34,7 +34,7 @@ Description:
 #define RUN_PIGGEN     0
 
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
-#define BUILD_IMGUI_OBJ 1
+#define BUILD_IMGUI_OBJ 0
 // Builds phys/phys_physx_capi_main.cpp in C++ mode into physx_capi.obj which will be linked into pig_core.dll and/or tests.exe
 #define BUILD_PHYSX_OBJ 1
 
@@ -63,7 +63,7 @@ Description:
 // Enables tests.exe being linked with raylib.lib and it's required libraries
 #define BUILD_WITH_RAYLIB    0
 // Enables tests.exe being linked with box2d.lib and it's required libraries
-#define BUILD_WITH_BOX2D     1
+#define BUILD_WITH_BOX2D     0
 // Enables pig_core.dll and tests.exe using sokol_gfx.h (and on non-windows OS' adds required libraries for Sokol to work)
 #define BUILD_WITH_SOKOL_GFX 1
 // Enables tests.exe using sokol_app.h to create and manage a graphical window
@@ -73,10 +73,10 @@ Description:
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries
 #define BUILD_WITH_OPENVR    0
 // Enables tests.exe using clay.h to render UI elements
-#define BUILD_WITH_CLAY      1
+#define BUILD_WITH_CLAY      0
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
-#define BUILD_WITH_IMGUI     1
+#define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib
-#define BUILD_WITH_PHYSX     0
+#define BUILD_WITH_PHYSX     1
 
 #endif //  _BUILD_CONFIG_H

@@ -246,7 +246,7 @@ for %%y in ("%shader_list:,=" "%") do (
 		set shader_file_path_fw_slash=!shader_file_path:\=/!
 		set shader_file_dir=%%y:~0,-1%
 		if "%BUILD_WINDOWS%"=="1" (
-			cl /c %common_cl_flags% /I"!shader_file_dir!" /Fo"!object_name!" !shader_file_path!
+			cl /c %common_cl_flags% %c_cl_flags% /I"!shader_file_dir!" /Fo"!object_name!" !shader_file_path!
 		)
 		if "%BUILD_LINUX%"=="1" (
 			if not exist linux mkdir linux
@@ -294,6 +294,10 @@ if "%RUN_PIGGEN%"=="1" (
 set imgui_source_path=%root%/ui/ui_imgui_main.cpp
 set imgui_obj_path=imgui.obj
 set imgui_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%root%\third_party\imgui" /Fo%imgui_obj_path% %imgui_source_path%
+if "%BUILD_WITH_IMGUI%"=="1" (
+	set pig_core_dll_libraries=%pig_core_dll_libraries% %imgui_obj_path%
+	set tests_libraries=%tests_libraries% %imgui_obj_path%
+)
 if "%BUILD_IMGUI_OBJ%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		del "%imgui_obj_path%" > NUL 2> NUL
@@ -306,6 +310,28 @@ if "%BUILD_IMGUI_OBJ%"=="1" (
 )
 
 :: +--------------------------------------------------------------+
+:: |                     Build physx_capi.obj                     |
+:: +--------------------------------------------------------------+
+set physx_source_path=%root%/phys/phys_physx_capi_main.cpp
+set physx_obj_path=physx_capi.obj
+set physx_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%root%\third_party\physx" /Fo%physx_obj_path% %physx_source_path%
+if "%BUILD_WITH_PHYSX%"=="1" (
+	set pig_core_dll_libraries=%pig_core_dll_libraries% %physx_obj_path% PhysX_static_64.lib
+	set tests_libraries=%tests_libraries% %physx_obj_path% PhysX_static_64.lib
+)
+
+if "%BUILD_PHYSX_OBJ%"=="1" (
+	if "%BUILD_WINDOWS%"=="1" (
+		del "%physx_obj_path%" > NUL 2> NUL
+		
+		echo.
+		echo [Building %physx_obj_path% for Windows...]
+		cl %physx_cl_args%
+		echo [Built %physx_obj_path% for Windows!]
+	)
+)
+
+:: +--------------------------------------------------------------+
 :: |                      Build pig_core.dll                      |
 :: +--------------------------------------------------------------+
 set pig_core_dll_source_path=%root%/dll/dll_main.c
@@ -314,9 +340,6 @@ set pig_core_lib_path=pig_core.lib
 set pig_core_so_path=libpig_core.so
 set pig_core_dll_args=%common_cl_flags% %c_cl_flags% /Fe%pig_core_dll_path% %pig_core_dll_source_path% /link /DLL %common_ld_flags% %pig_core_dll_libraries%
 set pig_core_so_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% -fPIC -shared -o %pig_core_so_path% ../%pig_core_dll_source_path%
-if "%BUILD_WITH_IMGUI%"=="1" (
-	set pig_core_dll_args=%pig_core_dll_args% %imgui_obj_path%
-)
 if "%BUILD_PIG_CORE_DLL%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo.
@@ -353,9 +376,6 @@ set tests_cl_args=%common_cl_flags% %c_cl_flags% /Fe%tests_exe_path% %tests_sour
 set tests_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% %tests_clang_libraries% -o %tests_bin_path% ../%tests_source_path% %shader_linux_object_files%
 if "%ENABLE_AUTO_PROFILE%"=="1" (
 	set tests_clang_args=-finstrument-functions %tests_clang_args%
-)
-if "%BUILD_WITH_IMGUI%"=="1" (
-	set tests_cl_args=%tests_cl_args% %imgui_obj_path%
 )
 set tests_web_args=%common_clang_flags% %wasm_clang_flags% ../%tests_source_path%"
 if "%USE_EMSCRIPTEN%"=="1" (
