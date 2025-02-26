@@ -22,10 +22,15 @@ Description:
 #include "os/os_error.h" //required by os_virtual_mem.h and os_file.h
 #include "os/os_virtual_mem.h"
 
-#include "mem/mem_arena.h" //required by os_path.h, os_file.h and os_process_info.h
-#include "struct/struct_string.h" //required by os_path.h and os_file.h
+#include "mem/mem_arena.h" //required by os_path.h, os_program_args.h, os_file.h and os_process_info.h
+#include "struct/struct_string.h" //required by os_path.h, os_program_args.h and os_file.h
 
 #include "os/os_path.h"
+
+#include "struct/struct_var_array.h" //required by os_program_args.h
+#include "misc/misc_parsing.h" //required by os_program_args.h
+
+#include "os/os_program_args.h"
 
 #include "misc/misc_result.h" //required by os_file.h and os_process_info.h
 
