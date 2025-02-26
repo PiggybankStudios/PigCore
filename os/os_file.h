@@ -124,6 +124,7 @@ struct OsDll
 	PIG_CORE_INLINE bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart);
 	Result OsLoadDll(FilePath path, OsDll* dllOut);
 	void* OsFindDllFunc(OsDll* dll, Str8 funcName);
+	Result OsDoOpenFileDialog(Arena* arena, Str8* pathOut);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -977,6 +978,63 @@ PEXP void* OsFindDllFunc(OsDll* dll, Str8 funcName)
 	
 	return result;
 	
+}
+
+// +--------------------------------------------------------------+
+// |                  File Open and Save Dialogs                  |
+// +--------------------------------------------------------------+
+#if TARGET_IS_WINDOWS
+static bool Win32_HasCoInitialized = false;
+#endif
+
+PEXP Result OsDoOpenFileDialog(Arena* arena, Str8* pathOut)
+{
+	Result result = Result_None;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		//TODO: This implementation has only been lightly tested!
+		
+		if (!Win32_HasCoInitialized)
+		{
+			HRESULT initResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+			Assert(SUCCEEDED(initResult));
+			Win32_HasCoInitialized = true;
+		}
+		
+		IFileOpenDialog* dialogPntr = nullptr;
+		HRESULT createInstanceResult = CoCreateInstance((const IID *const)&CLSID_FileOpenDialog, NULL, CLSCTX_ALL, (const IID *const)&IID_IFileOpenDialog, (void**)(&dialogPntr));
+		if (!SUCCEEDED(createInstanceResult)) { return Result_Failure; } //TODO: Make a better failure code!
+		
+		HRESULT showResult = dialogPntr->lpVtbl->Show(dialogPntr, NULL);
+		if (!SUCCEEDED(showResult)) { dialogPntr->lpVtbl->Release(dialogPntr); return Result_Canceled; }
+		
+		IShellItem* shellItem = nullptr;
+		HRESULT getResult = dialogPntr->lpVtbl->GetResult(dialogPntr, &shellItem);
+		if (!SUCCEEDED(getResult)) { dialogPntr->lpVtbl->Release(dialogPntr); return Result_Failure; } //TOOD: Make a better failure code!
+		
+		PWSTR filePathPntr16 = nullptr;
+		HRESULT getDisplayNameResult = shellItem->lpVtbl->GetDisplayName(shellItem, SIGDN_FILESYSPATH, &filePathPntr16);
+		if (!SUCCEEDED(getDisplayNameResult)) { dialogPntr->lpVtbl->Release(dialogPntr); shellItem->lpVtbl->Release(shellItem); return Result_Failure; } //TODO: Make a better failure code!
+		
+		if (pathOut != nullptr)
+		{
+			Str16 filePathStr16 = Str16Lit(filePathPntr16);
+			*pathOut = ConvertUcs2StrToUtf8(arena, filePathStr16, false);
+			Assert(pathOut->length == 0 || pathOut->chars != nullptr);
+		}
+		
+		CoTaskMemFree(filePathPntr16);
+		shellItem->lpVtbl->Release(shellItem);
+		dialogPntr->lpVtbl->Release(dialogPntr);
+		result = Result_Success;
+	}
+	#else
+	AssertMsg(false, "OsDoOpenFileDialog does not support the current platform yet!");
+	result = Result_UnsupportedPlatform;
+	#endif
+	
+	return result;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

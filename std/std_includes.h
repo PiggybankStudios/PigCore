@@ -92,6 +92,8 @@ Descriptions:
 	#undef DrawTextEx
 	#undef PlaySound
 	#endif
+	
+	#include <shobjidl_core.h> //for CoInitializeEx, etc. in OsDoOpenFileDialog
 #endif
 
 #endif //  _STD_INCLUDES_H

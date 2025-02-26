@@ -57,7 +57,7 @@ struct ClayUI
 	PIG_CORE_INLINE v2 ToV2iFromClay(Clay_Dimensions clayDimensions);
 	PIG_CORE_INLINE Clay_Dimensions ToClayDimensions(v2 vector);
 	void InitClayUI(Arena* arena, v2 windowSize, ClayUiMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut);
-	PIG_CORE_INLINE void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 frameTime, bool isMouseOverOther, v2 mousePos, bool isMouseDown, v2 mouseScrollDelta);
+	PIG_CORE_INLINE void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 elapsedMs, bool isMouseOverOther, v2 mousePos, bool isMouseDown, v2 mouseScrollDelta);
 	PIG_CORE_INLINE Clay_RenderCommandArray EndClayUIRender(ClayUI* clay);
 #endif
 
@@ -97,7 +97,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayUiMeasureText_f* measureTe
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
 }
 
-PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 frameTime, bool isMouseOverOther, v2 mousePos, bool isMouseDown, v2 mouseScrollDelta)
+PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 elapsedMs, bool isMouseOverOther, v2 mousePos, bool isMouseDown, v2 mouseScrollDelta)
 {
 	NotNull(clay);
 	NotNull(clay->arena);
@@ -109,7 +109,7 @@ PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 frameTime, bool is
 	else
 	{
 		Clay_SetPointerState(ToClayVector2(mousePos), isMouseDown);
-		Clay_UpdateScrollContainers(true, ToClayVector2(mouseScrollDelta), frameTime);
+		Clay_UpdateScrollContainers(true, ToClayVector2(mouseScrollDelta), elapsedMs / 1000.0f);
 	}
 	Clay_BeginLayout();
 }

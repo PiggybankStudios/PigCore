@@ -32,6 +32,7 @@ enum Result
 	Result_Failure,
 	Result_Unknown, //TODO: This name conflicts with UNKNOWN_STR macro thats returned from the GetResultStr function!
 	Result_Finished,
+	Result_Canceled,
 	
 	Result_InvalidCharacter,
 	Result_InvalidUtf8,
@@ -93,6 +94,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_Failure: return "Failure";
 		case Result_Unknown: return "Unknown";
 		case Result_Finished: return "Finished";
+		case Result_Canceled: return "Canceled";
 		case Result_InvalidCharacter: return "InvalidCharacter";
 		case Result_InvalidUtf8: return "InvalidUtf8";
 		case Result_InvalidType: return "InvalidType";
