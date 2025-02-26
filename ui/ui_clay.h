@@ -109,7 +109,7 @@ PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 elapsedMs, bool is
 	else
 	{
 		Clay_SetPointerState(ToClayVector2(mousePos), isMouseDown);
-		Clay_UpdateScrollContainers(true, ToClayVector2(mouseScrollDelta), elapsedMs / 1000.0f);
+		Clay_UpdateScrollContainers(false, ToClayVector2(mouseScrollDelta), elapsedMs / 1000.0f);
 	}
 	Clay_BeginLayout();
 }
