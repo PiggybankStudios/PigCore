@@ -92,6 +92,16 @@ struct OsDll
 	#endif
 };
 
+typedef struct OsFileWriteTime OsFileWriteTime;
+struct OsFileWriteTime
+{
+	#if TARGET_IS_WINDOWS
+	FILETIME fileTime;
+	#else
+	u8 placeholder;
+	#endif
+};
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -125,6 +135,7 @@ struct OsDll
 	Result OsLoadDll(FilePath path, OsDll* dllOut);
 	void* OsFindDllFunc(OsDll* dll, Str8 funcName);
 	Result OsDoOpenFileDialog(Arena* arena, Str8* pathOut);
+	Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -1034,6 +1045,31 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, Str8* pathOut)
 	result = Result_UnsupportedPlatform;
 	#endif
 	
+	return result;
+}
+
+PEXP Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)
+{
+	NotNullStr(filePath);
+	Result result = Result_None;
+	#if TARGET_IS_WINDOWS
+	{
+		ScratchBegin(scratch);
+		Str8 filePathNt = AllocStrAndCopy(scratch, filePath.length, filePath.chars, true);
+		NotNull(filePathNt.chars);
+		WIN32_FILE_ATTRIBUTE_DATA attributeData;
+		if (GetFileAttributesExA(filePathNt.chars, GetFileExInfoStandard, &attributeData))
+		{
+			if (timeOut != nullptr) { timeOut->fileTime = attributeData.ftLastWriteTime; }
+			result = Result_Success;
+		}
+		else { result = Result_NotFound; }
+		ScratchEnd(scratch);
+	}
+	#else
+	AssertMsg(false, "OsGetFileWriteTime does not support the current platform yet!");
+	result = Result_UnsupportedPlatform;
+	#endif
 	return result;
 }
 
