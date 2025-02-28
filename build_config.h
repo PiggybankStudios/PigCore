@@ -20,9 +20,9 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 1
+#define BUILD_WINDOWS 0
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   0
+#define BUILD_LINUX   1
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     0
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
@@ -36,10 +36,10 @@ Description:
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
 #define BUILD_IMGUI_OBJ 0
 // Builds phys/phys_physx_capi_main.cpp in C++ mode into physx_capi.obj which will be linked into pig_core.dll and/or tests.exe
-#define BUILD_PHYSX_OBJ 1
+#define BUILD_PHYSX_OBJ 0
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
-#define BUILD_PIG_CORE_DLL 0
+#define BUILD_PIG_CORE_DLL 1
 
 // Compiles tests/main.c
 #define BUILD_TESTS   1
@@ -61,13 +61,13 @@ Description:
 // | Optional Libraries/Frameworks |
 // +===============================+
 // Enables tests.exe being linked with raylib.lib and it's required libraries
-#define BUILD_WITH_RAYLIB    0
+#define BUILD_WITH_RAYLIB    1
 // Enables tests.exe being linked with box2d.lib and it's required libraries
-#define BUILD_WITH_BOX2D     0
+#define BUILD_WITH_BOX2D     1
 // Enables pig_core.dll and tests.exe using sokol_gfx.h (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL_GFX 1
+#define BUILD_WITH_SOKOL_GFX 0
 // Enables tests.exe using sokol_app.h to create and manage a graphical window
-#define BUILD_WITH_SOKOL_APP 1
+#define BUILD_WITH_SOKOL_APP 0
 // Enables tests.exe being linked with SDL.lib and it's required libraries
 #define BUILD_WITH_SDL       0
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries
@@ -77,6 +77,6 @@ Description:
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
 #define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib
-#define BUILD_WITH_PHYSX     1
+#define BUILD_WITH_PHYSX     0
 
 #endif //  _BUILD_CONFIG_H

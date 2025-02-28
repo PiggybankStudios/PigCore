@@ -38,7 +38,7 @@ Shader simpleShader;
 Shader main2dShader;
 Shader main3dShader;
 Texture gradientTexture;
-Font testFont;
+PigFont testFont;
 VertBuffer cubeBuffer;
 VertBuffer sphereBuffer;
 u64 programTime = 0;

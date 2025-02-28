@@ -26,7 +26,7 @@ Description:
 #define MyStrLength32(str)                 ((u32)strlen(str))
 #define MyStrLength64(str)                 ((u64)strlen(str))
 #if TARGET_IS_WINDOWS
-	#define MyWideStrLength(str)           wcslen(str)
+	#define MyWideStrLength(str)           wcslen((const wchar_t*)str)
 	#define MyWideStrLength32(str)         ((u32)wcslen(str))
 	#define MyWideStrLength64(str)         ((u64)wcslen(str))
 #else

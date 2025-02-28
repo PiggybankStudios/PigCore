@@ -43,9 +43,16 @@ Description:
 #pragma warning(push)
 #pragma warning(disable: 5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
 #endif
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
+#endif
 #include "third_party/stb/stb_truetype.h"
 #if COMPILER_IS_MSVC
 #pragma warning(pop)
+#endif
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic pop
 #endif
 
 typedef enum FontStyleFlag FontStyleFlag;
@@ -128,7 +135,7 @@ struct PigFont
 	FontKerningTable kerningTable;
 };
 
-#if !BUILD_WITH_RAYLIB
+#if !BUILD_WITH_RAYLIB && !TARGET_IS_LINUX
 typedef PigFont Font;
 #endif
 

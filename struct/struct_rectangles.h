@@ -198,37 +198,37 @@ typedef Obb3D obb3;
 #define Rec_Zero NewRec(0.0f, 0.0f, 0.0f, 0.0f)
 #define Rec_Default NewRec(0.0f, 0.0f, 1.0f, 1.0f)
 #define Rec_UnitRec NewRec(-1.0f, -1.0f, 2.0f, 2.0f)
-#define Rec_Zero_Const (rec){ 0.0f, 0.0f, 0.0f, 0.0f }
-#define Rec_Default_Const (rec){ 0.0f, 0.0f, 1.0f, 1.0f }
-#define Rec_UnitRec_Const (rec){ -1.0f, -1.0f, 2.0f, 2.0f }
+#define Rec_Zero_Const (rec){{ 0.0f, 0.0f, 0.0f, 0.0f }}
+#define Rec_Default_Const (rec){{ 0.0f, 0.0f, 1.0f, 1.0f }}
+#define Rec_UnitRec_Const (rec){{ -1.0f, -1.0f, 2.0f, 2.0f }}
 
 #define Reci_Zero NewReci(0, 0, 0, 0)
 #define Reci_Default NewReci(0, 0, 1, 1)
 #define Reci_UnitRec NewReci(-1, -1, 2, 2)
-#define Reci_Zero_Const (reci){ 0, 0, 0, 0 }
-#define Reci_Default_Const (reci){ 0, 0, 1, 1 }
-#define Reci_UnitRec_Const (reci){ -1, -1, 2, 2 }
+#define Reci_Zero_Const (reci){{ 0, 0, 0, 0 }}
+#define Reci_Default_Const (reci){{ 0, 0, 1, 1 }}
+#define Reci_UnitRec_Const (reci){{ -1, -1, 2, 2 }}
 
 #define Box_Zero NewBox(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
 #define Box_Default NewBox(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f)
 #define Box_UnitBox NewBox(-1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f)
 #define Box_Zero_Const (box){ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
-#define Box_Default_Const (box){ 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f }
-#define Box_UnitBox_Const (box){ -1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f }
+#define Box_Default_Const (box){{ 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f }}
+#define Box_UnitBox_Const (box){{ -1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f }}
 
 #define Boxi_Zero NewBoxi(0, 0, 0, 0, 0, 0)
 #define Boxi_Default NewBoxi(0, 0, 0, 1, 1, 1)
 #define Boxi_UnitBox NewBoxi(-1, -1, -1, 2, 2, 2)
-#define Boxi_Zero_Const (boxi){ 0, 0, 0, 0, 0, 0 }
-#define Boxi_Default_Const (boxi){ 0, 0, 0, 1, 1, 1 }
-#define Boxi_UnitBox_Const (boxi){ -1, -1, -1, 2, 2, 2 }
+#define Boxi_Zero_Const (boxi){{ 0, 0, 0, 0, 0, 0 }}
+#define Boxi_Default_Const (boxi){{ 0, 0, 0, 1, 1, 1 }}
+#define Boxi_UnitBox_Const (boxi){{ -1, -1, -1, 2, 2, 2 }}
 
 #define Obb2_Zero NewObb2(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
 #define Obb2_Default NewObb2(0.5f, 0.5f, 1.0f, 1.0f, 0.0f)
 #define Obb2_UnitBox NewObb2(0.0f, 0.0f, 2.0f, 2.0f, 0.0f)
-#define Obb2_Zero_Const (obb2){ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
-#define Obb2_Default_Const (obb2){ 0.5f, 0.5f, 1.0f, 1.0f, 0.0f }
-#define Obb2_UnitBox_Const (obb2){ 0.0f, 0.0f, 2.0f, 2.0f, 0.0f }
+#define Obb2_Zero_Const (obb2){{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }}
+#define Obb2_Default_Const (obb2){{ 0.5f, 0.5f, 1.0f, 1.0f, 0.0f }}
+#define Obb2_UnitBox_Const (obb2){{ 0.0f, 0.0f, 2.0f, 2.0f, 0.0f }}
 
 #define Obb3_Zero NewObb3(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, Quat_Identity)
 #define Obb3_Default NewObb3(0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, Quat_Identity)
