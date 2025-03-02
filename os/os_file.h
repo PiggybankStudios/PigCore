@@ -98,6 +98,7 @@ struct OsFileWriteTime
 	FilePath OsGetFullPath(Arena* arena, FilePath relativePath);
 	PIG_CORE_INLINE uxx OsGetFullPathLength(FilePath relativePath);
 	bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut);
+	PIG_CORE_INLINE bool OsDoesPathExist(FilePath path);
 	PIG_CORE_INLINE bool OsDoesFileExist(FilePath path);
 	PIG_CORE_INLINE bool OsDoesFolderExist(FilePath path);
 	PIG_CORE_INLINE void OsFreeFileIter(OsFileIter* fileIter);
@@ -201,22 +202,32 @@ PEXPI uxx OsGetFullPathLength(FilePath relativePath)
 // +--------------------------------------------------------------+
 PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 {
+	bool result = false;
+	
 	#if TARGET_IS_WINDOWS
 	{
 		ScratchBegin(scratch);
 		FilePath fullPath = OsGetFullPath(scratch, path);
-		DWORD fileType = GetFileAttributesA(fullPath.chars);
-		ScratchEnd(scratch);
-		if (fileType == INVALID_FILE_ATTRIBUTES)
+		BOOL fileExistsResult = PathFileExistsA(fullPath.chars);
+		if (fileExistsResult == TRUE)
 		{
-			SetOptionalOutPntr(isFolderOut, false);
-			return false;
+			if (isFolderOut != nullptr)
+			{
+				DWORD fileType = GetFileAttributesA(fullPath.chars);
+				if (fileType != INVALID_FILE_ATTRIBUTES)
+				{
+					*isFolderOut = IsFlagSet(fileType, FILE_ATTRIBUTE_DIRECTORY);
+					result = true;
+				}
+				else { result = false; }
+			}
+			else { result = true; }
 		}
 		else
 		{
-			SetOptionalOutPntr(isFolderOut, IsFlagSet(fileType, FILE_ATTRIBUTE_DIRECTORY));
-			return true;
+			result = false;
 		}
+		ScratchEnd(scratch);
 	}
 	// #elif TARGET_IS_LINUX
 	// {
@@ -230,8 +241,13 @@ PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 	UNUSED(path);
 	UNUSED(isFolderOut);
 	AssertMsg(false, "OsDoesFileOrFolderExist does not support the current platform yet!");
-	return false;
 	#endif
+	
+	return result;
+}
+PEXPI bool OsDoesPathExist(FilePath path)
+{
+	return OsDoesFileOrFolderExist(path, nullptr);
 }
 PEXPI bool OsDoesFileExist(FilePath path)
 {
