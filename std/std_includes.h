@@ -93,6 +93,7 @@ Descriptions:
 	#undef PlaySound
 	#endif
 	
+	#include <Shlobj.h> //for SHGetSpecialFolderPathA
 	#include <shobjidl_core.h> //for CoInitializeEx, etc. in OsDoOpenFileDialog
 #endif
 
