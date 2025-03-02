@@ -25,7 +25,7 @@ Date:   02\03\2025
 	PIG_CORE_INLINE Key GetKeyFromSokolKeycode(sapp_keycode keycode);
 	Key GetNonAltKeyForKey(Key key, u8 primaryIndex);
 	MouseBtn GetMouseBtnFromSokolMouseButton(sapp_mousebutton mouseButton);
-	bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked);
+	bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, v2i screenSize, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked);
 #endif
 
 // +--------------------------------------------------------------+
@@ -243,7 +243,7 @@ PEXP MouseBtn GetMouseBtnFromSokolMouseButton(sapp_mousebutton mouseButton)
 }
 
 // Returns true if the event is handled as a change to KeyboardState or MouseState
-PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked)
+PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, v2i screenSize, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked)
 {
 	NotNull(event);
 	NotNull(keyboard);
@@ -294,11 +294,23 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 		{
 			if (isMouseLocked)
 			{
+				if (!mouse->isOverWindow) { mouse->isOverWindow = true; } //if the mouse is locked, we assume it's over the window
 				UpdateMouseLockedDelta(mouse, currentTime, NewV2(event->mouse_dx, event->mouse_dy));
 			}
 			else
 			{
 				UpdateMousePosition(mouse, currentTime, NewV2(event->mouse_x, event->mouse_y));
+				
+				//NOTE: This check is needed because isOverWindow starts as false even if the mouse is inside the window when our application starts.
+				// With this, we consider it inside the window the minute it moves. We don't need to handle mouse leaving the window since we should
+				// get events for mouse leaving reliably
+				if (!mouse->isOverWindow)
+				{
+					if (event->mouse_x >= 0 && event->mouse_y >= 0 && event->mouse_x < screenSize.Width && event->mouse_y < screenSize.Height)
+					{
+						mouse->isOverWindow = true;
+					}
+				}
 			}
 			handled = true;
 		} break;
