@@ -24,6 +24,45 @@ Description:
 
 #if BUILD_WITH_CLAY
 
+typedef struct ClayElementUserData ClayElementUserData;
+struct ClayElementUserData
+{
+	int placeholder; //TODO: Add extensions here!
+};
+
+typedef enum TextContraction TextContraction;
+enum TextContraction
+{
+	TextContraction_ClipRight = 0,
+	TextContraction_ClipLeft,
+	TextContraction_EllipseRight,
+	TextContraction_EllipseMiddle,
+	TextContraction_EllipseLeft,
+	TextContraction_Count,
+};
+const char* GetTextContractionStr(TextContraction enumValue)
+{
+	switch (enumValue)
+	{
+		case TextContraction_ClipRight:     return "ClipRight";
+		case TextContraction_ClipLeft:      return "ClipLeft";
+		case TextContraction_EllipseRight:  return "EllipseRight";
+		case TextContraction_EllipseMiddle: return "EllipseMiddle";
+		case TextContraction_EllipseLeft:   return "EllipseLeft";
+		default: return UNKNOWN_STR;
+	}
+}
+
+typedef struct ClayTextUserData ClayTextUserData;
+struct ClayTextUserData
+{
+	TextContraction contraction;
+};
+
+#define CLAY_ELEMENT_USERDATA_TYPE ClayElementUserData
+#define CLAY_TEXT_USERDATA_TYPE ClayTextUserData
+#define CLAY_IMAGEDATA_TYPE struct Texture*
+
 #if PIG_CORE_IMPLEMENTATION
 #define CLAY_IMPLEMENTATION
 #define CLAY_DECOR PEXP

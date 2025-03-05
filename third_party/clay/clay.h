@@ -1,4 +1,7 @@
 // VERSION: 0.12
+// WARNING: Modifications have been made to this version that resides in PigCore.
+//  Please refer to the official Clay repostiory for an unmodified version of this file!
+//  https://github.com/nicbarker/clay
 
 /*
     NOTE: In order to use this library you must define
@@ -44,6 +47,31 @@
 
 #ifndef CLAY_DECOR
 #define CLAY_DECOR //nothing
+#endif
+
+
+//NOTE: These types MUST be able to be assigned to CLAY__DEFAULT_STRUCT, and a Clay__MemCmp with a zeroed version should be equivalent with checking if it's "empty"
+#ifndef CLAY_ELEMENT_USERDATA_TYPE
+#define CLAY_ELEMENT_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_TEXT_USERDATA_TYPE
+#define CLAY_TEXT_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_IMAGEDATA_TYPE
+#define CLAY_IMAGEDATA_TYPE void*
+#endif
+
+#ifndef CLAY_ERROR_USERDATA_TYPE
+#define CLAY_ERROR_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_ONHOVER_USERDATA_TYPE
+#define CLAY_ONHOVER_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_QUERYSCROLL_USERDATA_TYPE
+#define CLAY_QUERYSCROLL_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_MEASURE_USERDATA_TYPE
+#define CLAY_MEASURE_USERDATA_TYPE void*
 #endif
 
 // Public Macro API ------------------------
@@ -368,6 +396,8 @@ typedef struct {
     // text measurement cache, rather than just the pointer and length. This will incur significant performance cost for
     // long bodies of text.
     bool hashStringContents;
+    // A pointer transparently passed through from the original element declaration.
+    CLAY_TEXT_USERDATA_TYPE userData;
 } Clay_TextElementConfig;
 
 CLAY__WRAPPER_STRUCT(Clay_TextElementConfig);
@@ -376,7 +406,7 @@ CLAY__WRAPPER_STRUCT(Clay_TextElementConfig);
 
 // Controls various settings related to image elements.
 typedef struct {
-    void* imageData; // A transparent pointer used to pass image data through to the renderer.
+    CLAY_IMAGEDATA_TYPE imageData; // A transparent pointer used to pass image data through to the renderer.
     Clay_Dimensions sourceDimensions; // The original dimensions of the source image, used to control aspect ratio.
 } Clay_ImageElementConfig;
 
@@ -517,6 +547,8 @@ typedef struct {
     uint16_t letterSpacing;
     // The height of the bounding box for this line of text.
     uint16_t lineHeight;
+    // A pointer transparently passed through from the original text config.
+    CLAY_TEXT_USERDATA_TYPE userData;
 } Clay_TextRenderData;
 
 // Render command data when commandType == CLAY_RENDER_COMMAND_TYPE_RECTANGLE
@@ -540,7 +572,7 @@ typedef struct {
     // The original dimensions of the source image, used to control aspect ratio.
     Clay_Dimensions sourceDimensions;
     // A pointer transparently passed through from the original element definition, typically used to represent image data.
-    void* imageData;
+    CLAY_IMAGEDATA_TYPE imageData;
 } Clay_ImageRenderData;
 
 // Render command data when commandType == CLAY_RENDER_COMMAND_TYPE_CUSTOM
@@ -640,7 +672,7 @@ typedef struct {
     // A struct union containing data specific to this command's commandType.
     Clay_RenderData renderData;
     // A pointer transparently passed through from the original element declaration.
-    void *userData;
+    CLAY_ELEMENT_USERDATA_TYPE userData;
     // The id of this element, transparently passed through from the original element declaration.
     uint32_t id;
     // The z order required for drawing this command correctly.
@@ -716,7 +748,7 @@ typedef struct {
     // Controls settings related to element borders, and will generate BORDER render commands.
     Clay_BorderElementConfig border;
     // A pointer that will be transparently passed through to resulting render commands.
-    void *userData;
+    CLAY_ELEMENT_USERDATA_TYPE userData;
 } Clay_ElementDeclaration;
 
 CLAY__WRAPPER_STRUCT(Clay_ElementDeclaration);
@@ -757,7 +789,7 @@ typedef struct {
     // A string containing human-readable error text that explains the error in more detail.
     Clay_String errorText;
     // A transparent pointer passed through from when the error handler was first provided.
-    void *userData;
+    CLAY_ERROR_USERDATA_TYPE userData;
 } Clay_ErrorData;
 
 // A wrapper struct around Clay's error handler function.
@@ -765,7 +797,7 @@ typedef struct {
     // A user provided function to call when Clay encounters an error during layout.
     void (*errorHandlerFunction)(Clay_ErrorData errorText);
     // A pointer that will be transparently passed through to the error handler when it is called.
-    void *userData;
+    CLAY_ERROR_USERDATA_TYPE userData;
 } Clay_ErrorHandler;
 
 // Function Forward Declarations ---------------------------------
@@ -821,7 +853,7 @@ CLAY_DECOR bool Clay_Hovered(void);
 // Bind a callback that will be called when the pointer position provided by Clay_SetPointerState is within the current element's bounding box.
 // - onHoverFunction is a function pointer to a user defined function.
 // - userData is a pointer that will be transparently passed through when the onHoverFunction is called.
-CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData), intptr_t userData);
+CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerData, CLAY_ONHOVER_USERDATA_TYPE userData), CLAY_ONHOVER_USERDATA_TYPE userData);
 // An imperative function that returns true if the pointer position provided by Clay_SetPointerState is within the element with the provided ID's bounding box.
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
 CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId);
@@ -831,12 +863,12 @@ CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId);
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
 CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id);
 // Binds a callback function that Clay will call to determine the dimensions of a given string slice.
-// - measureTextFunction is a user provided function that adheres to the interface Clay_Dimensions (Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
+// - measureTextFunction is a user provided function that adheres to the interface Clay_Dimensions (Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
 // - userData is a pointer that will be transparently passed through when the measureTextFunction is called.
-CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData), void *userData);
+CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData), CLAY_MEASURE_USERDATA_TYPE userData);
 // Experimental - Used in cases where Clay needs to integrate with a system that manages its own scrolling containers externally.
 // Please reach out if you plan to use this function, as it may be subject to change.
-CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, void *userData), void *userData);
+CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData), CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 // A bounds-checked "get" function for the Clay_RenderCommandArray returned from Clay_EndLayout().
 CLAY_DECOR Clay_RenderCommand * Clay_RenderCommandArray_Get(Clay_RenderCommandArray* array, int32_t index);
 // Enables and disables Clay's internal debug tools.
@@ -996,7 +1028,7 @@ typedef struct {
 typedef struct {
     Clay_Color backgroundColor;
     Clay_CornerRadius cornerRadius;
-    void* userData;
+    CLAY_ELEMENT_USERDATA_TYPE userData;
 } Clay_SharedElementConfig;
 
 CLAY__WRAPPER_STRUCT(Clay_SharedElementConfig);
@@ -1113,8 +1145,8 @@ typedef struct { // todo get this struct into a single cache line
     Clay_BoundingBox boundingBox;
     Clay_ElementId elementId;
     Clay_LayoutElement* layoutElement;
-    void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData);
-    intptr_t hoverFunctionUserData;
+    void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerInfo, CLAY_ONHOVER_USERDATA_TYPE userData);
+    CLAY_ONHOVER_USERDATA_TYPE hoverFunctionUserData;
     int32_t nextIndex;
     uint32_t generation;
     uint32_t idAlias;
@@ -1180,8 +1212,8 @@ struct Clay_Context {
     uint32_t debugSelectedElementId;
     uint32_t generation;
     uintptr_t arenaResetOffset;
-    void *measureTextUserData;
-    void *queryScrollOffsetUserData;
+    CLAY_MEASURE_USERDATA_TYPE measureTextUserData;
+    CLAY_QUERYSCROLL_USERDATA_TYPE queryScrollOffsetUserData;
     Clay_Arena internalArena;
     // Layout Elements / Render Commands
     Clay_LayoutElementArray layoutElements;
@@ -1245,11 +1277,11 @@ Clay_String Clay__WriteStringToCharBuffer(Clay__charArray *buffer, Clay_String s
 }
 
 #ifdef CLAY_WASM
-    __attribute__((import_module("clay"), import_name("measureTextFunction"))) Clay_Dimensions Clay__MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
-    __attribute__((import_module("clay"), import_name("queryScrollOffsetFunction"))) Clay_Vector2 Clay__QueryScrollOffset(uint32_t elementId, void *userData);
+    __attribute__((import_module("clay"), import_name("measureTextFunction"))) Clay_Dimensions Clay__MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
+    __attribute__((import_module("clay"), import_name("queryScrollOffsetFunction"))) Clay_Vector2 Clay__QueryScrollOffset(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 #else
-    Clay_Dimensions (*Clay__MeasureText)(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
-    Clay_Vector2 (*Clay__QueryScrollOffset)(uint32_t elementId, void *userData);
+    Clay_Dimensions (*Clay__MeasureText)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
+    Clay_Vector2 (*Clay__QueryScrollOffset)(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 #endif
 
 Clay_LayoutElement* Clay__GetOpenLayoutElement(void) {
@@ -1365,6 +1397,8 @@ uint32_t Clay__HashTextWithConfig(Clay_String *text, Clay_TextElementConfig *con
     hash += config->wrapMode;
     hash += (hash << 10);
     hash ^= (hash >> 6);
+    
+    //TODO: We may want to hash the userData pointer here?
 
     hash += (hash << 3);
     hash ^= (hash >> 11);
@@ -1875,7 +1909,8 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
             Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .sharedElementConfig = sharedConfig }, CLAY__ELEMENT_CONFIG_TYPE_SHARED);
         }
     }
-    if (declaration.userData != 0) {
+    CLAY_ELEMENT_USERDATA_TYPE zeroUserDataType = CLAY__DEFAULT_STRUCT;
+    if (!Clay__MemCmp((char *)(&declaration.userData), (char *)(&zeroUserDataType), sizeof(CLAY_ELEMENT_USERDATA_TYPE))) {
         if (sharedConfig) {
             sharedConfig->userData = declaration.userData;
         } else {
@@ -1883,7 +1918,8 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
             Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .sharedElementConfig = sharedConfig }, CLAY__ELEMENT_CONFIG_TYPE_SHARED);
         }
     }
-    if (declaration.image.imageData) {
+    CLAY_IMAGEDATA_TYPE zeroImageDataType = CLAY__DEFAULT_STRUCT;
+    if (!Clay__MemCmp((char *)(&declaration.image.imageData), (char *)(&zeroImageDataType), sizeof(CLAY_IMAGEDATA_TYPE))) {
         Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .imageElementConfig = Clay__StoreImageElementConfig(declaration.image) }, CLAY__ELEMENT_CONFIG_TYPE_IMAGE);
         Clay__int32_tArray_Add(&context->imageElementPointers, context->layoutElements.length - 1);
     }
@@ -2493,7 +2529,7 @@ void Clay__CalculateFinalLayout(void) {
                 }
                 Clay__AddRenderCommand(CLAY__INIT(Clay_RenderCommand) {
                     .boundingBox = clipHashMapItem->boundingBox,
-                    .userData = 0,
+                    .userData = CLAY__DEFAULT_STRUCT,
                     .id = Clay__HashNumber(rootElement->id, rootElement->childrenOrTextContent.children.length + 10).id, // TODO need a better strategy for managing derived ids
                     .zIndex = root->zIndex,
                     .commandType = CLAY_RENDER_COMMAND_TYPE_SCISSOR_START,
@@ -2662,6 +2698,7 @@ void Clay__CalculateFinalLayout(void) {
                                         .fontSize = textElementConfig->fontSize,
                                         .letterSpacing = textElementConfig->letterSpacing,
                                         .lineHeight = textElementConfig->lineHeight,
+                                        .userData = textElementConfig->userData,
                                     }},
                                     .userData = sharedConfig->userData,
                                     .id = Clay__HashNumber(lineIndex, currentElement->id).id,
@@ -3160,7 +3197,7 @@ void Clay__RenderDebugViewCornerRadius(Clay_CornerRadius cornerRadius, Clay_Text
     }
 }
 
-void HandleDebugViewCloseButtonInteraction(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData) {
+void HandleDebugViewCloseButtonInteraction(Clay_ElementId elementId, Clay_PointerData pointerInfo, CLAY_ONHOVER_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     (void) elementId; (void) pointerInfo; (void) userData;
     if (pointerInfo.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -3221,7 +3258,8 @@ void Clay__RenderDebugView(void) {
                 .cornerRadius = CLAY_CORNER_RADIUS(4),
                 .border = { .color = { 217,91,67,255 }, .width = { 1, 1, 1, 1, 0 } },
             }) {
-                Clay_OnHover(HandleDebugViewCloseButtonInteraction, 0);
+            	CLAY_ONHOVER_USERDATA_TYPE zeroUserDataType = CLAY__DEFAULT_STRUCT;
+                Clay_OnHover(HandleDebugViewCloseButtonInteraction, zeroUserDataType);
                 CLAY_TEXT(CLAY_STRING("x"), CLAY_TEXT_CONFIG({ .textColor = CLAY__DEBUGVIEW_COLOR_4, .fontSize = 16 }));
             }
         }
@@ -3611,12 +3649,12 @@ CLAY_DECOR Clay_Arena Clay_CreateArenaWithCapacityAndMemory(uint32_t capacity, v
 }
 
 #ifndef CLAY_WASM
-CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData), void *userData) {
+CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData), CLAY_MEASURE_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     Clay__MeasureText = measureTextFunction;
     context->measureTextUserData = userData;
 }
-CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, void *userData), void *userData) {
+CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData), CLAY_QUERYSCROLL_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     Clay__QueryScrollOffset = queryScrollOffsetFunction;
     context->queryScrollOffsetUserData = userData;
@@ -3929,7 +3967,7 @@ CLAY_DECOR bool Clay_Hovered(void) {
     return false;
 }
 
-CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData), intptr_t userData) {
+CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerInfo, CLAY_ONHOVER_USERDATA_TYPE userData), CLAY_ONHOVER_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     if (context->booleanWarnings.maxElementsExceeded) {
         return;
@@ -3960,13 +3998,17 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
     for (int32_t i = 0; i < context->scrollContainerDatas.length; ++i) {
         Clay__ScrollContainerDataInternal *scrollContainerData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, i);
         if (scrollContainerData->elementId == id.id) {
-            return CLAY__INIT(Clay_ScrollContainerData) {
-                .scrollPosition = &scrollContainerData->scrollPosition,
-                .scrollContainerDimensions = { scrollContainerData->boundingBox.width, scrollContainerData->boundingBox.height },
-                .contentDimensions = scrollContainerData->contentSize,
-                .config = *Clay__FindElementConfigWithType(scrollContainerData->layoutElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig,
-                .found = true
-            };
+        	Clay_ScrollElementConfig* scrollConfig = Clay__FindElementConfigWithType(scrollContainerData->layoutElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig;
+        	if (scrollConfig != nullptr)
+        	{
+	            return CLAY__INIT(Clay_ScrollContainerData) {
+	                .scrollPosition = &scrollContainerData->scrollPosition,
+	                .scrollContainerDimensions = { scrollContainerData->boundingBox.width, scrollContainerData->boundingBox.height },
+	                .contentDimensions = scrollContainerData->contentSize,
+	                .config = *scrollConfig,
+	                .found = true
+	            };
+	        }
         }
     }
     return CLAY__INIT(Clay_ScrollContainerData) CLAY__DEFAULT_STRUCT;
