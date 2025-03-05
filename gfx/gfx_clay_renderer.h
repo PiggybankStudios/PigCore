@@ -71,7 +71,9 @@ PEXP CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	//NOTE: Clay has no way of knowing the lineHeight, so if we don't tell it otherwise it will place text a little too close to each other vertically
 	TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, textStr);
 	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
-	return (Clay_Dimensions){ .width = measure.Width, .height = measure.Height };
+	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
+	Clay_Dimensions result = (Clay_Dimensions){ .width = CeilR32(measure.Width - measure.OffsetX), .height = CeilR32(measure.Height) };
+	return result;
 }
 
 PEXP void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut)
@@ -144,11 +146,50 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)fontId);
 				FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
 				NotNull(fontAtlas);
-				// TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
-				v2 textPos = NewV2(drawRec.X, drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset);
-				// GfxSystem_DrawRectangleOutlineEx(system, drawRec, 1, MonokaiPurple, false);
+				reci oldClipRec = ZEROED;
+				v2 textOffset = V2_Zero;
+				if (StrExactStartsWith(text, StrLit("C:/")))
+				{
+					int breakOnMe = 5;
+				}
+				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
+					command->renderData.text.userData.contraction == TextContraction_ClipRight)
+				{
+					rec textClipRec = NewRec(
+						FloorR32(drawRec.X),
+						FloorR32(drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset - fontAtlas->maxAscend),
+						CeilR32(drawRec.Width),
+						CeilR32(fontAtlas->maxAscend + fontAtlas->maxDescend)
+					);
+					if (command->renderData.text.userData.contraction == TextContraction_ClipLeft)
+					{
+						TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
+						if (measure.Width > drawRec.Width)
+						{
+							textOffset.X -= (measure.Width - drawRec.Width);
+						}
+					}
+					// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(White, 0.2f));
+					oldClipRec = GfxSystem_AddClipRec(system, ToReciFromf(textClipRec));
+				}
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft ||
+					command->renderData.text.userData.contraction == TextContraction_EllipseMiddle ||
+					command->renderData.text.userData.contraction == TextContraction_EllipseRight)
+				{
+					// TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
+					// v2 charSize = MeasureTextEx(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, StrLit("W")).visualRec.Size;
+					// numCharsEstimate = (uxx)MaxI32(1, FloorR32i(availableRec.Width / charSize.Width));
+					//TODO: Implement me!
+				}
+				v2 textPos = NewV2(drawRec.X + textOffset.X, drawRec.Y + textOffset.Y + drawRec.Height/2 + fontAtlas->centerOffset);
+				AlignV2(&textPos);
 				Result drawResult = GfxSystem_DrawTextWithFont(system, font->pntr, fontSize, font->styleFlags, text, textPos, drawColor);
 				Assert(drawResult == Result_Success);
+				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
+					command->renderData.text.userData.contraction == TextContraction_ClipRight)
+				{
+					GfxSystem_SetClipRec(system, oldClipRec);
+				}
 			} break;
 			
 			// +================================+
