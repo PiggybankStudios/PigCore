@@ -88,6 +88,7 @@ __declspec(dllexport) GfxSystem gfx = ZEROED;
 #define BindFont(fontPntr)                             GfxSystem_BindFont(&gfx, (fontPntr))
 
 #define SetClipRec(clipRec)                      GfxSystem_SetClipRec(&gfx, (clipRec))
+#define AddClipRec(clipRec)                      GfxSystem_AddClipRec(&gfx, (clipRec))
 #define DisableClipRec()                         GfxSystem_DisableClipRec(&gfx)
 #define SetDepthTestEnabled(depthTestEnabled)    GfxSystem_SetDepthTestEnabled(&gfx, (depthTestEnabled))
 #define SetDepthWriteEnabled(depthWriteEnabled)  GfxSystem_SetDepthWriteEnabled(&gfx, (depthWriteEnabled))
