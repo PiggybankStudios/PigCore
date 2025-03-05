@@ -40,7 +40,8 @@ typedef Str8 FilePath;
 	PIG_CORE_INLINE bool DoesPathHaveExt(FilePath path);
 	uxx CountPathParts(FilePath path, bool includeEmptyBeginOrEnd);
 	Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd);
-	Str8 CollapsePathParts(FilePath path);
+	FilePath ShortenFilePath(Arena* arena, FilePath fullPath, uxx maxNumChars, Str8 ellipsesStr);
+	// Str8 CollapsePathParts(FilePath path);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -219,6 +220,31 @@ PEXP Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
 		}
 		return NewStr8(0, path.chars);
 	}
+}
+
+PEXP FilePath ShortenFilePath(Arena* arena, FilePath fullPath, uxx maxNumChars, Str8 ellipsesStr)
+{
+	NotNull(arena);
+	FilePath result = fullPath;
+	if (fullPath.length <= maxNumChars) { return AllocStr8(arena, result); }
+	
+	Str8 fileNamePart = GetFileNamePart(fullPath, true);
+	uxx fileNameStartIndex = (uxx)(fileNamePart.chars - fullPath.chars);
+	uxx ellipsesPos = (fileNameStartIndex > 0) ? (fileNameStartIndex/2) : (result.length/2);
+	uxx numCharsToCut = result.length - maxNumChars + ellipsesStr.length;
+	if (ellipsesPos > numCharsToCut/2)
+	{
+		Str8 firstPart = StrSlice(result, 0, ellipsesPos - numCharsToCut/2);
+		Str8 secondPart = StrSliceFrom(result, ellipsesPos + (numCharsToCut+1)/2);
+		result = PrintInArenaStr(arena, "%.*s%.*s%.*s", StrPrint(firstPart), StrPrint(ellipsesStr), StrPrint(secondPart));
+	}
+	else
+	{
+		Str8 lastPart = StrSliceFrom(result, result.length - maxNumChars + ellipsesStr.length);
+		result = PrintInArenaStr(arena, "%.*s%.*s", StrPrint(ellipsesStr), StrPrint(lastPart));
+	}
+	
+	return result;
 }
 
 // Removes any parts that are the "up one folder" syntax: ..
