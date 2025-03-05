@@ -859,8 +859,6 @@ CLAY_DECOR void Clay_SetMaxMeasureTextCacheWordCount(int32_t maxMeasureTextCache
 // Resets Clay's internal text measurement cache, useful if memory to represent strings is being re-used.
 // Similar behaviour can be achieved on an individual text element level by using Clay_TextElementConfig.hashStringContents
 CLAY_DECOR void Clay_ResetMeasureTextCache(void);
-// Added by Taylor! TODO: Write some documentation
-CLAY_DECOR Clay_BoundingBox Clay_FindElementBoundsById(Clay_ElementId elementId);
 
 // Internal API functions required by macros ----------------------
 
@@ -1258,7 +1256,6 @@ Clay_LayoutElement* Clay__GetOpenLayoutElement(void) {
     Clay_Context* context = Clay_GetCurrentContext();
     return Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&context->openLayoutElementStack, context->openLayoutElementStack.length - 1));
 }
-
 CLAY_DECOR uint32_t Clay__GetParentElementId(void) {
     Clay_Context* context = Clay_GetCurrentContext();
     return Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&context->openLayoutElementStack, context->openLayoutElementStack.length - 2))->id;
@@ -4058,15 +4055,6 @@ CLAY_DECOR void Clay_ResetMeasureTextCache(void) {
         context->measureTextHashMap.internalArray[i] = 0;
     }
     context->measureTextHashMapInternal.length = 1; // Reserve the 0 value to mean "no next element"
-}
-
-CLAY_WASM_EXPORT("Clay_FindElementDimensionsById")
-CLAY_DECOR Clay_BoundingBox Clay_FindElementBoundsById(Clay_ElementId elementId)
-{
-	Clay_LayoutElementHashMapItem* hashMapItem = Clay__GetHashMapItem(elementId.id);
-	return (hashMapItem != nullptr)
-		? hashMapItem->boundingBox
-		: (Clay_BoundingBox){ .x = 0, .y = 0, .width = 0, .height = 0 };
 }
 
 #endif // CLAY_IMPLEMENTATION

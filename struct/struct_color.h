@@ -94,7 +94,3 @@ PEXPI Color32 ColorWithAlpha(Color32 rgbColor, r32 alpha)
 #if defined(_STRUCT_COLOR_H) && defined(RAYLIB_H)
 #include "cross/cross_color_and_raylib.h"
 #endif
-
-#if defined(_STRUCT_COLOR_H) && defined(_UI_CLAY_H)
-#include "cross/cross_color_and_clay.h"
-#endif

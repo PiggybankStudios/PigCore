@@ -634,7 +634,3 @@ PEXPI box RelativeBox(box reference, box subReference, box other)
 #if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && defined(_STRUCT_MATRICES_H) && defined(_STRUCT_RECTANGLES_H)
 #include "cross/cross_vectors_quaternion_matrices_and_rectangles.h"
 #endif
-
-#if defined(_STRUCT_RECTANGLES_H) && defined(_UI_CLAY_H)
-#include "cross/cross_rectangles_and_clay.h"
-#endif

@@ -88,9 +88,10 @@ PEXP void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* render
 PEXPI u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags)
 {
 	NotNull(renderer);
-	NotNull(renderer->arena);
+	NotNull(renderer->clay.context);
 	NotNull(fontPntr);
 	Assert(renderer->fonts.length <= UINT16_MAX);
+	SetClayContext(&renderer->clay);
 	u16 newId = (u16)renderer->fonts.length;
 	ClayUIRendererFont* newFont = VarArrayAdd(ClayUIRendererFont, &renderer->fonts);
 	NotNull(newFont);
@@ -104,8 +105,9 @@ PEXPI u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 
 PEXPI u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags)
 {
 	NotNull(renderer);
-	NotNull(renderer->arena);
+	NotNull(renderer->clay.context);
 	NotNull(fontPntr);
+	SetClayContext(&renderer->clay);
 	VarArrayLoop(&renderer->fonts, fIndex)
 	{
 		VarArrayLoopGet(ClayUIRendererFont, font, &renderer->fonts, fIndex);
@@ -117,10 +119,11 @@ PEXPI u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u
 PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, Clay_RenderCommandArray* commands)
 {
 	NotNull(renderer);
-	NotNull(renderer->arena);
+	NotNull(renderer->clay.context);
 	NotNull(system);
 	NotNull(commands);
 	Assert(commands->length >= 0);
+	SetClayContext(&renderer->clay);
 	
 	for (uxx cIndex = 0; cIndex < (uxx)commands->length; cIndex++)
 	{
@@ -155,6 +158,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			{
 				Texture* texturePntr = (Texture*)command->renderData.image.imageData;
 				Color32 drawColor = ToColorFromClay(command->renderData.image.backgroundColor);
+				if (drawColor.valueU32 == 0) { drawColor = White; } //default value means "untinted"
 				GfxSystem_DrawTexturedRectangle(system, drawRec, drawColor, texturePntr);
 			} break;
 			
