@@ -148,6 +148,7 @@ typedef PigFont Font;
 	void FreeFont(PigFont* font);
 	void ClearFontAtlases(PigFont* font);
 	PigFont InitFont(Arena* arena, Str8 name);
+	PIG_CORE_INLINE FontCharRange NewFontCharRangeSingle(u32 codepoint);
 	PIG_CORE_INLINE FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint);
 	PIG_CORE_INLINE FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints);
 	PIG_CORE_INLINE void RemoveAttachedTtfFile(PigFont* font);
@@ -242,6 +243,13 @@ PEXP PigFont InitFont(Arena* arena, Str8 name)
 	return result;
 }
 
+PEXPI FontCharRange NewFontCharRangeSingle(u32 codepoint)
+{
+	FontCharRange result = ZEROED;
+	result.startCodepoint = codepoint;
+	result.endCodepoint = codepoint;
+	return result;
+}
 PEXPI FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint)
 {
 	FontCharRange result = ZEROED;

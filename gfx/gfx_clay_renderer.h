@@ -126,6 +126,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 	NotNull(commands);
 	Assert(commands->length >= 0);
 	SetClayContext(&renderer->clay);
+	ScratchBegin(scratch);
 	
 	for (uxx cIndex = 0; cIndex < (uxx)commands->length; cIndex++)
 	{
@@ -138,6 +139,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +===============================+
 			case CLAY_RENDER_COMMAND_TYPE_TEXT:
 			{
+				uxx scratchMark = ArenaGetMark(scratch);
 				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
 				u16 fontId = command->renderData.text.fontId;
 				r32 fontSize = (r32)command->renderData.text.fontSize;
@@ -148,10 +150,6 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				NotNull(fontAtlas);
 				reci oldClipRec = ZEROED;
 				v2 textOffset = V2_Zero;
-				if (StrExactStartsWith(text, StrLit("C:/")))
-				{
-					int breakOnMe = 5;
-				}
 				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
 					command->renderData.text.userData.contraction == TextContraction_ClipRight)
 				{
@@ -172,14 +170,21 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(White, 0.2f));
 					oldClipRec = GfxSystem_AddClipRec(system, ToReciFromf(textClipRec));
 				}
-				else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft ||
-					command->renderData.text.userData.contraction == TextContraction_EllipseMiddle ||
-					command->renderData.text.userData.contraction == TextContraction_EllipseRight)
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft)
 				{
-					// TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
-					// v2 charSize = MeasureTextEx(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, StrLit("W")).visualRec.Size;
-					// numCharsEstimate = (uxx)MaxI32(1, FloorR32i(availableRec.Width / charSize.Width));
-					//TODO: Implement me!
+					text = ShortenTextStartToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
+				}
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseMiddle)
+				{
+					text = ShortenTextToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR), text.length/2);
+				}
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseRight)
+				{
+					text = ShortenTextEndToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
+				}
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseFilePath)
+				{
+					text = ShortenFilePathToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
 				}
 				v2 textPos = NewV2(drawRec.X + textOffset.X, drawRec.Y + textOffset.Y + drawRec.Height/2 + fontAtlas->centerOffset);
 				AlignV2(&textPos);
@@ -190,6 +195,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				{
 					GfxSystem_SetClipRec(system, oldClipRec);
 				}
+				ArenaResetToMark(scratch, scratchMark);
 			} break;
 			
 			// +================================+
@@ -284,6 +290,8 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			default: AssertMsg(false, "Unhandled Clay RenderCommand Type!"); break;
 		}
 	}
+	
+	ScratchEnd(scratch);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

@@ -108,6 +108,11 @@ struct FontFlowCallbacks
 	Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut);
 	PIG_CORE_INLINE TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text);
 	PIG_CORE_INLINE TextMeasure MeasureText(const PigFont* font, Str8 text);
+	uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex, Str8* beforeEllipseStrOut, Str8* afterEllipseStrOut);
+	PIG_CORE_INLINE Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex);
+	PIG_CORE_INLINE Str8 ShortenTextStartToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
+	PIG_CORE_INLINE Str8 ShortenTextEndToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
+	PIG_CORE_INLINE Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, FilePath filePath, r32 maxWidth, Str8 ellipsesStr);
 #endif
 
 // +--------------------------------------------------------------+
@@ -249,6 +254,123 @@ PEXPI TextMeasure MeasureText(const PigFont* font, Str8 text)
 	Assert(font->atlases.length > 0);
 	FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
 	return MeasureTextEx(font, firstAtlas->fontSize, firstAtlas->styleFlags, text);
+}
+
+//NOTE: ellipsesIndex is an index into the pre-shortened string, it will replace characters from both left and right so it may end up at an index earlier in the string if it pulls characters from the left
+// Returns number of characters that were removed from the text in order to make it fit
+PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex, Str8* beforeEllipseStrOut, Str8* afterEllipseStrOut)
+{
+	NotNull(font);
+	NotNullStr(text);
+	NotNullStr(ellipsesStr);
+	Assert(ellipsesIndex <= text.length);
+	Assert(!IsInfiniteOrNanR32(maxWidth));
+	if (maxWidth <= 0)
+	{
+		SetOptionalOutPntr(beforeEllipseStrOut, NewStr8(0, &text.chars[0]));
+		SetOptionalOutPntr(afterEllipseStrOut, NewStr8(0, &text.chars[text.length-1]));
+		return text.length;
+	}
+	ScratchBegin(scratch);
+	FontFlowState state = ZEROED;
+	state.font = (PigFont*)font;
+	state.position = V2_Zero_Const;
+	state.fontSize = fontSize;
+	state.styleFlags = styleFlags;
+	state.text = text;
+	state.alignPixelSize = V2_One;
+	
+	FontFlow flow = ZEROED;
+	flow.numGlyphsAlloc = text.length;
+	flow.glyphs = AllocArray(FontFlowGlyph, scratch, text.length);
+	NotNull(flow.glyphs);
+	Result flowResult = DoFontFlow(&state, nullptr, &flow);
+	Assert(flowResult == Result_Success || flowResult == Result_InvalidUtf8);
+	AssertMsg(flow.numGlyphs <= flow.numGlyphsAlloc, "We shouldn't have more glyphs than there are number of bytes in the string!");
+	
+	if (flow.logicalRec.Width <= maxWidth)
+	{
+		SetOptionalOutPntr(beforeEllipseStrOut, text);
+		SetOptionalOutPntr(afterEllipseStrOut, NewStr8(0, &text.chars[text.length-1]));
+		ScratchEnd(scratch);
+		return 0;
+	}
+	
+	r32 ellipsesWidth = 0.0f;
+	if (!IsEmptyStr(ellipsesStr))
+	{
+		TextMeasure ellipsesMeasure = MeasureTextEx(font, fontSize, styleFlags, ellipsesStr);
+		ellipsesWidth = ellipsesMeasure.Width - ellipsesMeasure.OffsetX;
+	}
+	
+	Str8 leftPortion = StrSlice(text, 0, ellipsesIndex);
+	Str8 rightPortion = StrSliceFrom(text, ellipsesIndex);
+	FontFlowGlyph* leftLastGlyph = leftPortion.length > 0 ? &flow.glyphs[leftPortion.length-1] : nullptr;
+	r32 leftWidth = (leftLastGlyph != nullptr) ? (leftLastGlyph->drawRec.X + leftLastGlyph->drawRec.Width - flow.logicalRec.X) : 0.0f;
+	FontFlowGlyph* rightFirstGlyph = rightPortion.length > 0 ? &flow.glyphs[text.length - rightPortion.length] : nullptr;
+	r32 rightWidth = (rightFirstGlyph != nullptr) ? ((flow.logicalRec.X + flow.logicalRec.Width) - rightFirstGlyph->drawRec.X) : 0.0f;
+	uxx numCharsRemoved = 0;
+	bool removeLeft = true;
+	while (leftPortion.length + rightPortion.length > 0 && leftWidth + ellipsesWidth + rightWidth > maxWidth)
+	{
+		if (removeLeft && leftPortion.length == 0) { removeLeft = false; }
+		if (!removeLeft && rightPortion.length == 0) { removeLeft = true; }
+		if (removeLeft)
+		{
+			//TODO: This isn't going to work when we have multi-byte UTF-8 characters that account for a single glyph. We should think about how we are indexing into the glyphs to find the one we are about to remove!
+			FontFlowGlyph* leftGlyph = &flow.glyphs[leftPortion.length-1];
+			leftWidth = leftGlyph->drawRec.X - flow.logicalRec.X;
+			leftPortion.length--;
+			numCharsRemoved++;
+		}
+		else
+		{
+			//TODO: This isn't going to work when we have multi-byte UTF-8 characters that account for a single glyph. We should think about how we are indexing into the glyphs to find the one we are about to remove!
+			FontFlowGlyph* rightGlyph = &flow.glyphs[text.length - rightPortion.length];
+			rightWidth = (flow.logicalRec.X + flow.logicalRec.Width) - (rightGlyph->drawRec.X + rightGlyph->drawRec.Width);
+			rightPortion.chars++;
+			rightPortion.length--;
+			numCharsRemoved++;
+		}
+		removeLeft = !removeLeft; //alternate taking characters from left and right sides
+	}
+	
+	SetOptionalOutPntr(beforeEllipseStrOut, leftPortion);
+	SetOptionalOutPntr(afterEllipseStrOut, rightPortion);
+	
+	ScratchEnd(scratch);
+	return numCharsRemoved;
+}
+PEXPI Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex)
+{
+	NotNull(arena);
+	Str8 beforeEllipseStr = Str8_Empty;
+	Str8 afterEllipseStr = Str8_Empty;
+	uxx numCharsRemoved = ShortenTextToFitWidthEx(font, fontSize, styleFlags, text, maxWidth, ellipsesStr, ellipsesIndex, &beforeEllipseStr, &afterEllipseStr);
+	if (numCharsRemoved > 0)
+	{
+		return PrintInArenaStr(arena, "%.*s%.*s%.*s", StrPrint(beforeEllipseStr), StrPrint(ellipsesStr), StrPrint(afterEllipseStr));
+	}
+	else
+	{
+		return AllocStr8(arena, text);
+	}
+}
+PEXPI Str8 ShortenTextStartToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr)
+{
+	return ShortenTextToFitWidth(arena, font, fontSize, styleFlags, text, maxWidth, ellipsesStr, 0);
+}
+PEXPI Str8 ShortenTextEndToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr)
+{
+	return ShortenTextToFitWidth(arena, font, fontSize, styleFlags, text, maxWidth, ellipsesStr, text.length);
+}
+PEXPI Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, FilePath filePath, r32 maxWidth, Str8 ellipsesStr)
+{
+	
+	Str8 fileNamePart = GetFileNamePart(filePath, true);
+	uxx fileNameStartIndex = (uxx)(fileNamePart.chars - filePath.chars);
+	uxx ellipsesIndex = fileNameStartIndex / 2;
+	return ShortenTextToFitWidth(arena, font, fontSize, styleFlags, filePath, maxWidth, ellipsesStr, ellipsesIndex);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

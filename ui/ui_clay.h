@@ -38,17 +38,19 @@ enum TextContraction
 	TextContraction_EllipseRight,
 	TextContraction_EllipseMiddle,
 	TextContraction_EllipseLeft,
+	TextContraction_EllipseFilePath,
 	TextContraction_Count,
 };
 const char* GetTextContractionStr(TextContraction enumValue)
 {
 	switch (enumValue)
 	{
-		case TextContraction_ClipRight:     return "ClipRight";
-		case TextContraction_ClipLeft:      return "ClipLeft";
-		case TextContraction_EllipseRight:  return "EllipseRight";
-		case TextContraction_EllipseMiddle: return "EllipseMiddle";
-		case TextContraction_EllipseLeft:   return "EllipseLeft";
+		case TextContraction_ClipRight:       return "ClipRight";
+		case TextContraction_ClipLeft:        return "ClipLeft";
+		case TextContraction_EllipseRight:    return "EllipseRight";
+		case TextContraction_EllipseMiddle:   return "EllipseMiddle";
+		case TextContraction_EllipseLeft:     return "EllipseLeft";
+		case TextContraction_EllipseFilePath: return "EllipseFilePath";
 		default: return UNKNOWN_STR;
 	}
 }
