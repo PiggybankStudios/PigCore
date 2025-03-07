@@ -210,6 +210,8 @@ typedef Obb3D obb3;
 	PIG_CORE_INLINE reci OverlapPartReci(reci left, reci right);
 	PIG_CORE_INLINE box OverlapPartBox(box left, box right);
 	PIG_CORE_INLINE boxi OverlapPartBoxi(boxi left, boxi right);
+	PIG_CORE_INLINE bool IsInsideRec(rec rectangle, v2 position);
+	PIG_CORE_INLINE bool IsInsideRecInclusive(rec rectangle, v2 position);
 	PIG_CORE_INLINE rec RelativeRec(rec reference, rec subReference, rec other);
 	PIG_CORE_INLINE box RelativeBox(box reference, box subReference, box other);
 #endif
@@ -655,8 +657,11 @@ PEXPI boxi OverlapPartBoxi(boxi left, boxi right)
 	return NewBoxi(minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ);
 }
 
+PEXPI bool IsInsideRec(rec rectangle, v2 position) { return (position.X >= rectangle.X && position.Y >= rectangle.Y && position.X < rectangle.X + rectangle.Width && position.Y < rectangle.Y + rectangle.Height); }
+PEXPI bool IsInsideRecInclusive(rec rectangle, v2 position) { return (position.X >= rectangle.X && position.Y >= rectangle.Y && position.X <= rectangle.X + rectangle.Width && position.Y <= rectangle.Y + rectangle.Height); }
+
 //TODO: ExpandRecToV2/ExpandReciToV2i?
-//TODO: IsInsideRec/IsRecInsideRec?
+//TODO: IsInsideBox/IsInsideObb2/IsRecInsideRec?
 //TODO: DoesOverlapRec?
 //TODO: GetObb2AlignedBounds?
 //TODO: AlignRec/AlignRecTopLeft/AlignRecSize?

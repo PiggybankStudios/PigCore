@@ -122,7 +122,7 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSize);
 	PIG_CORE_INLINE void GfxSystem_BindFont(GfxSystem* system, PigFont* font);
 	PIG_CORE_INLINE void GfxSystem_SetClipRec(GfxSystem* system, reci clipRec);
-	PIG_CORE_INLINE rec GfxSystem_AddClipRec(GfxSystem* system, reci clipRec);
+	PIG_CORE_INLINE reci GfxSystem_AddClipRec(GfxSystem* system, reci clipRec);
 	PIG_CORE_INLINE void GfxSystem_DisableClipRec(GfxSystem* system);
 	PIG_CORE_INLINE void GfxSystem_SetColorWriteEnabled(GfxSystem* system, bool colorWriteEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthTestEnabled(GfxSystem* system, bool depthTestEnabled);
