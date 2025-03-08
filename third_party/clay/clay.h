@@ -2155,7 +2155,9 @@ void Clay__SizeContainersAlongAxis(bool xAxis) {
 
                 if (childSizing.type != CLAY__SIZING_TYPE_PERCENT
                     && childSizing.type != CLAY__SIZING_TYPE_FIXED
-                    && (!Clay__ElementHasConfig(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT) || (Clay__FindElementConfigWithType(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT).textElementConfig->wrapMode == CLAY_TEXT_WRAP_WORDS)) // todo too many loops
+                    && (!Clay__ElementHasConfig(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT) ||
+                    	(Clay__FindElementConfigWithType(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT).textElementConfig->wrapMode == CLAY_TEXT_WRAP_WORDS) ||
+                    	(Clay__FindElementConfigWithType(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT).textElementConfig->textAlignment == CLAY_TEXT_ALIGN_SHRINK)) // todo too many loops
                     && (xAxis || !Clay__ElementHasConfig(childElement, CLAY__ELEMENT_CONFIG_TYPE_IMAGE))
                 ) {
                     Clay__int32_tArray_Add(&resizableContainerBuffer, childElementIndex);
@@ -2325,6 +2327,8 @@ void Clay__CalculateFinalLayout(void) {
         Clay_LayoutElement *containerElement = Clay_LayoutElementArray_Get(&context->layoutElements, (int)textElementData->elementIndex);
         Clay_TextElementConfig *textConfig = Clay__FindElementConfigWithType(containerElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT).textElementConfig;
         Clay__MeasureTextCacheItem *measureTextCacheItem = Clay__MeasureTextCached(&textElementData->text, textConfig);
+        bool considerNewLines = (textConfig->wrapMode == CLAY_TEXT_WRAP_NEWLINES || textConfig->wrapMode == CLAY_TEXT_WRAP_WORDS);
+        bool considerMaxWidth = (textConfig->wrapMode == CLAY_TEXT_WRAP_WORDS && textConfig->textAlignment != CLAY_TEXT_ALIGN_SHRINK);
         float lineWidth = 0;
         float lineHeight = textConfig->lineHeight > 0 ? (float)textConfig->lineHeight : textElementData->preferredDimensions.height;
         int32_t lineLengthChars = 0;
@@ -2342,14 +2346,14 @@ void Clay__CalculateFinalLayout(void) {
             }
             Clay__MeasuredWord *measuredWord = Clay__MeasuredWordArray_Get(&context->measuredWords, wordIndex);
             // Only word on the line is too large, just render it anyway
-            if (lineLengthChars == 0 && lineWidth + measuredWord->width > containerElement->dimensions.width) {
+            if (lineLengthChars == 0 && lineWidth + measuredWord->width > containerElement->dimensions.width && considerMaxWidth) {
                 Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, CLAY__INIT(Clay__WrappedTextLine) { { measuredWord->width, lineHeight }, { .length = measuredWord->length, .chars = &textElementData->text.chars[measuredWord->startOffset] } });
                 textElementData->wrappedLines.length++;
                 wordIndex = measuredWord->next;
                 lineStartOffset = measuredWord->startOffset + measuredWord->length;
             }
             // measuredWord->length == 0 means a newline character
-            else if (measuredWord->length == 0 || lineWidth + measuredWord->width > containerElement->dimensions.width) {
+            else if ((measuredWord->length == 0 && considerNewLines) || (lineWidth + measuredWord->width > containerElement->dimensions.width && considerMaxWidth)) {
                 // Wrapped text lines list has overflowed, just render out the line
                 bool finalCharIsSpace = textElementData->text.chars[lineStartOffset + lineLengthChars - 1] == ' ';
                 Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, CLAY__INIT(Clay__WrappedTextLine) { { lineWidth + (finalCharIsSpace ? -spaceWidth : 0), lineHeight }, { .length = lineLengthChars + (finalCharIsSpace ? -1 : 0), .chars = &textElementData->text.chars[lineStartOffset] } });
