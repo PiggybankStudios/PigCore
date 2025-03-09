@@ -1329,6 +1329,7 @@ typedef enum sapp_event_type {
     SAPP_EVENTTYPE_QUIT_REQUESTED,
     SAPP_EVENTTYPE_CLIPBOARD_PASTED,
     SAPP_EVENTTYPE_FILES_DROPPED,
+    SAPP_EVENTTYPE_RESIZE_RENDER, //NOTE: Added by Taylor
     _SAPP_EVENTTYPE_NUM,
     _SAPP_EVENTTYPE_FORCE_U32 = 0x7FFFFFFF
 } sapp_event_type;
@@ -7493,6 +7494,33 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
                     }
                 }
                 break;
+            case WM_PAINT: //NOTE: Added by Taylor
+            	{
+            		#if defined(SOKOL_GLCORE)
+                    if (_sapp.valid && _sapp.init_called && !_sapp.fullscreen)
+                    {
+                        if (_sapp_win32_update_dimensions())
+                        {
+                            // #if defined(SOKOL_D3D11)
+                            // _sapp_d3d11_resize_default_render_target();
+                            // #endif
+                            _sapp_win32_app_event(SAPP_EVENTTYPE_RESIZED);
+                        }
+                        _sapp_init_event(SAPP_EVENTTYPE_RESIZE_RENDER);
+                        if (_sapp_call_event(&_sapp.event))
+                        {
+                            // #if defined(SOKOL_D3D11)
+                            // // present with DXGI_PRESENT_DO_NOT_WAIT
+                            // _sapp_d3d11_present(true);
+                            // #endif
+                            // #if defined(SOKOL_GLCORE)
+                            _sapp_wgl_swap_buffers();
+                            // #endif
+                        }
+                    }
+                    #endif
+            	}
+            	break;
             case WM_SETFOCUS:
                 _sapp_win32_app_event(SAPP_EVENTTYPE_FOCUSED);
                 break;
