@@ -375,6 +375,8 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 	};
 	sg_begin_pass(&mainPass);
 	
+	sg_apply_viewport(0, 0, (int)screenSize.Width, (int)screenSize.Height, true);
+	
 	system->state.clipRec = NewReciV(V2i_Zero, screenSize);
 	system->screenSize = screenSize;
 	

@@ -91,6 +91,10 @@ Description:
 #define BUILD_WITH_PHYSX 0
 #endif
 
+#ifndef PREFER_OPENGL_OVER_D3D11
+#define PREFER_OPENGL_OVER_D3D11 0
+#endif
+
 // +--------------------------------------------------------------+
 // |                       Check Conflicts                        |
 // +--------------------------------------------------------------+
