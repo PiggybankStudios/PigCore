@@ -507,6 +507,7 @@ CLAY__WRAPPER_STRUCT(Clay_CustomElementConfig);
 typedef struct {
     bool horizontal; // Clip overflowing elements on the X axis and allow scrolling left and right.
     bool vertical; // Clip overflowing elements on the YU axis and allow scrolling up and down.
+    float scrollLag;
 } Clay_ScrollElementConfig;
 
 CLAY__WRAPPER_STRUCT(Clay_ScrollElementConfig);
@@ -593,6 +594,7 @@ typedef struct {
 typedef struct {
     bool horizontal;
     bool vertical;
+    float scrollLag;
 } Clay_ScrollRenderData;
 
 // Render command data when commandType == CLAY_RENDER_COMMAND_TYPE_BORDER
@@ -629,6 +631,7 @@ typedef union {
 typedef struct {
     // Note: This is a pointer to the real internal scroll position, mutating it may cause a change in final layout.
     // Intended for use with external functionality that modifies scroll position, such as scroll bars or auto scrolling.
+    Clay_Vector2 *scrollTarget;
     Clay_Vector2 *scrollPosition;
     // The bounding box of the scroll element.
     Clay_Dimensions scrollContainerDimensions;
@@ -830,7 +833,7 @@ CLAY_DECOR void Clay_SetCurrentContext(Clay_Context* context);
 // - enableDragScrolling when set to true will enable mobile device like "touch drag" scroll of scroll containers, including momentum scrolling after the touch has ended.
 // - scrollDelta is the amount to scroll this frame on each axis in pixels.
 // - deltaTime is the time in seconds since the last "frame" (scroll update)
-// Returns true if a container is currently momentum scrolling (i.e. a touch sent it moving for some amount of time). Useful for keeping the application from "going to sleep" while the scrolling happens
+// Returns true if a container is currently momentum scrolling (i.e. a touch sent it moving for some amount of time) or scrolling with lag (if scrollLag != 0). Useful for keeping the application from "going to sleep" while the scrolling happens
 CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime);
 // Updates the layout dimensions in response to the window or outer container being resized.
 CLAY_DECOR void Clay_SetLayoutDimensions(Clay_Dimensions dimensions);
@@ -1127,9 +1130,11 @@ typedef struct {
     Clay_Vector2 scrollOrigin;
     Clay_Vector2 pointerOrigin;
     Clay_Vector2 scrollMomentum;
+    Clay_Vector2 scrollTarget;
     Clay_Vector2 scrollPosition;
     Clay_Vector2 previousDelta;
     float momentumTime;
+    float scrollLag;
     uint32_t elementId;
     bool openThisFrame;
     bool pointerScrollActive;
@@ -1984,13 +1989,15 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
                 scrollOffset = mapping;
                 scrollOffset->layoutElement = openLayoutElement;
                 scrollOffset->openThisFrame = true;
+                scrollOffset->scrollLag = declaration.scroll.scrollLag;
             }
         }
         if (!scrollOffset) {
-            scrollOffset = Clay__ScrollContainerDataInternalArray_Add(&context->scrollContainerDatas, CLAY__INIT(Clay__ScrollContainerDataInternal){.layoutElement = openLayoutElement, .scrollOrigin = {-1,-1}, .elementId = openLayoutElement->id, .openThisFrame = true});
+            scrollOffset = Clay__ScrollContainerDataInternalArray_Add(&context->scrollContainerDatas, CLAY__INIT(Clay__ScrollContainerDataInternal){.layoutElement = openLayoutElement, .scrollOrigin = {-1,-1}, .elementId = openLayoutElement->id, .scrollLag = declaration.scroll.scrollLag, .openThisFrame = true});
         }
         if (context->externalScrollHandlingEnabled) {
-            scrollOffset->scrollPosition = Clay__QueryScrollOffset(scrollOffset->elementId, context->queryScrollOffsetUserData);
+            scrollOffset->scrollTarget = Clay__QueryScrollOffset(scrollOffset->elementId, context->queryScrollOffsetUserData);
+            scrollOffset->scrollPosition = scrollOffset->scrollTarget;
         }
     }
     if (!Clay__MemCmp((char *)(&declaration.border.width), (char *)(&Clay__BorderWidth_DEFAULT), sizeof(Clay_BorderWidth))) {
@@ -2655,6 +2662,7 @@ void Clay__CalculateFinalLayout(void) {
                                 .scroll = {
                                     .horizontal = elementConfig->config.scrollElementConfig->horizontal,
                                     .vertical = elementConfig->config.scrollElementConfig->vertical,
+                                    .scrollLag = elementConfig->config.scrollElementConfig->scrollLag,
                                 }
                             };
                             break;
@@ -3795,7 +3803,7 @@ CLAY_DECOR void Clay_SetCurrentContext(Clay_Context* context) {
 CLAY_WASM_EXPORT("Clay_UpdateScrollContainers")
 CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime) {
     Clay_Context* context = Clay_GetCurrentContext();
-    bool areAnyContainersMomentumScrolling = false;
+    bool isAutoScrollingOccurring = false;
     bool isPointerActive = enableDragScrolling && (context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED || context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME);
     // Don't apply scroll events to ancestors of the inner element
     int32_t highestPriorityElementIndex = -1;
@@ -3816,13 +3824,13 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
 
         // Touch / click is released
         if (!isPointerActive && scrollData->pointerScrollActive) {
-            float xDiff = scrollData->scrollPosition.x - scrollData->scrollOrigin.x;
+            float xDiff = scrollData->scrollTarget.x - scrollData->scrollOrigin.x;
             if (xDiff < -10 || xDiff > 10) {
-                scrollData->scrollMomentum.x = (scrollData->scrollPosition.x - scrollData->scrollOrigin.x) / (scrollData->momentumTime * 25);
+                scrollData->scrollMomentum.x = (scrollData->scrollTarget.x - scrollData->scrollOrigin.x) / (scrollData->momentumTime * 25);
             }
-            float yDiff = scrollData->scrollPosition.y - scrollData->scrollOrigin.y;
+            float yDiff = scrollData->scrollTarget.y - scrollData->scrollOrigin.y;
             if (yDiff < -10 || yDiff > 10) {
-                scrollData->scrollMomentum.y = (scrollData->scrollPosition.y - scrollData->scrollOrigin.y) / (scrollData->momentumTime * 25);
+                scrollData->scrollMomentum.y = (scrollData->scrollTarget.y - scrollData->scrollOrigin.y) / (scrollData->momentumTime * 25);
             }
             scrollData->pointerScrollActive = false;
 
@@ -3831,25 +3839,50 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
             scrollData->momentumTime = 0;
         }
         
-        if (scrollData->scrollMomentum.x != 0) { areAnyContainersMomentumScrolling = true; }
-        if (scrollData->scrollMomentum.y != 0) { areAnyContainersMomentumScrolling = true; }
+        bool scrollMomentumOccurring = (scrollData->scrollMomentum.x != 0 || scrollData->scrollMomentum.y != 0);
+        if (scrollMomentumOccurring) { isAutoScrollingOccurring = true; }
 
         // Apply existing momentum
-        scrollData->scrollPosition.x += scrollData->scrollMomentum.x;
+        scrollData->scrollTarget.x += scrollData->scrollMomentum.x;
         scrollData->scrollMomentum.x *= 0.95f;
         bool scrollOccurred = scrollDelta.x != 0 || scrollDelta.y != 0;
         if ((scrollData->scrollMomentum.x > -0.1f && scrollData->scrollMomentum.x < 0.1f) || scrollOccurred) {
             scrollData->scrollMomentum.x = 0;
         }
-        scrollData->scrollPosition.x = CLAY__MIN(CLAY__MAX(scrollData->scrollPosition.x, -(CLAY__MAX(scrollData->contentSize.width - scrollData->layoutElement->dimensions.width, 0))), 0);
+        scrollData->scrollTarget.x = CLAY__MIN(CLAY__MAX(scrollData->scrollTarget.x, -(CLAY__MAX(scrollData->contentSize.width - scrollData->layoutElement->dimensions.width, 0))), 0);
 
-        scrollData->scrollPosition.y += scrollData->scrollMomentum.y;
+        scrollData->scrollTarget.y += scrollData->scrollMomentum.y;
         scrollData->scrollMomentum.y *= 0.95f;
         if ((scrollData->scrollMomentum.y > -0.1f && scrollData->scrollMomentum.y < 0.1f) || scrollOccurred) {
             scrollData->scrollMomentum.y = 0;
         }
-        scrollData->scrollPosition.y = CLAY__MIN(CLAY__MAX(scrollData->scrollPosition.y, -(CLAY__MAX(scrollData->contentSize.height - scrollData->layoutElement->dimensions.height, 0))), 0);
-
+        scrollData->scrollTarget.y = CLAY__MIN(CLAY__MAX(scrollData->scrollTarget.y, -(CLAY__MAX(scrollData->contentSize.height - scrollData->layoutElement->dimensions.height, 0))), 0);
+        
+        // Update scrollPosition to scrollTarget with scrollLag taken into account
+        if (scrollData->scrollLag == 0 || scrollMomentumOccurring || isPointerActive)
+        {
+        	scrollData->scrollPosition = scrollData->scrollTarget;
+        }
+        else
+        {
+        	Clay_Vector2 targetDelta = CLAY__INIT(Clay_Vector2){
+        		.x = scrollData->scrollTarget.x - scrollData->scrollPosition.x,
+        		.y = scrollData->scrollTarget.y - scrollData->scrollPosition.y
+        	};
+        	r32 targetDistanceSquared = (targetDelta.x * targetDelta.x) + (targetDelta.y * targetDelta.y);
+        	if (targetDistanceSquared >= 1.0f)
+        	{
+        		//TODO: We should do the proper framerate independent calculation here!
+        		scrollData->scrollPosition.x += targetDelta.x / scrollData->scrollLag;
+        		scrollData->scrollPosition.y += targetDelta.y / scrollData->scrollLag;
+        		isAutoScrollingOccurring = true;
+        	}
+        	else
+        	{
+        		scrollData->scrollPosition = scrollData->scrollTarget;
+        	}
+        }
+        
         for (int32_t j = 0; j < context->pointerOverIds.length; ++j) { // TODO n & m are small here but this being n*m gives me the creeps
             if (scrollData->layoutElement->id == Clay__ElementIdArray_Get(&context->pointerOverIds, j)->id) {
                 highestPriorityElementIndex = j;
@@ -3861,40 +3894,41 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
     if (highestPriorityElementIndex > -1 && highestPriorityScrollData) {
         Clay_LayoutElement *scrollElement = highestPriorityScrollData->layoutElement;
         Clay_ScrollElementConfig *scrollConfig = Clay__FindElementConfigWithType(scrollElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig;
+        highestPriorityScrollData->scrollLag = scrollConfig->scrollLag;
         bool canScrollVertically = scrollConfig->vertical && highestPriorityScrollData->contentSize.height > scrollElement->dimensions.height;
         bool canScrollHorizontally = scrollConfig->horizontal && highestPriorityScrollData->contentSize.width > scrollElement->dimensions.width;
         // Handle wheel scroll
         if (canScrollVertically) {
-            highestPriorityScrollData->scrollPosition.y = highestPriorityScrollData->scrollPosition.y + scrollDelta.y * 10;
+            highestPriorityScrollData->scrollTarget.y = highestPriorityScrollData->scrollTarget.y + scrollDelta.y * 10;
         }
         if (canScrollHorizontally) {
-            highestPriorityScrollData->scrollPosition.x = highestPriorityScrollData->scrollPosition.x + scrollDelta.x * 10;
+            highestPriorityScrollData->scrollTarget.x = highestPriorityScrollData->scrollTarget.x + scrollDelta.x * 10;
         }
         // Handle click / touch scroll
         if (isPointerActive) {
             highestPriorityScrollData->scrollMomentum = CLAY__INIT(Clay_Vector2)CLAY__DEFAULT_STRUCT;
             if (!highestPriorityScrollData->pointerScrollActive) {
                 highestPriorityScrollData->pointerOrigin = context->pointerInfo.position;
-                highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollPosition;
+                highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollTarget;
                 highestPriorityScrollData->pointerScrollActive = true;
             } else {
                 float scrollDeltaX = 0, scrollDeltaY = 0;
                 if (canScrollHorizontally) {
-                    float oldXScrollPosition = highestPriorityScrollData->scrollPosition.x;
-                    highestPriorityScrollData->scrollPosition.x = highestPriorityScrollData->scrollOrigin.x + (context->pointerInfo.position.x - highestPriorityScrollData->pointerOrigin.x);
-                    highestPriorityScrollData->scrollPosition.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.x, 0), -(highestPriorityScrollData->contentSize.width - highestPriorityScrollData->boundingBox.width));
-                    scrollDeltaX = highestPriorityScrollData->scrollPosition.x - oldXScrollPosition;
+                    float oldXScrollPosition = highestPriorityScrollData->scrollTarget.x;
+                    highestPriorityScrollData->scrollTarget.x = highestPriorityScrollData->scrollOrigin.x + (context->pointerInfo.position.x - highestPriorityScrollData->pointerOrigin.x);
+                    highestPriorityScrollData->scrollTarget.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollTarget.x, 0), -(highestPriorityScrollData->contentSize.width - highestPriorityScrollData->boundingBox.width));
+                    scrollDeltaX = highestPriorityScrollData->scrollTarget.x - oldXScrollPosition;
                 }
                 if (canScrollVertically) {
-                    float oldYScrollPosition = highestPriorityScrollData->scrollPosition.y;
-                    highestPriorityScrollData->scrollPosition.y = highestPriorityScrollData->scrollOrigin.y + (context->pointerInfo.position.y - highestPriorityScrollData->pointerOrigin.y);
-                    highestPriorityScrollData->scrollPosition.y = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.y, 0), -(highestPriorityScrollData->contentSize.height - highestPriorityScrollData->boundingBox.height));
-                    scrollDeltaY = highestPriorityScrollData->scrollPosition.y - oldYScrollPosition;
+                    float oldYScrollPosition = highestPriorityScrollData->scrollTarget.y;
+                    highestPriorityScrollData->scrollTarget.y = highestPriorityScrollData->scrollOrigin.y + (context->pointerInfo.position.y - highestPriorityScrollData->pointerOrigin.y);
+                    highestPriorityScrollData->scrollTarget.y = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollTarget.y, 0), -(highestPriorityScrollData->contentSize.height - highestPriorityScrollData->boundingBox.height));
+                    scrollDeltaY = highestPriorityScrollData->scrollTarget.y - oldYScrollPosition;
                 }
                 if (scrollDeltaX > -0.1f && scrollDeltaX < 0.1f && scrollDeltaY > -0.1f && scrollDeltaY < 0.1f && highestPriorityScrollData->momentumTime > 0.15f) {
                     highestPriorityScrollData->momentumTime = 0;
                     highestPriorityScrollData->pointerOrigin = context->pointerInfo.position;
-                    highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollPosition;
+                    highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollTarget;
                 } else {
                      highestPriorityScrollData->momentumTime += deltaTime;
                 }
@@ -3903,12 +3937,20 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
         // Clamp any changes to scroll position to the maximum size of the contents
         if (canScrollVertically) {
             highestPriorityScrollData->scrollPosition.y = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.y, 0), -(highestPriorityScrollData->contentSize.height - scrollElement->dimensions.height));
+            highestPriorityScrollData->scrollTarget.y = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollTarget.y, 0), -(highestPriorityScrollData->contentSize.height - scrollElement->dimensions.height));
         }
         if (canScrollHorizontally) {
             highestPriorityScrollData->scrollPosition.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.x, 0), -(highestPriorityScrollData->contentSize.width - scrollElement->dimensions.width));
+            highestPriorityScrollData->scrollTarget.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollTarget.x, 0), -(highestPriorityScrollData->contentSize.width - scrollElement->dimensions.width));
+        }
+        
+        //If no scrollLag, or currently scrolling with touch, immediately move scrollPosition to scrollTarget rather than waiting for next frame
+        if (highestPriorityScrollData->scrollLag == 0 || isPointerActive)
+        {
+    		highestPriorityScrollData->scrollPosition = highestPriorityScrollData->scrollTarget;
         }
     }
-    return areAnyContainersMomentumScrolling;
+    return isAutoScrollingOccurring;
 }
 
 CLAY_WASM_EXPORT("Clay_BeginLayout")
@@ -4023,6 +4065,7 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
         	if (scrollConfig != nullptr)
         	{
 	            return CLAY__INIT(Clay_ScrollContainerData) {
+	                .scrollTarget = &scrollContainerData->scrollTarget,
 	                .scrollPosition = &scrollContainerData->scrollPosition,
 	                .scrollContainerDimensions = { scrollContainerData->boundingBox.width, scrollContainerData->boundingBox.height },
 	                .contentDimensions = scrollContainerData->contentSize,
