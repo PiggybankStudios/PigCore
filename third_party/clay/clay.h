@@ -830,7 +830,8 @@ CLAY_DECOR void Clay_SetCurrentContext(Clay_Context* context);
 // - enableDragScrolling when set to true will enable mobile device like "touch drag" scroll of scroll containers, including momentum scrolling after the touch has ended.
 // - scrollDelta is the amount to scroll this frame on each axis in pixels.
 // - deltaTime is the time in seconds since the last "frame" (scroll update)
-CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime);
+// Returns true if a container is currently momentum scrolling (i.e. a touch sent it moving for some amount of time). Useful for keeping the application from "going to sleep" while the scrolling happens
+CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime);
 // Updates the layout dimensions in response to the window or outer container being resized.
 CLAY_DECOR void Clay_SetLayoutDimensions(Clay_Dimensions dimensions);
 // Called before starting any layout declarations.
@@ -3792,8 +3793,9 @@ CLAY_DECOR void Clay_SetCurrentContext(Clay_Context* context) {
 }
 
 CLAY_WASM_EXPORT("Clay_UpdateScrollContainers")
-CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime) {
+CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime) {
     Clay_Context* context = Clay_GetCurrentContext();
+    bool areAnyContainersMomentumScrolling = false;
     bool isPointerActive = enableDragScrolling && (context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED || context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME);
     // Don't apply scroll events to ancestors of the inner element
     int32_t highestPriorityElementIndex = -1;
@@ -3828,6 +3830,9 @@ CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
             scrollData->scrollOrigin = CLAY__INIT(Clay_Vector2){0,0};
             scrollData->momentumTime = 0;
         }
+        
+        if (scrollData->scrollMomentum.x != 0) { areAnyContainersMomentumScrolling = true; }
+        if (scrollData->scrollMomentum.y != 0) { areAnyContainersMomentumScrolling = true; }
 
         // Apply existing momentum
         scrollData->scrollPosition.x += scrollData->scrollMomentum.x;
@@ -3903,6 +3908,7 @@ CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
             highestPriorityScrollData->scrollPosition.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.x, 0), -(highestPriorityScrollData->contentSize.width - scrollElement->dimensions.width));
         }
     }
+    return areAnyContainersMomentumScrolling;
 }
 
 CLAY_WASM_EXPORT("Clay_BeginLayout")
