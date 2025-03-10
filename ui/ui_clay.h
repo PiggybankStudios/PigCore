@@ -114,7 +114,8 @@ typedef Clay_ElementId ClayId;
 	PIG_CORE_INLINE Clay_Color ToClayColor(Color32 color);
 	void SetClayContext(ClayUI* clay);
 	void InitClayUI(Arena* arena, v2 windowSize, ClayUiMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut);
-	PIG_CORE_INLINE void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 elapsedMs, bool isMouseOverOther, v2 mousePos, bool isMouseDown, v2 mouseScrollDelta);
+	PIG_CORE_INLINE bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling);
+	PIG_CORE_INLINE void BeginClayUIRender(ClayUI* clay, v2 windowSize, bool isMouseOverOther, v2 mousePos, bool isMouseDown);
 	PIG_CORE_INLINE Clay_RenderCommandArray EndClayUIRender(ClayUI* clay);
 	PIG_CORE_INLINE rec GetClayElementDrawRec(ClayId elementId);
 	PIG_CORE_INLINE rec GetClayElementDrawRecStr(Str8 elementIdStr);
@@ -182,7 +183,15 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayUiMeasureText_f* measureTe
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
 }
 
-PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 elapsedMs, bool isMouseOverOther, v2 mousePos, bool isMouseDown, v2 mouseScrollDelta)
+PEXPI bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling)
+{
+	SetClayContext(clay);
+	bool isMomentumScrolling = Clay_UpdateScrollContainers(allowTouchScrolling, ToClayVector2(isMouseOverOther ? V2_Zero : mouseScrollDelta), elapsedMs / 1000.0f);
+	return isMomentumScrolling;
+	
+}
+
+PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, bool isMouseOverOther, v2 mousePos, bool isMouseDown)
 {
 	SetClayContext(clay);
 	Clay_SetLayoutDimensions(ToClayDimensions(windowSize));
@@ -193,7 +202,6 @@ PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 elapsedMs, bool is
 	else
 	{
 		Clay_SetPointerState(ToClayVector2(mousePos), isMouseDown);
-		Clay_UpdateScrollContainers(false, ToClayVector2(mouseScrollDelta), elapsedMs / 1000.0f);
 	}
 	Clay_BeginLayout();
 }

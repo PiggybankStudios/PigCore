@@ -329,6 +329,7 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 			if (IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL))  { FlagSet(modifierKeys, ModifierKey_Control); }
 			if (IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT))   { FlagSet(modifierKeys, ModifierKey_Alt);     }
 			AddKeyboardCharInput(keyboard, event->char_code, modifierKeys);
+			handled = true;
 		} break;
 		
 		default: break;
