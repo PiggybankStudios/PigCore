@@ -43,6 +43,7 @@ struct ClayUIRenderer
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE Clay_ImageElementConfig ToClayImage(Texture* texture);
 	CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText);
 	void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut);
 	PIG_CORE_INLINE u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags);
@@ -54,6 +55,14 @@ struct ClayUIRenderer
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXPI Clay_ImageElementConfig ToClayImage(Texture* texture)
+{
+	Clay_ImageElementConfig result = ZEROED;
+	result.imageData = texture;
+	result.sourceDimensions = ToClayDimensions(ToV2Fromi(texture->size));
+	return result;
+}
 
 // +==============================+
 // |  ClayUIRendererMeasureText   |
@@ -214,7 +223,11 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +========================================+
 			case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
 			{
+				// r32 oldDepth = system->state.depth;
+				// GfxSystem_SetDepth(system, 0.0f);
+				// GfxSystem_DrawRectangleOutlineEx(system, drawRec, 1, MonokaiRed, false);
 				GfxSystem_SetClipRec(system, ToReciFromf(drawRec));
+				// GfxSystem_SetDepth(system, oldDepth);
 			} break;
 			
 			// +======================================+
