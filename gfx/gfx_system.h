@@ -122,6 +122,7 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSize);
 	PIG_CORE_INLINE void GfxSystem_BindFont(GfxSystem* system, PigFont* font);
 	PIG_CORE_INLINE void GfxSystem_SetClipRec(GfxSystem* system, reci clipRec);
+	PIG_CORE_INLINE reci GfxSystem_AddClipRec(GfxSystem* system, reci clipRec);
 	PIG_CORE_INLINE void GfxSystem_DisableClipRec(GfxSystem* system);
 	PIG_CORE_INLINE void GfxSystem_SetColorWriteEnabled(GfxSystem* system, bool colorWriteEnabled);
 	PIG_CORE_INLINE void GfxSystem_SetDepthTestEnabled(GfxSystem* system, bool depthTestEnabled);
@@ -374,6 +375,8 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 	};
 	sg_begin_pass(&mainPass);
 	
+	sg_apply_viewport(0, 0, (int)screenSize.Width, (int)screenSize.Height, true);
+	
 	system->state.clipRec = NewReciV(V2i_Zero, screenSize);
 	system->screenSize = screenSize;
 	
@@ -555,6 +558,18 @@ PEXPI void GfxSystem_SetClipRec(GfxSystem* system, reci clipRec)
 		sg_apply_scissor_rect(clipRec.X, clipRec.Y, clipRec.Width, clipRec.Height, true);
 		system->state.clipRec = clipRec;
 	}
+}
+PEXPI reci GfxSystem_AddClipRec(GfxSystem* system, reci clipRec)
+{
+	NotNull(system);
+	reci oldClipRec = system->state.clipRec;
+	if (!AreEqual(system->state.clipRec, clipRec))
+	{
+		reci overlapRec = OverlapPartReci(system->state.clipRec, clipRec);
+		sg_apply_scissor_rect(overlapRec.X, overlapRec.Y, overlapRec.Width, overlapRec.Height, true);
+		system->state.clipRec = overlapRec;
+	}
+	return oldClipRec;
 }
 PEXPI void GfxSystem_DisableClipRec(GfxSystem* system) { GfxSystem_SetClipRec(system, NewReciV(V2i_Zero, system->screenSize)); }
 

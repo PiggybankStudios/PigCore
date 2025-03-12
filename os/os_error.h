@@ -37,18 +37,22 @@ PEXP const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 {
 	switch (windowsErrorCode)
 	{
-		case ERROR_FILE_NOT_FOUND:    return "ERROR_FILE_NOT_FOUND";    //2
-		case ERROR_FILE_EXISTS:       return "ERROR_FILE_EXISTS";       //80
-		case ERROR_ALREADY_EXISTS:    return "ERROR_ALREADY_EXISTS";    //183
-		case ERROR_SHARING_VIOLATION: return "ERROR_SHARING_VIOLATION"; //?
-		case ERROR_PIPE_BUSY:         return "ERROR_PIPE_BUSY";         //?
-		case ERROR_ACCESS_DENIED:     return "ERROR_ACCESS_DENIED";     //?
-		case ERROR_DIRECTORY:         return "ERROR_DIRECTORY";         //267
+		// https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
+		case ERROR_SUCCESS:              return "ERROR_SUCCESS";              //0
+		case ERROR_FILE_NOT_FOUND:       return "ERROR_FILE_NOT_FOUND";       //2
+		case ERROR_ACCESS_DENIED:        return "ERROR_ACCESS_DENIED";        //5
+		case ERROR_SHARING_VIOLATION:    return "ERROR_SHARING_VIOLATION";    //32
+		case ERROR_FILE_EXISTS:          return "ERROR_FILE_EXISTS";          //80
+		case ERROR_MOD_NOT_FOUND:        return "ERROR_MOD_NOT_FOUND";        //126
+		case ERROR_ALREADY_EXISTS:       return "ERROR_ALREADY_EXISTS";       //183
+		case ERROR_PIPE_BUSY:            return "ERROR_PIPE_BUSY";            //231
+		case ERROR_DIRECTORY:            return "ERROR_DIRECTORY";            //267
+		case ERROR_CLASS_ALREADY_EXISTS: return "ERROR_CLASS_ALREADY_EXISTS"; //1410
 		// default: return (printUnknownValue ? TempPrint("(0x%08X)", windowsErrorCode) : UNKNOWN_STR); //TODO: Add this option back in once we have PrintInArena function!
 		default: return UNKNOWN_STR;
 	}
 }
-#endif
+#endif //TARGET_IS_WINDOWS
 
 #if (TARGET_IS_LINUX || TARGET_IS_OSX)
 PEXP const char* GetErrnoStr(int errnoValue)

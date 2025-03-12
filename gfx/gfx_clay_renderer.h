@@ -43,6 +43,7 @@ struct ClayUIRenderer
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE Clay_ImageElementConfig ToClayImage(Texture* texture);
 	CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText);
 	void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut);
 	PIG_CORE_INLINE u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags);
@@ -54,6 +55,14 @@ struct ClayUIRenderer
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXPI Clay_ImageElementConfig ToClayImage(Texture* texture)
+{
+	Clay_ImageElementConfig result = ZEROED;
+	result.imageData = texture;
+	result.sourceDimensions = ToClayDimensions(ToV2Fromi(texture->size));
+	return result;
+}
 
 // +==============================+
 // |  ClayUIRendererMeasureText   |
@@ -71,7 +80,9 @@ PEXP CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	//NOTE: Clay has no way of knowing the lineHeight, so if we don't tell it otherwise it will place text a little too close to each other vertically
 	TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, textStr);
 	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
-	return (Clay_Dimensions){ .width = measure.Width, .height = measure.Height };
+	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
+	Clay_Dimensions result = (Clay_Dimensions){ .width = CeilR32(measure.Width - measure.OffsetX), .height = CeilR32(measure.Height) };
+	return result;
 }
 
 PEXP void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut)
@@ -88,9 +99,10 @@ PEXP void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* render
 PEXPI u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags)
 {
 	NotNull(renderer);
-	NotNull(renderer->arena);
+	NotNull(renderer->clay.context);
 	NotNull(fontPntr);
 	Assert(renderer->fonts.length <= UINT16_MAX);
+	SetClayContext(&renderer->clay);
 	u16 newId = (u16)renderer->fonts.length;
 	ClayUIRendererFont* newFont = VarArrayAdd(ClayUIRendererFont, &renderer->fonts);
 	NotNull(newFont);
@@ -104,8 +116,9 @@ PEXPI u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 
 PEXPI u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags)
 {
 	NotNull(renderer);
-	NotNull(renderer->arena);
+	NotNull(renderer->clay.context);
 	NotNull(fontPntr);
+	SetClayContext(&renderer->clay);
 	VarArrayLoop(&renderer->fonts, fIndex)
 	{
 		VarArrayLoopGet(ClayUIRendererFont, font, &renderer->fonts, fIndex);
@@ -117,10 +130,12 @@ PEXPI u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u
 PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, Clay_RenderCommandArray* commands)
 {
 	NotNull(renderer);
-	NotNull(renderer->arena);
+	NotNull(renderer->clay.context);
 	NotNull(system);
 	NotNull(commands);
 	Assert(commands->length >= 0);
+	SetClayContext(&renderer->clay);
+	ScratchBegin(scratch);
 	
 	for (uxx cIndex = 0; cIndex < (uxx)commands->length; cIndex++)
 	{
@@ -133,6 +148,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +===============================+
 			case CLAY_RENDER_COMMAND_TYPE_TEXT:
 			{
+				uxx scratchMark = ArenaGetMark(scratch);
 				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
 				u16 fontId = command->renderData.text.fontId;
 				r32 fontSize = (r32)command->renderData.text.fontSize;
@@ -141,11 +157,54 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)fontId);
 				FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
 				NotNull(fontAtlas);
-				// TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
-				v2 textPos = NewV2(drawRec.X, drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset);
-				// GfxSystem_DrawRectangleOutlineEx(system, drawRec, 1, MonokaiPurple, false);
+				reci oldClipRec = ZEROED;
+				v2 textOffset = V2_Zero;
+				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
+					command->renderData.text.userData.contraction == TextContraction_ClipRight)
+				{
+					rec textClipRec = NewRec(
+						FloorR32(drawRec.X),
+						FloorR32(drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset - fontAtlas->maxAscend),
+						CeilR32(drawRec.Width),
+						CeilR32(fontAtlas->maxAscend + fontAtlas->maxDescend)
+					);
+					if (command->renderData.text.userData.contraction == TextContraction_ClipLeft)
+					{
+						TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
+						if (measure.Width > drawRec.Width)
+						{
+							textOffset.X -= (measure.Width - drawRec.Width);
+						}
+					}
+					// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(White, 0.2f));
+					oldClipRec = GfxSystem_AddClipRec(system, ToReciFromf(textClipRec));
+				}
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft)
+				{
+					text = ShortenTextStartToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
+				}
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseMiddle)
+				{
+					text = ShortenTextToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR), text.length/2);
+				}
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseRight)
+				{
+					text = ShortenTextEndToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
+				}
+				else if (command->renderData.text.userData.contraction == TextContraction_EllipseFilePath)
+				{
+					text = ShortenFilePathToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
+				}
+				v2 textPos = NewV2(drawRec.X + textOffset.X, drawRec.Y + textOffset.Y + drawRec.Height/2 + fontAtlas->centerOffset);
+				AlignV2(&textPos);
 				Result drawResult = GfxSystem_DrawTextWithFont(system, font->pntr, fontSize, font->styleFlags, text, textPos, drawColor);
 				Assert(drawResult == Result_Success);
+				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
+					command->renderData.text.userData.contraction == TextContraction_ClipRight)
+				{
+					GfxSystem_SetClipRec(system, oldClipRec);
+				}
+				ArenaResetToMark(scratch, scratchMark);
 			} break;
 			
 			// +================================+
@@ -155,6 +214,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			{
 				Texture* texturePntr = (Texture*)command->renderData.image.imageData;
 				Color32 drawColor = ToColorFromClay(command->renderData.image.backgroundColor);
+				if (drawColor.valueU32 == 0) { drawColor = White; } //default value means "untinted"
 				GfxSystem_DrawTexturedRectangle(system, drawRec, drawColor, texturePntr);
 			} break;
 			
@@ -163,7 +223,11 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +========================================+
 			case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
 			{
+				// r32 oldDepth = system->state.depth;
+				// GfxSystem_SetDepth(system, 0.0f);
+				// GfxSystem_DrawRectangleOutlineEx(system, drawRec, 1, MonokaiRed, false);
 				GfxSystem_SetClipRec(system, ToReciFromf(drawRec));
+				// GfxSystem_SetDepth(system, oldDepth);
 			} break;
 			
 			// +======================================+
@@ -239,6 +303,8 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			default: AssertMsg(false, "Unhandled Clay RenderCommand Type!"); break;
 		}
 	}
+	
+	ScratchEnd(scratch);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

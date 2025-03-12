@@ -42,6 +42,19 @@ Description:
 #define UNICODE_KATAKANA_COUNT 96
 #define UNICODE_KATAKANA_END   (UNICODE_KATAKANA_START + UNICODE_KATAKANA_COUNT)
 
+#define UNICODE_ELLIPSIS_CODEPOINT 0x2026 //Technically called "Horizontal Ellipsis"
+#define UNICODE_ELLIPSIS_STR       "\xE2\x80\xA6" //UTF-8 encoding
+
+#define UNICODE_RIGHT_ARROW_CODEPOINT 0x203A //Technically called "Single Right-Pointing Angle Quotation Mark"
+#define UNICODE_RIGHT_ARROW_STR       "\xE2\x80\xBA" //UTF-8 encoding
+
+// Basic Multilingual Plane Private Use Area: 0xE000-0xF8FF
+#define CUSTOM_CODEPOINT_START        0xE000
+#define CUSTOM_CODEPOINT_END          0xF900
+
+#define CUSTOM_CODEPOINT_FIRST        0xF900
+#define CUSTOM_CODEPOINT_LAST         0xF8FF
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+

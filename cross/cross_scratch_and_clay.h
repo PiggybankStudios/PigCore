@@ -1,11 +1,11 @@
 /*
-File:   cross_string_scratch_and_clay.h
+File:   cross_scratch_and_clay.h
 Author: Taylor Robbins
 Date:   02\16\2025
 */
 
-#ifndef _CROSS_STRING_SCRATCH_AND_CLAY_H
-#define _CROSS_STRING_SCRATCH_AND_CLAY_H
+#ifndef _CROSS_SCRATCH_AND_CLAY_H
+#define _CROSS_SCRATCH_AND_CLAY_H
 
 //NOTE: Intentionally no includes here
 
@@ -15,8 +15,8 @@ Date:   02\16\2025
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE Clay_ElementId ToClayIdPrintEx(uxx index, const char* formatString, ...);
-	PIG_CORE_INLINE Clay_ElementId ToClayIdPrint(const char* formatString, ...);
+	PIG_CORE_INLINE ClayId ToClayIdPrintEx(uxx index, const char* formatString, ...);
+	PIG_CORE_INLINE ClayId ToClayIdPrint(const char* formatString, ...);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -24,21 +24,21 @@ Date:   02\16\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI Clay_ElementId ToClayIdPrintEx(uxx index, const char* formatString, ...)
+PEXPI ClayId ToClayIdPrintEx(uxx index, const char* formatString, ...)
 {
 	ScratchBegin(scratch);
 	PrintInArenaVa(scratch, formattedString, formattedStringLength, formatString);
 	Assert(formattedStringLength >= 0);
-	Clay_ElementId result = ToClayIdEx(NewStr8((uxx)formattedStringLength, formattedString), index);
+	ClayId result = ToClayIdEx(NewStr8((uxx)formattedStringLength, formattedString), index);
 	ScratchEnd(scratch);
 	return result;
 }
-PEXPI Clay_ElementId ToClayIdPrint(const char* formatString, ...)
+PEXPI ClayId ToClayIdPrint(const char* formatString, ...)
 {
 	ScratchBegin(scratch);
 	PrintInArenaVa(scratch, formattedString, formattedStringLength, formatString);
 	Assert(formattedStringLength >= 0);
-	Clay_ElementId result = ToClayIdEx(NewStr8((uxx)formattedStringLength, formattedString), 0);
+	ClayId result = ToClayIdEx(NewStr8((uxx)formattedStringLength, formattedString), 0);
 	ScratchEnd(scratch);
 	return result;
 }
@@ -47,4 +47,4 @@ PEXPI Clay_ElementId ToClayIdPrint(const char* formatString, ...)
 
 #endif //BUILD_WITH_CLAY
 
-#endif //  _CROSS_STRING_SCRATCH_AND_CLAY_H
+#endif //  _CROSS_SCRATCH_AND_CLAY_H

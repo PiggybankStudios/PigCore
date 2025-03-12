@@ -10,7 +10,9 @@ Description:
 #define _OS_FILE_H
 
 #include "base/base_defines_check.h"
+#include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_macros.h"
 #include "std/std_includes.h"
 #include "struct/struct_string.h"
 #include "mem/mem_scratch.h"
@@ -79,19 +81,6 @@ struct OsFile
 	#endif
 };
 
-//NOTE: The name "dll" is a misnomer on non-windows platforms. This can represent a .dll or a .so
-typedef struct OsDll OsDll;
-struct OsDll
-{
-	#if TARGET_IS_WINDOWS
-	HMODULE handle;
-	#elif TARGET_IS_LINUX
-	void* handle;
-	#else
-	int placeholder;
-	#endif
-};
-
 typedef struct OsFileWriteTime OsFileWriteTime;
 struct OsFileWriteTime
 {
@@ -109,6 +98,7 @@ struct OsFileWriteTime
 	FilePath OsGetFullPath(Arena* arena, FilePath relativePath);
 	PIG_CORE_INLINE uxx OsGetFullPathLength(FilePath relativePath);
 	bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut);
+	PIG_CORE_INLINE bool OsDoesPathExist(FilePath path);
 	PIG_CORE_INLINE bool OsDoesFileExist(FilePath path);
 	PIG_CORE_INLINE bool OsDoesFolderExist(FilePath path);
 	PIG_CORE_INLINE void OsFreeFileIter(OsFileIter* fileIter);
@@ -124,6 +114,7 @@ struct OsFileWriteTime
 	bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines);
 	PIG_CORE_INLINE bool OsWriteTextFile(FilePath path, Str8 fileContents);
 	PIG_CORE_INLINE bool OsWriteBinFile(FilePath path, Str8 fileContents);
+	Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded);
 	void OsCloseFile(OsFile* file);
 	bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut);
 	Result OsReadFromOpenFile(OsFile* file, uxx numBytes, bool convertNewLines, void* bufferOut, uxx* numBytesReadOut);
@@ -132,9 +123,6 @@ struct OsFileWriteTime
 	bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNewLines);
 	PIG_CORE_INLINE bool OsWriteToOpenTextFile(OsFile* file, Str8 fileContentsPart);
 	PIG_CORE_INLINE bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart);
-	Result OsLoadDll(FilePath path, OsDll* dllOut);
-	void* OsFindDllFunc(OsDll* dll, Str8 funcName);
-	Result OsDoOpenFileDialog(Arena* arena, Str8* pathOut);
 	Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut);
 #endif //!PIG_CORE_IMPLEMENTATION
 
@@ -214,22 +202,32 @@ PEXPI uxx OsGetFullPathLength(FilePath relativePath)
 // +--------------------------------------------------------------+
 PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 {
+	bool result = false;
+	
 	#if TARGET_IS_WINDOWS
 	{
 		ScratchBegin(scratch);
 		FilePath fullPath = OsGetFullPath(scratch, path);
-		DWORD fileType = GetFileAttributesA(fullPath.chars);
-		ScratchEnd(scratch);
-		if (fileType == INVALID_FILE_ATTRIBUTES)
+		BOOL fileExistsResult = PathFileExistsA(fullPath.chars);
+		if (fileExistsResult == TRUE)
 		{
-			SetOptionalOutPntr(isFolderOut, false);
-			return false;
+			if (isFolderOut != nullptr)
+			{
+				DWORD fileType = GetFileAttributesA(fullPath.chars);
+				if (fileType != INVALID_FILE_ATTRIBUTES)
+				{
+					*isFolderOut = IsFlagSet(fileType, FILE_ATTRIBUTE_DIRECTORY);
+					result = true;
+				}
+				else { result = false; }
+			}
+			else { result = true; }
 		}
 		else
 		{
-			SetOptionalOutPntr(isFolderOut, IsFlagSet(fileType, FILE_ATTRIBUTE_DIRECTORY));
-			return true;
+			result = false;
 		}
+		ScratchEnd(scratch);
 	}
 	// #elif TARGET_IS_LINUX
 	// {
@@ -243,8 +241,13 @@ PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 	UNUSED(path);
 	UNUSED(isFolderOut);
 	AssertMsg(false, "OsDoesFileOrFolderExist does not support the current platform yet!");
-	return false;
 	#endif
+	
+	return result;
+}
+PEXPI bool OsDoesPathExist(FilePath path)
+{
+	return OsDoesFileOrFolderExist(path, nullptr);
 }
 PEXPI bool OsDoesFileExist(FilePath path)
 {
@@ -650,6 +653,56 @@ PEXPI bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile
 //      progress, otherwise we may run into conflicts with order of operations
 
 // +--------------------------------------------------------------+
+// |                        Create Folders                        |
+// +--------------------------------------------------------------+
+PEXP Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded)
+{
+	Result result = Result_None;
+	#if TARGET_IS_WINDOWS
+	{
+		ScratchBegin(scratch);
+		uxx numPathParts = CountPathParts(path, false);
+		if (createParentFoldersIfNeeded && numPathParts > 1)
+		{
+			for (uxx pIndex = 0; pIndex < numPathParts; pIndex++)
+			{
+				Str8 pathPart = GetPathPart(path, pIndex, false);
+				NotEmptyStr(pathPart);
+				Assert(IsSizedPntrWithin(path.chars, path.length, pathPart.chars, pathPart.length));
+				uxx partEndIndex = (uxx)((pathPart.chars + pathPart.length) - path.chars);
+				Str8 partialPath = StrSlice(path, 0, partEndIndex);
+				if (!OsDoesFolderExist(partialPath))
+				{
+					Result createResult = OsCreateFolder(partialPath, false);
+					if (createResult != Result_Success) { ScratchEnd(scratch); return createResult; }
+				}
+			}
+		}
+		
+		if (!OsDoesFolderExist(path))
+		{
+			Str8 pathNt = AllocStrAndCopy(scratch, path.length, path.chars, true);
+			BOOL createResult = CreateDirectoryA(
+				pathNt.chars, //lpPathName
+				NULL //lpSecurityAttributes
+			);
+			if (createResult != TRUE)
+			{
+				ScratchEnd(scratch);
+				return Result_Failure;
+			}
+		}
+		
+		ScratchEnd(scratch);
+		result = Result_Success;
+	}
+	#else
+	AssertMsg(false, "OsCreateFolder does not support the current platform yet!");
+	#endif
+	return result;
+}
+
+// +--------------------------------------------------------------+
 // |                Open File For Reading/Writing                 |
 // +--------------------------------------------------------------+
 PEXP void OsCloseFile(OsFile* file)
@@ -918,136 +971,8 @@ PEXPI bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart) { return Os
 //TODO: Implement OsMoveFileCursor
 
 // +--------------------------------------------------------------+
-// |                         DLL Loading                          |
+// |                       File Write Time                        |
 // +--------------------------------------------------------------+
-// PEXP void OsCloseDll(OsDll* dll)
-// {
-	
-// }
-
-PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
-{
-	NotNullStr(path);
-	NotNull(dllOut);
-	Result result = Result_None;
-	
-	#if TARGET_IS_WINDOWS
-	{
-		ScratchBegin(scratch);
-		FilePath pathNt = AllocFilePath(scratch, path, true);
-		ChangePathSlashesTo(pathNt, '\\');
-		dllOut->handle = LoadLibraryA(pathNt.chars);
-		if (dllOut->handle != NULL) { result = Result_Success; }
-		else { result = Result_Failure; }
-		ScratchEnd(scratch);
-	}
-	#elif TARGET_IS_LINUX
-	{
-		ScratchBegin(scratch);
-		FilePath pathNt = AllocFilePath(scratch, path, true);
-		ChangePathSlashesTo(pathNt, '/');
-		dllOut->handle = dlopen(
-			pathNt.chars, //file
-			RTLD_NOW //mode TODO: Do we ever want RTLD_LAZY?
-		);
-		if (dllOut->handle != nullptr) { result = Result_Success; }
-		else
-		{
-			char* errorStr = dlerror();
-			PrintLine_E("dlopen failed: \"%s\"", errorStr);
-			result = Result_Failure;
-		}
-		ScratchEnd(scratch);
-	}
-	#else
-	UNUSED(path);
-	AssertMsg(false, "OsLoadDll does not support the current platform yet!");
-	result = Result_UnsupportedPlatform;
-	#endif
-	
-	return result;
-}
-
-PEXP void* OsFindDllFunc(OsDll* dll, Str8 funcName)
-{
-	NotNull(dll);
-	NotNullStr(funcName);
-	void* result = nullptr;
-	
-	#if TARGET_IS_WINDOWS
-	{
-		ScratchBegin(scratch);
-		Str8 funcNameNt = AllocStrAndCopy(scratch, funcName.length, funcName.chars, true);
-		result = (void*)GetProcAddress(dll->handle, funcNameNt.chars);
-		ScratchEnd(scratch);
-	}
-	#else
-	UNUSED(dll);
-	UNUSED(funcName);
-	AssertMsg(false, "OsFindDllFunc does not support the current platform yet!");
-	#endif
-	
-	return result;
-	
-}
-
-// +--------------------------------------------------------------+
-// |                  File Open and Save Dialogs                  |
-// +--------------------------------------------------------------+
-#if TARGET_IS_WINDOWS
-static bool Win32_HasCoInitialized = false;
-#endif
-
-PEXP Result OsDoOpenFileDialog(Arena* arena, Str8* pathOut)
-{
-	Result result = Result_None;
-	
-	#if TARGET_IS_WINDOWS
-	{
-		//TODO: This implementation has only been lightly tested!
-		
-		if (!Win32_HasCoInitialized)
-		{
-			HRESULT initResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-			Assert(SUCCEEDED(initResult));
-			Win32_HasCoInitialized = true;
-		}
-		
-		IFileOpenDialog* dialogPntr = nullptr;
-		HRESULT createInstanceResult = CoCreateInstance((const IID *const)&CLSID_FileOpenDialog, NULL, CLSCTX_ALL, (const IID *const)&IID_IFileOpenDialog, (void**)(&dialogPntr));
-		if (!SUCCEEDED(createInstanceResult)) { return Result_Failure; } //TODO: Make a better failure code!
-		
-		HRESULT showResult = dialogPntr->lpVtbl->Show(dialogPntr, NULL);
-		if (!SUCCEEDED(showResult)) { dialogPntr->lpVtbl->Release(dialogPntr); return Result_Canceled; }
-		
-		IShellItem* shellItem = nullptr;
-		HRESULT getResult = dialogPntr->lpVtbl->GetResult(dialogPntr, &shellItem);
-		if (!SUCCEEDED(getResult)) { dialogPntr->lpVtbl->Release(dialogPntr); return Result_Failure; } //TOOD: Make a better failure code!
-		
-		PWSTR filePathPntr16 = nullptr;
-		HRESULT getDisplayNameResult = shellItem->lpVtbl->GetDisplayName(shellItem, SIGDN_FILESYSPATH, &filePathPntr16);
-		if (!SUCCEEDED(getDisplayNameResult)) { dialogPntr->lpVtbl->Release(dialogPntr); shellItem->lpVtbl->Release(shellItem); return Result_Failure; } //TODO: Make a better failure code!
-		
-		if (pathOut != nullptr)
-		{
-			Str16 filePathStr16 = Str16Lit(filePathPntr16);
-			*pathOut = ConvertUcs2StrToUtf8(arena, filePathStr16, false);
-			Assert(pathOut->length == 0 || pathOut->chars != nullptr);
-		}
-		
-		CoTaskMemFree(filePathPntr16);
-		shellItem->lpVtbl->Release(shellItem);
-		dialogPntr->lpVtbl->Release(dialogPntr);
-		result = Result_Success;
-	}
-	#else
-	AssertMsg(false, "OsDoOpenFileDialog does not support the current platform yet!");
-	result = Result_UnsupportedPlatform;
-	#endif
-	
-	return result;
-}
-
 PEXP Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)
 {
 	NotNullStr(filePath);

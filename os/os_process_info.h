@@ -4,7 +4,9 @@ Author: Taylor Robbins
 Date:   01\18\2025
 Description:
 	** Contains functions that help us get information about our process and other
-	** processes running on the OS.
+	** processes running on the OS. Also contains functions like OsGetSettingsSavePath
+	** which aren't strictly related to our process, but provide important
+	** info for a process to function
 */
 
 #ifndef _OS_PROGRAM_H
@@ -17,6 +19,7 @@ Description:
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "os/os_path.h"
+#include "os/os_file.h"
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -24,6 +27,7 @@ Description:
 #if !PIG_CORE_IMPLEMENTATION
 	FilePath OsGetExecutablePath(Arena* arena, Result* resultOut);
 	FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut);
+	FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 programName, bool createFolders);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -170,6 +174,93 @@ PEXP FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
 	#endif
 	
 	return resultPath;
+}
+
+PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 programName, bool createFolders)
+{
+	NotNull(arena);
+	NotNullStr(companyName);
+	NotNullStr(programName);
+	Assert(!IsEmptyStr(companyName) || !IsEmptyStr(programName));
+	FilePath result = FilePath_Empty;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		//TODO: Should we assert that companyName and programName have valid characters to use in folder names on the current OS?
+		ScratchBegin1(scratch, arena);
+		char* pathBuffer = (char*)AllocMem(arena, MAX_PATH);
+		NotNull(pathBuffer);
+		
+		BOOL getFolderPathResult = SHGetSpecialFolderPathA(
+			NULL, //hwnd
+			&pathBuffer[0], //pszPath
+			CSIDL_APPDATA, //csidl
+			false //fCreate
+		);
+		if (getFolderPathResult == FALSE)
+		{
+			WriteLine_E("SHGetSpecialFolderPathA(CSIDL_APPDATA) failed!");
+			ScratchEnd(scratch);
+			return FilePath_Empty;
+		}
+		// Assert(BufferIsNullTerminated(MAX_PATH, pathBuffer)); TODO: Re-enable me once we have BufferIsNullTerminated?
+		
+		result = NewFilePath((uxx)MyStrLength(&pathBuffer[0]), pathBuffer);
+		Assert(!IsEmptyStr(result));
+		FixPathSlashes(result);
+		
+		if (!IsEmptyStr(companyName) && !IsEmptyStr(programName))
+		{
+			result = PrintInArenaStr(scratch, "%.*s%s%.*s/%.*s",
+				StrPrint(result),
+				DoesPathHaveTrailingSlash(result) ? "" : "/",
+				StrPrint(companyName),
+				StrPrint(programName)
+			);
+		}
+		else if (!IsEmptyStr(companyName))
+		{
+			result = PrintInArenaStr(scratch, "%.*s%s%.*s",
+				StrPrint(result),
+				DoesPathHaveTrailingSlash(result) ? "" : "/",
+				StrPrint(companyName)
+			);
+		}
+		else if (!IsEmptyStr(programName))
+		{
+			result = PrintInArenaStr(scratch, "%.*s%s%.*s",
+				StrPrint(result),
+				DoesPathHaveTrailingSlash(result) ? "" : "/",
+				StrPrint(programName)
+			);
+		}
+		else if (DoesPathHaveTrailingSlash(result))
+		{
+			result = StrSlice(result, 0, result.length-1);
+		}
+		
+		result = AllocStr8(arena, result);
+		NotNull(result.chars);
+		
+		if (createFolders)
+		{
+			Result createFolderResult = OsCreateFolder(result, true);
+			if (createFolderResult != Result_Success)
+			{
+				PrintLine_E("Failed to create \"%.*s\"!", StrPrint(result));
+				FreeStr8(arena, &result);
+				ScratchEnd(scratch);
+				return FilePath_Empty;
+			}
+		}
+		
+		ScratchEnd(scratch);
+	}
+	#else
+	AssertMsg(false, "OsGetAppdataDirectory does not support the current platform yet!")
+	#endif
+	
+	return result;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

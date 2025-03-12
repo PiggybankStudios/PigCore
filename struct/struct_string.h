@@ -543,11 +543,3 @@ PEXPI bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* index
 #if defined(_MISC_HASH_H) && defined(_STRUCT_STRING_H)
 #include "cross/cross_string_and_hash.h"
 #endif
-
-#if defined(_STRUCT_STRING_H) && defined(_UI_CLAY_H)
-#include "cross/cross_string_and_clay.h"
-#endif
-
-#if defined(_STRUCT_STRING_H) && defined(_MEM_SCRATCH_H) && defined(_UI_CLAY_H)
-#include "cross/cross_string_scratch_and_clay.h"
-#endif

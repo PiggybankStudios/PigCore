@@ -78,6 +78,7 @@ enum Result
 	Result_Deprecated,
 	Result_NoMoreBytes,
 	Result_Partial,
+	Result_WrongFolder,
 	
 	Result_Count,
 };
@@ -139,6 +140,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_Deprecated: return "Deprecated";
 		case Result_NoMoreBytes: return "NoMoreBytes";
 		case Result_Partial: return "Partial";
+		case Result_WrongFolder: return "WrongFolder";
 		default: return UNKNOWN_STR;
 	}
 }

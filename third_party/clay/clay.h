@@ -1,4 +1,7 @@
 // VERSION: 0.12
+// WARNING: Modifications have been made to this version that resides in PigCore.
+//  Please refer to the official Clay repostiory for an unmodified version of this file!
+//  https://github.com/nicbarker/clay
 
 /*
     NOTE: In order to use this library you must define
@@ -44,6 +47,31 @@
 
 #ifndef CLAY_DECOR
 #define CLAY_DECOR //nothing
+#endif
+
+
+//NOTE: These types MUST be able to be assigned to CLAY__DEFAULT_STRUCT, and a Clay__MemCmp with a zeroed version should be equivalent with checking if it's "empty"
+#ifndef CLAY_ELEMENT_USERDATA_TYPE
+#define CLAY_ELEMENT_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_TEXT_USERDATA_TYPE
+#define CLAY_TEXT_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_IMAGEDATA_TYPE
+#define CLAY_IMAGEDATA_TYPE void*
+#endif
+
+#ifndef CLAY_ERROR_USERDATA_TYPE
+#define CLAY_ERROR_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_ONHOVER_USERDATA_TYPE
+#define CLAY_ONHOVER_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_QUERYSCROLL_USERDATA_TYPE
+#define CLAY_QUERYSCROLL_USERDATA_TYPE void*
+#endif
+#ifndef CLAY_MEASURE_USERDATA_TYPE
+#define CLAY_MEASURE_USERDATA_TYPE void*
 #endif
 
 // Public Macro API ------------------------
@@ -339,6 +367,8 @@ typedef CLAY_PACKED_ENUM {
     CLAY_TEXT_ALIGN_CENTER,
     // Horizontally aligns wrapped lines of text to the right hand side of their bounding box.
     CLAY_TEXT_ALIGN_RIGHT,
+    // Acts like ALIGN_LEFT, except that the boundingBox passed to the TEXT render command may be smaller than the measured text size. The renderer must then decide how to shorten the text to make it fit
+    CLAY_TEXT_ALIGN_SHRINK,
 } Clay_TextAlignment;
 
 // Controls various functionality related to text elements.
@@ -368,6 +398,8 @@ typedef struct {
     // text measurement cache, rather than just the pointer and length. This will incur significant performance cost for
     // long bodies of text.
     bool hashStringContents;
+    // A pointer transparently passed through from the original element declaration.
+    CLAY_TEXT_USERDATA_TYPE userData;
 } Clay_TextElementConfig;
 
 CLAY__WRAPPER_STRUCT(Clay_TextElementConfig);
@@ -376,7 +408,7 @@ CLAY__WRAPPER_STRUCT(Clay_TextElementConfig);
 
 // Controls various settings related to image elements.
 typedef struct {
-    void* imageData; // A transparent pointer used to pass image data through to the renderer.
+    CLAY_IMAGEDATA_TYPE imageData; // A transparent pointer used to pass image data through to the renderer.
     Clay_Dimensions sourceDimensions; // The original dimensions of the source image, used to control aspect ratio.
 } Clay_ImageElementConfig;
 
@@ -475,6 +507,7 @@ CLAY__WRAPPER_STRUCT(Clay_CustomElementConfig);
 typedef struct {
     bool horizontal; // Clip overflowing elements on the X axis and allow scrolling left and right.
     bool vertical; // Clip overflowing elements on the YU axis and allow scrolling up and down.
+    float scrollLag;
 } Clay_ScrollElementConfig;
 
 CLAY__WRAPPER_STRUCT(Clay_ScrollElementConfig);
@@ -517,6 +550,8 @@ typedef struct {
     uint16_t letterSpacing;
     // The height of the bounding box for this line of text.
     uint16_t lineHeight;
+    // A pointer transparently passed through from the original text config.
+    CLAY_TEXT_USERDATA_TYPE userData;
 } Clay_TextRenderData;
 
 // Render command data when commandType == CLAY_RENDER_COMMAND_TYPE_RECTANGLE
@@ -540,7 +575,7 @@ typedef struct {
     // The original dimensions of the source image, used to control aspect ratio.
     Clay_Dimensions sourceDimensions;
     // A pointer transparently passed through from the original element definition, typically used to represent image data.
-    void* imageData;
+    CLAY_IMAGEDATA_TYPE imageData;
 } Clay_ImageRenderData;
 
 // Render command data when commandType == CLAY_RENDER_COMMAND_TYPE_CUSTOM
@@ -559,6 +594,7 @@ typedef struct {
 typedef struct {
     bool horizontal;
     bool vertical;
+    float scrollLag;
 } Clay_ScrollRenderData;
 
 // Render command data when commandType == CLAY_RENDER_COMMAND_TYPE_BORDER
@@ -595,6 +631,7 @@ typedef union {
 typedef struct {
     // Note: This is a pointer to the real internal scroll position, mutating it may cause a change in final layout.
     // Intended for use with external functionality that modifies scroll position, such as scroll bars or auto scrolling.
+    Clay_Vector2 *scrollTarget;
     Clay_Vector2 *scrollPosition;
     // The bounding box of the scroll element.
     Clay_Dimensions scrollContainerDimensions;
@@ -640,7 +677,7 @@ typedef struct {
     // A struct union containing data specific to this command's commandType.
     Clay_RenderData renderData;
     // A pointer transparently passed through from the original element declaration.
-    void *userData;
+    CLAY_ELEMENT_USERDATA_TYPE userData;
     // The id of this element, transparently passed through from the original element declaration.
     uint32_t id;
     // The z order required for drawing this command correctly.
@@ -716,7 +753,7 @@ typedef struct {
     // Controls settings related to element borders, and will generate BORDER render commands.
     Clay_BorderElementConfig border;
     // A pointer that will be transparently passed through to resulting render commands.
-    void *userData;
+    CLAY_ELEMENT_USERDATA_TYPE userData;
 } Clay_ElementDeclaration;
 
 CLAY__WRAPPER_STRUCT(Clay_ElementDeclaration);
@@ -757,7 +794,7 @@ typedef struct {
     // A string containing human-readable error text that explains the error in more detail.
     Clay_String errorText;
     // A transparent pointer passed through from when the error handler was first provided.
-    void *userData;
+    CLAY_ERROR_USERDATA_TYPE userData;
 } Clay_ErrorData;
 
 // A wrapper struct around Clay's error handler function.
@@ -765,7 +802,7 @@ typedef struct {
     // A user provided function to call when Clay encounters an error during layout.
     void (*errorHandlerFunction)(Clay_ErrorData errorText);
     // A pointer that will be transparently passed through to the error handler when it is called.
-    void *userData;
+    CLAY_ERROR_USERDATA_TYPE userData;
 } Clay_ErrorHandler;
 
 // Function Forward Declarations ---------------------------------
@@ -796,7 +833,8 @@ CLAY_DECOR void Clay_SetCurrentContext(Clay_Context* context);
 // - enableDragScrolling when set to true will enable mobile device like "touch drag" scroll of scroll containers, including momentum scrolling after the touch has ended.
 // - scrollDelta is the amount to scroll this frame on each axis in pixels.
 // - deltaTime is the time in seconds since the last "frame" (scroll update)
-CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime);
+// Returns true if a container is currently momentum scrolling (i.e. a touch sent it moving for some amount of time) or scrolling with lag (if scrollLag != 0). Useful for keeping the application from "going to sleep" while the scrolling happens
+CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime);
 // Updates the layout dimensions in response to the window or outer container being resized.
 CLAY_DECOR void Clay_SetLayoutDimensions(Clay_Dimensions dimensions);
 // Called before starting any layout declarations.
@@ -821,7 +859,7 @@ CLAY_DECOR bool Clay_Hovered(void);
 // Bind a callback that will be called when the pointer position provided by Clay_SetPointerState is within the current element's bounding box.
 // - onHoverFunction is a function pointer to a user defined function.
 // - userData is a pointer that will be transparently passed through when the onHoverFunction is called.
-CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData), intptr_t userData);
+CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerData, CLAY_ONHOVER_USERDATA_TYPE userData), CLAY_ONHOVER_USERDATA_TYPE userData);
 // An imperative function that returns true if the pointer position provided by Clay_SetPointerState is within the element with the provided ID's bounding box.
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
 CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId);
@@ -831,12 +869,12 @@ CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId);
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
 CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id);
 // Binds a callback function that Clay will call to determine the dimensions of a given string slice.
-// - measureTextFunction is a user provided function that adheres to the interface Clay_Dimensions (Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
+// - measureTextFunction is a user provided function that adheres to the interface Clay_Dimensions (Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
 // - userData is a pointer that will be transparently passed through when the measureTextFunction is called.
-CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData), void *userData);
+CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData), CLAY_MEASURE_USERDATA_TYPE userData);
 // Experimental - Used in cases where Clay needs to integrate with a system that manages its own scrolling containers externally.
 // Please reach out if you plan to use this function, as it may be subject to change.
-CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, void *userData), void *userData);
+CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData), CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 // A bounds-checked "get" function for the Clay_RenderCommandArray returned from Clay_EndLayout().
 CLAY_DECOR Clay_RenderCommand * Clay_RenderCommandArray_Get(Clay_RenderCommandArray* array, int32_t index);
 // Enables and disables Clay's internal debug tools.
@@ -859,8 +897,6 @@ CLAY_DECOR void Clay_SetMaxMeasureTextCacheWordCount(int32_t maxMeasureTextCache
 // Resets Clay's internal text measurement cache, useful if memory to represent strings is being re-used.
 // Similar behaviour can be achieved on an individual text element level by using Clay_TextElementConfig.hashStringContents
 CLAY_DECOR void Clay_ResetMeasureTextCache(void);
-// Added by Taylor! TODO: Write some documentation
-CLAY_DECOR Clay_BoundingBox Clay_FindElementBoundsById(Clay_ElementId elementId);
 
 // Internal API functions required by macros ----------------------
 
@@ -998,7 +1034,7 @@ typedef struct {
 typedef struct {
     Clay_Color backgroundColor;
     Clay_CornerRadius cornerRadius;
-    void* userData;
+    CLAY_ELEMENT_USERDATA_TYPE userData;
 } Clay_SharedElementConfig;
 
 CLAY__WRAPPER_STRUCT(Clay_SharedElementConfig);
@@ -1094,9 +1130,11 @@ typedef struct {
     Clay_Vector2 scrollOrigin;
     Clay_Vector2 pointerOrigin;
     Clay_Vector2 scrollMomentum;
+    Clay_Vector2 scrollTarget;
     Clay_Vector2 scrollPosition;
     Clay_Vector2 previousDelta;
     float momentumTime;
+    float scrollLag;
     uint32_t elementId;
     bool openThisFrame;
     bool pointerScrollActive;
@@ -1115,8 +1153,8 @@ typedef struct { // todo get this struct into a single cache line
     Clay_BoundingBox boundingBox;
     Clay_ElementId elementId;
     Clay_LayoutElement* layoutElement;
-    void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData);
-    intptr_t hoverFunctionUserData;
+    void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerInfo, CLAY_ONHOVER_USERDATA_TYPE userData);
+    CLAY_ONHOVER_USERDATA_TYPE hoverFunctionUserData;
     int32_t nextIndex;
     uint32_t generation;
     uint32_t idAlias;
@@ -1182,8 +1220,8 @@ struct Clay_Context {
     uint32_t debugSelectedElementId;
     uint32_t generation;
     uintptr_t arenaResetOffset;
-    void *measureTextUserData;
-    void *queryScrollOffsetUserData;
+    CLAY_MEASURE_USERDATA_TYPE measureTextUserData;
+    CLAY_QUERYSCROLL_USERDATA_TYPE queryScrollOffsetUserData;
     Clay_Arena internalArena;
     // Layout Elements / Render Commands
     Clay_LayoutElementArray layoutElements;
@@ -1247,18 +1285,17 @@ Clay_String Clay__WriteStringToCharBuffer(Clay__charArray *buffer, Clay_String s
 }
 
 #ifdef CLAY_WASM
-    __attribute__((import_module("clay"), import_name("measureTextFunction"))) Clay_Dimensions Clay__MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
-    __attribute__((import_module("clay"), import_name("queryScrollOffsetFunction"))) Clay_Vector2 Clay__QueryScrollOffset(uint32_t elementId, void *userData);
+    __attribute__((import_module("clay"), import_name("measureTextFunction"))) Clay_Dimensions Clay__MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
+    __attribute__((import_module("clay"), import_name("queryScrollOffsetFunction"))) Clay_Vector2 Clay__QueryScrollOffset(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 #else
-    Clay_Dimensions (*Clay__MeasureText)(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
-    Clay_Vector2 (*Clay__QueryScrollOffset)(uint32_t elementId, void *userData);
+    Clay_Dimensions (*Clay__MeasureText)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
+    Clay_Vector2 (*Clay__QueryScrollOffset)(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 #endif
 
 Clay_LayoutElement* Clay__GetOpenLayoutElement(void) {
     Clay_Context* context = Clay_GetCurrentContext();
     return Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&context->openLayoutElementStack, context->openLayoutElementStack.length - 1));
 }
-
 CLAY_DECOR uint32_t Clay__GetParentElementId(void) {
     Clay_Context* context = Clay_GetCurrentContext();
     return Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&context->openLayoutElementStack, context->openLayoutElementStack.length - 2))->id;
@@ -1368,6 +1405,8 @@ uint32_t Clay__HashTextWithConfig(Clay_String *text, Clay_TextElementConfig *con
     hash += config->wrapMode;
     hash += (hash << 10);
     hash ^= (hash >> 6);
+    
+    //TODO: We may want to hash the userData pointer here?
 
     hash += (hash << 3);
     hash ^= (hash >> 11);
@@ -1878,7 +1917,8 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
             Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .sharedElementConfig = sharedConfig }, CLAY__ELEMENT_CONFIG_TYPE_SHARED);
         }
     }
-    if (declaration.userData != 0) {
+    CLAY_ELEMENT_USERDATA_TYPE zeroUserDataType = CLAY__DEFAULT_STRUCT;
+    if (!Clay__MemCmp((char *)(&declaration.userData), (char *)(&zeroUserDataType), sizeof(CLAY_ELEMENT_USERDATA_TYPE))) {
         if (sharedConfig) {
             sharedConfig->userData = declaration.userData;
         } else {
@@ -1886,7 +1926,8 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
             Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .sharedElementConfig = sharedConfig }, CLAY__ELEMENT_CONFIG_TYPE_SHARED);
         }
     }
-    if (declaration.image.imageData) {
+    CLAY_IMAGEDATA_TYPE zeroImageDataType = CLAY__DEFAULT_STRUCT;
+    if (!Clay__MemCmp((char *)(&declaration.image.imageData), (char *)(&zeroImageDataType), sizeof(CLAY_IMAGEDATA_TYPE))) {
         Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .imageElementConfig = Clay__StoreImageElementConfig(declaration.image) }, CLAY__ELEMENT_CONFIG_TYPE_IMAGE);
         Clay__int32_tArray_Add(&context->imageElementPointers, context->layoutElements.length - 1);
     }
@@ -1948,13 +1989,15 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
                 scrollOffset = mapping;
                 scrollOffset->layoutElement = openLayoutElement;
                 scrollOffset->openThisFrame = true;
+                scrollOffset->scrollLag = declaration.scroll.scrollLag;
             }
         }
         if (!scrollOffset) {
-            scrollOffset = Clay__ScrollContainerDataInternalArray_Add(&context->scrollContainerDatas, CLAY__INIT(Clay__ScrollContainerDataInternal){.layoutElement = openLayoutElement, .scrollOrigin = {-1,-1}, .elementId = openLayoutElement->id, .openThisFrame = true});
+            scrollOffset = Clay__ScrollContainerDataInternalArray_Add(&context->scrollContainerDatas, CLAY__INIT(Clay__ScrollContainerDataInternal){.layoutElement = openLayoutElement, .scrollOrigin = {-1,-1}, .elementId = openLayoutElement->id, .scrollLag = declaration.scroll.scrollLag, .openThisFrame = true});
         }
         if (context->externalScrollHandlingEnabled) {
-            scrollOffset->scrollPosition = Clay__QueryScrollOffset(scrollOffset->elementId, context->queryScrollOffsetUserData);
+            scrollOffset->scrollTarget = Clay__QueryScrollOffset(scrollOffset->elementId, context->queryScrollOffsetUserData);
+            scrollOffset->scrollPosition = scrollOffset->scrollTarget;
         }
     }
     if (!Clay__MemCmp((char *)(&declaration.border.width), (char *)(&Clay__BorderWidth_DEFAULT), sizeof(Clay_BorderWidth))) {
@@ -2120,7 +2163,9 @@ void Clay__SizeContainersAlongAxis(bool xAxis) {
 
                 if (childSizing.type != CLAY__SIZING_TYPE_PERCENT
                     && childSizing.type != CLAY__SIZING_TYPE_FIXED
-                    && (!Clay__ElementHasConfig(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT) || (Clay__FindElementConfigWithType(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT).textElementConfig->wrapMode == CLAY_TEXT_WRAP_WORDS)) // todo too many loops
+                    && (!Clay__ElementHasConfig(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT) ||
+                    	(Clay__FindElementConfigWithType(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT).textElementConfig->wrapMode == CLAY_TEXT_WRAP_WORDS) ||
+                    	(Clay__FindElementConfigWithType(childElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT).textElementConfig->textAlignment == CLAY_TEXT_ALIGN_SHRINK)) // todo too many loops
                     && (xAxis || !Clay__ElementHasConfig(childElement, CLAY__ELEMENT_CONFIG_TYPE_IMAGE))
                 ) {
                     Clay__int32_tArray_Add(&resizableContainerBuffer, childElementIndex);
@@ -2290,6 +2335,8 @@ void Clay__CalculateFinalLayout(void) {
         Clay_LayoutElement *containerElement = Clay_LayoutElementArray_Get(&context->layoutElements, (int)textElementData->elementIndex);
         Clay_TextElementConfig *textConfig = Clay__FindElementConfigWithType(containerElement, CLAY__ELEMENT_CONFIG_TYPE_TEXT).textElementConfig;
         Clay__MeasureTextCacheItem *measureTextCacheItem = Clay__MeasureTextCached(&textElementData->text, textConfig);
+        bool considerNewLines = (textConfig->wrapMode == CLAY_TEXT_WRAP_NEWLINES || textConfig->wrapMode == CLAY_TEXT_WRAP_WORDS);
+        bool considerMaxWidth = (textConfig->wrapMode == CLAY_TEXT_WRAP_WORDS && textConfig->textAlignment != CLAY_TEXT_ALIGN_SHRINK);
         float lineWidth = 0;
         float lineHeight = textConfig->lineHeight > 0 ? (float)textConfig->lineHeight : textElementData->preferredDimensions.height;
         int32_t lineLengthChars = 0;
@@ -2307,14 +2354,14 @@ void Clay__CalculateFinalLayout(void) {
             }
             Clay__MeasuredWord *measuredWord = Clay__MeasuredWordArray_Get(&context->measuredWords, wordIndex);
             // Only word on the line is too large, just render it anyway
-            if (lineLengthChars == 0 && lineWidth + measuredWord->width > containerElement->dimensions.width) {
+            if (lineLengthChars == 0 && lineWidth + measuredWord->width > containerElement->dimensions.width && considerMaxWidth) {
                 Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, CLAY__INIT(Clay__WrappedTextLine) { { measuredWord->width, lineHeight }, { .length = measuredWord->length, .chars = &textElementData->text.chars[measuredWord->startOffset] } });
                 textElementData->wrappedLines.length++;
                 wordIndex = measuredWord->next;
                 lineStartOffset = measuredWord->startOffset + measuredWord->length;
             }
             // measuredWord->length == 0 means a newline character
-            else if (measuredWord->length == 0 || lineWidth + measuredWord->width > containerElement->dimensions.width) {
+            else if ((measuredWord->length == 0 && considerNewLines) || (lineWidth + measuredWord->width > containerElement->dimensions.width && considerMaxWidth)) {
                 // Wrapped text lines list has overflowed, just render out the line
                 bool finalCharIsSpace = textElementData->text.chars[lineStartOffset + lineLengthChars - 1] == ' ';
                 Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, CLAY__INIT(Clay__WrappedTextLine) { { lineWidth + (finalCharIsSpace ? -spaceWidth : 0), lineHeight }, { .length = lineLengthChars + (finalCharIsSpace ? -1 : 0), .chars = &textElementData->text.chars[lineStartOffset] } });
@@ -2496,7 +2543,7 @@ void Clay__CalculateFinalLayout(void) {
                 }
                 Clay__AddRenderCommand(CLAY__INIT(Clay_RenderCommand) {
                     .boundingBox = clipHashMapItem->boundingBox,
-                    .userData = 0,
+                    .userData = CLAY__DEFAULT_STRUCT,
                     .id = Clay__HashNumber(rootElement->id, rootElement->childrenOrTextContent.children.length + 10).id, // TODO need a better strategy for managing derived ids
                     .zIndex = root->zIndex,
                     .commandType = CLAY_RENDER_COMMAND_TYPE_SCISSOR_START,
@@ -2615,6 +2662,7 @@ void Clay__CalculateFinalLayout(void) {
                                 .scroll = {
                                     .horizontal = elementConfig->config.scrollElementConfig->horizontal,
                                     .vertical = elementConfig->config.scrollElementConfig->vertical,
+                                    .scrollLag = elementConfig->config.scrollElementConfig->scrollLag,
                                 }
                             };
                             break;
@@ -2650,14 +2698,23 @@ void Clay__CalculateFinalLayout(void) {
                                     continue;
                                 }
                                 float offset = (currentElementBoundingBox.width - wrappedLine->dimensions.width);
-                                if (textElementConfig->textAlignment == CLAY_TEXT_ALIGN_LEFT) {
+                                if (textElementConfig->textAlignment == CLAY_TEXT_ALIGN_LEFT || textElementConfig->textAlignment == CLAY_TEXT_ALIGN_SHRINK) {
                                     offset = 0;
                                 }
                                 if (textElementConfig->textAlignment == CLAY_TEXT_ALIGN_CENTER) {
                                     offset /= 2;
                                 }
+                                Clay_BoundingBox boundingBox = {
+                                	currentElementBoundingBox.x + offset,
+                                	currentElementBoundingBox.y + yPosition,
+                                	wrappedLine->dimensions.width,
+                                	wrappedLine->dimensions.height
+                                };
+                                if (textElementConfig->textAlignment == CLAY_TEXT_ALIGN_SHRINK && boundingBox.width > currentElementBoundingBox.width) {
+                                	boundingBox.width = currentElementBoundingBox.width;
+                                }
                                 Clay__AddRenderCommand(CLAY__INIT(Clay_RenderCommand) {
-                                    .boundingBox = { currentElementBoundingBox.x + offset, currentElementBoundingBox.y + yPosition, wrappedLine->dimensions.width, wrappedLine->dimensions.height },
+                                    .boundingBox = boundingBox,
                                     .renderData = { .text = {
                                         .stringContents = CLAY__INIT(Clay_StringSlice) { .length = wrappedLine->line.length, .chars = wrappedLine->line.chars, .baseChars = currentElement->childrenOrTextContent.textElementData->text.chars },
                                         .textColor = textElementConfig->textColor,
@@ -2665,6 +2722,7 @@ void Clay__CalculateFinalLayout(void) {
                                         .fontSize = textElementConfig->fontSize,
                                         .letterSpacing = textElementConfig->letterSpacing,
                                         .lineHeight = textElementConfig->lineHeight,
+                                        .userData = textElementConfig->userData,
                                     }},
                                     .userData = sharedConfig->userData,
                                     .id = Clay__HashNumber(lineIndex, currentElement->id).id,
@@ -3163,7 +3221,7 @@ void Clay__RenderDebugViewCornerRadius(Clay_CornerRadius cornerRadius, Clay_Text
     }
 }
 
-void HandleDebugViewCloseButtonInteraction(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData) {
+void HandleDebugViewCloseButtonInteraction(Clay_ElementId elementId, Clay_PointerData pointerInfo, CLAY_ONHOVER_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     (void) elementId; (void) pointerInfo; (void) userData;
     if (pointerInfo.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -3224,7 +3282,8 @@ void Clay__RenderDebugView(void) {
                 .cornerRadius = CLAY_CORNER_RADIUS(4),
                 .border = { .color = { 217,91,67,255 }, .width = { 1, 1, 1, 1, 0 } },
             }) {
-                Clay_OnHover(HandleDebugViewCloseButtonInteraction, 0);
+            	CLAY_ONHOVER_USERDATA_TYPE zeroUserDataType = CLAY__DEFAULT_STRUCT;
+                Clay_OnHover(HandleDebugViewCloseButtonInteraction, zeroUserDataType);
                 CLAY_TEXT(CLAY_STRING("x"), CLAY_TEXT_CONFIG({ .textColor = CLAY__DEBUGVIEW_COLOR_4, .fontSize = 16 }));
             }
         }
@@ -3614,12 +3673,12 @@ CLAY_DECOR Clay_Arena Clay_CreateArenaWithCapacityAndMemory(uint32_t capacity, v
 }
 
 #ifndef CLAY_WASM
-CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData), void *userData) {
+CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData), CLAY_MEASURE_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     Clay__MeasureText = measureTextFunction;
     context->measureTextUserData = userData;
 }
-CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, void *userData), void *userData) {
+CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData), CLAY_QUERYSCROLL_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     Clay__QueryScrollOffset = queryScrollOffsetFunction;
     context->queryScrollOffsetUserData = userData;
@@ -3742,8 +3801,9 @@ CLAY_DECOR void Clay_SetCurrentContext(Clay_Context* context) {
 }
 
 CLAY_WASM_EXPORT("Clay_UpdateScrollContainers")
-CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime) {
+CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime) {
     Clay_Context* context = Clay_GetCurrentContext();
+    bool isAutoScrollingOccurring = false;
     bool isPointerActive = enableDragScrolling && (context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED || context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME);
     // Don't apply scroll events to ancestors of the inner element
     int32_t highestPriorityElementIndex = -1;
@@ -3764,13 +3824,13 @@ CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
 
         // Touch / click is released
         if (!isPointerActive && scrollData->pointerScrollActive) {
-            float xDiff = scrollData->scrollPosition.x - scrollData->scrollOrigin.x;
+            float xDiff = scrollData->scrollTarget.x - scrollData->scrollOrigin.x;
             if (xDiff < -10 || xDiff > 10) {
-                scrollData->scrollMomentum.x = (scrollData->scrollPosition.x - scrollData->scrollOrigin.x) / (scrollData->momentumTime * 25);
+                scrollData->scrollMomentum.x = (scrollData->scrollTarget.x - scrollData->scrollOrigin.x) / (scrollData->momentumTime * 25);
             }
-            float yDiff = scrollData->scrollPosition.y - scrollData->scrollOrigin.y;
+            float yDiff = scrollData->scrollTarget.y - scrollData->scrollOrigin.y;
             if (yDiff < -10 || yDiff > 10) {
-                scrollData->scrollMomentum.y = (scrollData->scrollPosition.y - scrollData->scrollOrigin.y) / (scrollData->momentumTime * 25);
+                scrollData->scrollMomentum.y = (scrollData->scrollTarget.y - scrollData->scrollOrigin.y) / (scrollData->momentumTime * 25);
             }
             scrollData->pointerScrollActive = false;
 
@@ -3778,23 +3838,51 @@ CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
             scrollData->scrollOrigin = CLAY__INIT(Clay_Vector2){0,0};
             scrollData->momentumTime = 0;
         }
+        
+        bool scrollMomentumOccurring = (scrollData->scrollMomentum.x != 0 || scrollData->scrollMomentum.y != 0);
+        if (scrollMomentumOccurring) { isAutoScrollingOccurring = true; }
 
         // Apply existing momentum
-        scrollData->scrollPosition.x += scrollData->scrollMomentum.x;
+        scrollData->scrollTarget.x += scrollData->scrollMomentum.x;
         scrollData->scrollMomentum.x *= 0.95f;
         bool scrollOccurred = scrollDelta.x != 0 || scrollDelta.y != 0;
         if ((scrollData->scrollMomentum.x > -0.1f && scrollData->scrollMomentum.x < 0.1f) || scrollOccurred) {
             scrollData->scrollMomentum.x = 0;
         }
-        scrollData->scrollPosition.x = CLAY__MIN(CLAY__MAX(scrollData->scrollPosition.x, -(CLAY__MAX(scrollData->contentSize.width - scrollData->layoutElement->dimensions.width, 0))), 0);
+        scrollData->scrollTarget.x = CLAY__MIN(CLAY__MAX(scrollData->scrollTarget.x, -(CLAY__MAX(scrollData->contentSize.width - scrollData->layoutElement->dimensions.width, 0))), 0);
 
-        scrollData->scrollPosition.y += scrollData->scrollMomentum.y;
+        scrollData->scrollTarget.y += scrollData->scrollMomentum.y;
         scrollData->scrollMomentum.y *= 0.95f;
         if ((scrollData->scrollMomentum.y > -0.1f && scrollData->scrollMomentum.y < 0.1f) || scrollOccurred) {
             scrollData->scrollMomentum.y = 0;
         }
-        scrollData->scrollPosition.y = CLAY__MIN(CLAY__MAX(scrollData->scrollPosition.y, -(CLAY__MAX(scrollData->contentSize.height - scrollData->layoutElement->dimensions.height, 0))), 0);
-
+        scrollData->scrollTarget.y = CLAY__MIN(CLAY__MAX(scrollData->scrollTarget.y, -(CLAY__MAX(scrollData->contentSize.height - scrollData->layoutElement->dimensions.height, 0))), 0);
+        
+        // Update scrollPosition to scrollTarget with scrollLag taken into account
+        if (scrollData->scrollLag == 0 || scrollMomentumOccurring || isPointerActive)
+        {
+        	scrollData->scrollPosition = scrollData->scrollTarget;
+        }
+        else
+        {
+        	Clay_Vector2 targetDelta = CLAY__INIT(Clay_Vector2){
+        		.x = scrollData->scrollTarget.x - scrollData->scrollPosition.x,
+        		.y = scrollData->scrollTarget.y - scrollData->scrollPosition.y
+        	};
+        	r32 targetDistanceSquared = (targetDelta.x * targetDelta.x) + (targetDelta.y * targetDelta.y);
+        	if (targetDistanceSquared >= 1.0f)
+        	{
+        		//TODO: We should do the proper framerate independent calculation here!
+        		scrollData->scrollPosition.x += targetDelta.x / scrollData->scrollLag;
+        		scrollData->scrollPosition.y += targetDelta.y / scrollData->scrollLag;
+        		isAutoScrollingOccurring = true;
+        	}
+        	else
+        	{
+        		scrollData->scrollPosition = scrollData->scrollTarget;
+        	}
+        }
+        
         for (int32_t j = 0; j < context->pointerOverIds.length; ++j) { // TODO n & m are small here but this being n*m gives me the creeps
             if (scrollData->layoutElement->id == Clay__ElementIdArray_Get(&context->pointerOverIds, j)->id) {
                 highestPriorityElementIndex = j;
@@ -3806,40 +3894,41 @@ CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
     if (highestPriorityElementIndex > -1 && highestPriorityScrollData) {
         Clay_LayoutElement *scrollElement = highestPriorityScrollData->layoutElement;
         Clay_ScrollElementConfig *scrollConfig = Clay__FindElementConfigWithType(scrollElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig;
+        highestPriorityScrollData->scrollLag = scrollConfig->scrollLag;
         bool canScrollVertically = scrollConfig->vertical && highestPriorityScrollData->contentSize.height > scrollElement->dimensions.height;
         bool canScrollHorizontally = scrollConfig->horizontal && highestPriorityScrollData->contentSize.width > scrollElement->dimensions.width;
         // Handle wheel scroll
         if (canScrollVertically) {
-            highestPriorityScrollData->scrollPosition.y = highestPriorityScrollData->scrollPosition.y + scrollDelta.y * 10;
+            highestPriorityScrollData->scrollTarget.y = highestPriorityScrollData->scrollTarget.y + scrollDelta.y * 10;
         }
         if (canScrollHorizontally) {
-            highestPriorityScrollData->scrollPosition.x = highestPriorityScrollData->scrollPosition.x + scrollDelta.x * 10;
+            highestPriorityScrollData->scrollTarget.x = highestPriorityScrollData->scrollTarget.x + scrollDelta.x * 10;
         }
         // Handle click / touch scroll
         if (isPointerActive) {
             highestPriorityScrollData->scrollMomentum = CLAY__INIT(Clay_Vector2)CLAY__DEFAULT_STRUCT;
             if (!highestPriorityScrollData->pointerScrollActive) {
                 highestPriorityScrollData->pointerOrigin = context->pointerInfo.position;
-                highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollPosition;
+                highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollTarget;
                 highestPriorityScrollData->pointerScrollActive = true;
             } else {
                 float scrollDeltaX = 0, scrollDeltaY = 0;
                 if (canScrollHorizontally) {
-                    float oldXScrollPosition = highestPriorityScrollData->scrollPosition.x;
-                    highestPriorityScrollData->scrollPosition.x = highestPriorityScrollData->scrollOrigin.x + (context->pointerInfo.position.x - highestPriorityScrollData->pointerOrigin.x);
-                    highestPriorityScrollData->scrollPosition.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.x, 0), -(highestPriorityScrollData->contentSize.width - highestPriorityScrollData->boundingBox.width));
-                    scrollDeltaX = highestPriorityScrollData->scrollPosition.x - oldXScrollPosition;
+                    float oldXScrollPosition = highestPriorityScrollData->scrollTarget.x;
+                    highestPriorityScrollData->scrollTarget.x = highestPriorityScrollData->scrollOrigin.x + (context->pointerInfo.position.x - highestPriorityScrollData->pointerOrigin.x);
+                    highestPriorityScrollData->scrollTarget.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollTarget.x, 0), -(highestPriorityScrollData->contentSize.width - highestPriorityScrollData->boundingBox.width));
+                    scrollDeltaX = highestPriorityScrollData->scrollTarget.x - oldXScrollPosition;
                 }
                 if (canScrollVertically) {
-                    float oldYScrollPosition = highestPriorityScrollData->scrollPosition.y;
-                    highestPriorityScrollData->scrollPosition.y = highestPriorityScrollData->scrollOrigin.y + (context->pointerInfo.position.y - highestPriorityScrollData->pointerOrigin.y);
-                    highestPriorityScrollData->scrollPosition.y = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.y, 0), -(highestPriorityScrollData->contentSize.height - highestPriorityScrollData->boundingBox.height));
-                    scrollDeltaY = highestPriorityScrollData->scrollPosition.y - oldYScrollPosition;
+                    float oldYScrollPosition = highestPriorityScrollData->scrollTarget.y;
+                    highestPriorityScrollData->scrollTarget.y = highestPriorityScrollData->scrollOrigin.y + (context->pointerInfo.position.y - highestPriorityScrollData->pointerOrigin.y);
+                    highestPriorityScrollData->scrollTarget.y = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollTarget.y, 0), -(highestPriorityScrollData->contentSize.height - highestPriorityScrollData->boundingBox.height));
+                    scrollDeltaY = highestPriorityScrollData->scrollTarget.y - oldYScrollPosition;
                 }
                 if (scrollDeltaX > -0.1f && scrollDeltaX < 0.1f && scrollDeltaY > -0.1f && scrollDeltaY < 0.1f && highestPriorityScrollData->momentumTime > 0.15f) {
                     highestPriorityScrollData->momentumTime = 0;
                     highestPriorityScrollData->pointerOrigin = context->pointerInfo.position;
-                    highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollPosition;
+                    highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollTarget;
                 } else {
                      highestPriorityScrollData->momentumTime += deltaTime;
                 }
@@ -3848,11 +3937,20 @@ CLAY_DECOR void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vecto
         // Clamp any changes to scroll position to the maximum size of the contents
         if (canScrollVertically) {
             highestPriorityScrollData->scrollPosition.y = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.y, 0), -(highestPriorityScrollData->contentSize.height - scrollElement->dimensions.height));
+            highestPriorityScrollData->scrollTarget.y = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollTarget.y, 0), -(highestPriorityScrollData->contentSize.height - scrollElement->dimensions.height));
         }
         if (canScrollHorizontally) {
             highestPriorityScrollData->scrollPosition.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollPosition.x, 0), -(highestPriorityScrollData->contentSize.width - scrollElement->dimensions.width));
+            highestPriorityScrollData->scrollTarget.x = CLAY__MAX(CLAY__MIN(highestPriorityScrollData->scrollTarget.x, 0), -(highestPriorityScrollData->contentSize.width - scrollElement->dimensions.width));
+        }
+        
+        //If no scrollLag, or currently scrolling with touch, immediately move scrollPosition to scrollTarget rather than waiting for next frame
+        if (highestPriorityScrollData->scrollLag == 0 || isPointerActive)
+        {
+    		highestPriorityScrollData->scrollPosition = highestPriorityScrollData->scrollTarget;
         }
     }
+    return isAutoScrollingOccurring;
 }
 
 CLAY_WASM_EXPORT("Clay_BeginLayout")
@@ -3932,7 +4030,7 @@ CLAY_DECOR bool Clay_Hovered(void) {
     return false;
 }
 
-CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData), intptr_t userData) {
+CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerInfo, CLAY_ONHOVER_USERDATA_TYPE userData), CLAY_ONHOVER_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     if (context->booleanWarnings.maxElementsExceeded) {
         return;
@@ -3963,13 +4061,18 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
     for (int32_t i = 0; i < context->scrollContainerDatas.length; ++i) {
         Clay__ScrollContainerDataInternal *scrollContainerData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, i);
         if (scrollContainerData->elementId == id.id) {
-            return CLAY__INIT(Clay_ScrollContainerData) {
-                .scrollPosition = &scrollContainerData->scrollPosition,
-                .scrollContainerDimensions = { scrollContainerData->boundingBox.width, scrollContainerData->boundingBox.height },
-                .contentDimensions = scrollContainerData->contentSize,
-                .config = *Clay__FindElementConfigWithType(scrollContainerData->layoutElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig,
-                .found = true
-            };
+        	Clay_ScrollElementConfig* scrollConfig = Clay__FindElementConfigWithType(scrollContainerData->layoutElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig;
+        	if (scrollConfig != nullptr)
+        	{
+	            return CLAY__INIT(Clay_ScrollContainerData) {
+	                .scrollTarget = &scrollContainerData->scrollTarget,
+	                .scrollPosition = &scrollContainerData->scrollPosition,
+	                .scrollContainerDimensions = { scrollContainerData->boundingBox.width, scrollContainerData->boundingBox.height },
+	                .contentDimensions = scrollContainerData->contentSize,
+	                .config = *scrollConfig,
+	                .found = true
+	            };
+	        }
         }
     }
     return CLAY__INIT(Clay_ScrollContainerData) CLAY__DEFAULT_STRUCT;
@@ -4058,15 +4161,6 @@ CLAY_DECOR void Clay_ResetMeasureTextCache(void) {
         context->measureTextHashMap.internalArray[i] = 0;
     }
     context->measureTextHashMapInternal.length = 1; // Reserve the 0 value to mean "no next element"
-}
-
-CLAY_WASM_EXPORT("Clay_FindElementDimensionsById")
-CLAY_DECOR Clay_BoundingBox Clay_FindElementBoundsById(Clay_ElementId elementId)
-{
-	Clay_LayoutElementHashMapItem* hashMapItem = Clay__GetHashMapItem(elementId.id);
-	return (hashMapItem != nullptr)
-		? hashMapItem->boundingBox
-		: (Clay_BoundingBox){ .x = 0, .y = 0, .width = 0, .height = 0 };
 }
 
 #endif // CLAY_IMPLEMENTATION

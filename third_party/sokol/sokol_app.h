@@ -1329,6 +1329,7 @@ typedef enum sapp_event_type {
     SAPP_EVENTTYPE_QUIT_REQUESTED,
     SAPP_EVENTTYPE_CLIPBOARD_PASTED,
     SAPP_EVENTTYPE_FILES_DROPPED,
+    SAPP_EVENTTYPE_RESIZE_RENDER, //NOTE: Added by Taylor
     _SAPP_EVENTTYPE_NUM,
     _SAPP_EVENTTYPE_FORCE_U32 = 0x7FFFFFFF
 } sapp_event_type;
@@ -2621,6 +2622,7 @@ typedef struct {
 typedef struct {
     HWND hwnd;
     HMONITOR hmonitor;
+    DWORD main_thread_id; //NOTE: Added by Taylor
     HDC dc;
     HICON big_icon;
     HICON small_icon;
@@ -2946,6 +2948,7 @@ typedef struct {
     bool cleanup_called;
     bool quit_requested;
     bool quit_ordered;
+    bool is_rendering; //NOTE: Added by Taylor
     bool event_consumed;
     bool html5_ask_leave_site;
     bool onscreen_keyboard_shown;
@@ -3217,6 +3220,10 @@ _SOKOL_PRIVATE void _sapp_init_state(const sapp_desc* desc) {
     // NOTE: _sapp.desc.width/height may be 0! Platform backends need to deal with this
     _sapp.window_width = _sapp.desc.width;
     _sapp.window_height = _sapp.desc.height;
+    _sapp.is_rendering = false; //NOTE: Added by Taylor
+    #if defined(_SAPP_WIN32)
+    _sapp.win32.main_thread_id = GetCurrentThreadId();
+    #endif
     _sapp.framebuffer_width = _sapp.window_width;
     _sapp.framebuffer_height = _sapp.window_height;
     _sapp.sample_count = _sapp.desc.sample_count;
@@ -3300,7 +3307,9 @@ _SOKOL_PRIVATE void _sapp_frame(void) {
         _sapp.first_frame = false;
         _sapp_call_init();
     }
+    _sapp.is_rendering = true;
     _sapp_call_frame();
+    _sapp.is_rendering = false;
     _sapp.frame_count++;
 }
 
@@ -7493,6 +7502,35 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
                     }
                 }
                 break;
+            case WM_PAINT: //NOTE: Added by Taylor
+                {
+                    #if defined(SOKOL_GLCORE)
+                    if (_sapp.valid && _sapp.init_called && !_sapp.fullscreen && !_sapp.is_rendering && GetCurrentThreadId() == _sapp.win32.main_thread_id)
+                    {
+                        _sapp.is_rendering = true;
+                        if (_sapp_win32_update_dimensions())
+                        {
+                            // #if defined(SOKOL_D3D11)
+                            // _sapp_d3d11_resize_default_render_target();
+                            // #endif
+                            _sapp_win32_app_event(SAPP_EVENTTYPE_RESIZED);
+                        }
+                        _sapp_init_event(SAPP_EVENTTYPE_RESIZE_RENDER);
+                        if (_sapp_call_event(&_sapp.event))
+                        {
+                            // #if defined(SOKOL_D3D11)
+                            // // present with DXGI_PRESENT_DO_NOT_WAIT
+                            // _sapp_d3d11_present(true);
+                            // #endif
+                            // #if defined(SOKOL_GLCORE)
+                            _sapp_wgl_swap_buffers();
+                            // #endif
+                        }
+                        _sapp.is_rendering = false;
+                    }
+                    #endif
+                }
+                break;
             case WM_SETFOCUS:
                 _sapp_win32_app_event(SAPP_EVENTTYPE_FOCUSED);
                 break;
@@ -7634,25 +7672,28 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
                 KillTimer(_sapp.win32.hwnd, 1);
                 break;
             case WM_TIMER:
-                _sapp_win32_timing_measure();
-                _sapp_frame();
-                #if defined(SOKOL_D3D11)
-                    // present with DXGI_PRESENT_DO_NOT_WAIT
-                    _sapp_d3d11_present(true);
-                #endif
-                #if defined(SOKOL_GLCORE)
-                    _sapp_wgl_swap_buffers();
-                #endif
-                /* NOTE: resizing the swap-chain during resize leads to a substantial
-                   memory spike (hundreds of megabytes for a few seconds).
-
-                if (_sapp_win32_update_dimensions()) {
+                if (!_sapp.is_rendering)
+                {
+                    _sapp_win32_timing_measure();
+                    _sapp_frame();
                     #if defined(SOKOL_D3D11)
-                    _sapp_d3d11_resize_default_render_target();
+                        // present with DXGI_PRESENT_DO_NOT_WAIT
+                        _sapp_d3d11_present(true);
                     #endif
-                    _sapp_win32_app_event(SAPP_EVENTTYPE_RESIZED);
+                    #if defined(SOKOL_GLCORE)
+                        _sapp_wgl_swap_buffers();
+                    #endif
+                    /* NOTE: resizing the swap-chain during resize leads to a substantial
+                       memory spike (hundreds of megabytes for a few seconds).
+
+                    if (_sapp_win32_update_dimensions()) {
+                        #if defined(SOKOL_D3D11)
+                        _sapp_d3d11_resize_default_render_target();
+                        #endif
+                        _sapp_win32_app_event(SAPP_EVENTTYPE_RESIZED);
+                    }
+                    */
                 }
-                */
                 break;
             case WM_NCLBUTTONDOWN:
                 /* workaround for half-second pause when starting to move window

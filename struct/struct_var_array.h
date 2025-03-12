@@ -567,8 +567,9 @@ PEXP void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, ux
 	//move all items above index down by one
 	if (index < array->length-1)
 	{
-		u8* removePntr = (u8*)array->items + (index * array->itemSize);
-		MyMemMove(removePntr, removePntr + 1*array->itemSize, (array->length * (array->itemSize - (index+1))));
+		u8* removePntr = ((u8*)array->items) + (index * array->itemSize);
+		uxx numItemsToShift = array->length - (index+1);
+		MyMemMove(removePntr, removePntr + 1*array->itemSize, numItemsToShift * array->itemSize);
 	}
 	array->length--;
 }

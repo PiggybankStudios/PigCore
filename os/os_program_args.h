@@ -40,7 +40,9 @@ struct ProgramArgs
 	void ParseProgramArgs(Arena* arena, uxx numArguments, const char** arguments, ProgramArgs* argsOut);
 	Str8 GetNamelessProgramArg(const ProgramArgs* args, uxx argIndex);
 	bool FindNamedProgramArgBoolEx(const ProgramArgs* args, Str8 name, Str8 otherName, bool defaultValue, uxx skipCount);
-	bool FindNamedProgramArgBool(const ProgramArgs* args, Str8 name, bool defaultValue);
+	PIG_CORE_INLINE bool FindNamedProgramArgBool(const ProgramArgs* args, Str8 name, bool defaultValue);
+	Str8 FindNamedProgramArgStrEx(const ProgramArgs* args, Str8 name, Str8 otherName, Str8 defaultValue, uxx skipCount);
+	PIG_CORE_INLINE Str8 FindNamedProgramArgStr(const ProgramArgs* args, Str8 name, Str8 otherName, Str8 defaultValue);
 #endif
 
 // +--------------------------------------------------------------+
@@ -177,9 +179,31 @@ PEXP bool FindNamedProgramArgBoolEx(const ProgramArgs* args, Str8 name, Str8 oth
 	}
 	return defaultValue;
 }
-PEXP bool FindNamedProgramArgBool(const ProgramArgs* args, Str8 name, bool defaultValue)
+PEXPI bool FindNamedProgramArgBool(const ProgramArgs* args, Str8 name, bool defaultValue)
 {
 	return FindNamedProgramArgBoolEx(args, name, Str8_Empty, defaultValue, 0);
+}
+
+PEXP Str8 FindNamedProgramArgStrEx(const ProgramArgs* args, Str8 name, Str8 otherName, Str8 defaultValue, uxx skipCount)
+{
+	uxx foundIndex = 0;
+	VarArrayLoop(&args->args, aIndex)
+	{
+		VarArrayLoopGet(ProgramArg, arg, &args->args, aIndex);
+		if (StrAnyCaseEquals(arg->name, name) || (!IsEmptyStr(otherName) && StrAnyCaseEquals(arg->name, otherName)))
+		{
+			if (foundIndex >= skipCount)
+			{
+				return arg->value;
+			}
+			foundIndex++;
+		}
+	}
+	return defaultValue;
+}
+PEXPI Str8 FindNamedProgramArgStr(const ProgramArgs* args, Str8 name, Str8 otherName, Str8 defaultValue)
+{
+	return FindNamedProgramArgStrEx(args, name, otherName, defaultValue, 0);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
