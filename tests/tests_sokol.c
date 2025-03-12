@@ -217,6 +217,7 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating);
 	Assert(gradientTexture.error == Result_Success);
 	
+	#if BUILD_WITH_CLAY
 	testFont = InitFont(stdHeap, StrLit("testFont"));
 	Result attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold);
 	Assert(attachResult == Result_Success);
@@ -228,6 +229,7 @@ void AppInit(void)
 	Result bakeResult = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
 	Assert(bakeResult == Result_Success);
 	FillFontKerningTable(&testFont);
+	#endif
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);

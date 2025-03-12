@@ -4,6 +4,7 @@ mkdir -p _build
 pushd _build > /dev/null
 root=".."
 scripts="$root/_scripts"
+tools="$root/third_party/_tools/linux"
 
 python3 --version > /dev/null 2> /dev/null
 if [ $? -ne 0 ]
@@ -112,9 +113,31 @@ wasm_js_files="$wasm_js_files $root/wasm/wasm_main.js"
 # +--------------------------------------------------------------+
 # |                        Build Shaders                         |
 # +--------------------------------------------------------------+
+shader_list_file="shader_list_source.txt"
+shader_clang_args="$common_clang_flags $c_clang_flags $linux_clang_flags"
 if [[ $BUILD_SHADERS -eq 1 ]] then
-	echo "TODO: Build shaders!"
+	if [[ ! -f sokol-shdc ]] then
+		cp $tools/sokol-shdc sokol-shdc
+	fi
+	python3 $scripts/find_and_compile_shaders.py "$root" --exclude="third_party" --exclude="_template" --exclude=".git" --exclude="_build" --list_file="$shader_list_file"
 fi
+shader_source_files=`cat $shader_list_file`
+
+shader_o_paths=""
+for shader_path in ${shader_source_files//,/ }
+do
+	shader_pathname="$(basename "$shader_path")"
+	shader_o_path="${shader_pathname%.*}.o"
+	if [[ $BUILD_SHADERS -eq 1 ]] then
+		echo "[Compiling $shader_path...]"
+		clang-18 -c $shader_clang_args $shader_path -o "$shader_o_path"
+	fi
+	if [[ -z "${shader_o_paths}" ]] then
+		shader_o_paths="$shader_o_path"
+	else
+		shader_o_paths="$shader_o_paths $shader_o_path"
+	fi
+done
 
 # +--------------------------------------------------------------+
 # |                         Build piggen                         |
@@ -157,7 +180,7 @@ fi
 # +--------------------------------------------------------------+
 tests_bin_path=tests
 tests_source_path=$root/tests/tests_main.c
-tests_clang_args="$common_clang_flags $c_clang_flags $linux_clang_flags -o $tests_bin_path $tests_source_path $common_linker_flags $tests_libraries"
+tests_clang_args="$common_clang_flags $c_clang_flags $linux_clang_flags -o $tests_bin_path $tests_source_path $common_linker_flags $tests_libraries $shader_o_paths"
 if [[ $BUILD_TESTS -eq 1 ]] then
 	if [[ $BUILD_LINUX -eq 1 ]] then
 		echo "[Building tests for Linux...]"

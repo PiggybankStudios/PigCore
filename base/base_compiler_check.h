@@ -161,4 +161,15 @@ Description:
 #define MAYBE_END_EXTERN_C   //nothing
 #endif
 
+// +--------------------------------------------------------------+
+// |                        Other Defines                         |
+// +--------------------------------------------------------------+
+#ifndef DEBUG_BUILD
+#define DEBUG_BUILD 0
+#endif
+
+#if !DEBUG_BUILD && (COMPILER_IS_CLANG || COMPILER_IS_GCC) && !defined(NDEBUG)
+#define NDEBUG
+#endif
+
 #endif //  _BASE_COMPILER_CHECK_H

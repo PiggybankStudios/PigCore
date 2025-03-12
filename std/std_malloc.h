@@ -23,8 +23,10 @@ Description:
 #define MyMalloc(numBytes) malloc(numBytes)
 #if COMPILER_IS_MSVC
 #define MyMallocAligned(numBytes, alignment) _aligned_malloc((numBytes), (alignment)) //this is available in C11 and on
-#else
+#elif 0 //TODO: Figure out why this was returning nullptr!
 #define MyMallocAligned(numBytes, alignment) aligned_alloc((numBytes), (alignment)) //this is available in C11 and on in glibc
+#else
+#define MyMallocAligned(numBytes, alignment) malloc(numBytes)
 #endif
 #if LANGUAGE_IS_CPP
 #define MyMallocType(type) (type*)MyMallocAligned(sizeof(type), std::alignment_of<type>())
