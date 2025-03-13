@@ -171,7 +171,7 @@ for shaderFilePath in shaderFilePaths:
 	fullShaderFilePath = os.path.abspath(shaderFilePath);
 	outputHeaderPath = fullShaderFilePath + ".h";
 	outputSourcePath = fullShaderFilePath + ".c";
-	cmd = ["sokol-shdc.exe"];
+	cmd = ["./sokol-shdc"];
 	cmd.append("--format=sokol_impl");
 	cmd.append("--errfmt=msvc");
 	# cmd.append("--reflection");

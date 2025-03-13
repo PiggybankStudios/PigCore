@@ -530,7 +530,7 @@ void AppFrame(void)
 // +--------------------------------------------------------------+
 void AppEvent(const sapp_event* event)
 {
-	bool handledEvent = HandleSokolKeyboardAndMouseEvents(event, programTime, &keyboard, &mouse, sapp_mouse_locked());
+	bool handledEvent = HandleSokolKeyboardAndMouseEvents(event, programTime, NewV2i(sapp_width(), sapp_height()), &keyboard, &mouse, sapp_mouse_locked());
 	
 	if (!handledEvent)
 	{

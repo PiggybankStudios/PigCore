@@ -26,7 +26,7 @@ Description:
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     0
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 0
+#define BUILD_SHADERS 1
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
@@ -61,13 +61,13 @@ Description:
 // | Optional Libraries/Frameworks |
 // +===============================+
 // Enables tests.exe being linked with raylib.lib and it's required libraries
-#define BUILD_WITH_RAYLIB    1
+#define BUILD_WITH_RAYLIB    0
 // Enables tests.exe being linked with box2d.lib and it's required libraries
 #define BUILD_WITH_BOX2D     1
 // Enables pig_core.dll and tests.exe using sokol_gfx.h (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL_GFX 0
+#define BUILD_WITH_SOKOL_GFX 1
 // Enables tests.exe using sokol_app.h to create and manage a graphical window
-#define BUILD_WITH_SOKOL_APP 0
+#define BUILD_WITH_SOKOL_APP 1
 // Enables tests.exe being linked with SDL.lib and it's required libraries
 #define BUILD_WITH_SDL       0
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries
