@@ -35,8 +35,10 @@ Descriptions:
 #endif
 #if (TARGET_IS_LINUX || TARGET_IS_OSX)
 	#include <signal.h>
-	// Gives us getpagesize and sleep
+	// Gives us getpagesize and sleep and access
 	#include <unistd.h>
+	// Gives us DIR and dirent types
+	#include <dirent.h>
 	// Gives us mmap
 	#include <sys/mman.h>
 	#include <sys/time.h>

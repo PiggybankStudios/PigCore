@@ -1273,6 +1273,7 @@
 			"Str8 GetFileNamePart(FilePath path, bool includeExtension)",
 			"Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)",
 			"Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)",
+			"Str8 JoinStringsInArenaWithChar(Arena* arena, Str8 left, char sepChar, Str8 right, bool addNullTerm)",
 			"Str8 NewStr8(uxx length, const void* pntr)",
 			"Str8 OsReadBinFileScratch(FilePath path)",
 			"Str8 OsReadTextFileScratch(FilePath path)",

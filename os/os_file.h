@@ -25,7 +25,6 @@ struct OsFileIter
 {
 	Arena* arena;
 	FilePath folderPath; //has a trailing slash
-	FilePath folderPathWithWildcard;
 	bool includeFiles;
 	bool includeFolders;
 	
@@ -34,8 +33,11 @@ struct OsFileIter
 	uxx nextIndex;
 	
 	#if TARGET_IS_WINDOWS
+	FilePath folderPathWithWildcard;
 	WIN32_FIND_DATAA findData;
 	HANDLE handle;
+	#elif TARGET_IS_LINUX
+	DIR* dirHandle;
 	#endif
 };
 
@@ -182,14 +184,53 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 		DebugAssert(PATH_MAX <= UINTXX_MAX);
 		char* temporaryBuffer = (char*)AllocMem(scratch, (uxx)PATH_MAX);
 		
+		//TODO: realpath does not work for paths that don't exist yet. We need to do a bunch of work to try and resolve some portion of the relative path, possibly appending the CWD to the front if we run out of pieces to rip off
+		// Ultimately this seems like it's going to be a lot of work to get right, so for now we are leaving it as-is. This is not great for a few use cases of OsGetFullPath but they are not crucial for now so it should be fine.
 		char* realPathResult = realpath(relativePathNt.chars, temporaryBuffer);
-		if (realPathResult == nullptr)
+		if (realPathResult != nullptr)
 		{
-			ScratchEnd(scratch);
-			return Str8_Empty;
+			if (arena != nullptr)
+			{
+				result = AllocStrAndCopyNt(arena, realPathResult, true);
+			}
+			else
+			{
+				result = NewStr8((uxx)MyStrLength(realPathResult), nullptr);
+			}
 		}
-		
-		result = AllocStrAndCopyNt(arena, realPathResult, true);
+		else
+		{
+			// If we don't get the full path for a file, it probably doesn't exist, let's try getting the full path for the folder it lives in?
+			// If that still doesn't work, we will resort to just returning the relativePath, since likely that will work for the users purpose if they are trying to talk about a file or folder that doesn't exist yet
+			FilePath folderPathNt = GetFileFolderPart(relativePathNt);
+			if (folderPathNt.length == 0 || folderPathNt.length == relativePathNt.length)
+			{
+				ScratchEnd(scratch);
+				return AllocStrAndCopy(arena, relativePath.length, relativePath.chars, true);
+			}
+			FilePath fileNamePart = NewFilePath(relativePathNt.length - folderPathNt.length, &relativePathNt.chars[folderPathNt.length]);
+			Assert(folderPathNt.chars[folderPathNt.length-1] == '\\' || folderPathNt.chars[folderPathNt.length-1] == '/');
+			folderPathNt.length--;
+			folderPathNt.chars[folderPathNt.length] = '\0'; //we can do this because relativePathNt was allocated in scratch above
+			
+			realPathResult = realpath(folderPathNt.chars, temporaryBuffer);
+			if (realPathResult != nullptr)
+			{
+				if (arena != nullptr)
+				{
+					result = JoinStringsInArenaWithChar(arena, StrLit(realPathResult), '/', fileNamePart, true);
+				}
+				else
+				{
+					result = NewStr8((uxx)MyStrLength(realPathResult) + 1 + fileNamePart.length, nullptr);
+				}
+			}
+			else
+			{
+				ScratchEnd(scratch);
+				return AllocStrAndCopy(arena, relativePath.length, relativePath.chars, true);
+			}
+		}
 	}
 	// #elif TARGET_IS_OSX
 	// {
@@ -240,10 +281,30 @@ PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 		}
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin(scratch);
+		FilePath fullPath = OsGetFullPath(scratch, path);
+		
+		int accessResult = access(fullPath.chars, F_OK);
+		result = (accessResult == 0);
+		
+		if (isFolderOut != nullptr && result)
+		{
+			struct stat statStruct = ZEROED;
+			int statResult = stat(fullPath.chars, &statStruct);
+			if (statResult == 0)
+			{
+				*isFolderOut = IsFlagSet(statStruct.st_mode, S_IFDIR);
+			}
+			else
+			{
+				PrintLine_E("stat(\"%.*s\") call failed! Can't determine if that path is a folder or file!", StrPrint(fullPath));
+				*isFolderOut = false;
+			}
+		}
+		
+	}
 	// #elif TARGET_IS_OSX
 	// {
 	// 	//TODO: Implement me!
@@ -278,23 +339,32 @@ PEXPI bool OsDoesFolderExist(FilePath path)
 // +--------------------------------------------------------------+
 PEXPI void OsFreeFileIter(OsFileIter* fileIter)
 {
-	if (fileIter->folderPath.chars != nullptr) { FreeStr8WithNt(fileIter->arena, &fileIter->folderPath); }
-	if (fileIter->folderPathWithWildcard.chars != nullptr) { FreeStr8WithNt(fileIter->arena, &fileIter->folderPathWithWildcard); }
+	if (fileIter->arena != nullptr)
+	{
+		if (CanArenaFree(fileIter->arena) && fileIter->folderPath.chars != nullptr) { FreeStr8WithNt(fileIter->arena, &fileIter->folderPath); }
+		#if TARGET_IS_WINDOWS
+		if (CanArenaFree(fileIter->arena) && fileIter->folderPathWithWildcard.chars != nullptr) { FreeStr8WithNt(fileIter->arena, &fileIter->folderPathWithWildcard); }
+		if (fileIter->handle != INVALID_HANDLE_VALUE) { FindClose(fileIter->handle); }
+		#elif TARGET_IS_LINUX
+		if (fileIter->dirHandle != nullptr) { int closeResult = closedir(fileIter->dirHandle); Assert(closeResult == 0); }
+		#endif
+	}
 	ClearPointer(fileIter);
 }
 
 PEXP OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, bool includeFolders)
 {
 	OsFileIter result = ZEROED;
+	result.arena = arena;
+	result.includeFiles = includeFiles;
+	result.includeFolders = includeFolders;
+	result.index = UINTXX_MAX;
+	result.nextIndex = 0;
+	result.finished = false;
 	
 	#if TARGET_IS_WINDOWS
 	{
 		ScratchBegin1(scratch, arena);
-		result.includeFiles = includeFiles;
-		result.includeFolders = includeFolders;
-		result.index = UINTXX_MAX;
-		result.nextIndex = 0;
-		result.finished = false;
 		Str8 fullPath = OsGetFullPath(scratch, path);
 		NotNullStr(fullPath);
 		result.folderPath = AllocFolderPath(arena, fullPath, true); //ensures trailing slash!
@@ -303,23 +373,23 @@ PEXP OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, b
 		//NOTE: File iteration in windows requires that we have a slash on the end and a * wildcard character
 		result.folderPathWithWildcard = JoinStringsInArena(arena, result.folderPath, StrLit("*"), true);
 		NotNullStr(result.folderPathWithWildcard);
-		MyPrint("result.folderPath: \"%.*s\"", StrPrint(result.folderPath));
-		MyPrint("result.folderPathWithWildcard: \"%.*s\"", StrPrint(result.folderPathWithWildcard));
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin1(scratch, arena);
+		Str8 fullPath = OsGetFullPath(scratch, path);
+		NotNullStr(fullPath);
+		result.folderPath = AllocFolderPath(arena, fullPath, true); //ensures trailing slash!
+		NotNullStr(result.folderPath);
+		ScratchEnd(scratch);
+	}
 	// #elif TARGET_IS_OSX
 	// {
 	// 	//TODO: Implement me!
 	// }
 	#else
-	UNUSED(arena);
 	UNUSED(path);
-	UNUSED(includeFiles);
-	UNUSED(includeFolders);
 	AssertMsg(false, "OsIterateFiles does not support the current platform yet!");
 	result.finished = true;
 	#endif
@@ -345,6 +415,7 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 				fileIter->handle = FindFirstFileA(fileIter->folderPathWithWildcard.chars, &fileIter->findData);
 				if (fileIter->handle == INVALID_HANDLE_VALUE)
 				{
+					OsFreeFileIter(fileIter);
 					fileIter->finished = true;
 					return false;
 				}
@@ -354,6 +425,7 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 				BOOL findNextResult = FindNextFileA(fileIter->handle, &fileIter->findData);
 				if (findNextResult == 0)
 				{
+					OsFreeFileIter(fileIter);
 					fileIter->finished = true;
 					return false;
 				}
@@ -393,10 +465,74 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 		}
 		Assert(false); //Shouldn't be possible to get here
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin1(scratch, fileIter->arena);
+		while (true)
+		{
+			bool firstIteration = (fileIter->index == UINTXX_MAX);
+			fileIter->index = fileIter->nextIndex;
+			if (firstIteration)
+			{
+				fileIter->dirHandle = opendir(fileIter->folderPath.chars);
+				if (fileIter->dirHandle == nullptr)
+				{
+					OsFreeFileIter(fileIter);
+					fileIter->finished = true;
+					ScratchEnd(scratch);
+					return false;
+				}
+			}
+			
+			struct dirent* entry = readdir(fileIter->dirHandle);
+			if (entry == nullptr)
+			{
+				OsFreeFileIter(fileIter);
+				fileIter->finished = true;
+				ScratchEnd(scratch);
+				return false;
+			}
+			
+			Str8 fileName = StrLit(entry->d_name);
+			if (StrExactEquals(fileName, StrLit(".")) || StrExactEquals(fileName, StrLit(".."))) { continue; } //ignore current and parent folder entries
+			
+			FilePath fullPath = JoinStringsInArena(scratch, fileIter->folderPath, fileName, true);
+			NotNullStr(fullPath);
+			if (!fileIter->includeFiles || !fileIter->includeFolders || isFolderOut != nullptr)
+			{
+				struct stat statStruct = ZEROED;
+				int statResult = stat(fullPath.chars, &statStruct);
+				if (statResult == 0)
+				{
+					if (IsFlagSet(statStruct.st_mode, S_IFDIR))
+					{
+						if (!fileIter->includeFolders) { continue; }
+						SetOptionalOutPntr(isFolderOut, true);
+					}
+					else if (IsFlagSet(statStruct.st_mode, S_IFREG))
+					{
+						if (!fileIter->includeFiles) { continue; }
+						SetOptionalOutPntr(isFolderOut, false);
+					}
+					else
+					{
+						PrintLine_W("Unknown file type for \"%.*s\"", StrPrint(fullPath));
+						continue;
+					}
+				}
+			}
+			
+			if (pathOut != nullptr)
+			{
+				*pathOut = AllocFilePath(pathOutArena, giveFullPath ? fullPath : fileName, false);
+				NotNullStr(*pathOut);
+			}
+			fileIter->nextIndex = fileIter->index+1;
+			return true;
+		}
+		Assert(false); //Shouldn't be possible to get here
+		ScratchEnd(scratch);
+	}
 	// #elif TARGET_IS_OSX
 	// {
 	// 	//TODO: Implement me!
@@ -534,7 +670,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 	#elif TARGET_IS_LINUX
 	{
 		Str8 fullPath = OsGetFullPath(scratch, path); //ensures null-termination
-		FILE* fileHandle = fopen(fullPath.chars, convertNewLines ? "r" : "rb");
+		FILE* fileHandle = fopen(fullPath.chars, "r");
 		if (fileHandle == nullptr)
 		{
 			//TODO: Should we read the last error code from somewhere?
@@ -556,7 +692,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		rewind(fileHandle);
 		
 		contentsOut->length = (uxx)fileSizeInt;
-		contentsOut->chars = (char*)AllocMem(arena, contentsOut->length+1);
+		contentsOut->chars = (char*)AllocMem(convertNewLines ? scratch : arena, contentsOut->length+1);
 		AssertMsg(contentsOut->chars != nullptr, "Failed to allocate space to hold file contents. The application probably tried to open a massive file");
 		
 		size_t readResult = fread(
@@ -571,12 +707,17 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		{
 			PrintLine_E("Read %llu/%llu bytes! Did fseek(SEEK_END) and ftell() lie to us about the file size?", (u64)readResult, (u64)contentsOut->length);
 			fclose(fileHandle);
-			FreeMem(arena, contentsOut->chars, contentsOut->length+1);
+			if (CanArenaFree(arena) && !convertNewLines) { FreeMem(arena, contentsOut->chars, contentsOut->length+1); }
 			ScratchEnd(scratch);
 			return false;
 		}
 		
 		contentsOut->chars[contentsOut->length] = '\0';
+		
+		if (convertNewLines)
+		{
+			*contentsOut = StrReplace(arena, *contentsOut, StrLit("\r\n"), StrLit("\n"), true);
+		}
 	}
 	// #elif TARGET_IS_OSX
 	// {
@@ -667,25 +808,57 @@ PEXP bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 				}
 				else
 				{
-					MyPrint("WARNING: Only wrote %u/%llu bytes to file at \"%.*s\"", bytesWritten, fileContents.length, StrPrint(fullPath));
+					PrintLine_E("WARNING: Only wrote %u/%llu bytes to file at \"%.*s\"", bytesWritten, fileContents.length, StrPrint(fullPath));
 				}
 			}
 			else
 			{
-				MyPrint("ERROR: Failed to write %llu bytes to file at \"%.*s\"", fileContents.length, StrPrint(fullPath));
+				PrintLine_E("ERROR: Failed to write %llu bytes to file at \"%.*s\"", fileContents.length, StrPrint(fullPath));
 			}
 			CloseHandle(fileHandle);
 		}
 		else
 		{
-			MyPrint("ERROR: Failed to open file for writing at \"%.*s\"", StrPrint(fullPath));
+			PrintLine_E("ERROR: Failed to open file for writing at \"%.*s\"", StrPrint(fullPath));
 		}
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin(scratch);
+		//NOTE: When writing files on linux we don't need to convert new-lines. We usually working with strings in memory using \n which is the line-ending style of Linux.
+		//      On Windows we convert on load and convert back on save. On Linux we convert on load just to be safe (in-case we load a Windows file from Linux)
+		UNUSED(convertNewLines);
+		
+		Str8 fullPath = OsGetFullPath(scratch, path); //ensures null-termination
+		FILE* fileHandle = fopen(fullPath.chars, "w");
+		if (fileHandle == nullptr)
+		{
+			PrintLine_E("ERROR: Failed to open file for writing at \"%.*s\"", StrPrint(fullPath));
+			ScratchEnd(scratch);
+			return false;
+		}
+		
+		size_t writeResult = fwrite(
+			fileContents.pntr, //ptr
+			1, //size
+			fileContents.length, //count
+			fileHandle //stream
+		);
+		DebugAssert(writeResult >= 0);
+		Assert((uxx)writeResult <= fileContents.length);
+		if ((uxx)writeResult < fileContents.length)
+		{
+			PrintLine_E("ERROR: Wrote %llu/%llu bytes to \"%.*s\"", (u64)writeResult, (u64)fileContents.length, StrPrint(fullPath));
+			ScratchEnd(scratch);
+			fclose(fileHandle);
+			return false;
+		}
+		
+		fclose(fileHandle);
+		ScratchEnd(scratch);
+		result = true;
+	}
 	// #elif TARGET_IS_OSX
 	// {
 	// 	//TODO: Implement me!
@@ -712,27 +885,28 @@ PEXPI bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile
 PEXP Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded)
 {
 	Result result = Result_None;
-	#if TARGET_IS_WINDOWS
+	
+	ScratchBegin(scratch);
+	uxx numPathParts = CountPathParts(path, false);
+	if (createParentFoldersIfNeeded && numPathParts > 1)
 	{
-		ScratchBegin(scratch);
-		uxx numPathParts = CountPathParts(path, false);
-		if (createParentFoldersIfNeeded && numPathParts > 1)
+		for (uxx pIndex = 0; pIndex < numPathParts; pIndex++)
 		{
-			for (uxx pIndex = 0; pIndex < numPathParts; pIndex++)
+			Str8 pathPart = GetPathPart(path, pIndex, false);
+			NotEmptyStr(pathPart);
+			Assert(IsSizedPntrWithin(path.chars, path.length, pathPart.chars, pathPart.length));
+			uxx partEndIndex = (uxx)((pathPart.chars + pathPart.length) - path.chars);
+			Str8 partialPath = StrSlice(path, 0, partEndIndex);
+			if (!OsDoesFolderExist(partialPath))
 			{
-				Str8 pathPart = GetPathPart(path, pIndex, false);
-				NotEmptyStr(pathPart);
-				Assert(IsSizedPntrWithin(path.chars, path.length, pathPart.chars, pathPart.length));
-				uxx partEndIndex = (uxx)((pathPart.chars + pathPart.length) - path.chars);
-				Str8 partialPath = StrSlice(path, 0, partEndIndex);
-				if (!OsDoesFolderExist(partialPath))
-				{
-					Result createResult = OsCreateFolder(partialPath, false);
-					if (createResult != Result_Success) { ScratchEnd(scratch); return createResult; }
-				}
+				Result createResult = OsCreateFolder(partialPath, false);
+				if (createResult != Result_Success) { ScratchEnd(scratch); return createResult; }
 			}
 		}
-		
+	}
+	
+	#if TARGET_IS_WINDOWS
+	{
 		if (!OsDoesFolderExist(path))
 		{
 			Str8 pathNt = AllocStrAndCopy(scratch, path.length, path.chars, true);
@@ -747,12 +921,28 @@ PEXP Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded)
 			}
 		}
 		
-		ScratchEnd(scratch);
+		result = Result_Success;
+	}
+	#elif TARGET_IS_LINUX
+	{
+		if (!OsDoesFolderExist(path))
+		{
+			Str8 pathNt = AllocStrAndCopy(scratch, path.length, path.chars, true);
+			int mkdirResult = mkdir(pathNt.chars, 0700);
+			if (mkdirResult != 0)
+			{
+				ScratchEnd(scratch);
+				return Result_Failure; //TODO: Should we produce a better error code using errno?
+			}
+		}
+		
 		result = Result_Success;
 	}
 	#else
 	AssertMsg(false, "OsCreateFolder does not support the current platform yet!");
 	#endif
+	
+	ScratchEnd(scratch);
 	return result;
 }
 
