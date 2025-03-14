@@ -77,6 +77,7 @@ PEXP CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)config->fontId);
 	r32 fontSize = (r32)config->fontSize;
 	FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
+	NotNull(fontAtlas);
 	//NOTE: Clay has no way of knowing the lineHeight, so if we don't tell it otherwise it will place text a little too close to each other vertically
 	TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, textStr);
 	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }

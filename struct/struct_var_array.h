@@ -416,7 +416,7 @@ PEXPI bool VarArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, VarArray* array,
 	if (!VarArrayContains_(itemSize, itemAlignment, array, itemInQuestion)) { return false; }
 	uxx offsetFromBase = (uxx)(((const u8*)itemInQuestion) - (u8*)array->items);
 	DebugAssert((offsetFromBase % array->itemSize) == 0);
-	DebugNotNull(indexOut);
+	DebugNotNull(indexOut); //Call VarArrayContains instead of VarArrayGetIndexOf if you don't need the index!
 	*indexOut = (offsetFromBase / array->itemSize);
 	return true;
 }

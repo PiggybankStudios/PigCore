@@ -1266,11 +1266,11 @@ PEXPI i32 OsCompareFileWriteTime(OsFileWriteTime left, OsFileWriteTime right)
 	#if TARGET_IS_WINDOWS
 	{
 		ULARGE_INTEGER leftTime = ZEROED;
-		leftTime.u.HighPart = left.dwHighDateTime;
-		leftTime.u.LowPart = left.dwLowDateTime;
+		leftTime.u.HighPart = left.fileTime.dwHighDateTime;
+		leftTime.u.LowPart = left.fileTime.dwLowDateTime;
 		ULARGE_INTEGER rightTime = ZEROED;
-		rightTime.u.HighPart = right.dwHighDateTime;
-		rightTime.u.LowPart = right.dwLowDateTime;
+		rightTime.u.HighPart = right.fileTime.dwHighDateTime;
+		rightTime.u.LowPart = right.fileTime.dwLowDateTime;
 		if (leftTime.QuadPart > rightTime.QuadPart) { return 1; }
 		else if (leftTime.QuadPart < rightTime.QuadPart) { return -1; }
 		else { return 0; }
