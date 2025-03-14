@@ -233,7 +233,8 @@ Description:
 	#define START_PACK()  //nothing
 	#define END_PACK()    //nothing
 	#define ATTR_PACKED __attribute__((__packed__))
-	#define EXPORT_FUNC(functionName) __attribute__((export_name(#functionName)))
+	// #define EXPORT_FUNC(functionName) __attribute__((export_name(#functionName)))
+	#define EXPORT_FUNC(functionName) __attribute__((visibility("default")))
 	// #define EXPORT(returnType, functionName, ...) returnType __attribute__((export_name(#functionName))) functionName(__VA_ARGS__)
 	//TODO: Figure out how to do IMPORT on other platforms
 #endif
