@@ -88,6 +88,8 @@ struct OsFileWriteTime
 {
 	#if TARGET_IS_WINDOWS
 	FILETIME fileTime;
+	#elif TARGET_IS_LINUX
+	struct timespec timeSpec;
 	#else
 	u8 placeholder;
 	#endif
@@ -126,6 +128,8 @@ struct OsFileWriteTime
 	PIG_CORE_INLINE bool OsWriteToOpenTextFile(OsFile* file, Str8 fileContentsPart);
 	PIG_CORE_INLINE bool OsWriteToOpenBinFile(OsFile* file, Str8 fileContentsPart);
 	Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut);
+	PIG_CORE_INLINE i32 OsCompareFileWriteTime(OsFileWriteTime left, OsFileWriteTime right);
+	PIG_CORE_INLINE bool OsAreFileWriteTimesEqual(OsFileWriteTime left, OsFileWriteTime right);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -1235,11 +1239,60 @@ PEXP Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)
 		else { result = Result_NotFound; }
 		ScratchEnd(scratch);
 	}
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin(scratch);
+		Str8 filePathNt = AllocStrAndCopy(scratch, filePath.length, filePath.chars, true);
+		struct stat statStruct = ZEROED;
+		int statResult = stat(filePathNt.chars, &statStruct);
+		ScratchEnd(scratch);
+		if (statResult != 0) { return Result_NotFound; }
+		if (timeOut != nullptr)
+		{
+			ClearPointer(timeOut);
+			timeOut->timeSpec = statStruct.st_mtim;
+		}
+		result = Result_Success;
+	}
 	#else
 	AssertMsg(false, "OsGetFileWriteTime does not support the current platform yet!");
 	result = Result_UnsupportedPlatform;
 	#endif
 	return result;
+}
+
+PEXPI i32 OsCompareFileWriteTime(OsFileWriteTime left, OsFileWriteTime right)
+{
+	#if TARGET_IS_WINDOWS
+	{
+		ULARGE_INTEGER leftTime = ZEROED;
+		leftTime.u.HighPart = left.dwHighDateTime;
+		leftTime.u.LowPart = left.dwLowDateTime;
+		ULARGE_INTEGER rightTime = ZEROED;
+		rightTime.u.HighPart = right.dwHighDateTime;
+		rightTime.u.LowPart = right.dwLowDateTime;
+		if (leftTime.QuadPart > rightTime.QuadPart) { return 1; }
+		else if (leftTime.QuadPart < rightTime.QuadPart) { return -1; }
+		else { return 0; }
+	}
+	#elif TARGET_IS_LINUX
+	{
+		if (left.timeSpec.tv_sec > right.timeSpec.tv_sec) { return 1; }
+		else if (left.timeSpec.tv_sec < right.timeSpec.tv_sec) { return -1; }
+		{
+			if (left.timeSpec.tv_nsec > right.timeSpec.tv_nsec) { return 1; }
+			else if (left.timeSpec.tv_nsec < right.timeSpec.tv_nsec) { return 1; }
+			else { return 0; }
+		}
+	}
+	#else
+	AssertMsg(false, "OsCompareFileWriteTime does not support the current platform yet!");
+	return 0;
+	#endif
+}
+PEXPI bool OsAreFileWriteTimesEqual(OsFileWriteTime left, OsFileWriteTime right)
+{
+	return (OsCompareFileWriteTime(left, right) == 0);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

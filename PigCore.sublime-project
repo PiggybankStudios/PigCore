@@ -1252,6 +1252,7 @@
 			"RegexResult StrRegexFind(Str8 haystack, Str8 needleRegexPattern, bool caseSensitive)",
 			"RenderTexture2D LoadRenderTexture(int width, int height)",
 			"Result GetResultForSlreErrorCode(int slreErrorCode)",
+			"Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)",
 			"Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut)",
 			"ScratchArena GetScratchArena()",
 			"ScratchArena GetScratchArena1(const Arena* conflict1)",
