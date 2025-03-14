@@ -59,3 +59,7 @@ Description:
 #endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _MISC_SOKOL_GFX_INCLUDE_H
+
+#if defined(_MISC_SOKOL_GFX_INCLUDE_H) && defined(_STRUCT_MATRICES_H)
+#include "cross/cross_sokol_gfx_and_matrices.h"
+#endif

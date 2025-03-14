@@ -825,7 +825,7 @@ PEXPI void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Col
 	mat4 worldMat = Mat4_Identity;
 	TransformMat4(&worldMat, MakeTranslateXYZMat4(-0.5f, -0.5f, 0.0f));
 	TransformMat4(&worldMat, MakeScaleXYZMat4(boundingBox.Width, boundingBox.Height, 1.0f));
-	TransformMat4(&worldMat, MakeRotateZMat4(boundingBox.Rotation));
+	TransformMat4(&worldMat, MakeRotate2DMat4(boundingBox.Rotation));
 	TransformMat4(&worldMat, MakeTranslateXYZMat4(boundingBox.X, boundingBox.Y, system->state.depth));
 	GfxSystem_SetWorldMat(system, worldMat);
 	

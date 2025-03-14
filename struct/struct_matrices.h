@@ -143,6 +143,9 @@ typedef HMM_Mat4 mat4;
 #define MakeRotateXMat4(angle) HMM_Rotate_LH((angle), V3_Right)
 #define MakeRotateYMat4(angle) HMM_Rotate_LH((angle), V3_Up)
 #define MakeRotateZMat4(angle) HMM_Rotate_LH((angle), V3_Forward)
+//NOTE: 2D Rotations use +Z for axis on DirectX since the normalized Z coordinates go [0 to 1] but OpenGL uses -Z axis because normalized Z coordiantes go [1 to -1]
+#define MakeRotate2DMat4Gl(angle) HMM_Rotate_LH((angle), V3_Backward)
+#define MakeRotate2DMat4Dx(angle) HMM_Rotate_LH((angle), V3_Forward)
 
 //NOTE: When working with OpenGL  use the Gl variant (implying z range [-1, 1])
 //      When working with DirectX use the Dx variant (implying z range [0, 1])
@@ -262,6 +265,10 @@ PEXPI mat3 MakeScaleMat3(v3 vec3)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_MATRICES_H
+
+#if defined(_MISC_SOKOL_GFX_INCLUDE_H) && defined(_STRUCT_MATRICES_H)
+#include "cross/cross_sokol_gfx_and_matrices.h"
+#endif
 
 #if defined(_MISC_PARSING_H) && defined(_STRUCT_MATRICES_H)
 #include "cross/cross_parsing_and_matrices.h"

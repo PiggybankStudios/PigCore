@@ -79,7 +79,7 @@ fi
 if [[ $DEBUG_BUILD -eq 1 ]] then
 	# -Wno-unused-parameter = warning: unused parameter 'numBytes'
 	# -Wno-unused-variable = ?
-	common_clang_flags="$common_clang_flags -Wno-unused-parameter -Wno-unused-variable"
+	common_clang_flags="$common_clang_flags -g -Wno-unused-parameter -Wno-unused-variable"
 	common_linker_flags="$common_linker_flags -L$root/third_party/_lib_debug"
 else
 	common_clang_flags="$common_clang_flags"
@@ -90,8 +90,9 @@ if [[ $DUMP_PREPROCESSOR -eq 1 ]] then
 	common_clang_flags="$common_clang_flags -E"
 fi
 
-pig_core_so_libraries=""
-tests_libraries=""
+# -lfontconfig = FontConfig library is needed for OsReadPlatformFont implementation in os_font.h
+pig_core_so_libraries="-lfontconfig"
+tests_libraries="-lfontconfig"
 if [[ $BUILD_WITH_RAYLIB -eq 1 ]] then
 	tests_libraries="$tests_libraries -lraylib -lGL -lpthread -lrt -lX11"
 fi

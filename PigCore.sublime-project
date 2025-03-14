@@ -94,6 +94,13 @@
 				"LICENSE",
 			],
 		},
+		{
+			"path": "third_party/clay",
+			"name": "Clay",
+			"file_exclude_patterns": [
+				"LICENSE.md",
+			],
+		},
 	],
 	"settings":
 	{
@@ -923,6 +930,12 @@
 			"#define IsVersionBelow(versionMajor, versionMinor, numberMajor, numberMinor)",
 			"#define Kilobytes(value)",
 			"#define Lerp(left, right, amount)",
+			"#define MakeOrthographicMat4(left, right, top, bottom, zNear, zFar)",
+			"#define MakePerspectiveMat4(fov, aspectRatio, zNear, zFar)",
+			"#define MakeRotate2DMat4(angle)",
+			"#define MakeRotate2DMat4Dx(angle)",
+			"#define MakeRotate2DMat4Gl(angle)",
+			"#define MakeRotateZMat4(angle)",
 			"#define Megabytes(value)",
 			"#define MyBufferPrintf(buffer, bufferSize, formatStr, ...)",
 			"#define MyFree(pntr)",
@@ -1450,6 +1463,7 @@
 			"bool TryParseU64Ex(Str8 str, u64* valueOut, Result* errorOut, bool allowHex, bool allowBinary, bool allowDecimal)",
 			"bool TryParseU8(Str8 str, u8* valueOut, Result* errorOut)",
 			"bool TryParseU8Ex(Str8 str, u8* valueOut, Result* errorOut, bool allowHex, bool allowBinary, bool allowDecimal)",
+			"bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling)",
 			"bool WindowShouldClose(void)",
 			"box AddBox(box boundingBox, v3 offset)",
 			"box DivBox(box boundingBox, v3 divisor)",
@@ -1717,7 +1731,7 @@
 			"void AttachAudioMixedProcessor(AudioCallback processor)",
 			"void AttachAudioStreamProcessor(AudioStream stream, AudioCallback processor)",
 			"void BeginBlendMode(int mode)",
-			"void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 frameTime, bool isMouseOverOther, v2 mousePos, bool isMouseDown, v2 mouseScrollDelta)",
+			"void BeginClayUIRender(ClayUI* clay, v2 windowSize, bool isMouseOverOther, v2 mousePos, bool isMouseDown)",
 			"void BeginDrawing(void)",
 			"void BeginMode2D(Camera2D camera)",
 			"void BeginMode3D(Camera3D camera)",

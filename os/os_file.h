@@ -176,10 +176,21 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 		
 		FixPathSlashes(result);
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		FilePath relativePathNt = AllocFilePath(scratch, relativePath, true);
+		DebugAssert(PATH_MAX <= UINTXX_MAX);
+		char* temporaryBuffer = (char*)AllocMem(scratch, (uxx)PATH_MAX);
+		
+		char* realPathResult = realpath(relativePathNt.chars, temporaryBuffer);
+		if (realPathResult == nullptr)
+		{
+			ScratchEnd(scratch);
+			return Str8_Empty;
+		}
+		
+		result = AllocStrAndCopyNt(arena, realPathResult, true);
+	}
 	// #elif TARGET_IS_OSX
 	// {
 	// 	//TODO: Implement me!
@@ -443,12 +454,12 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 			DWORD errorCode = GetLastError();
 			if (errorCode == ERROR_FILE_NOT_FOUND)
 			{
-				MyPrint("ERROR: File not found at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
+				PrintLine_E("ERROR: File not found at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
 			}
 			else
 			{
 				//The file might have permissions that prevent us from reading it
-				MyPrint("ERROR: Failed to open file that exists at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
+				PrintLine_E("ERROR: Failed to open file that exists at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
 			}
 			ScratchEnd(scratch);
 			CloseHandle(fileHandle);
@@ -463,7 +474,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		if (getFileSizeResult == 0)
 		{
 			DWORD errorCode = GetLastError();
-			MyPrint("ERROR: Failed to size of file at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
+			PrintLine_E("ERROR: Failed to size of file at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
 			ScratchEnd(scratch);
 			CloseHandle(fileHandle);
 			return false;
@@ -489,7 +500,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 			if (readFileResult == 0)
 			{
 				DWORD errorCode = GetLastError();
-				MyPrint("ERROR: Failed to ReadFile contents at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
+				PrintLine_E("ERROR: Failed to ReadFile contents at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
 				FreeStr8WithNt(arena, &result);
 				ScratchEnd(scratch);
 				CloseHandle(fileHandle);
@@ -498,7 +509,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 			if (bytesRead < result.length)
 			{
 				DWORD errorCode = GetLastError();
-				MyPrint("ERROR: Failed to read all of the file at \"%.*s\". Error code: %s. Read %u/%llu bytes", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode), bytesRead, result.length);
+				PrintLine_E("ERROR: Failed to read all of the file at \"%.*s\". Error code: %s. Read %u/%llu bytes", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode), bytesRead, result.length);
 				FreeStr8WithNt(arena, &result);
 				ScratchEnd(scratch);
 				CloseHandle(fileHandle);
@@ -520,10 +531,53 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		
 		CloseHandle(fileHandle);
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		Str8 fullPath = OsGetFullPath(scratch, path); //ensures null-termination
+		FILE* fileHandle = fopen(fullPath.chars, convertNewLines ? "r" : "rb");
+		if (fileHandle == nullptr)
+		{
+			//TODO: Should we read the last error code from somewhere?
+			PrintLine_E("ERROR: File not found at \"%.*s\"", StrPrint(fullPath));
+			ScratchEnd(scratch);
+			return false;
+		}
+		
+		fseek(fileHandle, 0, SEEK_END);
+		int fileSizeInt = ftell(fileHandle);
+		DebugAssert(fileSizeInt >= 0);
+		if ((unsigned int)fileSizeInt > (unsigned int)UINTXX_MAX)
+		{
+			PrintLine_E("File is %d bytes, too big for uxx type!", fileSizeInt);
+			fclose(fileHandle);
+			ScratchEnd(scratch);
+			return false;
+		}
+		rewind(fileHandle);
+		
+		contentsOut->length = (uxx)fileSizeInt;
+		contentsOut->chars = (char*)AllocMem(arena, contentsOut->length+1);
+		AssertMsg(contentsOut->chars != nullptr, "Failed to allocate space to hold file contents. The application probably tried to open a massive file");
+		
+		size_t readResult = fread(
+			contentsOut->chars, //buffer
+			1, //size
+			(size_t)contentsOut->length, //count
+			fileHandle //stream
+		);
+		DebugAssert(readResult >= 0);
+		Assert((uxx)readResult <= contentsOut->length);
+		if ((uxx)readResult < contentsOut->length)
+		{
+			PrintLine_E("Read %llu/%llu bytes! Did fseek(SEEK_END) and ftell() lie to us about the file size?", (u64)readResult, (u64)contentsOut->length);
+			fclose(fileHandle);
+			FreeMem(arena, contentsOut->chars, contentsOut->length+1);
+			ScratchEnd(scratch);
+			return false;
+		}
+		
+		contentsOut->chars[contentsOut->length] = '\0';
+	}
 	// #elif TARGET_IS_OSX
 	// {
 	// 	//TODO: Implement me!

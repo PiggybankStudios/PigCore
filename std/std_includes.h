@@ -43,6 +43,9 @@ Descriptions:
 	#include <errno.h>
 	#include <dlfcn.h> //needed for dlopen
 #endif
+#if TARGET_IS_LINUX
+	#include <fontconfig/fontconfig.h>
+#endif
 #if COMPILER_IS_MSVC && LANGUAGE_IS_C
 	#pragma warning(push)
 	#pragma warning(disable: 5262) //error C5262: implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases

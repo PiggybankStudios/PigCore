@@ -17,6 +17,9 @@ Description:
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
+#if TARGET_IS_LINUX
+#include "os/os_file.h"
+#endif
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -29,6 +32,10 @@ Description:
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+#if TARGET_IS_LINUX
+static FcConfig* fontConfig = nullptr;
+#endif
 
 PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool bold, bool italic, Slice* fileContentsOut)
 {
@@ -145,6 +152,69 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		
 		result = Result_Success;
 		ScratchEnd(scratch);
+	}
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin1(scratch, arena);
+		
+		if (fontConfig == nullptr)
+		{
+			fontConfig = FcInitLoadConfigAndFonts();
+			NotNull(fontConfig);
+		}
+		
+		NotNullStr(fontName);
+		Str8 fontSearchStr = PrintInArenaStr(scratch, "%.*s%s%s", StrPrint(fontName), bold ? ":bold" : "", italic ? ":italic" : "");
+		FcPattern* searchPattern = FcNameParse((FcChar8*)fontSearchStr.chars);
+		NotNull(searchPattern);
+		
+		FcConfigSubstitute(fontConfig, searchPattern, FcMatchPattern);
+		FcDefaultSubstitute(searchPattern);
+		
+		FcFontSet* fontSet = FcFontSetCreate();
+		FcObjectSet* objectSet = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, nullptr);
+		
+		FcResult fcResult;
+		FcFontSet* fontPatterns = FcFontSort(fontConfig, searchPattern, FcTrue, 0, &fcResult);
+		NotNull(fontPatterns);
+		if (fontPatterns->nfont <= 0)
+		{
+			//TODO: Do we need to cleanup fontSet, objectSet?
+			FcFontSetSortDestroy(fontPatterns);
+			FcPatternDestroy(searchPattern);
+			FcObjectSetDestroy(objectSet);
+			FcFontSetDestroy(fontSet);
+			ScratchEnd(scratch);
+			return Result_NotFound;
+		}
+		
+		FcPattern* fontPattern = FcFontRenderPrepare(fontConfig, searchPattern, fontPatterns->fonts[0]);
+		NotNull(fontPattern);
+		FcFontSetAdd(fontSet, fontPattern);
+		Assert(fontSet->nfont > 0);
+		
+		FcFontSetSortDestroy(fontPatterns);
+		FcPatternDestroy(searchPattern);
+		
+		FcPattern* font = FcPatternFilter(fontSet->fonts[0], objectSet);
+		NotNull(font);
+		FcValue fontValue;
+		FcPatternGet(font, FC_FILE, 0, &fontValue);
+		NotNull(fontValue.u.f);
+		FilePath fontFilePath = AllocStrAndCopyNt(scratch, fontValue.u.f, false);
+		
+		FcPatternDestroy(font);
+		FcFontSetDestroy(fontSet);
+		FcObjectSetDestroy(objectSet);
+		
+		Slice fontFileContents = Slice_Empty;
+		bool readSuccess = OsReadBinFile(fontFilePath, arena, &fontFileContents);
+		ScratchEnd(scratch);
+		if (!readSuccess) { return Result_FailedToReadFile; }
+		else if (IsEmptyStr(fontFileContents)) { return Result_EmptyFile; }
+		
+		*fileContentsOut = fontFileContents;
+		result = Result_Success;
 	}
 	#else
 	AssertMsg(false, "OsReadPlatformFont does not support the current platform yet!");

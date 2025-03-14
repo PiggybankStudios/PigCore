@@ -178,7 +178,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayUiMeasureText_f* measureTe
 	NotNull(clayMemory);
 	clayOut->clayArena = Clay_CreateArenaWithCapacityAndMemory(minMemory, clayMemory);
 	
-	clayOut->context = Clay_Initialize(clayOut->clayArena, ToClayDimensions(windowSize), (Clay_ErrorHandler){ ClayErrorCallback });
+	clayOut->context = Clay_Initialize(clayOut->clayArena, ToClayDimensions(windowSize), (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
 	
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
 }

@@ -217,7 +217,6 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating);
 	Assert(gradientTexture.error == Result_Success);
 	
-	#if BUILD_WITH_CLAY
 	testFont = InitFont(stdHeap, StrLit("testFont"));
 	Result attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold);
 	Assert(attachResult == Result_Success);
@@ -229,7 +228,6 @@ void AppInit(void)
 	Result bakeResult = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
 	Assert(bakeResult == Result_Success);
 	FillFontKerningTable(&testFont);
-	#endif
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
@@ -439,12 +437,25 @@ void AppFrame(void)
 			}
 			#endif
 			
+			#if 0
+			r32 atlasRenderPosX = 10.0f;
+			VarArrayLoop(&testFont.atlases, aIndex)
+			{
+				VarArrayLoopGet(FontAtlas, fontAtlas, &testFont.atlases, aIndex);
+				rec atlasRenderRec = NewRec(atlasRenderPosX, 10, (r32)fontAtlas->texture.Width, (r32)fontAtlas->texture.Height);
+				DrawTexturedRectangle(atlasRenderRec, White, &fontAtlas->texture);
+				DrawRectangleOutline(atlasRenderRec, 1, White);
+				atlasRenderPosX += atlasRenderRec.Width + 10;
+			}
+			#endif
+			
 			#if BUILD_WITH_BOX2D
 			RenderBox2DTest();
 			#endif
 			
 			#if BUILD_WITH_CLAY
-			BeginClayUIRender(&clay.clay, windowSize, 16.6f, false, mouse.position, IsMouseBtnDown(&mouse, MouseBtn_Left), mouse.scrollDelta);
+			UpdateClayScrolling(&clay.clay, 16.6f, false, mouse.scrollDelta, false);
+			BeginClayUIRender(&clay.clay, windowSize, false, mouse.position, IsMouseBtnDown(&mouse, MouseBtn_Left));
 			{
 				CLAY({ .id = CLAY_ID("FullscreenContainer"),
 					.layout = {
