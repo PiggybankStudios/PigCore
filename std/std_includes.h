@@ -41,6 +41,8 @@ Descriptions:
 	#include <dirent.h>
 	// Gives us mmap
 	#include <sys/mman.h>
+	// Needed for time_t and time()
+	#include <time.h>
 	#include <sys/time.h>
 	#include <errno.h>
 	#include <dlfcn.h> //needed for dlopen

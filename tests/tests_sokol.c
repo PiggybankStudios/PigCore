@@ -493,6 +493,21 @@ void AppFrame(void)
 							Clay__CloseElement();
 						}
 						Clay__CloseElement();
+						
+						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(16) } } }) {}
+						
+						u64 utcTimestamp = OsGetCurrentTimestamp(false);
+						i64 timezoneOffset = 0;
+						u64 localTimestamp = OsGetCurrentTimestampEx(true, &timezoneOffset, nullptr);
+						Str8 displayStr = ScratchPrintStr("UTC: %llu Local: %llu (%s%lld)", utcTimestamp, localTimestamp, timezoneOffset >= 0 ? "+" : "-", AbsI64(timezoneOffset));
+						CLAY_TEXT(
+							ToClayString(displayStr),
+							CLAY_TEXT_CONFIG({
+								.fontId = clayFont,
+								.fontSize = 18,
+								.textColor = ToClayColor(MonokaiWhite),
+							})
+						);
 					}
 				}
 			}

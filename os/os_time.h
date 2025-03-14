@@ -52,7 +52,7 @@ Description:
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timezoneDoesDstOut, Arena* timezoneNameArena, Str8* timezoneNameOut);
+	u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timezoneDoesDstOut); //, Arena* timezoneNameArena, Str8* timezoneNameOut);
 	PIG_CORE_INLINE u64 OsGetCurrentTimestamp(bool local);
 #endif
 
@@ -104,11 +104,15 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 	{
 		if (local)
 		{
-			u64 utcTimestamp = OsGetCurrentTimestampEx(false, nullptr, nullptr);
-			AssertMsg(false, "Local timestamp calculation not yet implemented on LINUX!");
-			result = utcTimestamp;
-			SetOptionalOutPntr(timezoneOffsetOut, 0);
-			SetOptionalOutPntr(timezoneDoesDstOut, false);
+			time_t utcTime = time(NULL);
+			struct tm localTime = ZEROED;
+			struct tm* localTimeResult = localtime_r(&utcTime, &localTime); //TODO: This might be a POSIX-only thing? Maybe we should use localtime() instead?
+			Assert(localTimeResult == &localTime);
+			long timezoneOffset = localTime.tm_gmtoff;
+			SetOptionalOutPntr(timezoneOffsetOut, (i64)timezoneOffset);
+			// PrintLine_D("Timezone: \"%s\"", localTime.tm_zone);
+			SetOptionalOutPntr(timezoneDoesDstOut, localTime.tm_isdst); //TODO: This is not right, it's just saying whether DST currently is in effect, not if the timezone will do DST!
+			result = (u64)((i64)utcTime + timezoneOffset);
 		}
 		else
 		{

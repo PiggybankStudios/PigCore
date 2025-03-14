@@ -104,6 +104,13 @@ PEXP void* OsFindDllFunc(OsDll* dll, Str8 funcName)
 		result = (void*)GetProcAddress(dll->handle, funcNameNt.chars);
 		ScratchEnd(scratch);
 	}
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin(scratch);
+		Str8 funcNameNt = AllocStrAndCopy(scratch, funcName.length, funcName.chars, true);
+		result = (void*)dlsym(dll->handle, funcNameNt.chars);
+		ScratchEnd(scratch);
+	}
 	#else
 	UNUSED(dll);
 	UNUSED(funcName);
