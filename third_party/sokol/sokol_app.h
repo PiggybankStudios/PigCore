@@ -1769,13 +1769,13 @@ typedef struct sapp_logger {
 
 typedef struct sapp_desc {
     void (*init_cb)(void);                  // these are the user-provided callbacks without user data
-    void (*frame_cb)(void);
+    bool (*frame_cb)(void);
     void (*cleanup_cb)(void);
     void (*event_cb)(const sapp_event*);
 
     void* user_data;                        // these are the user-provided callbacks with user data
     void (*init_userdata_cb)(void*);
-    void (*frame_userdata_cb)(void*);
+    bool (*frame_userdata_cb)(void*);
     void (*cleanup_userdata_cb)(void*);
     void (*event_userdata_cb)(const sapp_event*, void*);
 
@@ -3100,15 +3100,17 @@ _SOKOL_PRIVATE void _sapp_call_init(void) {
     _sapp.init_called = true;
 }
 
-_SOKOL_PRIVATE void _sapp_call_frame(void) {
+_SOKOL_PRIVATE bool _sapp_call_frame(void) {
+    bool frameResult = false;
     if (_sapp.init_called && !_sapp.cleanup_called) {
         if (_sapp.desc.frame_cb) {
-            _sapp.desc.frame_cb();
+            frameResult = _sapp.desc.frame_cb();
         }
         else if (_sapp.desc.frame_userdata_cb) {
-            _sapp.desc.frame_userdata_cb(_sapp.desc.user_data);
+            frameResult = _sapp.desc.frame_userdata_cb(_sapp.desc.user_data);
         }
     }
+    return frameResult;
 }
 
 _SOKOL_PRIVATE void _sapp_call_cleanup(void) {
@@ -3302,15 +3304,16 @@ _SOKOL_PRIVATE void _sapp_clear_drop_buffer(void) {
     }
 }
 
-_SOKOL_PRIVATE void _sapp_frame(void) {
+_SOKOL_PRIVATE bool _sapp_frame(void) {
     if (_sapp.first_frame) {
         _sapp.first_frame = false;
         _sapp_call_init();
     }
     _sapp.is_rendering = true;
-    _sapp_call_frame();
+    bool frameResult = _sapp_call_frame();
     _sapp.is_rendering = false;
     _sapp.frame_count++;
+    return frameResult;
 }
 
 _SOKOL_PRIVATE bool _sapp_image_validate(const sapp_image_desc* desc) {
@@ -3949,7 +3952,8 @@ _SOKOL_PRIVATE void _sapp_macos_set_icon(const sapp_icon_desc* icon_desc, int nu
 }
 
 _SOKOL_PRIVATE void _sapp_macos_frame(void) {
-    _sapp_frame();
+    bool frameResult = _sapp_frame();
+    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
     if (_sapp.quit_requested || _sapp.quit_ordered) {
         [_sapp.macos.window performClose:nil];
     }
@@ -4625,7 +4629,8 @@ _SOKOL_PRIVATE void _sapp_ios_update_dimensions(void) {
 
 _SOKOL_PRIVATE void _sapp_ios_frame(void) {
     _sapp_ios_update_dimensions();
-    _sapp_frame();
+    bool frameResult = _sapp_frame();
+    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
 }
 
 _SOKOL_PRIVATE void _sapp_ios_show_keyboard(bool shown) {
@@ -5910,13 +5915,15 @@ _SOKOL_PRIVATE void _sapp_emsc_wgpu_init(void) {
     wgpuInstanceRequestAdapter(_sapp.wgpu.instance, 0, _sapp_emsc_wgpu_request_adapter_cb, 0);
 }
 
-_SOKOL_PRIVATE void _sapp_emsc_wgpu_frame(void) {
+_SOKOL_PRIVATE bool _sapp_emsc_wgpu_frame(void) {
+	bool frameResult = false;
     if (_sapp.wgpu.async_init_done) {
         _sapp.wgpu.swapchain_view = wgpuSwapChainGetCurrentTextureView(_sapp.wgpu.swapchain);
-        _sapp_frame();
+        frameResult = _sapp_frame();
         wgpuTextureViewRelease(_sapp.wgpu.swapchain_view);
         _sapp.wgpu.swapchain_view = 0;
     }
+    return frameResult;
 }
 #endif // SOKOL_WGPU
 
@@ -5993,9 +6000,11 @@ _SOKOL_PRIVATE EM_BOOL _sapp_emsc_frame_animation_loop(double time, void* userDa
     _sapp_timing_external(&_sapp.timing, time / 1000.0);
 
     #if defined(SOKOL_WGPU)
-        _sapp_emsc_wgpu_frame();
+        bool frameResult = _sapp_emsc_wgpu_frame();
+	    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
     #else
-        _sapp_frame();
+        bool frameResult = _sapp_frame();
+	    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
     #endif
 
     // quit-handling
@@ -7675,7 +7684,8 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
                 if (!_sapp.is_rendering)
                 {
                     _sapp_win32_timing_measure();
-                    _sapp_frame();
+                    bool frameResult = _sapp_frame();
+                    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
                     #if defined(SOKOL_D3D11)
                         // present with DXGI_PRESENT_DO_NOT_WAIT
                         _sapp_d3d11_present(true);
@@ -8116,16 +8126,25 @@ _SOKOL_PRIVATE void _sapp_win32_run(const sapp_desc* desc) {
                 DispatchMessageW(&msg);
             }
         }
-        _sapp_frame();
-        #if defined(SOKOL_D3D11)
-            _sapp_d3d11_present(false);
-            if (IsIconic(_sapp.win32.hwnd)) {
-                Sleep((DWORD)(16 * _sapp.swap_interval));
-            }
-        #endif
-        #if defined(SOKOL_GLCORE)
-            _sapp_wgl_swap_buffers();
-        #endif
+        
+        bool frameResult = _sapp_frame();
+        
+        if (frameResult)
+        {
+            #if defined(SOKOL_D3D11)
+                _sapp_d3d11_present(false);
+                if (IsIconic(_sapp.win32.hwnd)) {
+                    Sleep((DWORD)(16 * _sapp.swap_interval));
+                }
+            #endif
+            #if defined(SOKOL_GLCORE)
+                _sapp_wgl_swap_buffers();
+            #endif
+        }
+        else
+        {
+            Sleep((DWORD)(16 * _sapp.swap_interval));
+        }
         /* check for window resized, this cannot happen in WM_SIZE as it explodes memory usage */
         if (_sapp_win32_update_dimensions()) {
             #if defined(SOKOL_D3D11)
@@ -8419,7 +8438,8 @@ _SOKOL_PRIVATE void _sapp_android_frame(void) {
     SOKOL_ASSERT(_sapp.android.surface != EGL_NO_SURFACE);
     _sapp_timing_measure(&_sapp.timing);
     _sapp_android_update_dimensions(_sapp.android.current.window, false);
-    _sapp_frame();
+    bool frameResult = _sapp_frame();
+    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
     eglSwapBuffers(_sapp.android.display, _sapp.android.surface);
 }
 
@@ -11689,7 +11709,8 @@ _SOKOL_PRIVATE void _sapp_linux_run(const sapp_desc* desc) {
             XNextEvent(_sapp.x11.display, &event);
             _sapp_x11_process_event(&event);
         }
-        _sapp_frame();
+        bool frameResult = _sapp_frame();
+        //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
 #if defined(_SAPP_GLX)
         _sapp_glx_swap_buffers();
 #else
