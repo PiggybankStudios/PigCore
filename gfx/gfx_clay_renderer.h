@@ -276,7 +276,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						command->renderData.border.cornerRadius.bottomRight,
 						command->renderData.border.cornerRadius.bottomLeft,
 						drawColor,
-						false
+						command->userData.outsideBorder
 					);
 				}
 				else
@@ -288,7 +288,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						command->renderData.border.width.top,
 						command->renderData.border.width.bottom,
 						drawColor,
-						false
+						command->userData.outsideBorder
 					);
 				}
 			} break;

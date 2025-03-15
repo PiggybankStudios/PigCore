@@ -27,7 +27,7 @@ Description:
 typedef struct ClayElementUserData ClayElementUserData;
 struct ClayElementUserData
 {
-	int placeholder; //TODO: Add extensions here!
+	bool outsideBorder;
 };
 
 typedef enum TextContraction TextContraction;

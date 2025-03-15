@@ -1078,6 +1078,10 @@ PEXP void GfxSystem_DrawTexturedRoundedRectangleOutlineEx(GfxSystem* system, rec
 	NotNull(system);
 	if (outside)
 	{
+		if (radiusTL > 0) { radiusTL += thickness; }
+		if (radiusTR > 0) { radiusTR += thickness; }
+		if (radiusBR > 0) { radiusBR += thickness; }
+		if (radiusBL > 0) { radiusBL += thickness; }
 		GfxSystem_DrawTexturedRoundedRectangleOutlineEx(system, NewRec(rectangle.X - thickness, rectangle.Y - thickness, rectangle.Width + thickness*2, rectangle.Height + thickness*2), thickness, radiusTL, radiusTR, radiusBR, radiusBL, color, false, texture, sourceRec);
 		return;
 	}
