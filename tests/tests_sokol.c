@@ -218,16 +218,36 @@ void AppInit(void)
 	Assert(gradientTexture.error == Result_Success);
 	
 	testFont = InitFont(stdHeap, StrLit("testFont"));
-	Result attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold);
-	Assert(attachResult == Result_Success);
 	// OsWriteBinFile(FilePathLit("Default.ttf"), testFont.ttfFile);
 	FontCharRange charRanges[] = {
 		FontCharRange_ASCII,
 		FontCharRange_LatinExt,
 	};
-	Result bakeResult = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
-	Assert(bakeResult == Result_Success);
+	
+	Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_None);
+	Assert(attachResult1 == Result_Success);
+	Result bakeResult1 = BakeFontAtlas(&testFont, 18, FontStyleFlag_None, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+	Assert(bakeResult1 == Result_Success);
 	FillFontKerningTable(&testFont);
+	RemoveAttachedTtfFile(&testFont);
+	
+	Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold);
+	Assert(attachResult2 == Result_Success);
+	Result bakeResult2 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+	Assert(bakeResult2 == Result_Success);
+	RemoveAttachedTtfFile(&testFont);
+	
+	Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Italic);
+	Assert(attachResult3 == Result_Success);
+	Result bakeResult3 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+	Assert(bakeResult3 == Result_Success);
+	RemoveAttachedTtfFile(&testFont);
+	
+	Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold|FontStyleFlag_Italic);
+	Assert(attachResult4 == Result_Success);
+	Result bakeResult4 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold|FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+	Assert(bakeResult4 == Result_Success);
+	RemoveAttachedTtfFile(&testFont);
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
@@ -307,8 +327,9 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 // +--------------------------------------------------------------+
 // |                            Update                            |
 // +--------------------------------------------------------------+
-void AppFrame(void)
+bool AppFrame(void)
 {
+	bool frameRendered = true;
 	programTime += 16; //TODO: Calculate this!
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
@@ -479,7 +500,7 @@ void AppFrame(void)
 					{
 						if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
 						{
-							if (ClayBtn("Open", Transparent, MonokaiWhite))
+							if (ClayBtn("Open \a\bBold!", Transparent, MonokaiWhite))
 							{
 								//TODO: Implement me!
 							} Clay__CloseElement();
@@ -549,6 +570,7 @@ void AppFrame(void)
 	gfx.numDrawCalls = 0;
 	RefreshMouseState(&mouse, sapp_mouse_locked(), NewV2(sapp_widthf()/2.0f, sapp_heightf()/2.0f));
 	RefreshKeyboardState(&keyboard);
+	return frameRendered;
 }
 
 // +--------------------------------------------------------------+

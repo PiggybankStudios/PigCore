@@ -19,6 +19,7 @@ Description:
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
+#include "struct/struct_rich_string.h"
 #include "gfx/gfx_texture.h"
 
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
@@ -58,19 +59,6 @@ Description:
 #if COMPILER_IS_CLANG
 #pragma clang diagnostic pop
 #endif
-
-typedef enum FontStyleFlag FontStyleFlag;
-enum FontStyleFlag
-{
-	FontStyleFlag_None          = 0x00,
-	FontStyleFlag_Bold          = 0x01,
-	FontStyleFlag_Italic        = 0x02,
-	FontStyleFlag_Inverted      = 0x04,
-	FontStyleFlag_Underline     = 0x08,
-	FontStyleFlag_Strikethrough = 0x10,
-	FontStyleFlag_Outline       = 0x20,
-	FontStyleFlag_All           = 0x3F,
-};
 
 typedef struct FontCharRange FontCharRange;
 struct FontCharRange

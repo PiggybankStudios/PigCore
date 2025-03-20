@@ -24,6 +24,7 @@ Description:
 #include "struct/struct_vectors.h"
 #include "struct/struct_rectangles.h"
 #include "struct/struct_string.h"
+#include "struct/struct_rich_string.h"
 #include "gfx/gfx_font.h"
 
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
@@ -59,16 +60,20 @@ struct FontFlowState
 	void* contextPntr;
 	PigFont* font;
 	v2 position;
-	r32 fontSize;
-	u8 styleFlags;
-	Str8 text;
+	r32 startFontSize;
+	u8 startFontStyle;
+	Color32 startColor;
+	RichStr text;
+	
 	uxx byteIndex;
 	uxx charIndex;
 	uxx glyphIndex;
+	uxx textPieceIndex;
+	uxx textPieceByteIndex;
+	RichStrStyle currentStyle;
 	v2 underlineStartPos;
 	v2 strikethroughStartPos;
 	v2 alignPixelSize;
-	Color32 color;
 	FontAtlas* prevGlyphAtlas;
 	FontGlyph* prevGlyph;
 };
@@ -106,8 +111,11 @@ struct FontFlowCallbacks
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut);
+	PIG_CORE_INLINE TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, RichStr text);
+	PIG_CORE_INLINE TextMeasure MeasureRichText(const PigFont* font, RichStr text);
 	PIG_CORE_INLINE TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text);
 	PIG_CORE_INLINE TextMeasure MeasureText(const PigFont* font, Str8 text);
+	//TODO: Made RichStr versions of ShortenTextToFitWidth functions!
 	uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex, Str8* beforeEllipseStrOut, Str8* afterEllipseStrOut);
 	PIG_CORE_INLINE Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex);
 	PIG_CORE_INLINE Str8 ShortenTextStartToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
@@ -123,9 +131,13 @@ struct FontFlowCallbacks
 PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
 {
 	NotNull(state);
-	NotNullStr(state->text);
+	NotNullStr(state->text.fullPiece.str);
 	NotNull(state->font);
 	Result result = Result_Success;
+	
+	state->currentStyle.fontSize = state->startFontSize;
+	state->currentStyle.fontStyle = state->startFontStyle;
+	state->currentStyle.color = state->startColor;
 	
 	if (flowOut != nullptr)
 	{
@@ -134,7 +146,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		flowOut->startPos = state->position;
 		flowOut->visualRec = NewRecV(state->position, V2_Zero);
 		flowOut->logicalRec = NewRecV(state->position, V2_Zero);
-		FontAtlas* firstAtlas = GetFontAtlas(state->font, state->fontSize, state->styleFlags);
+		FontAtlas* firstAtlas = GetFontAtlas(state->font, state->startFontSize, state->startFontStyle);
 		if (firstAtlas != nullptr)
 		{
 			flowOut->logicalRec.Y -= firstAtlas->maxAscend;
@@ -143,26 +155,35 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		flowOut->numGlyphs = 0;
 	}
 	
-	while (state->byteIndex < state->text.length)
+	while (state->byteIndex < state->text.fullPiece.str.length)
 	{
+		RichStrPiece* currentPiece = GetRichStrPiece(&state->text, state->textPieceIndex);
+		DebugAssert(currentPiece != nullptr);
+		ApplyRichStyleChange(&state->currentStyle, currentPiece->styleChange, state->startFontSize, state->startFontStyle, state->startColor);
+		if (currentPiece->str.length == 0) { state->textPieceIndex++; state->textPieceByteIndex = 0; continue; }
+		
 		u32 codepoint = 0;
-		u8 utf8ByteSize = GetCodepointForUtf8Str(state->text, state->byteIndex, &codepoint);
+		u8 utf8ByteSize = GetCodepointForUtf8Str(currentPiece->str, state->textPieceByteIndex, &codepoint);
 		if (utf8ByteSize == 0)
 		{
 			//TODO: Should we handle invalid UTF-8 differently?
-			codepoint = CharToU32(state->text.chars[state->byteIndex]);
+			codepoint = CharToU32(currentPiece->str.chars[state->textPieceByteIndex]);
 			utf8ByteSize = 1;
-			if (result == Result_Success) { result = Result_InvalidUtf8; }
+			if (result == Result_Success)
+			{
+				result = Result_InvalidUtf8;
+				MyBreak();
+			}
 		}
 		
 		if (callbacks != nullptr && callbacks->beforeChar != nullptr) { callbacks->beforeChar(state, flowOut, codepoint); }
-		if (state->byteIndex >= state->text.length) { break; }
+		if (state->byteIndex >= state->text.fullPiece.str.length) { break; }
 		
 		r32 kerning = 0.0f;
 		rec glyphDrawRec = Rec_Zero;
 		rec glyphLogicalRec = Rec_Zero;
 		FontAtlas* fontAtlas = nullptr;
-		FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, codepoint, state->fontSize, state->styleFlags, &fontAtlas);
+		FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &fontAtlas);
 		if (fontGlyph != nullptr)
 		{
 			if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->fontScale == fontAtlas->fontScale) //TODO: Should we check the style flags match?
@@ -184,6 +205,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			
 			//TODO: Draw Strikethrough
 			//TODO: Draw Underline
+			//TODO: Draw Highlight
 			
 			if (flowOut != nullptr)
 			{
@@ -198,7 +220,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					flowGlyph->glyph = fontGlyph;
 					flowGlyph->position = state->position;
 					flowGlyph->drawRec = glyphDrawRec;
-					flowGlyph->color = state->color;
+					flowGlyph->color = state->currentStyle.color;
 				}
 				
 				flowOut->logicalRec = BothRec(flowOut->logicalRec, glyphLogicalRec);
@@ -217,6 +239,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		
 		state->charIndex++;
 		state->byteIndex += utf8ByteSize;
+		state->textPieceByteIndex += utf8ByteSize;
+		if (state->textPieceByteIndex >= currentPiece->str.length) { state->textPieceIndex++; state->textPieceByteIndex = 0; }
 		
 		if (callbacks != nullptr && callbacks->afterChar != nullptr) { callbacks->afterChar(state, flowOut, glyphDrawRec, glyphLogicalRec, codepoint, fontAtlas, fontGlyph, kerning); }
 		
@@ -230,13 +254,13 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	return result;
 }
 
-PEXPI TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
+PEXPI TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, RichStr text)
 {
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
 	state.position = V2_Zero_Const;
-	state.fontSize = fontSize;
-	state.styleFlags = styleFlags;
+	state.startFontSize = fontSize;
+	state.startFontStyle = styleFlags;
 	state.text = text;
 	state.alignPixelSize = V2_One; //TODO: Should this be a function parameter?
 	
@@ -249,11 +273,21 @@ PEXPI TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags
 	result.logicalRec = flow.logicalRec;
 	return result;
 }
+PEXPI TextMeasure MeasureRichText(const PigFont* font, RichStr text)
+{
+	Assert(font->atlases.length > 0);
+	FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
+	return MeasureRichTextEx(font, firstAtlas->fontSize, firstAtlas->styleFlags, text);
+}
+PEXPI TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
+{
+	return MeasureRichTextEx(font, fontSize, styleFlags, ToRichStr(text));
+}
 PEXPI TextMeasure MeasureText(const PigFont* font, Str8 text)
 {
 	Assert(font->atlases.length > 0);
 	FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
-	return MeasureTextEx(font, firstAtlas->fontSize, firstAtlas->styleFlags, text);
+	return MeasureRichTextEx(font, firstAtlas->fontSize, firstAtlas->styleFlags, ToRichStr(text));
 }
 
 //NOTE: ellipsesIndex is an index into the pre-shortened string, it will replace characters from both left and right so it may end up at an index earlier in the string if it pulls characters from the left
@@ -275,9 +309,9 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
 	state.position = V2_Zero_Const;
-	state.fontSize = fontSize;
-	state.styleFlags = styleFlags;
-	state.text = text;
+	state.startFontSize = fontSize;
+	state.startFontStyle = styleFlags;
+	state.text = ToRichStr(text);
 	state.alignPixelSize = V2_One;
 	
 	FontFlow flow = ZEROED;

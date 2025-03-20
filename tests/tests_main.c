@@ -514,6 +514,65 @@ int main(int argc, char* argv[])
 	#endif
 	
 	// +==============================+
+	// |        RichStr Tests         |
+	// +==============================+
+	#if 1
+	{
+		ScratchBegin(scratch);
+		Str8 encodedString = StrLit("Open \a\bBold!");
+		RichStr richStr = DecodeStrToRichStr(scratch, encodedString);
+		PrintLine_D("RichStr is %llu/%llu bytes, %llu piece%s", richStr.fullPiece.str.length, encodedString.length, richStr.numPieces, Plural(richStr.numPieces, "s"));
+		for (uxx pIndex = 0; pIndex < richStr.numPieces; pIndex++)
+		{
+			RichStrPiece* piece = &richStr.pieces[pIndex];
+			switch (piece->styleChange.type)
+			{
+				case RichStrStyleChangeType_None:
+				{
+					PrintLine_D("\tPiece[%llu]: \"%.*s\"", (u64)pIndex, StrPrint(piece->str));
+				} break;
+				case RichStrStyleChangeType_FontStyle:
+				{
+					if (piece->styleChange.enableStyleFlags != 0)
+					{
+						PrintLine_D("\tPiece[%llu]: Enable %s%s \"%.*s\"",
+							(u64)pIndex,
+							IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Bold) ? "Bold" : "",
+							IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Italic) ? "Italic" : "",
+							StrPrint(piece->str)
+						);
+					}
+					else if (piece->styleChange.disableStyleFlags != 0)
+					{
+						PrintLine_D("\tPiece[%llu]: Disable %s%s \"%.*s\"",
+							(u64)pIndex,
+							IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Bold) ? "Bold" : "",
+							IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Italic) ? "Italic" : "",
+							StrPrint(piece->str)
+						);
+					}
+					else if (piece->styleChange.defaultStyleFlags != 0)
+					{
+						PrintLine_D("\tPiece[%llu]: Reset %s%s \"%.*s\"",
+							(u64)pIndex,
+							IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Bold) ? "Bold" : "",
+							IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Italic) ? "Italic" : "",
+							StrPrint(piece->str)
+						);
+					}
+				} break;
+				default:
+				{
+					PrintLine_D("\tPiece[%llu]: %s \"%.*s\"", (u64)pIndex, GetRichStrStyleChangeTypeStr(piece->styleChange.type), StrPrint(piece->str));
+				} break;
+			}
+			
+		}
+		ScratchEnd(scratch);
+	}
+	#endif
+	
+	// +==============================+
 	// |        Printing Tests        |
 	// +==============================+
 	#if 0

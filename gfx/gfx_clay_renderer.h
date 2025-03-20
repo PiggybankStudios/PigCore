@@ -70,19 +70,23 @@ PEXPI Clay_ImageElementConfig ToClayImage(Texture* texture)
 // Clay_Dimensions ClayUIRendererMeasureText(Clay_StringSlice text, Clay_TextElementConfig* config, void* userData)
 PEXP CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 {
+	ScratchBegin(scratch);
 	NotNull(userData);
 	ClayUIRenderer* renderer = (ClayUIRenderer*)userData;
 	Str8 textStr = NewStr8((uxx)text.length, text.chars);
+	RichStr richTextStr = DecodeStrToRichStr(scratch, textStr);
 	Assert(config->fontId < renderer->fonts.length);
 	ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)config->fontId);
 	r32 fontSize = (r32)config->fontSize;
 	FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
 	NotNull(fontAtlas);
 	//NOTE: Clay has no way of knowing the lineHeight, so if we don't tell it otherwise it will place text a little too close to each other vertically
-	TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, textStr);
+	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, richTextStr);
+	
 	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
 	Clay_Dimensions result = (Clay_Dimensions){ .width = CeilR32(measure.Width - measure.OffsetX), .height = CeilR32(measure.Height) };
+	ScratchEnd(scratch);
 	return result;
 }
 
@@ -151,6 +155,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			{
 				uxx scratchMark = ArenaGetMark(scratch);
 				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
+				RichStr richText = DecodeStrToRichStr(scratch, text);
 				u16 fontId = command->renderData.text.fontId;
 				r32 fontSize = (r32)command->renderData.text.fontSize;
 				Assert(fontId < renderer->fonts.length);
@@ -161,7 +166,8 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				reci oldClipRec = ZEROED;
 				v2 textOffset = V2_Zero;
 				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
-					command->renderData.text.userData.contraction == TextContraction_ClipRight)
+					command->renderData.text.userData.contraction == TextContraction_ClipRight ||
+					richText.numPieces > 1) //TODO: We don't support ellipses style contractions with RichStr right now!
 				{
 					rec textClipRec = NewRec(
 						FloorR32(drawRec.X),
@@ -171,7 +177,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					);
 					if (command->renderData.text.userData.contraction == TextContraction_ClipLeft)
 					{
-						TextMeasure measure = MeasureTextEx(font->pntr, fontSize, font->styleFlags, text);
+						TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, richText);
 						if (measure.Width > drawRec.Width)
 						{
 							textOffset.X -= (measure.Width - drawRec.Width);
@@ -183,23 +189,27 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft)
 				{
 					text = ShortenTextStartToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
+					richText = ToRichStr(text);
 				}
 				else if (command->renderData.text.userData.contraction == TextContraction_EllipseMiddle)
 				{
 					text = ShortenTextToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR), text.length/2);
+					richText = ToRichStr(text);
 				}
 				else if (command->renderData.text.userData.contraction == TextContraction_EllipseRight)
 				{
 					text = ShortenTextEndToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
+					richText = ToRichStr(text);
 				}
 				else if (command->renderData.text.userData.contraction == TextContraction_EllipseFilePath)
 				{
 					text = ShortenFilePathToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, drawRec.Width, StrLit(UNICODE_ELLIPSIS_STR));
+					richText = ToRichStr(text);
 				}
 				v2 textPos = NewV2(drawRec.X + textOffset.X, drawRec.Y + textOffset.Y + drawRec.Height/2 + fontAtlas->centerOffset);
 				AlignV2(&textPos);
-				Result drawResult = GfxSystem_DrawTextWithFont(system, font->pntr, fontSize, font->styleFlags, text, textPos, drawColor);
-				Assert(drawResult == Result_Success);
+				Result drawResult = GfxSystem_DrawRichTextWithFont(system, font->pntr, fontSize, font->styleFlags, richText, textPos, drawColor);
+				Assert(drawResult == Result_Success || drawResult == Result_InvalidUtf8);
 				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
 					command->renderData.text.userData.contraction == TextContraction_ClipRight)
 				{

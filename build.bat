@@ -156,7 +156,10 @@ if "%DEBUG_BUILD%"=="1" (
 
 :: Gdi32.lib = Needed for CreateFontA and other Windows graphics functions
 :: User32.lib = Needed for GetForegroundWindow, GetDC, etc.
-set tests_libraries=Gdi32.lib User32.lib
+:: Ole32.lib = Needed for CoInitializeEx, CoCreateInstance, etc.
+:: Shell32.lib = Needed for SHGetSpecialFolderPathA
+:: Shlwapi.lib = Needed for PathFileExistsA
+set tests_libraries=Gdi32.lib User32.lib Ole32.lib Shell32.lib Shlwapi.lib
 set tests_clang_libraries=
 set pig_core_dll_libraries=Gdi32.lib User32.lib
 if "%BUILD_WITH_RAYLIB%"=="1" (
@@ -372,8 +375,14 @@ set tests_bin_path=tests
 set tests_wasm_path=app.wasm
 set tests_wat_path=app.wat
 set tests_html_path=index.html
-set tests_cl_args=%common_cl_flags% %c_cl_flags% /Fe%tests_exe_path% %tests_source_path% %shader_object_files% /link %common_ld_flags% %tests_libraries%
-set tests_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% %tests_clang_libraries% -o %tests_bin_path% ../%tests_source_path% %shader_linux_object_files%
+set tests_win_input_files=%tests_source_path%
+set tests_linux_input_files=../%tests_source_path%
+if "%BUILD_WITH_SOKOL_GFX%"=="1" (
+	set tests_win_input_files=%tests_win_input_files% %shader_object_files%
+	set tests_linux_input_files=%tests_linux_input_files% %shader_linux_object_files%
+)
+set tests_cl_args=%common_cl_flags% %c_cl_flags% /Fe%tests_exe_path% %tests_win_input_files% /link %common_ld_flags% %tests_libraries%
+set tests_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% %tests_clang_libraries% -o %tests_bin_path% %tests_linux_input_files%
 if "%ENABLE_AUTO_PROFILE%"=="1" (
 	set tests_clang_args=-finstrument-functions %tests_clang_args%
 )

@@ -51,14 +51,14 @@ PEXP Result DoTextLayoutInArena(Arena* arena, FontFlowState* state, TextLayout* 
 	layoutOut->arena = arena;
 	
 	uxx numCodepoints = 0;
-	while (state->byteIndex < state->text.length)
+	while (state->byteIndex < state->text.fullPiece.str.length)
 	{
 		u32 codepoint = 0;
-		u8 utf8ByteSize = GetCodepointForUtf8Str(state->text, state->byteIndex, &codepoint);
+		u8 utf8ByteSize = GetCodepointForUtf8Str(state->text.fullPiece.str, state->byteIndex, &codepoint);
 		if (utf8ByteSize == 0)
 		{
 			//TODO: Should we handle invalid UTF-8 differently?
-			codepoint = CharToU32(state->text.chars[state->byteIndex]);
+			codepoint = CharToU32(state->text.fullPiece.str.chars[state->byteIndex]);
 			utf8ByteSize = 1;
 		}
 		numCodepoints++;
