@@ -249,6 +249,12 @@ void AppInit(void)
 	Assert(bakeResult4 == Result_Success);
 	RemoveAttachedTtfFile(&testFont);
 	
+	Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 10, FontStyleFlag_Bold);
+	Assert(attachResult5 == Result_Success);
+	Result bakeResult5 = BakeFontAtlas(&testFont, 10, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+	Assert(bakeResult5 == Result_Success);
+	RemoveAttachedTtfFile(&testFont);
+	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
 	for (uxx iIndex = 0; iIndex < cubeMesh.numIndices; iIndex++)
@@ -500,7 +506,7 @@ bool AppFrame(void)
 					{
 						if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
 						{
-							if (ClayBtn("Open \a\bBold!", Transparent, MonokaiWhite))
+							if (ClayBtn("Op[color=FF00FF]en [size=10]\bCo[rgb]lor\b[size]!", Transparent, MonokaiWhite))
 							{
 								//TODO: Implement me!
 							} Clay__CloseElement();

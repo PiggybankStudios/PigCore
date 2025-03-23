@@ -519,7 +519,7 @@ int main(int argc, char* argv[])
 	#if 1
 	{
 		ScratchBegin(scratch);
-		Str8 encodedString = StrLit("Open \a\bBold!");
+		Str8 encodedString = StrLit("Open [color=FFDDAA]Bold!");
 		RichStr richStr = DecodeStrToRichStr(scratch, encodedString);
 		PrintLine_D("RichStr is %llu/%llu bytes, %llu piece%s", richStr.fullPiece.str.length, encodedString.length, richStr.numPieces, Plural(richStr.numPieces, "s"));
 		for (uxx pIndex = 0; pIndex < richStr.numPieces; pIndex++)
@@ -559,6 +559,28 @@ int main(int argc, char* argv[])
 							IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Italic) ? "Italic" : "",
 							StrPrint(piece->str)
 						);
+					}
+				} break;
+				case RichStrStyleChangeType_Color:
+				{
+					if (piece->styleChange.color.valueU32 == RICH_STYLE_DEFAULT_COLOR_VALUE)
+					{
+						PrintLine_D("\tPiece[%llu]: Color=Default \"%.*s\"", (u64)pIndex, StrPrint(piece->str));
+					}
+					else
+					{
+						PrintLine_D("\tPiece[%llu]: Color=(r=%u, g=%u, b=%u) \"%.*s\"", (u64)pIndex, piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b, piece->styleChange.color.a, StrPrint(piece->str));
+					}
+				} break;
+				case RichStrStyleChangeType_ColorAndAlpha:
+				{
+					if (piece->styleChange.color.valueU32 == RICH_STYLE_DEFAULT_COLOR_VALUE)
+					{
+						PrintLine_D("\tPiece[%llu]: ColorAndAlpha=Default \"%.*s\"", (u64)pIndex, StrPrint(piece->str));
+					}
+					else
+					{
+						PrintLine_D("\tPiece[%llu]: ColorAndAlpha=(r=%u, g=%u, b=%u, a=%u) \"%.*s\"", (u64)pIndex, piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b, piece->styleChange.color.a, StrPrint(piece->str));
 					}
 				} break;
 				default:

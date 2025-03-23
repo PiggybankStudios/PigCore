@@ -19,6 +19,7 @@ Description:
 #include "std/std_memset.h"
 #include "struct/struct_string.h"
 #include "struct/struct_color.h"
+#include "misc/misc_standard_colors.h"
 #include "mem/mem_arena.h"
 
 typedef enum FontStyleFlag FontStyleFlag;
@@ -60,6 +61,8 @@ enum RichStrStyleChangeType
 	RichStrStyleChangeType_FontSize,
 	RichStrStyleChangeType_FontStyle,
 	RichStrStyleChangeType_Color,
+	RichStrStyleChangeType_ColorAndAlpha,
+	RichStrStyleChangeType_Alpha,
 	RichStrStyleChangeType_Count,
 };
 #if !PIG_CORE_IMPLEMENTATION
@@ -69,11 +72,13 @@ const char* GetRichStrStyleChangeTypeStr(RichStrStyleChangeType enumValue)
 {
 	switch (enumValue)
 	{
-		case RichStrStyleChangeType_None:      return "None";
-		case RichStrStyleChangeType_FontSize:  return "FontSize";
-		case RichStrStyleChangeType_FontStyle: return "FontStyle";
-		case RichStrStyleChangeType_Color:     return "Color";
-		case RichStrStyleChangeType_Count:     return "Count";
+		case RichStrStyleChangeType_None:          return "None";
+		case RichStrStyleChangeType_FontSize:      return "FontSize";
+		case RichStrStyleChangeType_FontStyle:     return "FontStyle";
+		case RichStrStyleChangeType_Color:         return "Color";
+		case RichStrStyleChangeType_ColorAndAlpha: return "ColorAndAlpha";
+		case RichStrStyleChangeType_Alpha:         return "Alpha";
+		case RichStrStyleChangeType_Count:         return "Count";
 		default: return "Unknown";
 	}
 }
@@ -95,11 +100,18 @@ typedef struct RichStrStyleChange RichStrStyleChange;
 struct RichStrStyleChange
 {
 	RichStrStyleChangeType type;
-	r32 fontSize;  // (0.0f means default size)
-	u8 enableStyleFlags;
-	u8 disableStyleFlags;
-	u8 defaultStyleFlags;
-	Color32 color; // (TransparentWhite means default color)
+	union
+	{
+		r32 fontSize;  // (0.0f means default size)
+		struct
+		{
+			u8 enableStyleFlags;
+			u8 disableStyleFlags;
+			u8 defaultStyleFlags;
+		};
+		Color32 color; // (TransparentWhite means default color)
+		r32 alpha;
+	};
 };
 
 typedef struct RichStrPiece RichStrPiece;
@@ -124,12 +136,14 @@ struct RichStr
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE RichStrStyle NewRichStrStyle(r32 fontSize, u8 fontStyle, Color32 color);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChange(RichStrStyleChangeType type, r32 fontSize, u8 enableStyleFlags, u8 disableStyleFlags, u8 defaultStyleFlags, Color32 color);
+	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChange(RichStrStyleChangeType type, r32 fontSize, u8 enableStyleFlags, u8 disableStyleFlags, u8 defaultStyleFlags, Color32 color, r32 alpha);
 	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeSize(r32 fontSize);
 	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeEnableFlags(u8 enableStyleFlags);
 	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeDisableFlags(u8 disableStyleFlags);
 	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeDefaultFlags(u8 defaultStyleFlags);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeColor(Color32 color);
+	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeColor(Color32 color, bool includeAlpha);
+	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeAlpha(r32 alpha);
+	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeAlphaU8(u8 alpha);
 	PIG_CORE_INLINE RichStr ToRichStrEx(Str8 string, RichStrStyleChange styleChange);
 	PIG_CORE_INLINE RichStr ToRichStr(Str8 string);
 	PIG_CORE_INLINE void FreeRichStr(Arena* arena, RichStr* richStrPntr);
@@ -160,7 +174,7 @@ PEXPI RichStrStyle NewRichStrStyle(r32 fontSize, u8 fontStyle, Color32 color)
 	result.color = color;
 	return result;
 }
-PEXPI RichStrStyleChange NewRichStrStyleChange(RichStrStyleChangeType type, r32 fontSize, u8 enableStyleFlags, u8 disableStyleFlags, u8 defaultStyleFlags, Color32 color)
+PEXPI RichStrStyleChange NewRichStrStyleChange(RichStrStyleChangeType type, r32 fontSize, u8 enableStyleFlags, u8 disableStyleFlags, u8 defaultStyleFlags, Color32 color, r32 alpha)
 {
 	RichStrStyleChange result = ZEROED;
 	result.type = type;
@@ -169,27 +183,36 @@ PEXPI RichStrStyleChange NewRichStrStyleChange(RichStrStyleChangeType type, r32 
 	result.disableStyleFlags = disableStyleFlags;
 	result.defaultStyleFlags = defaultStyleFlags;
 	result.color = color;
+	result.alpha = alpha;
 	return result;
 }
 PEXPI RichStrStyleChange NewRichStrStyleChangeSize(r32 fontSize)
 {
-	return NewRichStrStyleChange(RichStrStyleChangeType_FontSize, fontSize, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR);
+	return NewRichStrStyleChange(RichStrStyleChangeType_FontSize, fontSize, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f);
 }
 PEXPI RichStrStyleChange NewRichStrStyleChangeEnableFlags(u8 enableStyleFlags)
 {
-	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, enableStyleFlags, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR);
+	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, enableStyleFlags, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f);
 }
 PEXPI RichStrStyleChange NewRichStrStyleChangeDisableFlags(u8 disableStyleFlags)
 {
-	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, 0x00, disableStyleFlags, 0x00, RICH_STYLE_DEFAULT_COLOR);
+	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, 0x00, disableStyleFlags, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f);
 }
 PEXPI RichStrStyleChange NewRichStrStyleChangeDefaultFlags(u8 defaultStyleFlags)
 {
-	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, 0x00, 0x00, defaultStyleFlags, RICH_STYLE_DEFAULT_COLOR);
+	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, 0x00, 0x00, defaultStyleFlags, RICH_STYLE_DEFAULT_COLOR, 0.0f);
 }
-PEXPI RichStrStyleChange NewRichStrStyleChangeColor(Color32 color)
+PEXPI RichStrStyleChange NewRichStrStyleChangeColor(Color32 color, bool includeAlpha)
 {
-	return NewRichStrStyleChange(RichStrStyleChangeType_Color, 0.0f, 0x00, 0x00, 0x00, color);
+	return NewRichStrStyleChange(includeAlpha ? RichStrStyleChangeType_ColorAndAlpha : RichStrStyleChangeType_Color, 0.0f, 0x00, 0x00, 0x00, color, 0.0f);
+}
+PEXPI RichStrStyleChange NewRichStrStyleChangeAlpha(r32 alpha)
+{
+	return NewRichStrStyleChange(RichStrStyleChangeType_Alpha, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, alpha);
+}
+PEXPI RichStrStyleChange NewRichStrStyleChangeAlphaU8(u8 alpha)
+{
+	return NewRichStrStyleChange(RichStrStyleChangeType_Alpha, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, (r32)alpha / 255.0f);
 }
 
 PEXPI RichStr ToRichStrEx(Str8 string, RichStrStyleChange styleChange)
@@ -382,7 +405,9 @@ PEXPI void ApplyRichStyleChange(RichStrStyle* style, RichStrStyleChange styleCha
 			FlagUnset(style->fontStyle, styleChange.disableStyleFlags);
 			style->fontStyle = (style->fontStyle & (~styleChange.defaultStyleFlags)) | (defaultFontStyle & styleChange.defaultStyleFlags);
 		} break;
-		case RichStrStyleChangeType_Color: style->color = (styleChange.color.valueU32 != RICH_STYLE_DEFAULT_COLOR_VALUE) ? styleChange.color : defaultColor; break;
+		case RichStrStyleChangeType_Color: u8 oldAlpha = style->color.a; style->color = (styleChange.color.valueU32 != RICH_STYLE_DEFAULT_COLOR_VALUE) ? styleChange.color : defaultColor; style->color.a = oldAlpha; break;
+		case RichStrStyleChangeType_ColorAndAlpha: style->color = (styleChange.color.valueU32 != RICH_STYLE_DEFAULT_COLOR_VALUE) ? styleChange.color : defaultColor; break;
+		case RichStrStyleChangeType_Alpha: style->color.a = (styleChange.alpha >= 0) ? (u8)RoundR32i(styleChange.alpha * 255) : defaultColor.a; break;
 	}
 }
 
@@ -416,6 +441,21 @@ static void TwoPassRichStrPiece(RichStrParseState* state, u8 pass, uxx bIndex)
 }
 
 //TODO: If the string starts out with a style change sequence then the first piece shouldn't be an empty string with no style changes
+// Syntax: All style changes are encoded as text between square brackets: [color=F83333] The text inside the pipe walls always contains
+//         a word and optionally contains an equals and value. Possible words:
+//         bold[=true/false/default]
+//         italic[=true/false/default]
+//         underline[=true/false/default]
+//         strike[=true/false/default]
+//         outline[=true/false/default]
+//         highlight[=true/false/default]
+//         color[=RRGGB/AARRGGBB/default] (no value implies default color)
+//         rgb[=RRGGB/default] (alpha channel of color is unchanged, no value implies default color)
+//         alpha[=N.N/0xNN] (float and 2-byte hex accepted, no value implies default alpha)
+//         size[=N] (no value implies default font size)
+//         Bold and Italic use \b (backspace) and \a (bell) escape sequences as special shorthand characters to toggling them on in a C string
+//         since we don't use them for anything in our strings normally. Bold and Italic also have regular syntax as well though which are
+//         More useful in other contexts, like writing an encoded string into a file that gets loaded and parsed, etc.
 PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 {
 	RichStrParseState state = ZEROED;
@@ -464,6 +504,150 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 				{
 					state.nextStyleChange = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Italic);
 					FlagSet(state.enabledFlags, FontStyleFlag_Italic);
+				}
+			}
+			else if (codepoint == '[')
+			{
+				RichStrStyleChange styleChange = RichStrStyleChange_None_Const;
+				uxx styleChangePartLength = 0;
+				
+				uxx nextPipeIndex = FindNextCharInStr(encodedString, bIndex + state.utf8ByteSize, StrLit("]"));
+				if (nextPipeIndex < encodedString.length)
+				{
+					Str8 contentsStr = StrSlice(encodedString, bIndex + state.utf8ByteSize, nextPipeIndex);
+					uxx equalsIndex = FindNextCharInStr(contentsStr, 0, StrLit("="));
+					if (equalsIndex < contentsStr.length)
+					{
+						Str8 namePart = TrimWhitespace(StrSlice(contentsStr, 0, equalsIndex));
+						Str8 valuePart = TrimWhitespace(StrSliceFrom(contentsStr, equalsIndex+1));
+						
+						if (StrAnyCaseEquals(namePart, StrLit("bold")) ||
+							StrAnyCaseEquals(namePart, StrLit("italic")) ||
+							StrAnyCaseEquals(namePart, StrLit("underline")) ||
+							StrAnyCaseEquals(namePart, StrLit("strike")) ||
+							StrAnyCaseEquals(namePart, StrLit("outline")) ||
+							StrAnyCaseEquals(namePart, StrLit("highlight")))
+						{
+							FontStyleFlag styleFlag = FontStyleFlag_None;
+							if (StrAnyCaseEquals(namePart, StrLit("bold")))           { styleFlag = FontStyleFlag_Bold;          }
+							else if (StrAnyCaseEquals(namePart, StrLit("italic")))    { styleFlag = FontStyleFlag_Italic;        }
+							else if (StrAnyCaseEquals(namePart, StrLit("underline"))) { styleFlag = FontStyleFlag_Underline;     }
+							else if (StrAnyCaseEquals(namePart, StrLit("strike")))    { styleFlag = FontStyleFlag_Strikethrough; }
+							else if (StrAnyCaseEquals(namePart, StrLit("outline")))   { styleFlag = FontStyleFlag_Outline;       }
+							else if (StrAnyCaseEquals(namePart, StrLit("highlight"))) { styleFlag = FontStyleFlag_Highlighted;   }
+							
+							bool valueBool = false;
+							if (TryParseBool(valuePart, &valueBool, nullptr))
+							{
+								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+								styleChange.type = RichStrStyleChangeType_FontStyle;
+								if (valueBool) { styleChange.enableStyleFlags = styleFlag; FlagSet(state.enabledFlags, styleFlag); }
+								else { styleChange.disableStyleFlags = styleFlag; FlagUnset(state.enabledFlags, styleFlag); }
+							}
+							else if (StrAnyCaseEquals(valuePart, StrLit("default")))
+							{
+								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+								styleChange.type = RichStrStyleChangeType_FontStyle;
+								styleChange.defaultStyleFlags = styleFlag;
+								FlagUnset(state.enabledFlags, styleFlag);
+							}
+						}
+						else if (StrAnyCaseEquals(namePart, StrLit("color")) ||
+							StrAnyCaseEquals(namePart, StrLit("rgb")))
+						{
+							Color32 valueColor = Transparent;
+							if (TryParseColor(valuePart, &valueColor, nullptr))
+							{
+								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+								styleChange.type = StrAnyCaseEquals(namePart, StrLit("rgb")) ? RichStrStyleChangeType_Color : RichStrStyleChangeType_ColorAndAlpha;
+								styleChange.color = valueColor;
+							}
+							else if (StrAnyCaseEquals(valuePart, StrLit("default")))
+							{
+								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+								styleChange.type = RichStrStyleChangeType_ColorAndAlpha;
+								styleChange.color = RICH_STYLE_DEFAULT_COLOR;
+							}
+						}
+						else if (StrAnyCaseEquals(namePart, StrLit("alpha")))
+						{
+							r32 valueR32 = 0.0f;
+							u8 valueU8 = 0;
+							if (TryParseR32(valuePart, &valueR32, nullptr))
+							{
+								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+								styleChange.type = RichStrStyleChangeType_Alpha;
+								styleChange.alpha = valueR32;
+							}
+							else if (TryParseU8Ex(valuePart, &valueU8, nullptr, true, false, false))
+							{
+								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+								styleChange.type = RichStrStyleChangeType_Alpha;
+								styleChange.alpha = (r32)valueU8 / 255.0f;
+							}
+						}
+						else if (StrAnyCaseEquals(namePart, StrLit("size")))
+						{
+							r32 valueR32 = 0.0f;
+							if (TryParseR32(valuePart, &valueR32, nullptr))
+							{
+								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+								styleChange.type = RichStrStyleChangeType_FontSize;
+								styleChange.fontSize = valueR32;
+							}
+						}
+					}
+					else
+					{
+						Str8 namePart = TrimWhitespace(contentsStr);
+						if (StrAnyCaseEquals(namePart, StrLit("bold")) ||
+							StrAnyCaseEquals(namePart, StrLit("italic")) ||
+							StrAnyCaseEquals(namePart, StrLit("underline")) ||
+							StrAnyCaseEquals(namePart, StrLit("strike")) ||
+							StrAnyCaseEquals(namePart, StrLit("outline")) ||
+							StrAnyCaseEquals(namePart, StrLit("highlight")))
+						{
+							FontStyleFlag styleFlag = FontStyleFlag_None;
+							if (StrAnyCaseEquals(namePart, StrLit("bold")))           { styleFlag = FontStyleFlag_Bold;          }
+							else if (StrAnyCaseEquals(namePart, StrLit("italic")))    { styleFlag = FontStyleFlag_Italic;        }
+							else if (StrAnyCaseEquals(namePart, StrLit("underline"))) { styleFlag = FontStyleFlag_Underline;     }
+							else if (StrAnyCaseEquals(namePart, StrLit("strike")))    { styleFlag = FontStyleFlag_Strikethrough; }
+							else if (StrAnyCaseEquals(namePart, StrLit("outline")))   { styleFlag = FontStyleFlag_Outline;       }
+							else if (StrAnyCaseEquals(namePart, StrLit("highlight"))) { styleFlag = FontStyleFlag_Highlighted;   }
+							
+							styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+							styleChange.type = RichStrStyleChangeType_FontStyle;
+							if (IsFlagSet(state.enabledFlags, styleFlag)) { styleChange.defaultStyleFlags = styleFlag; FlagUnset(state.enabledFlags, styleFlag); }
+							else { styleChange.enableStyleFlags = styleFlag; FlagSet(state.enabledFlags, styleFlag); }
+						}
+						else if (StrAnyCaseEquals(namePart, StrLit("color")) ||
+							StrAnyCaseEquals(namePart, StrLit("rgb")))
+						{
+							styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+							styleChange.type = StrAnyCaseEquals(namePart, StrLit("rgb")) ? RichStrStyleChangeType_Color : RichStrStyleChangeType_ColorAndAlpha;
+							styleChange.color = RICH_STYLE_DEFAULT_COLOR;
+						}
+						else if (StrAnyCaseEquals(namePart, StrLit("alpha")))
+						{
+							styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+							styleChange.type = RichStrStyleChangeType_Alpha;
+							styleChange.alpha = -1.0f;
+						}
+						else if (StrAnyCaseEquals(namePart, StrLit("size")))
+						{
+							styleChangePartLength = (nextPipeIndex + 1) - bIndex;
+							styleChange.type = RichStrStyleChangeType_FontSize;
+							styleChange.fontSize = 0.0f;
+						}
+					}
+				}
+				
+				if (styleChange.type != RichStrStyleChangeType_None)
+				{
+					TwoPassRichStrPiece(&state, pass, bIndex);
+					state.pieceStartIndex = bIndex + styleChangePartLength;
+					state.nextStyleChange = styleChange;
+					bIndex += styleChangePartLength-1;
 				}
 			}
 			
