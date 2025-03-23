@@ -214,6 +214,10 @@ typedef Obb3D obb3;
 	PIG_CORE_INLINE bool IsInsideRecInclusive(rec rectangle, v2 position);
 	PIG_CORE_INLINE rec RelativeRec(rec reference, rec subReference, rec other);
 	PIG_CORE_INLINE box RelativeBox(box reference, box subReference, box other);
+	PIG_CORE_INLINE void AlignRecTo(rec* rectangleOut, r32 alignmentScale);
+	PIG_CORE_INLINE void AlignRec(rec* rectangleOut);
+	PIG_CORE_INLINE void AlignBoxTo(box* boundingBoxOut, r32 alignmentScale);
+	PIG_CORE_INLINE void AlignBox(box* boundingBoxOut);
 #endif
 
 // +--------------------------------------------------------------+
@@ -659,6 +663,25 @@ PEXPI boxi OverlapPartBoxi(boxi left, boxi right)
 
 PEXPI bool IsInsideRec(rec rectangle, v2 position) { return (position.X >= rectangle.X && position.Y >= rectangle.Y && position.X < rectangle.X + rectangle.Width && position.Y < rectangle.Y + rectangle.Height); }
 PEXPI bool IsInsideRecInclusive(rec rectangle, v2 position) { return (position.X >= rectangle.X && position.Y >= rectangle.Y && position.X <= rectangle.X + rectangle.Width && position.Y <= rectangle.Y + rectangle.Height); }
+
+PEXPI void AlignRecTo(rec* rectangleOut, r32 alignmentScale)
+{
+	v2 bottomRight = AddV2(rectangleOut->TopLeft, rectangleOut->Size);
+	AlignV2To(&bottomRight, alignmentScale);
+	AlignV2To(&rectangleOut->TopLeft, alignmentScale);
+	rectangleOut->Size = SubV2(bottomRight, rectangleOut->TopLeft);
+}
+PEXPI void AlignRec(rec* rectangleOut) { AlignRecTo(rectangleOut, 1.0f); }
+
+PEXPI void AlignBoxTo(box* boundingBoxOut, r32 alignmentScale)
+{
+	v3 topRightFront = AddV3(boundingBoxOut->BottomLeftBack, boundingBoxOut->Size);
+	AlignV3To(&topRightFront, alignmentScale);
+	AlignV3To(&boundingBoxOut->BottomLeftBack, alignmentScale);
+	boundingBoxOut->Size = SubV3(topRightFront, boundingBoxOut->BottomLeftBack);
+}
+PEXPI void AlignBox(box* boundingBoxOut) { AlignBoxTo(boundingBoxOut, 1.0f); }
+
 
 //TODO: ExpandRecToV2/ExpandReciToV2i?
 //TODO: IsInsideBox/IsInsideObb2/IsRecInsideRec?

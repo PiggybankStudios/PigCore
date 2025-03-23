@@ -460,6 +460,9 @@ int main(int argc, char* argv[])
 		PrintLine_D("obb3_2 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_2.X, obb3_2.Y, obb3_2.Z, obb3_2.Width, obb3_2.Height, obb3_2.Depth, obb3_2.Rotation.X, obb3_2.Rotation.Y, obb3_2.Rotation.Z, obb3_2.Rotation.W);
 		PrintLine_D("obb3_3 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_3.X, obb3_3.Y, obb3_3.Z, obb3_3.Width, obb3_3.Height, obb3_3.Depth, obb3_3.Rotation.X, obb3_3.Rotation.Y, obb3_3.Rotation.Z, obb3_3.Rotation.W);
 		
+		rec alignRec = NewRec(15.4f, 13.6f, 10.2f, 3.8f);
+		AlignRec(&alignRec);
+		PrintLine_D("alignRec = (%f, %f, %f, %f)", alignRec.X, alignRec.Y, alignRec.Width, alignRec.Height);
 	}
 	#endif
 	
