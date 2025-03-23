@@ -214,10 +214,13 @@ typedef Vec4Raw v4r;
 	PIG_CORE_INLINE v2 Vec2Rotate(v2 vec2, r32 angle);
 	PIG_CORE_INLINE r32 Vec3AngleBetween(v3 left, v3 right);
 	PIG_CORE_INLINE v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius);
+	PIG_CORE_INLINE void AlignV2ToV2(v2* vectorOut, v2 alignmentScale);
 	PIG_CORE_INLINE void AlignV2To(v2* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV2(v2* vectorOut);
+	PIG_CORE_INLINE void AlignV3ToV3(v3* vectorOut, v3 alignmentScale);
 	PIG_CORE_INLINE void AlignV3To(v3* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV3(v3* vectorOut);
+	PIG_CORE_INLINE void AlignV4ToV4(v4* vectorOut, v4 alignmentScale);
 	PIG_CORE_INLINE void AlignV4To(v4* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV4(v4* vectorOut);
 #endif //!PIG_CORE_IMPLEMENTATION
@@ -543,41 +546,35 @@ PEXPI v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius)
 // +--------------------------------------------------------------+
 // |             Quickhand Functions for Layout Code              |
 // +--------------------------------------------------------------+
-PEXPI void AlignV2To(v2* vectorOut, r32 alignmentScale)
+PEXPI void AlignV2ToV2(v2* vectorOut, v2 alignmentScale)
 {
 	DebugNotNull(vectorOut);
-	if (alignmentScale > 0)
-	{
-		vectorOut->X = RoundR32(vectorOut->X * alignmentScale) / alignmentScale;
-		vectorOut->Y = RoundR32(vectorOut->Y * alignmentScale) / alignmentScale;
-	}
+	if (alignmentScale.X > 0) { vectorOut->X = RoundR32(vectorOut->X * alignmentScale.X) / alignmentScale.X; }
+	if (alignmentScale.Y > 0) { vectorOut->Y = RoundR32(vectorOut->Y * alignmentScale.Y) / alignmentScale.Y; }
 }
-PEXPI void AlignV2(v2* vectorOut) { AlignV2To(vectorOut, 1.0f); }
+PEXPI void AlignV2To(v2* vectorOut, r32 alignmentScale) { AlignV2ToV2(vectorOut, FillV2(alignmentScale)); }
+PEXPI void AlignV2(v2* vectorOut) { AlignV2ToV2(vectorOut, V2_One); }
 
-PEXPI void AlignV3To(v3* vectorOut, r32 alignmentScale)
+PEXPI void AlignV3ToV3(v3* vectorOut, v3 alignmentScale)
 {
 	DebugNotNull(vectorOut);
-	if (alignmentScale > 0)
-	{
-		vectorOut->X = RoundR32(vectorOut->X * alignmentScale) / alignmentScale;
-		vectorOut->Y = RoundR32(vectorOut->Y * alignmentScale) / alignmentScale;
-		vectorOut->Z = RoundR32(vectorOut->Z * alignmentScale) / alignmentScale;
-	}
+	if (alignmentScale.X > 0) { vectorOut->X = RoundR32(vectorOut->X * alignmentScale.X) / alignmentScale.X; }
+	if (alignmentScale.Y > 0) { vectorOut->Y = RoundR32(vectorOut->Y * alignmentScale.Y) / alignmentScale.Y; }
+	if (alignmentScale.Z > 0) { vectorOut->Z = RoundR32(vectorOut->Z * alignmentScale.Z) / alignmentScale.Z; }
 }
-PEXPI void AlignV3(v3* vectorOut) { AlignV3To(vectorOut, 1.0f); }
+PEXPI void AlignV3To(v3* vectorOut, r32 alignmentScale) { AlignV3ToV3(vectorOut, FillV3(alignmentScale)); }
+PEXPI void AlignV3(v3* vectorOut) { AlignV3ToV3(vectorOut, V3_One); }
 
-PEXPI void AlignV4To(v4* vectorOut, r32 alignmentScale)
+PEXPI void AlignV4ToV4(v4* vectorOut, v4 alignmentScale)
 {
 	DebugNotNull(vectorOut);
-	if (alignmentScale > 0)
-	{
-		vectorOut->X = RoundR32(vectorOut->X * alignmentScale) / alignmentScale;
-		vectorOut->Y = RoundR32(vectorOut->Y * alignmentScale) / alignmentScale;
-		vectorOut->Z = RoundR32(vectorOut->Z * alignmentScale) / alignmentScale;
-		vectorOut->W = RoundR32(vectorOut->W * alignmentScale) / alignmentScale;
-	}
+	if (alignmentScale.X > 0) { vectorOut->X = RoundR32(vectorOut->X * alignmentScale.X) / alignmentScale.X; }
+	if (alignmentScale.Y > 0) { vectorOut->Y = RoundR32(vectorOut->Y * alignmentScale.Y) / alignmentScale.Y; }
+	if (alignmentScale.Z > 0) { vectorOut->Z = RoundR32(vectorOut->Z * alignmentScale.Z) / alignmentScale.Z; }
+	if (alignmentScale.W > 0) { vectorOut->W = RoundR32(vectorOut->W * alignmentScale.W) / alignmentScale.W; }
 }
-PEXPI void AlignV4(v4* vectorOut) { AlignV4To(vectorOut, 1.0f); }
+PEXPI void AlignV4To(v4* vectorOut, r32 alignmentScale) { AlignV4ToV4(vectorOut, FillV4(alignmentScale)); }
+PEXPI void AlignV4(v4* vectorOut) { AlignV4ToV4(vectorOut, V4_One); }
 
 #endif //PIG_CORE_IMPLEMENTATION
 

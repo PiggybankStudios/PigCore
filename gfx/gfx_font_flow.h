@@ -164,8 +164,7 @@ static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks*
 		state->position.X - state->highlightStartPos.X,
 		currentAtlas->lineHeight
 	);
-	AlignV2(&highlightRec.TopLeft);
-	highlightRec.Size = CeilV2(highlightRec.Size);
+	AlignRecToV2(&highlightRec, state->alignPixelSize);
 	if (callbacks != nullptr && callbacks->drawHighlight != nullptr)
 	{
 		callbacks->drawHighlight(state, flowOut, highlightRec, currentAtlas);

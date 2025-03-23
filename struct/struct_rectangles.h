@@ -214,8 +214,10 @@ typedef Obb3D obb3;
 	PIG_CORE_INLINE bool IsInsideRecInclusive(rec rectangle, v2 position);
 	PIG_CORE_INLINE rec RelativeRec(rec reference, rec subReference, rec other);
 	PIG_CORE_INLINE box RelativeBox(box reference, box subReference, box other);
+	PIG_CORE_INLINE void AlignRecToV2(rec* rectangleOut, v2 alignmentScale);
 	PIG_CORE_INLINE void AlignRecTo(rec* rectangleOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignRec(rec* rectangleOut);
+	PIG_CORE_INLINE void AlignBoxToV3(box* boundingBoxOut, v3 alignmentScale);
 	PIG_CORE_INLINE void AlignBoxTo(box* boundingBoxOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignBox(box* boundingBoxOut);
 #endif
@@ -664,23 +666,25 @@ PEXPI boxi OverlapPartBoxi(boxi left, boxi right)
 PEXPI bool IsInsideRec(rec rectangle, v2 position) { return (position.X >= rectangle.X && position.Y >= rectangle.Y && position.X < rectangle.X + rectangle.Width && position.Y < rectangle.Y + rectangle.Height); }
 PEXPI bool IsInsideRecInclusive(rec rectangle, v2 position) { return (position.X >= rectangle.X && position.Y >= rectangle.Y && position.X <= rectangle.X + rectangle.Width && position.Y <= rectangle.Y + rectangle.Height); }
 
-PEXPI void AlignRecTo(rec* rectangleOut, r32 alignmentScale)
+PEXPI void AlignRecToV2(rec* rectangleOut, v2 alignmentScale)
 {
 	v2 bottomRight = AddV2(rectangleOut->TopLeft, rectangleOut->Size);
-	AlignV2To(&bottomRight, alignmentScale);
-	AlignV2To(&rectangleOut->TopLeft, alignmentScale);
+	AlignV2ToV2(&bottomRight, alignmentScale);
+	AlignV2ToV2(&rectangleOut->TopLeft, alignmentScale);
 	rectangleOut->Size = SubV2(bottomRight, rectangleOut->TopLeft);
 }
-PEXPI void AlignRec(rec* rectangleOut) { AlignRecTo(rectangleOut, 1.0f); }
+PEXPI void AlignRecTo(rec* rectangleOut, r32 alignmentScale) { AlignRecToV2(rectangleOut, FillV2(alignmentScale)); }
+PEXPI void AlignRec(rec* rectangleOut) { AlignRecToV2(rectangleOut, V2_One); }
 
-PEXPI void AlignBoxTo(box* boundingBoxOut, r32 alignmentScale)
+PEXPI void AlignBoxToV3(box* boundingBoxOut, v3 alignmentScale)
 {
 	v3 topRightFront = AddV3(boundingBoxOut->BottomLeftBack, boundingBoxOut->Size);
-	AlignV3To(&topRightFront, alignmentScale);
-	AlignV3To(&boundingBoxOut->BottomLeftBack, alignmentScale);
+	AlignV3ToV3(&topRightFront, alignmentScale);
+	AlignV3ToV3(&boundingBoxOut->BottomLeftBack, alignmentScale);
 	boundingBoxOut->Size = SubV3(topRightFront, boundingBoxOut->BottomLeftBack);
 }
-PEXPI void AlignBox(box* boundingBoxOut) { AlignBoxTo(boundingBoxOut, 1.0f); }
+PEXPI void AlignBoxTo(box* boundingBoxOut, r32 alignmentScale) { AlignBoxToV3(boundingBoxOut, FillV3(alignmentScale)); }
+PEXPI void AlignBox(box* boundingBoxOut) { AlignBoxToV3(boundingBoxOut, V3_One); }
 
 
 //TODO: ExpandRecToV2/ExpandReciToV2i?
