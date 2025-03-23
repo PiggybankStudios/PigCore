@@ -156,24 +156,21 @@ if "%DEBUG_BUILD%"=="1" (
 
 :: Gdi32.lib = Needed for CreateFontA and other Windows graphics functions
 :: User32.lib = Needed for GetForegroundWindow, GetDC, etc.
-:: Ole32.lib = Needed for CoInitializeEx, CoCreateInstance, etc.
+:: Ole32.lib = Needed for Combaseapi.h, CoInitializeEx, CoCreateInstance, etc.
 :: Shell32.lib = Needed for SHGetSpecialFolderPathA
 :: Shlwapi.lib = Needed for PathFileExistsA
 set tests_libraries=Gdi32.lib User32.lib Ole32.lib Shell32.lib Shlwapi.lib
 set tests_clang_libraries=
-set pig_core_dll_libraries=Gdi32.lib User32.lib
+set pig_core_dll_libraries=Gdi32.lib User32.lib Ole32.lib Shell32.lib Shlwapi.lib
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM raylib.lib   = Raylib (NOTE: It has to come BEFORE User32.lib otherwise CloseWindow will conflict)
-	REM Shell32.lib  = Shlobj.h ? 
 	REM kernel32.lib = ?
 	REM winmm.lib    = ?
 	REM Winhttp.lib  = ?
-	REM Shlwapi.lib  = ?
-	REM Ole32.lib    = Combaseapi.h, CoCreateInstance
 	REM Advapi32.lib = Processthreadsapi.h, OpenProcessToken, GetTokenInformation
-	set tests_libraries=raylib.lib %tests_libraries% Shell32.lib kernel32.lib winmm.lib
+	set tests_libraries=raylib.lib %tests_libraries% kernel32.lib winmm.lib
 	REM NOTE: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
-	set pig_core_dll_libraries=raylib.lib %pig_core_dll_libraries% gdi32.lib User32.lib Shell32.lib kernel32.lib winmm.lib
+	set pig_core_dll_libraries=raylib.lib %pig_core_dll_libraries% kernel32.lib winmm.lib
 )
 if "%BUILD_WITH_BOX2D%"=="1" (
 	set tests_libraries=%tests_libraries% box2d.lib
