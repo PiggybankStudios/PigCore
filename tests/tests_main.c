@@ -519,7 +519,7 @@ int main(int argc, char* argv[])
 	#if 1
 	{
 		ScratchBegin(scratch);
-		Str8 encodedString = StrLit("Open [color=FFDDAA]Bold!");
+		Str8 encodedString = StrLit("Open [highlight][color=FFDDAA]Bold[highlight]!");
 		RichStr richStr = DecodeStrToRichStr(scratch, encodedString);
 		PrintLine_D("RichStr is %llu/%llu bytes, %llu piece%s", richStr.fullPiece.str.length, encodedString.length, richStr.numPieces, Plural(richStr.numPieces, "s"));
 		for (uxx pIndex = 0; pIndex < richStr.numPieces; pIndex++)
@@ -535,28 +535,31 @@ int main(int argc, char* argv[])
 				{
 					if (piece->styleChange.enableStyleFlags != 0)
 					{
-						PrintLine_D("\tPiece[%llu]: Enable %s%s \"%.*s\"",
+						PrintLine_D("\tPiece[%llu]: Enable %s%s%s \"%.*s\"",
 							(u64)pIndex,
 							IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Bold) ? "Bold" : "",
 							IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Italic) ? "Italic" : "",
+							IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Highlighted) ? "Highlight" : "",
 							StrPrint(piece->str)
 						);
 					}
-					else if (piece->styleChange.disableStyleFlags != 0)
+					if (piece->styleChange.disableStyleFlags != 0)
 					{
-						PrintLine_D("\tPiece[%llu]: Disable %s%s \"%.*s\"",
+						PrintLine_D("\tPiece[%llu]: Disable %s%s%s \"%.*s\"",
 							(u64)pIndex,
 							IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Bold) ? "Bold" : "",
 							IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Italic) ? "Italic" : "",
+							IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Highlighted) ? "Highlight" : "",
 							StrPrint(piece->str)
 						);
 					}
-					else if (piece->styleChange.defaultStyleFlags != 0)
+					if (piece->styleChange.defaultStyleFlags != 0)
 					{
-						PrintLine_D("\tPiece[%llu]: Reset %s%s \"%.*s\"",
+						PrintLine_D("\tPiece[%llu]: Reset %s%s%s \"%.*s\"",
 							(u64)pIndex,
 							IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Bold) ? "Bold" : "",
 							IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Italic) ? "Italic" : "",
+							IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Highlighted) ? "Highlight" : "",
 							StrPrint(piece->str)
 						);
 					}

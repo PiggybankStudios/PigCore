@@ -20,6 +20,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
 #include "base/base_unicode.h"
+#include "mem/mem_scratch.h"
 #include "struct/struct_color.h"
 #include "struct/struct_vectors.h"
 #include "struct/struct_rectangles.h"
@@ -63,6 +64,7 @@ struct FontFlowState
 	r32 startFontSize;
 	u8 startFontStyle;
 	Color32 startColor;
+	Color32 backgroundColor; //only used when drawing highlighted text
 	RichStr text;
 	
 	uxx byteIndex;
@@ -71,11 +73,15 @@ struct FontFlowState
 	uxx textPieceIndex;
 	uxx textPieceByteIndex;
 	RichStrStyle currentStyle;
-	v2 underlineStartPos;
-	v2 strikethroughStartPos;
 	v2 alignPixelSize;
 	FontAtlas* prevGlyphAtlas;
 	FontGlyph* prevGlyph;
+	
+	bool drawingHighlightRecs;
+	uxx highlightRecsDrawnToByteIndex;
+	v2 highlightStartPos;
+	v2 underlineStartPos;
+	v2 strikethroughStartPos;
 };
 
 typedef struct TextMeasure TextMeasure;
@@ -95,6 +101,9 @@ typedef FONT_FLOW_BEFORE_CHAR_DEF(FontFlowBeforeChar_f);
 #define FONT_FLOW_DRAW_CHAR_DEF(functionName)   void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
 typedef FONT_FLOW_DRAW_CHAR_DEF(FontFlowDrawChar_f);
 
+#define FONT_FLOW_DRAW_HIGHLIGHT_DEF(functionName)   void functionName(FontFlowState* state, FontFlow* flow, rec highlightRec, FontAtlas* currentAtlas)
+typedef FONT_FLOW_DRAW_HIGHLIGHT_DEF(FontFlowDrawHighlight_f);
+
 #define FONT_FLOW_AFTER_CHAR_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, rec glyphLogicalRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
 typedef FONT_FLOW_AFTER_CHAR_DEF(FontFlowAfterChar_f);
 
@@ -103,6 +112,7 @@ struct FontFlowCallbacks
 {
 	FontFlowBeforeChar_f* beforeChar;
 	FontFlowDrawChar_f* drawChar;
+	FontFlowDrawHighlight_f* drawHighlight;
 	FontFlowAfterChar_f* afterChar;
 };
 
@@ -127,6 +137,41 @@ struct FontFlowCallbacks
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut);
+
+static Result DoFontFlow_HighlightRecs(const FontFlowState* realState, const FontFlowCallbacks* realCallbacks, uxx* endIndexOut)
+{
+	NotNull(realState);
+	FontFlowState tempState;
+	FontFlowCallbacks tempCallbacks = ZEROED;
+	MyMemCopy(&tempState, realState, sizeof(FontFlowState));
+	if (realCallbacks != nullptr) { MyMemCopy(&tempCallbacks, realCallbacks, sizeof(FontFlowCallbacks)); }
+	tempState.drawingHighlightRecs = true;
+	tempState.highlightStartPos = tempState.position;
+	Result result = DoFontFlow(&tempState, &tempCallbacks, nullptr);
+	SetOptionalOutPntr(endIndexOut, tempState.byteIndex);
+	return result;
+}
+
+static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
+{
+	FontAtlas* currentAtlas = GetFontAtlas(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
+	NotNull(currentAtlas);
+	rec highlightRec = NewRec(
+		state->highlightStartPos.X,
+		state->highlightStartPos.Y - currentAtlas->centerOffset - currentAtlas->lineHeight/2.0f,
+		state->position.X - state->highlightStartPos.X,
+		currentAtlas->lineHeight
+	);
+	AlignV2(&highlightRec.TopLeft);
+	highlightRec.Size = CeilV2(highlightRec.Size);
+	if (callbacks != nullptr && callbacks->drawHighlight != nullptr)
+	{
+		callbacks->drawHighlight(state, flowOut, highlightRec, currentAtlas);
+	}
+	state->highlightStartPos = state->position;
+}
 
 PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
 {
@@ -159,8 +204,33 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	{
 		RichStrPiece* currentPiece = GetRichStrPiece(&state->text, state->textPieceIndex);
 		DebugAssert(currentPiece != nullptr);
+		
+		// If any of these things are changing in the next str piece then we need to draw a piece of the active highlight before we continue
+		bool isHighlightedChanging = IsFontStyleFlagChangingInRichStrStyleChange(&state->currentStyle, state->startFontStyle, currentPiece->styleChange, FontStyleFlag_Highlighted);
+		if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted))
+		{
+			if (currentPiece->styleChange.type == RichStrStyleChangeType_Color ||
+				currentPiece->styleChange.type == RichStrStyleChangeType_ColorAndAlpha ||
+				currentPiece->styleChange.type == RichStrStyleChangeType_FontSize ||
+				isHighlightedChanging)
+			{
+				DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
+				//Highlight is getting disabled, return to regular drawing of characters
+				if (isHighlightedChanging) { return result; }
+			}
+		}
+		
 		ApplyRichStyleChange(&state->currentStyle, currentPiece->styleChange, state->startFontSize, state->startFontStyle, state->startColor);
 		if (currentPiece->str.length == 0) { state->textPieceIndex++; state->textPieceByteIndex = 0; continue; }
+		
+		if (!state->drawingHighlightRecs && isHighlightedChanging && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && callbacks != nullptr && callbacks->drawHighlight != nullptr)
+		{
+			if (state->byteIndex >= state->highlightRecsDrawnToByteIndex)
+			{
+				Result drawHighlightResult = DoFontFlow_HighlightRecs(state, callbacks, &state->highlightRecsDrawnToByteIndex);
+				if (drawHighlightResult != Result_Success && drawHighlightResult != Result_InvalidUtf8) { return drawHighlightResult; }
+			}
+		}
 		
 		u32 codepoint = 0;
 		u8 utf8ByteSize = GetCodepointForUtf8Str(currentPiece->str, state->textPieceByteIndex, &codepoint);
@@ -169,14 +239,13 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			//TODO: Should we handle invalid UTF-8 differently?
 			codepoint = CharToU32(currentPiece->str.chars[state->textPieceByteIndex]);
 			utf8ByteSize = 1;
-			if (result == Result_Success)
-			{
-				result = Result_InvalidUtf8;
-				MyBreak();
-			}
+			if (result == Result_Success) { result = Result_InvalidUtf8; }
 		}
 		
-		if (callbacks != nullptr && callbacks->beforeChar != nullptr) { callbacks->beforeChar(state, flowOut, codepoint); }
+		if (callbacks != nullptr && callbacks->beforeChar != nullptr && !state->drawingHighlightRecs)
+		{
+			callbacks->beforeChar(state, flowOut, codepoint);
+		}
 		if (state->byteIndex >= state->text.fullPiece.str.length) { break; }
 		
 		r32 kerning = 0.0f;
@@ -198,7 +267,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
 			if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
 			
-			if (callbacks != nullptr && callbacks->drawChar != nullptr)
+			if (callbacks != nullptr && callbacks->drawChar != nullptr && !state->drawingHighlightRecs)
 			{
 				callbacks->drawChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph);
 			}
@@ -242,13 +311,21 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		state->textPieceByteIndex += utf8ByteSize;
 		if (state->textPieceByteIndex >= currentPiece->str.length) { state->textPieceIndex++; state->textPieceByteIndex = 0; }
 		
-		if (callbacks != nullptr && callbacks->afterChar != nullptr) { callbacks->afterChar(state, flowOut, glyphDrawRec, glyphLogicalRec, codepoint, fontAtlas, fontGlyph, kerning); }
+		if (callbacks != nullptr && callbacks->afterChar != nullptr && !state->drawingHighlightRecs)
+		{
+			callbacks->afterChar(state, flowOut, glyphDrawRec, glyphLogicalRec, codepoint, fontAtlas, fontGlyph, kerning);
+		}
 		
 		if (fontGlyph != nullptr)
 		{
 			state->prevGlyphAtlas = fontAtlas;
 			state->prevGlyph = fontGlyph;
 		}
+	}
+	
+	if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted))
+	{
+		DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 	}
 	
 	return result;

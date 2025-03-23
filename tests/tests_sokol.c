@@ -450,6 +450,7 @@ bool AppFrame(void)
 			TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
 			SetProjectionMat(projMat);
 			SetViewMat(Mat4_Identity);
+			SetTextBackgroundColor(MonokaiBack);
 			
 			#if 0
 			v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
@@ -506,7 +507,7 @@ bool AppFrame(void)
 					{
 						if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
 						{
-							if (ClayBtn("Op[color=FF00FF]en [size=10]\bCo[rgb]lor\b[size]!", Transparent, MonokaiWhite))
+							if (ClayBtn("Op[color=FF00FF]e[highlight]n [size=10]\bCo[rgb]lor\b[size]![highlight]", Transparent, MonokaiWhite))
 							{
 								//TODO: Implement me!
 							} Clay__CloseElement();

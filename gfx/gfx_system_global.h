@@ -155,10 +155,13 @@ With this file:
 #undef DrawText
 #endif
 
-#define DrawTextAtSize(fontSize, text, position, color) GfxSystem_DrawTextAtSize(&gfx, (fontSize), (text), (position), (color))
-#define DrawTextBold(text, position, color)             GfxSystem_DrawTextBold(&gfx, (text), (position), (color))
-#define DrawTextItalic(text, position, color)           GfxSystem_DrawTextItalic(&gfx, (text), (position), (color))
-#define DrawText(text, position, color)                 GfxSystem_DrawText(&gfx, (text), (position), (color))
+#define SetTextBackgroundColor(color)                                           GfxSystem_SetTextBackgroundColor(&gfx, (color))
+#define DrawRichTextWithFont(font, fontSize, styleFlags, text, position, color) GfxSystem_DrawRichTextWithFont(&gfx, (font), (fontSize), (styleFlags), (text), (position), (color))
+#define DrawTextWithFont(font, fontSize, styleFlags, text, position, color)     GfxSystem_DrawTextWithFont(&gfx, (font), (fontSize), (styleFlags), (text), (position), (color))
+#define DrawTextAtSize(fontSize, text, position, color)                         GfxSystem_DrawTextAtSize(&gfx, (fontSize), (text), (position), (color))
+#define DrawTextBold(text, position, color)                                     GfxSystem_DrawTextBold(&gfx, (text), (position), (color))
+#define DrawTextItalic(text, position, color)                                   GfxSystem_DrawTextItalic(&gfx, (text), (position), (color))
+#define DrawText(text, position, color)                                         GfxSystem_DrawText(&gfx, (text), (position), (color))
 
 #endif //BUILD_WITH_SOKOL_GFX
 

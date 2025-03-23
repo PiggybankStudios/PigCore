@@ -153,11 +153,12 @@ struct RichStr
 	RichStr RichStrSlice(Arena* arena, RichStr baseString, uxx startIndex, uxx endIndex);
 	PIG_CORE_INLINE RichStr RichStrSliceLength(Arena* arena, RichStr baseString, uxx startIndex, uxx length);
 	PIG_CORE_INLINE RichStr RichStrSliceFrom(Arena* arena, RichStr baseString, uxx startIndex);
+	PIG_CORE_INLINE bool IsFontStyleFlagChangingInRichStrStyleChange(const RichStrStyle* style, u8 defaultFontStyle, RichStrStyleChange styleChange, u8 fontStyleFlag);
 	PIG_CORE_INLINE void ApplyRichStyleChange(RichStrStyle* style, RichStrStyleChange change, r32 defaultFontSize, u8 defaultFontStyle, Color32 defaultColor);
 #endif
 
 #define RichStrStyleChange_None NewRichStrStyleChange(RichStrStyleChangeType_None, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR)
-#define RichStrStyleChange_None_Const (RichStrStyleChange){ .type=RichStrStyleChangeType_None, .fontSize=0.0f, .enableStyleFlags=0x00, .disableStyleFlags=0x00, .defaultStyleFlags=0x00, .color={.valueU32=RICH_STYLE_DEFAULT_COLOR_VALUE} }
+#define RichStrStyleChange_None_Const (RichStrStyleChange){ .type=RichStrStyleChangeType_None }
 
 #define RichStr_Empty NewRichStr(nullptr, 0, nullptr)
 
@@ -178,12 +179,15 @@ PEXPI RichStrStyleChange NewRichStrStyleChange(RichStrStyleChangeType type, r32 
 {
 	RichStrStyleChange result = ZEROED;
 	result.type = type;
-	result.fontSize = fontSize;
-	result.enableStyleFlags = enableStyleFlags;
-	result.disableStyleFlags = disableStyleFlags;
-	result.defaultStyleFlags = defaultStyleFlags;
-	result.color = color;
-	result.alpha = alpha;
+	if (type == RichStrStyleChangeType_FontSize) { result.fontSize = fontSize; }
+	if (type == RichStrStyleChangeType_FontStyle)
+	{
+		result.enableStyleFlags = enableStyleFlags;
+		result.disableStyleFlags = disableStyleFlags;
+		result.defaultStyleFlags = defaultStyleFlags;
+	}
+	if (type == RichStrStyleChangeType_Color || type == RichStrStyleChangeType_ColorAndAlpha) { result.color = color; }
+	if (type == RichStrStyleChangeType_Alpha) { result.alpha = alpha; }
 	return result;
 }
 PEXPI RichStrStyleChange NewRichStrStyleChangeSize(r32 fontSize)
@@ -392,6 +396,17 @@ PEXPI RichStr RichStrSliceFrom(Arena* arena, RichStr baseString, uxx startIndex)
 {
 	Assert(startIndex <= baseString.fullPiece.str.length);
 	return RichStrSlice(arena, baseString, startIndex, baseString.fullPiece.str.length);
+}
+
+PEXPI bool IsFontStyleFlagChangingInRichStrStyleChange(const RichStrStyle* style, u8 defaultFontStyle, RichStrStyleChange styleChange, u8 fontStyleFlag)
+{
+	NotNull(style);
+	if (fontStyleFlag == 0) { return false; }
+	if (styleChange.type != RichStrStyleChangeType_FontStyle) { return false; }
+	if (IsFlagSet(style->fontStyle, fontStyleFlag) && IsFlagSet(styleChange.disableStyleFlags, fontStyleFlag)) { return true; }
+	if (!IsFlagSet(style->fontStyle, fontStyleFlag) && IsFlagSet(styleChange.enableStyleFlags, fontStyleFlag)) { return true; }
+	if (IsFlagSet(styleChange.defaultStyleFlags, fontStyleFlag) && IsFlagSet(defaultFontStyle, fontStyleFlag) != IsFlagSet(style->fontStyle, fontStyleFlag)) { return true; }
+	return false;
 }
 
 PEXPI void ApplyRichStyleChange(RichStrStyle* style, RichStrStyleChange styleChange, r32 defaultFontSize, u8 defaultFontStyle, Color32 defaultColor)

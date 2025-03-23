@@ -48,6 +48,7 @@ struct GfxSystemState
 	GfxPipelineBlendMode blendMode;
 	r32 depth; //for 2D rendering functions
 	reci clipRec;
+	Color32 textBackgroundColor; //only used when drawing highlighted text
 	
 	Shader* shader;
 	Texture* textures[MAX_NUM_SHADER_IMAGES];
@@ -173,6 +174,7 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawRoundedRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 thickness, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color, bool outside);
 	PIG_CORE_INLINE void GfxSystem_DrawRoundedRectangleOutline(GfxSystem* system, rec rectangle, r32 thickness, r32 radius, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth);
+	PIG_CORE_INLINE void GfxSystem_SetTextBackgroundColor(GfxSystem* system, Color32 color);
 	Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextAtSize(GfxSystem* system, r32 fontSize, Str8 text, v2 position, Color32 color);
@@ -380,6 +382,7 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 	sg_apply_viewport(0, 0, (int)screenSize.Width, (int)screenSize.Height, true);
 	
 	system->state.clipRec = NewReciV(V2i_Zero, screenSize);
+	system->state.textBackgroundColor = NewColorU32(0x00000000);
 	system->screenSize = screenSize;
 	
 	system->state.shader = nullptr;
@@ -1178,6 +1181,12 @@ PEXPI void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth)
 	GfxSystem_SetViewMat(system, oldViewMat);
 }
 
+PEXPI void GfxSystem_SetTextBackgroundColor(GfxSystem* system, Color32 color)
+{
+	NotNull(system);
+	system->state.textBackgroundColor = color;
+}
+
 // +====================================+
 // | GfxSystem_FontFlowDrawCharCallback |
 // +====================================+
@@ -1191,7 +1200,25 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 	UNUSED(flow);
 	UNUSED(codepoint);
 	GfxSystem* system = (GfxSystem*)state->contextPntr;
-	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, state->currentStyle.color, &atlas->texture, ToRecFromi(glyph->atlasSourceRec));
+	Color32 drawColor = state->currentStyle.color;
+	if (IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && state->backgroundColor.a != 0)
+	{
+		drawColor = state->backgroundColor;
+	}
+	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, drawColor, &atlas->texture, ToRecFromi(glyph->atlasSourceRec));
+}
+
+// +==========================================+
+// | GfxSystem_FontFlowDrawHighlightCallback  |
+// +==========================================+
+// void GfxSystem_FontFlowDrawHighlightCallback(FontFlowState* state, FontFlow* flow, rec highlightRec, FontAtlas* currentAtlas)
+FONT_FLOW_DRAW_HIGHLIGHT_DEF(GfxSystem_FontFlowDrawHighlightCallback)
+{
+	NotNull(state);
+	NotNull(state->contextPntr);
+	NotNull(currentAtlas);
+	GfxSystem* system = (GfxSystem*)state->contextPntr;
+	GfxSystem_DrawRectangle(system, highlightRec, state->currentStyle.color);
 }
 
 PEXP Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color)
@@ -1209,8 +1236,10 @@ PEXP Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32
 	state.startColor = color;
 	state.alignPixelSize = system->state.alignPixelSize;
 	state.position = position;
+	state.backgroundColor = system->state.textBackgroundColor;
 	FontFlowCallbacks callbacks = ZEROED;
 	callbacks.drawChar = GfxSystem_FontFlowDrawCharCallback;
+	callbacks.drawHighlight = GfxSystem_FontFlowDrawHighlightCallback;
 	
 	Result result = DoFontFlow(&state, &callbacks, &system->prevFontFlow);
 	
