@@ -507,7 +507,7 @@ bool AppFrame(void)
 					{
 						if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
 						{
-							if (ClayBtn("Op[color=FF00FF]e[highlight]n [size=10]\bCo[rgb]lor\b[size]![highlight]", Transparent, MonokaiWhite))
+							if (ClayBtn("Op[color=FF00FF]e[highlight]n [size=10]\bCo[color]lor\b[size][highlight]!", Transparent, MonokaiWhite))
 							{
 								//TODO: Implement me!
 							} Clay__CloseElement();

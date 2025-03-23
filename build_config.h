@@ -20,13 +20,13 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 0
+#define BUILD_WINDOWS 1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   1
+#define BUILD_LINUX   0
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     0
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 1
+#define BUILD_SHADERS 0
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
@@ -39,7 +39,7 @@ Description:
 #define BUILD_PHYSX_OBJ 0
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
-#define BUILD_PIG_CORE_DLL 1
+#define BUILD_PIG_CORE_DLL 0
 
 // Compiles tests/main.c
 #define BUILD_TESTS   1
@@ -51,7 +51,7 @@ Description:
 #define DUMP_PREPROCESSOR 0
 // After .wasm file(s) are generated, we will run wasm2wat on them to make a .wat
 // file (a text format of WebAssembly that is readable, mostly for debugging purposes)
-#define CONVERT_WASM_TO_WAT 1
+#define CONVERT_WASM_TO_WAT 0
 // Use emcc when compiling the WEB files
 #define USE_EMSCRIPTEN 0
 // Enables auto-profiling on function entry/exit (for clang only). Dumps to a file that can be viewed by spall
@@ -63,7 +63,7 @@ Description:
 // Enables tests.exe being linked with raylib.lib and it's required libraries
 #define BUILD_WITH_RAYLIB    0
 // Enables tests.exe being linked with box2d.lib and it's required libraries
-#define BUILD_WITH_BOX2D     1
+#define BUILD_WITH_BOX2D     0
 // Enables pig_core.dll and tests.exe using sokol_gfx.h (and on non-windows OS' adds required libraries for Sokol to work)
 #define BUILD_WITH_SOKOL_GFX 1
 // Enables tests.exe using sokol_app.h to create and manage a graphical window
@@ -73,7 +73,7 @@ Description:
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries
 #define BUILD_WITH_OPENVR    0
 // Enables tests.exe using clay.h to render UI elements
-#define BUILD_WITH_CLAY      0
+#define BUILD_WITH_CLAY      1
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
 #define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib

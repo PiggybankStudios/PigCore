@@ -180,9 +180,13 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	NotNull(state->font);
 	Result result = Result_Success;
 	
-	state->currentStyle.fontSize = state->startFontSize;
-	state->currentStyle.fontStyle = state->startFontStyle;
-	state->currentStyle.color = state->startColor;
+	//Set the currentStyle to the start settings, unless we are doing highlight recs, in which case the currentStyle should have already been filled out by the parent DoFontFlow call
+	if (!state->drawingHighlightRecs)
+	{
+		state->currentStyle.fontSize = state->startFontSize;
+		state->currentStyle.fontStyle = state->startFontStyle;
+		state->currentStyle.color = state->startColor;
+	}
 	
 	if (flowOut != nullptr)
 	{

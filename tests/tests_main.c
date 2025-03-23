@@ -519,7 +519,7 @@ int main(int argc, char* argv[])
 	#if 1
 	{
 		ScratchBegin(scratch);
-		Str8 encodedString = StrLit("Open [highlight][color=FFDDAA]Bold[highlight]!");
+		Str8 encodedString = StrLit("Op[color=FF00FF]e[highlight]n [size=10]\bCo[color]lor\b[size]![highlight]");
 		RichStr richStr = DecodeStrToRichStr(scratch, encodedString);
 		PrintLine_D("RichStr is %llu/%llu bytes, %llu piece%s", richStr.fullPiece.str.length, encodedString.length, richStr.numPieces, Plural(richStr.numPieces, "s"));
 		for (uxx pIndex = 0; pIndex < richStr.numPieces; pIndex++)
@@ -530,6 +530,17 @@ int main(int argc, char* argv[])
 				case RichStrStyleChangeType_None:
 				{
 					PrintLine_D("\tPiece[%llu]: \"%.*s\"", (u64)pIndex, StrPrint(piece->str));
+				} break;
+				case RichStrStyleChangeType_FontSize:
+				{
+					if (piece->styleChange.fontSize == 0.0f)
+					{
+						PrintLine_D("\tPiece[%llu]: Size=default \"%.*s\"", (u64)pIndex, StrPrint(piece->str));
+					}
+					else
+					{
+						PrintLine_D("\tPiece[%llu]: Size=%g \"%.*s\"", (u64)pIndex, piece->styleChange.fontSize, StrPrint(piece->str));
+					}
 				} break;
 				case RichStrStyleChangeType_FontStyle:
 				{
