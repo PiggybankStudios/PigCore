@@ -62,6 +62,7 @@ Description:
 	PIG_CORE_INLINE u32 GetLowercaseCodepoint(u32 codepoint);
 	PIG_CORE_INLINE u32 GetUppercaseCodepoint(u32 codepoint);
 	u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions);
+	u8 GetCodepointUtf8Size(u32 codepoint);
 	u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut);
 	u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOut);
 	i32 CompareCodepoints(u32 codepoint1, u32 codepoint2);
@@ -148,6 +149,15 @@ PEXP u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions)
 		if (byteBufferOut != nullptr) { byteBufferOut[0] = '\0'; }
 		return 0;
 	}
+}
+PEXPI u8 GetCodepointUtf8Size(u32 codepoint)
+{
+	if (codepoint <= 0x7F) { return 1; }
+	else if (codepoint <= 0x7FF) { return 2; }
+	else if (codepoint >= 0xD800 && codepoint <= 0xDFFF) { return 0; } //invalid block
+	else if (codepoint <= 0xFFFF) { return 3; }
+	else if (codepoint <= UTF8_MAX_CODEPOINT) { return 4; }
+	else { return 0; } //everything above this point is also invalid
 }
 
 //Returns the number of bytes consumed to complete the UTF-8 encoded character pointed to by strPntr

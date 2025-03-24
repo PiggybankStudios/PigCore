@@ -121,8 +121,10 @@ struct FontFlowCallbacks
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut);
+	PIG_CORE_INLINE TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, FontFlow* flowOut);
 	PIG_CORE_INLINE TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, RichStr text);
 	PIG_CORE_INLINE TextMeasure MeasureRichText(const PigFont* font, RichStr text);
+	PIG_CORE_INLINE TextMeasure MeasureTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, FontFlow* flowOut);
 	PIG_CORE_INLINE TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text);
 	PIG_CORE_INLINE TextMeasure MeasureText(const PigFont* font, Str8 text);
 	//TODO: Made RichStr versions of ShortenTextToFitWidth functions!
@@ -334,8 +336,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	return result;
 }
 
-PEXPI TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, RichStr text)
+PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, FontFlow* flowOut)
 {
+	NotNull(flowOut);
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
 	state.position = V2_Zero_Const;
@@ -344,20 +347,28 @@ PEXPI TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleF
 	state.text = text;
 	state.alignPixelSize = V2_One; //TODO: Should this be a function parameter?
 	
-	FontFlow flow = ZEROED;
-	Result flowResult = DoFontFlow(&state, nullptr, &flow);
+	Result flowResult = DoFontFlow(&state, nullptr, flowOut);
 	Assert(flowResult == Result_Success || flowResult == Result_InvalidUtf8);
 	
 	TextMeasure result = ZEROED;
-	result.visualRec = flow.visualRec;
-	result.logicalRec = flow.logicalRec;
+	result.visualRec = flowOut->visualRec;
+	result.logicalRec = flowOut->logicalRec;
 	return result;
+}
+PEXPI TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, RichStr text)
+{
+	FontFlow flow = ZEROED;
+	return MeasureRichTextFlow(font, fontSize, styleFlags, text, &flow);
 }
 PEXPI TextMeasure MeasureRichText(const PigFont* font, RichStr text)
 {
 	Assert(font->atlases.length > 0);
 	FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
 	return MeasureRichTextEx(font, firstAtlas->fontSize, firstAtlas->styleFlags, text);
+}
+PEXPI TextMeasure MeasureTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, FontFlow* flowOut)
+{
+	return MeasureRichTextFlow(font, fontSize, styleFlags, ToRichStr(text), flowOut);
 }
 PEXPI TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
 {

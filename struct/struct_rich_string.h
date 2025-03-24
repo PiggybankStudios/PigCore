@@ -148,8 +148,9 @@ struct RichStr
 	PIG_CORE_INLINE RichStr ToRichStr(Str8 string);
 	PIG_CORE_INLINE void FreeRichStr(Arena* arena, RichStr* richStrPntr);
 	PIG_CORE_INLINE RichStr NewRichStr(Arena* arena, uxx numPieces, const RichStrPiece* pieces);
-	PIG_CORE_INLINE RichStr AllocRichStr(Arena* arena, RichStr richStr);
 	PIG_CORE_INLINE RichStrPiece* GetRichStrPiece(RichStr* richStr, uxx pieceIndex);
+	PIG_CORE_INLINE RichStr AllocRichStr(Arena* arena, RichStr richStr);
+	RichStr ToRichStrWithHighlight(Arena* arena, Str8 string, uxx highlightStartIndex, uxx highlightEndIndex);
 	RichStr RichStrSlice(Arena* arena, RichStr baseString, uxx startIndex, uxx endIndex);
 	PIG_CORE_INLINE RichStr RichStrSliceLength(Arena* arena, RichStr baseString, uxx startIndex, uxx length);
 	PIG_CORE_INLINE RichStr RichStrSliceFrom(Arena* arena, RichStr baseString, uxx startIndex);
@@ -157,7 +158,7 @@ struct RichStr
 	PIG_CORE_INLINE void ApplyRichStyleChange(RichStrStyle* style, RichStrStyleChange change, r32 defaultFontSize, u8 defaultFontStyle, Color32 defaultColor);
 #endif
 
-#define RichStrStyleChange_None NewRichStrStyleChange(RichStrStyleChangeType_None, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR)
+#define RichStrStyleChange_None NewRichStrStyleChange(RichStrStyleChangeType_None, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f)
 #define RichStrStyleChange_None_Const (RichStrStyleChange){ .type=RichStrStyleChangeType_None }
 
 #define RichStr_Empty NewRichStr(nullptr, 0, nullptr)
@@ -284,6 +285,7 @@ PEXPI RichStr NewRichStr(Arena* arena, uxx numPieces, const RichStrPiece* pieces
 		DebugAssert(bIndex == result.fullPiece.str.length);
 	}
 	
+	result.numPieces = numPieces;
 	result.pieces = AllocArray(RichStrPiece, arena, numPieces);
 	NotNull(result.pieces);
 	
@@ -315,6 +317,40 @@ PEXPI RichStrPiece* GetRichStrPiece(RichStr* richStr, uxx pieceIndex)
 PEXPI RichStr AllocRichStr(Arena* arena, RichStr richStr)
 {
 	return NewRichStr(arena, richStr.numPieces, (richStr.numPieces > 1) ? richStr.pieces : &richStr.fullPiece);
+}
+
+PEXP RichStr ToRichStrWithHighlight(Arena* arena, Str8 string, uxx highlightStartIndex, uxx highlightEndIndex)
+{
+	Assert(highlightEndIndex >= highlightStartIndex);
+	if (highlightEndIndex == highlightStartIndex)
+	{
+		RichStr result = ToRichStr(string);
+		result = AllocRichStr(arena, result);
+		return result;
+	}
+	
+	RichStrPiece pieces[3];
+	uxx pIndex = 0;
+	
+	if (highlightStartIndex > 0)
+	{
+		pieces[pIndex].str = StrSlice(string, 0, highlightStartIndex);
+		pieces[pIndex].styleChange = RichStrStyleChange_None;
+		pIndex++;
+	}
+	
+	pieces[pIndex].str = StrSlice(string, highlightStartIndex, highlightEndIndex);
+	pieces[pIndex].styleChange = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Highlighted);
+	pIndex++;
+	
+	if (highlightEndIndex < string.length)
+	{
+		pieces[pIndex].str = StrSliceFrom(string, highlightEndIndex);
+		pieces[pIndex].styleChange = NewRichStrStyleChangeDefaultFlags(FontStyleFlag_Highlighted);
+		pIndex++;
+	}
+	
+	return NewRichStr(arena, pIndex, &pieces[0]);
 }
 
 PEXP RichStr RichStrSlice(Arena* arena, RichStr baseString, uxx startIndex, uxx endIndex)
