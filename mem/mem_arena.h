@@ -44,6 +44,7 @@ enum ArenaFlag
 	ArenaFlag_SingleAlloc          = 0x04,
 	ArenaFlag_AllowNullptrFree     = 0x08,
 	ArenaFlag_AddPaddingForDebug   = 0x10,
+	ArenaFlag_DontPop              = 0x20,
 };
 
 typedef enum ArenaType ArenaType;
@@ -1118,24 +1119,40 @@ PEXPI void ArenaResetToMark(Arena* arena, uxx mark)
 	Assert(CanArenaResetToMark(arena));
 	switch (arena->type)
 	{
-		case ArenaType_Alias: DebugNotNull(arena->sourceArena); ArenaResetToMark(arena->sourceArena, mark); break;
+		case ArenaType_Alias:
+		{
+			DebugNotNull(arena->sourceArena);
+			if (!IsFlagSet(arena->flags, ArenaFlag_DontPop))
+			{
+				ArenaResetToMark(arena->sourceArena, mark);
+			}
+		} break;
 		case ArenaType_Stack:
 		{
-			arena->used = mark;
-			if (mark == 0) { arena->allocCount = 0; }
+			if (!IsFlagSet(arena->flags, ArenaFlag_DontPop))
+			{
+				arena->used = mark;
+				if (mark == 0) { arena->allocCount = 0; }
+			}
 		} break;
 		// case ArenaType_StackPaged: //TODO: Implement me!
 		case ArenaType_StackVirtual:
 		{
-			//TODO: Do we want to uncommit committed pages?
-			arena->used = mark;
-			if (mark == 0) { arena->allocCount = 0; }
+			if (!IsFlagSet(arena->flags, ArenaFlag_DontPop))
+			{
+				//TODO: Do we want to uncommit committed pages?
+				arena->used = mark;
+				if (mark == 0) { arena->allocCount = 0; }
+			}
 		} break;
 		case ArenaType_StackWasm:
 		{
-			//NOTE: Memory usage for our WASM module is not actually going down. We can't ever really free memory in WASM
-			arena->used = mark;
-			if (mark == 0) { arena->allocCount = 0; }
+			if (!IsFlagSet(arena->flags, ArenaFlag_DontPop))
+			{
+				//NOTE: Memory usage for our WASM module is not actually going down. We can't ever really free memory in WASM
+				arena->used = mark;
+				if (mark == 0) { arena->allocCount = 0; }
+			}
 		} break;
 		default: AssertMsg(false, "Arena type does not have a ArenaResetToMark implementation!"); break;
 	}
