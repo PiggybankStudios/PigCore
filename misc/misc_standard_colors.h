@@ -626,6 +626,79 @@ Description:
 	#endif //PIG_CORE_IMPLEMENTATION
 // +--------------------------------------------------------------+
 
+// +--------------------------------------------------------------+
+// |                        Blue UI Colors                        |
+// +--------------------------------------------------------------+
+	#define NUM_UI_COLORS 10
+	
+	#define UiTextWhite_Value           0xFFDDDEE0
+	#define UiTextLightGray_Value       0xFFAFB1B3
+	#define UiTextGray_Value            0xFF6B7078
+	#define UiBackgroundBlack_Value     0xFF191B1C
+	#define UiBackgroundDarkGray_Value  0xFF1F2223
+	#define UiBackgroundGray_Value      0xFF272A2B
+	#define UiOutlineGray_Value         0xFF343A3B
+	#define UiHoveredBlue_Value         0xFF103C4C
+	#define UiSelectedBlue_Value        0xFF0079A6
+	#define UiErrorRed_Value            0xFFFF6666
+
+	#define UiTextWhite           NewColorU32(UiTextWhite_Value)
+	#define UiTextLightGray       NewColorU32(UiTextLightGray_Value)
+	#define UiTextGray            NewColorU32(UiTextGray_Value)
+	#define UiBackgroundBlack     NewColorU32(UiBackgroundBlack_Value)
+	#define UiBackgroundDarkGray  NewColorU32(UiBackgroundDarkGray_Value)
+	#define UiBackgroundGray      NewColorU32(UiBackgroundGray_Value)
+	#define UiOutlineGray         NewColorU32(UiOutlineGray_Value)
+	#define UiHoveredBlue         NewColorU32(UiHoveredBlue_Value)
+	#define UiSelectedBlue        NewColorU32(UiSelectedBlue_Value)
+	#define UiErrorRed            NewColorU32(UiErrorRed_Value)
+	
+	#if !PIG_CORE_IMPLEMENTATION
+	Color32 GetUiColorByIndex(uxx index);
+	uxx GetUiColorIndexByValue(u32 colorValue);
+	uxx GetUiColorIndex(Color32 color);
+	#else //PIG_CORE_IMPLEMENTATION
+	PEXP Color32 GetUiColorByIndex(uxx index)
+	{
+		switch (index % NUM_UI_COLORS)
+		{
+			case 0: return UiTextWhite;
+			case 1: return UiTextLightGray;
+			case 2: return UiTextGray;
+			case 3: return UiBackgroundBlack;
+			case 4: return UiBackgroundDarkGray;
+			case 5: return UiBackgroundGray;
+			case 6: return UiOutlineGray;
+			case 7: return UiHoveredBlue;
+			case 8: return UiSelectedBlue;
+			case 9: return UiErrorRed;
+			default: return Black;
+		}
+	}
+	PEXP uxx GetUiColorIndexByValue(u32 colorValue)
+	{
+		switch (colorValue)
+		{
+			case UiTextWhite_Value:          return 0;
+			case UiTextLightGray_Value:      return 1;
+			case UiTextGray_Value:           return 2;
+			case UiBackgroundBlack_Value:    return 3;
+			case UiBackgroundDarkGray_Value: return 4;
+			case UiBackgroundGray_Value:     return 5;
+			case UiOutlineGray_Value:        return 6;
+			case UiHoveredBlue_Value:        return 7;
+			case UiSelectedBlue_Value:       return 8;
+			case UiErrorRed_Value:           return 9;
+			default: return NUM_UI_COLORS;
+		}
+	}
+	PEXP uxx GetUiColorIndex(Color32 color)
+	{
+		return GetUiColorIndexByValue(color.valueU32);
+	}
+	#endif //!PIG_CORE_IMPLEMENTATION
+// +--------------------------------------------------------------+
+
 #endif //  _MISC_STANDARD_COLORS_H
 
 #if defined(_BASE_DBG_LEVEL_H) && defined(_MISC_STANDARD_COLORS_H)
