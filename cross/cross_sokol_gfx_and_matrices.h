@@ -12,11 +12,9 @@ Date:   03\13\2025
 #if BUILD_WITH_SOKOL_GFX
 
 #if defined(SOKOL_D3D11)
-#define MakeRotate2DMat4(angle)                                     MakeRotate2DMat4Dx(angle)
 #define MakeOrthographicMat4(left, right, top, bottom, zNear, zFar) MakeOrthographicMat4Dx(left, right, top, bottom, zNear, zFar)
 #define MakePerspectiveMat4(fov, aspectRatio, zNear, zFar)          MakePerspectiveMat4Dx(fov, aspectRatio, zNear, zFar)
 #else //!defined(SOKOL_D3D11)
-#define MakeRotate2DMat4(angle)                                    	MakeRotate2DMat4Gl(angle)
 #define MakeOrthographicMat4(left, right, top, bottom, zNear, zFar) MakeOrthographicMat4Gl(left, right, top, bottom, zNear, zFar)
 #define MakePerspectiveMat4(fov, aspectRatio, zNear, zFar)          MakePerspectiveMat4Gl(fov, aspectRatio, zNear, zFar)
 #endif //defined(SOKOL_D3D11)
