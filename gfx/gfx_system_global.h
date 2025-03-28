@@ -16,22 +16,22 @@ Description:
 	** This file can be included in PigCore.dll if PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL is enabled
 Example:
 Without this file:
-	BeginSystemFrame(&gfx, MonokaiBack, 1.0f);
+	GfxSystem_BeginFrame(&gfx, MonokaiBack, 1.0f);
 	{
-		BindSystemShader(&gfx, &main2dShader);
-		BindSystemTexture(&gfx, &gradientTexture);
-		SetSystemProjectionMat(&gfx, MakeScaleYMat4(-1.0f));
-		SetSystemViewMat(&gfx, Mat4_Identity);
-		SetSystemSourceRec(&gfx, NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+		GfxSystem_BindShader(&gfx, &main2dShader);
+		GfxSystem_BindTexture(&gfx, &gradientTexture);
+		GfxSystem_SetProjectionMat(&gfx, MakeScaleYMat4(-1.0f));
+		GfxSystem_SetViewMat(&gfx, Mat4_Identity);
+		GfxSystem_SetSourceRec(&gfx, NewV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
 		mat4 worldMat = Mat4_Identity;
 		TransformMat4(&worldMat, MakeScaleXYZMat4(recSize.Width, recSize.Height, 1.0f));
 		TransformMat4(&worldMat, MakeTranslateXYZMat4(recPos.X, recPos.Y, 0.0f));
-		SetSystemWorldMat(&gfx, worldMat);
-		SetSystemTintColor(&gfx, color);
-		BindSystemVertBuffer(&gfx, &squareBuffer);
-		DrawSystemVertices(&gfx, );
+		GfxSystem_SetWorldMat(&gfx, worldMat);
+		GfxSystem_SetTintColor(&gfx, color);
+		GfxSystem_BindVertBuffer(&gfx, &squareBuffer);
+		GfxSystem_DrawVertices(&gfx, );
 	}
-	EndSystemFrame(&gfx, );
+	GfxSystem_EndFrame(&gfx, );
 With this file:
 	BeginFrame(MonokaiBack, 1.0f);
 	{
@@ -127,6 +127,7 @@ With this file:
 #define DrawTexturedObb2Ex(boundingBox, color, texture, sourceRec)                                                                                       GfxSystem_DrawTexturedObb2Ex(&gfx, (boundingBox), (color), (texture), (sourceRec))
 #define DrawTexturedObb2(boundingBox, color, texture)                                                                                                    GfxSystem_DrawTexturedObb2(&gfx, (boundingBox), (color), (texture))
 #define DrawObb2(boundingBox, color)                                                                                                                     GfxSystem_DrawObb2(&gfx, (boundingBox), (color))
+#define DrawLine(startPos, endPos, thickness, color)                                                                                                     GfxSystem_DrawLine(&gfx, (startPos), (endPos), (thickness), (color))
 #define DrawTexturedCirclePieceEx(circle, angleMin, angleMax, color, texture, sourceRec)                                                                 GfxSystem_DrawTexturedCirclePieceEx(&gfx, (circle), (angleMin), (angleMax), (color), (texture), (sourceRec))
 #define DrawTexturedCirclePiece(circle, angleMin, angleMax, color, texture)                                                                              GfxSystem_DrawTexturedCirclePiece(&gfx, (circle), (angleMin), (angleMax), (color), (texture))
 #define DrawTexturedCircleEx(circle, color, texture, sourceRec)                                                                                          GfxSystem_DrawTexturedCircleEx(&gfx, (circle), (color), (texture), (sourceRec))

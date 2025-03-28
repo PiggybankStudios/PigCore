@@ -153,6 +153,7 @@ struct GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color);
+	PIG_CORE_INLINE void GfxSystem_DrawLine(GfxSystem* system, v2 startPos, v2 endPos, r32 thickness, Color32 color);
 	void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedCircleEx(GfxSystem* system, Circle circle, Color32 color, Texture* texture, rec sourceRec);
@@ -847,6 +848,16 @@ PEXPI void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color
 PEXPI void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color)
 {
 	GfxSystem_DrawTexturedObb2Ex(system, boundingBox, color, nullptr, Rec_Default_Const);
+}
+
+PEXPI void GfxSystem_DrawLine(GfxSystem* system, v2 startPos, v2 endPos, r32 thickness, Color32 color)
+{
+	if (AreEqualV2(startPos, endPos)) { return; }
+	v2 lineMidpoint = Div(Add(startPos, endPos), 2.0f);
+	v2 lineSize = NewV2(LengthV2(Sub(endPos, startPos)), thickness);
+	r32 lineRotation = AtanR32(endPos.Y - startPos.Y, endPos.X - startPos.X);
+	obb2 lineBox = NewObb2V(lineMidpoint, lineSize, lineRotation);
+	GfxSystem_DrawObb2(system, lineBox, color);
 }
 
 PEXP void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture, rec sourceRec)
