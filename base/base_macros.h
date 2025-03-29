@@ -53,6 +53,12 @@ Description:
 #define ZEROED {}
 #endif
 
+#if LANGUAGE_IS_C
+#define NEW_STRUCT(type) (type)
+#else
+#define NEW_STRUCT(type) type
+#endif
+
 // +--------------------------------------------------------------+
 // |                     Function Like Macros                     |
 // +--------------------------------------------------------------+
