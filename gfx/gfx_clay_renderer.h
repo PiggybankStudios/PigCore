@@ -60,14 +60,14 @@ PEXPI Clay_ImageElementConfig ToClayImage(Texture* texture)
 {
 	Clay_ImageElementConfig result = ZEROED;
 	result.imageData = texture;
-	result.sourceDimensions = ToClayDimensions(ToV2Fromi(texture->size));
+	result.sourceDimensions = ToV2Fromi(texture->size);
 	return result;
 }
 
 // +==============================+
 // |  ClayUIRendererMeasureText   |
 // +==============================+
-// Clay_Dimensions ClayUIRendererMeasureText(Str8 text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData)
+// v2 ClayUIRendererMeasureText(Str8 text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData)
 PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 {
 	ScratchBegin(scratch);
@@ -85,7 +85,7 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	
 	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
-	Clay_Dimensions result = (Clay_Dimensions){ .width = CeilR32(measure.Width - measure.OffsetX), .height = CeilR32(measure.Height) };
+	v2 result = NewV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(measure.Height));
 	ScratchEnd(scratch);
 	return result;
 }
@@ -145,7 +145,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 	for (uxx cIndex = 0; cIndex < (uxx)commands->length; cIndex++)
 	{
 		Clay_RenderCommand* command = &commands->items[cIndex];
-		rec drawRec = ToRecFromClay(command->boundingBox);
+		rec drawRec = command->boundingBox;
 		switch (command->commandType)
 		{
 			// +===============================+

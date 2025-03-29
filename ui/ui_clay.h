@@ -96,12 +96,6 @@ typedef Clay_ElementId ClayId;
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE v2 ToV2FromClay(Clay_Vector2 clayVec);
-	PIG_CORE_INLINE Clay_Vector2 ToClayVector2(v2 vector);
-	PIG_CORE_INLINE v2 ToV2iFromClay(Clay_Dimensions clayDimensions);
-	PIG_CORE_INLINE Clay_Dimensions ToClayDimensions(v2 vector);
-	PIG_CORE_INLINE rec ToRecFromClay(Clay_BoundingBox clayBoundingBox);
-	PIG_CORE_INLINE Clay_BoundingBox ToClayBoundingBox(rec rectangle);
 	PIG_CORE_INLINE ClayId ToClayIdEx(Str8 idStr, uxx index);
 	PIG_CORE_INLINE ClayId ToClayId(Str8 idStr);
 	PIG_CORE_INLINE ClayId ToClayIdNt(const char* idNullTermString);
@@ -131,15 +125,6 @@ static void ClayErrorCallback(Clay_ErrorData errorData)
 // +--------------------------------------------------------------+
 // |                       Type Conversions                       |
 // +--------------------------------------------------------------+
-PEXPI v2 ToV2FromClay(Clay_Vector2 clayVec) { return NewV2(clayVec.x, clayVec.y); }
-PEXPI Clay_Vector2 ToClayVector2(v2 vector) { return (Clay_Vector2){ .x = vector.X, .y = vector.Y }; }
-
-PEXPI v2 ToV2iFromClay(Clay_Dimensions clayDimensions) { return NewV2(clayDimensions.width, clayDimensions.height); }
-PEXPI Clay_Dimensions ToClayDimensions(v2 vector) { return (Clay_Dimensions){ .width = vector.Width, .height = vector.Height }; }
-
-PEXPI rec ToRecFromClay(Clay_BoundingBox clayBoundingBox) { return NewRec(clayBoundingBox.x, clayBoundingBox.y, clayBoundingBox.width, clayBoundingBox.height); }
-PEXPI Clay_BoundingBox ToClayBoundingBox(rec rectangle) { return (Clay_BoundingBox){ .x = rectangle.X, .y = rectangle.Y, .width = rectangle.Width, .height = rectangle.Height }; }
-
 PEXPI ClayId ToClayIdEx(Str8 idStr, uxx index) { Assert(index <= UINT32_MAX); return Clay__HashString(idStr, (uint32_t)index, 0); }
 PEXPI ClayId ToClayId(Str8 idStr) { return ToClayIdEx(idStr, 0); }
 PEXPI ClayId ToClayIdNt(const char* idNullTermString) { return ToClayId(StrLit(idNullTermString)); }
@@ -171,7 +156,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureText
 	NotNull(clayMemory);
 	clayOut->clayArena = Clay_CreateArenaWithCapacityAndMemory(minMemory, clayMemory);
 	
-	clayOut->context = Clay_Initialize(clayOut->clayArena, ToClayDimensions(windowSize), (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
+	clayOut->context = Clay_Initialize(clayOut->clayArena, windowSize, (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
 	
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
 }
@@ -179,7 +164,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureText
 PEXPI bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling)
 {
 	SetClayContext(clay);
-	bool isMomentumScrolling = Clay_UpdateScrollContainers(allowTouchScrolling, ToClayVector2(isMouseOverOther ? V2_Zero : mouseScrollDelta), elapsedMs / 1000.0f);
+	bool isMomentumScrolling = Clay_UpdateScrollContainers(allowTouchScrolling, (isMouseOverOther ? V2_Zero : mouseScrollDelta), elapsedMs / 1000.0f);
 	return isMomentumScrolling;
 	
 }
@@ -187,14 +172,14 @@ PEXPI bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOthe
 PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, bool isMouseOverOther, v2 mousePos, bool isMouseDown)
 {
 	SetClayContext(clay);
-	Clay_SetLayoutDimensions(ToClayDimensions(windowSize));
+	Clay_SetLayoutDimensions(windowSize);
 	if (isMouseOverOther)
 	{
-		Clay_SetPointerState(ToClayVector2(NewV2(-1, -1)), false);
+		Clay_SetPointerState(NewV2(-1, -1), false);
 	}
 	else
 	{
-		Clay_SetPointerState(ToClayVector2(mousePos), isMouseDown);
+		Clay_SetPointerState(mousePos, isMouseDown);
 	}
 	Clay_BeginLayout();
 }
@@ -211,7 +196,7 @@ PEXPI Clay_RenderCommandArray EndClayUIRender(ClayUI* clay)
 PEXPI rec GetClayElementDrawRec(ClayId elementId)
 {
 	Clay_ElementData elementData = Clay_GetElementData(elementId);
-	return (elementData.found ? ToRecFromClay(elementData.boundingBox) : Rec_Zero);
+	return (elementData.found ? elementData.boundingBox : Rec_Zero);
 }
 PEXPI rec GetClayElementDrawRecStr(Str8 elementIdStr) { return GetClayElementDrawRec(ToClayId(elementIdStr)); }
 PEXPI rec GetClayElementDrawRecNt(const char* elementIdStrNt) { return GetClayElementDrawRec(ToClayIdNt(elementIdStrNt)); }
