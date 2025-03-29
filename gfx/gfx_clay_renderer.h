@@ -159,7 +159,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				u16 fontId = command->renderData.text.fontId;
 				r32 fontSize = (r32)command->renderData.text.fontSize;
 				Assert(fontId < renderer->fonts.length);
-				Color32 drawColor = ToColorFromClay(command->renderData.text.textColor);
+				Color32 drawColor = command->renderData.text.textColor;
 				ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)fontId);
 				FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
 				NotNull(fontAtlas);
@@ -224,7 +224,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			case CLAY_RENDER_COMMAND_TYPE_IMAGE:
 			{
 				Texture* texturePntr = (Texture*)command->renderData.image.imageData;
-				Color32 drawColor = ToColorFromClay(command->renderData.image.backgroundColor);
+				Color32 drawColor = command->renderData.image.backgroundColor;
 				if (drawColor.valueU32 == 0) { drawColor = White; } //default value means "untinted"
 				GfxSystem_DrawTexturedRectangle(system, drawRec, drawColor, texturePntr);
 			} break;
@@ -254,7 +254,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +====================================+
 			case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
 			{
-				Color32 drawColor = ToColorFromClay(command->renderData.rectangle.backgroundColor);
+				Color32 drawColor = command->renderData.rectangle.backgroundColor;
 				GfxSystem_DrawRoundedRectangleEx(system,
 					drawRec,
 					command->renderData.rectangle.cornerRadius.topLeft,
@@ -270,7 +270,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +==================================+
 			case CLAY_RENDER_COMMAND_TYPE_BORDER:
 			{
-				Color32 drawColor = ToColorFromClay(command->renderData.border.color);
+				Color32 drawColor = command->renderData.border.color;
 				if (command->renderData.border.cornerRadius.topLeft != 0 ||
 					command->renderData.border.cornerRadius.topRight != 0 ||
 					command->renderData.border.cornerRadius.bottomLeft != 0 ||

@@ -173,11 +173,6 @@ MAYBE_START_EXTERN_C
 
 typedef struct Clay_Context Clay_Context;
 
-// Internally clay conventionally represents colors as 0-255, but interpretation is up to the renderer.
-typedef struct {
-    float r, g, b, a;
-} Clay_Color;
-
 // Primarily created via the CLAY_ID(), CLAY_IDI(), CLAY_ID_LOCAL() and CLAY_IDI_LOCAL() macros.
 // Represents a hashed string ID used for identifying and finding specific clay UI elements, required
 // by functions such as Clay_PointerOver() and Clay_GetElementData().
@@ -317,7 +312,7 @@ typedef CLAY_PACKED_ENUM {
 // Controls various functionality related to text elements.
 typedef struct {
     // The RGBA color of the font to render, conventionally specified as 0-255.
-    Clay_Color textColor;
+    Color32 textColor;
     // An integer transparently passed to Clay_MeasureText to identify the font to use.
     // The debug view will pass fontId = 0 for its internal text.
     uint16_t fontId;
@@ -471,7 +466,7 @@ typedef struct {
 
 // Controls settings related to element borders.
 typedef struct {
-    Clay_Color color; // Controls the color of all borders with width > 0. Conventionally represented as 0-255, but interpretation is up to the renderer.
+    Color32 color; // Controls the color of all borders with width > 0. Conventionally represented as 0-255, but interpretation is up to the renderer.
     Clay_BorderWidth width; // Controls the widths of individual borders. At least one of these should be > 0 for a BORDER render command to be generated.
 } Clay_BorderElementConfig;
 
@@ -485,7 +480,7 @@ typedef struct {
     // Note: this is not guaranteed to be null terminated.
     Str8 stringContents;
     // Conventionally represented as 0-255 for each channel, but interpretation is up to the renderer.
-    Clay_Color textColor;
+    Color32 textColor;
     // An integer representing the font to use to render this text, transparently passed through from the text declaration.
     uint16_t fontId;
     uint16_t fontSize;
@@ -500,7 +495,7 @@ typedef struct {
 // Render command data when commandType == CLAY_RENDER_COMMAND_TYPE_RECTANGLE
 typedef struct {
     // The solid background color to fill this rectangle with. Conventionally represented as 0-255 for each channel, but interpretation is up to the renderer.
-    Clay_Color backgroundColor;
+    Color32 backgroundColor;
     // Controls the "radius", or corner rounding of elements, including rectangles, borders and images.
     // The rounding is determined by drawing a circle inset into the element corner by (radius, radius) pixels.
     Clay_CornerRadius cornerRadius;
@@ -511,7 +506,7 @@ typedef struct {
     // The tint color for this image. Note that the default value is 0,0,0,0 and should likely be interpreted
     // as "untinted".
     // Conventionally represented as 0-255 for each channel, but interpretation is up to the renderer.
-    Clay_Color backgroundColor;
+    Color32 backgroundColor;
     // Controls the "radius", or corner rounding of this image.
     // The rounding is determined by drawing a circle inset into the element corner by (radius, radius) pixels.
     Clay_CornerRadius cornerRadius;
@@ -525,7 +520,7 @@ typedef struct {
 typedef struct {
     // Passed through from .backgroundColor in the original element declaration.
     // Conventionally represented as 0-255 for each channel, but interpretation is up to the renderer.
-    Clay_Color backgroundColor;
+    Color32 backgroundColor;
     // Controls the "radius", or corner rounding of this custom element.
     // The rounding is determined by drawing a circle inset into the element corner by (radius, radius) pixels.
     Clay_CornerRadius cornerRadius;
@@ -544,7 +539,7 @@ typedef struct {
 typedef struct {
     // Controls a shared color for all this element's borders.
     // Conventionally represented as 0-255 for each channel, but interpretation is up to the renderer.
-    Clay_Color color;
+    Color32 color;
     // Specifies the "radius", or corner rounding of this border element.
     // The rounding is determined by drawing a circle inset into the element corner by (radius, radius) pixels.
     Clay_CornerRadius cornerRadius;
@@ -686,7 +681,7 @@ typedef struct {
     // Controls the background color of the resulting element.
     // By convention specified as 0-255, but interpretation is up to the renderer.
     // If no other config is specified, .backgroundColor will generate a RECTANGLE render command, otherwise it will be passed as a property to IMAGE or CUSTOM render commands.
-    Clay_Color backgroundColor;
+    Color32 backgroundColor;
     // Controls the "radius", or corner rounding of elements, including rectangles, borders and images.
     Clay_CornerRadius cornerRadius;
     // Controls settings related to image elements.
@@ -859,7 +854,7 @@ CLAY_DECOR void Clay__OpenTextElement(Str8 text, Clay_TextElementConfig *textCon
 CLAY_DECOR Clay_TextElementConfig *Clay__StoreTextElementConfig(Clay_TextElementConfig config);
 CLAY_DECOR uint32_t Clay__GetParentElementId(void);
 
-extern Clay_Color Clay__debugViewHighlightColor;
+extern Color32 Clay__debugViewHighlightColor;
 extern uint32_t Clay__debugViewWidth;
 
 MAYBE_END_EXTERN_C
@@ -882,7 +877,7 @@ MAYBE_END_EXTERN_C
 
 Clay_LayoutConfig CLAY_LAYOUT_DEFAULT = ZEROED;
 
-Clay_Color Clay__Color_DEFAULT = ZEROED;
+Color32 Clay__Color_DEFAULT = ZEROED;
 Clay_CornerRadius Clay__CornerRadius_DEFAULT = ZEROED;
 Clay_BorderWidth Clay__BorderWidth_DEFAULT = ZEROED;
 
@@ -915,7 +910,7 @@ typedef struct {
 } Clay__WarningArray;
 
 typedef struct {
-    Clay_Color backgroundColor;
+    Color32 backgroundColor;
     Clay_CornerRadius cornerRadius;
     CLAY_ELEMENT_USERDATA_TYPE userData;
 } Clay_SharedElementConfig;
@@ -2476,7 +2471,7 @@ void Clay__CalculateFinalLayout(void) {
                                 scrollOffset.Y = mapping->scrollPosition.Y;
                             }
                             if (context->externalScrollHandlingEnabled) {
-                                scrollOffset = NEW_STRUCT(v2) ZEROED;
+                                scrollOffset = V2_Zero;
                             }
                             break;
                         }
@@ -2694,7 +2689,7 @@ void Clay__CalculateFinalLayout(void) {
                     }
 
                     if (scrollContainerData) {
-                        scrollContainerData->contentSize = NEW_STRUCT(v2) { contentSize.Width + (float)(layoutConfig->padding.left + layoutConfig->padding.right), contentSize.Height + (float)(layoutConfig->padding.top + layoutConfig->padding.bottom) };
+                        scrollContainerData->contentSize = NewV2(contentSize.Width + (float)(layoutConfig->padding.left + layoutConfig->padding.right), contentSize.Height + (float)(layoutConfig->padding.top + layoutConfig->padding.bottom));
                     }
                 }
             }
@@ -2710,7 +2705,7 @@ void Clay__CalculateFinalLayout(void) {
                             if (scrollConfig->horizontal) { scrollOffset.X = mapping->scrollPosition.X; }
                             if (scrollConfig->vertical) { scrollOffset.Y = mapping->scrollPosition.Y; }
                             if (context->externalScrollHandlingEnabled) {
-                                scrollOffset = NEW_STRUCT(v2) ZEROED;
+                                scrollOffset = V2_Zero;
                             }
                             break;
                         }
@@ -2843,34 +2838,34 @@ void Clay__CalculateFinalLayout(void) {
 }
 
 #pragma region DebugTools
-Clay_Color CLAY__DEBUGVIEW_COLOR_1 = {58, 56, 52, 255};
-Clay_Color CLAY__DEBUGVIEW_COLOR_2 = {62, 60, 58, 255};
-Clay_Color CLAY__DEBUGVIEW_COLOR_3 = {141, 133, 135, 255};
-Clay_Color CLAY__DEBUGVIEW_COLOR_4 = {238, 226, 231, 255};
-Clay_Color CLAY__DEBUGVIEW_COLOR_SELECTED_ROW = {102, 80, 78, 255};
+Color32 CLAY__DEBUGVIEW_COLOR_1 = {.valueU32=0x373A3834}; //(58, 56, 52, 55)
+Color32 CLAY__DEBUGVIEW_COLOR_2 = {.valueU32=0xFF3E3C3A}; //(62, 60, 58, 255)
+Color32 CLAY__DEBUGVIEW_COLOR_3 = {.valueU32=0xFF8D8587}; //(141, 133, 135, 255)
+Color32 CLAY__DEBUGVIEW_COLOR_4 = {.valueU32=0xFFEEE2E7}; //(238, 226, 231, 255)
+Color32 CLAY__DEBUGVIEW_COLOR_SELECTED_ROW = {.valueU32=0xFF66504E}; //(102, 80, 78, 255)
 const int32_t CLAY__DEBUGVIEW_ROW_HEIGHT = 30;
 const int32_t CLAY__DEBUGVIEW_OUTER_PADDING = 10;
 const int32_t CLAY__DEBUGVIEW_INDENT_WIDTH = 16;
-Clay_TextElementConfig Clay__DebugView_TextNameConfig = {.textColor = {238, 226, 231, 255}, .fontSize = 16, .wrapMode = CLAY_TEXT_WRAP_NONE };
+Clay_TextElementConfig Clay__DebugView_TextNameConfig = {.textColor = {.valueU32=0xFFEEE2E7}, .fontSize = 16, .wrapMode = CLAY_TEXT_WRAP_NONE }; //textColor=(238, 226, 231, 255)
 Clay_LayoutConfig Clay__DebugView_ScrollViewItemLayoutConfig = ZEROED;
 
 typedef struct {
     Str8 label;
-    Clay_Color color;
+    Color32 color;
 } Clay__DebugElementConfigTypeLabelConfig;
 
 Clay__DebugElementConfigTypeLabelConfig Clay__DebugGetElementConfigTypeLabel(Clay__ElementConfigType type) {
     switch (type) {
-        case CLAY__ELEMENT_CONFIG_TYPE_SHARED: return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Shared"), {243,134,48,255} };
-        case CLAY__ELEMENT_CONFIG_TYPE_TEXT: return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Text"), {105,210,231,255} };
-        case CLAY__ELEMENT_CONFIG_TYPE_IMAGE: return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Image"), {121,189,154,255} };
-        case CLAY__ELEMENT_CONFIG_TYPE_FLOATING: return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Floating"), {250,105,0,255} };
-        case CLAY__ELEMENT_CONFIG_TYPE_SCROLL: return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) {CLAY_STRING("Scroll"), {242, 196, 90, 255} };
-        case CLAY__ELEMENT_CONFIG_TYPE_BORDER: return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) {CLAY_STRING("Border"), {108, 91, 123, 255} };
-        case CLAY__ELEMENT_CONFIG_TYPE_CUSTOM: return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Custom"), {11,72,107,255} };
+        case CLAY__ELEMENT_CONFIG_TYPE_SHARED:   return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Shared"),   {.valueU32=0xFFF38630} }; //(243, 134, 48, 255)
+        case CLAY__ELEMENT_CONFIG_TYPE_TEXT:     return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Text"),     {.valueU32=0xFF69D2E7} }; //(105, 210, 231, 255)
+        case CLAY__ELEMENT_CONFIG_TYPE_IMAGE:    return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Image"),    {.valueU32=0xFF79BD9A} }; //(121, 189, 154, 255)
+        case CLAY__ELEMENT_CONFIG_TYPE_FLOATING: return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Floating"), {.valueU32=0xFFFA6900} }; //(250, 105, 0, 255)
+        case CLAY__ELEMENT_CONFIG_TYPE_SCROLL:   return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Scroll"),   {.valueU32=0xFFF2C45A} }; //(242, 196, 90, 255)
+        case CLAY__ELEMENT_CONFIG_TYPE_BORDER:   return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Border"),   {.valueU32=0xFF6C5B7B} }; //(108, 91, 123, 255)
+        case CLAY__ELEMENT_CONFIG_TYPE_CUSTOM:   return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Custom"),   {.valueU32=0xFF0B486B} }; //(11, 72, 107, 255)
         default: break;
     }
-    return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Error"), {0,0,0,255} };
+    return NEW_STRUCT(Clay__DebugElementConfigTypeLabelConfig) { CLAY_STRING("Error"), {.valueU32=0xFF000000} };
 }
 
 typedef struct {
@@ -2943,7 +2938,7 @@ Clay__RenderDebugLayoutData Clay__RenderDebugLayoutElementsList(int32_t initialR
                 // Collisions and offscreen info
                 if (currentElementData) {
                     if (currentElementData->debugData->collision) {
-                        CLAY({ .layout = { .padding = { 8, 8, 2, 2 }}, .border = { .color = {177, 147, 8, 255}, .width = {1, 1, 1, 1, 0} } }) {
+                        CLAY({ .layout = { .padding = { 8, 8, 2, 2 }}, .border = { .color = {.valueU32=0xFFB19308}, .width = {1, 1, 1, 1, 0} } }) { //(177, 147, 8, 255)
                             CLAY_TEXT(CLAY_STRING("Duplicate ID"), CLAY_TEXT_CONFIG({ .textColor = CLAY__DEBUGVIEW_COLOR_3, .fontSize = 16 }));
                         }
                     }
@@ -2960,9 +2955,9 @@ Clay__RenderDebugLayoutData Clay__RenderDebugLayoutElementsList(int32_t initialR
                 for (int32_t elementConfigIndex = 0; elementConfigIndex < currentElement->elementConfigs.length; ++elementConfigIndex) {
                     Clay_ElementConfig *elementConfig = Clay__ElementConfigArraySlice_Get(&currentElement->elementConfigs, elementConfigIndex);
                     if (elementConfig->type == CLAY__ELEMENT_CONFIG_TYPE_SHARED) {
-                        Clay_Color labelColor = {243,134,48,90};
+                        Color32 labelColor = {.valueU32=0x5AF38630}; //(243, 134, 48, 90)
                         labelColor.a = 90;
-                        Clay_Color backgroundColor = elementConfig->config.sharedElementConfig->backgroundColor;
+                        Color32 backgroundColor = elementConfig->config.sharedElementConfig->backgroundColor;
                         Clay_CornerRadius radius = elementConfig->config.sharedElementConfig->cornerRadius;
                         if (backgroundColor.a > 0) {
                             CLAY({ .layout = { .padding = { 8, 8, 2, 2 } }, .backgroundColor = labelColor, .cornerRadius = CLAY_CORNER_RADIUS(4), .border = { .color = labelColor, .width = { 1, 1, 1, 1, 0} } }) {
@@ -2977,7 +2972,7 @@ Clay__RenderDebugLayoutData Clay__RenderDebugLayoutElementsList(int32_t initialR
                         continue;
                     }
                     Clay__DebugElementConfigTypeLabelConfig config = Clay__DebugGetElementConfigTypeLabel(elementConfig->type);
-                    Clay_Color backgroundColor = config.color;
+                    Color32 backgroundColor = config.color;
                     backgroundColor.a = 90;
                     CLAY({ .layout = { .padding = { 8, 8, 2, 2 } }, .backgroundColor = backgroundColor, .cornerRadius = CLAY_CORNER_RADIUS(4), .border = { .color = config.color, .width = { 1, 1, 1, 1, 0 } } }) {
                         CLAY_TEXT(config.label, CLAY_TEXT_CONFIG({ .textColor = offscreen ? CLAY__DEBUGVIEW_COLOR_3 : CLAY__DEBUGVIEW_COLOR_4, .fontSize = 16 }));
@@ -3065,7 +3060,7 @@ void Clay__RenderDebugLayoutSizing(Clay_SizingAxis sizing, Clay_TextElementConfi
 
 void Clay__RenderDebugViewElementConfigHeader(Str8 elementId, Clay__ElementConfigType type) {
     Clay__DebugElementConfigTypeLabelConfig config = Clay__DebugGetElementConfigTypeLabel(type);
-    Clay_Color backgroundColor = config.color;
+    Color32 backgroundColor = config.color;
     backgroundColor.a = 90;
     CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }, .padding = CLAY_PADDING_ALL(CLAY__DEBUGVIEW_OUTER_PADDING), .childAlignment = { .y = CLAY_ALIGN_Y_CENTER } } }) {
         CLAY({ .layout = { .padding = { 8, 8, 2, 2 } }, .backgroundColor = backgroundColor, .cornerRadius = CLAY_CORNER_RADIUS(4), .border = { .color = config.color, .width = { 1, 1, 1, 1, 0 } } }) {
@@ -3076,7 +3071,7 @@ void Clay__RenderDebugViewElementConfigHeader(Str8 elementId, Clay__ElementConfi
     }
 }
 
-void Clay__RenderDebugViewColor(Clay_Color color, Clay_TextElementConfig *textConfig) {
+void Clay__RenderDebugViewColor(Color32 color, Clay_TextElementConfig *textConfig) {
     CLAY({ .layout = { .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} } }) {
         CLAY_TEXT(CLAY_STRING("{ r: "), textConfig);
         CLAY_TEXT(Clay__IntToString(color.r), textConfig);
@@ -3163,9 +3158,9 @@ void Clay__RenderDebugView(void) {
             // Close button
             CLAY({
                 .layout = { .sizing = {CLAY_SIZING_FIXED(CLAY__DEBUGVIEW_ROW_HEIGHT - 10), CLAY_SIZING_FIXED(CLAY__DEBUGVIEW_ROW_HEIGHT - 10)}, .childAlignment = {CLAY_ALIGN_X_CENTER, CLAY_ALIGN_Y_CENTER} },
-                .backgroundColor = {217,91,67,80},
+                .backgroundColor = {.valueU32=0x50D95B43}, //(217, 91, 67, 80)
                 .cornerRadius = CLAY_CORNER_RADIUS(4),
-                .border = { .color = { 217,91,67,255 }, .width = { 1, 1, 1, 1, 0 } },
+                .border = { .color = {.valueU32=0xFFD95B43}, .width = { 1, 1, 1, 1, 0 } }, //(217, 91, 67, 255)
             }) {
             	CLAY_ONHOVER_USERDATA_TYPE zeroUserDataType = ZEROED;
                 Clay_OnHover(HandleDebugViewCloseButtonInteraction, zeroUserDataType);
@@ -3185,7 +3180,7 @@ void Clay__RenderDebugView(void) {
                 float contentWidth = Clay__GetHashMapItem(panelContentsId.id)->layoutElement->dimensions.Width;
                 CLAY({ .layout = { .sizing = {.width = CLAY_SIZING_FIXED(contentWidth) }, .layoutDirection = CLAY_TOP_TO_BOTTOM } }) {}
                 for (int32_t i = 0; i < layoutData.rowCount; i++) {
-                    Clay_Color rowColor = (i & 1) == 0 ? CLAY__DEBUGVIEW_COLOR_2 : CLAY__DEBUGVIEW_COLOR_1;
+                    Color32 rowColor = (i & 1) == 0 ? CLAY__DEBUGVIEW_COLOR_2 : CLAY__DEBUGVIEW_COLOR_1;
                     if (i == layoutData.selectedElementRowIndex) {
                         rowColor = CLAY__DEBUGVIEW_COLOR_SELECTED_ROW;
                     }
@@ -3435,7 +3430,7 @@ void Clay__RenderDebugView(void) {
                 CLAY({ .id = CLAY_ID("Clay__DebugViewWarningItemHeader"), .layout = { .sizing = {.height = CLAY_SIZING_FIXED(CLAY__DEBUGVIEW_ROW_HEIGHT)}, .padding = {CLAY__DEBUGVIEW_OUTER_PADDING, CLAY__DEBUGVIEW_OUTER_PADDING, 0, 0 }, .childGap = 8, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} } }) {
                     CLAY_TEXT(CLAY_STRING("Warnings"), warningConfig);
                 }
-                CLAY({ .id = CLAY_ID("Clay__DebugViewWarningsTopBorder"), .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(1)} }, .backgroundColor = {200, 200, 200, 255} }) {}
+                CLAY({ .id = CLAY_ID("Clay__DebugViewWarningsTopBorder"), .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(1)} }, .backgroundColor = {.valueU32=0xFFC8C8C8} }) {} //(200, 200, 200, 255)
                 int32_t previousWarningsLength = context->warnings.length;
                 for (int32_t i = 0; i < previousWarningsLength; i++) {
                     Clay__Warning warning = context->warnings.items[i];
@@ -3453,7 +3448,7 @@ void Clay__RenderDebugView(void) {
 #pragma endregion
 
 uint32_t Clay__debugViewWidth = 400;
-Clay_Color Clay__debugViewHighlightColor = { 168, 66, 28, 100 };
+Color32 Clay__debugViewHighlightColor = {.valueU32=0x64A8421C}; //(168, 66, 28, 100)
 
 Clay__WarningArray Clay__WarningArray_Allocate_Arena(int32_t initialCapacity, Clay_Arena* arena) {
     size_t totalSizeBytes = initialCapacity * sizeof(Str8);
@@ -3702,8 +3697,8 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, v2 scrollD
             }
             scrollData->pointerScrollActive = false;
 
-            scrollData->pointerOrigin = NEW_STRUCT(v2){0,0};
-            scrollData->scrollOrigin = NEW_STRUCT(v2){0,0};
+            scrollData->pointerOrigin = V2_Zero;
+            scrollData->scrollOrigin = V2_Zero;
             scrollData->momentumTime = 0;
         }
         
@@ -3774,7 +3769,7 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, v2 scrollD
         }
         // Handle click / touch scroll
         if (isPointerActive) {
-            highestPriorityScrollData->scrollMomentum = NEW_STRUCT(v2)ZEROED;
+            highestPriorityScrollData->scrollMomentum = V2_Zero;
             if (!highestPriorityScrollData->pointerScrollActive) {
                 highestPriorityScrollData->pointerOrigin = context->pointerInfo.position;
                 highestPriorityScrollData->scrollOrigin = highestPriorityScrollData->scrollTarget;
@@ -3861,7 +3856,7 @@ CLAY_DECOR Clay_RenderCommandArray Clay_EndLayout(void) {
         }
         Clay__AddRenderCommand(NEW_STRUCT(Clay_RenderCommand ) {
             .boundingBox = { context->layoutDimensions.Width / 2 - 59 * 4, context->layoutDimensions.Height / 2, 0, 0 },
-            .renderData = { .text = { .stringContents = message, .textColor = {255, 0, 0, 255}, .fontSize = 16 } },
+            .renderData = { .text = { .stringContents = message, .textColor = {.valueU32=0xFFFF0000}, .fontSize = 16 } }, //(255, 0, 0, 255)
             .commandType = CLAY_RENDER_COMMAND_TYPE_TEXT
         });
     } else {

@@ -99,8 +99,6 @@ typedef Clay_ElementId ClayId;
 	PIG_CORE_INLINE ClayId ToClayIdEx(Str8 idStr, uxx index);
 	PIG_CORE_INLINE ClayId ToClayId(Str8 idStr);
 	PIG_CORE_INLINE ClayId ToClayIdNt(const char* idNullTermString);
-	PIG_CORE_INLINE Color32 ToColorFromClay(Clay_Color clayColor);
-	PIG_CORE_INLINE Clay_Color ToClayColor(Color32 color);
 	void SetClayContext(ClayUI* clay);
 	void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut);
 	PIG_CORE_INLINE bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling);
@@ -128,9 +126,6 @@ static void ClayErrorCallback(Clay_ErrorData errorData)
 PEXPI ClayId ToClayIdEx(Str8 idStr, uxx index) { Assert(index <= UINT32_MAX); return Clay__HashString(idStr, (uint32_t)index, 0); }
 PEXPI ClayId ToClayId(Str8 idStr) { return ToClayIdEx(idStr, 0); }
 PEXPI ClayId ToClayIdNt(const char* idNullTermString) { return ToClayId(StrLit(idNullTermString)); }
-
-PEXPI Color32 ToColorFromClay(Clay_Color clayColor) { return ToColor32FromV4(NewV4(clayColor.r/255.0f, clayColor.g/255.0f, clayColor.b/255.0f, clayColor.a/255.0f)); }
-PEXPI Clay_Color ToClayColor(Color32 color) { v4 colorVec = ToV4FromColor32(color); return (Clay_Color){ .r = colorVec.R*255.0f, .g = colorVec.G*255.0f, .b = colorVec.B*255.0f, .a = colorVec.A*255.0f }; }
 
 // +--------------------------------------------------------------+
 // |                   Initialize and Begin/End                   |
