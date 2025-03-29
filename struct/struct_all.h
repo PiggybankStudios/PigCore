@@ -22,6 +22,9 @@ Description:
 
 #include "base/base_macros.h" //Needed by many of the files below
 #include "base/base_assert.h" //Needed by many of the files below
+
+#include "struct/struct_typed_array.h"
+
 #include "base/base_char.h" //Needed by struct_string.h
 #include "std/std_memset.h" //Needed by struct_string.h and struct_string_buffer.h
 

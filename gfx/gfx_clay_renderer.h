@@ -144,7 +144,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 	
 	for (uxx cIndex = 0; cIndex < (uxx)commands->length; cIndex++)
 	{
-		Clay_RenderCommand* command = &commands->internalArray[cIndex];
+		Clay_RenderCommand* command = &commands->items[cIndex];
 		rec drawRec = ToRecFromClay(command->boundingBox);
 		switch (command->commandType)
 		{
