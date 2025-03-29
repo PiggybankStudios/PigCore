@@ -13,10 +13,6 @@
 	See the examples folder for details.
 */
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-
 // SIMD includes on supported platforms
 #if !defined(CLAY_DISABLE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64))
 #include <emmintrin.h>
@@ -1013,25 +1009,21 @@ struct Clay_SharedElementConfig
 
 CLAY__WRAPPER_STRUCT(Clay_SharedElementConfig);
 
-Clay__WarningArray Clay__WarningArray_Allocate_Arena(i32 initialCapacity, Clay_Arena* arena);
+Clay__WarningArray Clay__WarningArray_Init(i32 initialCapacity, Clay_Arena* arena);
 Clay__Warning* Clay__WarningArray_Add(Clay__WarningArray* array, Clay__Warning item);
 bool Clay__Array_RangeCheck(i32 index, i32 length);
 bool Clay__Array_AddCapacityCheck(i32 length, i32 allocLength);
 
-DEFINE_TYPED_ARRAY(bool, boolArray)
-DEFINE_TYPED_ARRAY(i32, i32Array)
-DEFINE_TYPED_ARRAY(char, charArray)
-DEFINE_TYPED_ARRAY(Str8, Str8Array)
-DEFINE_TYPED_ARRAY(Clay_ElementId, Clay__ElementIdArray)
-DEFINE_TYPED_ARRAY(Clay_LayoutConfig, Clay__LayoutConfigArray)
-DEFINE_TYPED_ARRAY(Clay_TextElementConfig, Clay__TextElementConfigArray)
-DEFINE_TYPED_ARRAY(Clay_ImageElementConfig, Clay__ImageElementConfigArray)
-DEFINE_TYPED_ARRAY(Clay_FloatingElementConfig, Clay__FloatingElementConfigArray)
-DEFINE_TYPED_ARRAY(Clay_CustomElementConfig, Clay__CustomElementConfigArray)
-DEFINE_TYPED_ARRAY(Clay_ScrollElementConfig, Clay__ScrollElementConfigArray)
-DEFINE_TYPED_ARRAY(Clay_BorderElementConfig, Clay__BorderElementConfigArray)
-DEFINE_TYPED_ARRAY(Clay_SharedElementConfig, Clay__SharedElementConfigArray)
-DEFINE_TYPED_ARRAY_FUNCTIONS(Clay_RenderCommand, Clay_RenderCommandArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_ElementId, Clay__ElementIdArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_LayoutConfig, Clay__LayoutConfigArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_TextElementConfig, Clay__TextElementConfigArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_ImageElementConfig, Clay__ImageElementConfigArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_FloatingElementConfig, Clay__FloatingElementConfigArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_CustomElementConfig, Clay__CustomElementConfigArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_ScrollElementConfig, Clay__ScrollElementConfigArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_BorderElementConfig, Clay__BorderElementConfigArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_SharedElementConfig, Clay__SharedElementConfigArray)
+IMPLEMENT_TYPED_ARRAY_FUNCTIONS(Clay_RenderCommand, Clay_RenderCommandArray)
 
 typedef CLAY_PACKED_ENUM Clay__ElementConfigType Clay__ElementConfigType;
 CLAY_PACKED_ENUM Clay__ElementConfigType
@@ -1065,7 +1057,7 @@ struct Clay_ElementConfig
 	Clay_ElementConfigUnion config;
 };
 
-DEFINE_TYPED_ARRAY(Clay_ElementConfig, Clay__ElementConfigArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_ElementConfig, Clay__ElementConfigArray)
 
 typedef struct Clay__WrappedTextLine Clay__WrappedTextLine;
 struct Clay__WrappedTextLine
@@ -1074,7 +1066,7 @@ struct Clay__WrappedTextLine
 	Str8 line;
 };
 
-DEFINE_TYPED_ARRAY(Clay__WrappedTextLine, Clay__WrappedTextLineArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay__WrappedTextLine, Clay__WrappedTextLineArray)
 
 typedef struct Clay__TextElementData Clay__TextElementData;
 struct Clay__TextElementData
@@ -1085,7 +1077,7 @@ struct Clay__TextElementData
 	Clay__WrappedTextLineArraySlice wrappedLines;
 };
 
-DEFINE_TYPED_ARRAY(Clay__TextElementData, Clay__TextElementDataArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay__TextElementData, Clay__TextElementDataArray)
 
 typedef struct Clay__LayoutElementChildren Clay__LayoutElementChildren;
 struct Clay__LayoutElementChildren
@@ -1109,7 +1101,7 @@ struct Clay_LayoutElement
 	u32 id;
 };
 
-DEFINE_TYPED_ARRAY(Clay_LayoutElement, Clay_LayoutElementArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_LayoutElement, Clay_LayoutElementArray)
 
 typedef struct Clay__ScrollContainerDataInternal Clay__ScrollContainerDataInternal;
 struct Clay__ScrollContainerDataInternal
@@ -1130,7 +1122,7 @@ struct Clay__ScrollContainerDataInternal
 	bool pointerScrollActive;
 };
 
-DEFINE_TYPED_ARRAY(Clay__ScrollContainerDataInternal, Clay__ScrollContainerDataInternalArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay__ScrollContainerDataInternal, Clay__ScrollContainerDataInternalArray)
 
 typedef struct Clay__DebugElementData Clay__DebugElementData;
 struct Clay__DebugElementData
@@ -1139,7 +1131,7 @@ struct Clay__DebugElementData
 	bool collapsed;
 };
 
-DEFINE_TYPED_ARRAY(Clay__DebugElementData, Clay__DebugElementDataArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay__DebugElementData, Clay__DebugElementDataArray)
 
 typedef struct Clay_LayoutElementHashMapItem Clay_LayoutElementHashMapItem;
 struct Clay_LayoutElementHashMapItem // todo get this struct into a single cache line
@@ -1155,7 +1147,7 @@ struct Clay_LayoutElementHashMapItem // todo get this struct into a single cache
 	Clay__DebugElementData* debugData;
 };
 
-DEFINE_TYPED_ARRAY(Clay_LayoutElementHashMapItem, Clay__LayoutElementHashMapItemArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay_LayoutElementHashMapItem, Clay__LayoutElementHashMapItemArray)
 
 typedef struct Clay__MeasuredWord Clay__MeasuredWord;
 struct Clay__MeasuredWord
@@ -1166,7 +1158,7 @@ struct Clay__MeasuredWord
 	i32 next;
 };
 
-DEFINE_TYPED_ARRAY(Clay__MeasuredWord, Clay__MeasuredWordArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay__MeasuredWord, Clay__MeasuredWordArray)
 
 typedef struct Clay__MeasureTextCacheItem Clay__MeasureTextCacheItem;
 struct Clay__MeasureTextCacheItem
@@ -1180,7 +1172,7 @@ struct Clay__MeasureTextCacheItem
 	u32 generation;
 };
 
-DEFINE_TYPED_ARRAY(Clay__MeasureTextCacheItem, Clay__MeasureTextCacheItemArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay__MeasureTextCacheItem, Clay__MeasureTextCacheItemArray)
 
 typedef struct Clay__LayoutElementTreeNode Clay__LayoutElementTreeNode;
 struct Clay__LayoutElementTreeNode
@@ -1190,7 +1182,7 @@ struct Clay__LayoutElementTreeNode
 	v2 nextChildOffset;
 };
 
-DEFINE_TYPED_ARRAY(Clay__LayoutElementTreeNode, Clay__LayoutElementTreeNodeArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay__LayoutElementTreeNode, Clay__LayoutElementTreeNodeArray)
 
 typedef struct Clay__LayoutElementTreeRoot Clay__LayoutElementTreeRoot;
 struct Clay__LayoutElementTreeRoot
@@ -1202,7 +1194,7 @@ struct Clay__LayoutElementTreeRoot
 	v2 pointerOffset; // Only used when scroll containers are managed externally
 };
 
-DEFINE_TYPED_ARRAY(Clay__LayoutElementTreeRoot, Clay__LayoutElementTreeRootArray)
+DECLARE_AND_IMPLEMENT_TYPED_ARRAY(Clay__LayoutElementTreeRoot, Clay__LayoutElementTreeRootArray)
 
 struct Clay_Context {
 	i32 maxElementCount;
@@ -1265,7 +1257,7 @@ struct Clay_Context {
 	Clay__DebugElementDataArray debugElementData;
 };
 
-Clay_Context* Clay__Context_Allocate_Arena(Clay_Arena* arena)
+Clay_Context* Clay__Context_Init(Clay_Arena* arena)
 {
 	size_t totalSizeBytes = sizeof(Clay_Context);
 	uintptr_t memoryAddress = (uintptr_t)arena->memory;
@@ -1330,7 +1322,7 @@ Clay_ElementConfigUnion Clay__FindElementConfigWithType(Clay_LayoutElement* elem
 {
 	for (i32 i = 0; i < element->elementConfigs.length; i++)
 	{
-		Clay_ElementConfig* config = Clay__ElementConfigArraySlice_Get(&element->elementConfigs, i);
+		Clay_ElementConfig* config = Clay__ElementConfigArray_GetSlice(&element->elementConfigs, i);
 		if (config->type == type) { return config->config; }
 	}
 	return NEW_STRUCT(Clay_ElementConfigUnion) { NULL };
@@ -1694,7 +1686,7 @@ bool Clay__ElementHasConfig(Clay_LayoutElement* layoutElement, Clay__ElementConf
 {
 	for (i32 i = 0; i < layoutElement->elementConfigs.length; i++)
 	{
-		if (Clay__ElementConfigArraySlice_Get(&layoutElement->elementConfigs, i)->type == type) { return true; }
+		if (Clay__ElementConfigArray_GetSlice(&layoutElement->elementConfigs, i)->type == type) { return true; }
 	}
 	return false;
 }
@@ -1703,7 +1695,7 @@ void Clay__UpdateAspectRatioBox(Clay_LayoutElement* layoutElement)
 {
 	for (i32 j = 0; j < layoutElement->elementConfigs.length; j++)
 	{
-		Clay_ElementConfig* config = Clay__ElementConfigArraySlice_Get(&layoutElement->elementConfigs, j);
+		Clay_ElementConfig* config = Clay__ElementConfigArray_GetSlice(&layoutElement->elementConfigs, j);
 		if (config->type == CLAY__ELEMENT_CONFIG_TYPE_IMAGE)
 		{
 			Clay_ImageElementConfig* imageConfig = config->config.imageElementConfig;
@@ -1731,7 +1723,7 @@ CLAY_DECOR void Clay__CloseElement(void) {
 	bool elementHasScrollVertical = false;
 	for (i32 i = 0; i < openLayoutElement->elementConfigs.length; i++)
 	{
-		Clay_ElementConfig* config = Clay__ElementConfigArraySlice_Get(&openLayoutElement->elementConfigs, i);
+		Clay_ElementConfig* config = Clay__ElementConfigArray_GetSlice(&openLayoutElement->elementConfigs, i);
 		if (config->type == CLAY__ELEMENT_CONFIG_TYPE_SCROLL)
 		{
 			elementHasScrollHorizontal = config->config.scrollElementConfig->horizontal;
@@ -2139,35 +2131,35 @@ void Clay__InitializeEphemeralMemory(Clay_Context* context)
 	Clay_Arena* arena = &context->internalArena;
 	arena->nextAllocation = context->arenaResetOffset;
 	
-	context->layoutElementChildrenBuffer = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->layoutElements = Clay_LayoutElementArray_Allocate_Arena(maxElementCount, arena);
-	context->warnings = Clay__WarningArray_Allocate_Arena(100, arena);
+	context->layoutElementChildrenBuffer = i32Array_Init(maxElementCount, arena);
+	context->layoutElements = Clay_LayoutElementArray_Init(maxElementCount, arena);
+	context->warnings = Clay__WarningArray_Init(100, arena);
 	
-	context->layoutConfigs = Clay__LayoutConfigArray_Allocate_Arena(maxElementCount, arena);
-	context->elementConfigs = Clay__ElementConfigArray_Allocate_Arena(maxElementCount, arena);
-	context->textElementConfigs = Clay__TextElementConfigArray_Allocate_Arena(maxElementCount, arena);
-	context->imageElementConfigs = Clay__ImageElementConfigArray_Allocate_Arena(maxElementCount, arena);
-	context->floatingElementConfigs = Clay__FloatingElementConfigArray_Allocate_Arena(maxElementCount, arena);
-	context->scrollElementConfigs = Clay__ScrollElementConfigArray_Allocate_Arena(maxElementCount, arena);
-	context->customElementConfigs = Clay__CustomElementConfigArray_Allocate_Arena(maxElementCount, arena);
-	context->borderElementConfigs = Clay__BorderElementConfigArray_Allocate_Arena(maxElementCount, arena);
-	context->sharedElementConfigs = Clay__SharedElementConfigArray_Allocate_Arena(maxElementCount, arena);
+	context->layoutConfigs = Clay__LayoutConfigArray_Init(maxElementCount, arena);
+	context->elementConfigs = Clay__ElementConfigArray_Init(maxElementCount, arena);
+	context->textElementConfigs = Clay__TextElementConfigArray_Init(maxElementCount, arena);
+	context->imageElementConfigs = Clay__ImageElementConfigArray_Init(maxElementCount, arena);
+	context->floatingElementConfigs = Clay__FloatingElementConfigArray_Init(maxElementCount, arena);
+	context->scrollElementConfigs = Clay__ScrollElementConfigArray_Init(maxElementCount, arena);
+	context->customElementConfigs = Clay__CustomElementConfigArray_Init(maxElementCount, arena);
+	context->borderElementConfigs = Clay__BorderElementConfigArray_Init(maxElementCount, arena);
+	context->sharedElementConfigs = Clay__SharedElementConfigArray_Init(maxElementCount, arena);
 	
-	context->layoutElementIdStrings = Str8Array_Allocate_Arena(maxElementCount, arena);
-	context->wrappedTextLines = Clay__WrappedTextLineArray_Allocate_Arena(maxElementCount, arena);
-	context->layoutElementTreeNodeArray1 = Clay__LayoutElementTreeNodeArray_Allocate_Arena(maxElementCount, arena);
-	context->layoutElementTreeRoots = Clay__LayoutElementTreeRootArray_Allocate_Arena(maxElementCount, arena);
-	context->layoutElementChildren = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->openLayoutElementStack = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->textElementData = Clay__TextElementDataArray_Allocate_Arena(maxElementCount, arena);
-	context->imageElementPointers = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->renderCommands = Clay_RenderCommandArray_Allocate_Arena(maxElementCount, arena);
-	context->treeNodeVisited = boolArray_Allocate_Arena(maxElementCount, arena);
+	context->layoutElementIdStrings = Str8Array_Init(maxElementCount, arena);
+	context->wrappedTextLines = Clay__WrappedTextLineArray_Init(maxElementCount, arena);
+	context->layoutElementTreeNodeArray1 = Clay__LayoutElementTreeNodeArray_Init(maxElementCount, arena);
+	context->layoutElementTreeRoots = Clay__LayoutElementTreeRootArray_Init(maxElementCount, arena);
+	context->layoutElementChildren = i32Array_Init(maxElementCount, arena);
+	context->openLayoutElementStack = i32Array_Init(maxElementCount, arena);
+	context->textElementData = Clay__TextElementDataArray_Init(maxElementCount, arena);
+	context->imageElementPointers = i32Array_Init(maxElementCount, arena);
+	context->renderCommands = Clay_RenderCommandArray_Init(maxElementCount, arena);
+	context->treeNodeVisited = boolArray_Init(maxElementCount, arena);
 	context->treeNodeVisited.length = context->treeNodeVisited.allocLength; // This array is accessed directly rather than behaving as a list
-	context->openClipElementStack = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->reusableElementIndexBuffer = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->layoutElementClipElementIds = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->dynamicStringData = charArray_Allocate_Arena(maxElementCount, arena);
+	context->openClipElementStack = i32Array_Init(maxElementCount, arena);
+	context->reusableElementIndexBuffer = i32Array_Init(maxElementCount, arena);
+	context->layoutElementClipElementIds = i32Array_Init(maxElementCount, arena);
+	context->dynamicStringData = charArray_Init(maxElementCount, arena);
 }
 
 void Clay__InitializePersistentMemory(Clay_Context* context)
@@ -2177,16 +2169,16 @@ void Clay__InitializePersistentMemory(Clay_Context* context)
 	i32 maxMeasureTextCacheWordCount = context->maxMeasureTextCacheWordCount;
 	Clay_Arena* arena = &context->internalArena;
 	
-	context->scrollContainerDatas = Clay__ScrollContainerDataInternalArray_Allocate_Arena(10, arena);
-	context->layoutElementsHashMapInternal = Clay__LayoutElementHashMapItemArray_Allocate_Arena(maxElementCount, arena);
-	context->layoutElementsHashMap = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->measureTextHashMapInternal = Clay__MeasureTextCacheItemArray_Allocate_Arena(maxElementCount, arena);
-	context->measureTextHashMapInternalFreeList = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->measuredWordsFreeList = i32Array_Allocate_Arena(maxMeasureTextCacheWordCount, arena);
-	context->measureTextHashMap = i32Array_Allocate_Arena(maxElementCount, arena);
-	context->measuredWords = Clay__MeasuredWordArray_Allocate_Arena(maxMeasureTextCacheWordCount, arena);
-	context->pointerOverIds = Clay__ElementIdArray_Allocate_Arena(maxElementCount, arena);
-	context->debugElementData = Clay__DebugElementDataArray_Allocate_Arena(maxElementCount, arena);
+	context->scrollContainerDatas = Clay__ScrollContainerDataInternalArray_Init(10, arena);
+	context->layoutElementsHashMapInternal = Clay__LayoutElementHashMapItemArray_Init(maxElementCount, arena);
+	context->layoutElementsHashMap = i32Array_Init(maxElementCount, arena);
+	context->measureTextHashMapInternal = Clay__MeasureTextCacheItemArray_Init(maxElementCount, arena);
+	context->measureTextHashMapInternalFreeList = i32Array_Init(maxElementCount, arena);
+	context->measuredWordsFreeList = i32Array_Init(maxMeasureTextCacheWordCount, arena);
+	context->measureTextHashMap = i32Array_Init(maxElementCount, arena);
+	context->measuredWords = Clay__MeasuredWordArray_Init(maxMeasureTextCacheWordCount, arena);
+	context->pointerOverIds = Clay__ElementIdArray_Init(maxElementCount, arena);
+	context->debugElementData = Clay__DebugElementDataArray_Init(maxElementCount, arena);
 	context->arenaResetOffset = arena->nextAllocation;
 }
 
@@ -2817,8 +2809,8 @@ void Clay__CalculateFinalLayout(void)
 					{
 						i32 current = sortedConfigIndexes[i];
 						i32 next = sortedConfigIndexes[i + 1];
-						Clay__ElementConfigType currentType = Clay__ElementConfigArraySlice_Get(&currentElement->elementConfigs, current)->type;
-						Clay__ElementConfigType nextType = Clay__ElementConfigArraySlice_Get(&currentElement->elementConfigs, next)->type;
+						Clay__ElementConfigType currentType = Clay__ElementConfigArray_GetSlice(&currentElement->elementConfigs, current)->type;
+						Clay__ElementConfigType nextType = Clay__ElementConfigArray_GetSlice(&currentElement->elementConfigs, next)->type;
 						if (nextType == CLAY__ELEMENT_CONFIG_TYPE_SCROLL || currentType == CLAY__ELEMENT_CONFIG_TYPE_BORDER)
 						{
 							sortedConfigIndexes[i] = next;
@@ -2839,7 +2831,7 @@ void Clay__CalculateFinalLayout(void)
 				}
 				for (i32 elementConfigIndex = 0; elementConfigIndex < currentElement->elementConfigs.length; ++elementConfigIndex)
 				{
-					Clay_ElementConfig* elementConfig = Clay__ElementConfigArraySlice_Get(&currentElement->elementConfigs, sortedConfigIndexes[elementConfigIndex]);
+					Clay_ElementConfig* elementConfig = Clay__ElementConfigArray_GetSlice(&currentElement->elementConfigs, sortedConfigIndexes[elementConfigIndex]);
 					Clay_RenderCommand renderCommand = {
 						.boundingBox = currentElementBoundingBox,
 						.userData = sharedConfig->userData,
@@ -2896,7 +2888,7 @@ void Clay__CalculateFinalLayout(void)
 							r32 yPosition = lineHeightOffset;
 							for (i32 lineIndex = 0; lineIndex < currentElement->childrenOrTextContent.textElementData->wrappedLines.length; ++lineIndex)
 							{
-								Clay__WrappedTextLine* wrappedLine = Clay__WrappedTextLineArraySlice_Get(&currentElement->childrenOrTextContent.textElementData->wrappedLines, lineIndex);
+								Clay__WrappedTextLine* wrappedLine = Clay__WrappedTextLineArray_GetSlice(&currentElement->childrenOrTextContent.textElementData->wrappedLines, lineIndex);
 								if (wrappedLine->line.length == 0)
 								{
 									yPosition += finalLineHeight;
@@ -3344,7 +3336,7 @@ Clay__RenderDebugLayoutData Clay__RenderDebugLayoutElementsList(i32 initialRoots
 				}
 				for (i32 elementConfigIndex = 0; elementConfigIndex < currentElement->elementConfigs.length; ++elementConfigIndex)
 				{
-					Clay_ElementConfig* elementConfig = Clay__ElementConfigArraySlice_Get(&currentElement->elementConfigs, elementConfigIndex);
+					Clay_ElementConfig* elementConfig = Clay__ElementConfigArray_GetSlice(&currentElement->elementConfigs, elementConfigIndex);
 					if (elementConfig->type == CLAY__ELEMENT_CONFIG_TYPE_SHARED)
 					{
 						Color32 labelColor = {.valueU32=0x5AF38630}; //(243, 134, 48, 90)
@@ -3720,7 +3712,7 @@ void Clay__RenderDebugView(void)
 				}
 				for (i32 elementConfigIndex = 0; elementConfigIndex < selectedItem->layoutElement->elementConfigs.length; ++elementConfigIndex)
 				{
-					Clay_ElementConfig* elementConfig = Clay__ElementConfigArraySlice_Get(&selectedItem->layoutElement->elementConfigs, elementConfigIndex);
+					Clay_ElementConfig* elementConfig = Clay__ElementConfigArray_GetSlice(&selectedItem->layoutElement->elementConfigs, elementConfigIndex);
 					Clay__RenderDebugViewElementConfigHeader(selectedItem->elementId.stringId, elementConfig->type);
 					switch (elementConfig->type)
 					{
@@ -3905,7 +3897,7 @@ void Clay__RenderDebugView(void)
 u32 Clay__debugViewWidth = 400;
 Color32 Clay__debugViewHighlightColor = {.valueU32=0x64A8421C}; //(168, 66, 28, 100)
 
-Clay__WarningArray Clay__WarningArray_Allocate_Arena(i32 initialCapacity, Clay_Arena* arena)
+Clay__WarningArray Clay__WarningArray_Init(i32 initialCapacity, Clay_Arena* arena)
 {
 	size_t totalSizeBytes = initialCapacity * sizeof(Str8);
 	Clay__WarningArray array = { .allocLength = initialCapacity, .length = 0 };
@@ -3980,7 +3972,7 @@ CLAY_DECOR u32 Clay_MinMemorySize(void)
 		fakeContext.maxMeasureTextCacheWordCount = currentContext->maxElementCount;
 	}
 	// Reserve space in the arena for the context, important for calculating min memory size correctly
-	Clay__Context_Allocate_Arena(&fakeContext.internalArena);
+	Clay__Context_Init(&fakeContext.internalArena);
 	Clay__InitializePersistentMemory(&fakeContext);
 	Clay__InitializeEphemeralMemory(&fakeContext);
 	return fakeContext.internalArena.nextAllocation + 128;
@@ -4113,7 +4105,7 @@ CLAY_DECOR void Clay_SetPointerState(v2 position, bool isPointerDown)
 CLAY_WASM_EXPORT("Clay_Initialize")
 CLAY_DECOR Clay_Context* Clay_Initialize(Clay_Arena arena, v2 layoutDimensions, Clay_ErrorHandler errorHandler)
 {
-	Clay_Context* context = Clay__Context_Allocate_Arena(&arena);
+	Clay_Context* context = Clay__Context_Init(&arena);
 	if (context == NULL) { return NULL; }
 	// DEFAULTS
 	Clay_Context* oldContext = Clay_GetCurrentContext();

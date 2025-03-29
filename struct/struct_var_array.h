@@ -15,6 +15,8 @@ Description:
 	** To help combat this we will also make some specific 
 */
 
+//TODO: Add VarArraySet which memcpy's some value into a slot
+
 /*
 * Usage Example:
 *	VarArray numbers;
@@ -33,7 +35,7 @@ Description:
 *			VarArrayLoopGet(u32, num, &numbers, numIndex);
 *			printf("[%llu] %u\n", numIndex, num);
 *		}
-*		if (numbers.length > 10 && *VarArrayGet(u32, &numbers, 9) == 42) { printf("You Win!\n"); }
+*		if (numbers.length > 10 && VarArrayGetValue(u32, &numbers, 9) == 42) { printf("You Win!\n"); }
 *		FreeVarArray(&numbers);
 *	}
 */

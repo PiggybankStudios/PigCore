@@ -538,6 +538,10 @@ PEXPI bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* index
 #include "cross/cross_string_and_unicode.h"
 #endif
 
+#if defined(_STRUCT_STRING_H) && defined(_STRUCT_TYPED_ARRAY_H)
+#include "cross/cross_string_and_typed_array.h"
+#endif
+
 #if defined(_MEM_ARENA_H) && defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
 #include "cross/cross_mem_arena_string_and_unicode.h"
 #endif
