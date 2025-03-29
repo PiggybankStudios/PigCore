@@ -91,6 +91,7 @@ void arrayStructName##_Set(arrayStructName* array, i32 index, type value)       
 	}                                                                                             \
 }
 
+//TODO: Somehow we should make it so we can add semicolon after this macro and not have the compiler complain! This would make our syntax highlighting better in Sublime
 #define DEFINE_TYPED_ARRAY(elementType, arrayStructName)     \
 typedef struct                                               \
 {                                                            \
