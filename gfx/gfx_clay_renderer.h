@@ -44,7 +44,7 @@ struct ClayUIRenderer
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE Clay_ImageElementConfig ToClayImage(Texture* texture);
-	CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText);
+	CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText);
 	void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut);
 	PIG_CORE_INLINE u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags);
 	PIG_CORE_INLINE u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags);
@@ -67,8 +67,8 @@ PEXPI Clay_ImageElementConfig ToClayImage(Texture* texture)
 // +==============================+
 // |  ClayUIRendererMeasureText   |
 // +==============================+
-// Clay_Dimensions ClayUIRendererMeasureText(Clay_StringSlice text, Clay_TextElementConfig* config, void* userData)
-PEXP CLAY_UI_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
+// Clay_Dimensions ClayUIRendererMeasureText(Str8 text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData)
+PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 {
 	ScratchBegin(scratch);
 	NotNull(userData);

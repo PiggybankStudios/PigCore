@@ -107,7 +107,7 @@
 #define CLAY__ENSURE_STRING_LITERAL(x) ("" x "")
 
 // Note: If an error led you here, it's because CLAY_STRING can only be used with string literals, i.e. CLAY_STRING("SomeString") and not CLAY_STRING(yourString)
-#define CLAY_STRING(string) (NEW_STRUCT(Clay_String) { .length = CLAY__STRING_LENGTH(CLAY__ENSURE_STRING_LITERAL(string)), .chars = (string) })
+#define CLAY_STRING(stringLiteral) NewStr8(CLAY__STRING_LENGTH(CLAY__ENSURE_STRING_LITERAL(stringLiteral)), (stringLiteral))
 
 #define CLAY_STRING_CONST(string) { .length = CLAY__STRING_LENGTH(CLAY__ENSURE_STRING_LITERAL(string)), .chars = (string) }
 
@@ -171,22 +171,6 @@ MAYBE_START_EXTERN_C
 
 // Utility Structs -------------------------
 
-// Note: Clay_String is not guaranteed to be null terminated. It may be if created from a literal C string,
-// but it is also used to represent slices.
-typedef struct {
-    int32_t length;
-    // The underlying character memory. Note: this will not be copied and will not extend the lifetime of the underlying memory.
-    const char *chars;
-} Clay_String;
-
-// Clay_StringSlice is used to represent non owning string slices, and includes
-// a baseChars field which points to the string this slice is derived from.
-typedef struct {
-    int32_t length;
-    const char *chars;
-    const char *baseChars; // The source string / char* that this slice was derived from
-} Clay_StringSlice;
-
 typedef struct Clay_Context Clay_Context;
 
 // Clay_Arena is a memory arena structure that is used by clay to manage its internal allocations.
@@ -221,7 +205,7 @@ typedef struct {
     uint32_t id; // The resulting hash generated from the other fields.
     uint32_t offset; // A numerical offset applied after computing the hash from stringId.
     uint32_t baseId; // A base hash value to start from, for example the parent element ID is used when calculating CLAY_ID_LOCAL().
-    Clay_String stringId; // The string id to hash.
+    Str8 stringId; // The string id to hash.
 } Clay_ElementId;
 
 // Controls the "radius", or corner rounding of elements, including rectangles, borders and images.
@@ -519,7 +503,7 @@ CLAY__WRAPPER_STRUCT(Clay_BorderElementConfig);
 typedef struct {
     // A string slice containing the text to be rendered.
     // Note: this is not guaranteed to be null terminated.
-    Clay_StringSlice stringContents;
+    Str8 stringContents;
     // Conventionally represented as 0-255 for each channel, but interpretation is up to the renderer.
     Clay_Color textColor;
     // An integer representing the font to use to render this text, transparently passed through from the text declaration.
@@ -771,7 +755,7 @@ typedef struct {
     // CLAY_ERROR_TYPE_INTERNAL_ERROR - Clay encountered an internal error. It would be wonderful if you could report this so we can fix it!
     Clay_ErrorType errorType;
     // A string containing human-readable error text that explains the error in more detail.
-    Clay_String errorText;
+    Str8 errorText;
     // A transparent pointer passed through from when the error handler was first provided.
     CLAY_ERROR_USERDATA_TYPE userData;
 } Clay_ErrorData;
@@ -783,6 +767,9 @@ typedef struct {
     // A pointer that will be transparently passed through to the error handler when it is called.
     CLAY_ERROR_USERDATA_TYPE userData;
 } Clay_ErrorHandler;
+
+#define CLAY_MEASURE_TEXT_DEF(functionName) Clay_Dimensions functionName(Str8 text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData)
+typedef CLAY_MEASURE_TEXT_DEF(ClayMeasureText_f);
 
 // Function Forward Declarations ---------------------------------
 
@@ -823,11 +810,11 @@ CLAY_DECOR void Clay_BeginLayout(void);
 CLAY_DECOR Clay_RenderCommandArray Clay_EndLayout(void);
 // Calculates a hash ID from the given idString.
 // Generally only used for dynamic strings when CLAY_ID("stringLiteral") can't be used.
-CLAY_DECOR Clay_ElementId Clay_GetElementId(Clay_String idString);
+CLAY_DECOR Clay_ElementId Clay_GetElementId(Str8 idString);
 // Calculates a hash ID from the given idString and index.
 // - index is used to avoid constructing dynamic ID strings in loops.
 // Generally only used for dynamic strings when CLAY_IDI("stringLiteral", index) can't be used.
-CLAY_DECOR Clay_ElementId Clay_GetElementIdWithIndex(Clay_String idString, uint32_t index);
+CLAY_DECOR Clay_ElementId Clay_GetElementIdWithIndex(Str8 idString, uint32_t index);
 // Returns layout data such as the final calculated bounding box for an element with a given ID.
 // The returned Clay_ElementData contains a `found` bool that will be true if an element with the provided ID was found.
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
@@ -848,9 +835,9 @@ CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId);
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
 CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id);
 // Binds a callback function that Clay will call to determine the dimensions of a given string slice.
-// - measureTextFunction is a user provided function that adheres to the interface Clay_Dimensions (Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
+// - measureTextFunction is a user provided function that adheres to the interface Clay_Dimensions (Str8 text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
 // - userData is a pointer that will be transparently passed through when the measureTextFunction is called.
-CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData), CLAY_MEASURE_USERDATA_TYPE userData);
+CLAY_DECOR void Clay_SetMeasureTextFunction(ClayMeasureText_f* measureTextFunction, CLAY_MEASURE_USERDATA_TYPE userData);
 // Experimental - Used in cases where Clay needs to integrate with a system that manages its own scrolling containers externally.
 // Please reach out if you plan to use this function, as it may be subject to change.
 CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData), CLAY_QUERYSCROLL_USERDATA_TYPE userData);
@@ -882,8 +869,8 @@ CLAY_DECOR void Clay_ResetMeasureTextCache(void);
 CLAY_DECOR void Clay__OpenElement(void);
 CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration config);
 CLAY_DECOR void Clay__CloseElement(void);
-CLAY_DECOR Clay_ElementId Clay__HashString(Clay_String key, uint32_t offset, uint32_t seed);
-CLAY_DECOR void Clay__OpenTextElement(Clay_String text, Clay_TextElementConfig *textConfig);
+CLAY_DECOR Clay_ElementId Clay__HashString(Str8 key, uint32_t offset, uint32_t seed);
+CLAY_DECOR void Clay__OpenTextElement(Str8 text, Clay_TextElementConfig *textConfig);
 CLAY_DECOR Clay_TextElementConfig *Clay__StoreTextElementConfig(Clay_TextElementConfig config);
 CLAY_DECOR uint32_t Clay__GetParentElementId(void);
 
@@ -985,9 +972,6 @@ void Clay__ErrorHandlerFunctionDefault(Clay_ErrorData errorText) {
     (void) errorText;
 }
 
-Clay_String CLAY__SPACECHAR = { .length = 1, .chars = " " };
-Clay_String CLAY__STRING_DEFAULT = { .length = 0, .chars = NULL };
-
 typedef struct {
     bool maxElementsExceeded;
     bool maxRenderCommandsExceeded;
@@ -996,8 +980,8 @@ typedef struct {
 } Clay_BooleanWarnings;
 
 typedef struct {
-    Clay_String baseMessage;
-    Clay_String dynamicMessage;
+    Str8 baseMessage;
+    Str8 dynamicMessage;
 } Clay__Warning;
 
 Clay__Warning CLAY__WARNING_DEFAULT = ZEROED;
@@ -1033,7 +1017,7 @@ CLAY__ARRAY_DEFINE(Clay_FloatingElementConfig, Clay__FloatingElementConfigArray)
 CLAY__ARRAY_DEFINE(Clay_CustomElementConfig, Clay__CustomElementConfigArray)
 CLAY__ARRAY_DEFINE(Clay_ScrollElementConfig, Clay__ScrollElementConfigArray)
 CLAY__ARRAY_DEFINE(Clay_BorderElementConfig, Clay__BorderElementConfigArray)
-CLAY__ARRAY_DEFINE(Clay_String, Clay__StringArray)
+CLAY__ARRAY_DEFINE(Str8, Clay__Str8Array)
 CLAY__ARRAY_DEFINE(Clay_SharedElementConfig, Clay__SharedElementConfigArray)
 CLAY__ARRAY_DEFINE_FUNCTIONS(Clay_RenderCommand, Clay_RenderCommandArray)
 
@@ -1067,13 +1051,13 @@ CLAY__ARRAY_DEFINE(Clay_ElementConfig, Clay__ElementConfigArray)
 
 typedef struct {
     Clay_Dimensions dimensions;
-    Clay_String line;
+    Str8 line;
 } Clay__WrappedTextLine;
 
 CLAY__ARRAY_DEFINE(Clay__WrappedTextLine, Clay__WrappedTextLineArray)
 
 typedef struct {
-    Clay_String text;
+    Str8 text;
     Clay_Dimensions preferredDimensions;
     int32_t elementIndex;
     Clay__WrappedTextLineArraySlice wrappedLines;
@@ -1221,7 +1205,7 @@ struct Clay_Context {
     Clay__BorderElementConfigArray borderElementConfigs;
     Clay__SharedElementConfigArray sharedElementConfigs;
     // Misc Data Structures
-    Clay__StringArray layoutElementIdStrings;
+    Clay__Str8Array layoutElementIdStrings;
     Clay__WrappedTextLineArray wrappedTextLines;
     Clay__LayoutElementTreeNodeArray layoutElementTreeNodeArray1;
     Clay__LayoutElementTreeRootArray layoutElementTreeRoots;
@@ -1253,19 +1237,19 @@ Clay_Context* Clay__Context_Allocate_Arena(Clay_Arena *arena) {
     return (Clay_Context*)(memoryAddress + nextAllocOffset);
 }
 
-Clay_String Clay__WriteStringToCharBuffer(Clay__charArray *buffer, Clay_String string) {
+Str8 Clay__WriteStringToCharBuffer(Clay__charArray *buffer, Str8 string) {
     for (int32_t i = 0; i < string.length; i++) {
         buffer->internalArray[buffer->length + i] = string.chars[i];
     }
     buffer->length += string.length;
-    return NEW_STRUCT(Clay_String) { .length = string.length, .chars = (const char *)(buffer->internalArray + buffer->length - string.length) };
+    return NewStr8(string.length, buffer->internalArray + buffer->length - string.length);
 }
 
 #ifdef CLAY_WASM
-    __attribute__((import_module("clay"), import_name("measureTextFunction"))) Clay_Dimensions Clay__MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
+    __attribute__((import_module("clay"), import_name("measureTextFunction"))) ClayMeasureText_f* Clay__MeasureText;
     __attribute__((import_module("clay"), import_name("queryScrollOffsetFunction"))) Clay_Vector2 Clay__QueryScrollOffset(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 #else
-    Clay_Dimensions (*Clay__MeasureText)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData);
+    ClayMeasureText_f* Clay__MeasureText;
     Clay_Vector2 (*Clay__QueryScrollOffset)(uint32_t elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 #endif
 
@@ -1316,10 +1300,10 @@ Clay_ElementId Clay__HashNumber(const uint32_t offset, const uint32_t seed) {
     hash += (hash << 3);
     hash ^= (hash >> 11);
     hash += (hash << 15);
-    return NEW_STRUCT(Clay_ElementId) { .id = hash + 1, .offset = offset, .baseId = seed, .stringId = CLAY__STRING_DEFAULT }; // Reserve the hash result of zero as "null id"
+    return NEW_STRUCT(Clay_ElementId) { .id = hash + 1, .offset = offset, .baseId = seed, .stringId = Str8_Empty }; // Reserve the hash result of zero as "null id"
 }
 
-CLAY_DECOR Clay_ElementId Clay__HashString(Clay_String key, const uint32_t offset, const uint32_t seed) {
+CLAY_DECOR Clay_ElementId Clay__HashString(Str8 key, const uint32_t offset, const uint32_t seed) {
     uint32_t hash = 0;
     uint32_t base = seed;
 
@@ -1342,7 +1326,7 @@ CLAY_DECOR Clay_ElementId Clay__HashString(Clay_String key, const uint32_t offse
     return NEW_STRUCT(Clay_ElementId) { .id = hash + 1, .offset = offset, .baseId = base + 1, .stringId = key }; // Reserve the hash result of zero as "null id"
 }
 
-uint32_t Clay__HashTextWithConfig(Clay_String *text, Clay_TextElementConfig *config) {
+uint32_t Clay__HashTextWithConfig(Str8 *text, Clay_TextElementConfig *config) {
     uint32_t hash = 0;
     uintptr_t pointerAsNumber = (uintptr_t)text->chars;
 
@@ -1405,7 +1389,7 @@ Clay__MeasuredWord *Clay__AddMeasuredWord(Clay__MeasuredWord word, Clay__Measure
     }
 }
 
-Clay__MeasureTextCacheItem *Clay__MeasureTextCached(Clay_String *text, Clay_TextElementConfig *config) {
+Clay__MeasureTextCacheItem *Clay__MeasureTextCached(Str8 *text, Clay_TextElementConfig *config) {
     Clay_Context* context = Clay_GetCurrentContext();
     #ifndef CLAY_WASM
     if (!Clay__MeasureText) {
@@ -1483,7 +1467,7 @@ Clay__MeasureTextCacheItem *Clay__MeasureTextCached(Clay_String *text, Clay_Text
     float lineWidth = 0;
     float measuredWidth = 0;
     float measuredHeight = 0;
-    float spaceWidth = Clay__MeasureText(NEW_STRUCT(Clay_StringSlice) { .length = 1, .chars = CLAY__SPACECHAR.chars, .baseChars = CLAY__SPACECHAR.chars }, config, context->measureTextUserData).width;
+    float spaceWidth = Clay__MeasureText(Str8_Space, config, context->measureTextUserData).width;
     Clay__MeasuredWord tempWord = { .next = -1 };
     Clay__MeasuredWord *previousWord = &tempWord;
     while (end < text->length) {
@@ -1500,7 +1484,7 @@ Clay__MeasureTextCacheItem *Clay__MeasureTextCached(Clay_String *text, Clay_Text
         char current = text->chars[end];
         if (current == ' ' || current == '\n') {
             int32_t length = end - start;
-            Clay_Dimensions dimensions = Clay__MeasureText(NEW_STRUCT(Clay_StringSlice) { .length = length, .chars = &text->chars[start], .baseChars = text->chars }, config, context->measureTextUserData);
+            Clay_Dimensions dimensions = Clay__MeasureText(StrSliceLength(*text, start, length), config, context->measureTextUserData);
             measuredHeight = MaxR32(measuredHeight, dimensions.height);
             if (current == ' ') {
                 dimensions.width += spaceWidth;
@@ -1522,7 +1506,7 @@ Clay__MeasureTextCacheItem *Clay__MeasureTextCached(Clay_String *text, Clay_Text
         end++;
     }
     if (end - start > 0) {
-        Clay_Dimensions dimensions = Clay__MeasureText(NEW_STRUCT(Clay_StringSlice) { .length = end - start, .chars = &text->chars[start], .baseChars = text->chars }, config, context->measureTextUserData);
+        Clay_Dimensions dimensions = Clay__MeasureText(StrSlice(*text, start, end), config, context->measureTextUserData);
         Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = start, .length = end - start, .width = dimensions.width, .next = -1 }, previousWord);
         lineWidth += dimensions.width;
         measuredHeight = MaxR32(measuredHeight, dimensions.height);
@@ -1607,7 +1591,7 @@ Clay_ElementId Clay__GenerateIdForAnonymousElement(Clay_LayoutElement *openLayou
     Clay_ElementId elementId = Clay__HashNumber(parentElement->childrenOrTextContent.children.length, parentElement->id);
     openLayoutElement->id = elementId.id;
     Clay__AddHashMapItem(elementId, openLayoutElement, 0);
-    Clay__StringArray_Add(&context->layoutElementIdStrings, elementId.stringId);
+    Clay__Str8Array_Add(&context->layoutElementIdStrings, elementId.stringId);
     return elementId;
 }
 
@@ -1820,7 +1804,7 @@ CLAY_DECOR void Clay__OpenElement(void) {
     }
 }
 
-CLAY_DECOR void Clay__OpenTextElement(Clay_String text, Clay_TextElementConfig *textConfig) {
+CLAY_DECOR void Clay__OpenTextElement(Str8 text, Clay_TextElementConfig *textConfig) {
     Clay_Context* context = Clay_GetCurrentContext();
     if (context->layoutElements.length == context->layoutElements.capacity - 1 || context->booleanWarnings.maxElementsExceeded) {
         context->booleanWarnings.maxElementsExceeded = true;
@@ -1841,7 +1825,7 @@ CLAY_DECOR void Clay__OpenTextElement(Clay_String text, Clay_TextElementConfig *
     Clay_ElementId elementId = Clay__HashNumber(parentElement->childrenOrTextContent.children.length, parentElement->id);
     textElement->id = elementId.id;
     Clay__AddHashMapItem(elementId, textElement, 0);
-    Clay__StringArray_Add(&context->layoutElementIdStrings, elementId.stringId);
+    Clay__Str8Array_Add(&context->layoutElementIdStrings, elementId.stringId);
     Clay_Dimensions textDimensions = { .width = textMeasured->unwrappedDimensions.width, .height = textConfig->lineHeight > 0 ? (float)textConfig->lineHeight : textMeasured->unwrappedDimensions.height };
     textElement->dimensions = textDimensions;
     textElement->minDimensions = NEW_STRUCT(Clay_Dimensions) { .width = textMeasured->unwrappedDimensions.height, .height = textDimensions.height }; // TODO not sure this is the best way to decide min width for text
@@ -1863,7 +1847,7 @@ Clay_ElementId Clay__AttachId(Clay_ElementId elementId) {
     uint32_t idAlias = openLayoutElement->id;
     openLayoutElement->id = elementId.id;
     Clay__AddHashMapItem(elementId, openLayoutElement, idAlias);
-    Clay__StringArray_Add(&context->layoutElementIdStrings, elementId.stringId);
+    Clay__Str8Array_Add(&context->layoutElementIdStrings, elementId.stringId);
     return elementId;
 }
 
@@ -2002,7 +1986,7 @@ void Clay__InitializeEphemeralMemory(Clay_Context* context) {
     context->borderElementConfigs = Clay__BorderElementConfigArray_Allocate_Arena(maxElementCount, arena);
     context->sharedElementConfigs = Clay__SharedElementConfigArray_Allocate_Arena(maxElementCount, arena);
 
-    context->layoutElementIdStrings = Clay__StringArray_Allocate_Arena(maxElementCount, arena);
+    context->layoutElementIdStrings = Clay__Str8Array_Allocate_Arena(maxElementCount, arena);
     context->wrappedTextLines = Clay__WrappedTextLineArray_Allocate_Arena(maxElementCount, arena);
     context->layoutElementTreeNodeArray1 = Clay__LayoutElementTreeNodeArray_Allocate_Arena(maxElementCount, arena);
     context->layoutElementTreeRoots = Clay__LayoutElementTreeRootArray_Allocate_Arena(maxElementCount, arena);
@@ -2242,9 +2226,9 @@ void Clay__SizeContainersAlongAxis(bool xAxis) {
     }
 }
 
-Clay_String Clay__IntToString(int32_t integer) {
+Str8 Clay__IntToString(int32_t integer) {
     if (integer == 0) {
-        return NEW_STRUCT(Clay_String) { .length = 1, .chars = "0" };
+        return NEW_STRUCT(Str8) { .length = 1, .chars = "0" };
     }
     Clay_Context* context = Clay_GetCurrentContext();
     char *chars = (char *)(context->dynamicStringData.internalArray + context->dynamicStringData.length);
@@ -2270,7 +2254,7 @@ Clay_String Clay__IntToString(int32_t integer) {
         chars[k] = temp;
     }
     context->dynamicStringData.length += length;
-    return NEW_STRUCT(Clay_String) { .length = length, .chars = chars };
+    return NEW_STRUCT(Str8) { .length = length, .chars = chars };
 }
 
 void Clay__AddRenderCommand(Clay_RenderCommand renderCommand) {
@@ -2323,7 +2307,7 @@ void Clay__CalculateFinalLayout(void) {
             textElementData->wrappedLines.length++;
             continue;
         }
-        float spaceWidth = Clay__MeasureText(NEW_STRUCT(Clay_StringSlice) { .length = 1, .chars = CLAY__SPACECHAR.chars, .baseChars = CLAY__SPACECHAR.chars }, textConfig, context->measureTextUserData).width;
+        float spaceWidth = Clay__MeasureText(Str8_Space, textConfig, context->measureTextUserData).width;
         int32_t wordIndex = measureTextCacheItem->measuredWordsStartIndex;
         while (wordIndex != -1) {
             if (context->wrappedTextLines.length > context->wrappedTextLines.capacity - 1) {
@@ -2693,7 +2677,7 @@ void Clay__CalculateFinalLayout(void) {
                                 Clay__AddRenderCommand(NEW_STRUCT(Clay_RenderCommand) {
                                     .boundingBox = boundingBox,
                                     .renderData = { .text = {
-                                        .stringContents = NEW_STRUCT(Clay_StringSlice) { .length = wrappedLine->line.length, .chars = wrappedLine->line.chars, .baseChars = currentElement->childrenOrTextContent.textElementData->text.chars },
+                                        .stringContents = wrappedLine->line,
                                         .textColor = textElementConfig->textColor,
                                         .fontId = textElementConfig->fontId,
                                         .fontSize = textElementConfig->fontSize,
@@ -2947,7 +2931,7 @@ Clay_TextElementConfig Clay__DebugView_TextNameConfig = {.textColor = {238, 226,
 Clay_LayoutConfig Clay__DebugView_ScrollViewItemLayoutConfig = ZEROED;
 
 typedef struct {
-    Clay_String label;
+    Str8 label;
     Clay_Color color;
 } Clay__DebugElementConfigTypeLabelConfig;
 
@@ -3045,7 +3029,7 @@ Clay__RenderDebugLayoutData Clay__RenderDebugLayoutElementsList(int32_t initialR
                         }
                     }
                 }
-                Clay_String idString = context->layoutElementIdStrings.internalArray[currentElementIndex];
+                Str8 idString = context->layoutElementIdStrings.internalArray[currentElementIndex];
                 if (idString.length > 0) {
                     CLAY_TEXT(idString, offscreen ? CLAY_TEXT_CONFIG({ .textColor = CLAY__DEBUGVIEW_COLOR_3, .fontSize = 16 }) : &Clay__DebugView_TextNameConfig);
                 }
@@ -3085,7 +3069,7 @@ Clay__RenderDebugLayoutData Clay__RenderDebugLayoutElementsList(int32_t initialR
                 CLAY({ .layout = { .sizing = { .height = CLAY_SIZING_FIXED(CLAY__DEBUGVIEW_ROW_HEIGHT)}, .childAlignment = { .y = CLAY_ALIGN_Y_CENTER } } }) {
                     CLAY({ .layout = { .sizing = {.width = CLAY_SIZING_FIXED(CLAY__DEBUGVIEW_INDENT_WIDTH + 16) } } }) {}
                     CLAY_TEXT(CLAY_STRING("\""), rawTextConfig);
-                    CLAY_TEXT(textElementData->text.length > 40 ? (NEW_STRUCT(Clay_String) { .length = 40, .chars = textElementData->text.chars }) : textElementData->text, rawTextConfig);
+                    CLAY_TEXT(textElementData->text.length > 40 ? (NEW_STRUCT(Str8) { .length = 40, .chars = textElementData->text.chars }) : textElementData->text, rawTextConfig);
                     if (textElementData->text.length > 40) {
                         CLAY_TEXT(CLAY_STRING("..."), rawTextConfig);
                     }
@@ -3131,7 +3115,7 @@ Clay__RenderDebugLayoutData Clay__RenderDebugLayoutElementsList(int32_t initialR
 }
 
 void Clay__RenderDebugLayoutSizing(Clay_SizingAxis sizing, Clay_TextElementConfig *infoTextConfig) {
-    Clay_String sizingLabel = CLAY_STRING("GROW");
+    Str8 sizingLabel = CLAY_STRING("GROW");
     if (sizing.type == CLAY__SIZING_TYPE_FIT) {
         sizingLabel = CLAY_STRING("FIT");
     } else if (sizing.type == CLAY__SIZING_TYPE_PERCENT) {
@@ -3155,7 +3139,7 @@ void Clay__RenderDebugLayoutSizing(Clay_SizingAxis sizing, Clay_TextElementConfi
     }
 }
 
-void Clay__RenderDebugViewElementConfigHeader(Clay_String elementId, Clay__ElementConfigType type) {
+void Clay__RenderDebugViewElementConfigHeader(Str8 elementId, Clay__ElementConfigType type) {
     Clay__DebugElementConfigTypeLabelConfig config = Clay__DebugGetElementConfigTypeLabel(type);
     Clay_Color backgroundColor = config.color;
     backgroundColor.a = 90;
@@ -3361,7 +3345,7 @@ void Clay__RenderDebugView(void) {
                     CLAY_TEXT(CLAY_STRING("Child Alignment"), infoTitleConfig);
                     CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT } }) {
                         CLAY_TEXT(CLAY_STRING("{ x: "), infoTextConfig);
-                        Clay_String alignX = CLAY_STRING("LEFT");
+                        Str8 alignX = CLAY_STRING("LEFT");
                         if (layoutConfig->childAlignment.x == CLAY_ALIGN_X_CENTER) {
                             alignX = CLAY_STRING("CENTER");
                         } else if (layoutConfig->childAlignment.x == CLAY_ALIGN_X_RIGHT) {
@@ -3369,7 +3353,7 @@ void Clay__RenderDebugView(void) {
                         }
                         CLAY_TEXT(alignX, infoTextConfig);
                         CLAY_TEXT(CLAY_STRING(", y: "), infoTextConfig);
-                        Clay_String alignY = CLAY_STRING("TOP");
+                        Str8 alignY = CLAY_STRING("TOP");
                         if (layoutConfig->childAlignment.y == CLAY_ALIGN_Y_CENTER) {
                             alignY = CLAY_STRING("CENTER");
                         } else if (layoutConfig->childAlignment.y == CLAY_ALIGN_Y_BOTTOM) {
@@ -3412,7 +3396,7 @@ void Clay__RenderDebugView(void) {
                                 CLAY_TEXT(Clay__IntToString(textConfig->letterSpacing), infoTextConfig);
                                 // .wrapMode
                                 CLAY_TEXT(CLAY_STRING("Wrap Mode"), infoTitleConfig);
-                                Clay_String wrapMode = CLAY_STRING("WORDS");
+                                Str8 wrapMode = CLAY_STRING("WORDS");
                                 if (textConfig->wrapMode == CLAY_TEXT_WRAP_NONE) {
                                     wrapMode = CLAY_STRING("NONE");
                                 } else if (textConfig->wrapMode == CLAY_TEXT_WRAP_NEWLINES) {
@@ -3421,7 +3405,7 @@ void Clay__RenderDebugView(void) {
                                 CLAY_TEXT(wrapMode, infoTextConfig);
                                 // .textAlignment
                                 CLAY_TEXT(CLAY_STRING("Text Alignment"), infoTitleConfig);
-                                Clay_String textAlignment = CLAY_STRING("LEFT");
+                                Str8 textAlignment = CLAY_STRING("LEFT");
                                 if (textConfig->textAlignment == CLAY_TEXT_ALIGN_CENTER) {
                                     textAlignment = CLAY_STRING("CENTER");
                                 } else if (textConfig->textAlignment == CLAY_TEXT_ALIGN_RIGHT) {
@@ -3548,7 +3532,7 @@ uint32_t Clay__debugViewWidth = 400;
 Clay_Color Clay__debugViewHighlightColor = { 168, 66, 28, 100 };
 
 Clay__WarningArray Clay__WarningArray_Allocate_Arena(int32_t capacity, Clay_Arena *arena) {
-    size_t totalSizeBytes = capacity * sizeof(Clay_String);
+    size_t totalSizeBytes = capacity * sizeof(Str8);
     Clay__WarningArray array = {.capacity = capacity, .length = 0};
     uintptr_t nextAllocOffset = arena->nextAllocation + (64 - (arena->nextAllocation % 64));
     if (nextAllocOffset + totalSizeBytes <= arena->capacity) {
@@ -3650,7 +3634,7 @@ CLAY_DECOR Clay_Arena Clay_CreateArenaWithCapacityAndMemory(uint32_t capacity, v
 }
 
 #ifndef CLAY_WASM
-CLAY_DECOR void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, CLAY_MEASURE_USERDATA_TYPE userData), CLAY_MEASURE_USERDATA_TYPE userData) {
+CLAY_DECOR void Clay_SetMeasureTextFunction(ClayMeasureText_f* measureTextFunction, CLAY_MEASURE_USERDATA_TYPE userData) {
     Clay_Context* context = Clay_GetCurrentContext();
     Clay__MeasureText = measureTextFunction;
     context->measureTextUserData = userData;
@@ -3962,15 +3946,15 @@ CLAY_DECOR Clay_RenderCommandArray Clay_EndLayout(void) {
         context->warningsEnabled = true;
     }
     if (context->booleanWarnings.maxElementsExceeded) {
-        Clay_String message;
+        Str8 message;
         if (!elementsExceededBeforeDebugView) {
-            message = CLAY_STRING("Clay Error: Layout elements exceeded Clay__maxElementCount after adding the debug-view to the layout.");
+            message = StrLit("Clay Error: Layout elements exceeded Clay__maxElementCount after adding the debug-view to the layout.");
         } else {
-            message = CLAY_STRING("Clay Error: Layout elements exceeded Clay__maxElementCount");
+            message = StrLit("Clay Error: Layout elements exceeded Clay__maxElementCount");
         }
         Clay__AddRenderCommand(NEW_STRUCT(Clay_RenderCommand ) {
             .boundingBox = { context->layoutDimensions.width / 2 - 59 * 4, context->layoutDimensions.height / 2, 0, 0 },
-            .renderData = { .text = { .stringContents = NEW_STRUCT(Clay_StringSlice) { .length = message.length, .chars = message.chars, .baseChars = message.chars }, .textColor = {255, 0, 0, 255}, .fontSize = 16 } },
+            .renderData = { .text = { .stringContents = message, .textColor = {255, 0, 0, 255}, .fontSize = 16 } },
             .commandType = CLAY_RENDER_COMMAND_TYPE_TEXT
         });
     } else {
@@ -3980,12 +3964,12 @@ CLAY_DECOR Clay_RenderCommandArray Clay_EndLayout(void) {
 }
 
 CLAY_WASM_EXPORT("Clay_GetElementId")
-CLAY_DECOR Clay_ElementId Clay_GetElementId(Clay_String idString) {
+CLAY_DECOR Clay_ElementId Clay_GetElementId(Str8 idString) {
     return Clay__HashString(idString, 0, 0);
 }
 
 CLAY_WASM_EXPORT("Clay_GetElementIdWithIndex")
-CLAY_DECOR Clay_ElementId Clay_GetElementIdWithIndex(Clay_String idString, uint32_t index) {
+CLAY_DECOR Clay_ElementId Clay_GetElementIdWithIndex(Str8 idString, uint32_t index) {
     return Clay__HashString(idString, index, 0);
 }
 

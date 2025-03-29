@@ -137,9 +137,11 @@ struct Str8Pair
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define Str8_Empty       NewStr8(0, nullptr)
-#define Str8_Empty_Const ((Str8)ZEROED)
-	
+#define Str8_Empty        NewStr8(0, nullptr)
+#define Str8_Empty_Const  ((Str8)ZEROED)
+#define Str8_Space        NewStr8(1, " ")
+#define Str8_Space_Const  NEW_STRUCT(Str8){ .length=1, .chars=" " }
+
 #define Slice_Empty       NewStr8(0, nullptr)
 #define Slice_Empty_Const ((Slice)ZEROED)
 

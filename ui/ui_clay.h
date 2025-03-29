@@ -80,16 +80,13 @@ struct ClayTextUserData
 #pragma warning(pop)
 #endif
 
-#define CLAY_UI_MEASURE_TEXT_DEF(functionName) Clay_Dimensions functionName(Clay_StringSlice text, Clay_TextElementConfig* config, void* userData)
-typedef CLAY_UI_MEASURE_TEXT_DEF(ClayUiMeasureText_f);
-
 //TODO: We may want to make sure that ClayUI is always accessed from the same thread it was created on!
 typedef struct ClayUI ClayUI;
 struct ClayUI
 {
 	Arena* arena;
 	Clay_Arena clayArena;
-	ClayUiMeasureText_f* measureTextFunc;
+	ClayMeasureText_f* measureTextFunc;
 	Clay_Context* context;
 };
 
@@ -105,15 +102,13 @@ typedef Clay_ElementId ClayId;
 	PIG_CORE_INLINE Clay_Dimensions ToClayDimensions(v2 vector);
 	PIG_CORE_INLINE rec ToRecFromClay(Clay_BoundingBox clayBoundingBox);
 	PIG_CORE_INLINE Clay_BoundingBox ToClayBoundingBox(rec rectangle);
-	PIG_CORE_INLINE Str8 ToStrFromClay(Clay_String clayString);
-	PIG_CORE_INLINE Clay_String ToClayString(Str8 str);
 	PIG_CORE_INLINE ClayId ToClayIdEx(Str8 idStr, uxx index);
 	PIG_CORE_INLINE ClayId ToClayId(Str8 idStr);
 	PIG_CORE_INLINE ClayId ToClayIdNt(const char* idNullTermString);
 	PIG_CORE_INLINE Color32 ToColorFromClay(Clay_Color clayColor);
 	PIG_CORE_INLINE Clay_Color ToClayColor(Color32 color);
 	void SetClayContext(ClayUI* clay);
-	void InitClayUI(Arena* arena, v2 windowSize, ClayUiMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut);
+	void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut);
 	PIG_CORE_INLINE bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling);
 	PIG_CORE_INLINE void BeginClayUIRender(ClayUI* clay, v2 windowSize, bool isMouseOverOther, v2 mousePos, bool isMouseDown);
 	PIG_CORE_INLINE Clay_RenderCommandArray EndClayUIRender(ClayUI* clay);
@@ -145,9 +140,7 @@ PEXPI Clay_Dimensions ToClayDimensions(v2 vector) { return (Clay_Dimensions){ .w
 PEXPI rec ToRecFromClay(Clay_BoundingBox clayBoundingBox) { return NewRec(clayBoundingBox.x, clayBoundingBox.y, clayBoundingBox.width, clayBoundingBox.height); }
 PEXPI Clay_BoundingBox ToClayBoundingBox(rec rectangle) { return (Clay_BoundingBox){ .x = rectangle.X, .y = rectangle.Y, .width = rectangle.Width, .height = rectangle.Height }; }
 
-PEXPI Str8 ToStrFromClay(Clay_String clayString) { return NewStr8((uxx)clayString.length, clayString.chars); }
-PEXPI Clay_String ToClayString(Str8 str) { return (Clay_String){ .length = (int32_t)str.length, .chars = str.chars }; }
-PEXPI ClayId ToClayIdEx(Str8 idStr, uxx index) { Assert(index <= UINT32_MAX); return Clay__HashString(ToClayString(idStr), (uint32_t)index, 0); }
+PEXPI ClayId ToClayIdEx(Str8 idStr, uxx index) { Assert(index <= UINT32_MAX); return Clay__HashString(idStr, (uint32_t)index, 0); }
 PEXPI ClayId ToClayId(Str8 idStr) { return ToClayIdEx(idStr, 0); }
 PEXPI ClayId ToClayIdNt(const char* idNullTermString) { return ToClayId(StrLit(idNullTermString)); }
 
@@ -164,7 +157,7 @@ PEXPI void SetClayContext(ClayUI* clay)
 	Clay_SetCurrentContext(clay->context);
 }
 
-PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayUiMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut)
+PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut)
 {
 	NotNull(measureTextFunc);
 	NotNull(clayOut);
