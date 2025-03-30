@@ -34,17 +34,17 @@ typedef struct
 // +--------------------------------------------------------------+
 // The below functions define array bounds checking and convenience functions for a provided type.
 #define DECLARE_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor)         \
-functionDecor arrayStructName arrayStructName##_Init(i32 initialCapacity, Clay_Arena* arena);    \
-functionDecor elementType* arrayStructName##_Get(arrayStructName* array, i32 index);             \
-functionDecor elementType arrayStructName##_GetValue(arrayStructName* array, i32 index);         \
+functionDecor arrayStructName arrayStructName##_Init(uxx initialCapacity, Clay_Arena* arena);    \
+functionDecor elementType* arrayStructName##_Get(arrayStructName* array, uxx index);             \
+functionDecor elementType arrayStructName##_GetValue(arrayStructName* array, uxx index);         \
 functionDecor elementType* arrayStructName##_Add(arrayStructName* array, elementType item);      \
-functionDecor elementType* arrayStructName##_GetSlice(arrayStructName##Slice* slice, i32 index); \
-functionDecor elementType arrayStructName##_RemoveSwapback(arrayStructName* array, i32 index);   \
-functionDecor void arrayStructName##_Set(arrayStructName* array, i32 index, elementType value);  \
+functionDecor elementType* arrayStructName##_GetSlice(arrayStructName##Slice* slice, uxx index); \
+functionDecor elementType arrayStructName##_RemoveSwapback(arrayStructName* array, uxx index);   \
+functionDecor void arrayStructName##_Set(arrayStructName* array, uxx index, elementType value);  \
 
 #define IMPLEMENT_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor)             \
 elementType elementType##_DEFAULT = ZEROED;                                                            \
-functionDecor arrayStructName arrayStructName##_Init(i32 initialCapacity, Clay_Arena* arena)           \
+functionDecor arrayStructName arrayStructName##_Init(uxx initialCapacity, Clay_Arena* arena)           \
 {                                                                                                      \
 	return NEW_STRUCT(arrayStructName) {                                                               \
 		.allocLength = initialCapacity,                                                                \
@@ -52,11 +52,11 @@ functionDecor arrayStructName arrayStructName##_Init(i32 initialCapacity, Clay_A
 		.items = (elementType*)AllocateTypedArray(initialCapacity, sizeof(elementType), arena)         \
 	};                                                                                                 \
 }                                                                                                      \
-functionDecor elementType* arrayStructName##_Get(arrayStructName* array, i32 index)                    \
+functionDecor elementType* arrayStructName##_Get(arrayStructName* array, uxx index)                    \
 {                                                                                                      \
 	return TypedArrayRangeCheck(index, array->length) ? &array->items[index] : &elementType##_DEFAULT; \
 }                                                                                                      \
-functionDecor elementType arrayStructName##_GetValue(arrayStructName* array, i32 index)                \
+functionDecor elementType arrayStructName##_GetValue(arrayStructName* array, uxx index)                \
 {                                                                                                      \
 	return TypedArrayRangeCheck(index, array->length) ? array->items[index] : elementType##_DEFAULT;   \
 }                                                                                                      \
@@ -69,11 +69,11 @@ functionDecor elementType* arrayStructName##_Add(arrayStructName* array, element
 	}                                                                                                  \
 	return &elementType##_DEFAULT;                                                                     \
 }                                                                                                      \
-functionDecor elementType* arrayStructName##_GetSlice(arrayStructName##Slice* slice, i32 index)        \
+functionDecor elementType* arrayStructName##_GetSlice(arrayStructName##Slice* slice, uxx index)        \
 {                                                                                                      \
     return TypedArrayRangeCheck(index, slice->length) ? &slice->items[index] : &elementType##_DEFAULT; \
 }                                                                                                      \
-functionDecor elementType arrayStructName##_RemoveSwapback(arrayStructName* array, i32 index)          \
+functionDecor elementType arrayStructName##_RemoveSwapback(arrayStructName* array, uxx index)          \
 {                                                                                                      \
 	if (TypedArrayRangeCheck(index, array->length))                                                    \
 	{                                                                                                  \
@@ -84,7 +84,7 @@ functionDecor elementType arrayStructName##_RemoveSwapback(arrayStructName* arra
 	}                                                                                                  \
 	return elementType##_DEFAULT;                                                                      \
 }                                                                                                      \
-functionDecor void arrayStructName##_Set(arrayStructName* array, i32 index, elementType value)         \
+functionDecor void arrayStructName##_Set(arrayStructName* array, uxx index, elementType value)         \
 {                                                                                                      \
 	if (TypedArrayRangeCheck(index, array->allocLength))                                               \
 	{                                                                                                  \
@@ -97,13 +97,13 @@ functionDecor void arrayStructName##_Set(arrayStructName* array, i32 index, elem
 #define DECLARE_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)   \
 typedef struct                                                                   \
 {                                                                                \
-    i32 allocLength;                                                             \
-    i32 length;                                                                  \
+    uxx length;                                                                  \
+    uxx allocLength;                                                             \
     elementType* items;                                                          \
 } arrayStructName;                                                               \
 typedef struct                                                                   \
 {                                                                                \
-    i32 length;                                                                  \
+    uxx length;                                                                  \
     elementType* items;                                                          \
 } arrayStructName##Slice;                                                        \
 DECLARE_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor) \
@@ -125,9 +125,9 @@ IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)        
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	void* AllocateTypedArray(i32 initialCapacity, u32 itemSize, Clay_Arena* arena);
-	bool TypedArrayRangeCheck(i32 index, i32 length);
-	bool TypedArrayCapacityCheck(i32 length, i32 allocLength);
+	void* AllocateTypedArray(uxx initialCapacity, uxx itemSize, Clay_Arena* arena);
+	bool TypedArrayRangeCheck(uxx index, uxx length);
+	bool TypedArrayCapacityCheck(uxx length, uxx allocLength);
 	DECLARE_TYPED_ARRAY(bool, boolArray)
 	DECLARE_TYPED_ARRAY(i32, i32Array)
 	DECLARE_TYPED_ARRAY(u32, u32Array)
@@ -143,7 +143,7 @@ IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)        
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP void* AllocateTypedArray(i32 initialCapacity, u32 itemSize, Clay_Arena* arena)
+PEXP void* AllocateTypedArray(uxx initialCapacity, uxx itemSize, Clay_Arena* arena)
 {
     size_t totalSizeBytes = initialCapacity * itemSize;
     uintptr_t nextAllocOffset = arena->nextAllocation + (64 - (arena->nextAllocation % 64));
@@ -159,14 +159,14 @@ PEXP void* AllocateTypedArray(i32 initialCapacity, u32 itemSize, Clay_Arena* are
     }
 }
 
-PEXP bool TypedArrayRangeCheck(i32 index, i32 length)
+PEXP bool TypedArrayRangeCheck(uxx index, uxx length)
 {
 	if (index < length && index >= 0) { return true; }
 	AssertMsg(index < length && index >= 0, "Clay attempted to make an out of bounds array access. This is an internal error and is likely a bug.");
 	return false;
 }
 
-PEXP bool TypedArrayCapacityCheck(i32 length, i32 allocLength)
+PEXP bool TypedArrayCapacityCheck(uxx length, uxx allocLength)
 {
 	if (length < allocLength) { return true; }
 	AssertMsg(length < allocLength, "Clay attempted to make an out of bounds array access. This is an internal error and is likely a bug.");

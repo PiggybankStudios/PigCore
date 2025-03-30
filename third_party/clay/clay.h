@@ -706,16 +706,16 @@ typedef struct Clay_RenderCommandArray Clay_RenderCommandArray;
 struct Clay_RenderCommandArray
 {
 	// The underlying max capacity of the array, not necessarily all initialized.
-	i32 allocLength;
+	uxx allocLength;
 	// The number of initialized elements in this array. Used for loops and iteration.
-	i32 length;
+	uxx length;
 	// A pointer to the first element in the internal array.
 	Clay_RenderCommand* items;
 };
 typedef struct Clay_RenderCommandArraySlice Clay_RenderCommandArraySlice;
 struct Clay_RenderCommandArraySlice
 {
-	i32 length;
+	uxx length;
 	Clay_RenderCommand* items;
 };
 
@@ -905,7 +905,7 @@ CLAY_DECOR void Clay_SetMeasureTextFunction(ClayMeasureText_f* measureTextFuncti
 // Please reach out if you plan to use this function, as it may be subject to change.
 CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(v2 (*queryScrollOffsetFunction)(u32 elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData), CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 // A bounds-checked "get" function for the Clay_RenderCommandArray returned from Clay_EndLayout().
-CLAY_DECOR Clay_RenderCommand* Clay_RenderCommandArray_Get(Clay_RenderCommandArray* array, i32 index);
+CLAY_DECOR Clay_RenderCommand* Clay_RenderCommandArray_Get(Clay_RenderCommandArray* array, uxx index);
 // Enables and disables Clay's internal debug tools.
 // This state is retained and does not need to be set each frame.
 CLAY_DECOR void Clay_SetDebugModeEnabled(bool enabled);
@@ -1424,11 +1424,11 @@ Clay__MeasuredWord* Clay__AddMeasuredWord(Clay__MeasuredWord word, Clay__Measure
 	Clay_Context* context = Clay_GetCurrentContext();
 	if (context->measuredWordsFreeList.length > 0)
 	{
-		u32 newItemIndex = i32Array_GetValue(&context->measuredWordsFreeList, (int)context->measuredWordsFreeList.length - 1);
+		i32 newItemIndex = i32Array_GetValue(&context->measuredWordsFreeList, context->measuredWordsFreeList.length - 1);
 		context->measuredWordsFreeList.length--;
-		Clay__MeasuredWordArray_Set(&context->measuredWords, (int)newItemIndex, word);
-		previousWord->next = (i32)newItemIndex;
-		return Clay__MeasuredWordArray_Get(&context->measuredWords, (int)newItemIndex);
+		Clay__MeasuredWordArray_Set(&context->measuredWords, (uxx)newItemIndex, word);
+		previousWord->next = newItemIndex;
+		return Clay__MeasuredWordArray_Get(&context->measuredWords, (uxx)newItemIndex);
 	}
 	else
 	{
@@ -1461,7 +1461,7 @@ Clay__MeasureTextCacheItem* Clay__MeasureTextCached(Str8* text, Clay_TextElement
 	i32 elementIndex = context->measureTextHashMap.items[hashBucket];
 	while (elementIndex != 0)
 	{
-		Clay__MeasureTextCacheItem* hashEntry = Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, elementIndex);
+		Clay__MeasureTextCacheItem* hashEntry = Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, (uxx)elementIndex);
 		if (hashEntry->id == id)
 		{
 			hashEntry->generation = context->generation;
@@ -1474,8 +1474,8 @@ Clay__MeasureTextCacheItem* Clay__MeasureTextCached(Str8* text, Clay_TextElement
 			i32 nextWordIndex = hashEntry->measuredWordsStartIndex;
 			while (nextWordIndex != -1)
 			{
-				Clay__MeasuredWord* measuredWord = Clay__MeasuredWordArray_Get(&context->measuredWords, nextWordIndex);
-				i32Array_Add(&context->measuredWordsFreeList, nextWordIndex);
+				Clay__MeasuredWord* measuredWord = Clay__MeasuredWordArray_Get(&context->measuredWords, (uxx)nextWordIndex);
+				i32Array_Add(&context->measuredWordsFreeList, (uxx)nextWordIndex);
 				nextWordIndex = measuredWord->next;
 			}
 			
@@ -1488,7 +1488,7 @@ Clay__MeasureTextCacheItem* Clay__MeasureTextCached(Str8* text, Clay_TextElement
 			}
 			else
 			{
-				Clay__MeasureTextCacheItem* previousHashEntry = Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, elementIndexPrevious);
+				Clay__MeasureTextCacheItem* previousHashEntry = Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, (uxx)elementIndexPrevious);
 				previousHashEntry->nextIndex = nextIndex;
 			}
 			elementIndex = nextIndex;
@@ -1507,8 +1507,8 @@ Clay__MeasureTextCacheItem* Clay__MeasureTextCached(Str8* text, Clay_TextElement
 	{
 		newItemIndex = i32Array_GetValue(&context->measureTextHashMapInternalFreeList, context->measureTextHashMapInternalFreeList.length - 1);
 		context->measureTextHashMapInternalFreeList.length--;
-		Clay__MeasureTextCacheItemArray_Set(&context->measureTextHashMapInternal, newItemIndex, newCacheItem);
-		measured = Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, newItemIndex);
+		Clay__MeasureTextCacheItemArray_Set(&context->measureTextHashMapInternal, (uxx)newItemIndex, newCacheItem);
+		measured = Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, (uxx)newItemIndex);
 	}
 	else
 	{
@@ -1595,7 +1595,7 @@ Clay__MeasureTextCacheItem* Clay__MeasureTextCached(Str8* text, Clay_TextElement
 	
 	if (elementIndexPrevious != 0)
 	{
-		Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, elementIndexPrevious)->nextIndex = newItemIndex;
+		Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, (uxx)elementIndexPrevious)->nextIndex = newItemIndex;
 	}
 	else
 	{
@@ -1619,7 +1619,7 @@ Clay_LayoutElementHashMapItem* Clay__AddHashMapItem(Clay_ElementId elementId, Cl
 	i32 hashItemIndex = context->layoutElementsHashMap.items[hashBucket];
 	while (hashItemIndex != -1) // Just replace collision, not a big deal - leave it up to the end user
 	{
-		Clay_LayoutElementHashMapItem* hashItem = Clay__LayoutElementHashMapItemArray_Get(&context->layoutElementsHashMapInternal, hashItemIndex);
+		Clay_LayoutElementHashMapItem* hashItem = Clay__LayoutElementHashMapItemArray_Get(&context->layoutElementsHashMapInternal, (uxx)hashItemIndex);
 		if (hashItem->elementId.id == elementId.id) // Collision - resolve based on generation
 		{
 			item.nextIndex = hashItem->nextIndex;
@@ -1648,7 +1648,7 @@ Clay_LayoutElementHashMapItem* Clay__AddHashMapItem(Clay_ElementId elementId, Cl
 	hashItem->debugData = Clay__DebugElementDataArray_Add(&context->debugElementData, NEW_STRUCT(Clay__DebugElementData) ZEROED);
 	if (hashItemPrevious != -1)
 	{
-		Clay__LayoutElementHashMapItemArray_Get(&context->layoutElementsHashMapInternal, hashItemPrevious)->nextIndex = (i32)context->layoutElementsHashMapInternal.length - 1;
+		Clay__LayoutElementHashMapItemArray_Get(&context->layoutElementsHashMapInternal, (uxx)hashItemPrevious)->nextIndex = (i32)context->layoutElementsHashMapInternal.length - 1;
 	}
 	else
 	{
@@ -1664,7 +1664,7 @@ Clay_LayoutElementHashMapItem* Clay__GetHashMapItem(u32 id)
 	i32 elementIndex = context->layoutElementsHashMap.items[hashBucket];
 	while (elementIndex != -1)
 	{
-		Clay_LayoutElementHashMapItem* hashEntry = Clay__LayoutElementHashMapItemArray_Get(&context->layoutElementsHashMapInternal, elementIndex);
+		Clay_LayoutElementHashMapItem* hashEntry = Clay__LayoutElementHashMapItemArray_Get(&context->layoutElementsHashMapInternal, (uxx)elementIndex);
 		if (hashEntry->elementId.id == id) { return hashEntry; }
 		elementIndex = hashEntry->nextIndex;
 	}
@@ -1738,10 +1738,10 @@ CLAY_DECOR void Clay__CloseElement(void) {
 	if (layoutConfig->layoutDirection == CLAY_LEFT_TO_RIGHT)
 	{
 		openLayoutElement->dimensions.Width = (r32)(layoutConfig->padding.left + layoutConfig->padding.right);
-		for (i32 i = 0; i < openLayoutElement->childrenOrTextContent.children.length; i++)
+		for (uxx i = 0; i < openLayoutElement->childrenOrTextContent.children.length; i++)
 		{
-			i32 childIndex = i32Array_GetValue(&context->layoutElementChildrenBuffer, (int)context->layoutElementChildrenBuffer.length - openLayoutElement->childrenOrTextContent.children.length + i);
-			Clay_LayoutElement* child = Clay_LayoutElementArray_Get(&context->layoutElements, childIndex);
+			i32 childIndex = i32Array_GetValue(&context->layoutElementChildrenBuffer, context->layoutElementChildrenBuffer.length - openLayoutElement->childrenOrTextContent.children.length + i);
+			Clay_LayoutElement* child = Clay_LayoutElementArray_Get(&context->layoutElements, (uxx)childIndex);
 			openLayoutElement->dimensions.Width += child->dimensions.Width;
 			openLayoutElement->dimensions.Height = MaxR32(openLayoutElement->dimensions.Height, child->dimensions.Height + layoutConfig->padding.top + layoutConfig->padding.bottom);
 			// Minimum size of child elements doesn't matter to scroll containers as they can shrink and hide their contents
@@ -1762,10 +1762,10 @@ CLAY_DECOR void Clay__CloseElement(void) {
 	else if (layoutConfig->layoutDirection == CLAY_TOP_TO_BOTTOM)
 	{
 		openLayoutElement->dimensions.Height = (r32)(layoutConfig->padding.top + layoutConfig->padding.bottom);
-		for (i32 i = 0; i < openLayoutElement->childrenOrTextContent.children.length; i++)
+		for (uxx i = 0; i < openLayoutElement->childrenOrTextContent.children.length; i++)
 		{
-			i32 childIndex = i32Array_GetValue(&context->layoutElementChildrenBuffer, (int)context->layoutElementChildrenBuffer.length - openLayoutElement->childrenOrTextContent.children.length + i);
-			Clay_LayoutElement* child = Clay_LayoutElementArray_Get(&context->layoutElements, childIndex);
+			i32 childIndex = i32Array_GetValue(&context->layoutElementChildrenBuffer, context->layoutElementChildrenBuffer.length - openLayoutElement->childrenOrTextContent.children.length + i);
+			Clay_LayoutElement* child = Clay_LayoutElementArray_Get(&context->layoutElements, (uxx)childIndex);
 			openLayoutElement->dimensions.Height += child->dimensions.Height;
 			openLayoutElement->dimensions.Width = MaxR32(openLayoutElement->dimensions.Width, child->dimensions.Width + layoutConfig->padding.left + layoutConfig->padding.right);
 			// Minimum size of child elements doesn't matter to scroll containers as they can shrink and hide their contents
