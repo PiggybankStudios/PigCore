@@ -1,0 +1,86 @@
+/*
+File:   clay_arrays.h
+Author: Taylor Robbins
+Date:   03\31\2025
+Description: 
+	** Holds declaration of the typed arrays that clay uses
+	** Was a piece of original clay.h (zlib LICENSE attached below)
+*/
+
+#ifndef _CLAY_ARRAYS_H
+#define _CLAY_ARRAYS_H
+
+bool Clay__Array_RangeCheck(i32 index, i32 length);
+bool Clay__Array_AddCapacityCheck(i32 length, i32 allocLength);
+
+typedef struct Clay__Warning Clay__Warning;
+DECLARE_TYPED_ARRAY(Clay__Warning, Clay__WarningArray)
+
+typedef struct Clay_RenderCommand Clay_RenderCommand;
+DECLARE_TYPED_ARRAY(Clay_RenderCommand, Clay_RenderCommandArray)
+
+#ifdef CLAY_IMPLEMENTATION
+
+typedef struct Clay_ElementId Clay_ElementId;
+DECLARE_TYPED_ARRAY(Clay_ElementId, Clay__ElementIdArray)
+
+typedef struct Clay_LayoutConfig Clay_LayoutConfig;
+DECLARE_TYPED_ARRAY(Clay_LayoutConfig, Clay__LayoutConfigArray)
+
+typedef struct Clay_TextElementConfig Clay_TextElementConfig;
+DECLARE_TYPED_ARRAY(Clay_TextElementConfig, Clay__TextElementConfigArray)
+
+typedef struct Clay_ImageElementConfig Clay_ImageElementConfig;
+DECLARE_TYPED_ARRAY(Clay_ImageElementConfig, Clay__ImageElementConfigArray)
+
+typedef struct Clay_FloatingElementConfig Clay_FloatingElementConfig;
+DECLARE_TYPED_ARRAY(Clay_FloatingElementConfig, Clay__FloatingElementConfigArray)
+
+typedef struct Clay_CustomElementConfig Clay_CustomElementConfig;
+DECLARE_TYPED_ARRAY(Clay_CustomElementConfig, Clay__CustomElementConfigArray)
+
+typedef struct Clay_ScrollElementConfig Clay_ScrollElementConfig;
+DECLARE_TYPED_ARRAY(Clay_ScrollElementConfig, Clay__ScrollElementConfigArray)
+
+typedef struct Clay_BorderElementConfig Clay_BorderElementConfig;
+DECLARE_TYPED_ARRAY(Clay_BorderElementConfig, Clay__BorderElementConfigArray)
+
+typedef struct Clay_SharedElementConfig Clay_SharedElementConfig;
+DECLARE_TYPED_ARRAY(Clay_SharedElementConfig, Clay__SharedElementConfigArray)
+
+typedef struct Clay_ElementConfig Clay_ElementConfig;
+DECLARE_TYPED_ARRAY(Clay_ElementConfig, Clay__ElementConfigArray)
+
+typedef struct Clay__WrappedTextLine Clay__WrappedTextLine;
+DECLARE_TYPED_ARRAY(Clay__WrappedTextLine, Clay__WrappedTextLineArray)
+
+typedef struct Clay__TextElementData Clay__TextElementData;
+DECLARE_TYPED_ARRAY(Clay__TextElementData, Clay__TextElementDataArray)
+
+typedef struct Clay_LayoutElement Clay_LayoutElement;
+DECLARE_TYPED_ARRAY(Clay_LayoutElement, Clay_LayoutElementArray)
+
+typedef struct Clay__ScrollContainerDataInternal Clay__ScrollContainerDataInternal;
+DECLARE_TYPED_ARRAY(Clay__ScrollContainerDataInternal, Clay__ScrollContainerDataInternalArray)
+
+typedef struct Clay__DebugElementData Clay__DebugElementData;
+DECLARE_TYPED_ARRAY(Clay__DebugElementData, Clay__DebugElementDataArray)
+
+typedef struct Clay_LayoutElementHashMapItem Clay_LayoutElementHashMapItem;
+DECLARE_TYPED_ARRAY(Clay_LayoutElementHashMapItem, Clay__LayoutElementHashMapItemArray)
+
+typedef struct Clay__MeasuredWord Clay__MeasuredWord;
+DECLARE_TYPED_ARRAY(Clay__MeasuredWord, Clay__MeasuredWordArray)
+
+typedef struct Clay__MeasureTextCacheItem Clay__MeasureTextCacheItem;
+DECLARE_TYPED_ARRAY(Clay__MeasureTextCacheItem, Clay__MeasureTextCacheItemArray)
+
+typedef struct Clay__LayoutElementTreeNode Clay__LayoutElementTreeNode;
+DECLARE_TYPED_ARRAY(Clay__LayoutElementTreeNode, Clay__LayoutElementTreeNodeArray)
+
+typedef struct Clay__LayoutElementTreeRoot Clay__LayoutElementTreeRoot;
+DECLARE_TYPED_ARRAY(Clay__LayoutElementTreeRoot, Clay__LayoutElementTreeRootArray)
+
+#endif //CLAY_IMPLEMENTATION
+
+#endif //  _CLAY_ARRAYS_H

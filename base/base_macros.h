@@ -34,6 +34,8 @@ Description:
 //Actual Value of sqrt(2): 1.4142135623730950488016887242096...
 #define Sqrt2_64           1.41421356237309514547462185874      //accurate to 15 digits
 #define Sqrt2_32           1.41421353816986083984375f           //accurate to 7 digits
+#define HugeR32            3.40282346638528859812e+38F          //aka FLT_MAX or __FLT_MAX__, the largest finite float that can be represented by a 32-bit float
+#define NegativeHugeR32    1.17549435082228750797e-38F          //the smallest (as in most negative) float that can be represented by a 32-bit float
 
 // Used mostly by enum to string conversion functions when passed a value that is not valid in the enumeration
 #define UNKNOWN_STR  "Unknown"
@@ -71,7 +73,9 @@ Description:
 // Either v1 == c1 and v2 == c2 OR v2 = c1 and v1 == c2
 #define IsEqualXor(variable1, variable2, condition1, condition2) (((variable1) == (condition1) && (variable2) == (condition2)) || ((variable1) == (condition2) && (variable2) == (condition1)))
 
-#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+#define ArrayCount(array) (sizeof(array) / sizeof((array)[0]))
+// Similar to ArrayCount, but used on String Literals who's length includes the null-terminating character
+#define StrLitLength(strLit) ((sizeof(strLit) / sizeof((strLit)[0])) - sizeof((strLit)[0]))
 
 // Macros used to check or modify specific bit(s) in a field, the pattern of using individual bits as booleans is often referred to as "flags"
 #define IsFlagSet(BitwiseField, Bit) ((Bit) != 0 && ((BitwiseField) & (Bit)) == (Bit))
@@ -124,6 +128,9 @@ Description:
 #ifndef STRINGIFY
 #define STRINGIFY(text)          #text
 #endif
+
+//This is used to make sure a macro parameters is a string literal, not just a pointer, by checking to see if it implicitly concatenates with empty strings
+#define CheckStrLit(stringLiteral) ("" stringLiteral "")
 
 #define INDEX_FROM_COORD2D(coordX, coordY, arrayWidth, arrayHeight) ( \
 	(coordY) * (arrayWidth) +                                         \
