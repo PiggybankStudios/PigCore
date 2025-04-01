@@ -16,11 +16,6 @@
 **   #define MD_IMPL_Memset             (void*, int, uint64) -> void*
 **   #define MD_IMPL_Memmove            (void*, void*, uint64) -> void*
 **
-**  "file iteration" ** OPTIONAL (required for the metadesk FileIter helpers to work)
-**   #define MD_IMPL_FileIterBegin      (MD_FileIter*, MD_String8) -> Boolean
-**   #define MD_IMPL_FileIterNext       (MD_Arena*, MD_FileIter*) -> MD_FileInfo
-**   #define MD_IMPL_FileIterEnd        (MD_FileIter*) -> void
-**
 **  "file load" ** OPTIONAL (required for MD_ParseWholeFile to work)
 **   #define MD_IMPL_LoadEntireFile     (MD_Arena*, MD_String8 filename) -> MD_String8   
 **
@@ -57,7 +52,6 @@
 **  These controls default to '1' i.e. 'enabled'
 **   #define MD_DEFAULT_BASIC_TYPES -> construct "basic types" from stdint.h header
 **   #define MD_DEFAULT_MEMSET    -> construct "memset" from CRT
-**   #define MD_DEFAULT_FILE_ITER -> construct "file iteration" from OS headers
 **   #define MD_DEFAULT_MEMORY    -> construct "low level memory" from OS headers
 **   #define MD_DEFAULT_ARENA     -> construct "arena" from "low level memory"
 **   #define MD_DEFAULT_SCRATCH   -> construct "scratch" from "arena"
@@ -129,109 +123,6 @@ MD_CRT_LoadEntireFile(MD_Arena *arena, MD_String8 filename)
 /////////////////////////// Win32 Implementation ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-//- win32 header
-#if (MD_DEFAULT_FILE_ITER || MD_2DEFAULT_MEMORY) && MD_OS_WINDOWS
-# include <Windows.h>
-# pragma comment(lib, "User32.lib")
-#endif
-
-//- win32 "file iteration"
-#if MD_DEFAULT_FILE_ITER && MD_OS_WINDOWS
-
-#if !defined(MD_IMPL_FileIterBegin)
-# define MD_IMPL_FileIterBegin MD_WIN32_FileIterBegin
-#endif
-#if !defined(MD_IMPL_FileIterNext)
-# define MD_IMPL_FileIterNext MD_WIN32_FileIterNext
-#endif
-#if !defined(MD_IMPL_FileIterEnd)
-# define MD_IMPL_FileIterEnd MD_WIN32_FileIterEnd
-#endif
-
-typedef struct MD_WIN32_FileIter{
-    HANDLE state;
-    MD_u64 first;
-    WIN32_FIND_DATAW find_data;
-} MD_WIN32_FileIter;
-
-MD_StaticAssert(sizeof(MD_FileIter) >= sizeof(MD_WIN32_FileIter), file_iter_size_check);
-
-static MD_b32
-MD_WIN32_FileIterBegin(MD_FileIter *it, MD_String8 path)
-{
-    //- init search
-    MD_ArenaTemp scratch = MD_GetScratch(0, 0);
-    
-    MD_u8 c = path.str[path.size - 1];
-    MD_b32 need_star = (c == '/' || c == '\\');
-    MD_String8 cpath = need_star ? MD_S8Fmt(scratch.arena, "%.*s*", MD_S8VArg(path)) : path;
-    MD_String16 cpath16 = MD_S16FromS8(scratch.arena, cpath);
-    
-    WIN32_FIND_DATAW find_data = MD_ZERO_STRUCT;
-    HANDLE state = FindFirstFileW((WCHAR*)cpath16.str, &find_data);
-    
-    MD_ReleaseScratch(scratch);
-    
-    //- fill results
-    MD_b32 result = !!state;
-    if (result)
-    {
-        MD_WIN32_FileIter *win32_it = (MD_WIN32_FileIter*)it; 
-        win32_it->state = state;
-        win32_it->first = 1;
-        MD_MemoryCopy(&win32_it->find_data, &find_data, sizeof(find_data));
-    }
-    return(result);
-}
-
-static MD_FileInfo
-MD_WIN32_FileIterNext(MD_Arena *arena, MD_FileIter *it)
-{
-    //- get low-level file info for this step
-    MD_b32 good = 0;
-    
-    MD_WIN32_FileIter *win32_it = (MD_WIN32_FileIter*)it; 
-    WIN32_FIND_DATAW *find_data = &win32_it->find_data;
-    if (win32_it->first)
-    {
-        win32_it->first = 0;
-        good = 1;
-    }
-    else
-    {
-        good = FindNextFileW(win32_it->state, find_data);
-    }
-    
-    //- convert to MD_FileInfo
-    MD_FileInfo result = {0};
-    if (good)
-    {
-        if (find_data->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-        {
-            result.flags |= MD_FileFlag_Directory;
-        }
-        MD_u16 *filename_base = (MD_u16*)find_data->cFileName;
-        MD_u16 *ptr = filename_base;
-        for (;*ptr != 0; ptr += 1);
-        MD_String16 filename16 = {0};
-        filename16.str = filename_base;
-        filename16.size = (MD_u64)(ptr - filename_base);
-        result.filename = MD_S8FromS16(arena, filename16);
-        result.file_size = ((((MD_u64)find_data->nFileSizeHigh) << 32) |
-                            ((MD_u64)find_data->nFileSizeLow));
-    }
-    return(result);
-}
-
-static void
-MD_WIN32_FileIterEnd(MD_FileIter *it)
-{
-    MD_WIN32_FileIter *win32_it = (MD_WIN32_FileIter*)it; 
-    FindClose(win32_it->state);
-}
-
-#endif
-
 //- win32 "low level memory"
 #if MD_DEFAULT_MEMORY && MD_OS_WINDOWS
 
@@ -282,92 +173,13 @@ MD_WIN32_Release(void *ptr, MD_u64 size)
 ////////////////////////////////////////////////////////////////////////////////
 
 //- linux headers
-#if (MD_DEFAULT_FILE_ITER || MD_DEFAULT_MEMORY) && (MD_OS_LINUX || MD_OS_MAC)
+#if MD_DEFAULT_MEMORY && (MD_OS_LINUX || MD_OS_MAC)
 # include <dirent.h>
 # include <sys/stat.h>
 # include <fcntl.h>
 # include <unistd.h>
 # include <sys/syscall.h>
 # include <sys/mman.h>
-// NOTE(mal): To get these constants I need to #define _GNU_SOURCE,
-// which invites non-POSIX behavior I'd rather avoid
-# ifndef O_PATH
-#  define O_PATH                010000000
-# endif
-# ifndef AT_NO_AUTOMOUNT
-#  define AT_NO_AUTOMOUNT        0x800
-# endif
-# ifndef AT_SYMLINK_NOFOLLOW
-#  define AT_SYMLINK_NOFOLLOW    0x100
-# endif
-#endif
-
-//- linux "file iteration"
-#if MD_DEFAULT_FILE_ITER && MD_OS_LINUX
-
-#if !defined(MD_IMPL_FileIterIncrement)
-# define MD_IMPL_FileIterIncrement MD_LINUX_FileIterIncrement
-#endif
-
-typedef struct MD_LINUX_FileIter MD_LINUX_FileIter;
-struct MD_LINUX_FileIter
-{
-    int dir_fd;
-    DIR *dir;
-};
-MD_StaticAssert(sizeof(MD_LINUX_FileIter) <= sizeof(MD_FileIter), file_iter_size_check);
-
-static MD_b32
-MD_LINUX_FileIterIncrement(MD_Arena *arena, MD_FileIter *opaque_it, MD_String8 path,
-                           MD_FileInfo *out_info)
-{
-    MD_b32 result = 0;
-    
-    MD_LINUX_FileIter *it = (MD_LINUX_FileIter *)opaque_it;
-    if(it->dir == 0)
-    {
-        it->dir = opendir((char*)path.str);
-        it->dir_fd = open((char *)path.str, O_PATH|O_CLOEXEC);
-    }
-    
-    if(it->dir != 0 && it->dir_fd != -1)
-    {
-        struct dirent *dir_entry = readdir(it->dir);
-        if(dir_entry)
-        {
-            out_info->filename = MD_S8Fmt(arena, "%s", dir_entry->d_name);
-            out_info->flags = 0;
-            
-            struct stat st; 
-            if(fstatat(it->dir_fd, dir_entry->d_name, &st, AT_NO_AUTOMOUNT|AT_SYMLINK_NOFOLLOW) == 0)
-            {
-                if((st.st_mode & S_IFMT) == S_IFDIR)
-                {
-                    out_info->flags |= MD_FileFlag_Directory;
-                }
-                out_info->file_size = st.st_size;
-            }
-            result = 1;
-        }
-    }
-    
-    if(result == 0)
-    {
-        if(it->dir != 0)
-        {
-            closedir(it->dir);
-            it->dir = 0;
-        }
-        if(it->dir_fd != -1)
-        {
-            close(it->dir_fd);
-            it->dir_fd = -1;
-        }
-    }
-    
-    return result;
-}
-
 #endif
 
 //- linux "low level memory"
@@ -4409,35 +4221,6 @@ MD_LoadEntireFile(MD_Arena *arena, MD_String8 filename)
     result = MD_IMPL_LoadEntireFile(arena, filename);
 #endif
     return(result);
-}
-
-MD_FUNCTION MD_b32
-MD_FileIterBegin(MD_FileIter *it, MD_String8 path)
-{
-#if !defined(MD_IMPL_FileIterBegin)
-    return(0);
-#else
-    return(MD_IMPL_FileIterBegin(it, path));
-#endif
-}
-
-MD_FUNCTION MD_FileInfo
-MD_FileIterNext(MD_Arena *arena, MD_FileIter *it)
-{
-#if !defined(MD_IMPL_FileIterNext)
-    MD_FileInfo result = {0};
-    return(result);
-#else
-    return(MD_IMPL_FileIterNext(arena, it));
-#endif
-}
-
-MD_FUNCTION void
-MD_FileIterEnd(MD_FileIter *it)
-{
-#if defined(MD_IMPL_FileIterEnd)
-    MD_IMPL_FileIterEnd(it);
-#endif
 }
 
 #endif // MD_C

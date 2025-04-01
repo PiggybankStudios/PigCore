@@ -58,7 +58,6 @@ typedef r64 MD_f64;
 
 #define MD_DISABLE_PRINT_HELPERS 1
 
-// TODO: #define MD_DEFAULT_FILE_ITER 0
 // TODO: #define MD_DEFAULT_ARENA 0
 // TODO: #define MD_DEFAULT_SCRATCH 0
 

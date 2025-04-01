@@ -68,9 +68,6 @@
 #if !defined(MD_DEFAULT_FILE_LOAD)
 # define MD_DEFAULT_FILE_LOAD 1
 #endif
-#if !defined(MD_DEFAULT_FILE_ITER)
-# define MD_DEFAULT_FILE_ITER 1
-#endif
 #if !defined(MD_DEFAULT_MEMORY)
 # define MD_DEFAULT_MEMORY 1
 #endif
@@ -917,13 +914,6 @@ struct MD_FileInfo
     MD_u64 file_size;
 };
 
-typedef struct MD_FileIter MD_FileIter;
-struct MD_FileIter
-{
-    // This is opaque state to store OS-specific file-system iteration data.
-    MD_u8 opaque[640];
-};
-
 //~/////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////// Functions ///////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1234,9 +1224,6 @@ MD_FUNCTION MD_i64 MD_CmdLineI64FromString(MD_CmdLine cmdln, MD_String8 name);
 //~ File System
 
 MD_FUNCTION MD_String8  MD_LoadEntireFile(MD_Arena *arena, MD_String8 filename);
-MD_FUNCTION MD_b32      MD_FileIterBegin(MD_FileIter *it, MD_String8 path);
-MD_FUNCTION MD_FileInfo MD_FileIterNext(MD_Arena *arena, MD_FileIter *it);
-MD_FUNCTION void        MD_FileIterEnd(MD_FileIter *it);
 
 #endif // MD_H
 
