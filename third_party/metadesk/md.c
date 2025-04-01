@@ -1,4 +1,7 @@
 // LICENSE AT END OF FILE (MIT).
+// WARNING: Modifications have been made to this version that resides in PigCore.
+//  Please refer to the official Metadesk repository for an unmodified version of this file!
+//  https://github.com/ryanfleury/metadesk
 
 /* 
 ** Overrides & Options Macros

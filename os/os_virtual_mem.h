@@ -31,6 +31,7 @@ Description:
 	uxx OsGetMemoryPageSize();
 	void* OsReserveMemory(uxx numBytes);
 	void OsCommitReservedMemory(void* memoryPntr, uxx numBytes);
+	void OsDecommitReservedMemory(void* memoryPntr, uxx committedSize);
 	void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize);
 #endif //!PIG_CORE_IMPLEMENTATION
 
@@ -151,9 +152,37 @@ PEXP void OsCommitReservedMemory(void* memoryPntr, uxx numBytes)
 	#endif
 }
 
+PEXP void OsDecommitReservedMemory(void* memoryPntr, uxx committedSize)
+{
+	Assert((memoryPntr == nullptr) == (committedSize == 0));
+	if (memoryPntr == nullptr) { return; }
+	
+	uxx pageSize = OsGetMemoryPageSize();
+	Assert((uxx)memoryPntr % pageSize == 0);
+	Assert(committedSize % pageSize == 0);
+	
+	#if TARGET_IS_WINDOWS
+	{
+		BOOL freeResult = VirtualFree(
+			memoryPntr, //lpAddress
+			committedSize, //dwSize
+			MEM_DECOMMIT //dwFreeType
+		);
+		Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
+	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	{
+		//TODO: Do either of these return anything that we should Assert on?
+	    mprotect(memoryPntr, committedSize, PROT_NONE);
+	    madvise(memoryPntr, committedSize, MADV_DONTNEED);
+	}
+	#else
+	AssertMsg(false, "OsFreeReservedMemory is not supported on the current TARGET!");
+	#endif
+}
+
 PEXP void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 {
-	Assert((memoryPntr == nullptr) == (reservedSize == 0));
 	if (memoryPntr == nullptr) { return; }
 	
 	uxx pageSize = OsGetMemoryPageSize();
@@ -171,13 +200,10 @@ PEXP void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
+		Assert((memoryPntr == nullptr) == (reservedSize == 0)); //NOTE: This Assert is not true on Windows! There are scenarios where you want the reservedSize to be 0 for VirtualAlloc to succeed
 		int unmapResult = munmap(memoryPntr, reservedSize);
 		Assert(unmapResult == 0); //TODO: Handle errors, check errno and return an OsError_t
 	}
-	// #elif OSX_COMPILATION
-	// {
-	// 	SetOptionalOutPntr(errorOut, OsError_UnsupportedPlatform);
-	// }
 	#else
 	AssertMsg(false, "OsFreeReservedMemory is not supported on the current TARGET!");
 	#endif

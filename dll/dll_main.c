@@ -48,6 +48,9 @@ Description:
 #ifndef PIG_CORE_DLL_INCLUDE_PHYS
 #define PIG_CORE_DLL_INCLUDE_PHYS 1
 #endif
+#ifndef PIG_CORE_DLL_INCLUDE_PARSE
+#define PIG_CORE_DLL_INCLUDE_PARSE 1
+#endif
 
 #include "base/base_compiler_check.h"
 #include "base/base_defines_check.h"
@@ -110,6 +113,10 @@ Description:
 
 #if PIG_CORE_DLL_INCLUDE_PHYS
 #include "phys/phys_all.h"
+#endif
+
+#if PIG_CORE_DLL_INCLUDE_PARSE
+#include "parse/parse_all.h"
 #endif
 
 //TODO: Do we want a DllMain for any reason?

@@ -78,5 +78,7 @@ Description:
 #define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib
 #define BUILD_WITH_PHYSX     0
+// Enables using Metadesk library to parse Metadesk formatted files (md.h and md.c)
+#define BUILD_WITH_METADESK  0
 
 #endif //  _BUILD_CONFIG_H

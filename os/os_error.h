@@ -43,6 +43,7 @@ PEXP const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 		case ERROR_ACCESS_DENIED:        return "ERROR_ACCESS_DENIED";        //5
 		case ERROR_SHARING_VIOLATION:    return "ERROR_SHARING_VIOLATION";    //32
 		case ERROR_FILE_EXISTS:          return "ERROR_FILE_EXISTS";          //80
+		case ERROR_INVALID_PARAMETER:    return "ERROR_INVALID_PARAMETER";    //87
 		case ERROR_MOD_NOT_FOUND:        return "ERROR_MOD_NOT_FOUND";        //126
 		case ERROR_ALREADY_EXISTS:       return "ERROR_ALREADY_EXISTS";       //183
 		case ERROR_PIPE_BUSY:            return "ERROR_PIPE_BUSY";            //231

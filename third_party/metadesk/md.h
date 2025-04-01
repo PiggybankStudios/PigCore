@@ -1,4 +1,7 @@
 // LICENSE AT END OF FILE (MIT).
+// WARNING: Modifications have been made to this version that resides in PigCore.
+//  Please refer to the official Metadesk repository for an unmodified version of this file!
+//  https://github.com/ryanfleury/metadesk
 
 /*
 ** Welcome to Metadesk!
@@ -329,14 +332,14 @@
 
 //~ Basic Utilities
 
-#define MD_Assert(c) if (!(c)) { *(volatile MD_u64 *)0 = 0; }
+// #define MD_Assert(c) if (!(c)) { *(volatile MD_u64 *)0 = 0; }
 #define MD_StaticAssert(c,label) MD_u8 MD_static_assert_##label[(c)?(1):(-1)]
-#define MD_ArrayCount(a) (sizeof(a) / sizeof((a)[0]))
+// #define MD_ArrayCount(a) (sizeof(a) / sizeof((a)[0]))
 
-#define MD_Min(a,b) (((a)<(b))?(a):(b))
-#define MD_Max(a,b) (((a)>(b))?(a):(b))
-#define MD_ClampBot(a,b) MD_Max(a,b)
-#define MD_ClampTop(a,b) MD_Min(a,b)
+// #define MD_Min(a,b) (((a)<(b))?(a):(b))
+// #define MD_Max(a,b) (((a)>(b))?(a):(b))
+// #define MD_ClampBot(a,b) MD_Max(a,b)
+// #define MD_ClampTop(a,b) MD_Min(a,b)
 
 #define MD_AlignPow2(x,b) (((x)+((b)-1))&(~((b)-1)))
 
