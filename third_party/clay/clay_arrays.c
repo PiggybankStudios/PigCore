@@ -10,30 +10,6 @@ Description:
 //Clay__WarningArray is implemented in clay.h as part of the public API
 //Clay_RenderCommandArray is implemented in clay.h as part of the public API
 
-bool Clay__Array_RangeCheck(i32 index, i32 length)
-{
-	if (index < length && index >= 0) { return true; }
-	Clay_Context* context = Clay_GetCurrentContext();
-	context->errorHandler.errorHandlerFunction(NEW_STRUCT(Clay_ErrorData) {
-		.errorType = CLAY_ERROR_TYPE_INTERNAL_ERROR,
-		.errorText = CLAY_STRING("Clay attempted to make an out of bounds array access. This is an internal error and is likely a bug."),
-		.userData = context->errorHandler.userData
-	});
-	return false;
-}
-
-bool Clay__Array_AddCapacityCheck(i32 length, i32 allocLength)
-{
-	if (length < allocLength) { return true; }
-	Clay_Context* context = Clay_GetCurrentContext();
-	context->errorHandler.errorHandlerFunction(NEW_STRUCT(Clay_ErrorData) {
-		.errorType = CLAY_ERROR_TYPE_INTERNAL_ERROR,
-		.errorText = CLAY_STRING("Clay attempted to make an out of bounds array access. This is an internal error and is likely a bug."),
-		.userData = context->errorHandler.userData
-	});
-	return false;
-}
-
 IMPLEMENT_TYPED_ARRAY(Clay_ElementId, Clay__ElementIdArray)
 
 IMPLEMENT_TYPED_ARRAY(Clay_LayoutConfig, Clay__LayoutConfigArray)

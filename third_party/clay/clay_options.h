@@ -12,12 +12,6 @@ Description:
 
 //NOTE: Define CLAY_IMPLEMENTATION in one compilation unit before including clay.h
 
-#ifdef CLAY_WASM
-#define CLAY_WASM_EXPORT(name) __attribute__((export_name(name)))
-#else
-#define CLAY_WASM_EXPORT(null)
-#endif
-
 #ifndef CLAY_DECOR
 #define CLAY_DECOR //nothing
 #endif

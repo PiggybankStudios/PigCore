@@ -10,9 +10,6 @@ Description:
 #ifndef _CLAY_ARRAYS_H
 #define _CLAY_ARRAYS_H
 
-bool Clay__Array_RangeCheck(i32 index, i32 length);
-bool Clay__Array_AddCapacityCheck(i32 length, i32 allocLength);
-
 typedef struct Clay__Warning Clay__Warning;
 DECLARE_TYPED_ARRAY(Clay__Warning, Clay__WarningArray)
 

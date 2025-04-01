@@ -7,40 +7,6 @@ Description:
 	** Was a piece of original clay.h (zlib LICENSE attached below)
 */
 
-CLAY_WASM_EXPORT("Clay_MinMemorySize")
-CLAY_DECOR u32 Clay_MinMemorySize(void)
-{
-	Clay_Context fakeContext = {
-		.maxElementCount = Clay__defaultMaxElementCount,
-		.maxMeasureTextCacheWordCount = Clay__defaultMaxMeasureTextWordCacheCount,
-		.internalArena = {
-			.capacity = SIZE_MAX,
-			.memory = NULL,
-		}
-	};
-	Clay_Context* currentContext = Clay_GetCurrentContext();
-	if (currentContext)
-	{
-		fakeContext.maxElementCount = currentContext->maxElementCount;
-		fakeContext.maxMeasureTextCacheWordCount = currentContext->maxElementCount;
-	}
-	// Reserve space in the arena for the context, important for calculating min memory size correctly
-	Clay__Context_Init(&fakeContext.internalArena);
-	Clay__InitializePersistentMemory(&fakeContext);
-	Clay__InitializeEphemeralMemory(&fakeContext);
-	return fakeContext.internalArena.nextAllocation + 128;
-}
-
-CLAY_WASM_EXPORT("Clay_CreateArenaWithCapacityAndMemory")
-CLAY_DECOR Clay_Arena Clay_CreateArenaWithCapacityAndMemory(u32 capacity, void* memory)
-{
-	Clay_Arena arena = {
-		.capacity = capacity,
-		.memory = (char*)memory
-	};
-	return arena;
-}
-
 #ifndef CLAY_WASM
 CLAY_DECOR void Clay_SetMeasureTextFunction(ClayMeasureText_f* measureTextFunction, CLAY_MEASURE_USERDATA_TYPE userData)
 {
@@ -56,13 +22,13 @@ CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(v2 (*queryScrollOffsetFunction
 }
 #endif
 
-CLAY_WASM_EXPORT("Clay_SetLayoutDimensions")
+WASM_EXPORT("Clay_SetLayoutDimensions")
 CLAY_DECOR void Clay_SetLayoutDimensions(v2 dimensions)
 {
 	Clay_GetCurrentContext()->layoutDimensions = dimensions;
 }
 
-CLAY_WASM_EXPORT("Clay_SetPointerState")
+WASM_EXPORT("Clay_SetPointerState")
 CLAY_DECOR void Clay_SetPointerState(v2 position, bool isPointerDown)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
@@ -155,11 +121,11 @@ CLAY_DECOR void Clay_SetPointerState(v2 position, bool isPointerDown)
 	}
 }
 
-CLAY_WASM_EXPORT("Clay_Initialize")
-CLAY_DECOR Clay_Context* Clay_Initialize(Clay_Arena arena, v2 layoutDimensions, Clay_ErrorHandler errorHandler)
+WASM_EXPORT("Clay_Initialize")
+CLAY_DECOR Clay_Context* Clay_Initialize(Arena* arena, v2 layoutDimensions, Clay_ErrorHandler errorHandler)
 {
-	Clay_Context* context = Clay__Context_Init(&arena);
-	if (context == NULL) { return NULL; }
+	Clay_Context* context = AllocType(Clay_Context, arena);
+	if (context == nullptr) { return nullptr; }
 	// DEFAULTS
 	Clay_Context* oldContext = Clay_GetCurrentContext();
 	*context = NEW_STRUCT(Clay_Context) {
@@ -185,19 +151,19 @@ CLAY_DECOR Clay_Context* Clay_Initialize(Clay_Arena arena, v2 layoutDimensions, 
 	return context;
 }
 
-CLAY_WASM_EXPORT("Clay_GetCurrentContext")
+WASM_EXPORT("Clay_GetCurrentContext")
 CLAY_DECOR Clay_Context* Clay_GetCurrentContext(void)
 {
 	return Clay__currentContext;
 }
 
-CLAY_WASM_EXPORT("Clay_SetCurrentContext")
+WASM_EXPORT("Clay_SetCurrentContext")
 CLAY_DECOR void Clay_SetCurrentContext(Clay_Context* context)
 {
 	Clay__currentContext = context;
 }
 
-CLAY_WASM_EXPORT("Clay_UpdateScrollContainers")
+WASM_EXPORT("Clay_UpdateScrollContainers")
 CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, v2 scrollDelta, r32 deltaTime)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
@@ -375,10 +341,11 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, v2 scrollD
 	return isAutoScrollingOccurring;
 }
 
-CLAY_WASM_EXPORT("Clay_BeginLayout")
+WASM_EXPORT("Clay_BeginLayout")
 CLAY_DECOR void Clay_BeginLayout(void)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
+	Clay__FreeEphemeralMemory(context);
 	Clay__InitializeEphemeralMemory(context);
 	context->generation++;
 	context->dynamicElementIndex = 0;
@@ -395,7 +362,7 @@ CLAY_DECOR void Clay_BeginLayout(void)
 	Clay__LayoutElementTreeRootArray_Add(&context->layoutElementTreeRoots, NEW_STRUCT(Clay__LayoutElementTreeRoot) { .layoutElementIndex = 0 });
 }
 
-CLAY_WASM_EXPORT("Clay_EndLayout")
+WASM_EXPORT("Clay_EndLayout")
 CLAY_DECOR Clay_RenderCommandArray Clay_EndLayout(void)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
@@ -431,13 +398,13 @@ CLAY_DECOR Clay_RenderCommandArray Clay_EndLayout(void)
 	return context->renderCommands;
 }
 
-CLAY_WASM_EXPORT("Clay_GetElementId")
+WASM_EXPORT("Clay_GetElementId")
 CLAY_DECOR Clay_ElementId Clay_GetElementId(Str8 idString)
 {
 	return Clay__HashString(idString, 0, 0);
 }
 
-CLAY_WASM_EXPORT("Clay_GetElementIdWithIndex")
+WASM_EXPORT("Clay_GetElementIdWithIndex")
 CLAY_DECOR Clay_ElementId Clay_GetElementIdWithIndex(Str8 idString, u32 index)
 {
 	return Clay__HashString(idString, index, 0);
@@ -474,7 +441,7 @@ CLAY_DECOR void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, C
 	hashMapItem->hoverFunctionUserData = userData;
 }
 
-CLAY_WASM_EXPORT("Clay_PointerOver")
+WASM_EXPORT("Clay_PointerOver")
 CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId) // TODO return priority for separating multiple results
 {
 	Clay_Context* context = Clay_GetCurrentContext();
@@ -488,7 +455,7 @@ CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId) // TODO return priori
 	return false;
 }
 
-CLAY_WASM_EXPORT("Clay_GetScrollContainerData")
+WASM_EXPORT("Clay_GetScrollContainerData")
 CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
@@ -514,7 +481,7 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
 	return NEW_STRUCT(Clay_ScrollContainerData) ZEROED;
 }
 
-CLAY_WASM_EXPORT("Clay_GetElementData")
+WASM_EXPORT("Clay_GetElementData")
 CLAY_DECOR Clay_ElementData Clay_GetElementData(Clay_ElementId id)
 {
 	Clay_LayoutElementHashMapItem* item = Clay__GetHashMapItem(id.id);
@@ -529,42 +496,42 @@ CLAY_DECOR Clay_ElementData Clay_GetElementData(Clay_ElementId id)
 	};
 }
 
-CLAY_WASM_EXPORT("Clay_SetDebugModeEnabled")
+WASM_EXPORT("Clay_SetDebugModeEnabled")
 CLAY_DECOR void Clay_SetDebugModeEnabled(bool enabled)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
 	context->debugModeEnabled = enabled;
 }
 
-CLAY_WASM_EXPORT("Clay_IsDebugModeEnabled")
+WASM_EXPORT("Clay_IsDebugModeEnabled")
 CLAY_DECOR bool Clay_IsDebugModeEnabled(void)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
 	return context->debugModeEnabled;
 }
 
-CLAY_WASM_EXPORT("Clay_SetCullingEnabled")
+WASM_EXPORT("Clay_SetCullingEnabled")
 CLAY_DECOR void Clay_SetCullingEnabled(bool enabled)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
 	context->disableCulling = !enabled;
 }
 
-CLAY_WASM_EXPORT("Clay_SetExternalScrollHandlingEnabled")
+WASM_EXPORT("Clay_SetExternalScrollHandlingEnabled")
 void Clay_SetExternalScrollHandlingEnabled(bool enabled)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
 	context->externalScrollHandlingEnabled = enabled;
 }
 
-CLAY_WASM_EXPORT("Clay_GetMaxElementCount")
+WASM_EXPORT("Clay_GetMaxElementCount")
 CLAY_DECOR i32 Clay_GetMaxElementCount(void)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
 	return context->maxElementCount;
 }
 
-CLAY_WASM_EXPORT("Clay_SetMaxElementCount")
+WASM_EXPORT("Clay_SetMaxElementCount")
 CLAY_DECOR void Clay_SetMaxElementCount(i32 maxElementCount)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
@@ -579,14 +546,14 @@ CLAY_DECOR void Clay_SetMaxElementCount(i32 maxElementCount)
 	}
 }
 
-CLAY_WASM_EXPORT("Clay_GetMaxMeasureTextCacheWordCount")
+WASM_EXPORT("Clay_GetMaxMeasureTextCacheWordCount")
 CLAY_DECOR i32 Clay_GetMaxMeasureTextCacheWordCount(void)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
 	return context->maxMeasureTextCacheWordCount;
 }
 
-CLAY_WASM_EXPORT("Clay_SetMaxMeasureTextCacheWordCount")
+WASM_EXPORT("Clay_SetMaxMeasureTextCacheWordCount")
 CLAY_DECOR void Clay_SetMaxMeasureTextCacheWordCount(i32 maxMeasureTextCacheWordCount)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
@@ -600,7 +567,7 @@ CLAY_DECOR void Clay_SetMaxMeasureTextCacheWordCount(i32 maxMeasureTextCacheWord
 	}
 }
 
-CLAY_WASM_EXPORT("Clay_ResetMeasureTextCache")
+WASM_EXPORT("Clay_ResetMeasureTextCache")
 CLAY_DECOR void Clay_ResetMeasureTextCache(void)
 {
 	Clay_Context* context = Clay_GetCurrentContext();

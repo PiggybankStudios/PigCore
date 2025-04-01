@@ -252,6 +252,12 @@ Description:
 	//TODO: Figure out how to do IMPORT on other platforms
 #endif
 
+#if TARGET_IS_WASM
+	#define WASM_EXPORT(exportName) __attribute__((export_name(exportName)))
+#else
+	#define WASM_EXPORT(exportName) //nothing
+#endif
+
 #endif //  _BASE_MACROS_H
 
 // +--------------------------------------------------------------+

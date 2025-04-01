@@ -85,7 +85,6 @@ typedef struct ClayUI ClayUI;
 struct ClayUI
 {
 	Arena* arena;
-	Clay_Arena clayArena;
 	ClayMeasureText_f* measureTextFunc;
 	Clay_Context* context;
 };
@@ -145,13 +144,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureText
 	clayOut->arena = arena;
 	clayOut->measureTextFunc = measureTextFunc;
 	
-	u32 minMemory = Clay_MinMemorySize();
-	Assert(minMemory > 0);
-	u8* clayMemory = (u8*)AllocMem(arena, minMemory);
-	NotNull(clayMemory);
-	clayOut->clayArena = Clay_CreateArenaWithCapacityAndMemory(minMemory, clayMemory);
-	
-	clayOut->context = Clay_Initialize(clayOut->clayArena, windowSize, (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
+	clayOut->context = Clay_Initialize(arena, windowSize, (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
 	
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
 }

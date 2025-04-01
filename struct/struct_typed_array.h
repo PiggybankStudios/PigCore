@@ -19,22 +19,15 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
-
-// Clay_Arena is a memory arena structure that is used by clay to manage its internal allocations.
-// Rather than creating it by hand, it's easier to use Clay_CreateArenaWithCapacityAndMemory()
-typedef struct
-{
-    uintptr_t nextAllocation;
-    size_t capacity;
-    char* memory;
-} Clay_Arena;
+#include "mem/mem_arena.h"
 
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
 // The below functions define array bounds checking and convenience functions for a provided type.
 #define DECLARE_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor)         \
-functionDecor arrayStructName arrayStructName##_Init(uxx initialCapacity, Clay_Arena* arena);    \
+functionDecor void arrayStructName##_Free(arrayStructName* array, Arena* arena);                 \
+functionDecor arrayStructName arrayStructName##_Init(uxx initialCapacity, Arena* arena);         \
 functionDecor elementType* arrayStructName##_Get(arrayStructName* array, uxx index);             \
 functionDecor elementType arrayStructName##_GetValue(arrayStructName* array, uxx index);         \
 functionDecor elementType* arrayStructName##_Add(arrayStructName* array, elementType item);      \
@@ -44,12 +37,24 @@ functionDecor void arrayStructName##_Set(arrayStructName* array, uxx index, elem
 
 #define IMPLEMENT_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor)             \
 elementType elementType##_DEFAULT = ZEROED;                                                            \
-functionDecor arrayStructName arrayStructName##_Init(uxx initialCapacity, Clay_Arena* arena)           \
+functionDecor void arrayStructName##_Free(arrayStructName* array, Arena* arena)                        \
+{                                                                                                      \
+	NotNull(array);                                                                                    \
+	NotNull(arena);                                                                                    \
+	if (array->items != nullptr)                                                                       \
+	{                                                                                                  \
+		if (CanArenaFree(arena)) { FreeArray(elementType, arena, array->allocLength, array->items); }  \
+		array->items = nullptr;                                                                        \
+	}                                                                                                  \
+	array->allocLength = 0;                                                                            \
+	array->length = 0;                                                                                 \
+}                                                                                                      \
+functionDecor arrayStructName arrayStructName##_Init(uxx initialCapacity, Arena* arena)                \
 {                                                                                                      \
 	return NEW_STRUCT(arrayStructName) {                                                               \
 		.allocLength = initialCapacity,                                                                \
 		.length = 0,                                                                                   \
-		.items = (elementType*)AllocateTypedArray(initialCapacity, sizeof(elementType), arena)         \
+		.items = AllocArray(elementType, arena, initialCapacity)                                       \
 	};                                                                                                 \
 }                                                                                                      \
 functionDecor elementType* arrayStructName##_Get(arrayStructName* array, uxx index)                    \
@@ -125,7 +130,6 @@ IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)        
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	void* AllocateTypedArray(uxx initialCapacity, uxx itemSize, Clay_Arena* arena);
 	bool TypedArrayRangeCheck(uxx index, uxx length);
 	bool TypedArrayCapacityCheck(uxx length, uxx allocLength);
 	DECLARE_TYPED_ARRAY(bool, boolArray)
@@ -142,22 +146,6 @@ IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)        
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
-
-PEXP void* AllocateTypedArray(uxx initialCapacity, uxx itemSize, Clay_Arena* arena)
-{
-    size_t totalSizeBytes = initialCapacity * itemSize;
-    uintptr_t nextAllocOffset = arena->nextAllocation + (64 - (arena->nextAllocation % 64));
-    if (nextAllocOffset + totalSizeBytes <= arena->capacity)
-    {
-        arena->nextAllocation = nextAllocOffset + totalSizeBytes;
-        return (void*)((uintptr_t)arena->memory + (uintptr_t)nextAllocOffset);
-    }
-    else
-    {
-    	AssertMsg(false, "Clay attempted to allocate memory in its arena, but ran out of capacity. Try increasing the capacity of the arena passed to Clay_Initialize()");
-	    return nullptr;
-    }
-}
 
 PEXP bool TypedArrayRangeCheck(uxx index, uxx length)
 {

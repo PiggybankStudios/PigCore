@@ -7,20 +7,6 @@ Description:
 	** Was a piece of original clay.h (zlib LICENSE attached below)
 */
 
-Clay_Context* Clay__Context_Init(Clay_Arena* arena)
-{
-	size_t totalSizeBytes = sizeof(Clay_Context);
-	uintptr_t memoryAddress = (uintptr_t)arena->memory;
-	// Make sure the memory address passed in for clay to use is cache line aligned
-	uintptr_t nextAllocOffset = (memoryAddress % 64);
-	if (nextAllocOffset + totalSizeBytes > arena->capacity)
-	{
-		return NULL;
-	}
-	arena->nextAllocation = nextAllocOffset + totalSizeBytes;
-	return (Clay_Context*)(memoryAddress + nextAllocOffset);
-}
-
 Str8 Clay__WriteStringToCharBuffer(charArray* buffer, Str8 string)
 {
 	for (i32 i = 0; i < string.length; i++)
@@ -866,42 +852,73 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
 	}
 }
 
+//TODO: We really should push all these arenas over to use a Scratch arena
 void Clay__InitializeEphemeralMemory(Clay_Context* context)
 {
 	i32 maxElementCount = context->maxElementCount;
 	// Ephemeral Memory - reset every frame
-	Clay_Arena* arena = &context->internalArena;
-	arena->nextAllocation = context->arenaResetOffset;
 	
-	context->layoutElementChildrenBuffer = i32Array_Init(maxElementCount, arena);
-	context->layoutElements = Clay_LayoutElementArray_Init(maxElementCount, arena);
-	context->warnings = Clay__WarningArray_Init(100, arena);
+	context->layoutElementChildrenBuffer = i32Array_Init(maxElementCount, context->internalArena);
+	context->layoutElements = Clay_LayoutElementArray_Init(maxElementCount, context->internalArena);
+	context->warnings = Clay__WarningArray_Init(100, context->internalArena);
 	
-	context->layoutConfigs = Clay__LayoutConfigArray_Init(maxElementCount, arena);
-	context->elementConfigs = Clay__ElementConfigArray_Init(maxElementCount, arena);
-	context->textElementConfigs = Clay__TextElementConfigArray_Init(maxElementCount, arena);
-	context->imageElementConfigs = Clay__ImageElementConfigArray_Init(maxElementCount, arena);
-	context->floatingElementConfigs = Clay__FloatingElementConfigArray_Init(maxElementCount, arena);
-	context->scrollElementConfigs = Clay__ScrollElementConfigArray_Init(maxElementCount, arena);
-	context->customElementConfigs = Clay__CustomElementConfigArray_Init(maxElementCount, arena);
-	context->borderElementConfigs = Clay__BorderElementConfigArray_Init(maxElementCount, arena);
-	context->sharedElementConfigs = Clay__SharedElementConfigArray_Init(maxElementCount, arena);
+	context->layoutConfigs = Clay__LayoutConfigArray_Init(maxElementCount, context->internalArena);
+	context->elementConfigs = Clay__ElementConfigArray_Init(maxElementCount, context->internalArena);
+	context->textElementConfigs = Clay__TextElementConfigArray_Init(maxElementCount, context->internalArena);
+	context->imageElementConfigs = Clay__ImageElementConfigArray_Init(maxElementCount, context->internalArena);
+	context->floatingElementConfigs = Clay__FloatingElementConfigArray_Init(maxElementCount, context->internalArena);
+	context->scrollElementConfigs = Clay__ScrollElementConfigArray_Init(maxElementCount, context->internalArena);
+	context->customElementConfigs = Clay__CustomElementConfigArray_Init(maxElementCount, context->internalArena);
+	context->borderElementConfigs = Clay__BorderElementConfigArray_Init(maxElementCount, context->internalArena);
+	context->sharedElementConfigs = Clay__SharedElementConfigArray_Init(maxElementCount, context->internalArena);
 	
-	context->layoutElementIdStrings = Str8Array_Init(maxElementCount, arena);
-	context->wrappedTextLines = Clay__WrappedTextLineArray_Init(maxElementCount, arena);
-	context->layoutElementTreeNodeArray1 = Clay__LayoutElementTreeNodeArray_Init(maxElementCount, arena);
-	context->layoutElementTreeRoots = Clay__LayoutElementTreeRootArray_Init(maxElementCount, arena);
-	context->layoutElementChildren = i32Array_Init(maxElementCount, arena);
-	context->openLayoutElementStack = i32Array_Init(maxElementCount, arena);
-	context->textElementData = Clay__TextElementDataArray_Init(maxElementCount, arena);
-	context->imageElementPointers = i32Array_Init(maxElementCount, arena);
-	context->renderCommands = Clay_RenderCommandArray_Init(maxElementCount, arena);
-	context->treeNodeVisited = boolArray_Init(maxElementCount, arena);
+	context->layoutElementIdStrings = Str8Array_Init(maxElementCount, context->internalArena);
+	context->wrappedTextLines = Clay__WrappedTextLineArray_Init(maxElementCount, context->internalArena);
+	context->layoutElementTreeNodeArray1 = Clay__LayoutElementTreeNodeArray_Init(maxElementCount, context->internalArena);
+	context->layoutElementTreeRoots = Clay__LayoutElementTreeRootArray_Init(maxElementCount, context->internalArena);
+	context->layoutElementChildren = i32Array_Init(maxElementCount, context->internalArena);
+	context->openLayoutElementStack = i32Array_Init(maxElementCount, context->internalArena);
+	context->textElementData = Clay__TextElementDataArray_Init(maxElementCount, context->internalArena);
+	context->imageElementPointers = i32Array_Init(maxElementCount, context->internalArena);
+	context->renderCommands = Clay_RenderCommandArray_Init(maxElementCount, context->internalArena);
+	context->treeNodeVisited = boolArray_Init(maxElementCount, context->internalArena);
 	context->treeNodeVisited.length = context->treeNodeVisited.allocLength; // This array is accessed directly rather than behaving as a list
-	context->openClipElementStack = i32Array_Init(maxElementCount, arena);
-	context->reusableElementIndexBuffer = i32Array_Init(maxElementCount, arena);
-	context->layoutElementClipElementIds = i32Array_Init(maxElementCount, arena);
-	context->dynamicStringData = charArray_Init(maxElementCount, arena);
+	context->openClipElementStack = i32Array_Init(maxElementCount, context->internalArena);
+	context->reusableElementIndexBuffer = i32Array_Init(maxElementCount, context->internalArena);
+	context->layoutElementClipElementIds = i32Array_Init(maxElementCount, context->internalArena);
+	context->dynamicStringData = charArray_Init(maxElementCount, context->internalArena);
+}
+
+void Clay__FreeEphemeralMemory(Clay_Context* context)
+{
+	i32Array_Free(&context->layoutElementChildrenBuffer, context->internalArena);
+	Clay_LayoutElementArray_Free(&context->layoutElements, context->internalArena);
+	Clay__WarningArray_Free(&context->warnings, context->internalArena);
+	
+	Clay__LayoutConfigArray_Free(&context->layoutConfigs, context->internalArena);
+	Clay__ElementConfigArray_Free(&context->elementConfigs, context->internalArena);
+	Clay__TextElementConfigArray_Free(&context->textElementConfigs, context->internalArena);
+	Clay__ImageElementConfigArray_Free(&context->imageElementConfigs, context->internalArena);
+	Clay__FloatingElementConfigArray_Free(&context->floatingElementConfigs, context->internalArena);
+	Clay__ScrollElementConfigArray_Free(&context->scrollElementConfigs, context->internalArena);
+	Clay__CustomElementConfigArray_Free(&context->customElementConfigs, context->internalArena);
+	Clay__BorderElementConfigArray_Free(&context->borderElementConfigs, context->internalArena);
+	Clay__SharedElementConfigArray_Free(&context->sharedElementConfigs, context->internalArena);
+	
+	Str8Array_Free(&context->layoutElementIdStrings, context->internalArena);
+	Clay__WrappedTextLineArray_Free(&context->wrappedTextLines, context->internalArena);
+	Clay__LayoutElementTreeNodeArray_Free(&context->layoutElementTreeNodeArray1, context->internalArena);
+	Clay__LayoutElementTreeRootArray_Free(&context->layoutElementTreeRoots, context->internalArena);
+	i32Array_Free(&context->layoutElementChildren, context->internalArena);
+	i32Array_Free(&context->openLayoutElementStack, context->internalArena);
+	Clay__TextElementDataArray_Free(&context->textElementData, context->internalArena);
+	i32Array_Free(&context->imageElementPointers, context->internalArena);
+	Clay_RenderCommandArray_Free(&context->renderCommands, context->internalArena);
+	boolArray_Free(&context->treeNodeVisited, context->internalArena);
+	i32Array_Free(&context->openClipElementStack, context->internalArena);
+	i32Array_Free(&context->reusableElementIndexBuffer, context->internalArena);
+	i32Array_Free(&context->layoutElementClipElementIds, context->internalArena);
+	charArray_Free(&context->dynamicStringData, context->internalArena);
 }
 
 void Clay__InitializePersistentMemory(Clay_Context* context)
@@ -909,19 +926,17 @@ void Clay__InitializePersistentMemory(Clay_Context* context)
 	// Persistent memory - initialized once and not reset
 	i32 maxElementCount = context->maxElementCount;
 	i32 maxMeasureTextCacheWordCount = context->maxMeasureTextCacheWordCount;
-	Clay_Arena* arena = &context->internalArena;
 	
-	context->scrollContainerDatas = Clay__ScrollContainerDataInternalArray_Init(10, arena);
-	context->layoutElementsHashMapInternal = Clay__LayoutElementHashMapItemArray_Init(maxElementCount, arena);
-	context->layoutElementsHashMap = i32Array_Init(maxElementCount, arena);
-	context->measureTextHashMapInternal = Clay__MeasureTextCacheItemArray_Init(maxElementCount, arena);
-	context->measureTextHashMapInternalFreeList = i32Array_Init(maxElementCount, arena);
-	context->measuredWordsFreeList = i32Array_Init(maxMeasureTextCacheWordCount, arena);
-	context->measureTextHashMap = i32Array_Init(maxElementCount, arena);
-	context->measuredWords = Clay__MeasuredWordArray_Init(maxMeasureTextCacheWordCount, arena);
-	context->pointerOverIds = Clay__ElementIdArray_Init(maxElementCount, arena);
-	context->debugElementData = Clay__DebugElementDataArray_Init(maxElementCount, arena);
-	context->arenaResetOffset = arena->nextAllocation;
+	context->scrollContainerDatas = Clay__ScrollContainerDataInternalArray_Init(10, context->internalArena);
+	context->layoutElementsHashMapInternal = Clay__LayoutElementHashMapItemArray_Init(maxElementCount, context->internalArena);
+	context->layoutElementsHashMap = i32Array_Init(maxElementCount, context->internalArena);
+	context->measureTextHashMapInternal = Clay__MeasureTextCacheItemArray_Init(maxElementCount, context->internalArena);
+	context->measureTextHashMapInternalFreeList = i32Array_Init(maxElementCount, context->internalArena);
+	context->measuredWordsFreeList = i32Array_Init(maxMeasureTextCacheWordCount, context->internalArena);
+	context->measureTextHashMap = i32Array_Init(maxElementCount, context->internalArena);
+	context->measuredWords = Clay__MeasuredWordArray_Init(maxMeasureTextCacheWordCount, context->internalArena);
+	context->pointerOverIds = Clay__ElementIdArray_Init(maxElementCount, context->internalArena);
+	context->debugElementData = Clay__DebugElementDataArray_Init(maxElementCount, context->internalArena);
 }
 
 void Clay__CompressChildrenAlongAxis(bool xAxis, r32 totalSizeToDistribute, i32Array resizableContainerBuffer)

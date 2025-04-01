@@ -872,10 +872,9 @@ struct Clay_Context
 	bool externalScrollHandlingEnabled;
 	u32 debugSelectedElementId;
 	u32 generation;
-	uintptr_t arenaResetOffset;
 	CLAY_MEASURE_USERDATA_TYPE measureTextUserData;
 	CLAY_QUERYSCROLL_USERDATA_TYPE queryScrollOffsetUserData;
-	Clay_Arena internalArena;
+	Arena* internalArena;
 	// Layout Elements / Render Commands
 	Clay_LayoutElementArray layoutElements;
 	Clay_RenderCommandArray renderCommands;

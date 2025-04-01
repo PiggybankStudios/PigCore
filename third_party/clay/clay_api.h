@@ -12,13 +12,6 @@ Description:
 
 MAYBE_START_EXTERN_C
 
-// Returns the size, in bytes, of the minimum amount of memory Clay requires to operate at its current settings.
-CLAY_DECOR u32 Clay_MinMemorySize(void);
-// Creates an arena for clay to use for its internal allocations, given a certain capacity in bytes and a pointer to an allocation of at least that size.
-// Intended to be used with Clay_MinMemorySize in the following way:
-// u32 minMemoryRequired = Clay_MinMemorySize();
-// Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(minMemoryRequired, malloc(minMemoryRequired));
-CLAY_DECOR Clay_Arena Clay_CreateArenaWithCapacityAndMemory(u32 capacity, void* memory);
 // Sets the state of the "pointer" (i.e. the mouse or touch) in Clay's internal data. Used for detecting and responding to mouse events in the debug view,
 // as well as for Clay_Hovered() and scroll element handling.
 CLAY_DECOR void Clay_SetPointerState(v2 position, bool pointerDown);
@@ -26,7 +19,7 @@ CLAY_DECOR void Clay_SetPointerState(v2 position, bool pointerDown);
 // - arena can be created using Clay_CreateArenaWithCapacityAndMemory()
 // - layoutDimensions are the initial bounding dimensions of the layout (i.e. the screen width and height for a full screen layout)
 // - errorHandler is used by Clay to inform you if something has gone wrong in configuration or layout.
-CLAY_DECOR Clay_Context* Clay_Initialize(Clay_Arena arena, v2 layoutDimensions, Clay_ErrorHandler errorHandler);
+CLAY_DECOR Clay_Context* Clay_Initialize(Arena* arena, v2 layoutDimensions, Clay_ErrorHandler errorHandler);
 // Returns the Context that clay is currently using. Used when using multiple instances of clay simultaneously.
 CLAY_DECOR Clay_Context* Clay_GetCurrentContext(void);
 // Sets the context that clay will use to compute the layout.
