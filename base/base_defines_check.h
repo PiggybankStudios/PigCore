@@ -31,6 +31,10 @@ Description:
 #define PIG_CORE_BUILDING_AS_DLL 0
 #endif
 
+#ifndef BUILD_FOR_PIGGEN
+#define BUILD_FOR_PIGGEN 0
+#endif
+
 //NOTE: PEXP stands for "PigCore Export", PEXPI stands for PEXP + PIG_CORE_INLINE
 #if PIG_CORE_BUILDING_AS_DLL
 	#if COMPILER_IS_MSVC
@@ -48,15 +52,27 @@ Description:
 #endif
 
 // +--------------------------------------------------------------+
+// |                        PIGGEN Macros                         |
+// +--------------------------------------------------------------+
+#ifndef PIGGEN
+#define PIGGEN 0
+#endif
+#if (PIGGEN)
+#error PIGGEN was set to a true value! This will cause all the PIGGEN blocks to get compiled as C code which is not intended!
+#endif
+#ifndef PIGGEN_TAG
+#define PIGGEN_TAG(...) //nothing
+#endif
+#ifndef PIGGEN_INLINE
+#define PIGGEN_INLINE(...) //nothing
+#endif
+
+// +--------------------------------------------------------------+
 // |                  tests build_config Options                  |
 // +--------------------------------------------------------------+
 
 #ifndef USE_EMSCRIPTEN
 #define USE_EMSCRIPTEN 0
-#endif
-
-#ifndef BUILD_FOR_PIGGEN
-#define BUILD_FOR_PIGGEN 0
 #endif
 
 #ifndef BUILD_WITH_RAYLIB

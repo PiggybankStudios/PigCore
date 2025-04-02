@@ -805,7 +805,7 @@ MD_S8Match(MD_String8 a, MD_String8 b, MD_MatchFlags flags)
 MD_FUNCTION MD_u64
 MD_S8FindSubstring(MD_String8 str, MD_String8 substring, MD_u64 start_pos, MD_MatchFlags flags)
 {
-    MD_b32 found = 0;
+    // MD_b32 found = 0;
     MD_u64 found_idx = str.size;
     for(MD_u64 i = start_pos; i < str.size; i += 1)
     {
@@ -815,7 +815,7 @@ MD_S8FindSubstring(MD_String8 str, MD_String8 substring, MD_u64 start_pos, MD_Ma
             if(MD_S8Match(substr_from_str, substring, flags))
             {
                 found_idx = i;
-                found = 1;
+                // found = 1;
                 if(!(flags & MD_MatchFlag_FindLast))
                 {
                     break;
@@ -2616,7 +2616,7 @@ MD_ParseOneNode(MD_Arena *arena, MD_String8 string, MD_u64 offset)
                 case MD_TokenKind_BadCharacter:
                 {
                     MD_String8List bytes = {0};
-                    for(int i_byte = 0; i_byte < bad_token.raw_string.size; ++i_byte)
+                    for(MD_u64 i_byte = 0; i_byte < bad_token.raw_string.size; ++i_byte)
                     {
                         MD_u8 b = bad_token.raw_string.str[i_byte];
                         MD_S8ListPush(arena, &bytes, MD_CStyleHexStringFromU64(arena, b, 1));

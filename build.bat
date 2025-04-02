@@ -300,7 +300,7 @@ if "%BUILD_PIGGEN%"=="1" (
 if "%RUN_PIGGEN%"=="1" (
 	echo.
 	echo [%piggen_exe_path%]
-	%piggen_exe_path% %root%
+	%piggen_exe_path% %root% -o="gen/" -e="%root%/third_party" -e="%root%/piggen" -e="%root%/wasm/std" -e="%root%/.git" -e="%root%/_scripts" -e="%root%/_media" -e="%root%/_template" -e="%root%/base/base_defines_check.h"
 )
 
 :: +--------------------------------------------------------------+

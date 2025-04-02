@@ -405,7 +405,7 @@
 
 #include <stdarg.h>
 
-#if defined(MD_DEFAULT_BASIC_TYPES)
+#if MD_DEFAULT_BASIC_TYPES
 
 #include <stdint.h>
 typedef int8_t   MD_i8;

@@ -371,7 +371,7 @@ PEXP bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared a
 	{
 		MyMemCopy(newSpace, array->items, array->length * array->itemSize);
 	}
-	if (array->items != nullptr)
+	if (array->items != nullptr && CanArenaFree(array->arena))
 	{
 		if (CanArenaAllocAligned(array->arena))
 		{
