@@ -55,6 +55,10 @@ Description:
 #define USE_EMSCRIPTEN 0
 #endif
 
+#ifndef BUILD_FOR_PIGGEN
+#define BUILD_FOR_PIGGEN 0
+#endif
+
 #ifndef BUILD_WITH_RAYLIB
 #define BUILD_WITH_RAYLIB 0
 #endif

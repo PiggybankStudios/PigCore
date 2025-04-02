@@ -22,16 +22,16 @@ Description:
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS 1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   0
+#define BUILD_LINUX   1
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     0
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 0
 
 // Compiles piggen/main.c
-#define BUILD_PIGGEN   0
+#define BUILD_PIGGEN   1
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
-#define RUN_PIGGEN     0
+#define RUN_PIGGEN     1
 
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
 #define BUILD_IMGUI_OBJ 0
@@ -42,7 +42,7 @@ Description:
 #define BUILD_PIG_CORE_DLL 0
 
 // Compiles tests/main.c
-#define BUILD_TESTS   1
+#define BUILD_TESTS   0
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS     0
 
@@ -60,6 +60,8 @@ Description:
 // +===============================+
 // | Optional Libraries/Frameworks |
 // +===============================+
+// Disables various parts of PigCore so that piggen.exe can compile with minimal dependencies
+#define BUILD_FOR_PIGGEN     0
 // Enables tests.exe being linked with raylib.lib and it's required libraries
 #define BUILD_WITH_RAYLIB    0
 // Enables tests.exe being linked with box2d.lib and it's required libraries

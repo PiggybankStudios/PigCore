@@ -161,6 +161,8 @@ if "%DEBUG_BUILD%"=="1" (
 :: Shlwapi.lib = Needed for PathFileExistsA
 set tests_libraries=Gdi32.lib User32.lib Ole32.lib Shell32.lib Shlwapi.lib
 set tests_clang_libraries=
+set piggen_libraries=Shlwapi.lib
+set piggen_clang_libraries=
 set pig_core_dll_libraries=Gdi32.lib User32.lib Ole32.lib Shell32.lib Shlwapi.lib
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM raylib.lib   = Raylib (NOTE: It has to come BEFORE User32.lib otherwise CloseWindow will conflict)
@@ -269,17 +271,30 @@ rem echo shader_linux_object_files %shader_linux_object_files%
 set piggen_source_path=%root%/piggen/piggen_main.c
 set piggen_exe_path=piggen.exe
 set piggen_bin_path=piggen
-set piggen_cl_args=%common_cl_flags% %c_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
-set piggen_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% -o %piggen_bin_path% ../%piggen_source_path%
+set piggen_cl_args=%common_cl_flags% %c_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags% %piggen_libraries%
+set piggen_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% -o %piggen_bin_path% ../%piggen_source_path% %piggen_clang_libraries%
 if "%BUILD_PIGGEN%"=="1" (
-	echo.
-	echo [Building piggen...]
-	del %piggen_exe_path% > NUL 2> NUL
-	cl %piggen_cl_args%
-	if "%DUMP_PREPROCESSOR%"=="1" (
-		COPY main.i piggen_preprocessed.i > NUL
+	if "%BUILD_WINDOWS%"=="1" (
+		echo.
+		echo [Building %piggen_exe_path% for Windows...]
+		del %piggen_exe_path% > NUL 2> NUL
+		cl %piggen_cl_args%
+		if "%DUMP_PREPROCESSOR%"=="1" (
+			COPY main.i piggen_preprocessed.i > NUL
+		)
+		echo [Built %piggen_exe_path% for Windows!]
 	)
-	echo [Built piggen!]
+	if "%BUILD_LINUX%"=="1" (
+		echo.
+		echo [Building %piggen_bin_path% for Linux...]
+		if not exist linux mkdir linux
+		pushd linux
+		
+		wsl clang-18 %piggen_clang_args%
+		
+		popd
+		echo [Built %piggen_bin_path% for Linux!]
+	)
 )
 
 if "%RUN_PIGGEN%"=="1" (

@@ -46,8 +46,10 @@ Descriptions:
 	#include <sys/time.h>
 	#include <errno.h>
 	#include <dlfcn.h> //needed for dlopen
+	// Needed for struct stat
+	#include <sys/stat.h>
 #endif
-#if TARGET_IS_LINUX
+#if TARGET_IS_LINUX && !BUILD_FOR_PIGGEN
 	#include <fontconfig/fontconfig.h>
 #endif
 #if COMPILER_IS_MSVC && LANGUAGE_IS_C

@@ -16,6 +16,7 @@ Description:
 #include "std/std_includes.h"
 #include "struct/struct_string.h"
 #include "mem/mem_scratch.h"
+#include "base/base_debug_output.h" //TODO: Remove the need for debug output in this file? Return Result values instead!
 #include "os/os_error.h"
 #include "misc/misc_result.h"
 #include "os/os_path.h"
@@ -996,7 +997,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 		);
 		if (fileHandle == INVALID_HANDLE_VALUE)
 		{
-			MyPrint("ERROR: Failed to %s file at \"%.*s\"", (forWriting ? "Create" : "Open"), StrPrint(fullPath));
+			PrintLine_E("ERROR: Failed to %s file at \"%.*s\"", (forWriting ? "Create" : "Open"), StrPrint(fullPath));
 			ScratchEnd(scratch);
 			return false;
 		}
@@ -1015,7 +1016,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 			);
 			if (newCursorPos == INVALID_SET_FILE_POINTER)
 			{
-				MyPrint("ERROR: Failed to seek to the end of the file when opened for %s \"%.*s\"!", GetOsOpenFileModeStr(mode), StrPrint(fullPath));
+				PrintLine_E("ERROR: Failed to seek to the end of the file when opened for %s \"%.*s\"!", GetOsOpenFileModeStr(mode), StrPrint(fullPath));
 				CloseHandle(fileHandle);
 				ScratchEnd(scratch);
 				return false;
@@ -1176,7 +1177,7 @@ PEXP bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNew
 		if (writeResult == 0)
 		{
 			DWORD errorCode = GetLastError();
-			MyPrint("ERROR: WriteFile failed: 0x%08X (%u)", errorCode, errorCode);
+			PrintLine_E("ERROR: WriteFile failed: 0x%08X (%u)", errorCode, errorCode);
 			ScratchEnd(scratch);
 			return false;
 		}
@@ -1187,7 +1188,7 @@ PEXP bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNew
 		Assert(numBytesWritten <= numBytesToWrite);
 		if (numBytesWritten < numBytesToWrite)
 		{
-			MyPrint("ERROR: Partial write occurred: %u/%u", numBytesWritten, numBytesToWrite);
+			PrintLine_E("ERROR: Partial write occurred: %u/%u", numBytesWritten, numBytesToWrite);
 			ScratchEnd(scratch);
 			return false;
 		}

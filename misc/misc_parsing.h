@@ -17,7 +17,10 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_char.h"
 #include "std/std_printf.h"
+#include "std/std_basic_math.h"
 #include "misc/misc_result.h"
+#include "base/base_unicode.h"
+#include "struct/struct_string.h"
 
 #define MAX_FLOAT_PARSE_LENGTH   64 //characters
 

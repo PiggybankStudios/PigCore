@@ -33,6 +33,7 @@ Description:
 #include "os/os_program_args.h"
 
 #include "misc/misc_result.h" //required by os_dll.h, os_file.h, os_file_dialog.h and os_process_info.h
+#include "base/base_debug_output.h" //required by os_file.h
 
 #include "os/os_dll.h"
 #include "os/os_file.h"

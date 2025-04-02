@@ -19,7 +19,7 @@ Date:   01\05\2025
 #include "misc/misc_random.h"
 
 #include "std/std_trig.h" //required by misc_easing.h
-#include "std/std_basic_math.h" //required by misc_easing.h
+#include "std/std_basic_math.h" //required by misc_easing.h and misc_parsing.h
 
 #include "misc/misc_easing.h"
 
@@ -28,7 +28,7 @@ Date:   01\05\2025
 #include "misc/misc_standard_colors.h"
 
 #include "std/std_includes.h" //required by misc_printing.h
-#include "struct/struct_string.h" //required by misc_printing.h
+#include "struct/struct_string.h" //required by misc_printing.h and misc_parsing.h
 #include "std/std_printf.h" //required by misc_printing.h and misc_parsing.h
 #include "mem/mem_arena.h" //required by misc_printing.h
 
@@ -41,6 +41,7 @@ Date:   01\05\2025
 #include "misc/misc_zip.h"
 
 #include "base/base_char.h" //required by misc_parsing.h
+#include "base/base_unicode.h" //required by misc_parsing.h
 
 #include "misc/misc_parsing.h"
 

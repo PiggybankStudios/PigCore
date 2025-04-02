@@ -236,12 +236,13 @@ PEXP FilePath ShortenFilePath(Arena* arena, FilePath fullPath, uxx maxNumChars, 
 	{
 		Str8 firstPart = StrSlice(result, 0, ellipsesPos - numCharsToCut/2);
 		Str8 secondPart = StrSliceFrom(result, ellipsesPos + (numCharsToCut+1)/2);
-		result = PrintInArenaStr(arena, "%.*s%.*s%.*s", StrPrint(firstPart), StrPrint(ellipsesStr), StrPrint(secondPart));
+		
+		result = JoinStringsInArena3(arena, firstPart, ellipsesStr, secondPart, false);
 	}
 	else
 	{
 		Str8 lastPart = StrSliceFrom(result, result.length - maxNumChars + ellipsesStr.length);
-		result = PrintInArenaStr(arena, "%.*s%.*s", StrPrint(ellipsesStr), StrPrint(lastPart));
+		result = JoinStringsInArena(arena, ellipsesStr, lastPart, false);
 	}
 	
 	return result;

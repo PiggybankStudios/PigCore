@@ -9,29 +9,45 @@ Description:
 */
 
 #include "build_config.h"
-#ifdef BUILD_WITH_RAYLIB
-#undef BUILD_WITH_RAYLIB
+#if !BUILD_FOR_PIGGEN
+#error The wrong build_config.h was found!
 #endif
-#define BUILD_WITH_RAYLIB 0
-#ifdef BUILD_WITH_SOKOL_GFX
-#undef BUILD_WITH_SOKOL_GFX
-#endif
-#define BUILD_WITH_SOKOL_GFX 0
-#ifdef BUILD_WITH_SOKOL_APP
-#undef BUILD_WITH_SOKOL_APP
-#endif
-#define BUILD_WITH_SOKOL_APP 0
 
-#include "base/base_all.h"
-#include "std/std_all.h"
-#include "os/os_all.h"
-#include "mem/mem_all.h"
-#include "struct/struct_all.h"
+#include "base/base_compiler_check.h"
+#include "base/base_defines_check.h"
+#include "std/std_includes.h"
+#include "base/base_typedefs.h"
+#include "base/base_macros.h"
+#include "base/base_assert.h"
+#include "misc/misc_result.h"
+#include "os/os_file.h"
+#include "os/os_virtual_mem.h"
+#include "std/std_memset.h"
+#include "std/std_malloc.h"
+#include "std/std_basic_math.h"
+#include "mem/mem_arena.h"
+#include "mem/mem_scratch.h"
+#include "base/base_unicode.h"
+#include "struct/struct_string.h"
+#include "os/os_path.h"
+#include "misc/misc_parsing.h"
+#include "os/os_program_args.h"
+
+#include "base/base_debug_output_impl.h"
 
 int main()
 {
-	MyPrintNoLine("Running piggen...");
+	InitScratchArenasVirtual(Gigabytes(4));
+	ScratchBegin(scratch);
+	ScratchBegin1(scratch2, scratch);
+	ScratchBegin2(scratch3, scratch, scratch2);
+	
+	Print_N("Running piggen...");
 	// getchar(); //wait for user to press ENTER
-	MyPrint("DONE!");
+	PrintLine_N("DONE!");
+	
+	ScratchEnd(scratch);
+	ScratchEnd(scratch2);
+	ScratchEnd(scratch3);
 	return 0;
 }

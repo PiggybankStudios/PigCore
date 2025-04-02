@@ -22,6 +22,7 @@ Description:
 	PIG_CORE_INLINE void FreeStr8(Arena* arena, Str8* stringPntr);
 	PIG_CORE_INLINE void FreeStr8WithNt(Arena* arena, Str8* stringPntr);
 	Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm);
+	Str8 JoinStringsInArena3(Arena* arena, Str8 left, Str8 middle, Str8 right, bool addNullTerm);
 	Str8 JoinStringsInArenaWithChar(Arena* arena, Str8 left, char sepChar, Str8 right, bool addNullTerm);
 	Str8 StrReplace(Arena* arena, Str8 str, Str8 target, Str8 replacement, bool addNullTerm);
 #endif //!PIG_CORE_IMPLEMENTATION
@@ -108,6 +109,19 @@ PEXP Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTe
 	if (result.chars == nullptr) { return Str8_Empty; }
 	if (left.length  > 0) { MyMemCopy(result.chars + 0,           left.chars,  left.length);  }
 	if (right.length > 0) { MyMemCopy(result.chars + left.length, right.chars, right.length); }
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	return result;
+}
+PEXP Str8 JoinStringsInArena3(Arena* arena, Str8 left, Str8 middle, Str8 right, bool addNullTerm)
+{
+	Str8 result;
+	result.length = left.length + middle.length + right.length;
+	if (result.length == 0 && !addNullTerm) { return Str8_Empty; }
+	result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
+	if (result.chars == nullptr) { return Str8_Empty; }
+	if (left.length   > 0) { MyMemCopy(result.chars + 0,                           left.chars,    left.length);   }
+	if (middle.length > 0) { MyMemCopy(result.chars + left.length,                 middle.chars,  middle.length); }
+	if (right.length  > 0) { MyMemCopy(result.chars + left.length + middle.length, right.chars,   right.length);  }
 	if (addNullTerm) { result.chars[result.length] = '\0'; }
 	return result;
 }
