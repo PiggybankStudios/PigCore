@@ -140,7 +140,7 @@ Str8 SpliceFile(Arena* arena, FilePath filePath, Str8 fileContents, uxx startInd
 	NotNull(arena);
 	Assert(startIndex < fileContents.length);
 	Assert(endIndex < fileContents.length);
-	Assert(startIndex >= endIndex);
+	Assert(startIndex <= endIndex);
 	Str8 firstPart = StrSlice(fileContents, 0, startIndex);
 	Str8 lastPart = StrSliceFrom(fileContents, endIndex);
 	Str8 newFileContents = JoinStringsInArena3(arena, firstPart, spliceStr, lastPart, false);

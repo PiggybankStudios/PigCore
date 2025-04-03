@@ -11,9 +11,12 @@ void FreeSnippet(Snippet* snippet)
 	NotNull(snippet);
 	if (snippet->arena != nullptr)
 	{
-		FreeStr8(snippet->arena, &snippet->genFilePath);
-		FreeStr8(snippet->arena, &snippet->sourceFilePath);
-		FreeStr8(snippet->arena, &snippet->snippetStr);
+		if (CanArenaFree(snippet->arena))
+		{
+			FreeStr8(snippet->arena, &snippet->genFilePath);
+			FreeStr8(snippet->arena, &snippet->sourceFilePath);
+			FreeStr8(snippet->arena, &snippet->snippetStr);
+		}
 		FreeVarArray(&snippet->pieces);
 		MD_ArenaRelease(snippet->mdArena);
 	}
