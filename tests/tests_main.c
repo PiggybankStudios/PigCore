@@ -519,7 +519,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |        RichStr Tests         |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		ScratchBegin(scratch);
 		Str8 encodedString = StrLit("Op[color=FF00FF]e[highlight]n [size=10]\bCo[color]lor\b[size]![highlight]");
@@ -680,8 +680,10 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |        Unicode Tests         |
 	// +==============================+
-	#if 0
+	#if 1
 	{
+		ScratchBegin(scratch);
+		
 		u32 testCodepoints[] = { 0x7F, 0x80, 0xFE, 0xFF, 0xF0, 0x9F, 0xA7, 0xA9, /*kanji*/0x93E1, /*puzzle emoji*/0x1F9E9 };
 		for (u64 cIndex = 0; cIndex < ArrayCount(testCodepoints); cIndex++)
 		{
@@ -710,6 +712,17 @@ int main(int argc, char* argv[])
 		PrintLine_D("unknownCharIndex = %llu", (u64)unknownCharIndex);
 		uxx firstChar2 = FindNextCharInStrEx(haystack, 0, StrLit("amg"), true);
 		PrintLine_D("firstChar2 = %llu", (u64)firstChar2);
+		
+		// Str8 escapedString = Str8_Empty;
+		// Str8 escapedString = StrLit("\\\\\\");
+		Str8 escapedString = StrLit("\\\\-\\\"-\\\'-\\n-\\r-\\t-\\b-\\a-\\g");
+		Str8 rawString = StrLit("\\-\"-\'-\n-\r-\t-\b-\a-\\g");
+		rawString = UnescapeString(scratch, escapedString);
+		PrintLine_D("Raw String: \"%.*s\"", StrPrint(rawString));
+		escapedString = EscapeString(scratch, rawString);
+		PrintLine_D("Escaped String: \"%.*s\"", StrPrint(escapedString));
+		
+		ScratchEnd(scratch);
 	}
 	#endif
 	
