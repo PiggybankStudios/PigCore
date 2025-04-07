@@ -65,6 +65,23 @@ Description:
 #endif
 #endif
 
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable: 5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#endif
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
+#endif
+// #include "third_party/sqlite/sqlite3.h"
+#include "third_party/sqlite/sqlite3.c"
+#if COMPILER_IS_MSVC
+#pragma warning(pop)
+#endif
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic pop
+#endif
+
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
@@ -149,6 +166,15 @@ DEBUG_OUTPUT_HANDLER_DEF(TestsDebugOutputCallback)
 	#endif
 }
 #endif
+
+static int SqliteCallback(void *NotUsed, int argc, char** argv, char** azColName)
+{
+	for (int i=0; i < argc; i++)
+	{
+		PrintLine_E("%s = %s", azColName[i], argv[i] ? argv[i] : "NULL");
+	}
+	return 0;
+}
 
 // +--------------------------------------------------------------+
 // |                             Main                             |
@@ -680,7 +706,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |        Unicode Tests         |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		ScratchBegin(scratch);
 		
@@ -723,6 +749,30 @@ int main(int argc, char* argv[])
 		PrintLine_D("Escaped String: \"%.*s\"", StrPrint(escapedString));
 		
 		ScratchEnd(scratch);
+	}
+	#endif
+	
+	// +==============================+
+	// |         SQLite Tests         |
+	// +==============================+
+	#if 1
+	{
+		sqlite3* database = nullptr;
+		int openResult = sqlite3_open("test_database", &database);
+		if (openResult != 0)
+		{
+			PrintLine_E("Failed to open SQLite database: %s", sqlite3_errmsg(database));
+			sqlite3_close(database);
+			return 1;
+		}
+		
+		char* errorMsg = nullptr;
+		int execResult1 = sqlite3_exec(database, "CREATE TABLE table1 (id INT, name VARCHAR(255))", SqliteCallback, 0, &errorMsg);
+		if (execResult1 != SQLITE_OK) { PrintLine_E("sqlite3_exec[0] failed: %s", errorMsg); sqlite3_free(errorMsg); }
+		int execResult2 = sqlite3_exec(database, "INSERT INTO table1 (id, name) VALUES (42, \"Taylor\")", SqliteCallback, 0, &errorMsg);
+		if (execResult2 != SQLITE_OK) { PrintLine_E("sqlite3_exec[1] failed: %s", errorMsg); sqlite3_free(errorMsg); }
+		
+		sqlite3_close(database);
 	}
 	#endif
 	
