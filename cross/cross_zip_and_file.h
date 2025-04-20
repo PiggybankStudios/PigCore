@@ -7,6 +7,11 @@ Date:   01\21\2025
 #ifndef _CROSS_ZIP_AND_FILE_H
 #define _CROSS_ZIP_AND_FILE_H
 
+#if !TARGET_IS_ORCA //TODO: miniz.h relies on time.h which isn't available in Orca std C-lib
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	Result OpenZipArchivePath(Arena* arena, FilePath filePath, ZipArchive* archiveOut);
 	Slice OpenZipArchivePathAndReadFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName, bool convertNewLines);
@@ -14,6 +19,9 @@ Date:   01\21\2025
 	PIG_CORE_INLINE Slice OpenZipArchivePathAndReadBinFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName);
 #endif
 
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 PEXP Result OpenZipArchivePath(Arena* arena, FilePath filePath, ZipArchive* archiveOut)
 {
@@ -41,7 +49,8 @@ PEXP Slice OpenZipArchivePathAndReadFile(Arena* fileContentsArena, FilePath zipF
 PEXPI Str8 OpenZipArchivePathAndReadTextFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName) { return OpenZipArchivePathAndReadFile(fileContentsArena, zipFilePath, archiveFileName, true); }
 PEXPI Slice OpenZipArchivePathAndReadBinFile(Arena* fileContentsArena, FilePath zipFilePath, FilePath archiveFileName) { return OpenZipArchivePathAndReadFile(fileContentsArena, zipFilePath, archiveFileName, false); }
 
-
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //!TARGET_IS_ORCA
 
 #endif //  _CROSS_ZIP_AND_FILE_H

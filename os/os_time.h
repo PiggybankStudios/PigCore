@@ -122,6 +122,19 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 			//TODO: tv_usec is also available from currentTimeVal
 		}
 	}
+	#elif TARGET_IS_ORCA
+	{
+		if (local)
+		{
+			//TODO: Implement me!
+			AssertMsg(false, "Orca does not currently have a way to get local time!");
+		}
+		else
+		{
+			r64 clockTime = oc_clock_time(OC_CLOCK_DATE);
+			result = (u64)RoundR64i(AbsR64(clockTime));
+		}
+	}
 	#else
 	AssertMsg(false, "OsGetCurrentTimestampEx does not support the current platform yet!")
 	#endif

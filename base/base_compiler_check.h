@@ -81,7 +81,13 @@ Description:
 #define TARGET_IS_OSX 0
 #endif
 
-#ifdef __wasm32__
+#ifdef __ORCA__
+#define TARGET_IS_ORCA 1
+#else
+#define TARGET_IS_ORCA 0
+#endif
+
+#if defined(__wasm32__) && !TARGET_IS_ORCA
 #define TARGET_IS_WEB 1
 #else
 #define TARGET_IS_WEB 0
@@ -90,8 +96,6 @@ Description:
 //TODO: Detect if we are compiling for PLAYDATE!
 #define TARGET_IS_PLAYDATE_SIMULATOR 0
 #define TARGET_IS_PLAYDATE_DEVICE 0
-//TODO: Detect if we are compiling for Orca!
-#define TARGET_IS_ORCA 0
 
 //Make sure we have exactly one of the TARGET defines set to true
 #if TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA > 1
@@ -131,7 +135,7 @@ Description:
 #define TARGET_HAS_OFFICIAL_STDLIB 1
 #endif
 
-#if (TARGET_IS_WASM && !COMPILER_IS_EMSCRIPTEN)
+#if (TARGET_IS_WEB && !COMPILER_IS_EMSCRIPTEN)
 #define USING_CUSTOM_STDLIB 1
 #else
 #define USING_CUSTOM_STDLIB 0

@@ -20,18 +20,20 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 1
+#define BUILD_WINDOWS 0
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   1
+#define BUILD_LINUX   0
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB     0
+// Build a WASM binary and package as Orca application
+#define BUILD_ORCA    1
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 0
 
 // Compiles piggen/main.c
-#define BUILD_PIGGEN   1
+#define BUILD_PIGGEN   0
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
-#define RUN_PIGGEN     1
+#define RUN_PIGGEN     0
 
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
 #define BUILD_IMGUI_OBJ 0
@@ -42,7 +44,7 @@ Description:
 #define BUILD_PIG_CORE_DLL 0
 
 // Compiles tests/main.c
-#define BUILD_TESTS   0
+#define BUILD_TESTS   1
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS     0
 
@@ -67,15 +69,15 @@ Description:
 // Enables tests.exe being linked with box2d.lib and it's required libraries
 #define BUILD_WITH_BOX2D     0
 // Enables pig_core.dll and tests.exe using sokol_gfx.h (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL_GFX 1
+#define BUILD_WITH_SOKOL_GFX 0
 // Enables tests.exe using sokol_app.h to create and manage a graphical window
-#define BUILD_WITH_SOKOL_APP 1
+#define BUILD_WITH_SOKOL_APP 0
 // Enables tests.exe being linked with SDL.lib and it's required libraries
 #define BUILD_WITH_SDL       0
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries
 #define BUILD_WITH_OPENVR    0
 // Enables tests.exe using clay.h to render UI elements
-#define BUILD_WITH_CLAY      1
+#define BUILD_WITH_CLAY      0
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
 #define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib

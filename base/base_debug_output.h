@@ -45,6 +45,11 @@ Description:
 #define DEBUG_OUTPUT_TO_WIN32_OUTPUTDEBUGSTRING 1
 #endif
 
+//This omits the __FILE__, __LINE__, and __function__ arguments to Orca log functions so we don't get long path and function names prefixed to every line of the debug output
+#ifndef DEBUG_OUTPUT_MINIMAL_ORCA_PREFIX
+#define DEBUG_OUTPUT_MINIMAL_ORCA_PREFIX 1
+#endif
+
 #ifndef DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE
 #define DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE 1
 #endif

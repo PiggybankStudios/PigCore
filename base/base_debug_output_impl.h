@@ -82,20 +82,36 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		#endif
 		
 		#if TARGET_IS_WINDOWS
-		//NOTE: OutputDebugStringA comes from Debugapi.h which is included by Windows.h
-		//      Visual Studio and most Windows debuggers do not show things printed to stdout in
-		//      the "Output" window when debugging. Sending our debug output to OutputDebugString
-		//      ensures that our debug output can be viewed from the "Output" window in Windows debuggers.
-		#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
-		if (DebugOutputIsOnNewLine)
 		{
-			OutputDebugStringA(GetDbgLevelStr(level));
-			OutputDebugStringA(": ");
+			//NOTE: OutputDebugStringA comes from Debugapi.h which is included by Windows.h
+			//      Visual Studio and most Windows debuggers do not show things printed to stdout in
+			//      the "Output" window when debugging. Sending our debug output to OutputDebugString
+			//      ensures that our debug output can be viewed from the "Output" window in Windows debuggers.
+			#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
+			if (DebugOutputIsOnNewLine)
+			{
+				OutputDebugStringA(GetDbgLevelStr(level));
+				OutputDebugStringA(": ");
+			}
+			#endif
+			OutputDebugStringA(message);
+			if (newLine) { OutputDebugStringA("\n"); }
 		}
-		#endif
-		OutputDebugStringA(message);
-		if (newLine) { OutputDebugStringA("\n"); }
-		#endif
+		#endif //TARGET_IS_WINDOWS
+		
+		#if TARGET_IS_ORCA
+		{
+			//TODO: How do we handle when newLine == false?
+			oc_log_level orcaLevel = OC_LOG_LEVEL_INFO;
+			if (level == DbgLevel_Error) { orcaLevel = OC_LOG_LEVEL_ERROR; }
+			else if (level == DbgLevel_Warning) { orcaLevel = OC_LOG_LEVEL_WARNING; }
+			#if DEBUG_OUTPUT_MINIMAL_ORCA_PREFIX
+			oc_log_ext(orcaLevel, nullptr, nullptr, 0, message);
+			#else
+			oc_log_generic(orcaLevel, message);
+			#endif
+		}
+		#endif //TARGET_IS_ORCA
 		
 		#if DEBUG_OUTPUT_CALLBACK_GLOBAL
 		if (DebugOutputCallback != nullptr)

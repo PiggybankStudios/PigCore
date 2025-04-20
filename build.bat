@@ -33,6 +33,7 @@ for /f "delims=" %%i in ('%extract_define% ENABLE_AUTO_PROFILE') do set ENABLE_A
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_ORCA') do set BUILD_ORCA=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH_RAYLIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_BOX2D') do set BUILD_WITH_BOX2D=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_GFX') do set BUILD_WITH_SOKOL_GFX=%%i
@@ -67,6 +68,10 @@ if "%BUILD_WINDOWS%"=="1" ( echo VsDevCmd.bat took %vsdevcmd_elapsed_seconds_par
 
 if "%USE_EMSCRIPTEN%"=="1" (
 	call "C:\gamedev\lib\emsdk\emsdk_env.bat" > NUL 2> NUL
+)
+
+if "%BUILD_ORCA%"=="1" (
+	for /f "delims=" %%i in ('"orca sdk-path"') do set orca="%%i"
 )
 
 :: +--------------------------------------------------------------+
@@ -114,20 +119,26 @@ set linux_clang_flags=-I "../%root%" -mssse3 -maes
 set linux_linker_flags=-lm -ldl
 :: --target=wasm32 = ?
 :: -mbulk-memory = ?
-:: TODO: -Wl,--export-dynamic ?
-:: TODO: -Wl,--export-dynamic ?
 :: TODO: -nostdlib ?
 :: TODO: -Wl,--initial-memory=6553600 ?
 set wasm_clang_flags=--target=wasm32 -mbulk-memory -I "../%root%"
+:: -Wl, = Pass the following argument(s) to the linker
+:: --no-entry = ?
+:: --export-dynamic = ?
+:: --sysroot = ?
+:: -lorca_wasm = ?
+:: -D __ORCA__ = #define __ORCA__ so that base_compiler_check.h can set TARGET_IS_ORCA
+set orca_clang_flags=-Wl,--no-entry -Wl,--export-dynamic --sysroot %orca%/orca-libc -I "%orca%/src" -I "%orca%/src/ext" -L "%orca%/bin" -lorca_wasm -D __ORCA__
+set web_clang_flags=
 if "%USE_EMSCRIPTEN%"=="1" (
 	set wasm_clang_flags=%wasm_clang_flags% -sUSE_SDL -sALLOW_MEMORY_GROWTH
 ) else (
-	REM -Wl, = Pass the following argument(s) to the linker
-	REM --allow-undefined = ?
 	REM --no-entry = ?
+	REM --allow-undefined = ?
 	REM --no-standard-libraries = ?
 	REM --no-standard-includes = ?
-	set wasm_clang_flags=%wasm_clang_flags% -I "../%root%/wasm/std/include" --no-standard-libraries --no-standard-includes -Wl,--no-entry -Wl,--export=__heap_base -Wl,--allow-undefined
+	REM --export=__heap_base = ?
+	set web_clang_flags=%web_clang_flags% -Wl,--no-entry -Wl,--allow-undefined -I "../%root%/wasm/std/include" --no-standard-libraries --no-standard-includes -Wl,--export=__heap_base
 )
 if "%DEBUG_BUILD%"=="1" (
 	REM /MDd = ?
@@ -140,10 +151,13 @@ if "%DEBUG_BUILD%"=="1" (
 	REM /wd4189 = Local variable is initialized but not referenced [W4]
 	REM /wd4702 = Unreachable code [W4]
 	set common_cl_flags=%common_cl_flags% /MDd /Od /Zi /wd4065 /wd4100 /wd4101 /wd4127 /wd4189 /wd4702
+	REM -g = Generate debug information
+	set wasm_clang_flags=%wasm_clang_flags% -g
 	set shader_cl_flags=%shader_cl_flags% /MDd /Od /Zi
 	REM -Wno-unused-parameter = warning: unused parameter 'numBytes'
+	set common_clang_flags=%common_clang_flags% -Wno-unused-parameter -Wno-unused-variable
 	REM -gdwarf-4 = Generate debug information in the DWARF format version 4 (gdb on WSL was not liking other versions of DWARF)
-	set common_clang_flags=%common_clang_flags% -gdwarf-4 -Wno-unused-parameter -Wno-unused-variable
+	set linux_clang_flags=%linux_clang_flags% -gdwarf-4
 ) else (
 	REM /MD = ?
 	REM /Ot = Favors fast code over small code
@@ -151,6 +165,8 @@ if "%DEBUG_BUILD%"=="1" (
 	REM /O2 = Optimization level 2: Creates fast code
 	REM /Zi = Generate complete debugging information [optional]
 	set common_cl_flags=%common_cl_flags% /MD /Ot /Oy /O2
+	REM -O2 = Optimization level 2
+	set wasm_clang_flags=%wasm_clang_flags% -O2
 	set shader_cl_flags=%shader_cl_flags% /MD /Ot /Oy /O2
 	set common_clang_flags=%common_clang_flags%
 )
@@ -389,6 +405,7 @@ set tests_source_path=%root%/tests/tests_main.c
 set tests_exe_path=tests.exe
 set tests_bin_path=tests
 set tests_wasm_path=app.wasm
+set tests_orca_wasm_path=module.wasm
 set tests_wat_path=app.wat
 set tests_html_path=index.html
 set tests_win_input_files=%tests_source_path%
@@ -402,12 +419,13 @@ set tests_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flag
 if "%ENABLE_AUTO_PROFILE%"=="1" (
 	set tests_clang_args=-finstrument-functions %tests_clang_args%
 )
-set tests_web_args=%common_clang_flags% %wasm_clang_flags% ../%tests_source_path%"
+set tests_web_args=%common_clang_flags% %wasm_clang_flags% %web_clang_flags% ../%tests_source_path%"
 if "%USE_EMSCRIPTEN%"=="1" (
 	set tests_web_args=-o %tests_html_path% %tests_web_args%
 ) else (
 	set tests_web_args=-o %tests_wasm_path% %tests_web_args%
 )
+set tests_orca_clang_args=%common_clang_flags% %wasm_clang_flags% %orca_clang_flags% -o %tests_orca_wasm_path% ../%tests_source_path%
 if "%BUILD_TESTS%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo.
@@ -464,6 +482,23 @@ if "%BUILD_TESTS%"=="1" (
 		
 		popd web
 		echo [Built tests for Web!]
+	)
+	if "%BUILD_ORCA%"=="1" (
+		echo.
+		echo [Building tests for Orca...]
+		if not exist orca mkdir orca
+		pushd orca
+		
+		del %tests_orca_wasm_path% > NUL 2> NUL
+		clang %tests_orca_clang_args%
+		
+		echo [Bundling...]
+		
+		rmdir /s /q tests
+		orca bundle --name tests %tests_orca_wasm_path%
+		
+		popd
+		echo [Built tests for Orca!]
 	)
 )
 REM TODO: For some reason when building for WEB with EMSCRIPTEN we are never running anything below this end parens!

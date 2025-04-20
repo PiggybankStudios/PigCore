@@ -27,8 +27,13 @@ Descriptions:
 #include <assert.h>
 #include <string.h>
 #include <math.h>
-#include <uchar.h> //for char16_t
 //TODO: HandmadeMath.h includes <xmmintrin.h> when SSE is supported
+
+#if TARGET_IS_ORCA //uchar.h is not in the orca-libc yet
+typedef unsigned char char16_t;
+#else
+#include <uchar.h> //for char16_t
+#endif
 
 #if (TARGET_IS_WINDOWS || USING_CUSTOM_STDLIB)
 	#include <intrin.h>
@@ -69,7 +74,7 @@ Descriptions:
 
 #if TARGET_IS_ORCA
 	#include <orca.h>
-	#include "gy_orca_aliases.h"
+	// #include "gy_orca_aliases.h"
 #endif
 
 #if TARGET_IS_PLAYDATE

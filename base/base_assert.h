@@ -27,7 +27,7 @@ Description:
 #define MyBreakMsg(message) raise(SIGINT)
 #define MyBreak()           MyBreakMsg("")
 #elif TARGET_IS_ORCA
-#define MyBreakMsg(message) OC_AbortExt(__FILE__, __FUNCTION__, __LINE__, message)
+#define MyBreakMsg(message) oc_abort_ext(__FILE__, __FUNCTION__, __LINE__, message)
 #define MyBreak()           MyBreakMsg("MyBreak()")
 #else
 #define MyBreakMsg(message) //nothing

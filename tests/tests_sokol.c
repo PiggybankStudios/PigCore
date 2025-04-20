@@ -74,15 +74,15 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
 		.layout = { .padding = { 12, 12, 8, 8 } },
-		.backgroundColor = ToClayColor(isBtnHoveredOrMenuOpen ? highlightColor : backColor),
+		.backgroundColor = (isBtnHoveredOrMenuOpen ? highlightColor : backColor),
 		.cornerRadius = CLAY_CORNER_RADIUS(5),
 	});
 	CLAY_TEXT(
-		ToClayString(StrLit(btnText)),
+		StrLit(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = clayFont,
 			.fontSize = 18,
-			.textColor = ToClayColor(textColor),
+			.textColor = textColor,
 		})
 	);
 	bool isHovered = (Clay_PointerOver(btnId) || Clay_PointerOver(menuId));
@@ -113,7 +113,7 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 				},
 				.childGap = 2,
 			},
-			.backgroundColor = ToClayColor(MonokaiBack),
+			.backgroundColor = MonokaiBack,
 			.cornerRadius = CLAY_CORNER_RADIUS(8),
 		});
 	}
@@ -138,15 +138,15 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 			.padding = CLAY_PADDING_ALL(8),
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
 		},
-		.backgroundColor = ToClayColor(isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
+		.backgroundColor = (isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
 		.cornerRadius = CLAY_CORNER_RADIUS(8),
 	});
 	CLAY_TEXT(
-		ToClayString(StrLit(btnText)),
+		StrLit(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = clayFont,
 			.fontSize = 18,
-			.textColor = ToClayColor(textColor),
+			.textColor = textColor,
 		})
 	);
 	ScratchEnd(scratch);
@@ -502,7 +502,7 @@ bool AppFrame(void)
 							.childGap = 2,
 							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 						},
-						.backgroundColor = ToClayColor(MonokaiBack),
+						.backgroundColor = MonokaiBack,
 					})
 					{
 						if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
@@ -529,11 +529,11 @@ bool AppFrame(void)
 						u64 localTimestamp = OsGetCurrentTimestampEx(true, &timezoneOffset, nullptr);
 						Str8 displayStr = ScratchPrintStr("UTC: %llu Local: %llu (%s%lld)", utcTimestamp, localTimestamp, timezoneOffset >= 0 ? "+" : "-", AbsI64(timezoneOffset));
 						CLAY_TEXT(
-							ToClayString(displayStr),
+							displayStr,
 							CLAY_TEXT_CONFIG({
 								.fontId = clayFont,
 								.fontSize = 18,
-								.textColor = ToClayColor(MonokaiWhite),
+								.textColor = MonokaiWhite,
 							})
 						);
 					}

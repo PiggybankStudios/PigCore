@@ -20,6 +20,8 @@ Description:
 #include "os/os_path.h"
 #include "misc/misc_result.h"
 
+#if !TARGET_IS_ORCA //TODO: miniz.h relies on time.h which isn't available in Orca std C-lib
+
 #define MINIZ_NO_STDIO //to disable all usage and any functions which rely on stdio for file I/O.
 #if USING_CUSTOM_STDLIB
 #define MINIZ_NO_TIME //if specified then the ZIP archive functions will not be able to get the current time, or get/set file times, and the C run-time funcs that get/set times won't be called.
@@ -336,6 +338,8 @@ PEXPI Result AddZipArchiveTextFile(ZipArchive* archive, FilePath fileName, Str8 
 PEXPI Result AddZipArchiveBinFile(ZipArchive* archive, FilePath fileName, Slice fileContents) { return AddZipArchiveFile(archive, fileName, fileContents, false); }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //!TARGET_IS_ORCA
 
 #endif //  _MISC_ZIP_H
 
