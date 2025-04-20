@@ -142,7 +142,8 @@ if "%DEBUG_BUILD%"=="1" (
 	set common_cl_flags=%common_cl_flags% /MDd /Od /Zi /wd4065 /wd4100 /wd4101 /wd4127 /wd4189 /wd4702
 	set shader_cl_flags=%shader_cl_flags% /MDd /Od /Zi
 	REM -Wno-unused-parameter = warning: unused parameter 'numBytes'
-	set common_clang_flags=%common_clang_flags% -Wno-unused-parameter -Wno-unused-variable
+	REM -gdwarf-4 = Generate debug information in the DWARF format version 4 (gdb on WSL was not liking other versions of DWARF)
+	set common_clang_flags=%common_clang_flags% -gdwarf-4 -Wno-unused-parameter -Wno-unused-variable
 ) else (
 	REM /MD = ?
 	REM /Ot = Favors fast code over small code
@@ -160,10 +161,11 @@ if "%DEBUG_BUILD%"=="1" (
 :: Shell32.lib = Needed for SHGetSpecialFolderPathA
 :: Shlwapi.lib = Needed for PathFileExistsA
 set tests_libraries=Gdi32.lib User32.lib Ole32.lib Shell32.lib Shlwapi.lib
-set tests_clang_libraries=
+set tests_clang_libraries=-lfontconfig
 set piggen_libraries=Shlwapi.lib
 set piggen_clang_libraries=
 set pig_core_dll_libraries=Gdi32.lib User32.lib Ole32.lib Shell32.lib Shlwapi.lib
+set pig_core_clang_libraries=-lfontconfig
 if "%BUILD_WITH_RAYLIB%"=="1" (
 	REM raylib.lib   = Raylib (NOTE: It has to come BEFORE User32.lib otherwise CloseWindow will conflict)
 	REM kernel32.lib = ?
@@ -183,7 +185,7 @@ if "%BUILD_WITH_SDL%"=="1" (
 	set pig_core_dll_libraries=%pig_core_dll_libraries% SDL2.lib
 )
 if "%BUILD_WITH_SOKOL_GFX%"=="1" (
-	set tests_clang_libraries=%tests_clang_libraries% -lGL
+	set pig_core_clang_libraries=%pig_core_clang_libraries% -lGL
 )
 if "%BUILD_WITH_SOKOL_APP%"=="1" (
 	set tests_clang_libraries=%tests_clang_libraries% -lX11 -lXi -ldl -lXcursor
@@ -311,6 +313,7 @@ set imgui_obj_path=imgui.obj
 set imgui_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%root%\third_party\imgui" /Fo%imgui_obj_path% %imgui_source_path%
 if "%BUILD_WITH_IMGUI%"=="1" (
 	set pig_core_dll_libraries=%pig_core_dll_libraries% %imgui_obj_path%
+	set pig_core_clang_libraries=%pig_core_clang_libraries% %imgui_obj_path%
 	set tests_libraries=%tests_libraries% %imgui_obj_path%
 )
 if "%BUILD_IMGUI_OBJ%"=="1" (
@@ -332,6 +335,7 @@ set physx_obj_path=physx_capi.obj
 set physx_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%root%\third_party\physx" /Fo%physx_obj_path% %physx_source_path%
 if "%BUILD_WITH_PHYSX%"=="1" (
 	set pig_core_dll_libraries=%pig_core_dll_libraries% %physx_obj_path% PhysX_static_64.lib
+	set pig_core_clang_libraries=%pig_core_clang_libraries% %physx_obj_path% PhysX_static_64.lib
 	set tests_libraries=%tests_libraries% %physx_obj_path% PhysX_static_64.lib
 )
 
@@ -354,7 +358,7 @@ set pig_core_dll_path=pig_core.dll
 set pig_core_lib_path=pig_core.lib
 set pig_core_so_path=libpig_core.so
 set pig_core_dll_args=%common_cl_flags% %c_cl_flags% /Fe%pig_core_dll_path% %pig_core_dll_source_path% /link /DLL %common_ld_flags% %pig_core_dll_libraries%
-set pig_core_so_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% -fPIC -shared -o %pig_core_so_path% ../%pig_core_dll_source_path%
+set pig_core_so_clang_args=%common_clang_flags% %linux_clang_flags% %linux_linker_flags% %pig_core_clang_libraries% -fPIC -shared -o %pig_core_so_path% ../%pig_core_dll_source_path%
 if "%BUILD_PIG_CORE_DLL%"=="1" (
 	if "%BUILD_WINDOWS%"=="1" (
 		echo.

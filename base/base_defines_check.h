@@ -27,6 +27,10 @@ Description:
 #endif
 #endif
 
+#ifndef ASSERTIONS_ENABLED
+#define ASSERTIONS_ENABLED DEBUG_BUILD
+#endif
+
 #ifndef PIG_CORE_BUILDING_AS_DLL
 #define PIG_CORE_BUILDING_AS_DLL 0
 #endif

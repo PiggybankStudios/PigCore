@@ -14,8 +14,11 @@ Description:
 #define _BASE_ASSERT_H
 
 #include "base/base_compiler_check.h"
+#include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
+
+#if ASSERTIONS_ENABLED
 
 #if (TARGET_IS_WINDOWS || TARGET_IS_WEB)
 #define MyBreakMsg(message) __debugbreak()
@@ -34,12 +37,17 @@ Description:
 //TODO: Why can't we use a #define around _Static_assert????
 //TODO: _Static_assert is not available when compiling in C++ mode!
 #define StaticAssert(condition) _Static_assert(condition)
+
 #if USING_CUSTOM_STDLIB
-#define AssertMsg(condition, message) if (!(condition)) { assert_msg(condition, (message)); }
+#define AssertMsg(condition, message) if (!(condition)) { MyBreak(); assert_msg(condition, (message)); }
+#elif COMPILER_IS_MSVC
+#define AssertMsg(condition, message) if (!(condition)) { MyBreak(); assert(condition); }
 #else
-#define AssertMsg(condition, message) if (!(condition)) { assert(condition); }
+#define AssertMsg(condition, message) if (!(condition)) { MyBreak(); assert(condition); }
 #endif
+
 #define Assert(condition) AssertMsg(condition, "")
+
 #define NotNull(variable) Assert(variable != nullptr)
 
 #if DEBUG_BUILD
@@ -53,5 +61,20 @@ Description:
 #define DebugAssert(condition) //nothing
 #define DebugNotNull(variable) //nothing
 #endif
+
+#else //!ASSERTIONS_ENABLED
+
+#define MyBreakMsg(message)                //nothing
+#define MyBreak()                          //nothing
+#define StaticAssert(condition)            //nothing
+#define AssertMsg(condition, message)      //nothing
+#define Assert(condition)                  //nothing
+#define NotNull(variable)                  //nothing
+#define DebugStaticAssert(condition)       //nothing
+#define DebugAssertMsg(condition, message) //nothing
+#define DebugAssert(condition)             //nothing
+#define DebugNotNull(variable)             //nothing
+
+#endif //ASSERTIONS_ENABLED
 
 #endif //  _BASE_ASSERT_H

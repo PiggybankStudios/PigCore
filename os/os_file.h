@@ -46,9 +46,11 @@ typedef enum OsOpenFileMode OsOpenFileMode;
 enum OsOpenFileMode
 {
 	OsOpenFileMode_None = 0,
-	OsOpenFileMode_Read,
-	OsOpenFileMode_Write,
-	OsOpenFileMode_Append,
+	OsOpenFileMode_Read, //Opens file for reading if it exists (error otherwise)
+	OsOpenFileMode_Create, //Opens a NEW file for writing (fails if the file already exists)
+	OsOpenFileMode_Write, //Opens a file for writing (clearing the contents if it already existed)
+	OsOpenFileMode_Append, //Opens a file for writing, jumping to the end if it already exists (creating a new file if it doesn't exist)
+	//TODO: Do we want a mode where we open for appending but ONLY if the file exists?
 	OsOpenFileMode_Count,
 };
 #if !PIG_CORE_IMPLEMENTATION
@@ -58,10 +60,11 @@ PEXP const char* GetOsOpenFileModeStr(OsOpenFileMode enumValue)
 {
 	switch (enumValue)
 	{
-		case OsOpenFileMode_None:   return "None";
-		case OsOpenFileMode_Read:   return "Read";
-		case OsOpenFileMode_Write:  return "Write";
-		case OsOpenFileMode_Append: return "Append";
+		case OsOpenFileMode_None:      return "None";
+		case OsOpenFileMode_Read:      return "Read";
+		case OsOpenFileMode_Create:    return "Create";
+		case OsOpenFileMode_Write:     return "Write";
+		case OsOpenFileMode_Append:    return "Append";
 		default: return UNKNOWN_STR;
 	}
 }
@@ -982,29 +985,41 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 	#if TARGET_IS_WINDOWS
 	{
 		ScratchBegin1(scratch, arena);
-		Str8 fullPath = OsGetFullPath(scratch, path);
-		bool forWriteOrAppend = (mode == OsOpenFileMode_Write || mode == OsOpenFileMode_Append);
-		bool forWriting = (mode == OsOpenFileMode_Write);
+		Str8 fullPath = OsGetFullPath(scratch, path);;
 		
+		DWORD desiredAccess = GENERIC_READ;
+		if (mode != OsOpenFileMode_Read) { desiredAccess |= GENERIC_WRITE; }
+		
+		DWORD shareMode = 0;
+		if (mode == OsOpenFileMode_Read) { shareMode |= FILE_SHARE_READ; }
+		
+		DWORD creationDisposition = OPEN_EXISTING;
+		if (mode == OsOpenFileMode_Append) { creationDisposition = OPEN_ALWAYS; }
+		else if (mode == OsOpenFileMode_Write) { creationDisposition = CREATE_ALWAYS; }
+		else if (mode == OsOpenFileMode_Create) { creationDisposition = CREATE_NEW; }
+		
+		DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
+		
+		//TODO: We should convert the path to UCS2 and call CreateFileW!
 		HANDLE fileHandle = CreateFileA(
-			fullPath.pntr,                                     //lpFileName
-			(forWriteOrAppend ? GENERIC_WRITE : GENERIC_READ), //dwDesiredAccess
-			(forWriteOrAppend ? 0 : FILE_SHARE_READ),          //dwShareMode
-			NULL,                                              //lpSecurityAttributes
-			(forWriting ? CREATE_ALWAYS : OPEN_ALWAYS),        //dwCreationDisposition
-			FILE_ATTRIBUTE_NORMAL,                             //dwFlagsAndAttributes
-			NULL                                               //hTemplateFile
+			fullPath.pntr,       //lpFileName
+			desiredAccess,       //dwDesiredAccess
+			shareMode,           //dwShareMode
+			NULL,                //lpSecurityAttributes
+			creationDisposition, //dwCreationDisposition
+			flagsAndAttributes,  //dwFlagsAndAttributes
+			NULL                 //hTemplateFile
 		);
 		if (fileHandle == INVALID_HANDLE_VALUE)
 		{
-			PrintLine_E("ERROR: Failed to %s file at \"%.*s\"", (forWriting ? "Create" : "Open"), StrPrint(fullPath));
+			PrintLine_E("ERROR: Failed to open file for %s at \"%.*s\"", GetOsOpenFileModeStr(mode), StrPrint(fullPath));
 			ScratchEnd(scratch);
 			return false;
 		}
 		
 		uxx fileSize = 0;
 		uxx cursorIndex = 0;
-		if (calculateSize)
+		if (calculateSize && (mode == OsOpenFileMode_Read || mode == OsOpenFileMode_Append))
 		{
 			//Seek to the end of the file
 			LONG newCursorPosHighOrder = 0;
@@ -1029,7 +1044,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 			#endif
 			cursorIndex = fileSize;
 			
-			if (!forWriteOrAppend)
+			if (mode != OsOpenFileMode_Append)
 			{
 				//Seek back to the beginning
 				DWORD beginMove = SetFilePointer(
@@ -1049,7 +1064,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 		openFileOut->arena = arena;
 		openFileOut->isOpen = true;
 		openFileOut->handle = fileHandle;
-		openFileOut->openedForWriting = forWriteOrAppend;
+		openFileOut->openedForWriting = (mode != OsOpenFileMode_Read);
 		openFileOut->isKnownSize = calculateSize;
 		openFileOut->cursorIndex = cursorIndex;
 		openFileOut->fileSize = fileSize;
@@ -1299,6 +1314,10 @@ PEXPI bool OsAreFileWriteTimesEqual(OsFileWriteTime left, OsFileWriteTime right)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _OS_FILE_H
+
+#if defined(_OS_FILE_H) && defined(_MISC_RANDOM_H)
+#include "cross/cross_file_and_random.h"
+#endif
 
 #if defined(_GFX_IMAGE_LOADING_H) && defined(_OS_FILE_H)
 #include "cross/cross_image_loading_and_file.h"

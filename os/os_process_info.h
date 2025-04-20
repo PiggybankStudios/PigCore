@@ -90,12 +90,40 @@ PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 		FixPathSlashes(resultPath);
 		SetOptionalOutPntr(resultOut, Result_Success);
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// 	SetOptionalOutPntr(resultOut, Result_UnsupportedPlatform);
-	// 	return FilePath_Empty;
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin1(scratch, arena);
+		
+		//TODO: Rather than using PATH_MAX here we should call lstat("/proc/self/exe") and look at stat.st_size to find the size of the executable path
+		char* scratchBuffer = (char*)AllocMem(scratch, PATH_MAX);
+		NotNull(scratchBuffer);
+		ssize_t readLinkResult = readlink(
+			"/proc/self/exe", //path
+			scratchBuffer, //buf
+			PATH_MAX //bufsiz
+		);
+		if (readLinkResult < 0)
+		{
+			SetOptionalOutPntr(resultOut, Result_Failure); //TODO: check errno and report better errors
+			return FilePath_Empty;
+		}
+		
+		Assert((u64)readLinkResult <= UINTXX_MAX);
+		resultPath.length = (uxx)readLinkResult;
+		resultPath.chars = (char*)AllocMem(arena, resultPath.length+1);
+		if (resultPath.chars == nullptr)
+		{
+			SetOptionalOutPntr(resultOut, Result_FailedToAllocateMemory);
+			return FilePath_Empty;
+		}
+		
+		if (resultPath.length > 0) { MyMemCopy(resultPath.chars, scratchBuffer, resultPath.length); }
+		resultPath.chars[resultPath.length] = '\0';
+		FixPathSlashes(resultPath);
+		SetOptionalOutPntr(resultOut, Result_Success);
+		
+		ScratchEnd(scratch);
+	}
 	// #elif TARGET_IS_OSX
 	// {
 	//	//TODO: Implement me!
@@ -154,12 +182,46 @@ PEXP FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
 		SetOptionalOutPntr(resultOut, Result_Success);
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// 	SetOptionalOutPntr(resultOut, Result_UnsupportedPlatform);
-	// 	return FilePath_Empty;
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin1(scratch, arena);
+		
+		char* scratchBuffer = (char*)AllocMem(scratch, PATH_MAX);
+		NotNull(scratchBuffer);
+		
+		//TODO: After POSIX.1-2001 we can pass nullptr, 0 to have getcwd call malloc with appropriate space
+		char* getCwdResult = getcwd(scratchBuffer, PATH_MAX);
+		scratchBuffer[PATH_MAX-1] = '\0'; //getcwd should ensure null-termination but just to be sure let's write that last byte again
+		if (getCwdResult == nullptr)
+		{
+			//TODO: if ERANGE was returned then we should allocate a larger scratch buffer?
+			//TODO: Check errno and give better error Result!
+			SetOptionalOutPntr(resultOut, Result_Failure);
+			ScratchEnd(scratch);
+			return FilePath_Empty;
+		}
+		
+		uxx pathLength = (uxx)MyStrLength(getCwdResult);
+		bool needTrailingSlash = (pathLength == 0 || !(getCwdResult[pathLength-1] == '\\' || getCwdResult[pathLength-1] == '/'));
+		resultPath.length = pathLength + (needTrailingSlash ? 1 : 0);
+		DebugAssert(resultPath.length < PATH_MAX);
+		resultPath.chars = (char*)AllocMem(arena, resultPath.length+1);
+		if (resultPath.chars == nullptr)
+		{
+			SetOptionalOutPntr(resultOut, Result_FailedToAllocateMemory);
+			ScratchEnd(scratch);
+			return FilePath_Empty;
+		}
+		
+		if (resultPath.length > 0) { MyMemCopy(resultPath.chars, getCwdResult, pathLength); }
+		if (needTrailingSlash) { resultPath.chars[pathLength] = '/'; }
+		resultPath.chars[resultPath.length] = '\0';
+		FixPathSlashes(resultPath);
+		Assert(DoesPathHaveTrailingSlash(resultPath));
+		
+		SetOptionalOutPntr(resultOut, Result_Success);
+		ScratchEnd(scratch);
+	}
 	// #elif TARGET_IS_OSX
 	// {
 	// 	//TODO: Implement me!
@@ -257,7 +319,7 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		ScratchEnd(scratch);
 	}
 	#else
-	AssertMsg(false, "OsGetAppdataDirectory does not support the current platform yet!")
+	AssertMsg(false, "OsGetAppdataDirectory does not support the current platform yet!");
 	#endif
 	
 	return result;

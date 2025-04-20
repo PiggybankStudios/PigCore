@@ -402,3 +402,7 @@ PEXPI r64 GetRandR64Range(RandomSeries* series, r64 min, r64 max)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MISC_RANDOM_H
+
+#if defined(_OS_FILE_H) && defined(_MISC_RANDOM_H)
+#include "cross/cross_file_and_random.h"
+#endif
