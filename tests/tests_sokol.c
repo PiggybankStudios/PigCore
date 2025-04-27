@@ -591,7 +591,7 @@ bool AppFrame(void)
 				
 				if (igBegin("C Tokenizer", &isCTokenizerWindowOpen, ImGuiWindowFlags_None))
 				{
-					igText("%llu Token%s:", (u64)tokenizer.tokens.length, Plural(tokenizer.tokens.length, "s"));
+					igText("%llu Token%s: (%s)", (u64)tokenizer.tokens.length, Plural(tokenizer.tokens.length, "s"), GetResultStr(tokenizer.error));
 					igIndent(1.0f);
 					
 					tokenizer.outputTokenIndex = 0;

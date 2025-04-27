@@ -281,7 +281,7 @@ PEXP cToken* NextCToken(cTokenizer* tokenizer)
 			newToken.rawStr = StrSlice(tokenizer->inputStr, tokenizer->inputByteIndex, stringEndIndex);
 			Str8 innerStr = StrSlice(tokenizer->inputStr, tokenizer->inputByteIndex + codepointSize, innerStringEndIndex);
 			newToken.str = UnescapeStringEx(tokenizer->arena, innerStr, EscapeSequence_All, false);
-			if (newToken.str.chars == nullptr && newToken.rawStr.length > 0)
+			if (newToken.str.chars == nullptr && innerStr.length > 0)
 			{
 				tokenizer->finished = true;
 				tokenizer->error = Result_FailedToAllocateMemory;

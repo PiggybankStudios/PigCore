@@ -30,6 +30,7 @@ for /f "delims=" %%i in ('%extract_define% DUMP_PREPROCESSOR') do set DUMP_PREPR
 for /f "delims=" %%i in ('%extract_define% CONVERT_WASM_TO_WAT') do set CONVERT_WASM_TO_WAT=%%i
 for /f "delims=" %%i in ('%extract_define% USE_EMSCRIPTEN') do set USE_EMSCRIPTEN=%%i
 for /f "delims=" %%i in ('%extract_define% ENABLE_AUTO_PROFILE') do set ENABLE_AUTO_PROFILE=%%i
+for /f "delims=" %%i in ('%extract_define% RUN_FUZZER') do set RUN_FUZZER=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
@@ -227,6 +228,11 @@ if "%DUMP_PREPROCESSOR%"=="1" (
 	set common_cl_flags=/P /C %common_cl_flags%
 	REM -E = Only run the preprocessor
 	set common_clang_flags=%common_clang_flags% -E
+)
+
+if "%RUN_FUZZER%"=="1" (
+	REM /fsanitize=fuzzer = Enable the fuzzing entry-point so we can run tests using the "Fuzzing" approach to generate random inputs
+	set common_cl_flags=%common_cl_flags% /fsanitize=fuzzer
 )
 
 set wasm_js_files=..\%root%\wasm\wasm_globals.js
