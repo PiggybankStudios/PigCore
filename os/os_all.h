@@ -23,7 +23,7 @@ Description:
 #include "os/os_virtual_mem.h"
 
 #include "mem/mem_arena.h" //required by os_path.h, os_program_args.h, os_file.h and os_process_info.h
-#include "struct/struct_string.h" //required by os_path.h, os_program_args.h and os_file.h
+#include "struct/struct_string.h" //required by os_path.h, os_program_args.h, os_file.h and os_orca.h
 
 #include "os/os_path.h"
 
@@ -43,5 +43,11 @@ Description:
 
 #include "os/os_process_info.h"
 #include "os/os_font.h"
+
+#include "struct/struct_vectors.h" //required by os_orca.h
+#include "struct/struct_rectangles.h" //required by os_orca.h
+#include "struct/struct_color.h" //required by os_orca.h
+
+#include "os/os_orca.h"
 
 #endif //  _OS_ALL_H

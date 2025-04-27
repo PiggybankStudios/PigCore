@@ -115,6 +115,10 @@ enum EscapeSequence
 	PIG_CORE_INLINE Str16 Str16Lit(const char16_t* nullTermStr);
 	PIG_CORE_INLINE Str16 NewStr16(uxx length, const void* pntr);
 	PIG_CORE_INLINE Str8Pair NewStr8Pair(Str8 left, Str8 right);
+	#if TARGET_IS_ORCA
+	PIG_CORE_INLINE oc_str8 ToOcStr8(Str8 str);
+	PIG_CORE_INLINE Str8 ToStr8FromOc(oc_str8 orcaStr);
+	#endif //TARGET_IS_ORCA
 	PIG_CORE_INLINE bool IsEmptyStr(Str8 string) { return (string.length == 0); };
 	PIG_CORE_INLINE bool IsNullStr(Str8 string) { return (string.length > 0 && string.pntr == nullptr); };
 	PIG_CORE_INLINE bool IsNullTerminated(Str8 string) { return (string.pntr != nullptr && string.chars[string.length] == '\0'); };
@@ -238,6 +242,11 @@ PEXPI Str8Pair NewStr8Pair(Str8 left, Str8 right)
 	result.right = right;
 	return result;
 }
+
+#if TARGET_IS_ORCA
+PEXPI oc_str8 ToOcStr8(Str8 str) { return NEW_STRUCT(oc_str8){ .ptr = str.chars, .len = (size_t)str.length }; }
+PEXPI Str8 ToStr8FromOc(oc_str8 orcaStr) { DebugAssert(orcaStr.len <= UINTXX_MAX); return NewStr8((uxx)orcaStr.len, orcaStr.ptr); }
+#endif //TARGET_IS_ORCA
 
 PEXPI bool IsEmptyStr(Str8 string) { return (string.length == 0); }
 PEXPI bool IsNullStr(Str8 string) { return (string.length > 0 && string.pntr == nullptr); }

@@ -142,6 +142,10 @@ typedef Obb3D obb3;
 	PIG_CORE_INLINE boxi ToBoxiFromf(box boundingBox);
 	PIG_CORE_INLINE obb2 ToObb2FromRec(rec rectangle);
 	PIG_CORE_INLINE obb3 ToObb3FromBox(box boundingBox);
+	#if TARGET_IS_ORCA
+	PIG_CORE_INLINE oc_rect ToOcRect(rec rectangle);
+	PIG_CORE_INLINE rec ToRecFromOc(oc_rect orcaRectangle);
+	#endif //TARGET_IS_ORCA
 	PIG_CORE_INLINE rec AddRec(rec rectangle, v2 offset);
 	PIG_CORE_INLINE reci AddReci(reci rectangle, v2i offset);
 	PIG_CORE_INLINE box AddBox(box boundingBox, v3 offset);
@@ -535,6 +539,11 @@ PEXPI box ToBoxFromi(boxi boundingBox) { return NewBox((r32)boundingBox.X, (r32)
 PEXPI boxi ToBoxiFromf(box boundingBox) { return NewBoxi((i32)boundingBox.X, (i32)boundingBox.Y, (i32)boundingBox.Z, (i32)boundingBox.Width, (i32)boundingBox.Height, (i32)boundingBox.Depth); }
 PEXPI obb2 ToObb2FromRec(rec rectangle) { return NewObb2(rectangle.X + rectangle.Width/2.0f, rectangle.Y + rectangle.Height/2.0f, rectangle.Width, rectangle.Height, 0.0f); }
 PEXPI obb3 ToObb3FromBox(box boundingBox) { return NewObb3(boundingBox.X + boundingBox.Width/2.0f, boundingBox.Y + boundingBox.Height/2.0f, boundingBox.Z + boundingBox.Depth/2.0f, boundingBox.Width, boundingBox.Height, boundingBox.Depth, Quat_Identity); }
+
+#if TARGET_IS_ORCA
+PEXPI oc_rect ToOcRect(rec rectangle) { return NEW_STRUCT(oc_rect){ .x = rectangle.X, .y = rectangle.Y, .w = rectangle.Width, .h = rectangle.Height }; }
+PEXPI rec ToRecFromOc(oc_rect orcaRectangle) { return NewRec(orcaRectangle.x, orcaRectangle.y, orcaRectangle.w, orcaRectangle.h); }
+#endif //TARGET_IS_ORCA
 
 // +--------------------------------------------------------------+
 // |                Operator Overload Equivalents                 |

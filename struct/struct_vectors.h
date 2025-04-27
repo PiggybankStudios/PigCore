@@ -141,6 +141,18 @@ typedef Vec4Raw v4r;
 	PIG_CORE_INLINE v4i ToV4iFrom3(v3i vec3i, i32 w);
 	PIG_CORE_INLINE v4r ToV4rFrom4(v4 vec4);
 	PIG_CORE_INLINE v4 ToV4Fromr(v4r vec4r);
+	#if TARGET_IS_ORCA
+	PIG_CORE_INLINE oc_vec2 ToOcVec2(v2 vector);
+	PIG_CORE_INLINE v2 ToV2FromOc(oc_vec2 orcaVector);
+	PIG_CORE_INLINE oc_vec3 ToOcVec3(v3 vector);
+	PIG_CORE_INLINE v3 ToV3FromOc(oc_vec3 orcaVector);
+	PIG_CORE_INLINE oc_vec4 ToOcVec4(v4 vector);
+	PIG_CORE_INLINE v4 ToV4FromOc(oc_vec4 orcaVector);
+	PIG_CORE_INLINE oc_vec2i ToOcVec2i(v2i vector);
+	PIG_CORE_INLINE v2i ToV2iFromOc(oc_vec2i orcaVector);
+	PIG_CORE_INLINE oc_color ToOcColorFromV4r(v4r colorVec);
+	PIG_CORE_INLINE v4r ToV4rFromOcColor(oc_color orcaColor);
+	#endif //TARGET_IS_ORCA
 	PIG_CORE_INLINE v2i AddV2i(v2i left, v2i right);
 	PIG_CORE_INLINE v3i AddV3i(v3i left, v3i right);
 	PIG_CORE_INLINE v4i AddV4i(v4i left, v4i right);
@@ -411,6 +423,23 @@ PEXPI v4 ToV4Fromi(v4i vec4i) { return NewV4((r32)vec4i.X, (r32)vec4i.Y, (r32)ve
 PEXPI v4i ToV4iFrom3(v3i vec3i, i32 w) { return NewV4i(vec3i.X, vec3i.Y, vec3i.Z, w); }
 PEXPI v4r ToV4rFrom4(v4 vec4) { return NewV4r(vec4.X, vec4.Y, vec4.Z, vec4.W); }
 PEXPI v4 ToV4Fromr(v4r vec4r) { return NewV4(vec4r.X, vec4r.Y, vec4r.Z, vec4r.W); }
+
+#if TARGET_IS_ORCA
+PEXPI oc_vec2 ToOcVec2(v2 vector) { return NEW_STRUCT(oc_vec2){ .x = vector.X, .y = vector.Y }; }
+PEXPI v2 ToV2FromOc(oc_vec2 orcaVector) { return NewV2(orcaVector.x, orcaVector.y); }
+
+PEXPI oc_vec2i ToOcVec2i(v2i vector) { return NEW_STRUCT(oc_vec2i){ .x = vector.X, .y = vector.Y }; }
+PEXPI v2i ToV2iFromOc(oc_vec2i orcaVector) { return NewV2i(orcaVector.x, orcaVector.y); }
+
+PEXPI oc_vec3 ToOcVec3(v3 vector) { return NEW_STRUCT(oc_vec3){ .x = vector.X, .y = vector.Y, .z = vector.Z }; }
+PEXPI v3 ToV3FromOc(oc_vec3 orcaVector) { return NewV3(orcaVector.x, orcaVector.y, orcaVector.z); }
+
+PEXPI oc_vec4 ToOcVec4(v4 vector) { return NEW_STRUCT(oc_vec4){ .x = vector.X, .y = vector.Y, .z = vector.Z, .w = vector.W }; }
+PEXPI v4 ToV4FromOc(oc_vec4 orcaVector) { return NewV4(orcaVector.x, orcaVector.y, orcaVector.z, orcaVector.w); }
+
+PEXPI oc_color ToOcColorFromV4r(v4r colorVec) { return NEW_STRUCT(oc_color){ .r = colorVec.X, .g = colorVec.Y, .b = colorVec.Z, .a = colorVec.W }; }
+PEXPI v4r ToV4rFromOcColor(oc_color orcaColor) { return NewV4r(orcaColor.r, orcaColor.g, orcaColor.b, orcaColor.a); }
+#endif //TARGET_IS_ORCA
 
 // +--------------------------------------------------------------+
 // |                Operator Overload Equivalents                 |
