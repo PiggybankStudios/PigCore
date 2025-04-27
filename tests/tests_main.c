@@ -46,6 +46,7 @@ Description:
 #include "gfx/gfx_all.h"
 #include "gfx/gfx_system_global.h"
 #include "phys/phys_all.h"
+#include "parse/parse_all.h"
 
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/raylib.h"
@@ -541,6 +542,7 @@ static int SqliteCallback(void *NotUsed, int argc, char** argv, char** azColName
 // +--------------------------------------------------------------+
 // |                             Main                             |
 // +--------------------------------------------------------------+
+#if !RUN_FUZZER
 #if BUILD_WITH_SOKOL_APP
 int MyMain(int argc, char* argv[]) //pre-declared in tests_sokol.c
 #elif TARGET_IS_ORCA
@@ -1571,6 +1573,7 @@ int main(int argc, char* argv[])
 	WriteLine_I("All tests completed successfully!");
 	return 0;
 }
+#endif //!RUN_FUZZER
 
 #if TARGET_IS_WEB && !COMPILER_IS_EMSCRIPTEN
 WASM_EXPORTED_FUNC(int, ModuleInit, r32 initializeTimestamp)
@@ -1699,6 +1702,38 @@ ORCA_EXPORT void oc_on_frame_refresh(void)
     oc_gles_surface_swap_buffers(surface);
 }
 
+#endif //TARGET_IS_ORCA
+
+#if RUN_FUZZER
+int LLVMFuzzerTestOneInput(const u8* inputPntr, size_t inputSize)
+{
+	InitArenaStdHeap(&stdHeapStruct);
+	stdHeap = &stdHeapStruct;
+	// InitScratchArenasVirtual(Gigabytes(4)); //TODO: We need to free this in order for fuzzing to work properly! If we don't free we end up with too much virtual memory and the OS refuses to give us more!
+	uxx arenaUsedBefore = stdHeap->used;
+	
+	if (inputSize > UINTXX_MAX) { inputSize = UINTXX_MAX; }
+	Str8 inputStr = NewStr8((uxx)inputSize, inputPntr);
+	
+	cTokenizer tokenizer = NewCTokenizer(stdHeap, inputStr);
+	cToken* token = NextCToken(&tokenizer);
+	while (token != nullptr)
+	{
+		token = NextCToken(&tokenizer);
+	}
+	Assert(tokenizer.finished);
+	Assert(tokenizer.error != Result_FailedToAllocateMemory);
+	Assert(tokenizer.error == Result_Success || tokenizer.error == Result_InvalidUtf8);
+	Assert(tokenizer.outputTokenIndex == tokenizer.tokens.length);
+	Assert(tokenizer.inputByteIndex == inputStr.length || tokenizer.error == Result_InvalidUtf8);
+	
+	FreeCTokenizer(&tokenizer);
+	
+	Assert(stdHeap->used == arenaUsedBefore);
+	//TODO: Should we verify scratch arenas are all reset to 0?
+	return 0;
+	
+}
 #endif
 
 #if USING_CUSTOM_STDLIB

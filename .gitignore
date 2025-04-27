@@ -5,3 +5,6 @@ third_party/bullet/
 third_party/ode/
 third_party/_lib_debug/old
 third_party/_lib_release/old
+
+_fuzzing/c_tokenizer_corpus/*
+!_fuzzing/c_tokenizer_corpus/*.c

@@ -54,6 +54,8 @@ bool isFileMenuOpen = false;
 #if BUILD_WITH_IMGUI
 ImguiUI* imgui = nullptr;
 bool isImguiDemoWindowOpen = false;
+bool isCTokenizerWindowOpen = false;
+cTokenizer tokenizer = {};
 #endif
 #if BUILD_WITH_PHYSX
 PhysicsWorld* physWorld = nullptr;
@@ -550,6 +552,7 @@ bool AppFrame(void)
 				if (igBeginMenu("Menu", true))
 				{
 					igMenuItem_BoolPtr("Demo Window", nullptr, &isImguiDemoWindowOpen, true);
+					igMenuItem_BoolPtr("C Tokenizer", nullptr, &isCTokenizerWindowOpen, true);
 					if (igMenuItem_Bool("Close", "Alt+F4", false, true)) { sapp_request_quit(); }
 					igEndMenu();
 				}
@@ -561,6 +564,60 @@ bool AppFrame(void)
 			{
 				igShowDemoWindow(&isImguiDemoWindowOpen);
 			}
+			
+			// +==============================+
+			// |   C Tokenizer Imgui Window   |
+			// +==============================+
+			if (isCTokenizerWindowOpen)
+			{
+				if (IsKeyboardKeyPressed(&keyboard, Key_R) && tokenizer.arena != nullptr)
+				{
+					FreeStr8(stdHeap, &tokenizer.inputStr);
+					FreeCTokenizer(&tokenizer);
+				}
+				
+				if (tokenizer.arena == nullptr)
+				{
+					Str8 fileContents = Str8_Empty;
+					if (OsReadTextFile(FilePathLit("tokenizer_test.c"), stdHeap, &fileContents))
+					{
+						tokenizer = NewCTokenizer(stdHeap, fileContents);
+					}
+					else
+					{
+						tokenizer = NewCTokenizer(stdHeap, Str8_Empty);
+					}
+				}
+				
+				if (igBegin("C Tokenizer", &isCTokenizerWindowOpen, ImGuiWindowFlags_None))
+				{
+					igText("%llu Token%s: (%s)", (u64)tokenizer.tokens.length, Plural(tokenizer.tokens.length, "s"), GetResultStr(tokenizer.error));
+					igIndent(1.0f);
+					
+					tokenizer.outputTokenIndex = 0;
+					tokenizer.finished = false;
+					cToken* token = NextCToken(&tokenizer);
+					while (token != nullptr)
+					{
+						igText("[%llu] %s \"%.*s\" (Raw \"%.*s\")",
+							(u64)token->index,
+							GetcTokenTypeStr(token->type),
+							StrPrint(token->str),
+							StrPrint(token->rawStr)
+						);
+						token = NextCToken(&tokenizer);
+					}
+					
+					igUnindent(1.0f);
+				}
+				igEnd();
+			}
+			else if (tokenizer.arena != nullptr)
+			{
+				FreeStr8(stdHeap, &tokenizer.inputStr);
+				FreeCTokenizer(&tokenizer);
+			}
+			
 			GfxSystem_ImguiEndFrame(&gfx, imgui);
 			#endif
 		}
