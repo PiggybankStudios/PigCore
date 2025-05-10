@@ -9,6 +9,7 @@ Description:
 	** Because it is scraped, and not parsed with the full C language spec, we must
 	** be careful to keep this file very simple and not introduce any syntax that
 	** would confuse the scraper when it's searching for values
+	** NOTE: See tools\extract_define_main.c for the source code of the scraper
 */
 
 #ifndef _BUILD_CONFIG_H

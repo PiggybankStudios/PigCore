@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# TODO: This file is DEPRECATED in favor of C version in tools\extract_define_main.c
+
 #  File:   extract_define.py
 #  Author: Taylor Robbins
 #  Date:   12\31\2024

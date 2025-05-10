@@ -2239,6 +2239,7 @@
 			"ShaderUniformType",
 			"Sound",
 			"SqliteFileHandle",
+			"Str8",
 			"Str8Pair",
 			"StrBuffFlag",
 			"TextParser",
