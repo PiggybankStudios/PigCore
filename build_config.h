@@ -59,6 +59,10 @@ Description:
 #define USE_EMSCRIPTEN 0
 // Enables auto-profiling on function entry/exit (for clang only). Dumps to a file that can be viewed by spall
 #define ENABLE_AUTO_PROFILE 0
+// Enables the fuzzing codepath (/fsanitize=fuzzer in MSVC) that helps us test functionality of code by "fuzzing" input data
+// and tracking code-paths reached to help us search the possibility space efficiently, looking for crashes or assertions for any input
+// NOTE: tests.exe must be run inside a Visual Studio CMD instance so it can find the asan .dll
+#define RUN_FUZZER 1
 
 // +===============================+
 // | Optional Libraries/Frameworks |
