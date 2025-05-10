@@ -226,6 +226,10 @@ PEXPI mat4 ToMat4From3(mat3 matrix3)
 	);
 }
 
+#if TARGET_IS_ORCA
+//TODO: oc_mat2x3 conversion functions!
+#endif //TARGET_IS_ORCA
+
 PEXPI bool AreEqualMat2(mat2 left, mat2 right) { return (HMM_EqV2(left.Columns[0], right.Columns[0]) && HMM_EqV2(left.Columns[1], right.Columns[1])); }
 PEXPI bool AreEqualMat3(mat3 left, mat3 right) { return (HMM_EqV3(left.Columns[0], right.Columns[0]) && HMM_EqV3(left.Columns[1], right.Columns[1]) && HMM_EqV3(left.Columns[2], right.Columns[2])); }
 PEXPI bool AreEqualMat4(mat4 left, mat4 right) { return (HMM_EqV4(left.Columns[0], right.Columns[0]) && HMM_EqV4(left.Columns[1], right.Columns[1]) && HMM_EqV4(left.Columns[2], right.Columns[2]) && HMM_EqV4(left.Columns[3], right.Columns[3])); }

@@ -115,7 +115,7 @@ Arena* stdHeap = nullptr;
 // |                           Helpers                            |
 // +--------------------------------------------------------------+
 
-#if 0
+#if 1
 void PrintArena(Arena* arena)
 {
 	if (arena->committed > 0)
@@ -675,21 +675,37 @@ int main(int argc, char* argv[])
 		PrintLine_D("allocatedInt6: %p", allocatedInt6);
 		PrintArena(&bufferArena);
 		
-		u64 mark1 = ArenaGetMark(&scratch1);
-		PrintArena(&scratch1);
-		u32* num1 = (u32*)AllocMem(&scratch1, sizeof(u32));
+		ScratchBegin(scratch);
+		u64 mark1 = ArenaGetMark(scratch);
+		PrintArena(scratch);
+		u32* num1 = (u32*)AllocMem(scratch, sizeof(u32));
 		PrintLine_D("num1 %p", num1);
-		PrintArena(&scratch1);
-		u32* num2 = (u32*)AllocMem(&scratch1, sizeof(u32));
+		PrintArena(scratch);
+		u32* num2 = (u32*)AllocMem(scratch, sizeof(u32));
 		PrintLine_D("num2 %p", num2);
-		PrintArena(&scratch1);
-		u32* num3 = (u32*)AllocMem(&scratch1, sizeof(u32));
+		PrintArena(scratch);
+		u32* num3 = (u32*)AllocMem(scratch, sizeof(u32));
 		PrintLine_D("num3 %p", num3);
-		PrintArena(&scratch1);
-		FreeMem(&scratch1, num3, sizeof(u32));
-		PrintArena(&scratch1);
-		ArenaResetToMark(&scratch1, mark1);
-		PrintArena(&scratch1);
+		PrintArena(scratch);
+		FreeMem(scratch, num3, sizeof(u32));
+		PrintArena(scratch);
+		ArenaResetToMark(scratch, mark1);
+		PrintArena(scratch);
+		ScratchEnd(scratch);
+	}
+	#endif
+	
+	// +==============================+
+	// |          Orca Tests          |
+	// +==============================+
+	#if 1
+	{
+		v2 pigV2 = NewV2(17, 31);
+		oc_vec2 orcaVec2 = { .x = 7, .y = 13 };
+		v2 toPigV2 = ToV2FromOc(orcaVec2);
+		oc_vec2 toOrcaVec2 = ToOcVec2(pigV2);
+		PrintLine_D("ToV2FromOc => (%g, %g)", toPigV2.X, toPigV2.Y);
+		PrintLine_D("ToOcVec2 => (%g, %g)", toOrcaVec2.x, toOrcaVec2.y);
 	}
 	#endif
 	
