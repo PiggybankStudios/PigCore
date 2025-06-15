@@ -1,0 +1,6 @@
+name=Pig Core: Tests
+author=Piggybank Studios LLC
+description=A compilation of Pig Core Tests for the Playdate
+bundleID=com.piggybankstudios.pigcortests
+version=0.1
+buildNumber=1

@@ -81,14 +81,12 @@ typedef unsigned char char16_t;
 
 #if TARGET_IS_PLAYDATE
 	#include "pd_api.h"
+	#if !PIG_CORE_IMPLEMENTATION
 	extern PlaydateAPI* pd;
+	#else
+	PlaydateAPI* pd;
+	#endif
 	void* (*pdrealloc)(void* pntr, size_t size);
-	
-	#if TARGET_IS_PLAYDATE_DEVICE
-	void* _malloc_r(struct _reent* _REENT, size_t nbytes) { return pdrealloc(NULL,nbytes); }
-	void* _realloc_r(struct _reent* _REENT, void* ptr, size_t nbytes) { return pdrealloc(ptr,nbytes); }
-	void _free_r(struct _reent* _REENT, void* ptr ) { if ( ptr != NULL ) pdrealloc(ptr,0); }
-	#endif //PLAYDATE_DEVICE
 #endif
 
 #if TARGET_IS_WINDOWS

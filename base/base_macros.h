@@ -224,37 +224,25 @@ Description:
 // +--------------------------------------------------------------+
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
-//TODO: How does packing attributes work on all compilers and platforms?
-#if TARGET_IS_WINDOWS
-	#define PACKED(class_to_pack) __pragma( pack(push, 1) ) class_to_pack __pragma(pack(pop))
-	#define START_PACK()  __pragma(pack(push, 1))
-	#define END_PACK()    __pragma(pack(pop))
-	#define ATTR_PACKED //nothing
+//NOTE: Because MSVC is annoying and doesn't have an attribute, you must do
+// both START_PACK()+END_PACK() around your struct(s) and add ATTR_PACKED to each struct
+#if COMPILER_IS_MSVC
+	#define PACKED(structCode)        __pragma( pack(push, 1) ) structCode __pragma(pack(pop))
+	#define START_PACK()              __pragma(pack(push, 1))
+	#define END_PACK()                __pragma(pack(pop))
+	#define ATTR_PACKED               //nothing
 	#define EXPORT_FUNC(functionName) __declspec(dllexport)
 	// #define EXPORT(returnType, functionName, ...) returnType __declspec(dllexport) functionName(__VA_ARGS__)
 	// #define IMPORT(returnType, functionName, ...) returnType __declspec(dllimport) functionName(__VA_ARGS__)
 	// #define __func__ __FUNCTION__
-#elif TARGET_IS_PLAYDATE
-	#define PACKED(class_to_pack) //TODO: Nothing?
-	#define START_PACK()          //TODO: Nothing?
-	#define END_PACK()            //TODO: Nothing?
-	#define ATTR_PACKED           //TODO: Nothing?
-	#define EXPORT_FUNC __declspec(dllexport) //TODO: Is this right?
-	// #if TARGET_IS_PLAYDATE_SIMULATOR
-	// #define EXPORT(returnType, functionName, ...) returnType __declspec(dllexport) functionName(__VA_ARGS__)
-	// #define IMPORT(returnType, functionName, ...) returnType __declspec(dllimport) functionName(__VA_ARGS__)
-	// #else
-	// #define EXPORT(returnType, functionName, ...) returnType __attribute__((dllexport)) functionName(__VA_ARGS__)
-	// #define IMPORT(returnType, functionName, ...) // Not supported!
-	// #endif
 #else
-	#define PACKED(class_to_pack) class_to_pack __attribute__((__packed__))
-	#define START_PACK()  //nothing
-	#define END_PACK()    //nothing
-	#define ATTR_PACKED __attribute__((__packed__))
-	// #define EXPORT_FUNC(functionName) __attribute__((export_name(#functionName)))
+	#define PACKED(structCode)        structCode __attribute__((__packed__))
+	#define START_PACK()              //nothing
+	#define END_PACK()                //nothing
+	#define ATTR_PACKED               __attribute__((__packed__))
 	#define EXPORT_FUNC(functionName) __attribute__((visibility("default")))
 	// #define EXPORT(returnType, functionName, ...) returnType __attribute__((export_name(#functionName))) functionName(__VA_ARGS__)
+	// #define IMPORT(returnType, functionName, ...) returnType __declspec(dllimport) functionName(__VA_ARGS__)
 	//TODO: Figure out how to do IMPORT on other platforms
 #endif
 

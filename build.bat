@@ -181,12 +181,11 @@ rem -specs=nano.specs = Required for things like _read, _write, _exit, etc. to n
 rem -specs=nosys.specs = ?
 set playdate_dev_gcc_common_flags=%playdate_dev_gcc_common_flags% -mthumb -mcpu=%playdate_chip% -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__FPU_USED=1 -specs=nano.specs -specs=nosys.specs
 rem -g3 = Produce debugging information in the operating system's native format (3 = ?)
-rem -std=gnu11 = ? (Removed, because we are compiling C++, not C)
 rem -MD = (MSVC Option) Use the multithread-specific and DLL-specific version of the run-time library
 rem -MT = (MSVC Option) Use the multithread, static version of the run-time library
 rem -MP = This option instructs CPP to add a phony target for each dependency other than the main file, causing each to depend on nothing. These dummy rules work around errors make gives if you remove header files without updating the Makefile to match
 rem       ==OR== (MSVC Option) Build multiple source files concurrently (removed)
-rem -MF = When used with the driver options -MD or -MMD, -MF overrides the default dependency output file
+rem -MF tests.d = (Optional) When used with the driver options -MD or -MMD, -MF overrides the default dependency output file
 rem -gdwarf-2 = Produce debugging information in DWARF version 2 format (if that is supported). This is the format used by DBX on IRIX 6. With this option, GCC uses features of DWARF version 3 when they are useful; version 3 is upward compatible with version 2, but may still cause problems for older debuggers.
 set playdate_dev_gcc_compile_flags= -g3 -MD -MF tests.d -gdwarf-2
 rem -fverbose-asm = ?
@@ -213,13 +212,14 @@ rem -Wa,-ahlms=%ProjectNameSafe%.lst = ? (Removed)
 set playdate_dev_gcc_compile_flags=%playdate_dev_gcc_compile_flags% -Wall -Wno-unknown-pragmas -Wdouble-promotion -Wno-comment -Wno-switch -Wno-nonnull -Wno-unused -Wno-missing-braces -Wno-char-subscripts -Wno-double-promotion
 rem -nostartfiles = ?
 rem --entry eventHandlerShim
-rem -Map = ?
+rem --no-warn-rwx-segments = Suppress warning about Exectuable+Writable LOAD segmenet (which is defined by the Playdate linker script presumably)
 rem --cref = ?
 rem --gc-sections = ?
 rem --no-warn-mismatch = ?
 rem --emit-relocs = ?
-set playdate_dev_linker_flags=-nostartfiles --entry eventHandlerShim -Wl,-Map=%OutputMapName%,--cref,--gc-sections,--no-warn-mismatch,--emit-relocs
+set playdate_dev_linker_flags=-nostartfiles --entry eventHandlerShim -Wl,--no-warn-rwx-segments,--cref,--gc-sections,--no-warn-mismatch,--emit-relocs
 set playdate_dev_linker_flags=%playdate_dev_linker_flags% -T"%playdate_sdk_directory%\C_API\buildsupport\link_map.ld"
+set playdate_pdc_flags=-q -sdkpath "%playdate_sdk_directory%"
 
 if "%DEBUG_BUILD%"=="1" (
 	REM /MDd = ?
@@ -495,7 +495,9 @@ if "%BUILD_PIG_CORE_DLL%"=="1" (
 set tests_source_path=%root%/tests/tests_main.c
 set tests_obj_path=tests.obj
 set tests_exe_path=tests.exe
-set tests_elf_path=tests.elf
+set tests_elf_path=pdex.elf
+set tests_map_name=tests.map
+set tests_pdx_name=tests.pdx
 set tests_bin_path=tests
 set tests_wasm_path=app.wasm
 set tests_orca_wasm_path=module.wasm
@@ -597,7 +599,11 @@ if "%BUILD_TESTS%"=="1" (
 		REM compile to .obj
 		%playdate_arm_compiler_prefix%-gcc -c %tests_source_path% -o %tests_obj_path% %playdate_gcc_flags% %playdate_dev_gcc_common_flags% %playdate_dev_gcc_compile_flags%
 		REM then link into .elf
-		%playdate_arm_compiler_prefix%-gcc %tests_obj_path% %playdate_gcc_flags% %playdate_dev_gcc_common_flags% %playdate_dev_linker_flags% -o %tests_elf_path%
+		%playdate_arm_compiler_prefix%-gcc %tests_obj_path% %playdate_gcc_flags% %playdate_dev_gcc_common_flags% %playdate_dev_linker_flags% -o %tests_elf_path% -Wl,-Map=%tests_map_name%
+		if not exist playdate_data mkdir playdate_data
+		COPY "%tests_elf_path%" "playdate_data\%tests_elf_path%"
+		COPY "%root%\pdxinfo" "playdate_data\pdxinfo"
+		"%pdc_exe_name%" %playdate_pdc_flags% "playdate_data" "%tests_pdx_name%"
 	)
 	rem if "%BUILD_PLAYDATE_SIMULATOR%"=="1" (
 	rem 	%playdate_arm_compiler_prefix%-gcc -c %tests_source_path% -o %tests_obj_path%

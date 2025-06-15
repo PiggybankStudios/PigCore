@@ -33,20 +33,25 @@ Description:
 #include "build_config.h"
 
 #include "base/base_compiler_check.h"
+#include "base/base_defines_check.h"
+#include "base/base_macros.h"
+#include "base/base_debug_output.h"
+#include "std/std_printf.h"
+// #include "base/base_debug_output_impl.h"
 
-#include "base/base_all.h"
-#include "std/std_all.h"
-#include "os/os_all.h"
-#include "mem/mem_all.h"
-#include "struct/struct_all.h"
-#include "misc/misc_all.h"
-#include "input/input_all.h"
-#include "file_fmt/file_fmt_all.h"
-#include "ui/ui_all.h"
-#include "gfx/gfx_all.h"
-#include "gfx/gfx_system_global.h"
-#include "phys/phys_all.h"
-#include "parse/parse_all.h"
+// #include "base/base_all.h"
+// #include "std/std_all.h"
+// #include "os/os_all.h"
+// #include "mem/mem_all.h"
+// #include "struct/struct_all.h"
+// #include "misc/misc_all.h"
+// #include "input/input_all.h"
+// #include "file_fmt/file_fmt_all.h"
+// #include "ui/ui_all.h"
+// #include "gfx/gfx_all.h"
+// #include "gfx/gfx_system_global.h"
+// #include "phys/phys_all.h"
+// #include "parse/parse_all.h"
 
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/raylib.h"
@@ -93,9 +98,11 @@ Description:
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
+#if 0
 RandomSeries mainRandomStruct = ZEROED;
 RandomSeries* mainRandom = nullptr;
-#if !USING_CUSTOM_STDLIB
+#endif
+#if !USING_CUSTOM_STDLIB && 0
 Arena stdHeapStruct = ZEROED;
 Arena* stdHeap = nullptr;
 #endif
@@ -115,7 +122,7 @@ Arena* stdHeap = nullptr;
 // |                           Helpers                            |
 // +--------------------------------------------------------------+
 
-#if 1
+#if 0
 void PrintArena(Arena* arena)
 {
 	if (arena->committed > 0)
@@ -547,6 +554,8 @@ static int SqliteCallback(void *NotUsed, int argc, char** argv, char** azColName
 int MyMain(int argc, char* argv[]) //pre-declared in tests_sokol.c
 #elif TARGET_IS_ORCA
 int MyMain(int argc, char* argv[])
+#elif TARGET_IS_PLAYDATE_DEVICE
+int MyMain(int argc, char* argv[])
 #elif (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
@@ -599,6 +608,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |         Basic Arenas         |
 	// +==============================+
+	#if 0
 	#if USING_CUSTOM_STDLIB
 	Arena wasmMemory = ZEROED;
 	InitArenaStackWasm(&wasmMemory);
@@ -612,10 +622,12 @@ int main(int argc, char* argv[])
 	u8 arenaBuffer1[256] = ZEROED;
 	Arena bufferArena = ZEROED;
 	InitArenaBuffer(&bufferArena, arenaBuffer1, ArrayCount(arenaBuffer1));
+	#endif
 	
 	// +==============================+
 	// |     Scratch Arena Tests      |
 	// +==============================+
+	#if 0
 	#if USING_CUSTOM_STDLIB
 	InitScratchArenas(Megabytes(256), &wasmMemory);
 	#elif TARGET_IS_WASM || TARGET_IS_PLAYDATE
@@ -623,11 +635,12 @@ int main(int argc, char* argv[])
 	#else
 	InitScratchArenasVirtual(Gigabytes(4));
 	#endif
+	#endif
 	
 	// +==============================+
 	// |      RandomSeries Tests      |
 	// +==============================+
-	#if 1
+	#if 0
 	WriteLine_D("Initializing random number generator!");
 	InitRandomSeriesDefault(&mainRandomStruct);
 	SeedRandomSeriesU64(&mainRandomStruct, OsGetCurrentTimestamp(false));
@@ -1739,3 +1752,64 @@ int LLVMFuzzerTestOneInput(const u8* inputPntr, size_t inputSize)
 #if USING_CUSTOM_STDLIB
 #include "wasm/std/wasm_std_main.c"
 #endif
+
+#if TARGET_IS_PLAYDATE_DEVICE
+
+int PlaydateUpdateCallback(void* userData)
+{
+	//do nothing...
+	pd->graphics->clear(kColorBlack);
+	return 1;
+}
+
+void HandleSystemEvent(PDSystemEvent event, uint32_t arg)
+{
+	switch (event)
+	{
+		case kEventInit:
+		{
+			char* args[] = { "playdate" };
+			int mainResult = MyMain(ArrayCount(args), args);
+			if (mainResult != 0) { break; }
+			pd->system->setUpdateCallback(PlaydateUpdateCallback, nullptr);
+		} break;
+		
+		default:
+		{
+			
+		} break;
+	}
+}
+
+MAYBE_START_EXTERN_C
+#ifdef _WINDLL
+__declspec(dllexport)
+#endif
+int eventHandlerShim(PlaydateAPI* playdate, PDSystemEvent event, uint32_t arg)
+{
+	if (event == kEventInit) { pdrealloc = playdate->system->realloc; }
+	pd = playdate;
+	HandleSystemEvent(event, arg);
+	return 0;
+}
+MAYBE_END_EXTERN_C
+
+// +==============================+
+// |      DebugOutputRouter       |
+// +==============================+
+// void DEBUG_OUTPUT_HANDLER_DEF(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* message)
+DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
+{
+	pd->system->logToConsole(message);
+}
+
+// +==============================+
+// |       DebugPrintRouter       |
+// +==============================+
+// void DEBUG_PRINT_HANDLER_DEF(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* formatString, ...)
+DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
+{
+	pd->system->logToConsole(formatString);
+}
+
+#endif //TARGET_IS_PLAYDATE_DEVICE
