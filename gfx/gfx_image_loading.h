@@ -14,6 +14,7 @@ Description:
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_macros.h"
 #include "struct/struct_vectors.h"
 #include "misc/misc_result.h"
 #include "mem/mem_scratch.h"
@@ -28,9 +29,9 @@ Description:
 
 #if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
 	#if PIG_CORE_IMPLEMENTATION
-	thread_local Arena* StbImageScratchArena = nullptr;
+	THREAD_LOCAL Arena* StbImageScratchArena = nullptr;
 	#else
-	extern thread_local Arena* StbImageScratchArena;
+	extern THREAD_LOCAL Arena* StbImageScratchArena;
 	#endif
 #endif
 

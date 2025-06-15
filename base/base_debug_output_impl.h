@@ -42,11 +42,11 @@ Description:
 
 DebugOutput_f* DebugOutputCallback = nullptr;
 
-thread_local bool DebugOutputIsOnNewLine = true;
+THREAD_LOCAL bool DebugOutputIsOnNewLine = true;
 #if DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
-thread_local uxx DebugOutputLineLength = 0;
-thread_local char DebugOutputLineBuffer[DEBUG_OUTPUT_LINE_BUFFER_SIZE] = ZEROED;
-thread_local bool DebugOutputLineOverflowOccurred = false;
+THREAD_LOCAL uxx DebugOutputLineLength = 0;
+THREAD_LOCAL char DebugOutputLineBuffer[DEBUG_OUTPUT_LINE_BUFFER_SIZE] = ZEROED;
+THREAD_LOCAL bool DebugOutputLineOverflowOccurred = false;
 #endif //DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
 
 // +==============================+

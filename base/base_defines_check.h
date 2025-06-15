@@ -44,11 +44,11 @@ Description:
 	#if COMPILER_IS_MSVC
 	#define PEXP __declspec(dllexport)
 	#define PEXPI __declspec(dllexport) PIG_CORE_INLINE
-	#elif COMPILER_IS_CLANG
+	#elif COMPILER_IS_CLANG || IS_COMPILER_GCC
 	#define PEXP __attribute__((visibility("default")))
 	#define PEXPI __attribute__((visibility("default"))) PIG_CORE_INLINE
 	#else
-	#error This compiler doesn't have an implementation set for PEXP and PEXPI
+	#error This compiler doesnt have an implementation set for PEXP and PEXPI
 	#endif
 #else
 #define PEXP  //nothing

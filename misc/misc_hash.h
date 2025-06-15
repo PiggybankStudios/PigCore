@@ -16,10 +16,10 @@ Description:
 #define FNV_HASH_BASE_U64   0xcbf29ce484222325ULL //= DEC(14695981039346656037)
 #define FNV_HASH_PRIME_U64  0x100000001b3ULL      //= DEC(1099511628211)
 
-#if !TARGET_IS_WASM
-#define MEOW_HASH_AVAILABLE 1
-#else
+#if TARGET_IS_WASM || TARGET_IS_PLAYDATE
 #define MEOW_HASH_AVAILABLE 0
+#else
+#define MEOW_HASH_AVAILABLE 1
 #endif
 
 typedef union Hash128 Hash128;
@@ -84,7 +84,7 @@ PEXPI u8 FnvHashU8(const void* bufferPntr, u64 numBytes) { return (u8)FnvHashU64
 // +--------------------------------------------------------------+
 // |                     meow_hash Algorithm                      |
 // +--------------------------------------------------------------+
-//NOTE: When compiling for WASM we are getting: fatal error: 'x86intrin.h' file not found
+//NOTE: When compiling for WASM or Playdate we are getting: fatal error: 'x86intrin.h' file not found
 #if MEOW_HASH_AVAILABLE
 
 #include "third_party/meow_hash/meow_hash_x64_aesni.h"

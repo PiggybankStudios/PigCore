@@ -618,7 +618,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	#if USING_CUSTOM_STDLIB
 	InitScratchArenas(Megabytes(256), &wasmMemory);
-	#elif TARGET_IS_WASM
+	#elif TARGET_IS_WASM || TARGET_IS_PLAYDATE
 	InitScratchArenas(Megabytes(256), stdHeap);
 	#else
 	InitScratchArenasVirtual(Gigabytes(4));
@@ -698,7 +698,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |          Orca Tests          |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		v2 pigV2 = NewV2(17, 31);
 		oc_vec2 orcaVec2 = { .x = 7, .y = 13 };

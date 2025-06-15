@@ -24,9 +24,6 @@ Description:
 #endif
 #include "third_party/stb/stb_sprintf.h"
 
-#define MyPrint(formatStr, ...) printf_is_not_supported_on_playdate
-#define MyPrintNoLine(formatStr, ...) printf_is_not_supported_on_playdate
-
 //TODO: If we ever compile PigCore as a dll for Playdate then we may need to markup
 //      stbsp_sprintf with PEXP or maybe we need our own routing function around
 //      the call just so we can mark it up
@@ -36,6 +33,36 @@ Description:
 #ifndef MyVaListPrintf
 #define MyVaListPrintf(buffer, bufferSize, formatStr, vaList) stbsp_vsnprintf((buffer), (bufferSize), (formatStr), vaList)
 #endif
+
+#if !PIG_CORE_IMPLEMENTATION
+void PlaydatePrint(bool newLine, const char* formatStr, ...);
+#else
+PEXP void PlaydatePrint(bool newLine, const char* formatStr, ...)
+{
+	char printBuffer[256];
+	va_list args;
+	va_start(args, formatStr);
+	int printResult = MyVaListPrintf(printBuffer, 256, formatStr, args);
+	if (printResult >= 0)
+	{
+		if (printResult <= 256-2)
+		{
+			if (newLine) { printBuffer[printResult] = '\n'; printResult++; }
+			printBuffer[printResult] = '\0';
+			pd->system->logToConsole(printBuffer);
+		}
+		else
+		{
+			pd->system->logToConsole("PRINT BUFFER OVERFLOW");
+			pd->system->logToConsole(formatStr);
+		}
+	}
+	va_end(args);
+}
+#endif
+
+#define MyPrint(formatStr, ...)       PlaydatePrint(true,  (formatStr), ##__VA_ARGS__)
+#define MyPrintNoLine(formatStr, ...) PlaydatePrint(false, (formatStr), ##__VA_ARGS__)
 
 // +--------------------------------------------------------------+
 // |                    Regular printf Routing                    |

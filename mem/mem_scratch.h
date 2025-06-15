@@ -44,13 +44,13 @@ struct ScratchArena
 
 #if PIG_CORE_IMPLEMENTATION
 	#if SCRATCH_ARENAS_THREAD_LOCAL
-	thread_local Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
+	THREAD_LOCAL Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
 	#else
 	Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD] = ZEROED;
 	#endif
 #else //!PIG_CORE_IMPLEMENTATION
 	#if SCRATCH_ARENAS_THREAD_LOCAL
-	extern thread_local Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
+	extern THREAD_LOCAL Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
 	#else
 	extern Arena scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD];
 	#endif

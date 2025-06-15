@@ -91,7 +91,7 @@ void MdMemRelease(void* memoryPntr, MD_u64 numBytes);
 
 #if PIG_CORE_IMPLEMENTATION
 
-thread_local MD_Arena* mdArenaForCallback = nullptr; //TODO: Once we convert Metadesk to use our own Arena* then we won't have to do these shenanigans with thread_local to help our Arena* accepting functions allocate from MD_Arena
+THREAD_LOCAL MD_Arena* mdArenaForCallback = nullptr; //TODO: Once we convert Metadesk to use our own Arena* then we won't have to do these shenanigans with thread_local to help our Arena* accepting functions allocate from MD_Arena
 // +==============================+
 // |     MdAllocFuncCallback      |
 // +==============================+

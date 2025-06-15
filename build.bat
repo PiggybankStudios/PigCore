@@ -67,6 +67,8 @@ for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_ORCA') do set BUILD_ORCA=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_PLAYDATE_DEVICE') do set BUILD_PLAYDATE_DEVICE=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_PLAYDATE_SIMULATOR') do set BUILD_PLAYDATE_SIMULATOR=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH_RAYLIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_BOX2D') do set BUILD_WITH_BOX2D=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_GFX') do set BUILD_WITH_SOKOL_GFX=%%i
@@ -91,6 +93,13 @@ if "%USE_EMSCRIPTEN%"=="1" (
 if "%BUILD_ORCA%"=="1" (
 	for /f "delims=" %%i in ('"orca sdk-path"') do set orca="%%i"
 )
+
+set playdate_sdk_directory=%PLAYDATE_SDK_PATH%
+set pdc_exe_name=%playdate_sdk_directory%\bin\pdc
+set playdate_arm_compiler_prefix=arm-none-eabi
+set playdate_chip=cortex-m7
+set playdate_heap_size=8388208
+set playdate_stack_size=61800
 
 :: +--------------------------------------------------------------+
 :: |                       Compiler Options                       |
@@ -158,6 +167,60 @@ if "%USE_EMSCRIPTEN%"=="1" (
 	REM --export=__heap_base = ?
 	set web_clang_flags=%web_clang_flags% -Wl,--no-entry -Wl,--allow-undefined -I "../%root%/wasm/std/include" --no-standard-libraries --no-standard-includes -Wl,--export=__heap_base
 )
+
+set playdate_cl_flags=/D"__HEAP_SIZE=%playdate_heap_size%" /D"__STACK_SIZE=%playdate_stack_size%" /I"%root%" /I"%playdate_sdk_directory%\C_API"
+set playdate_gcc_flags=-D__HEAP_SIZE=%playdate_heap_size% -D__STACK_SIZE=%playdate_stack_size% -I "%root%" -I "%playdate_sdk_directory%\C_API"
+set playdate_sim_cl_flags=
+set playdate_dev_gcc_common_flags=-D "TARGET_PLAYDATE=1" -D "TARGET_EXTENSION=1"
+rem -mfloat-abi=hard = Use hardware instructions for floating-point operations (from FPU)
+rem -mfpu=fpv5-sp-d16 = Specifies the target FPU architecture, that is the floating-point hardware available on the target. (Armv7 FPv5-SP-D16 floating-point extension) (from FPU)
+rem __FPU_USED = ? (from FPU)
+rem -mthumb = Requests that the compiler targets the T32 (Thumb) instruction set instead of A32 (Arm) (from MCFLAGS)
+rem -mcpu=cortex-m7 = Enables code generation for a specific Arm processor. (from MCFLAGS)
+rem -specs=nano.specs = Required for things like _read, _write, _exit, etc. to not be pulled in as requirements from standard library (https://stackoverflow.com/questions/5764414/undefined-reference-to-sbrk) and (https://devforum.play.date/t/c-api-converting-string-to-float/10097)
+rem -specs=nosys.specs = ?
+set playdate_dev_gcc_common_flags=%playdate_dev_gcc_common_flags% -mthumb -mcpu=%playdate_chip% -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__FPU_USED=1 -specs=nano.specs -specs=nosys.specs
+rem -g3 = Produce debugging information in the operating system's native format (3 = ?)
+rem -std=gnu11 = ? (Removed, because we are compiling C++, not C)
+rem -MD = (MSVC Option) Use the multithread-specific and DLL-specific version of the run-time library
+rem -MT = (MSVC Option) Use the multithread, static version of the run-time library
+rem -MP = This option instructs CPP to add a phony target for each dependency other than the main file, causing each to depend on nothing. These dummy rules work around errors make gives if you remove header files without updating the Makefile to match
+rem       ==OR== (MSVC Option) Build multiple source files concurrently (removed)
+rem -MF = When used with the driver options -MD or -MMD, -MF overrides the default dependency output file
+rem -gdwarf-2 = Produce debugging information in DWARF version 2 format (if that is supported). This is the format used by DBX on IRIX 6. With this option, GCC uses features of DWARF version 3 when they are useful; version 3 is upward compatible with version 2, but may still cause problems for older debuggers.
+set playdate_dev_gcc_compile_flags= -g3 -MD -MF tests.d -gdwarf-2
+rem -fverbose-asm = ?
+rem -fno-common = ?
+rem -falign-functions = ? (from OPT)
+rem -fomit-frame-pointer = ? (from OPT)
+rem -ffunction-sections = ?
+rem -fdata-sections = ?
+rem -fno-exceptions = ? (Removed)
+rem -mword-relocations = ?
+set playdate_dev_gcc_compile_flags=%playdate_dev_gcc_compile_flags% -fverbose-asm -fno-common -falign-functions=16 -fomit-frame-pointer -ffunction-sections -fdata-sections -fno-exceptions -mword-relocations
+rem -Wall = ?
+rem -Wno-unknown-pragmas = ?
+rem -Wdouble-promotion = ?
+rem -Wno-comment = Don't warn about multi-line comments using // syntax
+rem -Wno-switch = Don't warn about switch statements on enums with unhandled values
+rem -Wno-nonnull = Don't warn about potentially null arguments passed to functions like memset
+rem -Wno-unused = ?
+rem -Wno-missing-braces = Suppress warning: missing braces around initializer
+rem -Wno-char-subscripts = Suppress warning: array subscript has type 'char'
+rem -Wno-double-promotion = Suppress warning: implicit conversion from 'float' to 'double' to match other operand of binary expression
+rem -Wstrict-prototypes = (Removed because it isn't compatible with C++ builds?)
+rem -Wa,-ahlms=%ProjectNameSafe%.lst = ? (Removed)
+set playdate_dev_gcc_compile_flags=%playdate_dev_gcc_compile_flags% -Wall -Wno-unknown-pragmas -Wdouble-promotion -Wno-comment -Wno-switch -Wno-nonnull -Wno-unused -Wno-missing-braces -Wno-char-subscripts -Wno-double-promotion
+rem -nostartfiles = ?
+rem --entry eventHandlerShim
+rem -Map = ?
+rem --cref = ?
+rem --gc-sections = ?
+rem --no-warn-mismatch = ?
+rem --emit-relocs = ?
+set playdate_dev_linker_flags=-nostartfiles --entry eventHandlerShim -Wl,-Map=%OutputMapName%,--cref,--gc-sections,--no-warn-mismatch,--emit-relocs
+set playdate_dev_linker_flags=%playdate_dev_linker_flags% -T"%playdate_sdk_directory%\C_API\buildsupport\link_map.ld"
+
 if "%DEBUG_BUILD%"=="1" (
 	REM /MDd = ?
 	REM /Od = Optimization level: Debug
@@ -176,6 +239,8 @@ if "%DEBUG_BUILD%"=="1" (
 	set common_clang_flags=%common_clang_flags% -Wno-unused-parameter -Wno-unused-variable
 	REM -gdwarf-4 = Generate debug information in the DWARF format version 4 (gdb on WSL was not liking other versions of DWARF)
 	set linux_clang_flags=%linux_clang_flags% -gdwarf-4
+	rem -Og = No optimizations?
+	set playdate_dev_gcc_compile_flags=%playdate_dev_gcc_compile_flags% -Og
 ) else (
 	REM /MD = ?
 	REM /Ot = Favors fast code over small code
@@ -187,6 +252,9 @@ if "%DEBUG_BUILD%"=="1" (
 	set wasm_clang_flags=%wasm_clang_flags% -O2
 	set shader_cl_flags=%shader_cl_flags% /MD /Ot /Oy /O2
 	set common_clang_flags=%common_clang_flags%
+	rem TODO: Change this back to -O2 once we figure out why it's causing problems!
+	rem -O2 = Optimize even more. GCC performs nearly all supported optimizations that do not involve a space-speed tradeoff. (from OPT)
+	set playdate_dev_gcc_compile_flags=%playdate_dev_gcc_compile_flags% -O1
 )
 
 :: Gdi32.lib = Needed for CreateFontA and other Windows graphics functions
@@ -425,7 +493,9 @@ if "%BUILD_PIG_CORE_DLL%"=="1" (
 :: |                       Build tests.exe                        |
 :: +--------------------------------------------------------------+
 set tests_source_path=%root%/tests/tests_main.c
+set tests_obj_path=tests.obj
 set tests_exe_path=tests.exe
+set tests_elf_path=tests.elf
 set tests_bin_path=tests
 set tests_wasm_path=app.wasm
 set tests_orca_wasm_path=module.wasm
@@ -523,6 +593,15 @@ if "%BUILD_TESTS%"=="1" (
 		popd
 		echo [Built tests for Orca!]
 	)
+	if "%BUILD_PLAYDATE_DEVICE%"=="1" (
+		REM compile to .obj
+		%playdate_arm_compiler_prefix%-gcc -c %tests_source_path% -o %tests_obj_path% %playdate_gcc_flags% %playdate_dev_gcc_common_flags% %playdate_dev_gcc_compile_flags%
+		REM then link into .elf
+		%playdate_arm_compiler_prefix%-gcc %tests_obj_path% %playdate_gcc_flags% %playdate_dev_gcc_common_flags% %playdate_dev_linker_flags% -o %tests_elf_path%
+	)
+	rem if "%BUILD_PLAYDATE_SIMULATOR%"=="1" (
+	rem 	%playdate_arm_compiler_prefix%-gcc -c %tests_source_path% -o %tests_obj_path%
+	rem )
 )
 REM TODO: For some reason when building for WEB with EMSCRIPTEN we are never running anything below this end parens!
 

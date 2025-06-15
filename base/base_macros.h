@@ -61,6 +61,12 @@ Description:
 #define NEW_STRUCT(type) type
 #endif
 
+#if TARGET_IS_PLAYDATE
+#define THREAD_LOCAL //nothing, not supported by Playdate because there is no OS to do threading
+#else
+#define THREAD_LOCAL thread_local
+#endif
+
 // +--------------------------------------------------------------+
 // |                     Function Like Macros                     |
 // +--------------------------------------------------------------+
