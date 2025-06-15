@@ -7,7 +7,7 @@ Date:   01\21\2025
 #ifndef _CROSS_ZIP_AND_FILE_H
 #define _CROSS_ZIP_AND_FILE_H
 
-#if !TARGET_IS_ORCA //TODO: miniz.h relies on time.h which isn't available in Orca std C-lib
+#if !TARGET_IS_ORCA && !TARGET_IS_PLAYDATE //TODO: miniz.h relies on time.h which isn't available in Orca std C-lib, nor Playdate stdlib
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -51,6 +51,6 @@ PEXPI Slice OpenZipArchivePathAndReadBinFile(Arena* fileContentsArena, FilePath 
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //!TARGET_IS_ORCA
+#endif //!TARGET_IS_ORCA && !TARGET_IS_PLAYDATE
 
 #endif //  _CROSS_ZIP_AND_FILE_H

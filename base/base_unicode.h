@@ -19,6 +19,7 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
+#include "base/base_char.h"
 
 #define UTF8_MAX_CODEPOINT 0x10FFFFUL
 #define UCS2_MAX_CHAR_SIZE 2 //words

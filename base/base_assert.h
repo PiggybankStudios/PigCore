@@ -29,6 +29,9 @@ Description:
 #elif TARGET_IS_ORCA
 #define MyBreakMsg(message) oc_abort_ext(__FILE__, __FUNCTION__, __LINE__, message)
 #define MyBreak()           MyBreakMsg("MyBreak()")
+#elif TARGET_IS_PLAYDATE
+#define MyBreakMsg(message) pd->system->error(message)
+#define MyBreak()           pd->system->error("MyBreak()")
 #else
 #define MyBreakMsg(message) //nothing
 #define MyBreak() //nothing
@@ -41,9 +44,11 @@ Description:
 #if USING_CUSTOM_STDLIB
 #define AssertMsg(condition, message) if (!(condition)) { MyBreak(); assert_msg(condition, (message)); }
 #elif COMPILER_IS_MSVC
-#define AssertMsg(condition, message) if (!(condition)) { MyBreak(); assert(condition); }
+#define AssertMsg(condition, message) if (!(condition)) { MyBreakMsg(message); assert(condition); }
+#elif TARGET_IS_PLAYDATE_DEVICE
+#define AssertMsg(condition, message) if (!(condition)) { MyBreakMsg(message); }
 #else
-#define AssertMsg(condition, message) if (!(condition)) { MyBreak(); assert(condition); }
+#define AssertMsg(condition, message) if (!(condition)) { MyBreakMsg(message); assert(condition); }
 #endif
 
 #define Assert(condition) AssertMsg(condition, "")

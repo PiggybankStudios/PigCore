@@ -14,6 +14,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
 #include "std/std_memset.h"
+#include "misc/misc_result.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"

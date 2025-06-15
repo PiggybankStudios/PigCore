@@ -84,14 +84,48 @@ PEXP void PlaydatePrint(bool newLine, const char* formatStr, ...)
 #define MyHostToNetworkByteOrderU32(integer) htonl(integer)
 #define MyNetworkToHostByteOrderU16(integer) ntohs(integer)
 #define MyNetworkToHostByteOrderU32(integer) ntohl(integer)
+
+#if TARGET_IS_PLAYDATE || USING_CUSTOM_STDLIB
+	#if !PIG_CORE_IMPLEMENTATION
+	float ratof(char* arr);
+	#else
+	PEXP float ratof(char* arr)
+	{
+		float val = 0;
+		int afterdot=0;
+		float scale=1;
+		int neg = 0; 
+		
+		if (*arr == '-')
+		{
+			arr++;
+			neg = 1;
+		}
+		while (*arr)
+		{
+			if (afterdot)
+			{
+				scale = scale/10;
+				val = val + (*arr-'0')*scale;
+			}
+			else
+			{
+				if (*arr == '.') { afterdot++; }
+				else { val = val * 10.0f + (*arr - '0'); }
+			}
+			arr++;
+		}
+		
+		return ((neg) ? -val : val);
+	}
+	#endif
+	
+	#define MyStrToFloat(nullTermStr) ratof(nullTermStr)
+#else
 #define MyStrToFloat(nullTermStr) atof(nullTermStr)
+#endif
 
 #if USING_CUSTOM_STDLIB
-r64 atof(const char* str)
-{
-	//TODO: Implement me
-	return 0.0;
-}
 #endif
 
 #endif //  _STD_PRINTF_H

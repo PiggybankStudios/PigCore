@@ -15,12 +15,15 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
+#include "os/os_path.h"
 #include "misc/misc_result.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
 #include "struct/struct_model_data.h"
 #include "gfx/gfx_image_loading.h"
+
+#if !TARGET_IS_PLAYDATE //TODO: cgltf.h relies on fopen and a few other stdlib functions that are not available on the Playdate
 
 #if PIG_CORE_IMPLEMENTATION
 #define CGLTF_IMPLEMENTATION
@@ -925,6 +928,8 @@ PEXPI Result TryParseGltfFile(Slice fileContents, Arena* arena, ModelData* model
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //!TARGET_IS_PLAYDATE
 
 #endif //  _FILE_FMT_GLTF_H
 

@@ -20,7 +20,7 @@ Description:
 #include "os/os_path.h"
 #include "misc/misc_result.h"
 
-#if !TARGET_IS_ORCA //TODO: miniz.h relies on time.h which isn't available in Orca std C-lib
+#if !TARGET_IS_ORCA && !TARGET_IS_PLAYDATE //TODO: miniz.h relies on time.h which isn't available in Orca std C-lib, nor Playdate stdlib
 
 #define MINIZ_NO_STDIO //to disable all usage and any functions which rely on stdio for file I/O.
 #if USING_CUSTOM_STDLIB
@@ -339,7 +339,7 @@ PEXPI Result AddZipArchiveBinFile(ZipArchive* archive, FilePath fileName, Slice 
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //!TARGET_IS_ORCA
+#endif //!TARGET_IS_ORCA && !TARGET_IS_PLAYDATE
 
 #endif //  _MISC_ZIP_H
 

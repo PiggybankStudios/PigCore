@@ -14,7 +14,9 @@ Description:
 #include "base/base_macros.h"
 #include "mem/mem_arena.h"
 #include "struct/struct_vectors.h"
+#include "struct/struct_rectangles.h"
 #include "struct/struct_circles.h"
+#include "struct/struct_color.h"
 #include "gfx/gfx_vertices.h"
 
 #define BOX_NUM_FACES                   6
@@ -249,7 +251,7 @@ PEXP GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRi
 			i32 ringVertIndex = (i32)(1 + (rIndex * numSegments) + sIndex);
 			Assert((uxx)ringVertIndex < result.numVertices);
 			result.vertices[ringVertIndex].position = NewV3(sphere.X + CosR32(segmentAngle) * ringRadius, ringY, sphere.Z + SinR32(segmentAngle) * ringRadius);
-			result.vertices[ringVertIndex].normal = Normalize(Sub(result.vertices[ringVertIndex].position, sphere.Center));
+			result.vertices[ringVertIndex].normal = NormalizeV3(SubV3(result.vertices[ringVertIndex].position, sphere.Center));
 			result.vertices[ringVertIndex].texCoord = NewV2(1.0f - ((r32)sIndex * texCoordStepX), 1.0f - ((r32)rIndex * texCoordStepY));
 			result.vertices[ringVertIndex].color = colorV4r;
 		}

@@ -37,6 +37,8 @@ Description:
 
 #include "struct/struct_var_array.h"
 
+#include "std/std_trig.h" //Needed by many of the files below
+
 #include "struct/struct_handmade_math_include.h" //Needed by struct_vectors.h, struct_quaternion.h, and struct_matrices.h
 
 #include "struct/struct_vectors.h"

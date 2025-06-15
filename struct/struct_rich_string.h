@@ -16,11 +16,13 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
+#include "base/base_unicode.h"
 #include "std/std_memset.h"
 #include "struct/struct_string.h"
 #include "struct/struct_color.h"
 #include "misc/misc_standard_colors.h"
 #include "mem/mem_arena.h"
+#include "misc/misc_parsing.h"
 
 typedef enum FontStyleFlag FontStyleFlag;
 enum FontStyleFlag

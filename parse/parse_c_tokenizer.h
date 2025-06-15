@@ -22,6 +22,7 @@ Description:
 #include "base/base_assert.h"
 #include "base/base_char.h"
 #include "base/base_unicode.h"
+#include "misc/misc_result.h"
 #include "std/std_memset.h"
 #include "mem/mem_arena.h"
 #include "struct/struct_string.h"

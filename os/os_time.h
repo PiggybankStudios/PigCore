@@ -46,6 +46,9 @@ Description:
 #define NUM_MIN_PER_WEEK    ((u64)NUM_DAYS_PER_WEEK * (u64)NUM_MIN_PER_DAY)    // 10,080 (i16 required)
 #define NUM_MIN_PER_YEAR    ((u64)NUM_DAYS_PER_YEAR * (u64)NUM_MIN_PER_DAY)    //525,600 (i32 required)
 
+//There are 30 years between 1970 and 2000, that's 7*4 + 2 which allows us to easily account for leap years during that time
+#define SECS_BETWEEN_1970_AND_2000 (((u64)NUM_DAYS_PER_4YEARS * NUM_SEC_PER_DAY * 7) + ((u64)NUM_DAYS_PER_YEAR * NUM_SEC_PER_DAY * 2))
+
 #define WIN32_FILETIME_SEC_OFFSET           11644473600ULL //11,644,473,600 seconds between Jan 1st 1601 and Jan 1st 1970
 
 // +--------------------------------------------------------------+
@@ -133,6 +136,20 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 		{
 			r64 clockTime = oc_clock_time(OC_CLOCK_DATE);
 			result = (u64)RoundR64i(AbsR64(clockTime));
+		}
+	}
+	#elif TARGET_IS_PLAYDATE
+	{
+		if (local)
+		{
+			//TODO: Implement me!
+			AssertMsg(false, "Playdate does not currently have a way to get local time!"); //TODO: This might not be true for Playdate, just don't have time to find the correct function right now
+		}
+		else
+		{
+			unsigned int milliseconds = 0;
+			unsigned int secondsSince2000 = pd->system->getSecondsSinceEpoch(&milliseconds);
+			return (u64)secondsSince2000 + SECS_BETWEEN_1970_AND_2000;
 		}
 	}
 	#else

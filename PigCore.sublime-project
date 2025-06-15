@@ -110,6 +110,13 @@
 			],
 		},
 		{
+			"path": "third_party/cgltf",
+			"name": "cGLTF",
+			"file_exclude_patterns": [
+				"LICENSE",
+			],
+		},
+		{
 			"path": "third_party/metadesk",
 			"name": "Metadesk",
 		},
@@ -713,6 +720,7 @@
 			"Result_UnsupportedPlatform",
 			"Result_WrongNumCharacters",
 			"SCRATCH_ARENAS_THREAD_LOCAL",
+			"SECS_BETWEEN_1970_AND_2000",
 			"SHADER_ATTRIB_FLOAT",
 			"SHADER_ATTRIB_VEC2",
 			"SHADER_ATTRIB_VEC3",

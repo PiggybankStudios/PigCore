@@ -9,6 +9,8 @@ Date:   02\15\2025
 
 //NOTE: Intentionally no includes here
 
+#if !TARGET_IS_PLAYDATE //TODO: cgltf.h relies on fopen and a few other stdlib functions that are not available on the Playdate
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -67,6 +69,8 @@ PEXPI Result TryLoadGltfFile(FilePath filePath, Arena* arena, ModelData* modelDa
 	return result;
 }
 
-#endif
+#endif //PIG_CORE_IMPLEMENTATION
+
+#endif //!TARGET_IS_PLAYDATE
 
 #endif //  _CROSS_GLTF_AND_OS_FILE_H

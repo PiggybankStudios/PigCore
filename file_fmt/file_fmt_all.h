@@ -17,6 +17,6 @@ Date:   02\14\2025
 #include "struct/struct_string.h"
 #include "struct/struct_model_data.h"
 
-#include "file_fmt_gltf.h"
+#include "file_fmt/file_fmt_gltf.h"
 
 #endif //  _FILE_FMT_ALL_H

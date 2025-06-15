@@ -19,6 +19,7 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
+#include "misc/misc_result.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
@@ -60,7 +61,9 @@ struct RegexResult
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
+#if DEBUG_BUILD && !TARGET_IS_PLAYDATE
 #define SLRE_DEBUG
+#endif
 #include "third_party/slre/slre.c"
 
 PEXP Result GetResultForSlreErrorCode(int slreErrorCode)

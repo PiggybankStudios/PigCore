@@ -12,6 +12,7 @@ Description:
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
+#include "std/std_basic_math.h"
 
 //NOTE: The name "Color" conflicts with a definition in <windows.h>
 typedef union Color32 Color32;

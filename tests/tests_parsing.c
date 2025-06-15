@@ -6,8 +6,6 @@ Description:
 	** Contains a bunch of test cases for the functions in misc_parsing.h
 */
 
-#if 0
-
 void TestParsingFunctions()
 {
 	Result parseError = Result_None;
@@ -212,5 +210,3 @@ void TestParsingFunctions()
 	TRY_PARSE_I32_TEST("-2147483648");
 	TRY_PARSE_I32_TEST("-2147483649");
 }
-
-#endif
