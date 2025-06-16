@@ -1,0 +1,131 @@
+/*
+File:   tools_cli.h
+Author: Taylor Robbins
+Date:   06\16\2025
+Description:
+	** Holds various things that help us build up arguments for a CLI program in a readable way in C
+*/
+
+#ifndef _TOOLS_CLI_H
+#define _TOOLS_CLI_H
+
+// We have this string inside a bunch of #defines in places like tools_msvc_flags.h
+// This allows us to replace that part of the argument string with an actual value, adding escaping if the argument is in quotes
+#define CLI_VAL_STR "[VAL]"
+
+#define CLI_MAX_ARGS 256
+typedef struct CliArgList CliArgList;
+struct CliArgList
+{
+	uxx numArgs;
+	Str8 args[CLI_MAX_ARGS];
+};
+
+void AddArgStr(CliArgList* list, const char* cliStrNt, Str8 valueStr)
+{
+	if (list->numArgs >= CLI_MAX_ARGS) { WriteLine_E("Too many CLI arguments!"); exit(4); }
+	
+	Str8 cliStr = NewStr8Nt(cliStrNt);
+	Str8 valTargetStr = StrLit(CLI_VAL_STR);
+	
+	uxx insertValIndex = cliStr.length;
+	for (uxx cIndex = 0; cIndex + valTargetStr.length <= cliStr.length; cIndex++)
+	{
+		if (StrExactEquals(StrSlice(cliStr, cIndex, cIndex+valTargetStr.length), valTargetStr))
+		{
+			insertValIndex = cIndex;
+			break;
+		}
+	}
+	if (valueStr.length > 0 && insertValIndex == cliStr.length)
+	{
+		PrintLine_E("Tried to fill value in CLI argument that doesn't take a value! %s", cliStrNt);
+		exit(4);
+	}
+	if (valueStr.length == 0 && insertValIndex < cliStr.length)
+	{
+		PrintLine_E("Missing value in CLI argument that takes a value! %s", cliStrNt);
+		exit(4);
+	}
+	
+	if (insertValIndex < cliStr.length)
+	{
+		uxx cliAfterTargetLength = (cliStr.length - (insertValIndex + valTargetStr.length));
+		Str8 concatCliStr;
+		concatCliStr.length = insertValIndex + valueStr.length + cliAfterTargetLength;
+		concatCliStr.pntr = malloc(concatCliStr.length+1);
+		uxx writeIndex = 0;
+		memcpy(&concatCliStr.chars[writeIndex], &cliStr.chars[0], insertValIndex); writeIndex += insertValIndex;
+		memcpy(&concatCliStr.chars[writeIndex], valueStr.chars, valueStr.length); writeIndex += valueStr.length;
+		memcpy(&concatCliStr.chars[writeIndex], &cliStr.chars[insertValIndex + valTargetStr.length], cliAfterTargetLength); writeIndex += cliAfterTargetLength;
+		concatCliStr.chars[writeIndex] = '\0';
+		cliStr = concatCliStr;
+	}
+	
+	list->args[list->numArgs] = cliStr;
+	list->numArgs++;
+}
+void AddArgNt(CliArgList* list, const char* cliStr, const char* valueStr)
+{
+	AddArgStr(list, cliStr, NewStr8Nt(valueStr));
+}
+void AddArgInt(CliArgList* list, const char* cliStr, int32_t valueInt)
+{
+	char printBuffer[12];
+	int printResult = snprintf(&printBuffer[0], 12, "%d", valueInt);
+	printBuffer[printResult] = '\0';
+	AddArgStr(list, cliStr, NewStr8((uxx)printResult, &printBuffer[0]));
+}
+void AddArg(CliArgList* list, const char* cliStr)
+{
+	AddArgStr(list, cliStr, NewStr8(0, nullptr));
+}
+
+void AddArgList(CliArgList* dest, const CliArgList* source)
+{
+	if (dest->numArgs + source->numArgs > CLI_MAX_ARGS) { WriteLine_E("Too many CLI arguments!"); exit(4); }
+	
+	for (uxx aIndex = 0; aIndex < source->numArgs; aIndex++)
+	{
+		dest->args[dest->numArgs] = CopyStr8(source->args[aIndex], false);
+		dest->numArgs++;
+	}
+}
+
+Str8 JoinCliArgsList(const CliArgList* list)
+{
+	uxx totalLength = 0;
+	for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++)
+	{
+		if (list->args[aIndex].length > 0)
+		{
+			if (totalLength > 0) { totalLength++; } //+1 for space between arguments
+			totalLength += list->args[aIndex].length;
+		}
+	}
+	
+	Str8 result;
+	result.length = totalLength;
+	result.pntr = malloc(result.length+1);
+	
+	uxx writeIndex = 0;
+	for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++)
+	{
+		if (list->args[aIndex].length > 0)
+		{
+			if (writeIndex > 0)
+			{
+				result.chars[writeIndex] = ' ';
+				writeIndex++;
+			}
+			
+			memcpy(&result.chars[writeIndex], list->args[aIndex].chars, list->args[aIndex].length);
+			writeIndex += list->args[aIndex].length;
+		}
+	}
+	
+	result.chars[writeIndex] = '\0';
+	return result;
+}
+
+#endif //  _TOOLS_CLI_H

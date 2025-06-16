@@ -41,6 +41,8 @@ Description:
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN     0
 
+#define BUILD_PIG_BUILD 1
+
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
 #define BUILD_IMGUI_OBJ 0
 // Builds phys/phys_physx_capi_main.cpp in C++ mode into physx_capi.obj which will be linked into pig_core.dll and/or tests.exe

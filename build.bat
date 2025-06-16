@@ -9,30 +9,39 @@ pushd _build
 set root=..
 set scripts=%root%\_scripts
 set tools=%root%\third_party\_tools\win32
+set build_config_path=%root%\build_config.h
 
 python --version > NUL 2> NUL
 if errorlevel 1 (
 	echo WARNING: Python isn't installed on this computer. Shaders cant be found and compiled, and javascript glue files can't be concatenated together for WebAssembly builds!
 )
 
+set initialized_msvc_compiler=0
+set tool_compiler_flags=/std:clatest /O2 /FC /nologo /I"%root%"
+
 :: +--------------------------------------------------------------+
-:: |                     Compile Build Tools                      |
+:: |                  Compile extract_define.exe                  |
 :: +--------------------------------------------------------------+
 set extract_define_tool_name=extract_define.exe
 
 :: If we need to build any tools, then we'll need to init MSVC compiler early, otherwise we initialize it later ONLY if BUILD_WINDOWS is true in build_config.h
 :: VsDevCmd.bat often takes 1-2 seconds to run (often longer than the actual compile), so skipping it when it's not needed saves us a lot of time
-set need_to_build_tools=0
+set need_to_build_extract_define=0
 if not exist %extract_define_tool_name% (
-	set need_to_build_tools=1
-)
-if "%need_to_build_tools%"=="1" (
-	CALL :init_msvc_compiler
+	set need_to_build_extract_define=1
 )
 
-if not exist %extract_define_tool_name% (
+if "%need_to_build_extract_define%"=="1" (
+	if "%initialized_msvc_compiler%"=="0" (
+		CALL :init_msvc_compiler
+		set initialized_msvc_compiler=1
+	)
+)
+
+if "%need_to_build_extract_define%"=="1" (
 	echo [Building %extract_define_tool_name%...]
-	cl /std:clatest /O2 /FC /nologo %root%\tools\extract_define_main.c /Fe%extract_define_tool_name%
+	del %extract_define_tool_name% > NUL 2> NUL
+	cl %tool_compiler_flags% %root%\tools\tools_extract_define_main.c /Fe%extract_define_tool_name%
 	if !ERRORLEVEL! NEQ 0 (
 		echo [FAILED to build %extract_define_tool_name%!]
 		exit
@@ -48,9 +57,10 @@ if not exist %extract_define_tool_name% (
 :: |                    Scrape build_config.h                     |
 :: +--------------------------------------------------------------+
 REM set extract_define=python %scripts%\extract_define.py ../build_config.h
-set extract_define=%extract_define_tool_name% ..\build_config.h
+set extract_define=%extract_define_tool_name% %build_config_path%
 for /f "delims=" %%i in ('%extract_define% DEBUG_BUILD') do set DEBUG_BUILD=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN') do set BUILD_PIGGEN=%%i
+for /f "delims=" %%i in ('%extract_define% BUILD_PIG_BUILD') do set BUILD_PIG_BUILD=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_SHADERS') do set BUILD_SHADERS=%%i
 for /f "delims=" %%i in ('%extract_define% RUN_PIGGEN') do set RUN_PIGGEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_IMGUI_OBJ') do set BUILD_IMGUI_OBJ=%%i
@@ -79,12 +89,49 @@ for /f "delims=" %%i in ('%extract_define% BUILD_WITH_CLAY') do set BUILD_WITH_C
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_IMGUI') do set BUILD_WITH_IMGUI=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WITH_PHYSX') do set BUILD_WITH_PHYSX=%%i
 
+:: +--------------------------------------------------------------+
+:: |                     Build pig_build.exe                      |
+:: +--------------------------------------------------------------+
+set pig_build_tool_name=pig_build.exe
+set need_to_build_pig_build=0
+if not exist %pig_build_tool_name% (
+	set need_to_build_pig_build=1
+)
+if "%BUILD_PIG_BUILD%"=="1" (
+	set need_to_build_pig_build=1
+)
+
+if "%need_to_build_pig_build%"=="1" (
+	if "%initialized_msvc_compiler%"=="0" (
+		CALL :init_msvc_compiler
+		set initialized_msvc_compiler=1
+	)
+)
+
+if "%need_to_build_pig_build%"=="1" (
+	echo [Building %pig_build_tool_name%...]
+	cl %tool_compiler_flags% %root%\tools\tools_pig_build_main.c /Fe%pig_build_tool_name%
+	if !ERRORLEVEL! NEQ 0 (
+		echo [FAILED to build %pig_build_tool_name%!]
+		exit
+	)
+	if not exist %pig_build_tool_name% (
+		echo [cl did NOT produce %pig_build_tool_name%!]
+		exit
+	)
+	echo [Built %pig_build_tool_name%!]
+)
+
+%pig_build_tool_name% "%build_config_path%" %initialized_msvc_compiler%
+
 :: If we didn't already initialize MSVC compiler for build tools and we're building WINDOWS then let's do that now
-if "%need_to_build_tools%"=="0" (
+if "%initialized_msvc_compiler%"=="0" (
 	if "%BUILD_WINDOWS%"=="1" (
 		CALL :init_msvc_compiler
+		set initialized_msvc_compiler=1
 	) else if "%BUILD_PLAYDATE_SIMULATOR%"=="1" (
 		CALL :init_msvc_compiler
+		set initialized_msvc_compiler=1
 	)
 )
 
