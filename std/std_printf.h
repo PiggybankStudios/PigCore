@@ -31,7 +31,7 @@ Description:
 #define MyBufferPrintf(buffer, bufferSize, formatStr, ...) stbsp_snprintf((buffer), (bufferSize), (formatStr), ##__VA_ARGS__)
 #endif
 #ifndef MyVaListPrintf
-#define MyVaListPrintf(buffer, bufferSize, formatStr, vaList) stbsp_vsnprintf((buffer), (bufferSize), (formatStr), vaList)
+#define MyVaListPrintf(buffer, bufferSize, formatStr, vaList) stbsp_vsnprintf((buffer), (int)(bufferSize), (formatStr), vaList)
 #endif
 
 #if !PIG_CORE_IMPLEMENTATION

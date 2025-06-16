@@ -550,7 +550,7 @@ static int SqliteCallback(void *NotUsed, int argc, char** argv, char** azColName
 int MyMain(int argc, char* argv[]) //pre-declared in tests_sokol.c
 #elif TARGET_IS_ORCA
 int MyMain(int argc, char* argv[])
-#elif TARGET_IS_PLAYDATE_DEVICE
+#elif TARGET_IS_PLAYDATE
 int MyMain(int argc, char* argv[])
 #elif (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -1752,7 +1752,7 @@ int LLVMFuzzerTestOneInput(const u8* inputPntr, size_t inputSize)
 #include "wasm/std/wasm_std_main.c"
 #endif
 
-#if TARGET_IS_PLAYDATE_DEVICE
+#if TARGET_IS_PLAYDATE
 
 void HandleSystemEvent(PDSystemEvent event, uint32_t arg)
 {
@@ -1774,10 +1774,7 @@ void HandleSystemEvent(PDSystemEvent event, uint32_t arg)
 }
 
 MAYBE_START_EXTERN_C
-#ifdef _WINDLL
-__declspec(dllexport)
-#endif
-int eventHandlerShim(PlaydateAPI* playdate, PDSystemEvent event, uint32_t arg)
+EXPORT_FUNC int eventHandler(PlaydateAPI* playdate, PDSystemEvent event, uint32_t arg)
 {
 	if (event == kEventInit) { pdrealloc = playdate->system->realloc; }
 	pd = playdate;
@@ -1786,9 +1783,7 @@ int eventHandlerShim(PlaydateAPI* playdate, PDSystemEvent event, uint32_t arg)
 }
 MAYBE_END_EXTERN_C
 
-#endif //TARGET_IS_PLAYDATE_DEVICE
-
-#if TARGET_IS_PLAYDATE
 DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter) { pd->system->logToConsole(message); }
 DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter) { pd->system->logToConsole(formatString); }
-#endif
+
+#endif //TARGET_IS_PLAYDATE

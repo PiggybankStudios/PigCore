@@ -83,6 +83,8 @@ for /f "delims=" %%i in ('%extract_define% BUILD_WITH_PHYSX') do set BUILD_WITH_
 if "%need_to_build_tools%"=="0" (
 	if "%BUILD_WINDOWS%"=="1" (
 		CALL :init_msvc_compiler
+	) else if "%BUILD_PLAYDATE_SIMULATOR%"=="1" (
+		CALL :init_msvc_compiler
 	)
 )
 
@@ -168,56 +170,82 @@ if "%USE_EMSCRIPTEN%"=="1" (
 	set web_clang_flags=%web_clang_flags% -Wl,--no-entry -Wl,--allow-undefined -I "../%root%/wasm/std/include" --no-standard-libraries --no-standard-includes -Wl,--export=__heap_base
 )
 
-set playdate_cl_flags=/D"__HEAP_SIZE=%playdate_heap_size%" /D"__STACK_SIZE=%playdate_stack_size%" /I"%root%" /I"%playdate_sdk_directory%\C_API"
-set playdate_gcc_flags=-D__HEAP_SIZE=%playdate_heap_size% -D__STACK_SIZE=%playdate_stack_size% -I "%root%" -I "%playdate_sdk_directory%\C_API"
-set playdate_sim_cl_flags=
-set playdate_dev_gcc_common_flags=-D "TARGET_PLAYDATE=1" -D "TARGET_EXTENSION=1"
-rem -mfloat-abi=hard = Use hardware instructions for floating-point operations (from FPU)
-rem -mfpu=fpv5-sp-d16 = Specifies the target FPU architecture, that is the floating-point hardware available on the target. (Armv7 FPv5-SP-D16 floating-point extension) (from FPU)
-rem __FPU_USED = ? (from FPU)
-rem -mthumb = Requests that the compiler targets the T32 (Thumb) instruction set instead of A32 (Arm) (from MCFLAGS)
-rem -mcpu=cortex-m7 = Enables code generation for a specific Arm processor. (from MCFLAGS)
-rem -specs=nano.specs = Required for things like _read, _write, _exit, etc. to not be pulled in as requirements from standard library (https://stackoverflow.com/questions/5764414/undefined-reference-to-sbrk) and (https://devforum.play.date/t/c-api-converting-string-to-float/10097)
-rem -specs=nosys.specs = ?
+set playdate_cl_flags=/D"__HEAP_SIZE=%playdate_heap_size%" /D"__STACK_SIZE=%playdate_stack_size%" /D "TARGET_EXTENSION=1" /I"%root%" /I"%playdate_sdk_directory%\C_API"
+set playdate_gcc_flags=-D__HEAP_SIZE=%playdate_heap_size% -D__STACK_SIZE=%playdate_stack_size% -D "TARGET_EXTENSION=1" -I "%root%" -I "%playdate_sdk_directory%\C_API"
+
+set playdate_sim_cl_flags=/D "TARGET_SIMULATOR=1" /D "_WINDLL" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D "_WINDLL=1"
+:: /GS = Buffer overrun protection is turned on
+:: /Zi = Generates complete debugging information
+:: /Gm- = Deprecated. Enables minimal rebuild
+:: /Od = Disables optimization TODO: Debug only?
+:: /RTC1 = Enable fast runtime checks (equivalent to /RTCsu)
+:: /std:clatest = Use latest C language spec features
+:: /experimental:c11atomics = Enables _Atomic types
+:: /Gd = Uses the __cdecl calling convention (x86 only)
+:: /MDd = Compiles to create a debug multithreaded DLL, by using MSVCRTD.lib
+:: /Ob0 = Controls inline expansion (0 level = no expansion?)
+:: /W3 = Set output warning level
+:: /WX- = (Don't?) Treat warnings as errors TODO: Do we need this?
+:: /nologo = Suppress the startup banner
+set playdate_sim_cl_flags=%playdate_sim_cl_flags% /GS /Zi /Gm- /Od /RTC1 /std:clatest /experimental:c11atomics /Gd /MDd /Ob0 /W3 /WX- /nologo
+:: /errorReport:prompt = Deprecated. Windows Error Reporting (WER) settings control error reporting TODO: Do we need this?
+:: /diagnostics:column =  Diagnostics format: prints column information. TODO: Do we need this? (Optional)
+:: /Zc:forScope = Enforce Standard C++ for scoping rules (on by default)
+:: /Zc:inline = Remove unreferenced functions or data if they're COMDAT or have internal linkage only (off by default)
+:: /Zc:wchar_t = wchar_t is a native type, not a typedef (on by default)
+:: /fp:precise = "precise" floating-point model; results are predictable
+set playdate_sim_cl_flags=%playdate_sim_cl_flags% /errorReport:prompt /Zc:forScope /Zc:inline /Zc:wchar_t /fp:precise
+set playdate_sim_linker_flags=/MANIFEST /NXCOMPAT /DYNAMICBASE /DEBUG /DLL /MACHINE:X64 /INCREMENTAL /SUBSYSTEM:CONSOLE /ERRORREPORT:PROMPT /NOLOGO /TLBID:1
+set playdate_sim_linker_flags=%playdate_sim_linker_flags% /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /ManifestFile:"tests.intermediate.manifest" /LTCGOUT:"tests.iobj" /ILK:"tests.ilk"
+set playdate_sim_libraries="kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "comdlg32.lib" "advapi32.lib"
+
+set playdate_dev_gcc_common_flags=-D "TARGET_PLAYDATE=1"
+:: -mfloat-abi=hard = Use hardware instructions for floating-point operations (from FPU)
+:: -mfpu=fpv5-sp-d16 = Specifies the target FPU architecture, that is the floating-point hardware available on the target. (Armv7 FPv5-SP-D16 floating-point extension) (from FPU)
+:: __FPU_USED = ? (from FPU)
+:: -mthumb = Requests that the compiler targets the T32 (Thumb) instruction set instead of A32 (Arm) (from MCFLAGS)
+:: -mcpu=cortex-m7 = Enables code generation for a specific Arm processor. (from MCFLAGS)
+:: -specs=nano.specs = Required for things like _read, _write, _exit, etc. to not be pulled in as requirements from standard library (https://stackoverflow.com/questions/5764414/undefined-reference-to-sbrk) and (https://devforum.play.date/t/c-api-converting-string-to-float/10097)
+:: -specs=nosys.specs = ?
 set playdate_dev_gcc_common_flags=%playdate_dev_gcc_common_flags% -mthumb -mcpu=%playdate_chip% -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__FPU_USED=1 -specs=nano.specs -specs=nosys.specs
-rem -g3 = Produce debugging information in the operating system's native format (3 = ?)
-rem -MD = (MSVC Option) Use the multithread-specific and DLL-specific version of the run-time library
-rem -MT = (MSVC Option) Use the multithread, static version of the run-time library
-rem -MP = This option instructs CPP to add a phony target for each dependency other than the main file, causing each to depend on nothing. These dummy rules work around errors make gives if you remove header files without updating the Makefile to match
-rem       ==OR== (MSVC Option) Build multiple source files concurrently (removed)
-rem -MF tests.d = (Optional) When used with the driver options -MD or -MMD, -MF overrides the default dependency output file
-rem -gdwarf-2 = Produce debugging information in DWARF version 2 format (if that is supported). This is the format used by DBX on IRIX 6. With this option, GCC uses features of DWARF version 3 when they are useful; version 3 is upward compatible with version 2, but may still cause problems for older debuggers.
+:: -g3 = Produce debugging information in the operating system's native format (3 = ?)
+:: -MD = (MSVC Option) Use the multithread-specific and DLL-specific version of the run-time library
+:: -MT = (MSVC Option) Use the multithread, static version of the run-time library
+:: -MP = This option instructs CPP to add a phony target for each dependency other than the main file, causing each to depend on nothing. These dummy rules work around errors make gives if you remove header files without updating the Makefile to match
+::       ==OR== (MSVC Option) Build multiple source files concurrently (removed)
+:: -MF tests.d = (Optional) When used with the driver options -MD or -MMD, -MF overrides the default dependency output file
+:: -gdwarf-2 = Produce debugging information in DWARF version 2 format (if that is supported). This is the format used by DBX on IRIX 6. With this option, GCC uses features of DWARF version 3 when they are useful; version 3 is upward compatible with version 2, but may still cause problems for older debuggers.
 set playdate_dev_gcc_compile_flags= -g3 -MD -MF tests.d -gdwarf-2
-rem -fverbose-asm = ?
-rem -fno-common = ?
-rem -falign-functions = ? (from OPT)
-rem -fomit-frame-pointer = ? (from OPT)
-rem -ffunction-sections = ?
-rem -fdata-sections = ?
-rem -fno-exceptions = ? (Removed)
-rem -mword-relocations = ?
+:: -fverbose-asm = ?
+:: -fno-common = ?
+:: -falign-functions = ? (from OPT)
+:: -fomit-frame-pointer = ? (from OPT)
+:: -ffunction-sections = ?
+:: -fdata-sections = ?
+:: -fno-exceptions = ? (Removed)
+:: -mword-relocations = ?
 set playdate_dev_gcc_compile_flags=%playdate_dev_gcc_compile_flags% -fverbose-asm -fno-common -falign-functions=16 -fomit-frame-pointer -ffunction-sections -fdata-sections -fno-exceptions -mword-relocations
-rem -Wall = ?
-rem -Wno-unknown-pragmas = ?
-rem -Wdouble-promotion = ?
-rem -Wno-comment = Don't warn about multi-line comments using // syntax
-rem -Wno-switch = Don't warn about switch statements on enums with unhandled values
-rem -Wno-nonnull = Don't warn about potentially null arguments passed to functions like memset
-rem -Wno-unused = ?
-rem -Wno-missing-braces = Suppress warning: missing braces around initializer
-rem -Wno-char-subscripts = Suppress warning: array subscript has type 'char'
-rem -Wno-double-promotion = Suppress warning: implicit conversion from 'float' to 'double' to match other operand of binary expression
-rem -Wstrict-prototypes = (Removed because it isn't compatible with C++ builds?)
-rem -Wa,-ahlms=%ProjectNameSafe%.lst = ? (Removed)
+:: -Wall = ?
+:: -Wno-unknown-pragmas = ?
+:: -Wdouble-promotion = ?
+:: -Wno-comment = Don't warn about multi-line comments using // syntax
+:: -Wno-switch = Don't warn about switch statements on enums with unhandled values
+:: -Wno-nonnull = Don't warn about potentially null arguments passed to functions like memset
+:: -Wno-unused = ?
+:: -Wno-missing-braces = Suppress warning: missing braces around initializer
+:: -Wno-char-subscripts = Suppress warning: array subscript has type 'char'
+:: -Wno-double-promotion = Suppress warning: implicit conversion from 'float' to 'double' to match other operand of binary expression
+:: -Wstrict-prototypes = (Removed because it isn't compatible with C++ builds?)
+:: -Wa,-ahlms=%ProjectNameSafe%.lst = ? (Removed)
 set playdate_dev_gcc_compile_flags=%playdate_dev_gcc_compile_flags% -Wall -Wno-unknown-pragmas -Wdouble-promotion -Wno-comment -Wno-switch -Wno-nonnull -Wno-unused -Wno-missing-braces -Wno-char-subscripts -Wno-double-promotion
-rem -nostartfiles = ?
-rem --entry eventHandlerShim
-rem --no-warn-rwx-segments = Suppress warning about Exectuable+Writable LOAD segmenet (which is defined by the Playdate linker script presumably)
-rem --cref = ?
-rem --gc-sections = ?
-rem --no-warn-mismatch = ?
-rem --emit-relocs = ?
-set playdate_dev_linker_flags=-nostartfiles --entry eventHandlerShim -Wl,--no-warn-rwx-segments,--cref,--gc-sections,--no-warn-mismatch,--emit-relocs
+:: -nostartfiles = ?
+:: --entry eventHandlerShim
+:: --no-warn-rwx-segments = Suppress warning about Exectuable+Writable LOAD segmenet (which is defined by the Playdate linker script presumably)
+:: --cref = ?
+:: --gc-sections = ?
+:: --no-warn-mismatch = ?
+:: --emit-relocs = ?
+set playdate_dev_linker_flags=-nostartfiles --entry eventHandler -Wl,--no-warn-rwx-segments,--cref,--gc-sections,--no-warn-mismatch,--emit-relocs
 set playdate_dev_linker_flags=%playdate_dev_linker_flags% -T"%playdate_sdk_directory%\C_API\buildsupport\link_map.ld"
 set playdate_pdc_flags=-q -sdkpath "%playdate_sdk_directory%"
 
@@ -496,6 +524,9 @@ set tests_source_path=%root%/tests/tests_main.c
 set tests_obj_path=tests.obj
 set tests_exe_path=tests.exe
 set tests_elf_path=pdex.elf
+set tests_dll_path=pdex.dll
+set tests_lib_path=pdex.lib
+set tests_pdb_path=pdex.pdb
 set tests_map_name=tests.map
 set tests_pdx_name=tests.pdx
 set tests_bin_path=tests
@@ -600,14 +631,22 @@ if "%BUILD_TESTS%"=="1" (
 		%playdate_arm_compiler_prefix%-gcc -c %tests_source_path% -o %tests_obj_path% %playdate_gcc_flags% %playdate_dev_gcc_common_flags% %playdate_dev_gcc_compile_flags%
 		REM then link into .elf
 		%playdate_arm_compiler_prefix%-gcc %tests_obj_path% %playdate_gcc_flags% %playdate_dev_gcc_common_flags% %playdate_dev_linker_flags% -o %tests_elf_path% -Wl,-Map=%tests_map_name%
+		
 		if not exist playdate_data mkdir playdate_data
 		COPY "%tests_elf_path%" "playdate_data\%tests_elf_path%"
 		COPY "%root%\pdxinfo" "playdate_data\pdxinfo"
 		"%pdc_exe_name%" %playdate_pdc_flags% "playdate_data" "%tests_pdx_name%"
 	)
-	rem if "%BUILD_PLAYDATE_SIMULATOR%"=="1" (
-	rem 	%playdate_arm_compiler_prefix%-gcc -c %tests_source_path% -o %tests_obj_path%
-	rem )
+	if "%BUILD_PLAYDATE_SIMULATOR%"=="1" (
+		del playdate_data\%tests_dll_path% > NUL 2> NUL
+		del playdate_data\pdxinfo > NUL 2> NUL
+		cl /Fo"%tests_obj_path%" %playdate_cl_flags% %playdate_sim_cl_flags% /c "%tests_source_path%"
+		LINK %playdate_sim_linker_flags% %playdate_sim_libraries% "%tests_obj_path%" /OUT:"%tests_dll_path%" /IMPLIB:"%tests_lib_path%" /PDB:"%tests_pdb_path%"
+		if not exist playdate_data mkdir playdate_data
+		COPY "%tests_dll_path%" "playdate_data\%tests_dll_path%"
+		COPY "%root%\pdxinfo" "playdate_data\pdxinfo"
+		"%pdc_exe_name%" %playdate_pdc_flags% "playdate_data" "%tests_pdx_name%"
+	)
 )
 REM TODO: For some reason when building for WEB with EMSCRIPTEN we are never running anything below this end parens!
 

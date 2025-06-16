@@ -142,8 +142,11 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 	{
 		if (local)
 		{
-			//TODO: Implement me!
-			AssertMsg(false, "Playdate does not currently have a way to get local time!"); //TODO: This might not be true for Playdate, just don't have time to find the correct function right now
+			i32 timezoneOffset = pd->system->getTimezoneOffset();
+			u64 unixTimestamp = OsGetCurrentTimestampEx(false, nullptr, nullptr);
+			SetOptionalOutPntr(timezoneOffsetOut, timezoneOffset);
+			SetOptionalOutPntr(timezoneDoesDstOut, true);
+			return unixTimestamp + timezoneOffset;
 		}
 		else
 		{

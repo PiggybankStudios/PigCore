@@ -18,6 +18,7 @@ Description:
 #include "misc/misc_result.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
+#include "misc/misc_printing.h"
 #include "os/os_path.h"
 #include "os/os_file.h"
 

@@ -231,7 +231,7 @@ Description:
 	#define START_PACK()              __pragma(pack(push, 1))
 	#define END_PACK()                __pragma(pack(pop))
 	#define ATTR_PACKED               //nothing
-	#define EXPORT_FUNC(functionName) __declspec(dllexport)
+	#define EXPORT_FUNC               __declspec(dllexport)
 	// #define EXPORT(returnType, functionName, ...) returnType __declspec(dllexport) functionName(__VA_ARGS__)
 	// #define IMPORT(returnType, functionName, ...) returnType __declspec(dllimport) functionName(__VA_ARGS__)
 	// #define __func__ __FUNCTION__
@@ -240,7 +240,7 @@ Description:
 	#define START_PACK()              //nothing
 	#define END_PACK()                //nothing
 	#define ATTR_PACKED               __attribute__((__packed__))
-	#define EXPORT_FUNC(functionName) __attribute__((visibility("default")))
+	#define EXPORT_FUNC               __attribute__((visibility("default")))
 	// #define EXPORT(returnType, functionName, ...) returnType __attribute__((export_name(#functionName))) functionName(__VA_ARGS__)
 	// #define IMPORT(returnType, functionName, ...) returnType __declspec(dllimport) functionName(__VA_ARGS__)
 	//TODO: Figure out how to do IMPORT on other platforms

@@ -69,7 +69,18 @@ Description:
 #define TARGET_IS_LINUX 0
 #endif
 
-#ifdef _WIN32
+#if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE
+#define TARGET_IS_PLAYDATE_SIMULATOR 0
+#define TARGET_IS_PLAYDATE_DEVICE 1
+#elif defined(TARGET_SIMULATOR) && TARGET_SIMULATOR
+#define TARGET_IS_PLAYDATE_SIMULATOR 1
+#define TARGET_IS_PLAYDATE_DEVICE 0
+#else
+#define TARGET_IS_PLAYDATE_SIMULATOR 0
+#define TARGET_IS_PLAYDATE_DEVICE 0
+#endif
+
+#if defined(_WIN32) && !TARGET_IS_PLAYDATE_SIMULATOR
 #define TARGET_IS_WINDOWS 1
 #else
 #define TARGET_IS_WINDOWS 0
@@ -91,19 +102,6 @@ Description:
 #define TARGET_IS_WEB 1
 #else
 #define TARGET_IS_WEB 0
-#endif
-
-#if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE
-	#if defined(TARGET_SIMULATOR) && TARGET_SIMULATOR
-	#define TARGET_IS_PLAYDATE_SIMULATOR 1
-	#define TARGET_IS_PLAYDATE_DEVICE 0
-	#else
-	#define TARGET_IS_PLAYDATE_SIMULATOR 0
-	#define TARGET_IS_PLAYDATE_DEVICE 1
-	#endif
-#else
-	#define TARGET_IS_PLAYDATE_SIMULATOR 0
-	#define TARGET_IS_PLAYDATE_DEVICE 0
 #endif
 
 //Make sure we have exactly one of the TARGET defines set to true

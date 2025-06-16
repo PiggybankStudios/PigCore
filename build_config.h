@@ -29,9 +29,9 @@ Description:
 // Build a WASM binary and package as Orca application
 #define BUILD_ORCA                0
 // Build a binary that can be uploaded to the Playdate device
-#define BUILD_PLAYDATE_DEVICE     1
+#define BUILD_PLAYDATE_DEVICE     0
 // Build a dll that can be loaded by the Playdate simulator
-#define BUILD_PLAYDATE_SIMULATOR  0
+#define BUILD_PLAYDATE_SIMULATOR  1
 
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 0

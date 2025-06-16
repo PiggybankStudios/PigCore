@@ -11,12 +11,24 @@ Description:
 
 int PlaydateUpdateCallback(void* userData)
 {
-	pd->graphics->clear(kColorBlack);
-	u64 timestamp = OsGetCurrentTimestamp(false);
 	char printBuffer[64];
-	int printResult = MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "%llu", timestamp);
-	pd->graphics->setDrawMode(kDrawModeFillWhite);
-	pd->graphics->drawText(printBuffer, printResult, kUTF8Encoding, 10, 10);
+	
+	pd->graphics->clear(kColorBlack);
+	
+	{
+		u64 timestamp = OsGetCurrentTimestamp(false);
+		int printResult = MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "UTC:   %llu", timestamp);
+		pd->graphics->setDrawMode(kDrawModeFillWhite);
+		pd->graphics->drawText(printBuffer, printResult, kUTF8Encoding, 10, 10);
+	}
+	
+	{
+		u64 localTimestamp = OsGetCurrentTimestamp(true);
+		int printResult = MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "Local: %llu", localTimestamp);
+		pd->graphics->setDrawMode(kDrawModeFillWhite);
+		pd->graphics->drawText(printBuffer, printResult, kUTF8Encoding, 10, 40);
+	}
+	
 	return 1;
 }
 
