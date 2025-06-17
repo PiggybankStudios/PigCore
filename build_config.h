@@ -23,7 +23,7 @@ Description:
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS             0
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX               0
+#define BUILD_LINUX               1
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB                 0
 // Build a WASM binary and package as Orca application
@@ -37,7 +37,7 @@ Description:
 #define BUILD_SHADERS 0
 
 // Compiles piggen/main.c
-#define BUILD_PIGGEN   0
+#define BUILD_PIGGEN   1
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN     0
 
@@ -52,7 +52,7 @@ Description:
 #define BUILD_PIG_CORE_DLL 0
 
 // Compiles tests/main.c
-#define BUILD_TESTS   1
+#define BUILD_TESTS   0
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS     0
 

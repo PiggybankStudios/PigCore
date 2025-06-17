@@ -10,6 +10,8 @@ Description:
 	** ran and decide what to build based on whats set in there.
 	** We don't directly #include build_config.h because we don't want
 	** to-recompile this tool every time one of the options changes
+	** NOTE: We don't really spend any time freeing things in this program
+	** since it's lifespan is short and it's memory requirements are tiny
 */
 
 #define TOOL_EXE_NAME "pig_build.exe"
@@ -116,14 +118,20 @@ int main(int argc, char* argv[])
 	// |          Constants           |
 	// +==============================+
 	const char* rootDir = "..";
-	const char* linux_rootDir = "..\\.."; //we are inside the "linux" folder when compiler linux binaries
+	const char* linux_rootDir = "../.."; //we are inside the "linux" folder when compiler linux binaries
+	Str8 msvcCompiler = StrLit("cl");
+	Str8 linuxClangCompiler = StrLit("wsl clang-18"); //we are using the WSL instance with clang-18 installed to compile for Linux
 	
 	// +==============================+
 	// |        cl_CommonFlags        |
 	// +==============================+
 	CliArgList cl_CommonFlags = ZEROED; //"common_cl_flags" flags that we use when compiling any C or C++ program using MSVC compiler
+	AddArg(&cl_CommonFlags, DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
 	AddArg(&cl_CommonFlags, CL_FULL_FILE_PATHS); //we need full file paths in errors for Sublime Text to be able to parse the errors and display them in the editor
 	AddArg(&cl_CommonFlags, CL_NO_LOGO); //Suppress the annoying Microsoft logo and copyright info that the compiler prints out
+	AddArgNt(&cl_CommonFlags, CL_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "d" : "2");
+	if (!DEBUG_BUILD) { AddArgNt(&cl_CommonFlags, CL_OPTIMIZATION_LEVEL, "y"); }
+	if (!DEBUG_BUILD) { AddArgNt(&cl_CommonFlags, CL_OPTIMIZATION_LEVEL, "t"); }
 	AddArgNt(&cl_CommonFlags, CL_WARNING_LEVEL, "X"); //Treat all warnings as errors
 	AddArgInt(&cl_CommonFlags, CL_WARNING_LEVEL, 4); //Use warning level 4, then disable various warnings we don't care about
 	AddArgInt(&cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_LOGICAL_OP_ON_ADDRESS_OF_STR_CONST);
@@ -135,6 +143,22 @@ int main(int argc, char* argv[])
 	AddArgInt(&cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_ASSIGNMENT_WITHIN_CONDITIONAL_EXPR);
 	AddArgInt(&cl_CommonFlags, CL_ENABLE_WARNING, CL_WARNING_SWITCH_FALLTHROUGH);
 	AddArgNt(&cl_CommonFlags, CL_INCLUDE_DIR, rootDir);
+	if (DEBUG_BUILD)
+	{
+		AddArg(&cl_CommonFlags, CL_DEBUG_INFO);
+		//We don't care about these warnings in debug builds, but we will solve them when we go to build in release mode because they probably indicate mistakes at that point
+		AddArgInt(&cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_SWITCH_ONLY_DEFAULT);
+		AddArgInt(&cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_UNREFERENCED_FUNC_PARAMETER);
+		AddArgInt(&cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_UNREFERENCED_LCOAL_VARIABLE);
+		AddArgInt(&cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_CONDITIONAL_EXPR_IS_CONSTANT);
+		AddArgInt(&cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_LOCAL_VAR_INIT_BUT_NOT_REFERENCED);
+		AddArgInt(&cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_UNREACHABLE_CODE_DETECTED);
+	}
+	if (DUMP_PREPROCESSOR)
+	{
+		AddArg(&cl_CommonFlags, CL_PRECOMPILE_ONLY);
+		AddArg(&cl_CommonFlags, CL_PRECOMPILE_PRESERVE_COMMENTS);
+	}
 	
 	// +==============================+
 	// |        cl_LangCFlags         |
@@ -163,6 +187,14 @@ int main(int argc, char* argv[])
 	AddArgNt(&clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH);
 	AddArgNt(&clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_SWITCH_MISSING_CASES);
 	AddArgNt(&clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_FUNCTION);
+	AddArgNt(&clang_CommonFlags, CLANG_INCLUDE_DIR, linux_rootDir);
+	if (DEBUG_BUILD)
+	{
+		//We don't care about these warnings in debug builds, but we will solve them when we go to build in release mode because they probably indicate mistakes at that point
+		AddArgNt(&clang_CommonFlags, CLANG_DISABLE_WARNING, "unused-parameter");
+		AddArgNt(&clang_CommonFlags, CLANG_DISABLE_WARNING, "unused-variable");
+	}
+	if (DUMP_PREPROCESSOR) { AddArg(&clang_CommonFlags, CLANG_PRECOMPILE_ONLY); }
 	
 	// +==============================+
 	// |       clang_LinuxFlags       |
@@ -171,19 +203,91 @@ int main(int argc, char* argv[])
 	AddArgNt(&clang_LinuxFlags, CLANG_INCLUDE_DIR, linux_rootDir);
 	AddArg(&clang_LinuxFlags, "-mssse3");
 	AddArg(&clang_LinuxFlags, "-maes");
+	if (DEBUG_BUILD) { AddArgNt(&clang_LinuxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
 	
 	// +==============================+
 	// |      clang_LinkerFlags       |
 	// +==============================+
-	CliArgList clang_LinkerFlags = ZEROED;
-	AddArgNt(&clang_LinkerFlags, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
-	AddArgNt(&clang_LinkerFlags, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
+	CliArgList clang_LinuxCommonLibraries = ZEROED; //"linux_linker_flags"
+	AddArgNt(&clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
+	AddArgNt(&clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
 	
-	CliArgList testList = ZEROED;
-	AddArgList(&testList, &clang_CommonFlags);
-	AddArgList(&testList, &clang_LinuxFlags);
-	Str8 testStr = JoinCliArgsList(&testList);
-	PrintLine("testStr: \"%.*s\"", testStr.length, testStr.chars);
+	// +==============================+
+	// |     cl_PigCoreLibraries      |
+	// +==============================+
+	CliArgList cl_PigCoreLibraries = ZEROED;
+	AddArg(&cl_PigCoreLibraries, "Gdi32.lib"); //Needed for CreateFontA and other Windows graphics functions
+	AddArg(&cl_PigCoreLibraries, "User32.lib"); //Needed for GetForegroundWindow, GetDC, etc.
+	AddArg(&cl_PigCoreLibraries, "Ole32.lib"); //Needed for Combaseapi.h, CoInitializeEx, CoCreateInstance, etc.
+	AddArg(&cl_PigCoreLibraries, "Shell32.lib"); //Needed for SHGetSpecialFolderPathA
+	AddArg(&cl_PigCoreLibraries, "Shlwapi.lib"); //Needed for PathFileExistsA
+	
+	// +==============================+
+	// |      cl_PiggenLibraries      |
+	// +==============================+
+	CliArgList cl_PiggenLibraries = ZEROED;
+	AddArg(&cl_PiggenLibraries, "Shlwapi.lib"); //Needed for PathFileExistsA
+	
+	// +==============================+
+	// |       Build piggen.exe       |
+	// +==============================+
+	if (BUILD_PIGGEN)
+	{
+		if (BUILD_WINDOWS)
+		{
+			PrintLine("[Building %s for Windows...]", "piggen.exe");
+			fflush(stdout);
+			fflush(stderr);
+			
+			CliArgList piggenCmd = ZEROED;
+			AddArg(&piggenCmd, "..\\piggen\\piggen_main.c");
+			AddArgNt(&piggenCmd, CL_BINARY_NAME, "piggen.exe");
+			AddArgList(&piggenCmd, &cl_CommonFlags);
+			AddArgList(&piggenCmd, &cl_LangCFlags);
+			AddArg(&piggenCmd, CL_LINK);
+			AddArgList(&piggenCmd, &cl_PiggenLibraries);
+			
+			int piggenStatusCode = RunCliProgram(msvcCompiler, &piggenCmd);
+			if (piggenStatusCode == 0)
+			{
+				PrintLine("[Built %s for Windows!]", "piggen.exe");
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s. Compiler Status Code: %d", "piggen.exe", piggenStatusCode);
+				exit(piggenStatusCode);
+			}
+		}
+		if (BUILD_LINUX)
+		{
+			PrintLine("[Building %s for Linux...]", "piggen.exe");
+			fflush(stdout);
+			fflush(stderr);
+			
+			mkdir("linux", 0);
+			chdir("linux");
+			
+			CliArgList piggenCmd = ZEROED;
+			AddArg(&piggenCmd, "../../piggen/piggen_main.c");
+			AddArgNt(&piggenCmd, CLANG_BINARY_NAME, "piggen");
+			AddArgList(&piggenCmd, &clang_CommonFlags);
+			AddArgList(&piggenCmd, &clang_LinuxFlags);
+			AddArgList(&piggenCmd, &clang_LinuxCommonLibraries);
+			
+			int piggenStatusCode = RunCliProgram(linuxClangCompiler, &piggenCmd);
+			if (piggenStatusCode == 0)
+			{
+				PrintLine("[Built %s for Linux!]", "piggen");
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s. Compiler Status Code: %d", "piggen", piggenStatusCode);
+				exit(piggenStatusCode);
+			}
+			
+			chdir("..");
+		}
+	}
 	
 	free(buildConfigContents.chars);
 	return 0;

@@ -94,9 +94,9 @@ void AddArgList(CliArgList* dest, const CliArgList* source)
 	}
 }
 
-Str8 JoinCliArgsList(const CliArgList* list)
+Str8 JoinCliArgsList(Str8 prefix, const CliArgList* list, bool addNullTerm)
 {
-	uxx totalLength = 0;
+	uxx totalLength = prefix.length;
 	for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++)
 	{
 		if (list->args[aIndex].length > 0)
@@ -108,9 +108,11 @@ Str8 JoinCliArgsList(const CliArgList* list)
 	
 	Str8 result;
 	result.length = totalLength;
-	result.pntr = malloc(result.length+1);
+	result.pntr = malloc(result.length + (addNullTerm ? 1 : 0));
 	
 	uxx writeIndex = 0;
+	memcpy(&result.chars[writeIndex], &prefix.chars[0], prefix.length); writeIndex += prefix.length;
+	
 	for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++)
 	{
 		if (list->args[aIndex].length > 0)
@@ -126,7 +128,7 @@ Str8 JoinCliArgsList(const CliArgList* list)
 		}
 	}
 	
-	result.chars[writeIndex] = '\0';
+	if (addNullTerm) { result.chars[writeIndex] = '\0'; }
 	return result;
 }
 
@@ -134,5 +136,13 @@ Str8 JoinCliArgsList(const CliArgList* list)
 // |                      Running CLI Tools                       |
 // +--------------------------------------------------------------+
 
+#include <stdlib.h>
+
+int RunCliProgram(Str8 programName, const CliArgList* args)
+{
+	Str8 joinedArgs = JoinCliArgsList(programName, args, true);
+	int resultCode = system(joinedArgs.chars);
+	return resultCode;
+}
 
 #endif //  _TOOLS_CLI_H
