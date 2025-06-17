@@ -166,6 +166,74 @@ static inline Str8 CopyStr8(Str8 strToCopy, bool addNullTerm)
 	return result;
 }
 
+static inline Str8 EscapeString(Str8 unescapedString, bool addNullTerm)
+{
+	Str8 result = ZEROED;
+	for (int pass = 0; pass < 2; pass++)
+	{
+		uxx byteIndex = 0;
+		for (uxx cIndex = 0; cIndex < unescapedString.length; cIndex++)
+		{
+			char character = unescapedString.chars[cIndex];
+			if (character == '\"' || character == '\\' || character == '\'')
+			{
+				if (result.chars != nullptr)
+				{
+					result.chars[byteIndex+0] = '\\';
+					result.chars[byteIndex+1] = character;
+				}
+				byteIndex += 2;
+			}
+			else if (character == '\n' || character == '\r' || character == '\t')
+			{
+				if (result.chars != nullptr)
+				{
+					result.chars[byteIndex+0] = '\\';
+					if (character == '\n') { result.chars[byteIndex+1] = 'n'; }
+					if (character == '\r') { result.chars[byteIndex+1] = 'r'; }
+					if (character == '\t') { result.chars[byteIndex+1] = 't'; }
+				}
+				byteIndex += 2;
+			}
+			else
+			{
+				if (result.chars != nullptr) { result.chars[byteIndex] = character; }
+				byteIndex++;
+			}
+		}
+		
+		if (pass == 0)
+		{
+			result.length = byteIndex;
+			result.pntr = malloc(result.length + (addNullTerm ? 1 : 0));
+		}
+		else if (addNullTerm) { result.chars[result.length] = '\0'; }
+	}
+	return result;
+}
+
+static inline Str8 JoinStrings2(Str8 left, Str8 right, bool addNullTerm)
+{
+	Str8 result;
+	result.length = left.length + right.length;
+	result.pntr = malloc(result.length + (addNullTerm ? 1 : 0));
+	memcpy(&result.chars[0], &left.chars[0], left.length);
+	memcpy(&result.chars[left.length], &right.chars[0], right.length);
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	return result;
+}
+static inline Str8 JoinStrings3(Str8 left, Str8 middle, Str8 right, bool addNullTerm)
+{
+	Str8 result;
+	result.length = left.length + middle.length + right.length;
+	result.pntr = malloc(result.length + (addNullTerm ? 1 : 0));
+	memcpy(&result.chars[0], &left.chars[0], left.length);
+	memcpy(&result.chars[left.length], &middle.chars[0], middle.length);
+	memcpy(&result.chars[left.length + middle.length], &right.chars[0], right.length);
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	return result;
+}
+
 // +--------------------------------------------------------------+
 // |                        File Functions                        |
 // +--------------------------------------------------------------+

@@ -13,6 +13,7 @@ Date:   06\16\2025
 #define CLANG_DISABLE_WARNING  "-Wno-[VAL]"
 #define CLANG_FULL_FILE_PATHS  "-fdiagnostics-absolute-paths" //Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 #define CLANG_INCLUDE_DIR      "-I \"[VAL]\""
+#define CLANG_SYSTEM_LIBRARY   "-l[VAL]"
 
 #define CLANG_WARNING_SWITCH_MISSING_CASES          "switch" //8 enumeration values not handled in switch: 'ArenaType_None', 'ArenaType_Funcs', 'ArenaType_Generic'...
 #define CLANG_WARNING_UNUSED_FUNCTION               "unused-function" //unused function 'MeowExpandSeed'

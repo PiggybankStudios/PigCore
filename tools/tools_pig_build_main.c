@@ -168,12 +168,20 @@ int main(int argc, char* argv[])
 	// |       clang_LinuxFlags       |
 	// +==============================+
 	CliArgList clang_LinuxFlags = ZEROED; //"linux_clang_flags" flags for when we are compiling the linux version of a program using Clang
-	AddArgStr(&clang_LinuxFlags, CLANG_INCLUDE_DIR, linux_rootDir);
+	AddArgNt(&clang_LinuxFlags, CLANG_INCLUDE_DIR, linux_rootDir);
+	AddArg(&clang_LinuxFlags, "-mssse3");
+	AddArg(&clang_LinuxFlags, "-maes");
 	
+	// +==============================+
+	// |      clang_LinkerFlags       |
+	// +==============================+
+	CliArgList clang_LinkerFlags = ZEROED;
+	AddArgNt(&clang_LinkerFlags, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
+	AddArgNt(&clang_LinkerFlags, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
 	
 	CliArgList testList = ZEROED;
-	AddArgList(&testList, &cl_LangCFlags);
-	AddArgList(&testList, &cl_CommonFlags);
+	AddArgList(&testList, &clang_CommonFlags);
+	AddArgList(&testList, &clang_LinuxFlags);
 	Str8 testStr = JoinCliArgsList(&testList);
 	PrintLine("testStr: \"%.*s\"", testStr.length, testStr.chars);
 	

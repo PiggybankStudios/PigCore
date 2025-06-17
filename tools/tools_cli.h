@@ -3,12 +3,16 @@ File:   tools_cli.h
 Author: Taylor Robbins
 Date:   06\16\2025
 Description:
-	** Holds various things that help us build up arguments for a CLI program in a readable way in C
+	** Holds various things that help us build up arguments for a CLI program in a readable way,
+	** and then join them together and run an external CLI tool with those arguments.
 */
 
 #ifndef _TOOLS_CLI_H
 #define _TOOLS_CLI_H
 
+// +--------------------------------------------------------------+
+// |                   Composing Argument Lists                   |
+// +--------------------------------------------------------------+
 // We have this string inside a bunch of #defines in places like tools_msvc_flags.h
 // This allows us to replace that part of the argument string with an actual value, adding escaping if the argument is in quotes
 #define CLI_VAL_STR "[VAL]"
@@ -34,6 +38,11 @@ void AddArgStr(CliArgList* list, const char* cliStrNt, Str8 valueStr)
 		if (StrExactEquals(StrSlice(cliStr, cIndex, cIndex+valTargetStr.length), valTargetStr))
 		{
 			insertValIndex = cIndex;
+			if (cIndex > 0 && cIndex + valTargetStr.length < cliStr.length &&
+				cliStr.chars[cIndex-1] == '\"' && cliStr.chars[cIndex + valTargetStr.length] == '\"')
+			{
+				valueStr = EscapeString(valueStr, false);
+			}
 			break;
 		}
 	}
@@ -50,16 +59,9 @@ void AddArgStr(CliArgList* list, const char* cliStrNt, Str8 valueStr)
 	
 	if (insertValIndex < cliStr.length)
 	{
-		uxx cliAfterTargetLength = (cliStr.length - (insertValIndex + valTargetStr.length));
-		Str8 concatCliStr;
-		concatCliStr.length = insertValIndex + valueStr.length + cliAfterTargetLength;
-		concatCliStr.pntr = malloc(concatCliStr.length+1);
-		uxx writeIndex = 0;
-		memcpy(&concatCliStr.chars[writeIndex], &cliStr.chars[0], insertValIndex); writeIndex += insertValIndex;
-		memcpy(&concatCliStr.chars[writeIndex], valueStr.chars, valueStr.length); writeIndex += valueStr.length;
-		memcpy(&concatCliStr.chars[writeIndex], &cliStr.chars[insertValIndex + valTargetStr.length], cliAfterTargetLength); writeIndex += cliAfterTargetLength;
-		concatCliStr.chars[writeIndex] = '\0';
-		cliStr = concatCliStr;
+		Str8 cliLeftPart = StrSlice(cliStr, 0, insertValIndex);
+		Str8 cliRightPart = StrSliceFrom(cliStr, insertValIndex + valTargetStr.length);
+		cliStr = JoinStrings3(cliLeftPart, valueStr, cliRightPart, true);
 	}
 	
 	list->args[list->numArgs] = cliStr;
@@ -127,5 +129,10 @@ Str8 JoinCliArgsList(const CliArgList* list)
 	result.chars[writeIndex] = '\0';
 	return result;
 }
+
+// +--------------------------------------------------------------+
+// |                      Running CLI Tools                       |
+// +--------------------------------------------------------------+
+
 
 #endif //  _TOOLS_CLI_H
