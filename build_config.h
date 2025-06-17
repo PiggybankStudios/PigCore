@@ -23,7 +23,7 @@ Description:
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS             1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX               1
+#define BUILD_LINUX               0
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB                 0
 // Build a WASM binary and package as Orca application
@@ -37,11 +37,11 @@ Description:
 #define BUILD_SHADERS 0
 
 // Compiles piggen/main.c
-#define BUILD_PIGGEN   0
+#define BUILD_PIGGEN   1
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN     0
 
-#define BUILD_PIG_BUILD 1
+#define BUILD_PIG_BUILD 0
 
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
 #define BUILD_IMGUI_OBJ 0

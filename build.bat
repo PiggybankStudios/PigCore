@@ -122,7 +122,7 @@ if "%need_to_build_pig_build%"=="1" (
 	echo [Built %pig_build_tool_name%!]
 )
 
-%pig_build_tool_name% "%build_config_path%" %initialized_msvc_compiler%
+%pig_build_tool_name% "%build_config_path%"
 
 :: If we didn't already initialize MSVC compiler for build tools and we're building WINDOWS then let's do that now
 if "%initialized_msvc_compiler%"=="0" (

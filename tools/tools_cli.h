@@ -150,4 +150,48 @@ int RunCliProgram(Str8 programName, const CliArgList* args)
 	return resultCode;
 }
 
+void ParseAndApplyEnvironmentVariables(Str8 environmentVars)
+{
+	uxx lineIndex = 0;
+	uxx lineStart = 0;
+	uxx equalsIndex = 0;
+	for (uxx cIndex = 0; cIndex < environmentVars.length; cIndex++)
+	{
+		char character = environmentVars.chars[cIndex];
+		char nextChar = (cIndex+1 < environmentVars.length) ? environmentVars.chars[cIndex+1] : '\0';
+		if (character == '\n' || (character == '\r' && nextChar == '\n'))
+		{
+			Str8 line = NewStr8(cIndex - lineStart, &environmentVars.chars[lineStart]);
+			
+			if (equalsIndex >= lineStart)
+			{
+				Str8 varName = StrSlice(line, 0, equalsIndex-lineStart);
+				Str8 varValue = StrSliceFrom(line, (equalsIndex-lineStart)+1);
+				
+				// PrintLine("set %.*s=%.*s", varName.length, varName.chars, varValue.length, varValue.chars);
+				varName = CopyStr8(varName, true);
+				varValue = CopyStr8(varValue, true);
+				_putenv_s(varName.chars, varValue.chars);
+				free(varName.chars);
+				free(varValue.chars);
+			}
+			else if (line.length > 0)
+			{
+				PrintLine_E("WARNING: No \'=\' character found in line %u of environment file. Ignoring line: \"%.*s\"", lineIndex+1, line.length, line.chars);
+			}
+			
+			if (character == '\r' && nextChar == '\n') { cIndex++; }
+			lineStart = cIndex + 1;
+			lineIndex++;
+		}
+		if (character == '=') { equalsIndex = cIndex; }
+	}
+}
+
+bool WasMsvcDevBatchRun()
+{
+	const char* versionEnvVarValue = getenv("VSCMD_VER");
+    return (versionEnvVarValue != nullptr);
+}
+
 #endif //  _TOOLS_CLI_H
