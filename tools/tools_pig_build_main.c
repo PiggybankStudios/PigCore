@@ -187,7 +187,6 @@ int main(int argc, char* argv[])
 	AddArgNt(&clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH);
 	AddArgNt(&clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_SWITCH_MISSING_CASES);
 	AddArgNt(&clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_FUNCTION);
-	AddArgNt(&clang_CommonFlags, CLANG_INCLUDE_DIR, linux_rootDir);
 	if (DEBUG_BUILD)
 	{
 		//We don't care about these warnings in debug builds, but we will solve them when we go to build in release mode because they probably indicate mistakes at that point
@@ -221,6 +220,21 @@ int main(int argc, char* argv[])
 	AddArg(&cl_PigCoreLibraries, "Ole32.lib"); //Needed for Combaseapi.h, CoInitializeEx, CoCreateInstance, etc.
 	AddArg(&cl_PigCoreLibraries, "Shell32.lib"); //Needed for SHGetSpecialFolderPathA
 	AddArg(&cl_PigCoreLibraries, "Shlwapi.lib"); //Needed for PathFileExistsA
+	if (BUILD_WITH_RAYLIB)
+	{
+		AddArg(&cl_PigCoreLibraries, "Kernel32.lib");
+		AddArg(&cl_PigCoreLibraries, "Winmm.lib");
+	}
+	if (BUILD_WITH_BOX2D) { AddArg(&cl_PigCoreLibraries, "box2d.lib"); }
+	if (BUILD_WITH_SDL) { AddArg(&cl_PigCoreLibraries, "SDL2.lib"); }
+	if (BUILD_WITH_OPENVR) { AddArg(&cl_PigCoreLibraries, "openvr_api.lib"); }
+	
+	// +==============================+
+	// |    clang_PigCoreLibraries    |
+	// +==============================+
+	CliArgList clang_PigCoreLibraries = ZEROED; //"pig_core_clang_libraries"
+	AddArgNt(&clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig");
+	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(&clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
 	
 	// +==============================+
 	// |      cl_PiggenLibraries      |
@@ -236,8 +250,6 @@ int main(int argc, char* argv[])
 		if (BUILD_WINDOWS)
 		{
 			PrintLine("[Building %s for Windows...]", "piggen.exe");
-			fflush(stdout);
-			fflush(stderr);
 			
 			CliArgList piggenCmd = ZEROED;
 			AddArg(&piggenCmd, "..\\piggen\\piggen_main.c");
@@ -247,22 +259,20 @@ int main(int argc, char* argv[])
 			AddArg(&piggenCmd, CL_LINK);
 			AddArgList(&piggenCmd, &cl_PiggenLibraries);
 			
-			int piggenStatusCode = RunCliProgram(msvcCompiler, &piggenCmd);
-			if (piggenStatusCode == 0)
+			int statusCode = RunCliProgram(msvcCompiler, &piggenCmd);
+			if (statusCode == 0)
 			{
 				PrintLine("[Built %s for Windows!]", "piggen.exe");
 			}
 			else
 			{
-				PrintLine_E("Failed to build %s. Compiler Status Code: %d", "piggen.exe", piggenStatusCode);
-				exit(piggenStatusCode);
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", "piggen.exe", statusCode);
+				exit(statusCode);
 			}
 		}
 		if (BUILD_LINUX)
 		{
 			PrintLine("[Building %s for Linux...]", "piggen.exe");
-			fflush(stdout);
-			fflush(stderr);
 			
 			mkdir("linux", 0);
 			chdir("linux");
@@ -274,15 +284,76 @@ int main(int argc, char* argv[])
 			AddArgList(&piggenCmd, &clang_LinuxFlags);
 			AddArgList(&piggenCmd, &clang_LinuxCommonLibraries);
 			
-			int piggenStatusCode = RunCliProgram(linuxClangCompiler, &piggenCmd);
-			if (piggenStatusCode == 0)
+			int statusCode = RunCliProgram(linuxClangCompiler, &piggenCmd);
+			if (statusCode == 0)
 			{
 				PrintLine("[Built %s for Linux!]", "piggen");
 			}
 			else
 			{
-				PrintLine_E("Failed to build %s. Compiler Status Code: %d", "piggen", piggenStatusCode);
-				exit(piggenStatusCode);
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", "piggen", statusCode);
+				exit(statusCode);
+			}
+			
+			chdir("..");
+		}
+	}
+	
+	// +==============================+
+	// |      Build pig_core.dll      |
+	// +==============================+
+	if (BUILD_PIG_CORE_DLL)
+	{
+		if (BUILD_WINDOWS)
+		{
+			PrintLine("[Building %s for Windows...]", "pig_core.dll");
+			
+			CliArgList pigCoreCmd = ZEROED;
+			AddArg(&pigCoreCmd, "..\\dll\\dll_main.c");
+			AddArgNt(&pigCoreCmd, CL_BINARY_NAME, "pig_core.dll");
+			AddArgList(&pigCoreCmd, &cl_CommonFlags);
+			AddArgList(&pigCoreCmd, &cl_LangCFlags);
+			AddArg(&pigCoreCmd, CL_LINK);
+			AddArg(&pigCoreCmd, LINK_BUILD_DLL);
+			AddArgList(&pigCoreCmd, &cl_PigCoreLibraries);
+			
+			int statusCode = RunCliProgram(msvcCompiler, &pigCoreCmd);
+			if (statusCode == 0)
+			{
+				PrintLine("[Built %s for Windows!]", "pig_core.dll");
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", "pig_core.dll", statusCode);
+				exit(statusCode);
+			}
+		}
+		if (BUILD_LINUX)
+		{
+			PrintLine("[Building %s for Linux...]", "pig_core.so");
+			
+			mkdir("linux", 0);
+			chdir("linux");
+			
+			CliArgList pigCoreCmd = ZEROED;
+			AddArg(&pigCoreCmd, "../../dll/dll_main.c");
+			AddArgNt(&pigCoreCmd, CLANG_BINARY_NAME, "libpig_core.so");
+			AddArg(&pigCoreCmd, CLANG_BUILD_SHARED_LIB);
+			AddArg(&pigCoreCmd, CLANG_fPIC);
+			AddArgList(&pigCoreCmd, &clang_CommonFlags);
+			AddArgList(&pigCoreCmd, &clang_LinuxFlags);
+			AddArgList(&pigCoreCmd, &clang_LinuxCommonLibraries);
+			AddArgList(&pigCoreCmd, &clang_PigCoreLibraries);
+			
+			int statusCode = RunCliProgram(linuxClangCompiler, &pigCoreCmd);
+			if (statusCode == 0)
+			{
+				PrintLine("[Built %s for Linux!]", "pig_core.so");
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", "pig_core.so", statusCode);
+				exit(statusCode);
 			}
 			
 			chdir("..");
@@ -290,5 +361,7 @@ int main(int argc, char* argv[])
 	}
 	
 	free(buildConfigContents.chars);
+	
+	WriteLine("[pig_build.exe Finished Successfully]");
 	return 0;
 }

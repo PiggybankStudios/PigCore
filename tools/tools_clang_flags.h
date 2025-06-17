@@ -17,6 +17,8 @@ Date:   06\16\2025
 #define CLANG_INCLUDE_DIR      "-I \"[VAL]\""
 #define CLANG_SYSTEM_LIBRARY   "-l[VAL]"
 #define CLANG_PRECOMPILE_ONLY  "-E"
+#define CLANG_BUILD_SHARED_LIB "-shared"
+#define CLANG_fPIC             "-fPIC" //TODO: Name this better!
 
 #define CLANG_WARNING_SWITCH_MISSING_CASES          "switch" //8 enumeration values not handled in switch: 'ArenaType_None', 'ArenaType_Funcs', 'ArenaType_Generic'...
 #define CLANG_WARNING_UNUSED_FUNCTION               "unused-function" //unused function 'MeowExpandSeed'

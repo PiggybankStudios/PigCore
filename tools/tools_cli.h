@@ -141,6 +141,11 @@ Str8 JoinCliArgsList(Str8 prefix, const CliArgList* list, bool addNullTerm)
 int RunCliProgram(Str8 programName, const CliArgList* args)
 {
 	Str8 joinedArgs = JoinCliArgsList(programName, args, true);
+	
+	// PrintLine(">> %s", joinedArgs.chars);
+	fflush(stdout);
+	fflush(stderr);
+	
 	int resultCode = system(joinedArgs.chars);
 	return resultCode;
 }

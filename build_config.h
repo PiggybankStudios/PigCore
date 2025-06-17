@@ -21,7 +21,7 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             0
+#define BUILD_WINDOWS             1
 // Build binaries for Linux platform(s)
 #define BUILD_LINUX               1
 // Build the WASM binary for operating as a webpage
@@ -37,7 +37,7 @@ Description:
 #define BUILD_SHADERS 0
 
 // Compiles piggen/main.c
-#define BUILD_PIGGEN   1
+#define BUILD_PIGGEN   0
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN     0
 
@@ -49,7 +49,7 @@ Description:
 #define BUILD_PHYSX_OBJ 0
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
-#define BUILD_PIG_CORE_DLL 0
+#define BUILD_PIG_CORE_DLL 1
 
 // Compiles tests/main.c
 #define BUILD_TESTS   0
