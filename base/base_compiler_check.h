@@ -179,8 +179,20 @@ Description:
 #define DEBUG_BUILD 0
 #endif
 
-#if !DEBUG_BUILD && (COMPILER_IS_CLANG || COMPILER_IS_GCC) && !defined(NDEBUG)
-#define NDEBUG
+#if DEBUG_BUILD
+	#if !defined(_DEBUG)
+	#define _DEBUG
+	#endif
+	#if defined(NDEBUG)
+	#undef NDEBUG
+	#endif
+#else
+	#if defined(_DEBUG)
+	#undef _DEBUG
+	#endif
+	#if !defined(NDEBUG)
+	#define NDEBUG
+	#endif
 #endif
 
 #endif //  _BASE_COMPILER_CHECK_H

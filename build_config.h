@@ -37,22 +37,22 @@ Description:
 #define BUILD_SHADERS 0
 
 // Compiles piggen/main.c
-#define BUILD_PIGGEN   1
+#define BUILD_PIGGEN   0
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN     0
 
-#define BUILD_PIG_BUILD 0
+#define BUILD_PIG_BUILD 1
 
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
-#define BUILD_IMGUI_OBJ 0
+#define BUILD_IMGUI_OBJ 1
 // Builds phys/phys_physx_capi_main.cpp in C++ mode into physx_capi.obj which will be linked into pig_core.dll and/or tests.exe
-#define BUILD_PHYSX_OBJ 0
+#define BUILD_PHYSX_OBJ 1
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
-#define BUILD_PIG_CORE_DLL 1
+#define BUILD_PIG_CORE_DLL 0
 
 // Compiles tests/main.c
-#define BUILD_TESTS   0
+#define BUILD_TESTS   1
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS     0
 
@@ -93,7 +93,7 @@ Description:
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
 #define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib
-#define BUILD_WITH_PHYSX     0
+#define BUILD_WITH_PHYSX     1
 // Enables using Metadesk library to parse Metadesk formatted files (md.h and md.c)
 #define BUILD_WITH_METADESK  0
 

@@ -16,6 +16,7 @@ Description:
 // We have this string inside a bunch of #defines in places like tools_msvc_flags.h
 // This allows us to replace that part of the argument string with an actual value, adding escaping if the argument is in quotes
 #define CLI_VAL_STR "[VAL]"
+#define CLI_QUOTED_ARG "\"[VAL]\""
 
 #define CLI_MAX_ARGS 256
 typedef struct CliArgList CliArgList;

@@ -56,9 +56,11 @@ Description:
 // +==============================+
 // |          LINK Flags          |
 // +==============================+
-#define LINK_BUILD_DLL                    "/DLL"
+#define LINK_BUILD_DLL        "/DLL"
 
 //TODO: Make #defines for these
+#define LINK_NOT_INCREMENTAL  "-incremental:no"
+#define LINK_LIBRARY_DIR      "/LIBPATH:\"[VAL]\""
 // /GS /Gm- /RTC1 /Gd /WX-
 // /errorReport:prompt /Zc:forScope /Zc:inline /Zc:wchar_t /fp:precise
 // /MANIFEST /NXCOMPAT /DYNAMICBASE /DEBUG /MACHINE:X64 /INCREMENTAL /SUBSYSTEM:CONSOLE /ERRORREPORT:PROMPT /NOLOGO /TLBID:1
