@@ -284,6 +284,25 @@ static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
 	return true;
 }
 
+static inline bool DoesFileExist(Str8 filePath)
+{
+	char* filePathNt = (char*)malloc(filePath.length+1);
+	memcpy(filePathNt, filePath.chars, filePath.length);
+	filePathNt[filePath.length] = '\0';
+	int accessResult = access(filePathNt, F_OK);
+	free(filePathNt);
+	return (accessResult == 0);
+}
+
+static inline void AssertFileExist(Str8 filePath, bool wasCreatedByBuild)
+{
+	if (!DoesFileExist(filePath))
+	{
+		PrintLine_E("\"%.*s\" %s!", filePath.length, filePath.chars, wasCreatedByBuild ? "was not created" : "was not found");
+		exit(6);
+	}
+}
+
 // +--------------------------------------------------------------+
 // |                     Extract Define Logic                     |
 // +--------------------------------------------------------------+
