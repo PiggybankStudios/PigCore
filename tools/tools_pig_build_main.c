@@ -253,6 +253,7 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	#define FILENAME_PIGGEN "piggen.exe"
 	#define LINUX_FILENAME_PIGGEN "piggen"
+	if (RUN_PIGGEN && !BUILD_PIGGEN && !DoesFileExist(StrLit(FILENAME_PIGGEN))) { PrintLine("Building %s because it's missing", FILENAME_PIGGEN); BUILD_PIGGEN = true; }
 	if (BUILD_PIGGEN)
 	{
 		// +==============================+
@@ -317,6 +318,14 @@ int main(int argc, char* argv[])
 	}
 	
 	// +--------------------------------------------------------------+
+	// |                        Build Shaders                         |
+	// +--------------------------------------------------------------+
+	if (BUILD_SHADERS)
+	{
+		//TODO: Implement this!
+	}
+	
+	// +--------------------------------------------------------------+
 	// |                        Run piggen.exe                        |
 	// +--------------------------------------------------------------+
 	#define FOLDERNAME_GENERATED_CODE "gen"
@@ -352,7 +361,8 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	#define FILENAME_IMGUI "imgui.obj"
 	#define LINUX_FILENAME_IMGUI "imgui.o"
-	//TODO: Check if imgui.obj exists, and auto-build even if not requested
+	if (BUILD_WITH_IMGUI && !BUILD_IMGUI_OBJ && BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_IMGUI))) { PrintLine("Building %s because it's missing", FILENAME_IMGUI); BUILD_IMGUI_OBJ = true; }
+	if (BUILD_WITH_IMGUI && !BUILD_IMGUI_OBJ && BUILD_LINUX && !DoesFileExist(StrLit(LINUX_FILENAME_IMGUI))) { PrintLine("Building %s because it's missing", LINUX_FILENAME_IMGUI); BUILD_IMGUI_OBJ = true; }
 	if (BUILD_IMGUI_OBJ)
 	{
 		if (BUILD_WINDOWS)
@@ -393,6 +403,8 @@ int main(int argc, char* argv[])
 	#define FILENAME_PHYSX "physx_capi.obj"
 	#define LINUX_FILENAME_PHYSX "physx_capi.o"
 	//TODO: Check if imgui.obj exists, and auto-build even if not requested
+	if (BUILD_WITH_PHYSX && !BUILD_PHYSX_OBJ && BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_PHYSX))) { PrintLine("Building %s because it's missing", FILENAME_PHYSX); BUILD_WITH_PHYSX = true; }
+	if (BUILD_WITH_PHYSX && !BUILD_PHYSX_OBJ && BUILD_LINUX && !DoesFileExist(StrLit(LINUX_FILENAME_PHYSX))) { PrintLine("Building %s because it's missing", LINUX_FILENAME_PHYSX); BUILD_WITH_PHYSX = true; }
 	if (BUILD_PHYSX_OBJ)
 	{
 		if (BUILD_WINDOWS)

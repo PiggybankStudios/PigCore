@@ -39,7 +39,7 @@ Description:
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
-#define RUN_PIGGEN     0
+#define RUN_PIGGEN     1
 
 #define BUILD_PIG_BUILD 1
 
@@ -52,7 +52,7 @@ Description:
 #define BUILD_PIG_CORE_DLL 0
 
 // Compiles tests/main.c
-#define BUILD_TESTS   1
+#define BUILD_TESTS   0
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS     0
 
