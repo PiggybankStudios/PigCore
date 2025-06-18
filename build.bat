@@ -110,7 +110,7 @@ if "%need_to_build_pig_build%"=="1" (
 
 if "%need_to_build_pig_build%"=="1" (
 	echo [Building %pig_build_tool_name%...]
-	cl %tool_compiler_flags% %root%\tools\tools_pig_build_main.c /Fe%pig_build_tool_name%
+	cl %tool_compiler_flags% %root%\tools\tools_pig_build_main.c /Fe%pig_build_tool_name% /link Shlwapi.lib
 	if !ERRORLEVEL! NEQ 0 (
 		echo [FAILED to build %pig_build_tool_name%!]
 		exit

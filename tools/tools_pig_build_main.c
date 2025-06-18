@@ -277,6 +277,7 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(msvcCompiler, &cmd);
 			if (statusCode == 0)
 			{
+				AssertFileExist(StrLit(FILENAME_PIGGEN), true);
 				PrintLine("[Built %s for Windows!]", FILENAME_PIGGEN);
 			}
 			else
@@ -302,6 +303,7 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
 			if (statusCode == 0)
 			{
+				AssertFileExist(StrLit(LINUX_FILENAME_PIGGEN), true);
 				PrintLine("[Built %s for Linux!]", LINUX_FILENAME_PIGGEN);
 			}
 			else
@@ -370,6 +372,7 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(msvcCompiler, &cmd);
 			if (statusCode == 0)
 			{
+				AssertFileExist(StrLit(FILENAME_IMGUI), true);
 				PrintLine("[Built %s for Windows!]", FILENAME_IMGUI);
 			}
 			else
@@ -409,6 +412,7 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(msvcCompiler, &cmd);
 			if (statusCode == 0)
 			{
+				AssertFileExist(StrLit(FILENAME_PHYSX), true);
 				PrintLine("[Built %s for Windows!]", FILENAME_PHYSX);
 			}
 			else
@@ -447,6 +451,7 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(msvcCompiler, &cmd);
 			if (statusCode == 0)
 			{
+				AssertFileExist(StrLit(FILENAME_PIGCORE), true);
 				PrintLine("[Built %s for Windows!]", FILENAME_PIGCORE);
 			}
 			else
@@ -475,6 +480,7 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
 			if (statusCode == 0)
 			{
+				AssertFileExist(StrLit(LINUX_FILENAME_PIGCORE), true);
 				PrintLine("[Built %s for Linux!]", LINUX_FILENAME_PIGCORE);
 			}
 			else
@@ -510,6 +516,7 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(msvcCompiler, &cmd);
 			if (statusCode == 0)
 			{
+				AssertFileExist(StrLit(FILENAME_TESTS), true);
 				PrintLine("[Built %s for Windows!]", FILENAME_TESTS);
 			}
 			else
@@ -536,6 +543,7 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
 			if (statusCode == 0)
 			{
+				AssertFileExist(StrLit(LINUX_FILENAME_TESTS), true);
 				PrintLine("[Built %s for Linux!]", LINUX_FILENAME_TESTS);
 			}
 			else

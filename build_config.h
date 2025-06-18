@@ -44,9 +44,9 @@ Description:
 #define BUILD_PIG_BUILD 1
 
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
-#define BUILD_IMGUI_OBJ 1
+#define BUILD_IMGUI_OBJ 0
 // Builds phys/phys_physx_capi_main.cpp in C++ mode into physx_capi.obj which will be linked into pig_core.dll and/or tests.exe
-#define BUILD_PHYSX_OBJ 1
+#define BUILD_PHYSX_OBJ 0
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
 #define BUILD_PIG_CORE_DLL 0
@@ -93,7 +93,7 @@ Description:
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
 #define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib
-#define BUILD_WITH_PHYSX     1
+#define BUILD_WITH_PHYSX     0
 // Enables using Metadesk library to parse Metadesk formatted files (md.h and md.c)
 #define BUILD_WITH_METADESK  0
 

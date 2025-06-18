@@ -45,6 +45,28 @@ Description:
 #define ZEROED {}
 #endif
 
+#if defined(__linux__) || defined(__unix__)
+#define TARGET_IS_LINUX 1
+#else
+#define TARGET_IS_LINUX 0
+#endif
+
+#if defined(_WIN32)
+#define TARGET_IS_WINDOWS 1
+#else
+#define TARGET_IS_WINDOWS 0
+#endif
+
+#ifdef __APPLE__
+#define TARGET_IS_OSX 1
+#else
+#define TARGET_IS_OSX 0
+#endif
+
+#if TARGET_IS_WINDOWS
+#include <windows.h>
+#endif
+
 // +--------------------------------------------------------------+
 // |                            Types                             |
 // +--------------------------------------------------------------+
@@ -289,16 +311,29 @@ static inline bool DoesFileExist(Str8 filePath)
 	char* filePathNt = (char*)malloc(filePath.length+1);
 	memcpy(filePathNt, filePath.chars, filePath.length);
 	filePathNt[filePath.length] = '\0';
-	int accessResult = access(filePathNt, F_OK);
-	free(filePathNt);
-	return (accessResult == 0);
+	#if TARGET_IS_WINDOWS
+	{
+		BOOL fileExistsResult = PathFileExistsA(filePathNt);
+		free(filePathNt);
+		return (fileExistsResult == TRUE);
+	}
+	#elif TARGET_IS_LINUX || TARGET_IS_OSX
+	{
+		int accessResult = access(filePathNt, F_OK);
+		free(filePathNt);
+		return (accessResult == 0);
+	}
+	#else
+	assert(false && "tools_shared.h's DoesFileExist does not support the current platform yet!");
+	return false;
+	#endif
 }
 
 static inline void AssertFileExist(Str8 filePath, bool wasCreatedByBuild)
 {
 	if (!DoesFileExist(filePath))
 	{
-		PrintLine_E("\"%.*s\" %s!", filePath.length, filePath.chars, wasCreatedByBuild ? "was not created" : "was not found");
+		PrintLine_E("Missing file \"%.*s\" %s!", filePath.length, filePath.chars, wasCreatedByBuild ? "was not created" : "was not found");
 		exit(6);
 	}
 }
