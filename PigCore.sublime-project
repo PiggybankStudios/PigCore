@@ -506,6 +506,7 @@
 			"LANGUAGE_IS_CPP",
 			"LIGHTGRAY",
 			"LIME",
+			"LINK_NOT_INCREMENTAL",
 			"LOG_ALL",
 			"LOG_DEBUG",
 			"LOG_ERROR",

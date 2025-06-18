@@ -26,16 +26,10 @@ START_EXTERN_C
 #include "base/base_debug_output.h"
 #include "std/std_memset.h"
 #include "mem/mem_arena.h"
+#include "struct/struct_var_array.h"
 END_EXTERN_C
 
 #define PX_PHYSX_STATIC_LIB
-#if DEBUG_BUILD
-#ifndef _DEBUG
-#define _DEBUG
-#endif
-#else
-#define NDEBUG
-#endif
 #include "third_party/physx/PxPhysicsAPI.h"
 #include "third_party/physx/extensions/PxExtensionsAPI.h"
 
@@ -156,7 +150,7 @@ PEXP void CreatePhysicsTest(PhysicsWorld* world)
 			body->staticHandle->release();
 		}
 	}
-	VarArrayClear(&world->bodies);
+	VarArrayClearEx(&world->bodies, false);
 	
 	physx::PxRigidStatic* groundStaticBody = PxCreatePlane(*world->physics, physx::PxPlane(0, 1, 0, 0.5f), *world->defaultMaterial);
 	world->groundPlaneBodyIndex = AddRigidStaticToWorld(world, groundStaticBody)->index;

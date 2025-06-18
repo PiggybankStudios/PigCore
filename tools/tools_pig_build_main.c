@@ -46,36 +46,21 @@ static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
 int main(int argc, char* argv[])
 {
 	// WriteLine("Running Pig Build!");
-	// +==============================+
-	// |        Parse CLI Args        |
-	// +==============================+
-	int numArgs = argc-1;
-	if (numArgs != 1)
-	{
-		PrintLine_E("Expected 1 arguments, got %d", numArgs);
-		PrintUsage();
-		return 1;
-	}
-	const char* buildConfigPathNt = argv[1];
-	Str8 buildConfigPath = NewStr8Nt(buildConfigPathNt);
-	// PrintLine("buildConfigPath: \"%s\"", buildConfigPathNt);
-	
-	// +==============================+
-	// |          Open File           |
-	// +==============================+
-	Str8 buildConfigContents = ZEROED;
-	if (!TryReadFile(buildConfigPath, &buildConfigContents))
-	{
-		PrintLine_E("Failed to open file \"%s\"", buildConfigPathNt);
-		return 3;
-	}
 	
 	// +==============================+
 	// |       Extract Defines        |
 	// +==============================+
+	const char* buildConfigPath = "..\\build_config.h";
+	Str8 buildConfigContents = ZEROED;
+	if (!TryReadFile(NewStr8Nt(buildConfigPath), &buildConfigContents))
+	{
+		PrintLine_E("Failed to open file \"%s\"", buildConfigPath);
+		return 3;
+	}
+	
 	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
 	bool BUILD_PIGGEN             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
-	bool BUILD_PIG_BUILD          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_BUILD"));
+	// bool BUILD_PIG_BUILD          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_BUILD"));
 	bool BUILD_SHADERS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
 	bool RUN_PIGGEN               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
 	bool BUILD_IMGUI_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_IMGUI_OBJ"));
@@ -100,9 +85,11 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_SOKOL_APP     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_APP"));
 	bool BUILD_WITH_SDL           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SDL"));
 	bool BUILD_WITH_OPENVR        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_OPENVR"));
-	bool BUILD_WITH_CLAY          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
+	// bool BUILD_WITH_CLAY          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
 	bool BUILD_WITH_IMGUI         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
 	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
+	
+	free(buildConfigContents.chars);
 	
 	// +==============================+
 	// |          Constants           |
@@ -195,7 +182,14 @@ int main(int argc, char* argv[])
 	if (DEBUG_BUILD) { AddArgNt(&clang_LinuxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
 	
 	// +==============================+
-	// |      clang_LinkerFlags       |
+	// |     cl_CommonLinkerFlags     |
+	// +==============================+
+	CliArgList cl_CommonLinkerFlags = ZEROED;
+	AddArgNt(&cl_CommonLinkerFlags, LINK_LIBRARY_DIR, DEBUG_BUILD ? "..\\third_party\\_lib_debug" : "..\\third_party\\_lib_release");
+	AddArg(&cl_CommonLinkerFlags, LINK_NOT_INCREMENTAL);
+	
+	// +==============================+
+	// |  clang_LinuxCommonLibraries  |
 	// +==============================+
 	CliArgList clang_LinuxCommonLibraries = ZEROED; //"linux_linker_flags"
 	AddArgNt(&clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
@@ -204,7 +198,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |     cl_PigCoreLibraries      |
 	// +==============================+
-	CliArgList cl_PigCoreLibraries = ZEROED;
+	CliArgList cl_PigCoreLibraries = ZEROED; //These are all the libraries we need when compiling a binary that contains code from PigCore
 	AddArg(&cl_PigCoreLibraries, "Gdi32.lib"); //Needed for CreateFontA and other Windows graphics functions
 	AddArg(&cl_PigCoreLibraries, "User32.lib"); //Needed for GetForegroundWindow, GetDC, etc.
 	AddArg(&cl_PigCoreLibraries, "Ole32.lib"); //Needed for Combaseapi.h, CoInitializeEx, CoCreateInstance, etc.
@@ -218,28 +212,24 @@ int main(int argc, char* argv[])
 	if (BUILD_WITH_BOX2D) { AddArg(&cl_PigCoreLibraries, "box2d.lib"); }
 	if (BUILD_WITH_SDL) { AddArg(&cl_PigCoreLibraries, "SDL2.lib"); }
 	if (BUILD_WITH_OPENVR) { AddArg(&cl_PigCoreLibraries, "openvr_api.lib"); }
+	if (BUILD_WITH_PHYSX) { AddArg(&cl_PigCoreLibraries, "PhysX_static_64.lib"); }
 	
 	// +==============================+
 	// |    clang_PigCoreLibraries    |
 	// +==============================+
-	CliArgList clang_PigCoreLibraries = ZEROED; //"pig_core_clang_libraries"
+	CliArgList clang_PigCoreLibraries = ZEROED; //These are all the libraries we need when compiling a binary that contains code from PigCore
 	AddArgNt(&clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig");
 	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(&clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
 	
-	// +==============================+
-	// |      cl_PiggenLibraries      |
-	// +==============================+
-	CliArgList cl_PiggenLibraries = ZEROED;
-	AddArg(&cl_PiggenLibraries, "Shlwapi.lib"); //Needed for PathFileExistsA
-	
-	// +==============================+
-	// |   Initialize MSVC Compiler   |
-	// +==============================+
+	// +--------------------------------------------------------------+
+	// |                   Initialize MSVC Compiler                   |
+	// +--------------------------------------------------------------+
+	#define FILENAME_MSVC_ENVIRONMENT "environment.txt"
 	if (!WasMsvcDevBatchRun())
 	{
 		PrintLine("Initializing MSVC Compiler...");
 		CliArgList cmd = ZEROED;
-		AddArgNt(&cmd, "\"[VAL]\"", "environment.txt");
+		AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_MSVC_ENVIRONMENT);
 		
 		int statusCode = RunCliProgram(StrLit("..\\init_msvc.bat"), &cmd); //this batch file runs VsDevCmd.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what VsDevCmd.bat changed
 		if (statusCode != 0)
@@ -249,53 +239,62 @@ int main(int argc, char* argv[])
 		}
 		
 		Str8 environmentFileContents = ZEROED;
-		if (!TryReadFile(StrLit("environment.txt"), &environmentFileContents))
+		if (!TryReadFile(StrLit(FILENAME_MSVC_ENVIRONMENT), &environmentFileContents))
 		{
-			PrintLine_E("init_msvc.bat did not create \"%s\"! Or we can't open it for some reason", "environment.txt");
+			PrintLine_E("init_msvc.bat did not create \"%s\"! Or we can't open it for some reason", FILENAME_MSVC_ENVIRONMENT);
 			return 4;
 		}
 		ParseAndApplyEnvironmentVariables(environmentFileContents);
 		free(environmentFileContents.chars);
 	}
 	
-	// +==============================+
-	// |       Build piggen.exe       |
-	// +==============================+
+	// +--------------------------------------------------------------+
+	// |                       Build piggen.exe                       |
+	// +--------------------------------------------------------------+
+	#define FILENAME_PIGGEN "piggen.exe"
+	#define LINUX_FILENAME_PIGGEN "piggen"
 	if (BUILD_PIGGEN)
 	{
+		// +==============================+
+		// |      cl_PiggenLibraries      |
+		// +==============================+
+		CliArgList cl_PiggenLibraries = ZEROED;
+		AddArg(&cl_PiggenLibraries, "Shlwapi.lib"); //Needed for PathFileExistsA
+		
 		if (BUILD_WINDOWS)
 		{
-			PrintLine("\n[Building %s for Windows...]", "piggen.exe");
+			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN);
 			
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, "..\\piggen\\piggen_main.c");
-			AddArgNt(&cmd, CL_BINARY_NAME, "piggen.exe");
+			AddArgNt(&cmd, CL_BINARY_NAME, FILENAME_PIGGEN);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_PiggenLibraries);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
 			int statusCode = RunCliProgram(msvcCompiler, &cmd);
 			if (statusCode == 0)
 			{
-				PrintLine("[Built %s for Windows!]", "piggen.exe");
+				PrintLine("[Built %s for Windows!]", FILENAME_PIGGEN);
 			}
 			else
 			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", "piggen.exe", statusCode);
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PIGGEN, statusCode);
 				exit(statusCode);
 			}
 		}
 		if (BUILD_LINUX)
 		{
-			PrintLine("\n[Building %s for Linux...]", "piggen");
+			PrintLine("\n[Building %s for Linux...]", LINUX_FILENAME_PIGGEN);
 			
 			mkdir("linux", 0);
 			chdir("linux");
 			
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, "../../piggen/piggen_main.c");
-			AddArgNt(&cmd, CLANG_BINARY_NAME, "piggen");
+			AddArgNt(&cmd, CLANG_BINARY_NAME, LINUX_FILENAME_PIGGEN);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
@@ -303,11 +302,11 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
 			if (statusCode == 0)
 			{
-				PrintLine("[Built %s for Linux!]", "piggen");
+				PrintLine("[Built %s for Linux!]", LINUX_FILENAME_PIGGEN);
 			}
 			else
 			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", "piggen", statusCode);
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", LINUX_FILENAME_PIGGEN, statusCode);
 				exit(statusCode);
 			}
 			
@@ -315,19 +314,20 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	// +==============================+
-	// |        Run piggen.exe        |
-	// +==============================+
+	// +--------------------------------------------------------------+
+	// |                        Run piggen.exe                        |
+	// +--------------------------------------------------------------+
+	#define FOLDERNAME_GENERATED_CODE "gen"
 	if (RUN_PIGGEN)
 	{
-		PrintLine("\n[%s]", "piggen.exe");
+		PrintLine("\n[%s]", FILENAME_PIGGEN);
 		
 		#define PIGGEN_OUTPUT_FOLDER "-o=\"[VAL]\""
 		#define PIGGEN_EXCLUDE_FOLDER "-e=\"[VAL]\""
 		
 		CliArgList cmd = ZEROED;
 		AddArg(&cmd, rootDir);
-		AddArgNt(&cmd, PIGGEN_OUTPUT_FOLDER, "gen/");
+		AddArgNt(&cmd, PIGGEN_OUTPUT_FOLDER, FOLDERNAME_GENERATED_CODE "/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "../base/base_defines_check.h");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "../piggen/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "../tools/");
@@ -337,53 +337,134 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "../_media/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "../_template/");
 		
-		int statusCode = RunCliProgram(StrLit("piggen.exe"), &cmd);
+		int statusCode = RunCliProgram(StrLit(FILENAME_PIGGEN), &cmd);
 		if (statusCode != 0)
 		{
-			PrintLine_E("%s Failed! Status Code: %d", "piggen.exe", statusCode);
+			PrintLine_E("%s Failed! Status Code: %d", FILENAME_PIGGEN, statusCode);
 			exit(statusCode);
 		}
 	}
 	
-	// +==============================+
-	// |      Build pig_core.dll      |
-	// +==============================+
-	if (BUILD_PIG_CORE_DLL)
+	// +--------------------------------------------------------------+
+	// |                       Build imgui.obj                        |
+	// +--------------------------------------------------------------+
+	#define FILENAME_IMGUI "imgui.obj"
+	#define LINUX_FILENAME_IMGUI "imgui.o"
+	//TODO: Check if imgui.obj exists, and auto-build even if not requested
+	if (BUILD_IMGUI_OBJ)
 	{
 		if (BUILD_WINDOWS)
 		{
-			PrintLine("\n[Building %s for Windows...]", "pig_core.dll");
+			PrintLine("[Building %s for Windows...]", FILENAME_IMGUI);
 			
 			CliArgList cmd = ZEROED;
-			AddArg(&cmd, "..\\dll\\dll_main.c");
-			AddArgNt(&cmd, CL_BINARY_NAME, "pig_core.dll");
+			AddArg(&cmd, CL_COMPILE);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "..\\ui\\ui_imgui_main.cpp");
+			AddArgNt(&cmd, CL_INCLUDE_DIR, "..\\third_party\\imgui");
+			AddArgNt(&cmd, CL_OBJ_NAME, FILENAME_IMGUI);
 			AddArgList(&cmd, &cl_CommonFlags);
-			AddArgList(&cmd, &cl_LangCFlags);
+			AddArgList(&cmd, &cl_LangCppFlags);
 			AddArg(&cmd, CL_LINK);
-			AddArg(&cmd, LINK_BUILD_DLL);
-			AddArgList(&cmd, &cl_PigCoreLibraries);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
 			int statusCode = RunCliProgram(msvcCompiler, &cmd);
 			if (statusCode == 0)
 			{
-				PrintLine("[Built %s for Windows!]", "pig_core.dll");
+				PrintLine("[Built %s for Windows!]", FILENAME_IMGUI);
 			}
 			else
 			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", "pig_core.dll", statusCode);
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_IMGUI, statusCode);
 				exit(statusCode);
 			}
 		}
 		if (BUILD_LINUX)
 		{
-			PrintLine("\n[Building %s for Linux...]", "pig_core.so");
+			//TODO: Implement Linux version!
+		}
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                     Build physx_capi.obj                     |
+	// +--------------------------------------------------------------+
+	#define FILENAME_PHYSX "physx_capi.obj"
+	#define LINUX_FILENAME_PHYSX "physx_capi.o"
+	//TODO: Check if imgui.obj exists, and auto-build even if not requested
+	if (BUILD_PHYSX_OBJ)
+	{
+		if (BUILD_WINDOWS)
+		{
+			PrintLine("[Building %s for Windows...]", FILENAME_PHYSX);
+			
+			CliArgList cmd = ZEROED;
+			AddArg(&cmd, CL_COMPILE);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "..\\phys\\phys_physx_capi_main.cpp");
+			AddArgNt(&cmd, CL_INCLUDE_DIR, "..\\third_party\\physx");
+			AddArgNt(&cmd, CL_OBJ_NAME, FILENAME_PHYSX);
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCppFlags);
+			AddArg(&cmd, CL_LINK);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			
+			int statusCode = RunCliProgram(msvcCompiler, &cmd);
+			if (statusCode == 0)
+			{
+				PrintLine("[Built %s for Windows!]", FILENAME_PHYSX);
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PHYSX, statusCode);
+				exit(statusCode);
+			}
+		}
+		if (BUILD_LINUX)
+		{
+			//TODO: Implement Linux version!
+		}
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                      Build pig_core.dll                      |
+	// +--------------------------------------------------------------+
+	#define FILENAME_PIGCORE "pig_core.dll"
+	#define LINUX_FILENAME_PIGCORE "libpig_core.so"
+	if (BUILD_PIG_CORE_DLL)
+	{
+		if (BUILD_WINDOWS)
+		{
+			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGCORE);
+			
+			CliArgList cmd = ZEROED;
+			AddArg(&cmd, "..\\dll\\dll_main.c");
+			AddArgNt(&cmd, CL_BINARY_NAME, FILENAME_PIGCORE);
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCFlags);
+			AddArg(&cmd, CL_LINK);
+			AddArg(&cmd, LINK_BUILD_DLL);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			AddArgList(&cmd, &cl_PigCoreLibraries);
+			
+			int statusCode = RunCliProgram(msvcCompiler, &cmd);
+			if (statusCode == 0)
+			{
+				PrintLine("[Built %s for Windows!]", FILENAME_PIGCORE);
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PIGCORE, statusCode);
+				exit(statusCode);
+			}
+		}
+		if (BUILD_LINUX)
+		{
+			PrintLine("\n[Building %s for Linux...]", LINUX_FILENAME_PIGCORE);
 			
 			mkdir("linux", 0);
 			chdir("linux");
 			
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, "../../dll/dll_main.c");
-			AddArgNt(&cmd, CLANG_BINARY_NAME, "libpig_core.so");
+			AddArgNt(&cmd, CLANG_BINARY_NAME, LINUX_FILENAME_PIGCORE);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
 			AddArgList(&cmd, &clang_CommonFlags);
@@ -394,11 +475,11 @@ int main(int argc, char* argv[])
 			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
 			if (statusCode == 0)
 			{
-				PrintLine("[Built %s for Linux!]", "pig_core.so");
+				PrintLine("[Built %s for Linux!]", LINUX_FILENAME_PIGCORE);
 			}
 			else
 			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", "pig_core.so", statusCode);
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", LINUX_FILENAME_PIGCORE, statusCode);
 				exit(statusCode);
 			}
 			
@@ -406,7 +487,66 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	free(buildConfigContents.chars);
+	// +--------------------------------------------------------------+
+	// |                       Build tests.exe                        |
+	// +--------------------------------------------------------------+
+	#define FILENAME_TESTS "tests.exe"
+	#define LINUX_FILENAME_TESTS "tests"
+	if (BUILD_TESTS)
+	{
+		if (BUILD_WINDOWS)
+		{
+			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS);
+			
+			CliArgList cmd = ZEROED;
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "..\\tests\\tests_main.c");
+			AddArgNt(&cmd, CL_BINARY_NAME, FILENAME_TESTS);
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCFlags);
+			AddArg(&cmd, CL_LINK);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			AddArgList(&cmd, &cl_PigCoreLibraries);
+			
+			int statusCode = RunCliProgram(msvcCompiler, &cmd);
+			if (statusCode == 0)
+			{
+				PrintLine("[Built %s for Windows!]", FILENAME_TESTS);
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_TESTS, statusCode);
+				exit(statusCode);
+			}
+		}
+		if (BUILD_LINUX)
+		{
+			PrintLine("\n[Building %s for Linux...]", LINUX_FILENAME_TESTS);
+			
+			mkdir("linux", 0);
+			chdir("linux");
+			
+			CliArgList cmd = ZEROED;
+			AddArg(&cmd, "../../tests/tests_main.c");
+			AddArgNt(&cmd, CLANG_BINARY_NAME, LINUX_FILENAME_TESTS);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgList(&cmd, &clang_PigCoreLibraries);
+			
+			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
+			if (statusCode == 0)
+			{
+				PrintLine("[Built %s for Linux!]", LINUX_FILENAME_TESTS);
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", LINUX_FILENAME_TESTS, statusCode);
+				exit(statusCode);
+			}
+			
+			chdir("..");
+		}
+	}
 	
 	WriteLine("\n[pig_build.exe Finished Successfully]");
 	return 0;
