@@ -123,7 +123,7 @@ if "%need_to_build_pig_build%"=="1" (
 	echo [Built %pig_build_tool_name%!]
 )
 
-%pig_build_tool_name% "%build_config_path%"
+%pig_build_tool_name%
 
 exit
 

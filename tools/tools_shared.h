@@ -189,6 +189,17 @@ static inline bool StrExactEndsWith(Str8 target, Str8 suffix)
 	if (target.length < suffix.length) { return false; }
 	return StrExactEquals(StrSlice(target, target.length - suffix.length, target.length), suffix);
 }
+static inline Str8 GetDirectoryPart(Str8 fullPath, bool includeTrailingSlash)
+{
+	uxx lastSlashIndex = fullPath.length;
+	for (uxx cIndex = 0; cIndex < fullPath.length; cIndex++)
+	{
+		char character = fullPath.chars[cIndex];
+		if (character == '\\' || character == '/') { lastSlashIndex = cIndex; }
+	}
+	if (lastSlashIndex < fullPath.length) { return StrSlice(fullPath, 0, lastSlashIndex + (includeTrailingSlash ? 1 : 0)); }
+	else { return fullPath; }
+}
 static inline Str8 GetFileNamePart(Str8 fullPath, bool includeExtension)
 {
 	uxx lastSlashIndex = fullPath.length;
@@ -340,6 +351,26 @@ static inline Str8 JoinStrings3(Str8 left, Str8 middle, Str8 right, bool addNull
 	return result;
 }
 
+//Returns the number of target characters that were replaced
+static inline uxx StrReplaceChars(Str8 haystack, char targetChar, char replaceChar)
+{
+	uxx numReplacements = 0;
+	for (uxx cIndex = 0; cIndex < haystack.length; cIndex++)
+	{
+		if (haystack.chars[cIndex] == targetChar)
+		{
+			haystack.chars[cIndex] = replaceChar;
+			numReplacements++;
+		}
+	}
+	return numReplacements;
+}
+
+static inline void FixPathSlashes(Str8 path, char slashChar)
+{
+	StrReplaceChars(path, (slashChar == '/') ? '\\' : '/', slashChar);
+}
+
 static inline Str8 StrReplace(Str8 haystack, Str8 target, Str8 replacement, bool addNullTerm)
 {
 	Str8 result = ZEROED;
@@ -424,6 +455,67 @@ static inline bool LineParserGetLine(LineParser* parser, Str8* lineOut)
 // +--------------------------------------------------------------+
 // |                        File Functions                        |
 // +--------------------------------------------------------------+
+// Result is always null-terminated
+// TODO: On linux this will not work properly for paths to folders that don't exist yet
+static inline Str8 GetFullPath(Str8 relativePath, char slashChar)
+{
+	Str8 result = ZEROED;
+	
+	#if BUILDING_ON_WINDOWS
+	{
+		Str8 relativePathNt = CopyStr8(relativePath, true);
+		FixPathSlashes(relativePathNt, PATH_SEP_CHAR);
+		
+		// Returns required buffer size +1 when the nBufferLength is too small
+		DWORD getPathResult1 = GetFullPathNameA(
+			relativePathNt.chars, //lpFileName
+			0, //nBufferLength
+			nullptr, //lpBuffer
+			nullptr //lpFilePart
+		);
+		assert(getPathResult1 != 0);
+		
+		result.length = (uxx)getPathResult1-1;
+		result.chars = (char*)malloc(result.length + 1);
+		
+		// Returns the length of the string (not +1) when nBufferLength is large enough
+		DWORD getPathResult2 = GetFullPathNameA(
+			relativePathNt.chars, //lpFileName
+			(DWORD)(result.length+1), //nBufferLength
+			result.chars, //lpBuffer
+			nullptr //lpFilePart
+		);
+		assert(getPathResult2+1 == getPathResult1);
+		assert(result.chars[result.length] == '\0');
+		
+		FixPathSlashes(result, slashChar);
+		free(relativePathNt.chars);
+	}
+	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
+	{
+		Str8 relativePathNt = CopyStr8(relativePath, true);
+		FixPathSlashes(relativePathNt, PATH_SEP_CHAR);
+		
+		char* temporaryBuffer = (char*)malloc(PATH_MAX);
+		char* realPathResult = realpath(relativePathNt.chars, temporaryBuffer);
+		assert(realPathResult != nullptr);
+		
+		result.length = (uxx)strlen(realPathResult);
+		result.chars = (char*)malloc(result.length + 1);
+		memcpy(result.chars, realPathResult, result.length);
+		result.chars[result.length] = '\0';
+		
+		FixPathSlashes(result, slashChar);
+		free(temporaryBuffer);
+		free(relativePathNt.chars);
+	}
+	#else
+	assert(false && "GetFullPath does not support the current platform yet!");
+	#endif
+		
+	return result;
+}
+
 static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
 {
 	char* filePathNt = (char*)malloc(filePath.length+1);

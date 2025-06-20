@@ -24,6 +24,36 @@ static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
 	return result;
 }
 
+#define FILENAME_MSVC_ENVIRONMENT "environment.txt"
+
+static inline void InitializeMsvcIf(bool* isMsvcInitialized)
+{
+	if (*isMsvcInitialized == false)
+	{
+		PrintLine("Initializing MSVC Compiler...");
+		
+		CliArgList cmd = ZEROED;
+		AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_MSVC_ENVIRONMENT);
+		
+		int statusCode = RunCliProgram(StrLit("..\\init_msvc.bat"), &cmd); //this batch file runs VsDevCmd.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what VsDevCmd.bat changed
+		if (statusCode != 0)
+		{
+			PrintLine_E("Failed to initialize MSVC compiler! Status Code: %d", statusCode);
+			exit(statusCode);
+		}
+		
+		Str8 environmentFileContents = ZEROED;
+		if (!TryReadFile(StrLit(FILENAME_MSVC_ENVIRONMENT), &environmentFileContents))
+		{
+			PrintLine_E("init_msvc.bat did not create \"%s\"! Or we can't open it for some reason", FILENAME_MSVC_ENVIRONMENT);
+			exit(4);
+		}
+		ParseAndApplyEnvironmentVariables(environmentFileContents);
+		free(environmentFileContents.chars);
+		*isMsvcInitialized = true;
+	}
+}
+
 // +--------------------------------------------------------------+
 // |                  Shader Header File Parsing                  |
 // +--------------------------------------------------------------+
@@ -245,6 +275,202 @@ static inline bool IsShaderHeaderLine_UniformMember(Str8 line, Str8* typeOut, St
 	if (typeOut != nullptr) { *typeOut = typeStr; }
 	if (nameOut != nullptr) { *nameOut = nameStr; }
 	return true;
+}
+
+void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
+{
+	Str8 headerFileContents = ZEROED;
+	if (!TryReadFile(headerPath, &headerFileContents)) { PrintLine_E("Failed to open %.*s for reading after creation!", headerPath.length, headerPath.chars); exit(4); }
+	
+	Str8 shaderName = ZEROED;
+	StrArray shaderAttributes = ZEROED;
+	StrArray shaderImages = ZEROED;
+	StrArray shaderSamplers = ZEROED;
+	StrArray shaderUniformBlocks = ZEROED;
+	StrArray shaderUniforms = ZEROED;
+	StrArray shaderUniformsBlockNames = ZEROED;
+	
+	bool insideUniformBlock = false;
+	Str8 uniformBlockName = ZEROED;
+	Str8 line = ZEROED;
+	LineParser lineParser = NewLineParser(headerFileContents);
+	while (LineParserGetLine(&lineParser, &line))
+	{
+		if (shaderName.length == 0)
+		{
+			if (IsShaderHeaderLine_Name(line, &shaderName))
+			{
+				assert(shaderName.length > 0);
+				// PrintLine("Shader name: \"%.*s\"", shaderName.length, shaderName.chars);
+			}
+		}
+		else if (insideUniformBlock)
+		{
+			Str8 uniformType = ZEROED;
+			Str8 uniformName = ZEROED;
+			if (IsShaderHeaderLine_UniformStructEnd(shaderName, uniformBlockName, line))
+			{
+				insideUniformBlock = false;
+			}
+			else if (IsShaderHeaderLine_UniformMember(line, &uniformType, &uniformName))
+			{
+				// PrintLine("Found uniform \"%.*s\" \"%.*s\"", uniformType.length, uniformType.chars, uniformName.length, uniformName.chars);
+				AddStr(&shaderUniforms, uniformName);
+				AddStr(&shaderUniformsBlockNames, uniformBlockName);
+			}
+		}
+		else
+		{
+			Str8 name = ZEROED;
+			if (IsShaderHeaderLine_Attribute(shaderName, line, &name))
+			{
+				// PrintLine("Found attribute \"%.*s\"", name.length, name.chars);
+				AddStr(&shaderAttributes, name);
+			}
+			else if (IsShaderHeaderLine_Image(shaderName, line, &name))
+			{
+				// PrintLine("Found image \"%.*s\"", name.length, name.chars);
+				AddStr(&shaderImages, name);
+			}
+			else if (IsShaderHeaderLine_Sampler(shaderName, line, &name))
+			{
+				// PrintLine("Found sampler \"%.*s\"", name.length, name.chars);
+				AddStr(&shaderSamplers, name);
+			}
+			else if (IsShaderHeaderLine_UniformStruct(shaderName, line, &name))
+			{
+				// PrintLine("Found uniform block \"%.*s\"", name.length, name.chars);
+				uniformBlockName = name;
+				insideUniformBlock = true;
+			}
+		}
+	}
+	
+	assert(shaderName.length > 0);
+	
+	Str8 shaderFullPath = GetFullPath(shaderPath, '/');
+	Str8 escapedFullShaderPath = EscapeString(shaderFullPath, false);
+	AppendToFile(headerPath, StrLit(
+		"\n\n//NOTE: These lines were added by pig_build.exe\n"
+		"//NOTE: Because an empty array is invalid in C, we always add at least one dummy entry to these definition #defines while the corresponding COUNT #define will remain 0\n"
+		"#ifndef NO_ENTRIES_STR\n"
+		"#define NO_ENTRIES_STR \"no_entries\"\n"
+		"#endif\n"),
+		true
+	);
+	AppendPrintToFile(headerPath,
+		"#define %.*s_SHADER_FILE_PATH \"%.*s\"\n",
+		shaderName.length, shaderName.chars,
+		escapedFullShaderPath.length, escapedFullShaderPath.chars
+	);
+	
+	//Attributes
+	{
+		AppendPrintToFile(headerPath,
+			"#define %.*s_SHADER_ATTR_COUNT %u\n"
+			"#define %.*s_SHADER_ATTR_DEFS { \\\n",
+			shaderName.length, shaderName.chars,
+			shaderAttributes.length,
+			shaderName.length, shaderName.chars
+		);
+		free(shaderFullPath.chars);
+		free(escapedFullShaderPath.chars);
+		for (uxx attributeIndex = 0; attributeIndex < shaderAttributes.length; attributeIndex++)
+		{
+			Str8 attributeName = shaderAttributes.strings[attributeIndex];
+			AppendPrintToFile(headerPath,
+				"\t{ .name=\"%.*s\", .index=ATTR_%.*s_%.*s }, \\\n",
+				attributeName.length, attributeName.chars,
+				shaderName.length, shaderName.chars,
+				attributeName.length, attributeName.chars
+			);
+		}
+		if (shaderAttributes.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
+		AppendToFile(headerPath, StrLit("} // These should match ShaderAttributeDef struct found in gfx_shader.h\n"), true);
+	}
+	
+	//Images
+	{
+		AppendPrintToFile(headerPath,
+			"#define %.*s_SHADER_IMAGE_COUNT %u\n"
+			"#define %.*s_SHADER_IMAGE_DEFS { \\\n",
+			shaderName.length, shaderName.chars,
+			shaderImages.length,
+			shaderName.length, shaderName.chars
+		);
+		for (uxx imageIndex = 0; imageIndex < shaderImages.length; imageIndex++)
+		{
+			Str8 imageName = shaderImages.strings[imageIndex];
+			AppendPrintToFile(headerPath,
+				"\t{ .name=\"%.*s_%.*s\", .index=IMG_%.*s_%.*s }, \\\n",
+				shaderName.length, shaderName.chars,
+				imageName.length, imageName.chars,
+				shaderName.length, shaderName.chars,
+				imageName.length, imageName.chars
+			);
+		}
+		if (shaderImages.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
+		AppendToFile(headerPath, StrLit("} // These should match ShaderImageDef struct found in gfx_shader.h\n"), true);
+	}
+	
+	//Samplers
+	{
+		AppendPrintToFile(headerPath,
+			"#define %.*s_SHADER_SAMPLER_COUNT %u\n"
+			"#define %.*s_SHADER_SAMPLER_DEFS { \\\n",
+			shaderName.length, shaderName.chars,
+			shaderSamplers.length,
+			shaderName.length, shaderName.chars
+		);
+		for (uxx samplerIndex = 0; samplerIndex < shaderSamplers.length; samplerIndex++)
+		{
+			Str8 samplerName = shaderSamplers.strings[samplerIndex];
+			AppendPrintToFile(headerPath,
+				"\t{ .name=\"%.*s_%.*s\", .index=SMP_%.*s_%.*s }, \\\n",
+				shaderName.length, shaderName.chars,
+				samplerName.length, samplerName.chars,
+				shaderName.length, shaderName.chars,
+				samplerName.length, samplerName.chars
+			);
+		}
+		if (shaderSamplers.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
+		AppendToFile(headerPath, StrLit("} // These should match ShaderSamplerDef struct found in gfx_shader.h\n"), true);
+	}
+	
+	//Uniforms
+	{
+		AppendPrintToFile(headerPath,
+			"#define %.*s_SHADER_UNIFORM_COUNT %u\n"
+			"#define %.*s_SHADER_UNIFORM_DEFS { \\\n",
+			shaderName.length, shaderName.chars,
+			shaderUniforms.length,
+			shaderName.length, shaderName.chars
+		);
+		for (uxx uniformIndex = 0; uniformIndex < shaderUniforms.length; uniformIndex++)
+		{
+			Str8 uniformName = shaderUniforms.strings[uniformIndex];
+			Str8 uniformBlockName = shaderUniformsBlockNames.strings[uniformIndex];
+			AppendPrintToFile(headerPath,
+				"\t{ .name=\"%.*s\", "
+				".blockIndex=UB_%.*s_%.*s, "
+				".offset=STRUCT_VAR_OFFSET(%.*s_%.*s_t, %.*s), "
+				".size=STRUCT_VAR_SIZE(%.*s_%.*s_t, %.*s) }, \\\n",
+				uniformName.length, uniformName.chars,
+				shaderName.length, shaderName.chars,
+				uniformBlockName.length, uniformBlockName.chars,
+				shaderName.length, shaderName.chars,
+				uniformBlockName.length, uniformBlockName.chars,
+				uniformName.length, uniformName.chars,
+				shaderName.length, shaderName.chars,
+				uniformBlockName.length, uniformBlockName.chars,
+				uniformName.length, uniformName.chars
+			);
+		}
+		if (shaderUniforms.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .blockIndex=0, .offset=0 } \\\n"), true); }
+		AppendToFile(headerPath, StrLit("} // These should match ShaderUniformDef struct found in gfx_shader.h\n"), true);
+	}
+	
+	free(headerFileContents.chars);
 }
 
 #endif //  _TOOLS_PIG_BUILD_HELPERS_H

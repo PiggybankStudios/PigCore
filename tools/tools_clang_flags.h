@@ -10,6 +10,7 @@ Date:   06\16\2025
 #define CLANG_COMPILE          "-c"
 #define CLANG_LANG_VERSION     "-std=[VAL]"
 #define CLANG_BINARY_NAME      "-o \"[VAL]\""
+#define CLANG_OBJECT_NAME      "-o \"[VAL]\"" //TODO: Is this the same?
 #define CLANG_DEBUG_INFO       "-g[VAL]"
 #define CLANG_WARNING_LEVEL    "-W[VAL]"
 #define CLANG_ENABLE_WARNING   "-W[VAL]"

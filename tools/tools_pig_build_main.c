@@ -69,6 +69,8 @@ int main(int argc, char* argv[])
 {
 	// WriteLine("Running Pig Build!");
 	
+	bool isMsvcInitialized = WasMsvcDevBatchRun();
+	
 	// +==============================+
 	// |       Extract Defines        |
 	// +==============================+
@@ -119,7 +121,7 @@ int main(int argc, char* argv[])
 	const char* rootDir = "..";
 	const char* linux_rootDir = "../.."; //we are inside the "linux" folder when compiler linux binaries
 	Str8 msvcCompiler = StrLit("cl");
-	Str8 linuxClangCompiler = StrLit("wsl clang-18"); //we are using the WSL instance with clang-18 installed to compile for Linux
+	Str8 wslClangCompiler = StrLit("wsl clang-18"); //we are using the WSL instance with clang-18 installed to compile for Linux
 	#if BUILDING_ON_WINDOWS
 	Str8 shdcExe = StrLit("..\\third_party\\_tools\\win32\\sokol-shdc.exe");
 	#elif BUILDING_ON_LINUX
@@ -251,33 +253,6 @@ int main(int argc, char* argv[])
 	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(&clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
 	
 	// +--------------------------------------------------------------+
-	// |                   Initialize MSVC Compiler                   |
-	// +--------------------------------------------------------------+
-	#define FILENAME_MSVC_ENVIRONMENT "environment.txt"
-	if (!WasMsvcDevBatchRun())
-	{
-		PrintLine("Initializing MSVC Compiler...");
-		CliArgList cmd = ZEROED;
-		AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_MSVC_ENVIRONMENT);
-		
-		int statusCode = RunCliProgram(StrLit("..\\init_msvc.bat"), &cmd); //this batch file runs VsDevCmd.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what VsDevCmd.bat changed
-		if (statusCode != 0)
-		{
-			PrintLine_E("Failed to initialize MSVC compiler! Status Code: %d", statusCode);
-			exit(statusCode);
-		}
-		
-		Str8 environmentFileContents = ZEROED;
-		if (!TryReadFile(StrLit(FILENAME_MSVC_ENVIRONMENT), &environmentFileContents))
-		{
-			PrintLine_E("init_msvc.bat did not create \"%s\"! Or we can't open it for some reason", FILENAME_MSVC_ENVIRONMENT);
-			return 4;
-		}
-		ParseAndApplyEnvironmentVariables(environmentFileContents);
-		free(environmentFileContents.chars);
-	}
-	
-	// +--------------------------------------------------------------+
 	// |                       Build piggen.exe                       |
 	// +--------------------------------------------------------------+
 	#define FILENAME_PIGGEN "piggen.exe"
@@ -293,6 +268,7 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_WINDOWS)
 		{
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN);
 			
 			CliArgList cmd = ZEROED;
@@ -330,7 +306,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
-			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
+			int statusCode = RunCliProgram(wslClangCompiler, &cmd);
 			if (statusCode == 0)
 			{
 				AssertFileExist(StrLit(LINUX_FILENAME_PIGGEN), true);
@@ -380,10 +356,46 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                        Build Shaders                         |
 	// +--------------------------------------------------------------+
+	FindShadersContext findContext = ZEROED;
+	CliArgList cl_ShaderObjects = ZEROED;
+	CliArgList clang_ShaderObjects = ZEROED;
+	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
+	{
+		RecursiveDirWalk(StrLit(".."), FindShaderFilesCallback, &findContext);
+		
+		if (BUILD_WINDOWS)
+		{
+			for (uxx sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
+			{
+				Str8 objPath = findContext.objPaths.strings[sIndex];
+				AddArgStr(&cl_ShaderObjects, CLI_QUOTED_ARG, objPath);
+				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", objPath.length, objPath.chars); BUILD_SHADERS = true; }
+			}
+		}
+		if (BUILD_LINUX)
+		{
+			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			{
+				Str8 oPath = findContext.oPaths.strings[sIndex];
+				AddArgStr(&clang_ShaderObjects, CLI_QUOTED_ARG, oPath);
+				Str8 oPathWithFolder = JoinStrings2(StrLit("linux/"), oPath, false);
+				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
+			}
+		}
+		
+		if (!BUILD_SHADERS)
+		{
+			FreeStrArray(&findContext.shaderPaths);
+			FreeStrArray(&findContext.headerPaths);
+			FreeStrArray(&findContext.sourcePaths);
+			FreeStrArray(&findContext.objPaths);
+			FreeStrArray(&findContext.oPaths);
+		}
+	}
+	
 	if (BUILD_SHADERS)
 	{
-		FindShadersContext findContext = ZEROED;
-		RecursiveDirWalk(StrLit(".."), FindShaderFilesCallback, &findContext);
+		if (BUILD_WINDOWS) { InitializeMsvcIf(&isMsvcInitialized); }
 		
 		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
 		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
@@ -412,190 +424,7 @@ int main(int argc, char* argv[])
 			
 			PrintLine("Generating \"%.*s\"...", headerPath.length, headerPath.chars);
 			int statusCode = RunCliProgram(shdcExe, &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(headerPath, true);
-				
-				Str8 headerFileContents = ZEROED;
-				if (!TryReadFile(headerPath, &headerFileContents)) { PrintLine_E("Failed to open %.*s for reading after creation!", headerPath.length, headerPath.chars); exit(4); }
-				
-				Str8 shaderName = ZEROED;
-				StrArray shaderAttributes = ZEROED;
-				StrArray shaderImages = ZEROED;
-				StrArray shaderSamplers = ZEROED;
-				StrArray shaderUniformBlocks = ZEROED;
-				StrArray shaderUniforms = ZEROED;
-				StrArray shaderUniformsBlockNames = ZEROED;
-				
-				bool insideUniformBlock = false;
-				Str8 uniformBlockName = ZEROED;
-				Str8 line = ZEROED;
-				LineParser lineParser = NewLineParser(headerFileContents);
-				while (LineParserGetLine(&lineParser, &line))
-				{
-					if (shaderName.length == 0)
-					{
-						if (IsShaderHeaderLine_Name(line, &shaderName))
-						{
-							assert(shaderName.length > 0);
-							// PrintLine("Shader name: \"%.*s\"", shaderName.length, shaderName.chars);
-						}
-					}
-					else if (insideUniformBlock)
-					{
-						Str8 uniformType = ZEROED;
-						Str8 uniformName = ZEROED;
-						if (IsShaderHeaderLine_UniformStructEnd(shaderName, uniformBlockName, line))
-						{
-							insideUniformBlock = false;
-						}
-						else if (IsShaderHeaderLine_UniformMember(line, &uniformType, &uniformName))
-						{
-							PrintLine("Found uniform \"%.*s\" \"%.*s\"", uniformType.length, uniformType.chars, uniformName.length, uniformName.chars);
-							AddStr(&shaderUniforms, uniformName);
-							AddStr(&shaderUniformsBlockNames, uniformBlockName);
-						}
-					}
-					else
-					{
-						Str8 name = ZEROED;
-						if (IsShaderHeaderLine_Attribute(shaderName, line, &name))
-						{
-							PrintLine("Found attribute \"%.*s\"", name.length, name.chars);
-							AddStr(&shaderAttributes, name);
-						}
-						else if (IsShaderHeaderLine_Image(shaderName, line, &name))
-						{
-							PrintLine("Found image \"%.*s\"", name.length, name.chars);
-							AddStr(&shaderImages, name);
-						}
-						else if (IsShaderHeaderLine_Sampler(shaderName, line, &name))
-						{
-							PrintLine("Found sampler \"%.*s\"", name.length, name.chars);
-							AddStr(&shaderSamplers, name);
-						}
-						else if (IsShaderHeaderLine_UniformStruct(shaderName, line, &name))
-						{
-							PrintLine("Found uniform block \"%.*s\"", name.length, name.chars);
-							uniformBlockName = name;
-							insideUniformBlock = true;
-						}
-					}
-				}
-				
-				if (shaderName.length > 0)
-				{
-					Str8 escapedShaderPath = EscapeString(shaderPath, false);
-					AppendPrintToFile(headerPath,
-						"\n\n//NOTE: These lines were added by pig_build.exe\n"
-						"//NOTE: Because an empty array is invalid in C, we always add at least one dummy entry to these definition #defines while the corresponding COUNT #define will remain 0\n"
-						"#ifndef NO_ENTRIES_STR\n"
-						"#define NO_ENTRIES_STR \"no_entries\"\n"
-						"#endif\n"
-						"#define %.*s_SHADER_FILE_PATH \"%.*s\"\n"
-						"#define %.*s_SHADER_ATTR_COUNT %u\n"
-						"#define %.*s_SHADER_ATTR_DEFS { \\\n",
-						shaderName.length, shaderName.chars,
-						escapedShaderPath.length, escapedShaderPath.chars,
-						shaderName.length, shaderName.chars,
-						shaderAttributes.length,
-						shaderName.length, shaderName.chars
-					);
-					for (uxx attributeIndex = 0; attributeIndex < shaderAttributes.length; attributeIndex++)
-					{
-						Str8 attributeName = shaderAttributes.strings[attributeIndex];
-						AppendPrintToFile(headerPath,
-							"\t{ .name=\"%.*s\", .index=ATTR_%.*s_%.*s }, \\\n",
-							attributeName.length, attributeName.chars,
-							shaderName.length, shaderName.chars,
-							attributeName.length, attributeName.chars
-						);
-					}
-					if (shaderAttributes.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-					AppendPrintToFile(headerPath,
-						"} // These should match ShaderAttributeDef struct found in gfx_shader.h\n"
-						"#define %.*s_SHADER_IMAGE_COUNT %u\n"
-						"#define %.*s_SHADER_IMAGE_DEFS { \\\n",
-						shaderName.length, shaderName.chars,
-						shaderImages.length,
-						shaderName.length, shaderName.chars
-					);
-					for (uxx imageIndex = 0; imageIndex < shaderImages.length; imageIndex++)
-					{
-						Str8 imageName = shaderImages.strings[imageIndex];
-						AppendPrintToFile(headerPath,
-							"\t{ .name=\"%.*s_%.*s\", .index=IMG_%.*s_%.*s }, \\\n",
-							shaderName.length, shaderName.chars,
-							imageName.length, imageName.chars,
-							shaderName.length, shaderName.chars,
-							imageName.length, imageName.chars
-						);
-					}
-					if (shaderImages.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-					AppendPrintToFile(headerPath,
-						"} // These should match ShaderImageDef struct found in gfx_shader.h\n"
-						"#define %.*s_SHADER_SAMPLER_COUNT %u\n"
-						"#define %.*s_SHADER_SAMPLER_DEFS { \\\n",
-						shaderName.length, shaderName.chars,
-						shaderSamplers.length,
-						shaderName.length, shaderName.chars
-					);
-					for (uxx samplerIndex = 0; samplerIndex < shaderSamplers.length; samplerIndex++)
-					{
-						Str8 samplerName = shaderSamplers.strings[samplerIndex];
-						AppendPrintToFile(headerPath,
-							"\t{ .name=\"%.*s_%.*s\", .index=SMP_%.*s_%.*s }, \\\n",
-							shaderName.length, shaderName.chars,
-							samplerName.length, samplerName.chars,
-							shaderName.length, shaderName.chars,
-							samplerName.length, samplerName.chars
-						);
-					}
-					if (shaderSamplers.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-					AppendPrintToFile(headerPath,
-						"} // These should match ShaderSamplerDef struct found in gfx_shader.h\n"
-						"#define %.*s_SHADER_UNIFORM_COUNT %u\n"
-						"#define %.*s_SHADER_UNIFORM_DEFS { \\\n",
-						shaderName.length, shaderName.chars,
-						shaderUniforms.length,
-						shaderName.length, shaderName.chars
-					);
-					for (uxx uniformIndex = 0; uniformIndex < shaderUniforms.length; uniformIndex++)
-					{
-						Str8 uniformName = shaderUniforms.strings[uniformIndex];
-						Str8 uniformBlockName = shaderUniformsBlockNames.strings[uniformIndex];
-						AppendPrintToFile(headerPath,
-							"\t{ .name=\"%.*s\", "
-							".blockIndex=UB_%.*s_%.*s, "
-							".offset=STRUCT_VAR_OFFSET(%.*s_%.*s_t, %.*s), "
-							".size=STRUCT_VAR_SIZE(%.*s_%.*s_t, %.*s) }, \\\n",
-							uniformName.length, uniformName.chars,
-							shaderName.length, shaderName.chars,
-							uniformBlockName.length, uniformBlockName.chars,
-							shaderName.length, shaderName.chars,
-							uniformBlockName.length, uniformBlockName.chars,
-							uniformName.length, uniformName.chars,
-							shaderName.length, shaderName.chars,
-							uniformBlockName.length, uniformBlockName.chars,
-							uniformName.length, uniformName.chars
-						);
-					}
-					//TODO: Loop over uniforms!
-					if (shaderUniforms.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .blockIndex=0, .offset=0 } \\\n"), true); }
-					AppendToFile(headerPath, StrLit("} // These should match ShaderUniformDef struct found in gfx_shader.h\n"), true);
-				}
-				
-				// AppendToFile(headerPath, StrLit("} // These should match ShaderSamplerDef struct found in gfx_shader.h\n"), true);
-				// AppendToFile(headerPath, StrLit("#define simple_SHADER_UNIFORM_COUNT 0\n"), true);
-				// AppendToFile(headerPath, StrLit("#define simple_SHADER_UNIFORM_DEFS { \\\n"), true);
-				// AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .blockIndex=0, .offset=0, .size=0 }, \\\n"), true);
-				// AppendToFile(headerPath, StrLit("} // These should match ShaderUniformDef struct found in gfx_shader.h\n"), true);
-				// AppendToFile(headerPath, StrLit("#define simple_SHADER_ATTR_COUNT 2\n"), true);
-				// AppendToFile(headerPath, StrLit("#define simple_SHADER_ATTR_DEFS { \\\n"), true);
-				// AppendToFile(headerPath, StrLit("\t{ .name=\"position\", .index=ATTR_simple_position }, \\\n"), true);
-				// AppendToFile(headerPath, StrLit("} // These should match ShaderAttributeDef struct found in gfx_shader.h\n"), true);
-			}
-			else
+			if (statusCode != 0)
 			{
 				Str8 shdcFilename = GetFileNamePart(shdcExe, true);
 				PrintLine_E("%.*s failed on %.*s! Status Code: %d",
@@ -603,16 +432,24 @@ int main(int argc, char* argv[])
 					shaderPath.length, shaderPath.chars,
 					statusCode
 				);
+				exit(statusCode);
+			}
+			else
+			{
+				AssertFileExist(headerPath, true);
+				ScrapeShaderHeaderFileAndAddExtraInfo(headerPath, shaderPath);
 			}
 		}
 		
-		//Then compile each header file to a .o/.obj file
+		//Then compile each header file to an .o/.obj file
 		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		{
 			Str8 headerPath = findContext.headerPaths.strings[sIndex];
 			Str8 sourcePath = findContext.sourcePaths.strings[sIndex];
 			Str8 headerFileName = GetFileNamePart(headerPath, true);
+			Str8 headerDirectory = GetDirectoryPart(headerPath, true);
 			
+			//We need a .c file that #includes shader_include.h (which defines SOKOL_SHDC_IMPL) and then the shader header file
 			Str8 sourceFileContents = JoinStrings3(
 				StrLit("\n#include \"shader_include.h\"\n\n#include \""),
 				headerFileName,
@@ -625,15 +462,71 @@ int main(int argc, char* argv[])
 			if (BUILD_WINDOWS)
 			{
 				Str8 objPath = findContext.objPaths.strings[sIndex];
-				//TODO: Implement me!
+				Str8 fixedSourcePath = CopyStr8(sourcePath, false);
+				FixPathSlashes(fixedSourcePath, '\\');
+				Str8 fixedHeaderDirectory = CopyStr8(headerDirectory, false);
+				FixPathSlashes(fixedHeaderDirectory, '\\');
+				
+				CliArgList cmd = ZEROED;
+				AddArg(&cmd, CL_COMPILE);
+				AddArgStr(&cmd, CLI_QUOTED_ARG, fixedSourcePath);
+				AddArgStr(&cmd, CL_OBJ_NAME, objPath);
+				AddArgStr(&cmd, CL_INCLUDE_DIR, fixedHeaderDirectory);
+				AddArgList(&cmd, &cl_CommonFlags);
+				AddArgList(&cmd, &cl_LangCFlags);
+				
+				
+				int statusCode = RunCliProgram(msvcCompiler, &cmd);
+				if (statusCode == 0)
+				{
+					AssertFileExist(objPath, true);
+				}
+				else
+				{
+					PrintLine_E("Failed to build %.*s for WINDOWS! Compiler Status Code: %d", sourcePath.length, sourcePath.chars, statusCode);
+					exit(statusCode);
+				}
 			}
 			if (BUILD_LINUX)
 			{
+				mkdir("linux", 0);
+				chdir("linux");
+				
 				Str8 oPath = findContext.oPaths.strings[sIndex];
-				//TODO: Implement me!
+				Str8 fixedSourcePath = JoinStrings2(StrLit("../"), sourcePath, false);
+				FixPathSlashes(fixedSourcePath, '/');
+				Str8 fixedHeaderDirectory = JoinStrings2(StrLit("../"), headerDirectory, false);
+				FixPathSlashes(fixedHeaderDirectory, '/');
+				
+				CliArgList cmd = ZEROED;
+				AddArg(&cmd, CLANG_COMPILE);
+				AddArgStr(&cmd, CLI_QUOTED_ARG, fixedSourcePath);
+				AddArgStr(&cmd, CLANG_OBJECT_NAME, oPath);
+				AddArgStr(&cmd, CLANG_INCLUDE_DIR, fixedHeaderDirectory);
+				AddArgList(&cmd, &clang_CommonFlags);
+				AddArgList(&cmd, &clang_LinuxFlags);
+				
+				int statusCode = RunCliProgram(wslClangCompiler, &cmd);
+				if (statusCode == 0)
+				{
+					AssertFileExist(oPath, true);
+				}
+				else
+				{
+					PrintLine_E("Failed to build %.*s for LINUX! Compiler Status Code: %d", sourcePath.length, sourcePath.chars, statusCode);
+					exit(statusCode);
+				}
+				
+				chdir("..");
 			}
 		}
-	}
+		
+		FreeStrArray(&findContext.shaderPaths);
+		FreeStrArray(&findContext.headerPaths);
+		FreeStrArray(&findContext.sourcePaths);
+		FreeStrArray(&findContext.objPaths);
+		FreeStrArray(&findContext.oPaths);
+	} 
 	
 	// +--------------------------------------------------------------+
 	// |                       Build imgui.obj                        |
@@ -646,6 +539,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_IMGUI);
 			
 			CliArgList cmd = ZEROED;
@@ -688,6 +582,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_PHYSX);
 			
 			CliArgList cmd = ZEROED;
@@ -727,6 +622,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGCORE);
 			
 			CliArgList cmd = ZEROED;
@@ -768,7 +664,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
 			
-			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
+			int statusCode = RunCliProgram(wslClangCompiler, &cmd);
 			if (statusCode == 0)
 			{
 				AssertFileExist(StrLit(LINUX_FILENAME_PIGCORE), true);
@@ -789,10 +685,12 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	#define FILENAME_TESTS "tests.exe"
 	#define LINUX_FILENAME_TESTS "tests"
+	if (RUN_TESTS && !BUILD_TESTS && !DoesFileExist(StrLit(FILENAME_TESTS))) { PrintLine("Building %s because it's missing", FILENAME_TESTS); BUILD_TESTS = true; }
 	if (BUILD_TESTS)
 	{
 		if (BUILD_WINDOWS)
 		{
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS);
 			
 			CliArgList cmd = ZEROED;
@@ -803,6 +701,7 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgList(&cmd, &cl_PigCoreLibraries);
+			AddArgList(&cmd, &cl_ShaderObjects);
 			
 			int statusCode = RunCliProgram(msvcCompiler, &cmd);
 			if (statusCode == 0)
@@ -830,8 +729,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
+			AddArgList(&cmd, &clang_ShaderObjects);
 			
-			int statusCode = RunCliProgram(linuxClangCompiler, &cmd);
+			int statusCode = RunCliProgram(wslClangCompiler, &cmd);
 			if (statusCode == 0)
 			{
 				AssertFileExist(StrLit(LINUX_FILENAME_TESTS), true);
@@ -844,6 +744,23 @@ int main(int argc, char* argv[])
 			}
 			
 			chdir("..");
+		}
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                        Run tests.exe                         |
+	// +--------------------------------------------------------------+
+	if (RUN_TESTS)
+	{
+		PrintLine("\n[%s]", FILENAME_TESTS);
+		
+		CliArgList cmd = ZEROED;
+		
+		int statusCode = RunCliProgram(StrLit(FILENAME_TESTS), &cmd);
+		if (statusCode != 0)
+		{
+			PrintLine_E("%s Failed! Status Code: %d", FILENAME_TESTS, statusCode);
+			exit(statusCode);
 		}
 	}
 	
