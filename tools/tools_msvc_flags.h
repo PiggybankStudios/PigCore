@@ -16,6 +16,7 @@ Description:
 #define CL_DEFINE                       "/D\"[VAL]\""
 #define CL_OBJ_NAME                     "/Fo\"[VAL]\""
 #define CL_BINARY_NAME                  "/Fe\"[VAL]\""
+#define CL_PDB_NAME                     "/Fd\"[VAL]\""
 #define CL_LANG_VERSION                 "/std:[VAL]" //clatest, c++20
 #define CL_EXPERIMENTAL                 "/experimental:[VAL]" //c11atomics
 #define CL_DISABLE_WARNING              "/wd[VAL]"

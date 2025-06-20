@@ -104,6 +104,16 @@ struct FileIter
 	#endif
 };
 
+typedef struct LineParser LineParser;
+struct LineParser
+{
+	uxx byteIndex;
+	uxx lineBeginByteIndex;
+	uxx lineIndex; //This is not zero based! It's more like a line number you'd see in the gutter of a text editor! It also contains the total number of lines in the input after the iteration has finished
+	Str8 inputStr;
+	//TODO: Should we add support for Streams again?
+};
+
 #define RECURSIVE_DIR_WALK_CALLBACK_DEF(functionName) bool functionName(Str8 path, bool isFolder, void* contextPntr)
 typedef RECURSIVE_DIR_WALK_CALLBACK_DEF(RecursiveDirWalkCallback_f);
 
@@ -363,6 +373,55 @@ static inline Str8 StrReplace(Str8 haystack, Str8 target, Str8 replacement, bool
 }
 
 // +--------------------------------------------------------------+
+// |                         Line Parser                          |
+// +--------------------------------------------------------------+
+static inline LineParser NewLineParser(Str8 inputStr)
+{
+	LineParser result = ZEROED;
+	result.byteIndex = 0;
+	result.lineIndex = 0;
+	result.inputStr = inputStr;
+	return result;
+}
+
+static inline bool LineParserGetLine(LineParser* parser, Str8* lineOut)
+{
+	if (parser->byteIndex >= parser->inputStr.length) { return false; }
+	parser->lineIndex++;
+	parser->lineBeginByteIndex = parser->byteIndex;
+	
+	uxx endOfLineByteSize = 0;
+	uxx startIndex = parser->byteIndex;
+	while (parser->byteIndex < parser->inputStr.length)
+	{
+		char nextChar = parser->inputStr.chars[parser->byteIndex];
+		char nextNextChar = parser->inputStr.chars[parser->byteIndex+1];
+		//TODO: Should we handle \n\r sequence? Windows is \r\n and I don't know of any space where \n\r is considered a valid single new-line
+		if (nextChar != nextNextChar &&
+			(nextChar     == '\n' || nextChar     == '\r') &&
+			(nextNextChar == '\n' || nextNextChar == '\r'))
+		{
+			endOfLineByteSize = 2;
+			break;
+		}
+		else if (nextChar == '\n' || nextChar == '\r')
+		{
+			endOfLineByteSize = 1;
+			break;
+		}
+		else
+		{
+			parser->byteIndex++;
+		}
+	}
+	
+	Str8 line = NewStr8(parser->byteIndex - startIndex, &parser->inputStr.chars[startIndex]);
+	parser->byteIndex += endOfLineByteSize;
+	if (lineOut != nullptr) { *lineOut = line; }
+	return true;
+}
+
+// +--------------------------------------------------------------+
 // |                        File Functions                        |
 // +--------------------------------------------------------------+
 static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
@@ -531,6 +590,19 @@ static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool conve
 	#else
 	assert(false && "WriteToFile does not support the current platform yet!");
 	#endif
+}
+static inline void AppendPrintToFile(Str8 filePath, const char* formatString, ...)
+{
+	char printBuffer[512];
+	
+	va_list args;
+	va_start(args, formatString);
+	int printResult = vsnprintf(&printBuffer[0], ArrayCount(printBuffer), formatString, args);
+	va_end(args);
+	assert(printResult >= 0);
+	assert(printResult < ArrayCount(printBuffer));
+	Str8 printedStr = NewStr8((uxx)printResult, &printBuffer[0]);
+	AppendToFile(filePath, printedStr, true);
 }
 
 static inline bool DoesFileExist(Str8 filePath)

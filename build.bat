@@ -17,7 +17,7 @@ if errorlevel 1 (
 )
 
 set initialized_msvc_compiler=0
-set tool_compiler_flags=/std:clatest /O2 /FC /nologo /I"%root%"
+set tool_compiler_flags=/std:clatest /O2 /FC /nologo /Zi /I"%root%"
 
 :: +--------------------------------------------------------------+
 :: |                  Compile extract_define.exe                  |
@@ -93,6 +93,7 @@ for /f "delims=" %%i in ('%extract_define% BUILD_WITH_PHYSX') do set BUILD_WITH_
 :: |                     Build pig_build.exe                      |
 :: +--------------------------------------------------------------+
 set pig_build_tool_name=pig_build.exe
+set pig_build_pdb_name=pig_build.pdb
 set need_to_build_pig_build=0
 if not exist %pig_build_tool_name% (
 	set need_to_build_pig_build=1
@@ -110,7 +111,7 @@ if "%need_to_build_pig_build%"=="1" (
 
 if "%need_to_build_pig_build%"=="1" (
 	echo [Building %pig_build_tool_name%...]
-	cl %tool_compiler_flags% %root%\tools\tools_pig_build_main.c /Fe%pig_build_tool_name% /link Shlwapi.lib
+	cl %tool_compiler_flags% %root%\tools\tools_pig_build_main.c /Fe%pig_build_tool_name% /Fd"%pig_build_pdb_name%" /link Shlwapi.lib
 	if !ERRORLEVEL! NEQ 0 (
 		echo [FAILED to build %pig_build_tool_name%!]
 		exit

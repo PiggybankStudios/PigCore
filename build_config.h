@@ -34,12 +34,12 @@ Description:
 #define BUILD_PLAYDATE_SIMULATOR  0
 
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 0
+#define BUILD_SHADERS 1
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
-#define RUN_PIGGEN     1
+#define RUN_PIGGEN     0
 
 #define BUILD_PIG_BUILD 1
 
