@@ -7,6 +7,7 @@ Date:   06\16\2025
 #ifndef _TOOLS_CLANG_FLAGS_H
 #define _TOOLS_CLANG_FLAGS_H
 
+#define CLANG_COMPILE          "-c"
 #define CLANG_LANG_VERSION     "-std=[VAL]"
 #define CLANG_BINARY_NAME      "-o \"[VAL]\""
 #define CLANG_DEBUG_INFO       "-g[VAL]"

@@ -45,32 +45,40 @@ Description:
 #define ZEROED {}
 #endif
 
-#if defined(__linux__) || defined(__unix__)
-#define TARGET_IS_LINUX 1
+#if defined(_WIN32)
+#define BUILDING_ON_WINDOWS 1
 #else
-#define TARGET_IS_LINUX 0
+#define BUILDING_ON_WINDOWS 0
 #endif
 
-#if defined(_WIN32)
-#define TARGET_IS_WINDOWS 1
+#if defined(__linux__) || defined(__unix__)
+#define BUILDING_ON_LINUX 1
 #else
-#define TARGET_IS_WINDOWS 0
+#define BUILDING_ON_LINUX 0
 #endif
 
 #ifdef __APPLE__
-#define TARGET_IS_OSX 1
+#define BUILDING_ON_OSX 1
 #else
-#define TARGET_IS_OSX 0
+#define BUILDING_ON_OSX 0
 #endif
 
-#if TARGET_IS_WINDOWS
+#if BUILDING_ON_WINDOWS
 #include <windows.h>
+#endif
+
+#if BUILDING_ON_WINDOWS
+#define PATH_SEP_CHAR '\\'
+#else
+#define PATH_SEP_CHAR '/'
 #endif
 
 // +--------------------------------------------------------------+
 // |                            Types                             |
 // +--------------------------------------------------------------+
 typedef unsigned int uxx;
+
+#define UINTXX_MAX UINT_MAX
 
 typedef struct Str8 Str8;
 struct Str8
@@ -79,12 +87,33 @@ struct Str8
 	union { char* chars; uint8_t* bytes; void* pntr; };
 };
 
+typedef struct FileIter FileIter;
+struct FileIter
+{
+	bool finished;
+	Str8 folderPathNt;
+	uxx index;
+	uxx nextIndex;
+	
+	#if BUILDING_ON_WINDOWS
+	Str8 folderPathWithWildcard;
+	WIN32_FIND_DATAA findData;
+	HANDLE handle;
+	#elif BUILDING_ON_LINUX
+	DIR* dirHandle;
+	#endif
+};
+
+#define RECURSIVE_DIR_WALK_CALLBACK_DEF(functionName) bool functionName(Str8 path, bool isFolder, void* contextPntr)
+typedef RECURSIVE_DIR_WALK_CALLBACK_DEF(RecursiveDirWalkCallback_f);
+
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
 #define StrLitLength(stringLiteral) ((sizeof(stringLiteral) / sizeof((stringLiteral)[0])) - sizeof((stringLiteral)[0]))
 #define CheckStrLit(stringLiteral) ("" stringLiteral "")
 #define StrLit(stringLiteral) NewStr8(StrLitLength(CheckStrLit(stringLiteral)), (stringLiteral))
+#define ArrayCount(array) (sizeof(array) / sizeof((array)[0]))
 
 #define WriteLine(messageStr) printf(messageStr "\n")
 #define WriteLine_E(messageStr) fprintf(stderr, messageStr "\n")
@@ -127,6 +156,51 @@ static inline Str8 StrSlice(Str8 target, uxx startIndex, uxx endIndex)
 static inline Str8 StrSliceFrom(Str8 target, uxx startIndex)
 {
 	return StrSlice(target, startIndex, target.length);
+}
+static inline bool StrExactContains(Str8 haystack, Str8 needle)
+{
+	assert(needle.length > 0);
+	if (haystack.length < needle.length) { return false; }
+	for (uxx bIndex = 0; bIndex <= haystack.length - needle.length; bIndex++)
+	{
+		if (StrExactEquals(StrSlice(haystack, bIndex, bIndex+needle.length), needle)) { return true; }
+	}
+	return false;
+}
+static inline bool StrExactStartsWith(Str8 target, Str8 prefix)
+{
+	assert(prefix.length > 0);
+	if (target.length < prefix.length) { return false; }
+	return StrExactEquals(StrSlice(target, 0, prefix.length), prefix);
+}
+static inline bool StrExactEndsWith(Str8 target, Str8 suffix)
+{
+	assert(suffix.length > 0);
+	if (target.length < suffix.length) { return false; }
+	return StrExactEquals(StrSlice(target, target.length - suffix.length, target.length), suffix);
+}
+static inline Str8 GetFileNamePart(Str8 fullPath, bool includeExtension)
+{
+	uxx lastSlashIndex = fullPath.length;
+	for (uxx cIndex = 0; cIndex < fullPath.length; cIndex++)
+	{
+		char character = fullPath.chars[cIndex];
+		if (character == '\\' || character == '/') { lastSlashIndex = cIndex; }
+	}
+	if (lastSlashIndex < fullPath.length) { return StrSliceFrom(fullPath, lastSlashIndex+1); }
+	else { return fullPath; }
+}
+static inline Str8 GetFileExtPart(Str8 fullPath)
+{
+	uxx periodIndex = fullPath.length;
+	for (uxx cIndex = 0; cIndex < fullPath.length; cIndex++)
+	{
+		char character = fullPath.chars[cIndex];
+		if (character == '\\' || character == '/') { periodIndex = fullPath.length; } //reset periodIndex
+		else if (character == '.') { periodIndex = cIndex; }
+	}
+	if (periodIndex < fullPath.length) { return StrSliceFrom(fullPath, periodIndex); }
+	else { return StrSliceFrom(fullPath, fullPath.length); }
 }
 static inline bool IsCharWhitespace(char character)
 {
@@ -256,6 +330,38 @@ static inline Str8 JoinStrings3(Str8 left, Str8 middle, Str8 right, bool addNull
 	return result;
 }
 
+static inline Str8 StrReplace(Str8 haystack, Str8 target, Str8 replacement, bool addNullTerm)
+{
+	Str8 result = ZEROED;
+	for (uxx cIndex = 0; cIndex + target.length <= haystack.length; cIndex++)
+	{
+		if (StrExactEquals(StrSlice(haystack, cIndex, cIndex+target.length), target))
+		{
+			result.length += replacement.length;
+			cIndex += target.length-1;
+		}
+		else { result.length += 1; }
+	}
+	result.pntr = malloc(result.length + (addNullTerm ? 1 : 0));
+	uxx writeIndex = 0;
+	for (uxx cIndex = 0; cIndex < haystack.length; cIndex++)
+	{
+		if (StrExactEquals(StrSlice(haystack, cIndex, cIndex+target.length), target))
+		{
+			memcpy(&result.chars[writeIndex], replacement.chars, replacement.length);
+			writeIndex += replacement.length;
+			cIndex += target.length-1;
+		}
+		else
+		{
+			result.chars[writeIndex] = haystack.chars[cIndex];
+			writeIndex += 1;
+		}
+	}
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	return result;
+}
+
 // +--------------------------------------------------------------+
 // |                        File Functions                        |
 // +--------------------------------------------------------------+
@@ -306,18 +412,139 @@ static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
 	return true;
 }
 
+static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convertNewLines)
+{
+	char* filePathNt = (char*)malloc(filePath.length+1);
+	memcpy(filePathNt, filePath.chars, filePath.length);
+	filePathNt[filePath.length] = '\0';
+	
+	#if BUILDING_ON_WINDOWS
+	{
+		if (convertNewLines) { contents = StrReplace(contents, StrLit("\n"), StrLit("\r\n"), false); }
+		HANDLE fileHandle = CreateFileA(
+			filePathNt,            //Name of the file
+			GENERIC_WRITE,         //Open for writing
+			0,                     //Do not share
+			NULL,                  //Default security
+			CREATE_ALWAYS,         //Always overwrite
+			FILE_ATTRIBUTE_NORMAL, //Default file attributes
+			0                      //No Template File
+		);
+		assert(fileHandle != INVALID_HANDLE_VALUE);
+		if (contents.length > 0)
+		{
+			DWORD bytesWritten = 0;
+			BOOL writeResult = WriteFile(
+				fileHandle, //hFile
+				contents.chars, //lpBuffer
+				(DWORD)contents.length, //nNumberOfBytesToWrite
+				&bytesWritten, //lpNumberOfBytesWritten
+				0 //lpOverlapped
+			);
+			assert(writeResult == TRUE);
+			assert((uxx)bytesWritten == contents.length);
+		}
+		CloseHandle(fileHandle);
+		if (convertNewLines) { free(contents.chars); }
+	}
+	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
+	{
+		FILE* fileHandle = fopen(filePathNt, "w");
+		assert(fileHandle != nullptr);
+		if (content.length > 0)
+		{
+			size_t writeResult = fwrite(
+				contents.pntr, //ptr
+				1, //size
+				contents.length, //count
+				fileHandle //stream
+			);
+			assert(writeResult >= 0);
+			assert((uxx)writeResult == contents.length);
+		}
+		fclose(fileHandle);
+	}
+	#else
+	assert(false && "WriteToFile does not support the current platform yet!");
+	#endif
+}
+
+static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool convertNewLines)
+{
+	char* filePathNt = (char*)malloc(filePath.length+1);
+	memcpy(filePathNt, filePath.chars, filePath.length);
+	filePathNt[filePath.length] = '\0';
+	
+	#if BUILDING_ON_WINDOWS
+	{
+		if (convertNewLines) { contentsToAppend = StrReplace(contentsToAppend, StrLit("\n"), StrLit("\r\n"), false); }
+		HANDLE fileHandle = CreateFileA(
+			filePathNt,            //Name of the file
+			GENERIC_WRITE,         //Open for writing
+			0,                     //Do not share
+			NULL,                  //Default security
+			OPEN_ALWAYS,           //Open if it exists, or create a new file if not
+			FILE_ATTRIBUTE_NORMAL, //Default file attributes
+			0                      //No Template File
+		);
+		assert(fileHandle != INVALID_HANDLE_VALUE);
+		DWORD moveResult = SetFilePointer(
+			fileHandle, //hFile
+			0, //lDistanceToMove,
+			NULL, //lDistanceToMoveHigh
+			FILE_END
+		);
+		assert(moveResult != INVALID_SET_FILE_POINTER);
+		if (contentsToAppend.length > 0)
+		{
+			DWORD bytesWritten = 0;
+			BOOL writeResult = WriteFile(
+				fileHandle, //hFile
+				contentsToAppend.chars, //lpBuffer
+				(DWORD)contentsToAppend.length, //nNumberOfBytesToWrite
+				&bytesWritten, //lpNumberOfBytesWritten
+				0 //lpOverlapped
+			);
+			assert(writeResult == TRUE);
+			assert((uxx)bytesWritten == contentsToAppend.length);
+		}
+		CloseHandle(fileHandle);
+		if (convertNewLines) { free(contentsToAppend.chars); }
+	}
+	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
+	{
+		FILE* fileHandle = fopen(filePathNt, "a");
+		assert(fileHandle != nullptr);
+		if (content.length > 0)
+		{
+			size_t writeResult = fwrite(
+				contentsToAppend.pntr, //ptr
+				1, //size
+				contentsToAppend.length, //count
+				fileHandle //stream
+			);
+			assert(writeResult >= 0);
+			assert((uxx)writeResult == contentsToAppend.length);
+		}
+		fclose(fileHandle);
+	}
+	#else
+	assert(false && "WriteToFile does not support the current platform yet!");
+	#endif
+}
+
 static inline bool DoesFileExist(Str8 filePath)
 {
 	char* filePathNt = (char*)malloc(filePath.length+1);
 	memcpy(filePathNt, filePath.chars, filePath.length);
 	filePathNt[filePath.length] = '\0';
-	#if TARGET_IS_WINDOWS
+	#if BUILDING_ON_WINDOWS
 	{
 		BOOL fileExistsResult = PathFileExistsA(filePathNt);
 		free(filePathNt);
 		return (fileExistsResult == TRUE);
 	}
-	#elif TARGET_IS_LINUX || TARGET_IS_OSX
+	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
 	{
 		int accessResult = access(filePathNt, F_OK);
 		free(filePathNt);
@@ -335,6 +562,179 @@ static inline void AssertFileExist(Str8 filePath, bool wasCreatedByBuild)
 	{
 		PrintLine_E("Missing file \"%.*s\" %s!", filePath.length, filePath.chars, wasCreatedByBuild ? "was not created" : "was not found");
 		exit(6);
+	}
+}
+
+static inline FileIter StartFileIter(Str8 folderPath)
+{
+	FileIter result = ZEROED;
+	result.index = UINTXX_MAX;
+	result.nextIndex = 0;
+	result.finished = false;
+	bool needsTrailingSlash = (folderPath.length == 0 || (folderPath.chars[folderPath.length-1] != '\\' && folderPath.chars[folderPath.length-1] != '/'));
+	result.folderPathNt.length = folderPath.length + (needsTrailingSlash ? 1 : 0);
+	result.folderPathNt.chars = (char*)malloc(result.folderPathNt.length + 1);
+	memcpy(result.folderPathNt.chars, folderPath.chars, folderPath.length);
+	if (needsTrailingSlash) { result.folderPathNt.chars[folderPath.length] = PATH_SEP_CHAR; }
+	result.folderPathNt.chars[result.folderPathNt.length] = '\0';
+	
+	#if BUILDING_ON_WINDOWS
+	{
+		// ChangePathSlashesTo(result.folderPath, '\\'); //TODO: Should we do this?
+		//NOTE: File iteration in windows requires that we have a slash on the end and a * wildcard character
+		result.folderPathWithWildcard = JoinStrings2(result.folderPathNt, StrLit("*"), true);
+	}
+	#elif BUILDING_ON_LINUX
+	{
+		//nothing to do
+	}
+	// #elif BUILDING_ON_OSX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	#else
+	assert(false && "StartFileIter does not support the current platform yet!");
+	result.finished = true;
+	#endif
+	
+	return result;
+}
+
+// Ex version gives isFolderOut
+static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
+{
+	if (fileIter->finished) { return false; }
+	
+	#if BUILDING_ON_WINDOWS
+	{
+		while (true)
+		{
+			bool firstIteration = (fileIter->index == UINTXX_MAX);
+			fileIter->index = fileIter->nextIndex;
+			if (firstIteration)
+			{
+				fileIter->handle = FindFirstFileA(fileIter->folderPathWithWildcard.chars, &fileIter->findData);
+				if (fileIter->handle == INVALID_HANDLE_VALUE)
+				{
+					free(fileIter->folderPathNt.chars); fileIter->folderPathNt.chars = nullptr;
+					free(fileIter->folderPathWithWildcard.chars); fileIter->folderPathWithWildcard.chars = nullptr;
+					fileIter->finished = true;
+					return false;
+				}
+			}
+			else
+			{
+				BOOL findNextResult = FindNextFileA(fileIter->handle, &fileIter->findData);
+				if (findNextResult == 0)
+				{
+					free(fileIter->folderPathNt.chars); fileIter->folderPathNt.chars = nullptr;
+					free(fileIter->folderPathWithWildcard.chars); fileIter->folderPathWithWildcard.chars = nullptr;
+					fileIter->finished = true;
+					return false;
+				}
+			}
+			
+			Str8 fileName = NewStr8Nt(fileIter->findData.cFileName);
+			
+			//ignore current and parent folder entries
+			if (StrExactEquals(fileName, StrLit(".")) || StrExactEquals(fileName, StrLit("..")))
+			{
+				continue;
+			}
+			
+			bool isFolder = (fileIter->findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+			if (pathOut != nullptr)
+			{
+				*pathOut = JoinStrings2(fileIter->folderPathNt, fileName, true);
+				// FixPathSlashes(*pathOut); //TODO: Should we do this?
+			}
+			if (isFolderOut != nullptr) { *isFolderOut = isFolder; }
+			fileIter->nextIndex = fileIter->index+1;
+			return true;
+		}
+	}
+	#elif BUILDING_ON_LINUX
+	{
+		while (true)
+		{
+			bool firstIteration = (fileIter->index == UINTXX_MAX);
+			fileIter->index = fileIter->nextIndex;
+			if (firstIteration)
+			{
+				fileIter->dirHandle = opendir(fileIter->folderPathNt.chars);
+				if (fileIter->dirHandle == nullptr)
+				{
+					free(fileIter->folderPathNt.chars); fileIter->folderPathNt.chars = nullptr;
+					free(fileIter->folderPathWithWildcard.chars); fileIter->folderPathWithWildcard.chars = nullptr;
+					fileIter->finished = true;
+					return false;
+				}
+			}
+			
+			struct dirent* entry = readdir(fileIter->dirHandle);
+			if (entry == nullptr)
+			{
+				free(fileIter->folderPathNt.chars); fileIter->folderPathNt.chars = nullptr;
+				free(fileIter->folderPathWithWildcard.chars); fileIter->folderPathWithWildcard.chars = nullptr;
+				fileIter->finished = true;
+				return false;
+			}
+			
+			Str8 fileName = NewStr8Nt(entry->d_name);
+			if (StrExactEquals(fileName, StrLit(".")) || StrExactEquals(fileName, StrLit(".."))) { continue; } //ignore current and parent folder entries
+			
+			Str8 fullPath = JoinStrings2(fileIter->folderPathNt, fileName, true);
+			if (isFolderOut != nullptr)
+			{
+				struct stat statStruct = ZEROED;
+				int statResult = stat(fullPath.chars, &statStruct);
+				if (statResult == 0)
+				{
+					if (statStruct.st_mode & S_IFDIR != 0)
+					{
+						if (isFolderOut != nullptr) { *isFolderOut = true; }
+					}
+					else if (statStruct.st_mode & S_IFREG != 0)
+					{
+						if (isFolderOut != nullptr) { *isFolderOut = false; }
+					}
+					else
+					{
+						PrintLine_W("Unknown file type for \"%.*s\"", StrPrint(fullPath));
+						continue;
+					}
+				}
+			}
+			
+			if (pathOut != nullptr) { *pathOut = fullPath; }
+			fileIter->nextIndex = fileIter->index+1;
+			return true;
+		}
+	}
+	// #elif BUILDING_ON_OSX
+	// {
+	// 	//TODO: Implement me!
+	// }
+	#else
+	assert(false && "StepFileIter does not support the current platform yet!");
+	fileIter->finished = true;
+	#endif
+	
+	return false;
+}
+
+static void RecursiveDirWalk(Str8 rootDir, RecursiveDirWalkCallback_f* callback, void* contextPntr)
+{
+	FileIter iter = StartFileIter(rootDir);
+	Str8 path = ZEROED;
+	bool isFolder = false;
+	while (StepFileIter(&iter, &path, &isFolder))
+	{
+		bool callbackResult = callback(path, isFolder, contextPntr);
+		if (isFolder && callbackResult)
+		{
+			RecursiveDirWalk(path, callback, contextPntr);
+		}
 	}
 }
 

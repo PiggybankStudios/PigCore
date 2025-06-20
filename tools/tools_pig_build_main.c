@@ -20,27 +20,68 @@ Description:
 #include "tools/tools_cli.h"
 #include "tools/tools_msvc_flags.h"
 #include "tools/tools_clang_flags.h"
+#include "tools/tools_shdc_flags.h"
+#include "tools/tools_pig_build_helpers.h"
 
 static inline void PrintUsage()
 {
 	WriteLine_E("Usage: " TOOL_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
 }
 
-static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
+#define SHADER_IGNORE_LIST { ".git", "_template", "third_party", "_build" }
+
+RECURSIVE_DIR_WALK_CALLBACK_DEF(CountShaderFilesCallback)
 {
-	Str8 defineValueStr = ZEROED;
-	if (!TryExtractDefineFrom(buildConfigContents, defineName, &defineValueStr))
+	if (isFolder)
 	{
-		PrintLine_E("Couldn't find #define %.*s in build_config.h!", defineName.length, defineName.chars);
-		exit(4);
+		const char* shaderIgnoreList[] = SHADER_IGNORE_LIST;
+		for (uxx iIndex = 0; iIndex < ArrayCount(shaderIgnoreList); iIndex++)
+		{
+			if (StrExactContains(path, NewStr8Nt(shaderIgnoreList[iIndex]))) { return false; }
+		}
 	}
-	bool result = false;
-	if (!TryParseBoolArg(defineValueStr, &result))
+	
+	uxx* numShaders = (uxx*)contextPntr;
+	if (!isFolder && StrExactEndsWith(path, StrLit(".glsl"))) { (*numShaders)++; }
+	return true;
+}
+
+typedef struct FindShadersContext FindShadersContext;
+struct FindShadersContext
+{
+	uxx numShaders;
+	uxx shaderIndex;
+	Str8* shaderPaths;
+	Str8* headerPaths;
+	Str8* sourcePaths;
+	Str8* objPaths;
+	Str8* oPaths;
+};
+
+RECURSIVE_DIR_WALK_CALLBACK_DEF(FindShaderFilesCallback)
+{
+	if (isFolder)
 	{
-		PrintLine_E("#define %.*s has a non-bool value: \"%.*s\"", defineName.length, defineName.chars, defineValueStr.length, defineValueStr.chars);
-		exit(4);
+		const char* shaderIgnoreList[] = SHADER_IGNORE_LIST;
+		for (uxx iIndex = 0; iIndex < ArrayCount(shaderIgnoreList); iIndex++)
+		{
+			if (StrExactContains(path, NewStr8Nt(shaderIgnoreList[iIndex]))) { return false; }
+		}
 	}
-	return result;
+	
+	FindShadersContext* context = (FindShadersContext*)contextPntr;
+	if (!isFolder && StrExactEndsWith(path, StrLit(".glsl")))
+	{
+		assert(context->shaderIndex < context->numShaders);
+		Str8 shaderName = GetFileNamePart(path, false);
+		context->shaderPaths[context->shaderIndex] = path;
+		context->headerPaths[context->shaderIndex] = JoinStrings2(path, StrLit(".h"), true);
+		context->sourcePaths[context->shaderIndex] = JoinStrings2(path, StrLit(".c"), true);
+		context->objPaths[context->shaderIndex] = JoinStrings2(shaderName, StrLit(".obj"), true);
+		context->oPaths[context->shaderIndex] = JoinStrings2(shaderName, StrLit(".o"), true);
+		context->shaderIndex++;
+	}
+	return true;
 }
 
 int main(int argc, char* argv[])
@@ -98,6 +139,13 @@ int main(int argc, char* argv[])
 	const char* linux_rootDir = "../.."; //we are inside the "linux" folder when compiler linux binaries
 	Str8 msvcCompiler = StrLit("cl");
 	Str8 linuxClangCompiler = StrLit("wsl clang-18"); //we are using the WSL instance with clang-18 installed to compile for Linux
+	#if BUILDING_ON_WINDOWS
+	Str8 shdcExe = StrLit("..\\third_party\\_tools\\win32\\sokol-shdc.exe");
+	#elif BUILDING_ON_LINUX
+	Str8 shdcExe = StrLit("../../third_party/_tools/linux/sokol-shdc");
+	#elif BUILDINGON_ON_OSX
+	Str8 shdcExe = StrLit("../../third_party/_tools/osx/sokol-shdc");
+	#endif
 	
 	// +==============================+
 	// |        cl_CommonFlags        |
@@ -246,6 +294,142 @@ int main(int argc, char* argv[])
 		}
 		ParseAndApplyEnvironmentVariables(environmentFileContents);
 		free(environmentFileContents.chars);
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                        Build Shaders                         |
+	// +--------------------------------------------------------------+
+	if (BUILD_SHADERS)
+	{
+		uxx numShaders = 0;
+		RecursiveDirWalk(StrLit(".."), CountShaderFilesCallback, &numShaders);
+		PrintLine("Found %u shader%s", numShaders, numShaders == 1 ? "" : "s");
+		if (numShaders > 0)
+		{
+			FindShadersContext findContext = ZEROED;
+			findContext.numShaders = numShaders;
+			findContext.shaderIndex = 0;
+			findContext.shaderPaths = (Str8*)malloc(sizeof(Str8) * numShaders); memset(findContext.shaderPaths, 0x00, sizeof(Str8) * numShaders);
+			findContext.headerPaths = (Str8*)malloc(sizeof(Str8) * numShaders); memset(findContext.headerPaths, 0x00, sizeof(Str8) * numShaders);
+			findContext.sourcePaths = (Str8*)malloc(sizeof(Str8) * numShaders); memset(findContext.sourcePaths, 0x00, sizeof(Str8) * numShaders);
+			findContext.objPaths    = (Str8*)malloc(sizeof(Str8) * numShaders); memset(findContext.objPaths,    0x00, sizeof(Str8) * numShaders);
+			findContext.oPaths      = (Str8*)malloc(sizeof(Str8) * numShaders); memset(findContext.oPaths,      0x00, sizeof(Str8) * numShaders);
+			RecursiveDirWalk(StrLit(".."), FindShaderFilesCallback, &findContext);
+			assert(findContext.shaderIndex == findContext.numShaders);
+			
+			// for (uxx sIndex = 0; sIndex < numShaders; sIndex++)
+			// {
+			// 	PrintLine("Shader[%u]", sIndex);
+			// 	PrintLine("\t\"%.*s\"", findContext.shaderPaths[sIndex].length, findContext.shaderPaths[sIndex].chars);
+			// 	PrintLine("\t\"%.*s\"", findContext.headerPaths[sIndex].length, findContext.headerPaths[sIndex].chars);
+			// 	PrintLine("\t\"%.*s\"", findContext.sourcePaths[sIndex].length, findContext.sourcePaths[sIndex].chars);
+			// 	PrintLine("\t\"%.*s\"", findContext.objPaths[sIndex].length, findContext.objPaths[sIndex].chars);
+			// 	PrintLine("\t\"%.*s\"", findContext.oPaths[sIndex].length, findContext.oPaths[sIndex].chars);
+			// }
+			
+			// First use shdc.exe to generate header files for each .glsl file
+			for (uxx sIndex = 0; sIndex < numShaders; sIndex++)
+			{
+				Str8 shaderPath = findContext.shaderPaths[sIndex];
+				Str8 headerPath = findContext.headerPaths[sIndex];
+				
+				CliArgList cmd = ZEROED;
+				AddArgNt(&cmd, SHDC_FORMAT, "sokol_impl");
+				AddArgNt(&cmd, SHDC_ERROR_FORMAT, "msvc");
+				// AddArg(&cmd, SHDC_REFLECTION);
+				AddArgNt(&cmd, SHDC_SHADER_LANGUAGES, "hlsl5:glsl430:metal_macos");
+				AddArgStr(&cmd, SHDC_INPUT, shaderPath);
+				AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
+				
+				PrintLine("Generating \"%.*s\"...", headerPath.length, headerPath.chars);
+				int statusCode = RunCliProgram(shdcExe, &cmd);
+				if (statusCode == 0)
+				{
+					AssertFileExist(headerPath, true);
+					
+					Str8 headerFileContents = ZEROED;
+					if (!TryReadFile(headerPath, &headerFileContents)) { PrintLine_E("Failed to open %.*s for reading after creation!", headerPath.length, headerPath.chars); exit(4); }
+					
+					uxx lineStart = 0;
+					for (uxx cIndex = 0; cIndex < headerFileContents.length; cIndex++)
+					{
+						char character = headerFileContents.chars[cIndex];
+						char nextChar = (cIndex+1 < headerFileContents.length) ? headerFileContents.chars[cIndex+1] : '\0';
+						if (character == '\n' || (character == '\r' && nextChar == '\n'))
+						{
+							Str8 line = StrSlice(headerFileContents, lineStart, cIndex);
+							//"\\#define\\s+ATTR_%s_(.*)\\s+\\(\\d+\\)"
+							if (StrExactStartsWith(line, StrLit("#define ATTR_")))
+							{
+								
+							}
+							if (character == '\r' && nextChar == '\n') { cIndex++; }
+							lineStart = cIndex+1;
+						}
+					}
+					
+					AppendToFile(headerPath, StrLit("\n\n//NOTE: These lines were added by pig_build.exe\n"), true);
+					AppendToFile(headerPath, StrLit("//NOTE: Because an empty array is invalid in C, we always add at least one dummy entry to these definition #defines while the corresponding COUNT #define will remain 0\n"), true);
+					AppendToFile(headerPath, StrLit("#ifndef NO_ENTRIES_STR\n#define NO_ENTRIES_STR \"no_entries\"\n#endif\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_FILE_PATH \""), true);
+					AppendToFile(headerPath, EscapeString(shaderPath, false), true);
+					AppendToFile(headerPath, StrLit("\"\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_IMAGE_COUNT 0\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_IMAGE_DEFS { \\\n"), true);
+					AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 }, \\\n"), true);
+					AppendToFile(headerPath, StrLit("} // These should match ShaderImageDef struct found in gfx_shader.h\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_SAMPLER_COUNT 0\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_SAMPLER_DEFS { \\\n"), true);
+					AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 }, \\\n"), true);
+					AppendToFile(headerPath, StrLit("} // These should match ShaderSamplerDef struct found in gfx_shader.h\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_UNIFORM_COUNT 0\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_UNIFORM_DEFS { \\\n"), true);
+					AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .blockIndex=0, .offset=0, .size=0 }, \\\n"), true);
+					AppendToFile(headerPath, StrLit("} // These should match ShaderUniformDef struct found in gfx_shader.h\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_ATTR_COUNT 2\n"), true);
+					AppendToFile(headerPath, StrLit("#define simple_SHADER_ATTR_DEFS { \\\n"), true);
+					AppendToFile(headerPath, StrLit("\t{ .name=\"position\", .index=ATTR_simple_position }, \\\n"), true);
+					AppendToFile(headerPath, StrLit("} // These should match ShaderAttributeDef struct found in gfx_shader.h\n"), true);
+				}
+				else
+				{
+					Str8 shdcFilename = GetFileNamePart(shdcExe, true);
+					PrintLine_E("%.*s failed on %.*s! Status Code: %d",
+						shdcFilename.length, shdcFilename.chars,
+						shaderPath.length, shaderPath.chars,
+						statusCode
+					);
+				}
+			}
+			
+			//Then compile each header file to a .o/.obj file
+			for (uxx sIndex = 0; sIndex < numShaders; sIndex++)
+			{
+				Str8 headerPath = findContext.headerPaths[sIndex];
+				Str8 sourcePath = findContext.sourcePaths[sIndex];
+				Str8 headerFileName = GetFileNamePart(headerPath, true);
+				
+				Str8 sourceFileContents = JoinStrings3(
+					StrLit("\n#include \"shader_include.h\"\n\n#include \""),
+					headerFileName,
+					StrLit("\"\n"),
+					false
+				);
+				PrintLine("Generating \"%.*s\"...", sourcePath.length, sourcePath.chars);
+				CreateAndWriteFile(sourcePath, sourceFileContents, true);
+				
+				if (BUILD_WINDOWS)
+				{
+					Str8 objPath = findContext.objPaths[sIndex];
+					//TODO: Implement me!
+				}
+				if (BUILD_LINUX)
+				{
+					Str8 oPath = findContext.oPaths[sIndex];
+					//TODO: Implement me!
+				}
+			}
+		}
 	}
 	
 	// +--------------------------------------------------------------+
