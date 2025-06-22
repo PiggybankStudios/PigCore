@@ -60,6 +60,8 @@ void AddArgStr(CliArgList* list, const char* cliStrNt, Str8 valueStr)
 	if (valueStr.length == 0 && insertValIndex < cliStr.length)
 	{
 		PrintLine_E("Missing value in CLI argument that takes a value! %s", cliStrNt);
+		PrintLine_E("There are %u arguments in this list:", list->numArgs);
+		for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++) { PrintLine_E("\t[%u] \"%.*s\"", aIndex, list->args[aIndex].length, list->args[aIndex].chars); }
 		exit(4);
 	}
 	

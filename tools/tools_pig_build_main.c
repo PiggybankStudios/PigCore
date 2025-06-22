@@ -236,20 +236,21 @@ int main(int argc, char* argv[])
 	// |     cl_PigCoreLibraries      |
 	// +==============================+
 	CliArgList cl_PigCoreLibraries = ZEROED; //These are all the libraries we need when compiling a binary that contains code from PigCore
-	AddArg(&cl_PigCoreLibraries, "Gdi32.lib"); //Needed for CreateFontA and other Windows graphics functions
-	AddArg(&cl_PigCoreLibraries, "User32.lib"); //Needed for GetForegroundWindow, GetDC, etc.
-	AddArg(&cl_PigCoreLibraries, "Ole32.lib"); //Needed for Combaseapi.h, CoInitializeEx, CoCreateInstance, etc.
-	AddArg(&cl_PigCoreLibraries, "Shell32.lib"); //Needed for SHGetSpecialFolderPathA
-	AddArg(&cl_PigCoreLibraries, "Shlwapi.lib"); //Needed for PathFileExistsA
+	if (BUILD_WITH_RAYLIB) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "raylib.lib"); } //NOTE: raylib.lib MUST be before User32.lib and others
+	AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "Gdi32.lib"); //Needed for CreateFontA and other Windows graphics functions
+	AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "User32.lib"); //Needed for GetForegroundWindow, GetDC, etc.
+	AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "Ole32.lib"); //Needed for Combaseapi.h, CoInitializeEx, CoCreateInstance, etc.
+	AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "Shell32.lib"); //Needed for SHGetSpecialFolderPathA
+	AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "Shlwapi.lib"); //Needed for PathFileExistsA
 	if (BUILD_WITH_RAYLIB)
 	{
-		AddArg(&cl_PigCoreLibraries, "Kernel32.lib");
-		AddArg(&cl_PigCoreLibraries, "Winmm.lib");
+		AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "Kernel32.lib");
+		AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "Winmm.lib");
 	}
-	if (BUILD_WITH_BOX2D) { AddArg(&cl_PigCoreLibraries, "box2d.lib"); }
-	if (BUILD_WITH_SDL) { AddArg(&cl_PigCoreLibraries, "SDL2.lib"); }
-	if (BUILD_WITH_OPENVR) { AddArg(&cl_PigCoreLibraries, "openvr_api.lib"); }
-	if (BUILD_WITH_PHYSX) { AddArg(&cl_PigCoreLibraries, "PhysX_static_64.lib"); }
+	if (BUILD_WITH_BOX2D) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "box2d.lib"); }
+	if (BUILD_WITH_SDL) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "SDL2.lib"); }
+	if (BUILD_WITH_OPENVR) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "openvr_api.lib"); }
+	if (BUILD_WITH_PHYSX) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "PhysX_static_64.lib"); }
 	
 	// +==============================+
 	// |    clang_PigCoreLibraries    |
@@ -350,7 +351,7 @@ int main(int argc, char* argv[])
 	AddArgNt(&cl_PlaydateSimulatorCompilerFlags, CL_EXPERIMENTAL, "c11atomics"); //Enables _Atomic types
 	
 	AddArgNt(&cl_PlaydateSimulatorCompilerFlags, CL_INCLUDE_DIR, rootDir);
-	AddArgStr(&cl_PlaydateSimulatorCompilerFlags, CL_INCLUDE_DIR, playdateSdkDir_C_API);
+	if (BUILD_PLAYDATE_SIMULATOR) { AddArgStr(&cl_PlaydateSimulatorCompilerFlags, CL_INCLUDE_DIR, playdateSdkDir_C_API); } //NOTE: playdateSdkDir_C_API is only filled if BUILD_PLAYDATE_SIMULATOR
 	AddArgNt(&cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "TARGET_SIMULATOR=1");
 	AddArgNt(&cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "TARGET_EXTENSION=1");
 	AddArgNt(&cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "__HEAP_SIZE=8388208");
@@ -409,7 +410,7 @@ int main(int argc, char* argv[])
 	// +===============================+
 	CliArgList gcc_PlaydateDeviceCommonFlags = ZEROED;
 	AddArgNt(&gcc_PlaydateDeviceCommonFlags, GCC_INCLUDE_DIR, rootDir);
-	AddArgStr(&gcc_PlaydateDeviceCommonFlags, GCC_INCLUDE_DIR, playdateSdkDir_C_API);
+	if (BUILD_PLAYDATE_DEVICE) { AddArgStr(&gcc_PlaydateDeviceCommonFlags, GCC_INCLUDE_DIR, playdateSdkDir_C_API); } //NOTE: playdateSdkDir_C_API is only filled if BUILD_PLAYDATE_DEVICE
 	AddArgNt(&gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "TARGET_PLAYDATE=1");
 	AddArgNt(&gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "TARGET_EXTENSION=1");
 	AddArgNt(&gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "__HEAP_SIZE=8388208");
@@ -469,7 +470,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	CliArgList pdc_CommonFlags = ZEROED;
 	AddArg(&pdc_CommonFlags, PDC_QUIET); //Quiet mode, suppress non-error output
-	AddArgStr(&pdc_CommonFlags, PDC_SDK_PATH, playdateSdkDir);
+	if (BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR) { AddArgStr(&pdc_CommonFlags, PDC_SDK_PATH, playdateSdkDir); } //NOTE: playdateSdkDir is only filled if BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR
 	
 	// +--------------------------------------------------------------+
 	// |                       Build piggen.exe                       |
@@ -831,6 +832,7 @@ int main(int argc, char* argv[])
 			//TODO: Implement Linux version!
 		}
 	}
+	if (BUILD_WITH_PHYSX) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_PHYSX); }
 	
 	// +--------------------------------------------------------------+
 	// |                      Build pig_core.dll                      |
