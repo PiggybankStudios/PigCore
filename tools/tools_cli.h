@@ -17,6 +17,11 @@ Description:
 // This allows us to replace that part of the argument string with an actual value, adding escaping if the argument is in quotes
 #define CLI_VAL_STR "[VAL]"
 #define CLI_QUOTED_ARG "\"[VAL]\""
+#if BUILDING_ON_WINDOWS
+#define CLI_PIPE_OUTPUT_TO_FILE "> \"[VAL]\""
+#else
+#define CLI_PIPE_OUTPUT_TO_FILE "| \"[VAL]\""
+#endif
 
 #define CLI_MAX_ARGS 256
 typedef struct CliArgList CliArgList;
@@ -142,12 +147,11 @@ Str8 JoinCliArgsList(Str8 prefix, const CliArgList* list, bool addNullTerm)
 int RunCliProgram(Str8 programName, const CliArgList* args)
 {
 	Str8 joinedArgs = JoinCliArgsList(programName, args, true);
-	
 	// PrintLine(">> %s", joinedArgs.chars);
 	fflush(stdout);
 	fflush(stderr);
-	
 	int resultCode = system(joinedArgs.chars);
+	free(joinedArgs.chars);
 	return resultCode;
 }
 

@@ -109,6 +109,8 @@ PEXP void* OsReserveMemory(uxx numBytes)
 		if (result != nullptr && result != MAP_FAILED) { Assert((uxx)result % pageSize == 0); }
 	}
 	#else
+	UNUSED(numBytes);
+	UNUSED(pageSize);
 	AssertMsg(false, "OsReserveMemory is not implemented for the current TARGET!");
 	#endif
 	

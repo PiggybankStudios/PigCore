@@ -697,6 +697,23 @@ static inline void AppendPrintToFile(Str8 filePath, const char* formatString, ..
 	AppendToFile(filePath, printedStr, true);
 }
 
+static inline void CopyFileToPath(Str8 filePath, Str8 newFilePath)
+{
+	Str8 fileContents = ZEROED;
+	bool readSuccess = TryReadFile(filePath, &fileContents);
+	assert(readSuccess);
+	CreateAndWriteFile(newFilePath, fileContents, false);
+	free(fileContents.chars);
+}
+static inline void CopyFileToFolder(Str8 filePath, Str8 folderPath)
+{
+	Str8 fileName = GetFileNamePart(filePath, true);
+	const char* joinStr = (folderPath.length == 0 || (folderPath.chars[folderPath.length-1] != '/' && folderPath.chars[folderPath.length-1] != '\\')) ? "/" : "";
+	Str8 newPath = JoinStrings3(folderPath, NewStr8Nt(joinStr), fileName, false);
+	CopyFileToPath(filePath, newPath);
+	free(newPath.chars);
+}
+
 static inline bool DoesFileExist(Str8 filePath)
 {
 	char* filePathNt = (char*)malloc(filePath.length+1);

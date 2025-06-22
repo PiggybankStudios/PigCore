@@ -21,7 +21,7 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             1
+#define BUILD_WINDOWS             0
 // Build binaries for Linux platform(s)
 #define BUILD_LINUX               0
 // Build the WASM binary for operating as a webpage
@@ -29,9 +29,9 @@ Description:
 // Build a WASM binary and package as Orca application
 #define BUILD_ORCA                0
 // Build a binary that can be uploaded to the Playdate device
-#define BUILD_PLAYDATE_DEVICE     0
+#define BUILD_PLAYDATE_DEVICE     1
 // Build a dll that can be loaded by the Playdate simulator
-#define BUILD_PLAYDATE_SIMULATOR  0
+#define BUILD_PLAYDATE_SIMULATOR  1
 
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 0
@@ -41,7 +41,7 @@ Description:
 // Generates code for all projects using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN     0
 
-#define BUILD_PIG_BUILD 0
+#define BUILD_PIG_BUILD 1
 
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
 #define BUILD_IMGUI_OBJ 0
@@ -54,7 +54,7 @@ Description:
 // Compiles tests/main.c
 #define BUILD_TESTS   1
 // Runs the result of compiling tests/main.c, aka the tests.exe
-#define RUN_TESTS     1
+#define RUN_TESTS     0
 
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
