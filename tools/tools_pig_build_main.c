@@ -72,6 +72,7 @@ int main(int argc, char* argv[])
 	// WriteLine("Running Pig Build!");
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
+	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
 	
 	// +==============================+
 	// |       Extract Defines        |
@@ -127,6 +128,7 @@ int main(int argc, char* argv[])
 	Str8 clangCompiler = StrLit("clang");
 	Str8 wslClangCompiler = StrLit("wsl clang-18"); //we are using the WSL instance with clang-18 installed to compile for Linux
 	Str8 armGccCompiler = StrLit("arm-none-eabi-gcc"); //we use this when compiling for the Playdate device
+	Str8 emscriptenCompiler = StrLit("emcc");
 	#if BUILDING_ON_WINDOWS
 	Str8 shdcExe = StrLit("..\\third_party\\_tools\\win32\\sokol-shdc.exe");
 	#elif BUILDING_ON_LINUX
@@ -235,7 +237,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |     cl_PigCoreLibraries      |
 	// +==============================+
-	CliArgList cl_PigCoreLibraries = ZEROED; //These are all the libraries we need when compiling a binary that contains code from PigCore
+	CliArgList cl_PigCoreLibraries = ZEROED; //These are all the libraries we need when compiling a binary that contains code from PigCore (both pig_core.dll and tests.exe)
 	if (BUILD_WITH_RAYLIB) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "raylib.lib"); } //NOTE: raylib.lib MUST be before User32.lib and others
 	AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "Gdi32.lib"); //Needed for CreateFontA and other Windows graphics functions
 	AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, "User32.lib"); //Needed for GetForegroundWindow, GetDC, etc.
@@ -255,9 +257,28 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |    clang_PigCoreLibraries    |
 	// +==============================+
-	CliArgList clang_PigCoreLibraries = ZEROED; //These are all the libraries we need when compiling a binary that contains code from PigCore
+	CliArgList clang_PigCoreLibraries = ZEROED; //These are all the libraries we need when compiling a binary that contains code from PigCore (both pig_core.so and tests)
 	AddArgNt(&clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig");
 	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(&clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
+	
+	// +==============================+
+	// |      emscriptenSdkPath       |
+	// +==============================+
+	Str8 emscriptenSdkPath = ZEROED;
+	if (BUILD_WEB && USE_EMSCRIPTEN)
+	{
+		const char* sdkEnvVariable = getenv("EMSCRIPTEN_SDK_PATH");
+		if (sdkEnvVariable == nullptr)
+		{
+			WriteLine_E("Please set the EMSCRIPTEN_SDK_PATH environment variable before trying to build for the web with USE_EMSCRIPTEN");
+			exit(7);
+		}
+		emscriptenSdkPath = NewStr8Nt(sdkEnvVariable);
+		if (emscriptenSdkPath.chars[emscriptenSdkPath.length-1] == '\\' || emscriptenSdkPath.chars[emscriptenSdkPath.length-1] == '/') { emscriptenSdkPath.length--; }
+		emscriptenSdkPath = CopyStr8(emscriptenSdkPath, true);
+		PrintLine("Emscripten SDK path: \"%.*s\"", emscriptenSdkPath.length, emscriptenSdkPath.chars);
+		InitializeEmsdkIf(&isEmsdkInitialized);
+	}
 	
 	// +==============================+
 	// |       clang_WasmFlags        |
@@ -268,10 +289,26 @@ int main(int argc, char* argv[])
 	AddArgNt(&clang_WasmFlags, CLANG_INCLUDE_DIR, linux_rootDir);
 	if (DEBUG_BUILD) { AddArg(&clang_WasmFlags, CLANG_DEBUG_INFO_DEFAULT); }
 	else { AddArgNt(&clang_WasmFlags, CLANG_OPTIMIZATION_LEVEL, "2"); }
+	
+	// +==============================+
+	// |        clang_WebFlags        |
+	// +==============================+
+	CliArgList clang_WebFlags = ZEROED;
 	if (USE_EMSCRIPTEN)
 	{
-		AddArgNt(&clang_WasmFlags, EMSCRIPTEN_S_FLAG, "USE_SDL");
-		AddArgNt(&clang_WasmFlags, EMSCRIPTEN_S_FLAG, "ALLOW_MEMORY_GROWTH");
+		AddArgNt(&clang_WebFlags, EMSCRIPTEN_S_FLAG, "USE_SDL");
+		AddArgNt(&clang_WebFlags, EMSCRIPTEN_S_FLAG, "ALLOW_MEMORY_GROWTH");
+	}
+	else
+	{
+		Str8 customStdLibDir = JoinStrings2(NewStr8Nt(linux_rootDir), StrLit("/wasm/std/include"), false);
+		PrintLine("customStdLibDir: \"%.*s\"", customStdLibDir.length, customStdLibDir.chars);
+		AddArgStr(&clang_WebFlags, CLANG_INCLUDE_DIR, customStdLibDir);
+		AddArg(&clang_WebFlags, CLANG_NO_ENTRYPOINT);
+		AddArg(&clang_WebFlags, CLANG_ALLOW_UNDEFINED);
+		AddArg(&clang_WebFlags, CLANG_NO_STD_LIBRARIES);
+		AddArg(&clang_WebFlags, CLANG_NO_STD_INCLUDES);
+		AddArgNt(&clang_WebFlags, CLANG_EXPORT_SYMBOL, "__heap_base");
 	}
 	
 	// +==============================+
@@ -906,6 +943,8 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	#define FILENAME_TESTS "tests.exe"
 	#define LINUX_FILENAME_TESTS "tests"
+	#define WEB_FILENAME_TESTS "app.wasm"
+	#define WEB_FILENAME_INDEX_HTML "index.html"
 	#define ORCA_FILENAME_TESTS "module.wasm"
 	#define FILENAME_TESTS_OBJ "tests.obj"
 	#define PLAYDATE_FILENAME_TESTS "pdex.elf"
@@ -968,6 +1007,65 @@ int main(int argc, char* argv[])
 			{
 				PrintLine_E("Failed to build %s! Compiler Status Code: %d", LINUX_FILENAME_TESTS, statusCode);
 				exit(statusCode);
+			}
+			
+			chdir("..");
+		}
+		
+		if (BUILD_WEB)
+		{
+			PrintLine("\n[Building %s for Web...]", WEB_FILENAME_TESTS);
+			
+			mkdir("web", 0);
+			chdir("web");
+			
+			// TODO: del *.wasm > NUL 2> NUL
+			// TODO: del *.wat > NUL 2> NUL
+			// TODO: del *.css > NUL 2> NUL
+			// TODO: del *.html > NUL 2> NUL
+			// TODO: del *.js > NUL 2> NUL
+			
+			CliArgList cmd = ZEROED;
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "../../tests/tests_main.c");
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, USE_EMSCRIPTEN ? WEB_FILENAME_INDEX_HTML : WEB_FILENAME_TESTS);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_WasmFlags);
+			AddArgList(&cmd, &clang_WebFlags);
+			
+			int statusCode = RunCliProgram(USE_EMSCRIPTEN ? emscriptenCompiler : clangCompiler, &cmd);
+			if (statusCode == 0)
+			{
+				if (USE_EMSCRIPTEN)
+				{
+					AssertFileExist(StrLit(WEB_FILENAME_INDEX_HTML), true);
+					AssertFileExist(StrLit("index.wasm"), true);
+					AssertFileExist(StrLit("index.js"), true);
+				}
+				else
+				{
+					AssertFileExist(NewStr8Nt(WEB_FILENAME_TESTS), true);
+				}
+				PrintLine("[Built %s for Web!]", WEB_FILENAME_TESTS);
+			}
+			else
+			{
+				PrintLine_E("Failed to build %s! Compiler Status Code: %d", WEB_FILENAME_TESTS, statusCode);
+				exit(statusCode);
+			}
+			
+			//TODO: CONVERT_WASM_TO_WAT
+			
+			if (!USE_EMSCRIPTEN)
+			{
+				StrArray javascriptFiles = ZEROED;
+				AddStr(&javascriptFiles, StrLit("..\\..\\wasm\\wasm_globals.js"));
+				AddStr(&javascriptFiles, StrLit("..\\..\\wasm\\std\\include\\internal\\wasm_std_js_api.js"));
+				AddStr(&javascriptFiles, StrLit("..\\..\\wasm\\wasm_app_js_api.js"));
+				AddStr(&javascriptFiles, StrLit("..\\..\\wasm\\wasm_main.js"));
+				ConcatAllFilesIntoSingleFile(&javascriptFiles, StrLit("combined.js"));
+				
+				CopyFileToPath(StrLit("..\\..\\wasm\\wasm_app_style.css"), StrLit("main.css"));
+				CopyFileToPath(StrLit("..\\..\\wasm\\wasm_app_index.html"), StrLit("index.html"));
 			}
 			
 			chdir("..");

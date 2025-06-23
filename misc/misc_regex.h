@@ -24,6 +24,8 @@ Description:
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
 
+#if !USING_CUSTOM_STDLIB //slre uses some some stdlib functions that our custom stdlib implementation doesn't support yet
+
 #include "third_party/slre/slre.h"
 
 //NOTE: When writing regex patterns with captures make sure you stay below this number (bump this number up as needed)
@@ -148,5 +150,7 @@ PEXPI bool StrAnyCaseRegexContains(Str8 haystack, Str8 needleRegexPattern)
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //!USING_CUSTOM_STDLIB
 
 #endif //  _MISC_REGEX_H

@@ -200,5 +200,10 @@ bool WasMsvcDevBatchRun()
 	const char* versionEnvVarValue = getenv("VSCMD_VER");
     return (versionEnvVarValue != nullptr);
 }
+bool WasEmsdkEnvBatchRun()
+{
+	const char* sdkEnvVarValue = getenv("EMSDK");
+    return (sdkEnvVarValue != nullptr);
+}
 
 #endif //  _TOOLS_CLI_H

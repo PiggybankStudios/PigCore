@@ -26,6 +26,9 @@ int strncmp(const char* left, const char* right, size_t numBytes);
 size_t strlen(const char* str);
 // TODO: size_t wcslen(const wchar_t* str);
 
+//TODO: char *strchr (const char *, int); //NEEDED for slre.c
+//TODO: char *strrchr (const char *, int); //NEEDED for slre.c
+
 CONDITIONAL_EXTERN_C_END
 
 #endif //  _STRING_H

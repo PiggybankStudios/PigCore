@@ -616,7 +616,7 @@ static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convert
 		fclose(fileHandle);
 	}
 	#else
-	assert(false && "WriteToFile does not support the current platform yet!");
+	assert(false && "CreateAndWriteFile does not support the current platform yet!");
 	#endif
 }
 
@@ -680,7 +680,7 @@ static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool conve
 		fclose(fileHandle);
 	}
 	#else
-	assert(false && "WriteToFile does not support the current platform yet!");
+	assert(false && "AppendToFile does not support the current platform yet!");
 	#endif
 }
 static inline void AppendPrintToFile(Str8 filePath, const char* formatString, ...)

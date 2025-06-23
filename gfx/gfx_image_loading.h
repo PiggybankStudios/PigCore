@@ -87,7 +87,7 @@ static void StbImageFree(void* allocPntr)
 #pragma warning(push)
 #pragma warning(disable: 5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
 #endif
-#if COMPILER_IS_CLANG
+#if (COMPILER_IS_CLANG || COMPILER_IS_EMSCRIPTEN)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
 #endif
@@ -97,7 +97,7 @@ static void StbImageFree(void* allocPntr)
 #if COMPILER_IS_MSVC
 #pragma warning(pop)
 #endif
-#if COMPILER_IS_CLANG
+#if (COMPILER_IS_CLANG || COMPILER_IS_EMSCRIPTEN)
 #pragma clang diagnostic pop
 #endif
 

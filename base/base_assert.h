@@ -20,7 +20,7 @@ Description:
 
 #if ASSERTIONS_ENABLED
 
-#if (TARGET_IS_WINDOWS || TARGET_IS_WEB)
+#if (TARGET_IS_WINDOWS || (TARGET_IS_WEB && !USE_EMSCRIPTEN))
 #define MyBreakMsg(message) __debugbreak()
 #define MyBreak()           MyBreakMsg("")
 #elif (TARGET_IS_OSX || TARGET_IS_LINUX)

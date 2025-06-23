@@ -23,7 +23,7 @@ Description:
 #include "struct/struct_model_data.h"
 #include "gfx/gfx_image_loading.h"
 
-#if !TARGET_IS_PLAYDATE //TODO: cgltf.h relies on fopen and a few other stdlib functions that are not available on the Playdate
+#if !TARGET_IS_PLAYDATE && !TARGET_IS_WEB //TODO: cgltf.h relies on fopen and a few other stdlib functions that are not available on the Playdate and in the Web
 
 #if PIG_CORE_IMPLEMENTATION
 #define CGLTF_IMPLEMENTATION
@@ -929,7 +929,7 @@ PEXPI Result TryParseGltfFile(Slice fileContents, Arena* arena, ModelData* model
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //!TARGET_IS_PLAYDATE
+#endif //!TARGET_IS_PLAYDATE && !TARGET_IS_WEB
 
 #endif //  _FILE_FMT_GLTF_H
 

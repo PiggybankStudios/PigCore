@@ -24,34 +24,102 @@ static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
 	return result;
 }
 
-#define FILENAME_MSVC_ENVIRONMENT "environment.txt"
+#define FILENAME_ENVIRONMENT "environment.txt"
+
+static inline void RunBatchFileAndApplyDumpedEnvironment(Str8 batchFilePath)
+{
+	CliArgList cmd = ZEROED;
+	AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_ENVIRONMENT);
+	
+	int statusCode = RunCliProgram(batchFilePath, &cmd); //this batch file runs emsdk_env.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what emsdk_env.bat changed
+	if (statusCode != 0)
+	{
+		PrintLine_E("%.*s failed! Status Code: %d", batchFilePath.length, batchFilePath.chars, statusCode);
+		exit(statusCode);
+	}
+	
+	Str8 environmentFileContents = ZEROED;
+	if (!TryReadFile(StrLit(FILENAME_ENVIRONMENT), &environmentFileContents))
+	{
+		PrintLine_E("%.*s did not create \"%s\"! Or we can't open it for some reason", batchFilePath.length, batchFilePath.chars, FILENAME_ENVIRONMENT);
+		exit(4);
+	}
+	
+	ParseAndApplyEnvironmentVariables(environmentFileContents);
+	
+	free(environmentFileContents.chars);
+}
 
 static inline void InitializeMsvcIf(bool* isMsvcInitialized)
 {
 	if (*isMsvcInitialized == false)
 	{
 		PrintLine("Initializing MSVC Compiler...");
-		
-		CliArgList cmd = ZEROED;
-		AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_MSVC_ENVIRONMENT);
-		
-		int statusCode = RunCliProgram(StrLit("..\\init_msvc.bat"), &cmd); //this batch file runs VsDevCmd.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what VsDevCmd.bat changed
-		if (statusCode != 0)
-		{
-			PrintLine_E("Failed to initialize MSVC compiler! Status Code: %d", statusCode);
-			exit(statusCode);
-		}
-		
-		Str8 environmentFileContents = ZEROED;
-		if (!TryReadFile(StrLit(FILENAME_MSVC_ENVIRONMENT), &environmentFileContents))
-		{
-			PrintLine_E("init_msvc.bat did not create \"%s\"! Or we can't open it for some reason", FILENAME_MSVC_ENVIRONMENT);
-			exit(4);
-		}
-		ParseAndApplyEnvironmentVariables(environmentFileContents);
-		free(environmentFileContents.chars);
+		RunBatchFileAndApplyDumpedEnvironment(StrLit("..\\init_msvc.bat"));
 		*isMsvcInitialized = true;
 	}
+}
+
+static inline void InitializeEmsdkIf(bool* isEmsdkInitialized)
+{
+	if (*isEmsdkInitialized == false)
+	{
+		PrintLine("Initializing Emscripten SDK...");
+		RunBatchFileAndApplyDumpedEnvironment(StrLit("..\\init_emsdk.bat"));
+		*isEmsdkInitialized = true;
+	}
+}
+
+static inline void ConcatAllFilesIntoSingleFile(const StrArray* pathArray, Str8 outputFilePath)
+{
+	//TODO: We really should handle new-line differences between Windows and Linux/etc. a little smarter here
+	//      Just because we are building on Windows doesn't mean all these .js files are using Windows style line-endings
+	
+	StrArray allFilesContents = ZEROED;
+	uxx totalLength = 0;
+	for (uxx fIndex = 0; fIndex < pathArray->length; fIndex++)
+	{
+		Str8 inputPath = pathArray->strings[fIndex];
+		Str8 inputFileContents = ZEROED;
+		if (!TryReadFile(inputPath, &inputFileContents))
+		{
+			PrintLine_E("Couldn't find/open \"%.*s\"!", inputPath.length, inputPath.chars);
+			exit(8);
+		}
+		AddStr(&allFilesContents, inputFileContents);
+		if (totalLength > 0) { totalLength += BUILDING_ON_WINDOWS ? 2 : 1; } //+1-2 for the new-line between each file
+		totalLength += inputFileContents.length;
+		free(inputFileContents.chars);
+	}
+	
+	Str8 combinedContents = ZEROED;
+	combinedContents.length = totalLength;
+	combinedContents.pntr = malloc(combinedContents.length + 1);
+	
+	uxx writeIndex = 0;
+	for (uxx fIndex = 0; fIndex < allFilesContents.length; fIndex++)
+	{
+		Str8 inputFileContents = allFilesContents.strings[fIndex];
+		if (writeIndex > 0)
+		{
+			#if BUILDING_ON_WINDOWS
+			combinedContents.chars[writeIndex+0] = '\r';
+			combinedContents.chars[writeIndex+1] = '\n';
+			writeIndex += 2;
+			#else
+			combinedContents.chars[writeIndex] = '\n';
+			writeIndex += 1;
+			#endif
+		}
+		memcpy(&combinedContents.chars[writeIndex], inputFileContents.chars, inputFileContents.length);
+		writeIndex += inputFileContents.length;
+	}
+	assert(writeIndex == combinedContents.length);
+	combinedContents.chars[combinedContents.length] = '\0';
+	
+	CreateAndWriteFile(outputFilePath, combinedContents, false);
+	
+	FreeStrArray(&allFilesContents);
 }
 
 // +--------------------------------------------------------------+

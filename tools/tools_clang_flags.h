@@ -32,6 +32,10 @@ Description:
 //NOTE: Arguments prefixed with -Wl, are passed along to the linker
 #define CLANG_NO_ENTRYPOINT       "-Wl,--no-entry"
 #define CLANG_EXPORT_DYNAMIC      "-Wl,--export-dynamic"
+#define CLANG_EXPORT_SYMBOL       "-Wl,--export=[VAL]"
+#define CLANG_ALLOW_UNDEFINED     "-Wl,--allow-undefined"
+#define CLANG_NO_STD_LIBRARIES    "--no-standard-libraries"
+#define CLANG_NO_STD_INCLUDES     "--no-standard-includes"
 
 #define CLANG_WARNING_SWITCH_MISSING_CASES          "switch" //8 enumeration values not handled in switch: 'ArenaType_None', 'ArenaType_Funcs', 'ArenaType_Generic'...
 #define CLANG_WARNING_UNUSED_FUNCTION               "unused-function" //unused function 'MeowExpandSeed'
