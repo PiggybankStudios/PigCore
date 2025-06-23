@@ -55,7 +55,7 @@ bool isFileMenuOpen = false;
 ImguiUI* imgui = nullptr;
 bool isImguiDemoWindowOpen = false;
 bool isCTokenizerWindowOpen = false;
-cTokenizer tokenizer = {};
+cTokenizer tokenizer = ZEROED;
 #endif
 #if BUILD_WITH_PHYSX
 PhysicsWorld* physWorld = nullptr;

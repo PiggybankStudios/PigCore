@@ -9,6 +9,9 @@ Description:
 #ifndef _TOOLS_CLANG_FLAGS_H
 #define _TOOLS_CLANG_FLAGS_H
 
+#define EXE_CLANG     "clang"
+#define EXE_WSL_CLANG "wsl clang-18"
+
 #define CLANG_COMPILE             "-c"
 #define CLANG_DEFINE              "-D \"[VAL]\""
 #define CLANG_LANG_VERSION        "-std=[VAL]"
@@ -41,7 +44,5 @@ Description:
 #define CLANG_WARNING_UNUSED_FUNCTION               "unused-function" //unused function 'MeowExpandSeed'
 #define CLANG_WARNING_SHADOWING                     "shadow" //Warn whenever a local variable or type declaration shadows another variable, parameter, type, class member (in C++), or instance variable (in Objective-C) or whenever a built-in function is shadowed
 #define CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH "implicit-fallthrough" //Must use [[fallthrough]] on a case label that falls through to the next case
-
-#define EMSCRIPTEN_S_FLAG "-s[VAL]" //TODO: Give this a better name!
 
 #endif //  _TOOLS_CLANG_FLAGS_H

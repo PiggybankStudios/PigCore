@@ -351,6 +351,9 @@ static inline Str8 JoinStrings3(Str8 left, Str8 middle, Str8 right, bool addNull
 	return result;
 }
 
+#define CONCAT2(leftNt, rightNt)           JoinStrings2(NewStr8Nt(leftNt), NewStr8Nt(rightNt), true)
+#define CONCAT3(leftNt, middleNt, rightNt) JoinStrings3(NewStr8Nt(leftNt), NewStr8Nt(middleNt), NewStr8Nt(rightNt), true)
+
 //Returns the number of target characters that were replaced
 static inline uxx StrReplaceChars(Str8 haystack, char targetChar, char replaceChar)
 {
@@ -518,15 +521,14 @@ static inline Str8 GetFullPath(Str8 relativePath, char slashChar)
 
 static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
 {
-	char* filePathNt = (char*)malloc(filePath.length+1);
-	memcpy(filePathNt, filePath.chars, filePath.length);
-	filePathNt[filePath.length] = '\0';
+	Str8 filePathNt = CopyStr8(filePath, true);
+	FixPathSlashes(filePathNt, '\\');
 	
 	//NOTE: We open the file in binary mode because otherwise the result from jumping to SEEK_END to
 	//      check the file size does not match the result of fread because the new-lines get converted
 	//      in the fread NOT in the result from ftell
-	FILE* fileHandle = fopen(filePathNt, "rb");
-	free(filePathNt);
+	FILE* fileHandle = fopen(filePathNt.chars, "rb");
+	free(filePathNt.chars);
 	if (fileHandle == nullptr)
 	{
 		fprintf(stderr, "Couldn't open file at \"%.*s\"!\n", filePath.length, filePath.chars);
@@ -565,15 +567,14 @@ static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
 
 static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convertNewLines)
 {
-	char* filePathNt = (char*)malloc(filePath.length+1);
-	memcpy(filePathNt, filePath.chars, filePath.length);
-	filePathNt[filePath.length] = '\0';
+	Str8 filePathNt = CopyStr8(filePath, true);
+	FixPathSlashes(filePathNt, '\\');
 	
 	#if BUILDING_ON_WINDOWS
 	{
 		if (convertNewLines) { contents = StrReplace(contents, StrLit("\n"), StrLit("\r\n"), false); }
 		HANDLE fileHandle = CreateFileA(
-			filePathNt,            //Name of the file
+			filePathNt.chars,      //Name of the file
 			GENERIC_WRITE,         //Open for writing
 			0,                     //Do not share
 			NULL,                  //Default security
@@ -600,7 +601,7 @@ static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convert
 	}
 	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
 	{
-		FILE* fileHandle = fopen(filePathNt, "w");
+		FILE* fileHandle = fopen(filePathNt.chars, "w");
 		assert(fileHandle != nullptr);
 		if (content.length > 0)
 		{
@@ -618,19 +619,20 @@ static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convert
 	#else
 	assert(false && "CreateAndWriteFile does not support the current platform yet!");
 	#endif
+	
+	free(filePathNt.chars);
 }
 
 static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool convertNewLines)
 {
-	char* filePathNt = (char*)malloc(filePath.length+1);
-	memcpy(filePathNt, filePath.chars, filePath.length);
-	filePathNt[filePath.length] = '\0';
+	Str8 filePathNt = CopyStr8(filePath, true);
+	FixPathSlashes(filePathNt, '\\');
 	
 	#if BUILDING_ON_WINDOWS
 	{
 		if (convertNewLines) { contentsToAppend = StrReplace(contentsToAppend, StrLit("\n"), StrLit("\r\n"), false); }
 		HANDLE fileHandle = CreateFileA(
-			filePathNt,            //Name of the file
+			filePathNt.chars,      //Name of the file
 			GENERIC_WRITE,         //Open for writing
 			0,                     //Do not share
 			NULL,                  //Default security
@@ -664,7 +666,7 @@ static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool conve
 	}
 	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
 	{
-		FILE* fileHandle = fopen(filePathNt, "a");
+		FILE* fileHandle = fopen(filePathNt.chars, "a");
 		assert(fileHandle != nullptr);
 		if (content.length > 0)
 		{
@@ -682,6 +684,8 @@ static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool conve
 	#else
 	assert(false && "AppendToFile does not support the current platform yet!");
 	#endif
+	
+	free(filePathNt.chars);
 }
 static inline void AppendPrintToFile(Str8 filePath, const char* formatString, ...)
 {

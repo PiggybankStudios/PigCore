@@ -9,6 +9,8 @@ Description:
 #ifndef _TOOLS_GCC_FLAGS_H
 #define _TOOLS_GCC_FLAGS_H
 
+#define EXE_ARM_GCC "arm-none-eabi-gcc" //we use this when compiling for the Playdate device
+
 #define GCC_COMPILE                  "-c"
 #define GCC_PRECOMPILE_ONLY          "-E"
 #define GCC_OUTPUT_FILE              "-o \"[VAL]\""

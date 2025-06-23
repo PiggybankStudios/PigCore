@@ -1,11 +1,11 @@
 /*
-File:   tools_pig_build_helpers.h
+File:   tools_build_helpers.h
 Author: Taylor Robbins
 Date:   06\19\2025
 */
 
-#ifndef _TOOLS_PIG_BUILD_HELPERS_H
-#define _TOOLS_PIG_BUILD_HELPERS_H
+#ifndef _TOOLS_BUILD_HELPERS_H
+#define _TOOLS_BUILD_HELPERS_H
 
 static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
 {
@@ -541,4 +541,43 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 	free(headerFileContents.chars);
 }
 
-#endif //  _TOOLS_PIG_BUILD_HELPERS_H
+typedef struct FindShadersContext FindShadersContext;
+struct FindShadersContext
+{
+	uxx ignoreListLength;
+	Str8* ignoreList;
+	StrArray shaderPaths;
+	StrArray headerPaths;
+	StrArray sourcePaths;
+	StrArray objPaths;
+	StrArray oPaths;
+};
+
+// +==============================+
+// |   FindShaderFilesCallback    |
+// +==============================+
+// bool FindShaderFilesCallback(Str8 path, bool isFolder, void* contextPntr)
+RECURSIVE_DIR_WALK_CALLBACK_DEF(FindShaderFilesCallback)
+{
+	FindShadersContext* context = (FindShadersContext*)contextPntr;
+	if (isFolder)
+	{
+		for (uxx iIndex = 0; iIndex < context->ignoreListLength; iIndex++)
+		{
+			if (StrExactContains(path, context->ignoreList[iIndex])) { return false; }
+		}
+	}
+	
+	if (!isFolder && StrExactEndsWith(path, StrLit(".glsl")))
+	{
+		Str8 shaderName = GetFileNamePart(path, false);
+		AddStr(&context->shaderPaths, path);
+		AddStr(&context->headerPaths, JoinStrings2(path, StrLit(".h"), true));
+		AddStr(&context->sourcePaths, JoinStrings2(path, StrLit(".c"), true));
+		AddStr(&context->objPaths, JoinStrings2(shaderName, StrLit(".obj"), true));
+		AddStr(&context->oPaths, JoinStrings2(shaderName, StrLit(".o"), true));
+	}
+	return true;
+}
+
+#endif //  _TOOLS_BUILD_HELPERS_H

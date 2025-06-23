@@ -9,6 +9,9 @@ Description:
 #ifndef _TOOLS_MSVC_FLAGS_H
 #define _TOOLS_MSVC_FLAGS_H
 
+#define EXE_MSVC_CL    "cl"
+#define EXE_MSVC_LINK  "LINK"
+
 // +==============================+
 // |           CL Flags           |
 // +==============================+
