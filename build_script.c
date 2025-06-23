@@ -50,7 +50,10 @@ BuildContext ctx;
 #define FILENAME_TESTS_EXE         "tests.exe"
 #define FILENAME_TESTS_OBJ         "tests.obj"
 #define FILENAME_APP_WASM          "app.wasm"
+#define FILENAME_APP_WAT           "app.wat"
 #define FILENAME_INDEX_HTML        "index.html"
+#define FILENAME_INDEX_WASM        "index.wasm"
+#define FILENAME_INDEX_WAT         "index.wat"
 #define FILENAME_MODULE_WASM       "module.wasm"
 #define FILENAME_PDEX_ELF          "pdex.elf"
 #define FILENAME_PDEX_DLL          "pdex.dll"
@@ -918,7 +921,7 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &ctx.cl_CommonLinkerFlags);
 			AddArgList(&cmd, &ctx.cl_PigCoreLibraries);
-			AddArgList(&cmd, &cl_ShaderObjects);
+			if (ctx.BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_ShaderObjects); }
 			
 			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
 			if (statusCode == 0)
@@ -947,7 +950,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &ctx.clang_LinuxFlags);
 			AddArgList(&cmd, &ctx.clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &ctx.clang_PigCoreLibraries);
-			AddArgList(&cmd, &clang_ShaderObjects);
+			if (ctx.BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
 			
 			int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
 			if (statusCode == 0)
@@ -990,7 +993,7 @@ int main(int argc, char* argv[])
 				if (ctx.USE_EMSCRIPTEN)
 				{
 					AssertFileExist(StrLit(FILENAME_INDEX_HTML), true);
-					AssertFileExist(StrLit("index.wasm"), true);
+					AssertFileExist(StrLit(FILENAME_INDEX_WASM), true);
 					AssertFileExist(StrLit("index.js"), true);
 				}
 				else
@@ -1005,7 +1008,23 @@ int main(int argc, char* argv[])
 				exit(statusCode);
 			}
 			
-			//TODO: ctx.CONVERT_WASM_TO_WAT
+			if (ctx.CONVERT_WASM_TO_WAT)
+			{
+				CliArgList convertCmd = ZEROED;
+				AddArgNt(&convertCmd, CLI_QUOTED_ARG, ctx.USE_EMSCRIPTEN ? FILENAME_INDEX_WASM : FILENAME_APP_WASM);
+				AddArgNt(&convertCmd, CLI_PIPE_OUTPUT_TO_FILE, ctx.USE_EMSCRIPTEN ? FILENAME_INDEX_WAT : FILENAME_APP_WAT);
+				
+				int convertStatusCode = RunCliProgram(StrLit("wasm2wat"), &convertCmd);
+				if (convertStatusCode == 0)
+				{
+					AssertFileExist(ctx.USE_EMSCRIPTEN ? StrLit(FILENAME_INDEX_WAT) : StrLit(FILENAME_APP_WAT), true);
+				}
+				else
+				{
+					PrintLine_E("Failed to convert .wasm to .wat! Status Code: %d", convertStatusCode);
+					exit(convertStatusCode);
+				}
+			}
 			
 			if (!ctx.USE_EMSCRIPTEN)
 			{
