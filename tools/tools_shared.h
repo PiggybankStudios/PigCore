@@ -130,6 +130,8 @@ typedef RECURSIVE_DIR_WALK_CALLBACK_DEF(RecursiveDirWalkCallback_f);
 #define PrintLine(formatStr, ...) printf(formatStr "\n", ##__VA_ARGS__)
 #define PrintLine_E(formatStr, ...) fprintf(stderr, formatStr "\n", ##__VA_ARGS__)
 
+#define IS_SLASH(character) ((character) == '\\' || (character) == '/')
+
 // +--------------------------------------------------------------+
 // |                        Str Functions                         |
 // +--------------------------------------------------------------+
@@ -195,7 +197,7 @@ static inline Str8 GetDirectoryPart(Str8 fullPath, bool includeTrailingSlash)
 	for (uxx cIndex = 0; cIndex < fullPath.length; cIndex++)
 	{
 		char character = fullPath.chars[cIndex];
-		if (character == '\\' || character == '/') { lastSlashIndex = cIndex; }
+		if (IS_SLASH(character)) { lastSlashIndex = cIndex; }
 	}
 	if (lastSlashIndex < fullPath.length) { return StrSlice(fullPath, 0, lastSlashIndex + (includeTrailingSlash ? 1 : 0)); }
 	else { return fullPath; }
@@ -206,7 +208,7 @@ static inline Str8 GetFileNamePart(Str8 fullPath, bool includeExtension)
 	for (uxx cIndex = 0; cIndex < fullPath.length; cIndex++)
 	{
 		char character = fullPath.chars[cIndex];
-		if (character == '\\' || character == '/') { lastSlashIndex = cIndex; }
+		if (IS_SLASH(character)) { lastSlashIndex = cIndex; }
 	}
 	if (lastSlashIndex < fullPath.length) { return StrSliceFrom(fullPath, lastSlashIndex+1); }
 	else { return fullPath; }
@@ -217,7 +219,7 @@ static inline Str8 GetFileExtPart(Str8 fullPath)
 	for (uxx cIndex = 0; cIndex < fullPath.length; cIndex++)
 	{
 		char character = fullPath.chars[cIndex];
-		if (character == '\\' || character == '/') { periodIndex = fullPath.length; } //reset periodIndex
+		if (IS_SLASH(character)) { periodIndex = fullPath.length; } //reset periodIndex
 		else if (character == '.') { periodIndex = cIndex; }
 	}
 	if (periodIndex < fullPath.length) { return StrSliceFrom(fullPath, periodIndex); }
@@ -563,6 +565,18 @@ static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
 	
 	fclose(fileHandle);
 	return true;
+}
+//NOTE: We can't name this "ReadFile" because it conflicts with a Windows function
+static inline Str8 ReadEntireFile(Str8 filePath)
+{
+	Str8 result = ZEROED;
+	bool readSuccess = TryReadFile(filePath, &result);
+	if (!readSuccess)
+	{
+		PrintLine_E("Failed to open \"%.*s\"", filePath.length, filePath.chars);
+		exit(3);
+	}
+	return result;
 }
 
 static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convertNewLines)

@@ -9,6 +9,14 @@ Description:
 #ifndef _TOOLS_SHDC_FLAGS_H
 #define _TOOLS_SHDC_FLAGS_H
 
+#if BUILDING_ON_WINDOWS
+#define EXE_SHDC   ROOT_DIR "/third_party/_tools/win32/sokol-shdc.exe"
+#elif BUILDING_ON_LINUX
+#define EXE_SHDC   ROOT_DIR "/third_party/_tools/linux/sokol-shdc"
+#elif BUILDING_ON_OSX
+#define EXE_SHDC   ROOT_DIR "/third_party/_tools/osx/sokol-shdc"
+#endif
+
 #define SHDC_FORMAT           "--format=[VAL]"
 #define SHDC_ERROR_FORMAT     "--errfmt=[VAL]"
 #define SHDC_REFLECTION       "--reflection"

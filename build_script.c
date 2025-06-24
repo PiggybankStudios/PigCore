@@ -31,11 +31,13 @@ Description:
 #include "tools/tools_build_helpers.h"
 #include "tools/tools_pig_core_build_flags.h"
 
-#define TOOL_EXE_NAME      "pig_build.exe"
+#define BUILD_CONFIG_PATH       ROOT_DIR "/build_config.h"
 
-#define SHADER_IGNORE_LIST { ".git", "_template", "third_party", "_build" }
+#define FOLDERNAME_GENERATED_CODE  "gen"
+#define FOLDERNAME_LINUX           "linux"
+#define FOLDERNAME_WEB             "web"
+#define FOLDERNAME_ORCA            "orca"
 
-#define FILENAME_ORCA_SDK_PATH     "orca_sdk_path.txt"
 #define FILENAME_PIGGEN_EXE        "piggen.exe"
 #define FILENAME_PIGGEN            "piggen"
 #define FILENAME_IMGUI_OBJ         "imgui.obj"
@@ -57,6 +59,8 @@ Description:
 #define FILENAME_PDEX_DLL          "pdex.dll"
 #define FILENAME_TESTS_PDX         "tests.pdx"
 
+#define TOOL_EXE_NAME      "pig_build.exe"
+
 static inline void PrintUsage()
 {
 	WriteLine_E("Usage: " TOOL_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
@@ -64,7 +68,7 @@ static inline void PrintUsage()
 
 int main(int argc, char* argv[])
 {
-	// WriteLine("Running Pig Build!");
+	// PrintLine("Running %s...", TOOL_EXE_NAME);
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
 	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
@@ -72,13 +76,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |       Extract Defines        |
 	// +==============================+
-	const char* buildConfigPath = ROOT_DIR "\\build_config.h";
-	Str8 buildConfigContents = ZEROED;
-	if (!TryReadFile(NewStr8Nt(buildConfigPath), &buildConfigContents))
-	{
-		PrintLine_E("Failed to open file \"%s\"", buildConfigPath);
-		return 3;
-	}
+	Str8 buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
 	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
 	bool BUILD_PIGGEN             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
@@ -92,8 +90,8 @@ int main(int argc, char* argv[])
 	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
 	bool CONVERT_WASM_TO_WAT      = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
 	bool USE_EMSCRIPTEN           = ExtractBoolDefine(buildConfigContents, StrLit("USE_EMSCRIPTEN"));
-	bool ENABLE_AUTO_PROFILE      = ExtractBoolDefine(buildConfigContents, StrLit("ENABLE_AUTO_PROFILE"));
-	bool RUN_FUZZER               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_FUZZER"));
+	// bool ENABLE_AUTO_PROFILE      = ExtractBoolDefine(buildConfigContents, StrLit("ENABLE_AUTO_PROFILE"));
+	// bool RUN_FUZZER               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_FUZZER"));
 	bool BUILD_WINDOWS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WINDOWS"));
 	bool BUILD_LINUX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
 	bool BUILD_WEB                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
@@ -106,87 +104,42 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_SOKOL_APP     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_APP"));
 	bool BUILD_WITH_SDL           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SDL"));
 	bool BUILD_WITH_OPENVR        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_OPENVR"));
-	bool BUILD_WITH_CLAY          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
+	// bool BUILD_WITH_CLAY          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
 	bool BUILD_WITH_IMGUI         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
 	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
 	
 	free(buildConfigContents.chars);
 	
 	// +==============================+
-	// |          Constants           |
-	// +==============================+
-	#if BUILDING_ON_WINDOWS
-	Str8 shdcExe = StrLit(ROOT_DIR "\\third_party\\_tools\\win32\\sokol-shdc.exe");
-	#elif BUILDING_ON_LINUX
-	Str8 shdcExe = StrLit(ROOT_DIR "/third_party/_tools/linux/sokol-shdc");
-	#elif BUILDING_ON_OSX
-	Str8 shdcExe = StrLit(ROOT_DIR "/third_party/_tools/osx/sokol-shdc");
-	#endif
-	
-	// +==============================+
-	// |      emscriptenSdkPath       |
+	// |        Find SDK Paths        |
 	// +==============================+
 	Str8 emscriptenSdkPath = ZEROED;
 	if (BUILD_WEB && USE_EMSCRIPTEN)
 	{
-		const char* sdkEnvVariable = getenv("EMSCRIPTEN_SDK_PATH");
-		if (sdkEnvVariable == nullptr)
-		{
-			WriteLine_E("Please set the EMSCRIPTEN_SDK_PATH environment variable before trying to build for the web with USE_EMSCRIPTEN");
-			exit(7);
-		}
-		emscriptenSdkPath = NewStr8Nt(sdkEnvVariable);
-		if (emscriptenSdkPath.chars[emscriptenSdkPath.length-1] == '\\' || emscriptenSdkPath.chars[emscriptenSdkPath.length-1] == '/') { emscriptenSdkPath.length--; }
-		emscriptenSdkPath = CopyStr8(emscriptenSdkPath, true);
+		emscriptenSdkPath = GetEmscriptenSdkPath();
 		PrintLine("Emscripten SDK path: \"%.*s\"", emscriptenSdkPath.length, emscriptenSdkPath.chars);
 		InitializeEmsdkIf(&isEmsdkInitialized);
 	}
 	
-	// +==============================+
-	// |         orcaSdkPath          |
-	// +==============================+
 	Str8 orcaSdkPath = ZEROED;
 	if (BUILD_ORCA)
 	{
-		CliArgList cmd = ZEROED;
-		AddArg(&cmd, "sdk-path");
-		AddArgNt(&cmd, CLI_PIPE_OUTPUT_TO_FILE, FILENAME_ORCA_SDK_PATH);
-		int statusCode = RunCliProgram(StrLit("orca"), &cmd);
-		if (statusCode != 0)
-		{
-			PrintLine_E("Failed to run \"orca sdk-path\"! Status code: %d", statusCode);
-			WriteLine_E("Make sure Orca SDK is installed and is added to the PATH!");
-			exit(statusCode);
-		}
-		AssertFileExist(StrLit(FILENAME_ORCA_SDK_PATH), false);
-		bool readSuccess = TryReadFile(StrLit(FILENAME_ORCA_SDK_PATH), &orcaSdkPath);
-		assert(readSuccess == true);
-		assert(orcaSdkPath.length > 0);
-		FixPathSlashes(orcaSdkPath, '/');
-		if (orcaSdkPath.chars[orcaSdkPath.length-1] == '/') { orcaSdkPath.length--; } //no trailing slash
+		orcaSdkPath = GetOrcaSdkPath();
 		PrintLine("Orca SDK path: \"%.*s\"", orcaSdkPath.length, orcaSdkPath.chars);
 	}
 	
-	// +==============================+
-	// |        playdateSdkDir        |
-	// +==============================+
 	Str8 playdateSdkDir = ZEROED;
 	Str8 playdateSdkDir_C_API = ZEROED;
 	if (BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR)
 	{
-		const char* sdkEnvVariable = getenv("PLAYDATE_SDK_PATH");
-		if (sdkEnvVariable == nullptr)
-		{
-			WriteLine_E("Please set the PLAYDATE_SDK_PATH environment variable before trying to build for the Playdate");
-			exit(7);
-		}
-		playdateSdkDir = NewStr8Nt(sdkEnvVariable);
-		if (playdateSdkDir.chars[playdateSdkDir.length-1] == '\\' || playdateSdkDir.chars[playdateSdkDir.length-1] == '/') { playdateSdkDir.length--; }
-		playdateSdkDir = CopyStr8(playdateSdkDir, true);
+		playdateSdkDir = GetPlaydateSdkPath();
 		PrintLine("Playdate SDK path: \"%.*s\"", playdateSdkDir.length, playdateSdkDir.chars);
 		playdateSdkDir_C_API = JoinStrings2(playdateSdkDir, StrLit("\\C_API"), false);
 	}
 	
+	// +==============================+
+	// |       Fill CliArgLists       |
+	// +==============================+
 	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
 	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
@@ -249,8 +202,8 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIGGEN);
 			
-			mkdir("linux", 0);
-			chdir("linux");
+			mkdir(FOLDERNAME_LINUX, 0);
+			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, NESTED_ROOT_DIR "/piggen/piggen_main.c");
@@ -278,7 +231,6 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                        Run piggen.exe                        |
 	// +--------------------------------------------------------------+
-	#define FOLDERNAME_GENERATED_CODE "gen"
 	if (RUN_PIGGEN)
 	{
 		PrintLine("\n[%s]", FILENAME_PIGGEN_EXE);
@@ -314,7 +266,7 @@ int main(int argc, char* argv[])
 	CliArgList clang_ShaderObjects = ZEROED;
 	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
 	{
-		const char* ignoreList[] = SHADER_IGNORE_LIST;
+		const char* ignoreList[] = { ".git", "_template", "third_party", "_build" };
 		findContext.ignoreListLength = ArrayCount(ignoreList);
 		findContext.ignoreList = (Str8*)malloc(sizeof(Str8) * findContext.ignoreListLength);
 		for (uxx iIndex = 0; iIndex < findContext.ignoreListLength; iIndex++)
@@ -339,7 +291,7 @@ int main(int argc, char* argv[])
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
 				AddArgStr(&clang_ShaderObjects, CLI_QUOTED_ARG, oPath);
-				Str8 oPathWithFolder = JoinStrings2(StrLit("linux/"), oPath, false);
+				Str8 oPathWithFolder = JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
 			}
 		}
@@ -384,10 +336,10 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
 			
 			PrintLine("Generating \"%.*s\"...", headerPath.length, headerPath.chars);
-			int statusCode = RunCliProgram(shdcExe, &cmd);
+			int statusCode = RunCliProgram(StrLit(EXE_SHDC), &cmd);
 			if (statusCode != 0)
 			{
-				Str8 shdcFilename = GetFileNamePart(shdcExe, true);
+				Str8 shdcFilename = GetFileNamePart(StrLit(EXE_SHDC), true);
 				PrintLine_E("%.*s failed on %.*s! Status Code: %d",
 					shdcFilename.length, shdcFilename.chars,
 					shaderPath.length, shaderPath.chars,
@@ -450,8 +402,8 @@ int main(int argc, char* argv[])
 			}
 			if (BUILD_LINUX)
 			{
-				mkdir("linux", 0);
-				chdir("linux");
+				mkdir(FOLDERNAME_LINUX, 0);
+				chdir(FOLDERNAME_LINUX);
 				
 				Str8 oPath = findContext.oPaths.strings[sIndex];
 				Str8 fixedSourcePath = JoinStrings2(StrLit(ROOT_DIR "/"), sourcePath, false);
@@ -487,7 +439,7 @@ int main(int argc, char* argv[])
 		FreeStrArray(&findContext.sourcePaths);
 		FreeStrArray(&findContext.objPaths);
 		FreeStrArray(&findContext.oPaths);
-	} 
+	}
 	
 	// +--------------------------------------------------------------+
 	// |                       Build imgui.obj                        |
@@ -607,8 +559,8 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIG_CORE_SO);
 			
-			mkdir("linux", 0);
-			chdir("linux");
+			mkdir(FOLDERNAME_LINUX, 0);
+			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, NESTED_ROOT_DIR "/dll/dll_main.c");
@@ -674,8 +626,8 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_TESTS);
 			
-			mkdir("linux", 0);
-			chdir("linux");
+			mkdir(FOLDERNAME_LINUX, 0);
+			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, NESTED_ROOT_DIR "/tests/tests_main.c");
@@ -705,8 +657,8 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Web...]", FILENAME_APP_WASM);
 			
-			mkdir("web", 0);
-			chdir("web");
+			mkdir(FOLDERNAME_WEB, 0);
+			chdir(FOLDERNAME_WEB);
 			
 			// TODO: del *.wasm > NUL 2> NUL
 			// TODO: del *.wat > NUL 2> NUL
@@ -780,8 +732,8 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Orca...]", FILENAME_MODULE_WASM);
 			
-			mkdir("orca", 0);
-			chdir("orca");
+			mkdir(FOLDERNAME_ORCA, 0);
+			chdir(FOLDERNAME_ORCA);
 			
 			CliArgList cmd = ZEROED;
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_MODULE_WASM);

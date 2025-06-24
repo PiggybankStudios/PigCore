@@ -122,6 +122,60 @@ static inline void ConcatAllFilesIntoSingleFile(const StrArray* pathArray, Str8 
 	FreeStrArray(&allFilesContents);
 }
 
+static inline Str8 GetEmscriptenSdkPath()
+{
+	const char* sdkEnvVariable = getenv("EMSCRIPTEN_SDK_PATH");
+	if (sdkEnvVariable == nullptr)
+	{
+		WriteLine_E("Please set the EMSCRIPTEN_SDK_PATH environment variable before trying to build for the web with USE_EMSCRIPTEN");
+		exit(7);
+	}
+	Str8 result = NewStr8Nt(sdkEnvVariable);
+	if (IS_SLASH(result.chars[result.length-1])) { result.length--; } //no trailing slash
+	result = CopyStr8(result, true);
+	FixPathSlashes(result, PATH_SEP_CHAR);
+	return result;
+}
+
+#define FILENAME_ORCA_SDK_PATH  "orca_sdk_path.txt"
+
+static inline Str8 GetOrcaSdkPath()
+{
+	CliArgList cmd = ZEROED;
+	AddArg(&cmd, "sdk-path");
+	AddArgNt(&cmd, CLI_PIPE_OUTPUT_TO_FILE, FILENAME_ORCA_SDK_PATH);
+	int statusCode = RunCliProgram(StrLit("orca"), &cmd);
+	if (statusCode != 0)
+	{
+		PrintLine_E("Failed to run \"orca sdk-path\"! Status code: %d", statusCode);
+		WriteLine_E("Make sure Orca SDK is installed and is added to the PATH!");
+		exit(statusCode);
+	}
+	AssertFileExist(StrLit(FILENAME_ORCA_SDK_PATH), false);
+	Str8 result = ZEROED;
+	bool readSuccess = TryReadFile(StrLit(FILENAME_ORCA_SDK_PATH), &result);
+	assert(readSuccess == true);
+	assert(result.length > 0);
+	FixPathSlashes(result, PATH_SEP_CHAR);
+	if (result.chars[result.length-1] == PATH_SEP_CHAR) { result.length--; } //no trailing slash
+	return result;
+}
+
+static inline Str8 GetPlaydateSdkPath()
+{
+	const char* sdkEnvVariable = getenv("PLAYDATE_SDK_PATH");
+	if (sdkEnvVariable == nullptr)
+	{
+		WriteLine_E("Please set the PLAYDATE_SDK_PATH environment variable before trying to build for the Playdate");
+		exit(7);
+	}
+	Str8 result = NewStr8Nt(sdkEnvVariable);
+	if (IS_SLASH(result.chars[result.length-1])) { result.length--; }
+	result = CopyStr8(result, true);
+	FixPathSlashes(result, PATH_SEP_CHAR);
+	return result;
+}
+
 // +--------------------------------------------------------------+
 // |                  Shader Header File Parsing                  |
 // +--------------------------------------------------------------+
