@@ -14,7 +14,8 @@ Description:
 	** since it's lifespan is short and it's memory requirements are tiny
 */
 
-#define TOOL_EXE_NAME "pig_build.exe"
+#define ROOT_DIR           ".."
+#define NESTED_ROOT_DIR    "../.."
 
 #include "tools/tools_shared.h"
 #include "tools/tools_str_array.h"
@@ -27,16 +28,13 @@ Description:
 #include "tools/tools_shdc_flags.h"
 #include "tools/tools_pdc_flags.h"
 
-#include "tools/tools_build_context.h"
 #include "tools/tools_build_helpers.h"
+#include "tools/tools_pig_core_build_flags.h"
 
-BuildContext ctx;
-
-#include "tools/tools_build_basics.c"
+#define TOOL_EXE_NAME      "pig_build.exe"
 
 #define SHADER_IGNORE_LIST { ".git", "_template", "third_party", "_build" }
-#define ROOT_DIR           ".."
-#define NESTED_ROOT_DIR    "../.."
+
 #define FILENAME_ORCA_SDK_PATH     "orca_sdk_path.txt"
 #define FILENAME_PIGGEN_EXE        "piggen.exe"
 #define FILENAME_PIGGEN            "piggen"
@@ -67,10 +65,9 @@ static inline void PrintUsage()
 int main(int argc, char* argv[])
 {
 	// WriteLine("Running Pig Build!");
-	memset(&ctx, 0x00, sizeof(ctx));
 	
-	ctx.isMsvcInitialized = WasMsvcDevBatchRun();
-	ctx.isEmsdkInitialized = WasEmsdkEnvBatchRun();
+	bool isMsvcInitialized = WasMsvcDevBatchRun();
+	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
 	
 	// +==============================+
 	// |       Extract Defines        |
@@ -83,35 +80,35 @@ int main(int argc, char* argv[])
 		return 3;
 	}
 	
-	ctx.DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
-	ctx.BUILD_PIGGEN             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
-	ctx.BUILD_SHADERS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
-	ctx.RUN_PIGGEN               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
-	ctx.BUILD_IMGUI_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_IMGUI_OBJ"));
-	ctx.BUILD_PHYSX_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PHYSX_OBJ"));
-	ctx.BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
-	ctx.BUILD_TESTS              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
-	ctx.RUN_TESTS                = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
-	ctx.DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
-	ctx.CONVERT_WASM_TO_WAT      = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
-	ctx.USE_EMSCRIPTEN           = ExtractBoolDefine(buildConfigContents, StrLit("USE_EMSCRIPTEN"));
-	ctx.ENABLE_AUTO_PROFILE      = ExtractBoolDefine(buildConfigContents, StrLit("ENABLE_AUTO_PROFILE"));
-	ctx.RUN_FUZZER               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_FUZZER"));
-	ctx.BUILD_WINDOWS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WINDOWS"));
-	ctx.BUILD_LINUX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
-	ctx.BUILD_WEB                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
-	ctx.BUILD_ORCA               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
-	ctx.BUILD_PLAYDATE_DEVICE    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
-	ctx.BUILD_PLAYDATE_SIMULATOR = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
-	ctx.BUILD_WITH_RAYLIB        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_RAYLIB"));
-	ctx.BUILD_WITH_BOX2D         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_BOX2D"));
-	ctx.BUILD_WITH_SOKOL_GFX     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_GFX"));
-	ctx.BUILD_WITH_SOKOL_APP     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_APP"));
-	ctx.BUILD_WITH_SDL           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SDL"));
-	ctx.BUILD_WITH_OPENVR        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_OPENVR"));
-	ctx.BUILD_WITH_CLAY          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
-	ctx.BUILD_WITH_IMGUI         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
-	ctx.BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
+	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
+	bool BUILD_PIGGEN             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
+	bool BUILD_SHADERS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
+	bool RUN_PIGGEN               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
+	bool BUILD_IMGUI_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_IMGUI_OBJ"));
+	bool BUILD_PHYSX_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PHYSX_OBJ"));
+	bool BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
+	bool BUILD_TESTS              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
+	bool RUN_TESTS                = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
+	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
+	bool CONVERT_WASM_TO_WAT      = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
+	bool USE_EMSCRIPTEN           = ExtractBoolDefine(buildConfigContents, StrLit("USE_EMSCRIPTEN"));
+	bool ENABLE_AUTO_PROFILE      = ExtractBoolDefine(buildConfigContents, StrLit("ENABLE_AUTO_PROFILE"));
+	bool RUN_FUZZER               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_FUZZER"));
+	bool BUILD_WINDOWS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WINDOWS"));
+	bool BUILD_LINUX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
+	bool BUILD_WEB                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
+	bool BUILD_ORCA               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
+	bool BUILD_PLAYDATE_DEVICE    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
+	bool BUILD_PLAYDATE_SIMULATOR = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
+	bool BUILD_WITH_RAYLIB        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_RAYLIB"));
+	bool BUILD_WITH_BOX2D         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_BOX2D"));
+	bool BUILD_WITH_SOKOL_GFX     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_GFX"));
+	bool BUILD_WITH_SOKOL_APP     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_APP"));
+	bool BUILD_WITH_SDL           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SDL"));
+	bool BUILD_WITH_OPENVR        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_OPENVR"));
+	bool BUILD_WITH_CLAY          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
+	bool BUILD_WITH_IMGUI         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
+	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
 	
 	free(buildConfigContents.chars);
 	
@@ -127,128 +124,10 @@ int main(int argc, char* argv[])
 	#endif
 	
 	// +==============================+
-	// |        cl_CommonFlags        |
-	// +==============================+
-	AddArg(&ctx.cl_CommonFlags, ctx.DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
-	AddArg(&ctx.cl_CommonFlags, CL_FULL_FILE_PATHS); //we need full file paths in errors for Sublime Text to be able to parse the errors and display them in the editor
-	AddArg(&ctx.cl_CommonFlags, CL_NO_LOGO); //Suppress the annoying Microsoft logo and copyright info that the compiler prints out
-	AddArgNt(&ctx.cl_CommonFlags, CL_OPTIMIZATION_LEVEL, ctx.DEBUG_BUILD ? "d" : "2");
-	if (!ctx.DEBUG_BUILD) { AddArgNt(&ctx.cl_CommonFlags, CL_OPTIMIZATION_LEVEL, "y"); }
-	if (!ctx.DEBUG_BUILD) { AddArgNt(&ctx.cl_CommonFlags, CL_OPTIMIZATION_LEVEL, "t"); }
-	AddArgNt(&ctx.cl_CommonFlags, CL_WARNING_LEVEL, "X"); //Treat all warnings as errors
-	AddArgInt(&ctx.cl_CommonFlags, CL_WARNING_LEVEL, 4); //Use warning level 4, then disable various warnings we don't care about
-	AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_LOGICAL_OP_ON_ADDRESS_OF_STR_CONST);
-	AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_NAMELESS_STRUCT_OR_UNION);
-	AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_STRUCT_WAS_PADDED);
-	AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_DECLARATION_HIDES_CLASS_MEMBER);
-	AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_UNREFERENCED_FUNC_REMOVED);
-	AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_USAGE_OF_DEPRECATED);
-	AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_ASSIGNMENT_WITHIN_CONDITIONAL_EXPR);
-	AddArgInt(&ctx.cl_CommonFlags, CL_ENABLE_WARNING, CL_WARNING_SWITCH_FALLTHROUGH);
-	AddArgNt(&ctx.cl_CommonFlags, CL_INCLUDE_DIR, ROOT_DIR);
-	if (ctx.DEBUG_BUILD)
-	{
-		AddArg(&ctx.cl_CommonFlags, CL_DEBUG_INFO);
-		//We don't care about these warnings in debug builds, but we will solve them when we go to build in release mode because they probably indicate mistakes at that point
-		AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_SWITCH_ONLY_DEFAULT);
-		AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_UNREFERENCED_FUNC_PARAMETER);
-		AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_UNREFERENCED_LCOAL_VARIABLE);
-		AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_CONDITIONAL_EXPR_IS_CONSTANT);
-		AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_LOCAL_VAR_INIT_BUT_NOT_REFERENCED);
-		AddArgInt(&ctx.cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_UNREACHABLE_CODE_DETECTED);
-	}
-	if (ctx.DUMP_PREPROCESSOR)
-	{
-		AddArg(&ctx.cl_CommonFlags, CL_PRECOMPILE_ONLY);
-		AddArg(&ctx.cl_CommonFlags, CL_PRECOMPILE_PRESERVE_COMMENTS);
-	}
-	
-	// +==============================+
-	// |        cl_LangCFlags         |
-	// +==============================+
-	AddArgNt(&ctx.cl_LangCFlags, CL_LANG_VERSION, "clatest"); //Use latest C language spec features
-	AddArgNt(&ctx.cl_LangCFlags, CL_EXPERIMENTAL, "c11atomics"); //Enables _Atomic types
-	
-	// +==============================+
-	// |       cl_LangCppFlags        |
-	// +==============================+
-	AddArgNt(&ctx.cl_LangCppFlags, CL_LANG_VERSION, "c++20");
-	AddArgInt(&ctx.cl_LangCppFlags, CL_DISABLE_WARNING, CL_WARNING_ENUMERATION_MUST_HAVE_UNDERLYING_TYPE);
-	AddArgInt(&ctx.cl_LangCppFlags, CL_DISABLE_WARNING, CL_WARNING_BITWISE_OP_BETWEEN_ENUMS);
-	
-	// +==============================+
-	// |      clang_CommonFlags       |
-	// +==============================+
-	AddArg(&ctx.clang_CommonFlags, CLANG_FULL_FILE_PATHS); //Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
-	AddArgNt(&ctx.clang_CommonFlags, CLANG_LANG_VERSION, "gnu2x"); //Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
-	AddArgNt(&ctx.clang_CommonFlags, CLANG_WARNING_LEVEL, "all"); //This enables all the warnings about constructions that some users consider questionable, and that are easy to avoid (or modify to prevent the warning), even in conjunction with macros
-	AddArgNt(&ctx.clang_CommonFlags, CLANG_WARNING_LEVEL, "extra"); //This enables some extra warning flags that are not enabled by -Wall
-	AddArgNt(&ctx.clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_SHADOWING);
-	AddArgNt(&ctx.clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH);
-	AddArgNt(&ctx.clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_SWITCH_MISSING_CASES);
-	AddArgNt(&ctx.clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_FUNCTION);
-	if (ctx.DEBUG_BUILD)
-	{
-		//We don't care about these warnings in debug builds, but we will solve them when we go to build in release mode because they probably indicate mistakes at that point
-		AddArgNt(&ctx.clang_CommonFlags, CLANG_DISABLE_WARNING, "unused-parameter");
-		AddArgNt(&ctx.clang_CommonFlags, CLANG_DISABLE_WARNING, "unused-variable");
-	}
-	if (ctx.DUMP_PREPROCESSOR) { AddArg(&ctx.clang_CommonFlags, CLANG_PRECOMPILE_ONLY); }
-	
-	// +==============================+
-	// |       clang_LinuxFlags       |
-	// +==============================+
-	AddArgNt(&ctx.clang_LinuxFlags, CLANG_INCLUDE_DIR, NESTED_ROOT_DIR);
-	AddArg(&ctx.clang_LinuxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
-	AddArg(&ctx.clang_LinuxFlags, "-maes"); //For MeowHash to work we need aes support
-	if (ctx.DEBUG_BUILD) { AddArgNt(&ctx.clang_LinuxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
-	
-	// +==============================+
-	// |     cl_CommonLinkerFlags     |
-	// +==============================+
-	AddArgNt(&ctx.cl_CommonLinkerFlags, LINK_LIBRARY_DIR, ctx.DEBUG_BUILD ? ROOT_DIR "\\third_party\\_lib_debug" : ROOT_DIR "\\third_party\\_lib_release");
-	AddArg(&ctx.cl_CommonLinkerFlags, LINK_DISABLE_INCREMENTAL);
-	
-	// +==============================+
-	// |  clang_LinuxCommonLibraries  |
-	// +==============================+
-	AddArgNt(&ctx.clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
-	AddArgNt(&ctx.clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
-	
-	// +==============================+
-	// |     cl_PigCoreLibraries      |
-	// +==============================+
-	if (ctx.BUILD_WITH_RAYLIB) { AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "raylib.lib"); } //NOTE: raylib.lib MUST be before User32.lib and others
-	AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "Gdi32.lib"); //Needed for CreateFontA and other Windows graphics functions
-	AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "User32.lib"); //Needed for GetForegroundWindow, GetDC, etc.
-	AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "Ole32.lib"); //Needed for Combaseapi.h, CoInitializeEx, CoCreateInstance, etc.
-	AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "Shell32.lib"); //Needed for SHGetSpecialFolderPathA
-	AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "Shlwapi.lib"); //Needed for PathFileExistsA
-	if (ctx.BUILD_WITH_RAYLIB)
-	{
-		AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "Kernel32.lib");
-		AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "Winmm.lib");
-	}
-	if (ctx.BUILD_WITH_BOX2D) { AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "box2d.lib"); }
-	if (ctx.BUILD_WITH_SDL) { AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "SDL2.lib"); }
-	if (ctx.BUILD_WITH_OPENVR) { AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "openvr_api.lib"); }
-	if (ctx.BUILD_WITH_IMGUI) { AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_IMGUI_OBJ); }
-	if (ctx.BUILD_WITH_PHYSX)
-	{
-		AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, "PhysX_static_64.lib");
-		AddArgNt(&ctx.cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_PHYSX_OBJ);
-	}
-	
-	// +==============================+
-	// |    clang_PigCoreLibraries    |
-	// +==============================+
-	AddArgNt(&ctx.clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig");
-	if (ctx.BUILD_WITH_SOKOL_GFX) { AddArgNt(&ctx.clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
-	
-	// +==============================+
 	// |      emscriptenSdkPath       |
 	// +==============================+
-	if (ctx.BUILD_WEB && ctx.USE_EMSCRIPTEN)
+	Str8 emscriptenSdkPath = ZEROED;
+	if (BUILD_WEB && USE_EMSCRIPTEN)
 	{
 		const char* sdkEnvVariable = getenv("EMSCRIPTEN_SDK_PATH");
 		if (sdkEnvVariable == nullptr)
@@ -256,45 +135,18 @@ int main(int argc, char* argv[])
 			WriteLine_E("Please set the EMSCRIPTEN_SDK_PATH environment variable before trying to build for the web with USE_EMSCRIPTEN");
 			exit(7);
 		}
-		ctx.emscriptenSdkPath = NewStr8Nt(sdkEnvVariable);
-		if (ctx.emscriptenSdkPath.chars[ctx.emscriptenSdkPath.length-1] == '\\' || ctx.emscriptenSdkPath.chars[ctx.emscriptenSdkPath.length-1] == '/') { ctx.emscriptenSdkPath.length--; }
-		ctx.emscriptenSdkPath = CopyStr8(ctx.emscriptenSdkPath, true);
-		PrintLine("Emscripten SDK path: \"%.*s\"", ctx.emscriptenSdkPath.length, ctx.emscriptenSdkPath.chars);
-		InitializeEmsdkIf(&ctx.isEmsdkInitialized);
-	}
-	
-	// +==============================+
-	// |       clang_WasmFlags        |
-	// +==============================+
-	AddArgNt(&ctx.clang_WasmFlags, CLANG_TARGET_ARCHITECTURE, "wasm32");
-	AddArgNt(&ctx.clang_WasmFlags, CLANG_M_FLAG, "bulk-memory");
-	AddArgNt(&ctx.clang_WasmFlags, CLANG_INCLUDE_DIR, NESTED_ROOT_DIR);
-	if (ctx.DEBUG_BUILD) { AddArg(&ctx.clang_WasmFlags, CLANG_DEBUG_INFO_DEFAULT); }
-	else { AddArgNt(&ctx.clang_WasmFlags, CLANG_OPTIMIZATION_LEVEL, "2"); }
-	
-	// +==============================+
-	// |        clang_WebFlags        |
-	// +==============================+
-	if (ctx.USE_EMSCRIPTEN)
-	{
-		AddArgNt(&ctx.clang_WebFlags, EMSCRIPTEN_S_FLAG, "USE_SDL");
-		AddArgNt(&ctx.clang_WebFlags, EMSCRIPTEN_S_FLAG, "ALLOW_MEMORY_GROWTH");
-	}
-	else
-	{
-		Str8 customStdLibDir = StrLit(NESTED_ROOT_DIR "/wasm/std/include");
-		AddArgStr(&ctx.clang_WebFlags, CLANG_INCLUDE_DIR, customStdLibDir);
-		AddArg(&ctx.clang_WebFlags, CLANG_NO_ENTRYPOINT);
-		AddArg(&ctx.clang_WebFlags, CLANG_ALLOW_UNDEFINED);
-		AddArg(&ctx.clang_WebFlags, CLANG_NO_STD_LIBRARIES);
-		AddArg(&ctx.clang_WebFlags, CLANG_NO_STD_INCLUDES);
-		AddArgNt(&ctx.clang_WebFlags, CLANG_EXPORT_SYMBOL, "__heap_base");
+		emscriptenSdkPath = NewStr8Nt(sdkEnvVariable);
+		if (emscriptenSdkPath.chars[emscriptenSdkPath.length-1] == '\\' || emscriptenSdkPath.chars[emscriptenSdkPath.length-1] == '/') { emscriptenSdkPath.length--; }
+		emscriptenSdkPath = CopyStr8(emscriptenSdkPath, true);
+		PrintLine("Emscripten SDK path: \"%.*s\"", emscriptenSdkPath.length, emscriptenSdkPath.chars);
+		InitializeEmsdkIf(&isEmsdkInitialized);
 	}
 	
 	// +==============================+
 	// |         orcaSdkPath          |
 	// +==============================+
-	if (ctx.BUILD_ORCA)
+	Str8 orcaSdkPath = ZEROED;
+	if (BUILD_ORCA)
 	{
 		CliArgList cmd = ZEROED;
 		AddArg(&cmd, "sdk-path");
@@ -307,30 +159,20 @@ int main(int argc, char* argv[])
 			exit(statusCode);
 		}
 		AssertFileExist(StrLit(FILENAME_ORCA_SDK_PATH), false);
-		bool readSuccess = TryReadFile(StrLit(FILENAME_ORCA_SDK_PATH), &ctx.orcaSdkPath);
+		bool readSuccess = TryReadFile(StrLit(FILENAME_ORCA_SDK_PATH), &orcaSdkPath);
 		assert(readSuccess == true);
-		assert(ctx.orcaSdkPath.length > 0);
-		FixPathSlashes(ctx.orcaSdkPath, '/');
-		if (ctx.orcaSdkPath.chars[ctx.orcaSdkPath.length-1] == '/') { ctx.orcaSdkPath.length--; } //no trailing slash
-		PrintLine("Orca SDK path: \"%.*s\"", ctx.orcaSdkPath.length, ctx.orcaSdkPath.chars);
+		assert(orcaSdkPath.length > 0);
+		FixPathSlashes(orcaSdkPath, '/');
+		if (orcaSdkPath.chars[orcaSdkPath.length-1] == '/') { orcaSdkPath.length--; } //no trailing slash
+		PrintLine("Orca SDK path: \"%.*s\"", orcaSdkPath.length, orcaSdkPath.chars);
 	}
-	
-	// +==============================+
-	// |       clang_OrcaFlags        |
-	// +==============================+
-	AddArg(&ctx.clang_OrcaFlags, CLANG_NO_ENTRYPOINT);
-	AddArg(&ctx.clang_OrcaFlags, CLANG_EXPORT_DYNAMIC);
-	AddArgStr(&ctx.clang_OrcaFlags, CLANG_STDLIB_FOLDER, JoinStrings2(ctx.orcaSdkPath, StrLit("/orca-libc"), false));
-	AddArgStr(&ctx.clang_OrcaFlags, CLANG_INCLUDE_DIR, JoinStrings2(ctx.orcaSdkPath, StrLit("/src"), false));
-	AddArgStr(&ctx.clang_OrcaFlags, CLANG_INCLUDE_DIR, JoinStrings2(ctx.orcaSdkPath, StrLit("/src/ext"), false));
-	AddArgStr(&ctx.clang_OrcaFlags, CLANG_LIBRARY_DIR, JoinStrings2(ctx.orcaSdkPath, StrLit("/bin"), false));
-	AddArgNt(&ctx.clang_OrcaFlags, CLANG_SYSTEM_LIBRARY, "orca_wasm");
-	AddArgNt(&ctx.clang_OrcaFlags, CLANG_DEFINE, "__ORCA__"); //#define __ORCA__ so that base_compiler_check.h can set TARGET_IS_ORCA
 	
 	// +==============================+
 	// |        playdateSdkDir        |
 	// +==============================+
-	if (ctx.BUILD_PLAYDATE_DEVICE || ctx.BUILD_PLAYDATE_SIMULATOR)
+	Str8 playdateSdkDir = ZEROED;
+	Str8 playdateSdkDir_C_API = ZEROED;
+	if (BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR)
 	{
 		const char* sdkEnvVariable = getenv("PLAYDATE_SDK_PATH");
 		if (sdkEnvVariable == nullptr)
@@ -338,148 +180,38 @@ int main(int argc, char* argv[])
 			WriteLine_E("Please set the PLAYDATE_SDK_PATH environment variable before trying to build for the Playdate");
 			exit(7);
 		}
-		ctx.playdateSdkDir = NewStr8Nt(sdkEnvVariable);
-		if (ctx.playdateSdkDir.chars[ctx.playdateSdkDir.length-1] == '\\' || ctx.playdateSdkDir.chars[ctx.playdateSdkDir.length-1] == '/') { ctx.playdateSdkDir.length--; }
-		ctx.playdateSdkDir = CopyStr8(ctx.playdateSdkDir, true);
-		PrintLine("Playdate SDK path: \"%.*s\"", ctx.playdateSdkDir.length, ctx.playdateSdkDir.chars);
-		ctx.playdateSdkDir_C_API = JoinStrings2(ctx.playdateSdkDir, StrLit("\\C_API"), false);
+		playdateSdkDir = NewStr8Nt(sdkEnvVariable);
+		if (playdateSdkDir.chars[playdateSdkDir.length-1] == '\\' || playdateSdkDir.chars[playdateSdkDir.length-1] == '/') { playdateSdkDir.length--; }
+		playdateSdkDir = CopyStr8(playdateSdkDir, true);
+		PrintLine("Playdate SDK path: \"%.*s\"", playdateSdkDir.length, playdateSdkDir.chars);
+		playdateSdkDir_C_API = JoinStrings2(playdateSdkDir, StrLit("\\C_API"), false);
 	}
 	
-	// +====================================+
-	// | cl_PlaydateSimulatorCompilerFlags  |
-	// +====================================+
-	//TODO: Just use cl_CommonFlags?
-	AddArg(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_NO_LOGO);
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_WARNING_LEVEL, "3");
-	AddArg(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_NO_WARNINGS_AS_ERRORS);
-	AddArg(&ctx.cl_PlaydateSimulatorCompilerFlags, ctx.DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_OPTIMIZATION_LEVEL, ctx.DEBUG_BUILD ? "d" : "2");
-	if (ctx.DEBUG_BUILD) { AddArg(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEBUG_INFO); }
-	
-	//TODO: Just use cl_LangCFlags?
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_LANG_VERSION, "clatest"); //Use latest C language spec features
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_EXPERIMENTAL, "c11atomics"); //Enables _Atomic types
-	
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_INCLUDE_DIR, ROOT_DIR);
-	if (ctx.BUILD_PLAYDATE_SIMULATOR) { AddArgStr(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_INCLUDE_DIR, ctx.playdateSdkDir_C_API); } //NOTE: ctx.playdateSdkDir_C_API is only filled if BUILD_PLAYDATE_SIMULATOR
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "TARGET_SIMULATOR=1");
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "TARGET_EXTENSION=1");
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "__HEAP_SIZE=8388208");
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "__STACK_SIZE=61800");
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "_WINDLL");
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "_MBCS");
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "WIN32");
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "_WINDOWS");
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "_WINDLL=1");
-	AddArg(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_ENABLE_BUFFER_SECURITY_CHECK);
-	AddArg(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_DISABLE_MINIMAL_REBUILD);
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_ENABLE_RUNTIME_CHECKS, "1"); //Enable fast runtime checks (Equivalent to "su")
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_CALLING_CONVENTION, "d"); //Use __cdecl calling convention
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_INLINE_EXPANSION_LEVEL, "0"); //Disable inline expansions
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_INTERNAL_COMPILER_ERROR_BEHAVIOR, "prompt"); //TODO: Do we need this?
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_ENABLE_LANG_CONFORMANCE_OPTION, "forScope"); //Enforce Standard C++ for scoping rules (on by default)
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_ENABLE_LANG_CONFORMANCE_OPTION, "inline"); //Remove unreferenced functions or data if they're COMDAT or have internal linkage only (off by default)
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_ENABLE_LANG_CONFORMANCE_OPTION, "wchar_t"); //wchar_t is a native type, not a typedef (on by default)
-	AddArgNt(&ctx.cl_PlaydateSimulatorCompilerFlags, CL_FLOATING_POINT_MODEL, "precise"); //"precise" floating-point model; results are predictable
-	
-	// +====================================+
-	// | link_PlaydateSimulatorLinkerFlags  |
-	// +====================================+
-	AddArg(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_NO_LOGO);
-	AddArgNt(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_TARGET_ARCHITECTURE, "X64");
-	AddArg(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_DATA_EXEC_COMPAT);
-	AddArg(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_ENABLE_ASLR);
-	AddArg(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_CONSOLE_APPLICATION);
-	AddArgInt(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_TYPELIB_RESOURCE_ID, 1);
-	AddArg(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_ENABLE_INCREMENTAL);
-	AddArgNt(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_INCREMENTAL_FILE_NAME, "tests.ilk"); //TODO: This should really move down below inside the tests.exe block
-	AddArg(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_CREATE_ASSEMBLY_MANIFEST);
-	AddArgNt(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_ASSEMBLY_MANIFEST_FILE, "tests.intermediate.manifest"); //TODO: This should really move down below inside the tests.exe block
-	AddArgNt(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_LINK_TIME_CODEGEN_FILE, "tests.iobj"); //TODO: This should really move down below inside the tests.exe block
-	AddArgNt(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_EMBED_UAC_INFO_EX, "level='asInvoker' uiAccess='false'");
-	if (ctx.DEBUG_BUILD) { AddArg(&ctx.link_PlaydateSimulatorLinkerFlags, LINK_DEBUG_INFO); }
-	
-	// +==================================+
-	// | link_PlaydateSimulatorLibraries  |
-	// +==================================+
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "kernel32.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "user32.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "gdi32.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "winspool.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "shell32.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "ole32.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "oleaut32.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "uuid.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "comdlg32.lib");
-	AddArgNt(&ctx.link_PlaydateSimulatorLibraries, CLI_QUOTED_ARG, "advapi32.lib");
-	
-	// +===============================+
-	// | gcc_PlaydateDeviceCommonFlags |
-	// +===============================+
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_INCLUDE_DIR, ROOT_DIR);
-	if (ctx.BUILD_PLAYDATE_DEVICE) { AddArgStr(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_INCLUDE_DIR, ctx.playdateSdkDir_C_API); } //NOTE: ctx.playdateSdkDir_C_API is only filled if BUILD_PLAYDATE_DEVICE
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "TARGET_PLAYDATE=1");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "TARGET_EXTENSION=1");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "__HEAP_SIZE=8388208");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "__STACK_SIZE=61800");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "__FPU_USED=1");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_USE_SPEC_FILE, "nano.specs"); //Required for things like _read, _write, _exit, etc. to not be pulled in as requirements from standard library
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_USE_SPEC_FILE, "nosys.specs"); //TODO: Is this helping?
-	AddArg(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_TARGET_THUMB);
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_TARGET_CPU, "cortex-m7");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_FLOAT_ABI_MODE, "hard"); //Use hardware for floating-point operations
-	AddArgNt(&ctx.gcc_PlaydateDeviceCommonFlags, GCC_TARGET_FPU, "fpv5-sp-d16");
-	
-	// +==================================+
-	// | gcc_PlaydateDeviceCompilerFlags  |
-	// +==================================+
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DEBUG_INFO_EX, "3");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DEBUG_INFO_EX, "dwarf-2");
-	AddArg(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_STD_LIB_DYNAMIC);
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DEPENDENCY_FILE, "tests.d"); //TODO: This should really move down below inside the tests.exe block
-	AddArgInt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_ALIGN_FUNCS_TO, 16);
-	AddArg(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_SEP_DATA_SECTIONS);
-	AddArg(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_SEP_FUNC_SECTIONS);
-	AddArg(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DISABLE_EXCEPTIONS);
-	AddArg(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_OMIT_FRAME_PNTR);
-	AddArg(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_GLOBAL_VAR_NO_COMMON);
-	AddArg(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_VERBOSE_ASSEMBLY); //TODO: Should this only be on when DEBUG_BUILD?
-	AddArg(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_ONLY_RELOC_WORD_SIZE);
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_WARNING_LEVEL, "all");
-	// AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_ENABLE_WARNING, "double-promotion");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DISABLE_WARNING, "unknown-pragmas");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DISABLE_WARNING, "comment");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DISABLE_WARNING, "switch");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DISABLE_WARNING, "nonnull");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DISABLE_WARNING, "unused");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DISABLE_WARNING, "missing-braces");
-	AddArgNt(&ctx.gcc_PlaydateDeviceCompilerFlags, GCC_DISABLE_WARNING, "char-subscripts");
-	
-	// +===============================+
-	// | gcc_PlaydateDeviceLinkerFlags |
-	// +===============================+
-	AddArg(&ctx.gcc_PlaydateDeviceLinkerFlags, GCC_NO_STD_STARTUP);
-	AddArgNt(&ctx.gcc_PlaydateDeviceLinkerFlags, GCC_ENTRYPOINT_NAME, "eventHandler");
-	AddArg(&ctx.gcc_PlaydateDeviceLinkerFlags, GCC_DISABLE_RWX_WARNING);
-	AddArg(&ctx.gcc_PlaydateDeviceLinkerFlags, GCC_CREF);
-	AddArg(&ctx.gcc_PlaydateDeviceLinkerFlags, GCC_GC_SECTIONS);
-	AddArg(&ctx.gcc_PlaydateDeviceLinkerFlags, GCC_DISABLE_MISMATCH_WARNING);
-	AddArg(&ctx.gcc_PlaydateDeviceLinkerFlags, GCC_EMIT_RELOCATIONS);
-	Str8 playdateLinkerScriptPath = JoinStrings2(ctx.playdateSdkDir, StrLit("\\C_API\\buildsupport\\link_map.ld"), false);
-	FixPathSlashes(playdateLinkerScriptPath, '\\');
-	AddArgStr(&ctx.gcc_PlaydateDeviceLinkerFlags, GCC_LINKER_SCRIPT, playdateLinkerScriptPath);
-	
-	// +==============================+
-	// |       pdc_CommonFlags        |
-	// +==============================+
-	AddArg(&ctx.pdc_CommonFlags, PDC_QUIET); //Quiet mode, suppress non-error output
-	if (ctx.BUILD_PLAYDATE_DEVICE || ctx.BUILD_PLAYDATE_SIMULATOR) { AddArgStr(&ctx.pdc_CommonFlags, PDC_SDK_PATH, ctx.playdateSdkDir); } //NOTE: ctx.playdateSdkDir is only filled if BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR
+	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
+	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
+	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
+	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
+	CliArgList clang_LinuxFlags                  = ZEROED; Fill_clang_LinuxFlags(&clang_LinuxFlags, DEBUG_BUILD);
+	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
+	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries);
+	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX);
+	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_SOKOL_GFX);
+	CliArgList clang_WasmFlags                   = ZEROED; Fill_clang_WasmFlags(&clang_WasmFlags, DEBUG_BUILD);
+	CliArgList clang_WebFlags                    = ZEROED; Fill_clang_WebFlags(&clang_WebFlags, USE_EMSCRIPTEN);
+	CliArgList clang_OrcaFlags                   = ZEROED; Fill_clang_OrcaFlags(&clang_OrcaFlags, orcaSdkPath);
+	CliArgList cl_PlaydateSimulatorCompilerFlags = ZEROED; Fill_cl_PlaydateSimulatorCompilerFlags(&cl_PlaydateSimulatorCompilerFlags, DEBUG_BUILD, playdateSdkDir_C_API);
+	CliArgList link_PlaydateSimulatorLinkerFlags = ZEROED; Fill_link_PlaydateSimulatorLinkerFlags(&link_PlaydateSimulatorLinkerFlags, DEBUG_BUILD);
+	CliArgList link_PlaydateSimulatorLibraries   = ZEROED; Fill_link_PlaydateSimulatorLibraries(&link_PlaydateSimulatorLibraries);
+	CliArgList gcc_PlaydateDeviceCommonFlags     = ZEROED; Fill_gcc_PlaydateDeviceCommonFlags(&gcc_PlaydateDeviceCommonFlags, playdateSdkDir_C_API);
+	CliArgList gcc_PlaydateDeviceCompilerFlags   = ZEROED; Fill_gcc_PlaydateDeviceCompilerFlags(&gcc_PlaydateDeviceCompilerFlags);
+	CliArgList gcc_PlaydateDeviceLinkerFlags     = ZEROED; Fill_gcc_PlaydateDeviceLinkerFlags(&gcc_PlaydateDeviceLinkerFlags, playdateSdkDir);
+	CliArgList pdc_CommonFlags                   = ZEROED; Fill_pdc_CommonFlags(&pdc_CommonFlags, playdateSdkDir);
 	
 	// +--------------------------------------------------------------+
 	// |                       Build piggen.exe                       |
 	// +--------------------------------------------------------------+
-	if (ctx.RUN_PIGGEN && !ctx.BUILD_PIGGEN && !DoesFileExist(StrLit(FILENAME_PIGGEN_EXE))) { PrintLine("Building %s because it's missing", FILENAME_PIGGEN_EXE); ctx.BUILD_PIGGEN = true; }
-	if (ctx.BUILD_PIGGEN)
+	if (RUN_PIGGEN && !BUILD_PIGGEN && !DoesFileExist(StrLit(FILENAME_PIGGEN_EXE))) { PrintLine("Building %s because it's missing", FILENAME_PIGGEN_EXE); BUILD_PIGGEN = true; }
+	if (BUILD_PIGGEN)
 	{
 		// +==============================+
 		// |      cl_PiggenLibraries      |
@@ -487,19 +219,19 @@ int main(int argc, char* argv[])
 		CliArgList cl_PiggenLibraries = ZEROED;
 		AddArg(&cl_PiggenLibraries, "Shlwapi.lib"); //Needed for PathFileExistsA
 		
-		if (ctx.BUILD_WINDOWS)
+		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&ctx.isMsvcInitialized);
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN_EXE);
 			
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, ROOT_DIR "\\piggen\\piggen_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIGGEN_EXE);
-			AddArgList(&cmd, &ctx.cl_CommonFlags);
-			AddArgList(&cmd, &ctx.cl_LangCFlags);
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCFlags);
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_PiggenLibraries);
-			AddArgList(&cmd, &ctx.cl_CommonLinkerFlags);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
 			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
 			if (statusCode == 0)
@@ -513,7 +245,7 @@ int main(int argc, char* argv[])
 				exit(statusCode);
 			}
 		}
-		if (ctx.BUILD_LINUX)
+		if (BUILD_LINUX)
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIGGEN);
 			
@@ -523,9 +255,9 @@ int main(int argc, char* argv[])
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, NESTED_ROOT_DIR "/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
-			AddArgList(&cmd, &ctx.clang_CommonFlags);
-			AddArgList(&cmd, &ctx.clang_LinuxFlags);
-			AddArgList(&cmd, &ctx.clang_LinuxCommonLibraries);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
 			int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
 			if (statusCode == 0)
@@ -547,7 +279,7 @@ int main(int argc, char* argv[])
 	// |                        Run piggen.exe                        |
 	// +--------------------------------------------------------------+
 	#define FOLDERNAME_GENERATED_CODE "gen"
-	if (ctx.RUN_PIGGEN)
+	if (RUN_PIGGEN)
 	{
 		PrintLine("\n[%s]", FILENAME_PIGGEN_EXE);
 		
@@ -580,7 +312,7 @@ int main(int argc, char* argv[])
 	FindShadersContext findContext = ZEROED;
 	CliArgList cl_ShaderObjects = ZEROED;
 	CliArgList clang_ShaderObjects = ZEROED;
-	if (ctx.BUILD_SHADERS || ctx.BUILD_WITH_SOKOL_GFX)
+	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
 	{
 		const char* ignoreList[] = SHADER_IGNORE_LIST;
 		findContext.ignoreListLength = ArrayCount(ignoreList);
@@ -592,27 +324,27 @@ int main(int argc, char* argv[])
 		
 		RecursiveDirWalk(StrLit(".."), FindShaderFilesCallback, &findContext);
 		
-		if (ctx.BUILD_WINDOWS)
+		if (BUILD_WINDOWS)
 		{
 			for (uxx sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
 			{
 				Str8 objPath = findContext.objPaths.strings[sIndex];
 				AddArgStr(&cl_ShaderObjects, CLI_QUOTED_ARG, objPath);
-				if (!DoesFileExist(objPath) && !ctx.BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", objPath.length, objPath.chars); ctx.BUILD_SHADERS = true; }
+				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", objPath.length, objPath.chars); BUILD_SHADERS = true; }
 			}
 		}
-		if (ctx.BUILD_LINUX)
+		if (BUILD_LINUX)
 		{
 			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
 				AddArgStr(&clang_ShaderObjects, CLI_QUOTED_ARG, oPath);
 				Str8 oPathWithFolder = JoinStrings2(StrLit("linux/"), oPath, false);
-				if (!DoesFileExist(oPathWithFolder) && !ctx.BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); ctx.BUILD_SHADERS = true; }
+				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
 			}
 		}
 		
-		if (!ctx.BUILD_SHADERS)
+		if (!BUILD_SHADERS)
 		{
 			FreeStrArray(&findContext.shaderPaths);
 			FreeStrArray(&findContext.headerPaths);
@@ -622,9 +354,9 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	if (ctx.BUILD_SHADERS)
+	if (BUILD_SHADERS)
 	{
-		if (ctx.BUILD_WINDOWS) { InitializeMsvcIf(&ctx.isMsvcInitialized); }
+		if (BUILD_WINDOWS) { InitializeMsvcIf(&isMsvcInitialized); }
 		
 		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
 		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
@@ -688,7 +420,7 @@ int main(int argc, char* argv[])
 			PrintLine("Generating \"%.*s\"...", sourcePath.length, sourcePath.chars);
 			CreateAndWriteFile(sourcePath, sourceFileContents, true);
 			
-			if (ctx.BUILD_WINDOWS)
+			if (BUILD_WINDOWS)
 			{
 				Str8 objPath = findContext.objPaths.strings[sIndex];
 				Str8 fixedSourcePath = CopyStr8(sourcePath, false);
@@ -701,8 +433,8 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLI_QUOTED_ARG, fixedSourcePath);
 				AddArgStr(&cmd, CL_OBJ_FILE, objPath);
 				AddArgStr(&cmd, CL_INCLUDE_DIR, fixedHeaderDirectory);
-				AddArgList(&cmd, &ctx.cl_CommonFlags);
-				AddArgList(&cmd, &ctx.cl_LangCFlags);
+				AddArgList(&cmd, &cl_CommonFlags);
+				AddArgList(&cmd, &cl_LangCFlags);
 				
 				
 				int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
@@ -716,7 +448,7 @@ int main(int argc, char* argv[])
 					exit(statusCode);
 				}
 			}
-			if (ctx.BUILD_LINUX)
+			if (BUILD_LINUX)
 			{
 				mkdir("linux", 0);
 				chdir("linux");
@@ -732,8 +464,8 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLI_QUOTED_ARG, fixedSourcePath);
 				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
 				AddArgStr(&cmd, CLANG_INCLUDE_DIR, fixedHeaderDirectory);
-				AddArgList(&cmd, &ctx.clang_CommonFlags);
-				AddArgList(&cmd, &ctx.clang_LinuxFlags);
+				AddArgList(&cmd, &clang_CommonFlags);
+				AddArgList(&cmd, &clang_LinuxFlags);
 				
 				int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
 				if (statusCode == 0)
@@ -760,13 +492,13 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                       Build imgui.obj                        |
 	// +--------------------------------------------------------------+
-	if (ctx.BUILD_WITH_IMGUI && !ctx.BUILD_IMGUI_OBJ && ctx.BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_IMGUI_OBJ))) { PrintLine("Building %s because it's missing", FILENAME_IMGUI_OBJ); ctx.BUILD_IMGUI_OBJ = true; }
-	if (ctx.BUILD_WITH_IMGUI && !ctx.BUILD_IMGUI_OBJ && ctx.BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_IMGUI_O))) { PrintLine("Building %s because it's missing", FILENAME_IMGUI_O); ctx.BUILD_IMGUI_OBJ = true; }
-	if (ctx.BUILD_IMGUI_OBJ)
+	if (BUILD_WITH_IMGUI && !BUILD_IMGUI_OBJ && BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_IMGUI_OBJ))) { PrintLine("Building %s because it's missing", FILENAME_IMGUI_OBJ); BUILD_IMGUI_OBJ = true; }
+	if (BUILD_WITH_IMGUI && !BUILD_IMGUI_OBJ && BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_IMGUI_O))) { PrintLine("Building %s because it's missing", FILENAME_IMGUI_O); BUILD_IMGUI_OBJ = true; }
+	if (BUILD_IMGUI_OBJ)
 	{
-		if (ctx.BUILD_WINDOWS)
+		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&ctx.isMsvcInitialized);
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_IMGUI_OBJ);
 			
 			CliArgList cmd = ZEROED;
@@ -774,10 +506,10 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, ROOT_DIR "\\ui\\ui_imgui_main.cpp");
 			AddArgNt(&cmd, CL_INCLUDE_DIR, ROOT_DIR "\\third_party\\imgui");
 			AddArgNt(&cmd, CL_OBJ_FILE, FILENAME_IMGUI_OBJ);
-			AddArgList(&cmd, &ctx.cl_CommonFlags);
-			AddArgList(&cmd, &ctx.cl_LangCppFlags);
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCppFlags);
 			AddArg(&cmd, CL_LINK);
-			AddArgList(&cmd, &ctx.cl_CommonLinkerFlags);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
 			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
 			if (statusCode == 0)
@@ -791,22 +523,23 @@ int main(int argc, char* argv[])
 				exit(statusCode);
 			}
 		}
-		if (ctx.BUILD_LINUX)
+		if (BUILD_LINUX)
 		{
 			//TODO: Implement Linux version!
 		}
 	}
+	if (BUILD_WITH_IMGUI) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_IMGUI_OBJ); }
 	
 	// +--------------------------------------------------------------+
 	// |                     Build physx_capi.obj                     |
 	// +--------------------------------------------------------------+
-	if (ctx.BUILD_WITH_PHYSX && !ctx.BUILD_PHYSX_OBJ && ctx.BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_PHYSX_OBJ))) { PrintLine("Building %s because it's missing", FILENAME_PHYSX_OBJ); ctx.BUILD_PHYSX_OBJ = true; }
-	if (ctx.BUILD_WITH_PHYSX && !ctx.BUILD_PHYSX_OBJ && ctx.BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_PHYSX_O))) { PrintLine("Building %s because it's missing", FILENAME_PHYSX_O); ctx.BUILD_PHYSX_OBJ = true; }
-	if (ctx.BUILD_PHYSX_OBJ)
+	if (BUILD_WITH_PHYSX && !BUILD_PHYSX_OBJ && BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_PHYSX_OBJ))) { PrintLine("Building %s because it's missing", FILENAME_PHYSX_OBJ); BUILD_PHYSX_OBJ = true; }
+	if (BUILD_WITH_PHYSX && !BUILD_PHYSX_OBJ && BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_PHYSX_O))) { PrintLine("Building %s because it's missing", FILENAME_PHYSX_O); BUILD_PHYSX_OBJ = true; }
+	if (BUILD_PHYSX_OBJ)
 	{
-		if (ctx.BUILD_WINDOWS)
+		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&ctx.isMsvcInitialized);
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_PHYSX_OBJ);
 			
 			CliArgList cmd = ZEROED;
@@ -814,10 +547,10 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, ROOT_DIR "\\phys\\phys_physx_capi_main.cpp");
 			AddArgNt(&cmd, CL_INCLUDE_DIR, ROOT_DIR "\\third_party\\physx");
 			AddArgNt(&cmd, CL_OBJ_FILE, FILENAME_PHYSX_OBJ);
-			AddArgList(&cmd, &ctx.cl_CommonFlags);
-			AddArgList(&cmd, &ctx.cl_LangCppFlags);
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCppFlags);
 			AddArg(&cmd, CL_LINK);
-			AddArgList(&cmd, &ctx.cl_CommonLinkerFlags);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
 			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
 			if (statusCode == 0)
@@ -831,31 +564,32 @@ int main(int argc, char* argv[])
 				exit(statusCode);
 			}
 		}
-		if (ctx.BUILD_LINUX)
+		if (BUILD_LINUX)
 		{
 			//TODO: Implement Linux version!
 		}
 	}
+	if (BUILD_WITH_PHYSX) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_PHYSX_OBJ); }
 	
 	// +--------------------------------------------------------------+
 	// |                      Build pig_core.dll                      |
 	// +--------------------------------------------------------------+
-	if (ctx.BUILD_PIG_CORE_DLL)
+	if (BUILD_PIG_CORE_DLL)
 	{
-		if (ctx.BUILD_WINDOWS)
+		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&ctx.isMsvcInitialized);
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, ROOT_DIR "\\dll\\dll_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIG_CORE_DLL);
-			AddArgList(&cmd, &ctx.cl_CommonFlags);
-			AddArgList(&cmd, &ctx.cl_LangCFlags);
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCFlags);
 			AddArg(&cmd, CL_LINK);
 			AddArg(&cmd, LINK_BUILD_DLL);
-			AddArgList(&cmd, &ctx.cl_CommonLinkerFlags);
-			AddArgList(&cmd, &ctx.cl_PigCoreLibraries);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			AddArgList(&cmd, &cl_PigCoreLibraries);
 			
 			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
 			if (statusCode == 0)
@@ -869,7 +603,7 @@ int main(int argc, char* argv[])
 				exit(statusCode);
 			}
 		}
-		if (ctx.BUILD_LINUX)
+		if (BUILD_LINUX)
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIG_CORE_SO);
 			
@@ -881,10 +615,10 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIG_CORE_SO);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
-			AddArgList(&cmd, &ctx.clang_CommonFlags);
-			AddArgList(&cmd, &ctx.clang_LinuxFlags);
-			AddArgList(&cmd, &ctx.clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &ctx.clang_PigCoreLibraries);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgList(&cmd, &clang_PigCoreLibraries);
 			
 			int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
 			if (statusCode == 0)
@@ -905,23 +639,23 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                       Build tests.exe                        |
 	// +--------------------------------------------------------------+
-	if (ctx.RUN_TESTS && !ctx.BUILD_TESTS && !DoesFileExist(StrLit(FILENAME_TESTS_EXE))) { PrintLine("Building %s because it's missing", FILENAME_TESTS_EXE); ctx.BUILD_TESTS = true; ctx.BUILD_WINDOWS = true; }
-	if (ctx.BUILD_TESTS)
+	if (RUN_TESTS && !BUILD_TESTS && !DoesFileExist(StrLit(FILENAME_TESTS_EXE))) { PrintLine("Building %s because it's missing", FILENAME_TESTS_EXE); BUILD_TESTS = true; BUILD_WINDOWS = true; }
+	if (BUILD_TESTS)
 	{
-		if (ctx.BUILD_WINDOWS)
+		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&ctx.isMsvcInitialized);
+			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS_EXE);
 			
 			CliArgList cmd = ZEROED;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, ROOT_DIR "\\tests\\tests_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TESTS_EXE);
-			AddArgList(&cmd, &ctx.cl_CommonFlags);
-			AddArgList(&cmd, &ctx.cl_LangCFlags);
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCFlags);
 			AddArg(&cmd, CL_LINK);
-			AddArgList(&cmd, &ctx.cl_CommonLinkerFlags);
-			AddArgList(&cmd, &ctx.cl_PigCoreLibraries);
-			if (ctx.BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_ShaderObjects); }
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			AddArgList(&cmd, &cl_PigCoreLibraries);
+			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_ShaderObjects); }
 			
 			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
 			if (statusCode == 0)
@@ -936,7 +670,7 @@ int main(int argc, char* argv[])
 			}
 		}
 		
-		if (ctx.BUILD_LINUX)
+		if (BUILD_LINUX)
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_TESTS);
 			
@@ -946,11 +680,11 @@ int main(int argc, char* argv[])
 			CliArgList cmd = ZEROED;
 			AddArg(&cmd, NESTED_ROOT_DIR "/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
-			AddArgList(&cmd, &ctx.clang_CommonFlags);
-			AddArgList(&cmd, &ctx.clang_LinuxFlags);
-			AddArgList(&cmd, &ctx.clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &ctx.clang_PigCoreLibraries);
-			if (ctx.BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgList(&cmd, &clang_PigCoreLibraries);
+			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
 			
 			int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
 			if (statusCode == 0)
@@ -967,7 +701,7 @@ int main(int argc, char* argv[])
 			chdir("..");
 		}
 		
-		if (ctx.BUILD_WEB)
+		if (BUILD_WEB)
 		{
 			PrintLine("\n[Building %s for Web...]", FILENAME_APP_WASM);
 			
@@ -982,15 +716,15 @@ int main(int argc, char* argv[])
 			
 			CliArgList cmd = ZEROED;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, NESTED_ROOT_DIR "/tests/tests_main.c");
-			AddArgNt(&cmd, CLANG_OUTPUT_FILE, ctx.USE_EMSCRIPTEN ? FILENAME_INDEX_HTML : FILENAME_APP_WASM);
-			AddArgList(&cmd, &ctx.clang_CommonFlags);
-			AddArgList(&cmd, &ctx.clang_WasmFlags);
-			AddArgList(&cmd, &ctx.clang_WebFlags);
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_HTML : FILENAME_APP_WASM);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_WasmFlags);
+			AddArgList(&cmd, &clang_WebFlags);
 			
-			int statusCode = RunCliProgram(ctx.USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), &cmd);
+			int statusCode = RunCliProgram(USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), &cmd);
 			if (statusCode == 0)
 			{
-				if (ctx.USE_EMSCRIPTEN)
+				if (USE_EMSCRIPTEN)
 				{
 					AssertFileExist(StrLit(FILENAME_INDEX_HTML), true);
 					AssertFileExist(StrLit(FILENAME_INDEX_WASM), true);
@@ -1008,16 +742,16 @@ int main(int argc, char* argv[])
 				exit(statusCode);
 			}
 			
-			if (ctx.CONVERT_WASM_TO_WAT)
+			if (CONVERT_WASM_TO_WAT)
 			{
 				CliArgList convertCmd = ZEROED;
-				AddArgNt(&convertCmd, CLI_QUOTED_ARG, ctx.USE_EMSCRIPTEN ? FILENAME_INDEX_WASM : FILENAME_APP_WASM);
-				AddArgNt(&convertCmd, CLI_PIPE_OUTPUT_TO_FILE, ctx.USE_EMSCRIPTEN ? FILENAME_INDEX_WAT : FILENAME_APP_WAT);
+				AddArgNt(&convertCmd, CLI_QUOTED_ARG, USE_EMSCRIPTEN ? FILENAME_INDEX_WASM : FILENAME_APP_WASM);
+				AddArgNt(&convertCmd, CLI_PIPE_OUTPUT_TO_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_WAT : FILENAME_APP_WAT);
 				
 				int convertStatusCode = RunCliProgram(StrLit("wasm2wat"), &convertCmd);
 				if (convertStatusCode == 0)
 				{
-					AssertFileExist(ctx.USE_EMSCRIPTEN ? StrLit(FILENAME_INDEX_WAT) : StrLit(FILENAME_APP_WAT), true);
+					AssertFileExist(USE_EMSCRIPTEN ? StrLit(FILENAME_INDEX_WAT) : StrLit(FILENAME_APP_WAT), true);
 				}
 				else
 				{
@@ -1026,7 +760,7 @@ int main(int argc, char* argv[])
 				}
 			}
 			
-			if (!ctx.USE_EMSCRIPTEN)
+			if (!USE_EMSCRIPTEN)
 			{
 				StrArray javascriptFiles = ZEROED;
 				AddStr(&javascriptFiles, StrLit(NESTED_ROOT_DIR "/wasm/wasm_globals.js"));
@@ -1042,7 +776,7 @@ int main(int argc, char* argv[])
 			chdir("..");
 		}
 		
-		if (ctx.BUILD_ORCA)
+		if (BUILD_ORCA)
 		{
 			PrintLine("\n[Building %s for Orca...]", FILENAME_MODULE_WASM);
 			
@@ -1052,9 +786,9 @@ int main(int argc, char* argv[])
 			CliArgList cmd = ZEROED;
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_MODULE_WASM);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, NESTED_ROOT_DIR "/tests/tests_main.c");
-			AddArgList(&cmd, &ctx.clang_CommonFlags);
-			AddArgList(&cmd, &ctx.clang_WasmFlags);
-			AddArgList(&cmd, &ctx.clang_OrcaFlags);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_WasmFlags);
+			AddArgList(&cmd, &clang_OrcaFlags);
 			
 			int statusCode = RunCliProgram(StrLit(EXE_CLANG), &cmd);
 			if (statusCode == 0)
@@ -1086,7 +820,7 @@ int main(int argc, char* argv[])
 			chdir("..");
 		}
 		
-		if (ctx.BUILD_PLAYDATE_DEVICE)
+		if (BUILD_PLAYDATE_DEVICE)
 		{
 			PrintLine("\n[Building %s for Playdate...]", FILENAME_PDEX_ELF);
 			
@@ -1094,8 +828,8 @@ int main(int argc, char* argv[])
 			AddArg(&compileCmd, GCC_COMPILE);
 			AddArgNt(&compileCmd, CLI_QUOTED_ARG, ROOT_DIR "/tests/tests_main.c");
 			AddArgNt(&compileCmd, GCC_OUTPUT_FILE, FILENAME_TESTS_OBJ);
-			AddArgList(&compileCmd, &ctx.gcc_PlaydateDeviceCommonFlags);
-			AddArgList(&compileCmd, &ctx.gcc_PlaydateDeviceCompilerFlags);
+			AddArgList(&compileCmd, &gcc_PlaydateDeviceCommonFlags);
+			AddArgList(&compileCmd, &gcc_PlaydateDeviceCompilerFlags);
 			
 			int compileStatusCode = RunCliProgram(StrLit(EXE_ARM_GCC), &compileCmd);
 			if (compileStatusCode == 0)
@@ -1111,8 +845,8 @@ int main(int argc, char* argv[])
 			CliArgList linkCmd = ZEROED;
 			AddArgNt(&linkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_OBJ);
 			AddArgNt(&linkCmd, GCC_OUTPUT_FILE, FILENAME_PDEX_ELF);
-			AddArgList(&linkCmd, &ctx.gcc_PlaydateDeviceCommonFlags);
-			AddArgList(&linkCmd, &ctx.gcc_PlaydateDeviceLinkerFlags);
+			AddArgList(&linkCmd, &gcc_PlaydateDeviceCommonFlags);
+			AddArgList(&linkCmd, &gcc_PlaydateDeviceLinkerFlags);
 			AddArgNt(&linkCmd, GCC_MAP_FILE, "tests.map");
 			
 			int linkStatusCode = RunCliProgram(StrLit(EXE_ARM_GCC), &linkCmd);
@@ -1131,7 +865,7 @@ int main(int argc, char* argv[])
 			CopyFileToFolder(StrLit(FILENAME_PDEX_ELF), StrLit("playdate_data"));
 		}
 		
-		if (ctx.BUILD_PLAYDATE_SIMULATOR)
+		if (BUILD_PLAYDATE_SIMULATOR)
 		{
 			PrintLine("\n[Building %s for Playdate Simulator...]", FILENAME_PDEX_DLL);
 			
@@ -1139,7 +873,7 @@ int main(int argc, char* argv[])
 			AddArg(&compileCmd, CL_COMPILE);
 			AddArgNt(&compileCmd, CLI_QUOTED_ARG, ROOT_DIR "\\tests\\tests_main.c");
 			AddArgNt(&compileCmd, CL_OBJ_FILE, FILENAME_TESTS_OBJ);
-			AddArgList(&compileCmd, &ctx.cl_PlaydateSimulatorCompilerFlags);
+			AddArgList(&compileCmd, &cl_PlaydateSimulatorCompilerFlags);
 			
 			int compileStatusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &compileCmd);
 			if (compileStatusCode == 0)
@@ -1158,8 +892,8 @@ int main(int argc, char* argv[])
 			AddArgNt(&linkCmd, LINK_OUTPUT_FILE, FILENAME_PDEX_DLL);
 			AddArgNt(&linkCmd, LINK_IMPORT_LIBRARY_FILE, "tests.lib"); //TODO: Do we actually need to generate this?
 			AddArgNt(&linkCmd, LINK_DEBUG_INFO_FILE, "tests.pdb");
-			AddArgList(&linkCmd, &ctx.link_PlaydateSimulatorLinkerFlags);
-			AddArgList(&linkCmd, &ctx.link_PlaydateSimulatorLibraries);
+			AddArgList(&linkCmd, &link_PlaydateSimulatorLinkerFlags);
+			AddArgList(&linkCmd, &link_PlaydateSimulatorLibraries);
 			
 			int linkStatusCode = RunCliProgram(StrLit(EXE_MSVC_LINK), &linkCmd);
 			if (linkStatusCode == 0)
@@ -1177,12 +911,12 @@ int main(int argc, char* argv[])
 			CopyFileToFolder(StrLit(FILENAME_PDEX_DLL), StrLit("playdate_data"));
 		}
 		
-		if (ctx.BUILD_PLAYDATE_DEVICE || ctx.BUILD_PLAYDATE_SIMULATOR)
+		if (BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR)
 		{
 			CopyFileToFolder(StrLit(ROOT_DIR "\\pdxinfo"), StrLit("playdate_data"));
 			
 			CliArgList packageCmd = ZEROED;
-			AddArgList(&packageCmd, &ctx.pdc_CommonFlags);
+			AddArgList(&packageCmd, &pdc_CommonFlags);
 			AddArgNt(&packageCmd, CLI_QUOTED_ARG, "playdate_data");
 			AddArgNt(&packageCmd, CLI_QUOTED_ARG, FILENAME_TESTS_PDX);
 			
@@ -1203,7 +937,7 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                        Run tests.exe                         |
 	// +--------------------------------------------------------------+
-	if (ctx.RUN_TESTS)
+	if (RUN_TESTS)
 	{
 		PrintLine("\n[%s]", FILENAME_TESTS_EXE);
 		
@@ -1217,6 +951,6 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	WriteLine("\n[pig_build.exe Finished Successfully]");
+	PrintLine("\n[%s Finished Successfully]", TOOL_EXE_NAME);
 	return 0;
 }

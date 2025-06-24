@@ -23,11 +23,11 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             0
+#define BUILD_WINDOWS             1
 // Build binaries for Linux platform(s)
 #define BUILD_LINUX               0
 // Build the WASM binary for operating as a webpage
-#define BUILD_WEB                 1
+#define BUILD_WEB                 0
 // Build a WASM binary and package as Orca application
 #define BUILD_ORCA                0
 // Build a binary that can be uploaded to the Playdate device
@@ -61,7 +61,7 @@ Description:
 #define DUMP_PREPROCESSOR 0
 // After .wasm file(s) are generated, we will run wasm2wat on them to make a .wat
 // file (a text format of WebAssembly that is readable, mostly for debugging purposes)
-#define CONVERT_WASM_TO_WAT 1
+#define CONVERT_WASM_TO_WAT 0
 // Use emcc when compiling the WEB files
 #define USE_EMSCRIPTEN 0
 // Enables auto-profiling on function entry/exit (for clang only). Dumps to a file that can be viewed by spall
