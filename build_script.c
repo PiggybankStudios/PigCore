@@ -166,12 +166,6 @@ int main(int argc, char* argv[])
 	if (RUN_PIGGEN && !BUILD_PIGGEN && !DoesFileExist(StrLit(FILENAME_PIGGEN_EXE))) { PrintLine("Building %s because it's missing", FILENAME_PIGGEN_EXE); BUILD_PIGGEN = true; }
 	if (BUILD_PIGGEN)
 	{
-		// +==============================+
-		// |      cl_PiggenLibraries      |
-		// +==============================+
-		CliArgList cl_PiggenLibraries = ZEROED;
-		AddArg(&cl_PiggenLibraries, "Shlwapi.lib"); //Needed for PathFileExistsA
-		
 		if (BUILD_WINDOWS)
 		{
 			InitializeMsvcIf(&isMsvcInitialized);
@@ -183,20 +177,12 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
 			AddArg(&cmd, CL_LINK);
-			AddArgList(&cmd, &cl_PiggenLibraries);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "Shlwapi.lib"); //Needed for PathFileExistsA
 			
-			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_PIGGEN_EXE), true);
-				PrintLine("[Built %s for Windows!]", FILENAME_PIGGEN_EXE);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PIGGEN_EXE, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_PIGGEN_EXE "!"));
+			AssertFileExist(StrLit(FILENAME_PIGGEN_EXE), true);
+			PrintLine("[Built %s for Windows!]", FILENAME_PIGGEN_EXE);
 		}
 		if (BUILD_LINUX)
 		{
@@ -212,17 +198,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
-			int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_PIGGEN), true);
-				PrintLine("[Built %s for Linux!]", FILENAME_PIGGEN);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PIGGEN, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_WSL_CLANG), &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
+			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
+			PrintLine("[Built %s for Linux!]", FILENAME_PIGGEN);
 			
 			chdir("..");
 		}
@@ -250,12 +228,7 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/_media/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/_template/");
 		
-		int statusCode = RunCliProgram(StrLit(FILENAME_PIGGEN_EXE), &cmd);
-		if (statusCode != 0)
-		{
-			PrintLine_E("%s Failed! Status Code: %d", FILENAME_PIGGEN_EXE, statusCode);
-			exit(statusCode);
-		}
+		RunCliProgramAndExitOnFailure(StrLit(FILENAME_PIGGEN_EXE), &cmd, StrLit(FILENAME_PIGGEN_EXE " Failed!"));
 	}
 	
 	// +--------------------------------------------------------------+
@@ -336,22 +309,10 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
 			
 			PrintLine("Generating \"%.*s\"...", headerPath.length, headerPath.chars);
-			int statusCode = RunCliProgram(StrLit(EXE_SHDC), &cmd);
-			if (statusCode != 0)
-			{
-				Str8 shdcFilename = GetFileNamePart(StrLit(EXE_SHDC), true);
-				PrintLine_E("%.*s failed on %.*s! Status Code: %d",
-					shdcFilename.length, shdcFilename.chars,
-					shaderPath.length, shaderPath.chars,
-					statusCode
-				);
-				exit(statusCode);
-			}
-			else
-			{
-				AssertFileExist(headerPath, true);
-				ScrapeShaderHeaderFileAndAddExtraInfo(headerPath, shaderPath);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_SHDC), &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
+			AssertFileExist(headerPath, true);
+			
+			ScrapeShaderHeaderFileAndAddExtraInfo(headerPath, shaderPath);
 		}
 		
 		//Then compile each header file to an .o/.obj file
@@ -388,17 +349,8 @@ int main(int argc, char* argv[])
 				AddArgList(&cmd, &cl_CommonFlags);
 				AddArgList(&cmd, &cl_LangCFlags);
 				
-				
-				int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
-				if (statusCode == 0)
-				{
-					AssertFileExist(objPath, true);
-				}
-				else
-				{
-					PrintLine_E("Failed to build %.*s for WINDOWS! Compiler Status Code: %d", sourcePath.length, sourcePath.chars, statusCode);
-					exit(statusCode);
-				}
+				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build TODO: for Windows!"));
+				AssertFileExist(objPath, true);
 			}
 			if (BUILD_LINUX)
 			{
@@ -419,16 +371,8 @@ int main(int argc, char* argv[])
 				AddArgList(&cmd, &clang_CommonFlags);
 				AddArgList(&cmd, &clang_LinuxFlags);
 				
-				int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
-				if (statusCode == 0)
-				{
-					AssertFileExist(oPath, true);
-				}
-				else
-				{
-					PrintLine_E("Failed to build %.*s for LINUX! Compiler Status Code: %d", sourcePath.length, sourcePath.chars, statusCode);
-					exit(statusCode);
-				}
+				RunCliProgramAndExitOnFailure(StrLit(EXE_WSL_CLANG), &cmd, StrLit("Failed to build TODO: for Linux!"));
+				AssertFileExist(oPath, true);
 				
 				chdir("..");
 			}
@@ -463,17 +407,9 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
-			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_IMGUI_OBJ), true);
-				PrintLine("[Built %s for Windows!]", FILENAME_IMGUI_OBJ);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_IMGUI_OBJ, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_IMGUI_OBJ "!"));
+			AssertFileExist(StrLit(FILENAME_IMGUI_OBJ), true);
+			PrintLine("[Built %s for Windows!]", FILENAME_IMGUI_OBJ);
 		}
 		if (BUILD_LINUX)
 		{
@@ -504,17 +440,9 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
-			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_PHYSX_OBJ), true);
-				PrintLine("[Built %s for Windows!]", FILENAME_PHYSX_OBJ);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PHYSX_OBJ, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_PHYSX_OBJ "!"));
+			AssertFileExist(StrLit(FILENAME_PHYSX_OBJ), true);
+			PrintLine("[Built %s for Windows!]", FILENAME_PHYSX_OBJ);
 		}
 		if (BUILD_LINUX)
 		{
@@ -543,17 +471,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgList(&cmd, &cl_PigCoreLibraries);
 			
-			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_PIG_CORE_DLL), true);
-				PrintLine("[Built %s for Windows!]", FILENAME_PIG_CORE_DLL);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PIG_CORE_DLL, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
+			AssertFileExist(StrLit(FILENAME_PIG_CORE_DLL), true);
+			PrintLine("[Built %s for Windows!]", FILENAME_PIG_CORE_DLL);
 		}
 		if (BUILD_LINUX)
 		{
@@ -572,17 +492,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
 			
-			int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_PIG_CORE_SO), true);
-				PrintLine("[Built %s for Linux!]", FILENAME_PIG_CORE_SO);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PIG_CORE_SO, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_WSL_CLANG), &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
+			AssertFileExist(StrLit(FILENAME_PIG_CORE_SO), true);
+			PrintLine("[Built %s for Linux!]", FILENAME_PIG_CORE_SO);
 			
 			chdir("..");
 		}
@@ -609,17 +521,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &cl_PigCoreLibraries);
 			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_ShaderObjects); }
 			
-			int statusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_TESTS_EXE), true);
-				PrintLine("[Built %s for Windows!]", FILENAME_TESTS_EXE);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_TESTS_EXE, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_TESTS_EXE "!"));
+			AssertFileExist(StrLit(FILENAME_TESTS_EXE), true);
+			PrintLine("[Built %s for Windows!]", FILENAME_TESTS_EXE);
 		}
 		
 		if (BUILD_LINUX)
@@ -638,17 +542,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_PigCoreLibraries);
 			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
 			
-			int statusCode = RunCliProgram(StrLit(EXE_WSL_CLANG), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_TESTS), true);
-				PrintLine("[Built %s for Linux!]", FILENAME_TESTS);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_TESTS, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_WSL_CLANG), &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
+			AssertFileExist(StrLit(FILENAME_TESTS), true);
+			PrintLine("[Built %s for Linux!]", FILENAME_TESTS);
 			
 			chdir("..");
 		}
@@ -673,26 +569,18 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_WasmFlags);
 			AddArgList(&cmd, &clang_WebFlags);
 			
-			int statusCode = RunCliProgram(USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), &cmd);
-			if (statusCode == 0)
+			RunCliProgramAndExitOnFailure(USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_APP_WASM "!"));
+			if (USE_EMSCRIPTEN)
 			{
-				if (USE_EMSCRIPTEN)
-				{
-					AssertFileExist(StrLit(FILENAME_INDEX_HTML), true);
-					AssertFileExist(StrLit(FILENAME_INDEX_WASM), true);
-					AssertFileExist(StrLit("index.js"), true);
-				}
-				else
-				{
-					AssertFileExist(NewStr8Nt(FILENAME_APP_WASM), true);
-				}
-				PrintLine("[Built %s for Web!]", FILENAME_APP_WASM);
+				AssertFileExist(StrLit(FILENAME_INDEX_HTML), true);
+				AssertFileExist(StrLit(FILENAME_INDEX_WASM), true);
+				AssertFileExist(StrLit("index.js"), true);
 			}
 			else
 			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_APP_WASM, statusCode);
-				exit(statusCode);
+				AssertFileExist(NewStr8Nt(FILENAME_APP_WASM), true);
 			}
+			PrintLine("[Built %s for Web!]", FILENAME_APP_WASM);
 			
 			if (CONVERT_WASM_TO_WAT)
 			{
@@ -742,32 +630,16 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_WasmFlags);
 			AddArgList(&cmd, &clang_OrcaFlags);
 			
-			int statusCode = RunCliProgram(StrLit(EXE_CLANG), &cmd);
-			if (statusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_MODULE_WASM), true);
-				PrintLine("[Built %s for Orca!]", FILENAME_MODULE_WASM);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_MODULE_WASM, statusCode);
-				exit(statusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_MODULE_WASM "!"));
+			AssertFileExist(StrLit(FILENAME_MODULE_WASM), true);
+			PrintLine("[Built %s for Orca!]", FILENAME_MODULE_WASM);
 			
 			CliArgList bundleCmd = ZEROED;
 			AddArg(&bundleCmd, "bundle");
 			AddArgNt(&bundleCmd, "--name [VAL]", "tests");
 			AddArg(&bundleCmd, FILENAME_MODULE_WASM);
-			int bundleStatusCode = RunCliProgram(StrLit("orca"), &bundleCmd);
-			if (bundleStatusCode == 0)
-			{
-				PrintLine("[Bundled %s into \"tests\" app!]", FILENAME_MODULE_WASM);
-			}
-			else
-			{
-				PrintLine_E("Failed to bundle %s! Orca Status Code: %d", FILENAME_MODULE_WASM, bundleStatusCode);
-				exit(bundleStatusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit("orca"), &bundleCmd, StrLit("Failed to bundle " FILENAME_MODULE_WASM "!"));
+			PrintLine("[Bundled %s into \"tests\" app!]", FILENAME_MODULE_WASM);
 			
 			chdir("..");
 		}
@@ -783,16 +655,8 @@ int main(int argc, char* argv[])
 			AddArgList(&compileCmd, &gcc_PlaydateDeviceCommonFlags);
 			AddArgList(&compileCmd, &gcc_PlaydateDeviceCompilerFlags);
 			
-			int compileStatusCode = RunCliProgram(StrLit(EXE_ARM_GCC), &compileCmd);
-			if (compileStatusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PDEX_ELF, compileStatusCode);
-				exit(compileStatusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_ARM_GCC), &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
+			AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
 			
 			CliArgList linkCmd = ZEROED;
 			AddArgNt(&linkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_OBJ);
@@ -801,17 +665,9 @@ int main(int argc, char* argv[])
 			AddArgList(&linkCmd, &gcc_PlaydateDeviceLinkerFlags);
 			AddArgNt(&linkCmd, GCC_MAP_FILE, "tests.map");
 			
-			int linkStatusCode = RunCliProgram(StrLit(EXE_ARM_GCC), &linkCmd);
-			if (linkStatusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_PDEX_ELF), true);
-				PrintLine("\n[Built %s for Playdate!]", FILENAME_PDEX_ELF);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Linker Status Code: %d", FILENAME_PDEX_ELF, linkStatusCode);
-				exit(linkStatusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_ARM_GCC), &linkCmd, StrLit("Failed to build " FILENAME_PDEX_ELF "!"));
+			AssertFileExist(StrLit(FILENAME_PDEX_ELF), true);
+			PrintLine("[Built %s for Playdate!]", FILENAME_PDEX_ELF);
 			
 			mkdir("playdate_data", 0);
 			CopyFileToFolder(StrLit(FILENAME_PDEX_ELF), StrLit("playdate_data"));
@@ -827,16 +683,8 @@ int main(int argc, char* argv[])
 			AddArgNt(&compileCmd, CL_OBJ_FILE, FILENAME_TESTS_OBJ);
 			AddArgList(&compileCmd, &cl_PlaydateSimulatorCompilerFlags);
 			
-			int compileStatusCode = RunCliProgram(StrLit(EXE_MSVC_CL), &compileCmd);
-			if (compileStatusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Compiler Status Code: %d", FILENAME_PDEX_DLL, compileStatusCode);
-				exit(compileStatusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
+			AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
 			
 			CliArgList linkCmd = ZEROED;
 			AddArg(&linkCmd, LINK_BUILD_DLL);
@@ -847,17 +695,9 @@ int main(int argc, char* argv[])
 			AddArgList(&linkCmd, &link_PlaydateSimulatorLinkerFlags);
 			AddArgList(&linkCmd, &link_PlaydateSimulatorLibraries);
 			
-			int linkStatusCode = RunCliProgram(StrLit(EXE_MSVC_LINK), &linkCmd);
-			if (linkStatusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_PDEX_DLL), true);
-				PrintLine("\n[Built %s for Playdate Simulator!]", FILENAME_PDEX_DLL);
-			}
-			else
-			{
-				PrintLine_E("Failed to build %s! Linker Status Code: %d", FILENAME_PDEX_DLL, linkStatusCode);
-				exit(linkStatusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_LINK), &linkCmd, StrLit("Failed to build " FILENAME_PDEX_DLL "!"));
+			AssertFileExist(StrLit(FILENAME_PDEX_DLL), true);
+			PrintLine("[Built %s for Playdate Simulator!]", FILENAME_PDEX_DLL);
 			
 			mkdir("playdate_data", 0);
 			CopyFileToFolder(StrLit(FILENAME_PDEX_DLL), StrLit("playdate_data"));
@@ -867,22 +707,14 @@ int main(int argc, char* argv[])
 		{
 			CopyFileToFolder(StrLit(ROOT_DIR "\\pdxinfo"), StrLit("playdate_data"));
 			
-			CliArgList packageCmd = ZEROED;
-			AddArgList(&packageCmd, &pdc_CommonFlags);
-			AddArgNt(&packageCmd, CLI_QUOTED_ARG, "playdate_data");
-			AddArgNt(&packageCmd, CLI_QUOTED_ARG, FILENAME_TESTS_PDX);
+			CliArgList cmd = ZEROED;
+			AddArgList(&cmd, &pdc_CommonFlags);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "playdate_data");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_TESTS_PDX);
 			
-			int packageStatusCode = RunCliProgram(StrLit("pdc"), &packageCmd);
-			if (packageStatusCode == 0)
-			{
-				AssertFileExist(StrLit(FILENAME_TESTS_PDX), true); //TODO: Is this going to work on a folder?
-				PrintLine("\n[Packaged %s for Playdate!]", FILENAME_TESTS_PDX);
-			}
-			else
-			{
-				PrintLine_E("Failed to package %s! Status Code: %d", FILENAME_TESTS_PDX, packageStatusCode);
-				exit(packageStatusCode);
-			}
+			RunCliProgramAndExitOnFailure(StrLit("pdc"), &cmd, StrLit("Failed to package " FILENAME_TESTS_PDX "!"));
+			AssertFileExist(StrLit(FILENAME_TESTS_PDX), true); //TODO: Is this going to work on a folder?
+			PrintLine("[Packaged %s for Playdate!]", FILENAME_TESTS_PDX);
 		}
 	}
 	
@@ -892,15 +724,8 @@ int main(int argc, char* argv[])
 	if (RUN_TESTS)
 	{
 		PrintLine("\n[%s]", FILENAME_TESTS_EXE);
-		
 		CliArgList cmd = ZEROED;
-		
-		int statusCode = RunCliProgram(StrLit(FILENAME_TESTS_EXE), &cmd);
-		if (statusCode != 0)
-		{
-			PrintLine_E("%s Failed! Status Code: %d", FILENAME_TESTS_EXE, statusCode);
-			exit(statusCode);
-		}
+		RunCliProgramAndExitOnFailure(StrLit(FILENAME_TESTS_EXE), &cmd, StrLit(FILENAME_TESTS_EXE " Exited With Error!"));
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", TOOL_EXE_NAME);

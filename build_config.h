@@ -25,15 +25,15 @@ Description:
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS             1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX               0
+#define BUILD_LINUX               1
 // Build the WASM binary for operating as a webpage
-#define BUILD_WEB                 0
+#define BUILD_WEB                 1
 // Build a WASM binary and package as Orca application
-#define BUILD_ORCA                0
+#define BUILD_ORCA                1
 // Build a binary that can be uploaded to the Playdate device
-#define BUILD_PLAYDATE_DEVICE     0
+#define BUILD_PLAYDATE_DEVICE     1
 // Build a dll that can be loaded by the Playdate simulator
-#define BUILD_PLAYDATE_SIMULATOR  0
+#define BUILD_PLAYDATE_SIMULATOR  1
 
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 0

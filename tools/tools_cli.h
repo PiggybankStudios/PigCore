@@ -156,6 +156,20 @@ int RunCliProgram(Str8 programName, const CliArgList* args)
 	free(joinedArgs.chars);
 	return resultCode;
 }
+void RunCliProgramAndExitOnFailure(Str8 programName, const CliArgList* args, Str8 errorMessage)
+{
+	int statusCode = RunCliProgram(programName, args);
+	if (statusCode != 0)
+	{
+		Str8 programNamePart = GetFileNamePart(programName, true);
+		PrintLine_E("%.*s\n%.*s Status Code: %d",
+			errorMessage.length, errorMessage.chars,
+			programNamePart.length, programNamePart.chars,
+			statusCode
+		);
+		exit(statusCode);
+	}
+}
 
 void ParseAndApplyEnvironmentVariables(Str8 environmentVars)
 {
