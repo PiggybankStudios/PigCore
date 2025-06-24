@@ -26,7 +26,6 @@ Description:
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
-#include <unistd.h>
 // #include <math.h>
 
 // +--------------------------------------------------------------+
@@ -73,6 +72,10 @@ Description:
 #define PATH_SEP_CHAR '\\'
 #else
 #define PATH_SEP_CHAR '/'
+#endif
+
+#if !BUILDING_ON_WINDOWS
+#include <unistd.h>
 #endif
 
 // +--------------------------------------------------------------+

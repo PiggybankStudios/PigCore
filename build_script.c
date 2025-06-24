@@ -72,7 +72,7 @@ static inline void PrintUsage()
 
 int main(int argc, char* argv[])
 {
-	PrintLine("Running %s...", TOOL_EXE_NAME);
+	// PrintLine("Running %s...", TOOL_EXE_NAME);
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
 	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
@@ -80,7 +80,6 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |       Extract Defines        |
 	// +==============================+
-	Write("Reading build_config.h...");
 	Str8 buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
 	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
