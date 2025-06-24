@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 mkdir -p _build
 pushd _build
@@ -7,14 +7,27 @@ root=".."
 python3 --version > /dev/null 2> /dev/null
 if [ $? -ne 0 ]
 then
-	echo WARNING: Python isn't installed on this computer. Defines cannot be extracted from build_config.h! And build numbers won't be incremented
+	echo "WARNING: Python isn't installed on this computer. Defines cannot be extracted from build_config.h! And build numbers won't be incremented"
 	exit
 fi
+
+tool_compiler_flags="-std=gnu2x -O2 -fdiagnostics-absolute-paths -g -I \"$root\""
+
+# +--------------------------------------------------------------+
+# |                  Compile extract_define.exe                  |
+# +--------------------------------------------------------------+
+extract_define_tool_name="extract_define"
+
+echo "[Building $extract_define_tool_name...]"
+echo ">> $tool_compiler_flags \"$root/tools/tools_extract_define_main.c\" -o $extract_define_tool_name"
+clang $tool_compiler_flags "$root/tools/tools_extract_define_main.c" -o $extract_define_tool_name
+
+exit
 
 # +==============================+
 # |    Scrape build_config.h     |
 # +==============================+
-extract_defines="python3 $root/_scripts/extract_define.py $root/build_config.h"
+# extract_defines="python3 $root/_scripts/extract_define.py $root/build_config.h"
 DEBUG_BUILD=$($extract_defines DEBUG_BUILD)
 BUILD_PIGGEN=$($extract_defines BUILD_PIGGEN)
 RUN_PIGGEN=$($extract_defines RUN_PIGGEN)

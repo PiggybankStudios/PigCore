@@ -17,9 +17,13 @@ Description:
 	** Usage extract_define.exe [file_path] [DEFINE_NAME]
 */
 
-#define TOOL_EXE_NAME "extract_define.exe"
-
 #include "tools/tools_shared.h"
+
+#if BUILDING_ON_WINDOWS
+#define TOOL_EXE_NAME "extract_define.exe"
+#else
+#define TOOL_EXE_NAME "extract_define"
+#endif
 
 static inline void PrintUsage()
 {
@@ -41,12 +45,7 @@ int main(int argc, char* argv[])
 	Str8 filePath = NewStr8Nt(filePathNt);
 	Str8 defineName = NewStr8Nt(defineNameNt);
 	
-	Str8 fileContents = ZEROED;
-	if (!TryReadFile(filePath, &fileContents))
-	{
-		PrintLine_E("Failed to open file \"%s\"", filePathNt);
-		return 3;
-	}
+	Str8 fileContents = ReadEntireFile(filePath);
 	
 	Str8 defineValue = ZEROED;
 	if (TryExtractDefineFrom(fileContents, defineName, &defineValue))

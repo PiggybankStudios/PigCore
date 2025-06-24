@@ -20,11 +20,13 @@ Description:
 #include <stdio.h>
 #include <stdbool.h>
 // #include <float.h>
-// #include <limits.h>
+#include <limits.h>
 // #include <stddef.h>
 // #include <stdarg.h>
 #include <assert.h>
-// #include <string.h>
+#include <string.h>
+#include <stdarg.h>
+#include <unistd.h>
 // #include <math.h>
 
 // +--------------------------------------------------------------+
@@ -524,7 +526,7 @@ static inline Str8 GetFullPath(Str8 relativePath, char slashChar)
 static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
 {
 	Str8 filePathNt = CopyStr8(filePath, true);
-	FixPathSlashes(filePathNt, '\\');
+	FixPathSlashes(filePathNt, PATH_SEP_CHAR);
 	
 	//NOTE: We open the file in binary mode because otherwise the result from jumping to SEEK_END to
 	//      check the file size does not match the result of fread because the new-lines get converted
@@ -571,18 +573,14 @@ static inline Str8 ReadEntireFile(Str8 filePath)
 {
 	Str8 result = ZEROED;
 	bool readSuccess = TryReadFile(filePath, &result);
-	if (!readSuccess)
-	{
-		PrintLine_E("Failed to open \"%.*s\"", filePath.length, filePath.chars);
-		exit(3);
-	}
+	if (!readSuccess) { exit(3); }
 	return result;
 }
 
 static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convertNewLines)
 {
 	Str8 filePathNt = CopyStr8(filePath, true);
-	FixPathSlashes(filePathNt, '\\');
+	FixPathSlashes(filePathNt, PATH_SEP_CHAR);
 	
 	#if BUILDING_ON_WINDOWS
 	{
@@ -617,7 +615,7 @@ static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convert
 	{
 		FILE* fileHandle = fopen(filePathNt.chars, "w");
 		assert(fileHandle != nullptr);
-		if (content.length > 0)
+		if (contents.length > 0)
 		{
 			size_t writeResult = fwrite(
 				contents.pntr, //ptr
@@ -640,7 +638,7 @@ static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convert
 static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool convertNewLines)
 {
 	Str8 filePathNt = CopyStr8(filePath, true);
-	FixPathSlashes(filePathNt, '\\');
+	FixPathSlashes(filePathNt, PATH_SEP_CHAR);
 	
 	#if BUILDING_ON_WINDOWS
 	{
@@ -682,7 +680,7 @@ static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool conve
 	{
 		FILE* fileHandle = fopen(filePathNt.chars, "a");
 		assert(fileHandle != nullptr);
-		if (content.length > 0)
+		if (contentsToAppend.length > 0)
 		{
 			size_t writeResult = fwrite(
 				contentsToAppend.pntr, //ptr
@@ -726,7 +724,7 @@ static inline void CopyFileToPath(Str8 filePath, Str8 newFilePath)
 static inline void CopyFileToFolder(Str8 filePath, Str8 folderPath)
 {
 	Str8 fileName = GetFileNamePart(filePath, true);
-	const char* joinStr = (folderPath.length == 0 || (folderPath.chars[folderPath.length-1] != '/' && folderPath.chars[folderPath.length-1] != '\\')) ? "/" : "";
+	const char* joinStr = (folderPath.length == 0 || !IS_SLASH(folderPath.chars[folderPath.length-1])) ? "/" : "";
 	Str8 newPath = JoinStrings3(folderPath, NewStr8Nt(joinStr), fileName, false);
 	CopyFileToPath(filePath, newPath);
 	free(newPath.chars);
