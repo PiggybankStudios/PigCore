@@ -23,11 +23,11 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             0
+#define BUILD_WINDOWS             1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX               0
+#define BUILD_LINUX               1
 // Build binaries for OSX platform
-#define BUILD_OSX                 1
+#define BUILD_OSX                 0
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB                 0
 // Build a WASM binary and package as Orca application
@@ -56,7 +56,7 @@ Description:
 // Compiles tests/main.c
 #define BUILD_TESTS   1
 // Runs the result of compiling tests/main.c, aka the tests.exe
-#define RUN_TESTS     1
+#define RUN_TESTS     0
 
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder

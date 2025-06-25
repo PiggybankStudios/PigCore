@@ -132,11 +132,9 @@ void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_R
 }
 
 // These are all the libraries we need when compiling a Linux binary that contains code from PigCore
-void Fill_clang_PigCoreLibraries(CliArgList* clang_PigCoreLibraries, bool BUILD_WITH_SOKOL_GFX)
+void Fill_clang_PigCoreLibraries(CliArgList* clang_PigCoreLibraries, bool BUILD_WITH_SOKOL_GFX, bool TARGET_IS_LINUX)
 {
-	#if BUILDING_ON_LINUX
-	AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig");
-	#endif
+	if (TARGET_IS_LINUX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig"); }
 	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
 }
 

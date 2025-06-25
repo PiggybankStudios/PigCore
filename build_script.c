@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
 	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries);
 	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX);
-	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_SOKOL_GFX);
+	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_SOKOL_GFX, BUILDING_ON_WINDOWS);
 	CliArgList clang_WasmFlags                   = ZEROED; Fill_clang_WasmFlags(&clang_WasmFlags, DEBUG_BUILD);
 	CliArgList clang_WebFlags                    = ZEROED; Fill_clang_WebFlags(&clang_WebFlags, USE_EMSCRIPTEN);
 	CliArgList clang_OrcaFlags                   = ZEROED; Fill_clang_OrcaFlags(&clang_OrcaFlags, orcaSdkPath);
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIGGEN);
 			
-			mkdir(FOLDERNAME_LINUX, S_IRWXU|S_IRWXG|S_IRWXO);
+			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
@@ -397,7 +397,7 @@ int main(int argc, char* argv[])
 			}
 			if (BUILD_LINUX)
 			{
-				mkdir(FOLDERNAME_LINUX, S_IRWXU|S_IRWXG|S_IRWXO);
+				mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 				chdir(FOLDERNAME_LINUX);
 				
 				Str8 oPath = findContext.oPaths.strings[sIndex];
@@ -522,7 +522,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIG_CORE_SO);
 			
-			mkdir(FOLDERNAME_LINUX, S_IRWXU|S_IRWXG|S_IRWXO);
+			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
@@ -573,7 +573,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_TESTS);
 			
-			mkdir(FOLDERNAME_LINUX, S_IRWXU|S_IRWXG|S_IRWXO);
+			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
@@ -614,7 +614,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Web...]", FILENAME_APP_WASM);
 			
-			mkdir(FOLDERNAME_WEB, S_IRWXU|S_IRWXG|S_IRWXO);
+			mkdir(FOLDERNAME_WEB, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_WEB);
 			
 			// TODO: del *.wasm > NUL 2> NUL
@@ -681,7 +681,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Orca...]", FILENAME_MODULE_WASM);
 			
-			mkdir(FOLDERNAME_ORCA, S_IRWXU|S_IRWXG|S_IRWXO);
+			mkdir(FOLDERNAME_ORCA, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ORCA);
 			
 			CliArgList cmd = ZEROED;
@@ -730,7 +730,7 @@ int main(int argc, char* argv[])
 			AssertFileExist(StrLit(FILENAME_PDEX_ELF), true);
 			PrintLine("[Built %s for Playdate!]", FILENAME_PDEX_ELF);
 			
-			mkdir("playdate_data", S_IRWXU|S_IRWXG|S_IRWXO);
+			mkdir("playdate_data", FOLDER_PERMISSIONS);
 			CopyFileToFolder(StrLit(FILENAME_PDEX_ELF), StrLit("playdate_data"));
 		}
 		
@@ -760,7 +760,7 @@ int main(int argc, char* argv[])
 			AssertFileExist(StrLit(FILENAME_PDEX_DLL), true);
 			PrintLine("[Built %s for Playdate Simulator!]", FILENAME_PDEX_DLL);
 			
-			mkdir("playdate_data", S_IRWXU|S_IRWXG|S_IRWXO);
+			mkdir("playdate_data", FOLDER_PERMISSIONS);
 			CopyFileToFolder(StrLit(FILENAME_PDEX_DLL), StrLit("playdate_data"));
 		}
 		

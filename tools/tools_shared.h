@@ -79,6 +79,12 @@ Description:
 #include <sys/stat.h>
 #endif
 
+#if BUILDING_ON_WINDOWS
+#define FOLDER_PERMISSIONS 0
+#else
+#define FOLDER_PERMISSIONS S_IRWXU|S_IRWXG|S_IRWXO
+#endif
+
 // +--------------------------------------------------------------+
 // |                            Types                             |
 // +--------------------------------------------------------------+
