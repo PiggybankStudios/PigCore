@@ -401,8 +401,7 @@ static inline bool IsShaderHeaderLine_UniformMember(Str8 line, Str8* typeOut, St
 
 void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 {
-	Str8 headerFileContents = ZEROED;
-	if (!TryReadFile(headerPath, &headerFileContents)) { PrintLine_E("Failed to open %.*s for reading after creation!", headerPath.length, headerPath.chars); exit(4); }
+	Str8 headerFileContents = ReadEntireFile(headerPath);
 	
 	Str8 shaderName = ZEROED;
 	StrArray shaderAttributes = ZEROED;
@@ -625,9 +624,10 @@ RECURSIVE_DIR_WALK_CALLBACK_DEF(FindShaderFilesCallback)
 	if (!isFolder && StrExactEndsWith(path, StrLit(".glsl")))
 	{
 		Str8 shaderName = GetFileNamePart(path, false);
-		AddStr(&context->shaderPaths, path);
-		AddStr(&context->headerPaths, JoinStrings2(path, StrLit(".h"), true));
-		AddStr(&context->sourcePaths, JoinStrings2(path, StrLit(".c"), true));
+		Str8 rootPath = StrReplace(path, StrLit(".."), StrLit("[ROOT]"), false);
+		AddStr(&context->shaderPaths, rootPath);
+		AddStr(&context->headerPaths, JoinStrings2(rootPath, StrLit(".h"), true));
+		AddStr(&context->sourcePaths, JoinStrings2(rootPath, StrLit(".c"), true));
 		AddStr(&context->objPaths, JoinStrings2(shaderName, StrLit(".obj"), true));
 		AddStr(&context->oPaths, JoinStrings2(shaderName, StrLit(".o"), true));
 	}

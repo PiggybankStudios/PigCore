@@ -23,9 +23,9 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             0
+#define BUILD_WINDOWS             1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX               1
+#define BUILD_LINUX               0
 // Build binaries for OSX platform
 #define BUILD_OSX                 0
 // Build the WASM binary for operating as a webpage
@@ -38,7 +38,7 @@ Description:
 #define BUILD_PLAYDATE_SIMULATOR  0
 
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 0
+#define BUILD_SHADERS 1
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
@@ -91,9 +91,9 @@ Description:
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries
 #define BUILD_WITH_OPENVR    0
 // Enables tests.exe using clay.h to render UI elements
-#define BUILD_WITH_CLAY      1
+#define BUILD_WITH_CLAY      0
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
-#define BUILD_WITH_IMGUI     0
+#define BUILD_WITH_IMGUI     1
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib
 #define BUILD_WITH_PHYSX     0
 // Enables using Metadesk library to parse Metadesk formatted files (md.h and md.c)

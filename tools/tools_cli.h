@@ -15,13 +15,15 @@ Description:
 // +--------------------------------------------------------------+
 // We have this string inside a bunch of #defines in places like tools_msvc_flags.h
 // This allows us to replace that part of the argument string with an actual value, adding escaping if the argument is in quotes
-#define CLI_VAL_STR "[VAL]"
-#define CLI_QUOTED_ARG "\"[VAL]\""
+#define CLI_VAL_STR      "[VAL]"
+#define CLI_UNQUOTED_ARG "[VAL]"
+#define CLI_QUOTED_ARG   "\"[VAL]\""
 #if BUILDING_ON_WINDOWS
 #define CLI_PIPE_OUTPUT_TO_FILE "> \"[VAL]\""
 #else
 #define CLI_PIPE_OUTPUT_TO_FILE "| \"[VAL]\""
 #endif
+#define CLI_ROOT_DIR "[ROOT]"
 
 //When running a program on Linux/OSX/etc. we have to specify we want to run a program out of the current working directory with "./"
 #if BUILDING_ON_WINDOWS
@@ -30,96 +32,128 @@ Description:
 #define EXEC_PROGRAM_IN_FOLDER_PREFIX "./"
 #endif
 
+typedef struct CliArg CliArg;
+struct CliArg
+{
+	Str8 format;
+	Str8 value;
+};
+
 #define CLI_MAX_ARGS 256
 typedef struct CliArgList CliArgList;
 struct CliArgList
 {
+	Str8 rootDirPath;
+	char pathSepChar;
 	uxx numArgs;
-	Str8 args[CLI_MAX_ARGS];
+	CliArg args[CLI_MAX_ARGS];
 };
 
-void AddArgStr(CliArgList* list, const char* cliStrNt, Str8 valueStr)
+Str8 FormatArg(const CliArg* arg, Str8 rootDirPath, char pathSepChar)
 {
-	if (list->numArgs >= CLI_MAX_ARGS) { WriteLine_E("Too many CLI arguments!"); exit(4); }
-	
-	Str8 cliStr = NewStr8Nt(cliStrNt);
 	Str8 valTargetStr = StrLit(CLI_VAL_STR);
+	Str8 formatStr = arg->format;
+	Str8 valueStr = StrReplace(arg->value, StrLit(CLI_ROOT_DIR), rootDirPath, false);
+	FixPathSlashes(valueStr, pathSepChar);
 	
-	uxx insertValIndex = cliStr.length;
-	for (uxx cIndex = 0; cIndex + valTargetStr.length <= cliStr.length; cIndex++)
+	uxx insertValIndex = formatStr.length;
+	for (uxx cIndex = 0; cIndex + valTargetStr.length <= formatStr.length; cIndex++)
 	{
-		if (StrExactEquals(StrSlice(cliStr, cIndex, cIndex+valTargetStr.length), valTargetStr))
+		if (StrExactEquals(StrSlice(formatStr, cIndex, cIndex+valTargetStr.length), valTargetStr))
 		{
 			insertValIndex = cIndex;
-			if (cIndex > 0 && cIndex + valTargetStr.length < cliStr.length &&
-				cliStr.chars[cIndex-1] == '\"' && cliStr.chars[cIndex + valTargetStr.length] == '\"')
+			if (cIndex > 0 && cIndex + valTargetStr.length < formatStr.length &&
+				formatStr.chars[cIndex-1] == '\"' && formatStr.chars[cIndex + valTargetStr.length] == '\"')
 			{
-				valueStr = EscapeString(valueStr, false);
+				Str8 escapedString = EscapeString(valueStr, false);
+				free(valueStr.chars);
+				valueStr = escapedString;
 			}
 			break;
 		}
 	}
-	if (valueStr.length > 0 && insertValIndex == cliStr.length)
+	if (valueStr.length > 0 && insertValIndex >= formatStr.length)
 	{
-		PrintLine_E("Tried to fill value in CLI argument that doesn't take a value! %s", cliStrNt);
+		PrintLine_E("Tried to fill value in CLI argument that doesn't take a value! %.*s", formatStr.length, formatStr.chars);
 		exit(4);
 	}
-	if (valueStr.length == 0 && insertValIndex < cliStr.length)
+	if (valueStr.length == 0 && insertValIndex < formatStr.length)
 	{
-		PrintLine_E("Missing value in CLI argument that takes a value! %s", cliStrNt);
-		PrintLine_E("There are %u arguments in this list:", list->numArgs);
-		for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++) { PrintLine_E("\t[%u] \"%.*s\"", aIndex, list->args[aIndex].length, list->args[aIndex].chars); }
+		PrintLine_E("Missing value in CLI argument that takes a value! %.*s - %.*s - %.*s", formatStr.length, formatStr.chars, valueStr.length, valueStr.chars, arg->value.length, arg->value.chars);
+		// PrintLine_E("There are %u arguments in this list:", list->numArgs);
+		// for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++) { PrintLine_E("\t[%u] \"%.*s\"", aIndex, list->args[aIndex].length, list->args[aIndex].chars); }
 		exit(4);
 	}
 	
-	if (insertValIndex < cliStr.length)
+	Str8 result = CopyStr8(formatStr, false);
+	if (insertValIndex < formatStr.length)
 	{
-		Str8 cliLeftPart = StrSlice(cliStr, 0, insertValIndex);
-		Str8 cliRightPart = StrSliceFrom(cliStr, insertValIndex + valTargetStr.length);
-		cliStr = JoinStrings3(cliLeftPart, valueStr, cliRightPart, true);
+		Str8 cliLeftPart = StrSlice(formatStr, 0, insertValIndex);
+		Str8 cliRightPart = StrSliceFrom(formatStr, insertValIndex + valTargetStr.length);
+		Str8 joinedStr = JoinStrings3(cliLeftPart, valueStr, cliRightPart, true);
+		free(result.chars);
+		result = joinedStr;
 	}
+	free(valueStr.chars);
 	
-	list->args[list->numArgs] = cliStr;
+	return result;
+}
+
+void AddArgStr(CliArgList* list, const char* formatStrNt, Str8 valueStr)
+{
+	if (list->numArgs >= CLI_MAX_ARGS) { WriteLine_E("Too many CLI arguments!"); exit(4); }
+	list->args[list->numArgs].format = CopyStr8(NewStr8Nt(formatStrNt), false);
+	list->args[list->numArgs].value = CopyStr8(valueStr, false);
 	list->numArgs++;
 }
-void AddArgNt(CliArgList* list, const char* cliStr, const char* valueStr)
+void AddArgNt(CliArgList* list, const char* formatStrNt, const char* valueStr)
 {
-	AddArgStr(list, cliStr, NewStr8Nt(valueStr));
+	AddArgStr(list, formatStrNt, NewStr8Nt(valueStr));
 }
-void AddArgInt(CliArgList* list, const char* cliStr, int32_t valueInt)
+void AddArgInt(CliArgList* list, const char* formatStrNt, int32_t valueInt)
 {
 	char printBuffer[12];
 	int printResult = snprintf(&printBuffer[0], 12, "%d", valueInt);
 	printBuffer[printResult] = '\0';
-	AddArgStr(list, cliStr, NewStr8((uxx)printResult, &printBuffer[0]));
+	AddArgStr(list, formatStrNt, NewStr8((uxx)printResult, &printBuffer[0]));
 }
-void AddArg(CliArgList* list, const char* cliStr)
+void AddArg(CliArgList* list, const char* formatStrNt)
 {
-	AddArgStr(list, cliStr, NewStr8(0, nullptr));
+	AddArgStr(list, formatStrNt, NewStr8(0, nullptr));
 }
 
 void AddArgList(CliArgList* dest, const CliArgList* source)
 {
 	if (dest->numArgs + source->numArgs > CLI_MAX_ARGS) { WriteLine_E("Too many CLI arguments!"); exit(4); }
-	
 	for (uxx aIndex = 0; aIndex < source->numArgs; aIndex++)
 	{
-		dest->args[dest->numArgs] = CopyStr8(source->args[aIndex], false);
+		dest->args[dest->numArgs].format = CopyStr8(source->args[aIndex].format, false);
+		dest->args[dest->numArgs].value = CopyStr8(source->args[aIndex].value, false);
 		dest->numArgs++;
 	}
 }
 
 Str8 JoinCliArgsList(Str8 prefix, const CliArgList* list, bool addNullTerm)
 {
+	char pathSepChar = list->pathSepChar;
+	if (pathSepChar == '\0') { pathSepChar = PATH_SEP_CHAR; }
+	Str8 rootDirPath = ZEROED;
+	if (list->rootDirPath.length == 0) { rootDirPath = CopyStr8(StrLit(".."), false); }
+	else { rootDirPath = CopyStr8(list->rootDirPath, false); }
+	FixPathSlashes(rootDirPath, pathSepChar);
+	
+	Str8* formattedStrings = (list->numArgs > 0) ? (Str8*)malloc(sizeof(Str8) * list->numArgs) : nullptr;
 	uxx totalLength = prefix.length;
 	for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++)
 	{
-		if (list->args[aIndex].length > 0)
+		formattedStrings[aIndex] = FormatArg(&list->args[aIndex], rootDirPath, pathSepChar);
+		if (formattedStrings[aIndex].length > 0)
 		{
 			if (totalLength > 0) { totalLength++; } //+1 for space between arguments
-			totalLength += list->args[aIndex].length;
+			totalLength += formattedStrings[aIndex].length;
 		}
 	}
+	free(rootDirPath.chars);
 	
 	Str8 result;
 	result.length = totalLength;
@@ -130,7 +164,7 @@ Str8 JoinCliArgsList(Str8 prefix, const CliArgList* list, bool addNullTerm)
 	
 	for (uxx aIndex = 0; aIndex < list->numArgs; aIndex++)
 	{
-		if (list->args[aIndex].length > 0)
+		if (formattedStrings[aIndex].length > 0)
 		{
 			if (writeIndex > 0)
 			{
@@ -138,8 +172,8 @@ Str8 JoinCliArgsList(Str8 prefix, const CliArgList* list, bool addNullTerm)
 				writeIndex++;
 			}
 			
-			memcpy(&result.chars[writeIndex], list->args[aIndex].chars, list->args[aIndex].length);
-			writeIndex += list->args[aIndex].length;
+			memcpy(&result.chars[writeIndex], formattedStrings[aIndex].chars, formattedStrings[aIndex].length);
+			writeIndex += formattedStrings[aIndex].length;
 		}
 	}
 	

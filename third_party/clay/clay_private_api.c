@@ -1121,9 +1121,9 @@ void Clay__SizeContainersAlongAxis(bool xAxis)
 				else if (sizeToDistribute > 0 && growContainerCount > 0)
 				{
 					r32 targetSize = (sizeToDistribute + growContainerContentSize) / (r32)growContainerCount;
-					for (uxx childOffset = 0; childOffset < resizableContainerBuffer.length; childOffset++)
+					for (ixx childOffset = 0; (uxx)childOffset < resizableContainerBuffer.length; childOffset++)
 					{
-						Clay_LayoutElement* childElement = Clay_LayoutElementArray_Get(&context->layoutElements, i32Array_GetValue(&resizableContainerBuffer, childOffset));
+						Clay_LayoutElement* childElement = Clay_LayoutElementArray_Get(&context->layoutElements, i32Array_GetValue(&resizableContainerBuffer, (uxx)childOffset));
 						Clay_SizingAxis childSizing = xAxis ? childElement->layoutConfig->sizing.width : childElement->layoutConfig->sizing.height;
 						if (childSizing.type == CLAY__SIZING_TYPE_GROW)
 						{
@@ -1132,7 +1132,7 @@ void Clay__SizeContainersAlongAxis(bool xAxis)
 							if (targetSize < *minSize)
 							{
 								growContainerContentSize -= *minSize;
-								i32Array_RemoveSwapback(&resizableContainerBuffer, childOffset);
+								i32Array_RemoveSwapback(&resizableContainerBuffer, (uxx)childOffset);
 								growContainerCount--;
 								targetSize = (sizeToDistribute + growContainerContentSize) / (r32)growContainerCount;
 								childOffset = -1;

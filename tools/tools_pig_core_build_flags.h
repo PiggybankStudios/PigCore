@@ -11,13 +11,6 @@ Description:
 #ifndef _TOOLS_PIG_CORE_BUILD_FLAGS_H
 #define _TOOLS_PIG_CORE_BUILD_FLAGS_H
 
-#ifndef ROOT_DIR
-#error The build script must #define ROOT_DIR before including tools_pig_core_build_flags.h
-#endif
-#ifndef NESTED_ROOT_DIR
-#error The build script must #define NESTED_ROOT_DIR before including tools_pig_core_build_flags.h
-#endif
-
 void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR)
 {
 	AddArg(cl_CommonFlags, DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
@@ -36,7 +29,7 @@ void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_USAGE_OF_DEPRECATED);
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_ASSIGNMENT_WITHIN_CONDITIONAL_EXPR);
 	AddArgInt(cl_CommonFlags, CL_ENABLE_WARNING, CL_WARNING_SWITCH_FALLTHROUGH);
-	AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, ROOT_DIR);
+	AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]");
 	if (DEBUG_BUILD)
 	{
 		AddArg(cl_CommonFlags, CL_DEBUG_INFO);
@@ -94,7 +87,8 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 void Fill_clang_LinuxFlags(CliArgList* clang_LinuxFlags, bool DEBUG_BUILD)
 {
 	AddArgNt(clang_LinuxFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
-	AddArgNt(clang_LinuxFlags, CLANG_INCLUDE_DIR, BUILDING_ON_WINDOWS ? NESTED_ROOT_DIR : ROOT_DIR);
+	AddArgNt(clang_LinuxFlags, CLANG_INCLUDE_DIR, "[ROOT]");
+	AddArgStr(clang_LinuxFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
 	AddArg(clang_LinuxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
 	AddArg(clang_LinuxFlags, "-maes"); //For MeowHash to work we need aes support
 	if (DEBUG_BUILD) { AddArgNt(clang_LinuxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
@@ -102,7 +96,7 @@ void Fill_clang_LinuxFlags(CliArgList* clang_LinuxFlags, bool DEBUG_BUILD)
 
 void Fill_cl_CommonLinkerFlags(CliArgList* cl_CommonLinkerFlags, bool DEBUG_BUILD)
 {
-	AddArgNt(cl_CommonLinkerFlags, LINK_LIBRARY_DIR, DEBUG_BUILD ? ROOT_DIR "\\third_party\\_lib_debug" : ROOT_DIR "\\third_party\\_lib_release");
+	AddArgNt(cl_CommonLinkerFlags, LINK_LIBRARY_DIR, DEBUG_BUILD ? "[ROOT]/third_party/_lib_debug" : "[ROOT]/third_party/_lib_release");
 	AddArg(cl_CommonLinkerFlags, LINK_DISABLE_INCREMENTAL);
 }
 
@@ -139,17 +133,18 @@ void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_R
 }
 
 // These are all the libraries we need when compiling a Linux binary that contains code from PigCore
-void Fill_clang_PigCoreLibraries(CliArgList* clang_PigCoreLibraries, bool BUILD_WITH_SOKOL_GFX, bool TARGET_IS_LINUX)
+void Fill_clang_PigCoreLibraries(CliArgList* clang_PigCoreLibraries, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SOKOL_GFX, bool TARGET_IS_LINUX)
 {
 	if (TARGET_IS_LINUX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig"); }
 	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
+	if (BUILD_WITH_BOX2D) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "box2d"); }
 }
 
 void Fill_clang_WasmFlags(CliArgList* clang_WasmFlags, bool DEBUG_BUILD)
 {
 	AddArgNt(clang_WasmFlags, CLANG_TARGET_ARCHITECTURE, "wasm32");
 	AddArgNt(clang_WasmFlags, CLANG_M_FLAG, "bulk-memory");
-	AddArgNt(clang_WasmFlags, CLANG_INCLUDE_DIR, NESTED_ROOT_DIR);
+	AddArgNt(clang_WasmFlags, CLANG_INCLUDE_DIR, "[ROOT]");
 	if (DEBUG_BUILD) { AddArg(clang_WasmFlags, CLANG_DEBUG_INFO_DEFAULT); }
 	else { AddArgNt(clang_WasmFlags, CLANG_OPTIMIZATION_LEVEL, "2"); }
 }
@@ -163,8 +158,7 @@ void Fill_clang_WebFlags(CliArgList* clang_WebFlags, bool USE_EMSCRIPTEN)
 	}
 	else
 	{
-		Str8 customStdLibDir = StrLit(NESTED_ROOT_DIR "/wasm/std/include");
-		AddArgStr(clang_WebFlags, CLANG_INCLUDE_DIR, customStdLibDir);
+		AddArgNt(clang_WebFlags, CLANG_INCLUDE_DIR, "[ROOT]/wasm/std/include");
 		AddArg(clang_WebFlags, CLANG_NO_ENTRYPOINT);
 		AddArg(clang_WebFlags, CLANG_ALLOW_UNDEFINED);
 		AddArg(clang_WebFlags, CLANG_NO_STD_LIBRARIES);
@@ -199,7 +193,7 @@ void Fill_cl_PlaydateSimulatorCompilerFlags(CliArgList* cl_PlaydateSimulatorComp
 	AddArgNt(cl_PlaydateSimulatorCompilerFlags, CL_LANG_VERSION, "clatest"); //Use latest C language spec features
 	AddArgNt(cl_PlaydateSimulatorCompilerFlags, CL_EXPERIMENTAL, "c11atomics"); //Enables _Atomic types
 	
-	AddArgNt(cl_PlaydateSimulatorCompilerFlags, CL_INCLUDE_DIR, ROOT_DIR);
+	AddArgNt(cl_PlaydateSimulatorCompilerFlags, CL_INCLUDE_DIR, "[ROOT]");
 	if (playdateSdkDir_C_API.length > 0) { AddArgStr(cl_PlaydateSimulatorCompilerFlags, CL_INCLUDE_DIR, playdateSdkDir_C_API); }
 	AddArgNt(cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "TARGET_SIMULATOR=1");
 	AddArgNt(cl_PlaydateSimulatorCompilerFlags, CL_DEFINE, "TARGET_EXTENSION=1");
@@ -255,7 +249,7 @@ void Fill_link_PlaydateSimulatorLibraries(CliArgList* link_PlaydateSimulatorLibr
 
 void Fill_gcc_PlaydateDeviceCommonFlags(CliArgList* gcc_PlaydateDeviceCommonFlags, Str8 playdateSdkDir_C_API)
 {
-	AddArgNt(gcc_PlaydateDeviceCommonFlags, GCC_INCLUDE_DIR, ROOT_DIR);
+	AddArgNt(gcc_PlaydateDeviceCommonFlags, GCC_INCLUDE_DIR, "[ROOT]");
 	if (playdateSdkDir_C_API.length > 0) { AddArgStr(gcc_PlaydateDeviceCommonFlags, GCC_INCLUDE_DIR, playdateSdkDir_C_API); }
 	AddArgNt(gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "TARGET_PLAYDATE=1");
 	AddArgNt(gcc_PlaydateDeviceCommonFlags, GCC_DEFINE, "TARGET_EXTENSION=1");
@@ -304,9 +298,7 @@ void Fill_gcc_PlaydateDeviceLinkerFlags(CliArgList* gcc_PlaydateDeviceLinkerFlag
 	AddArg(gcc_PlaydateDeviceLinkerFlags, GCC_GC_SECTIONS);
 	AddArg(gcc_PlaydateDeviceLinkerFlags, GCC_DISABLE_MISMATCH_WARNING);
 	AddArg(gcc_PlaydateDeviceLinkerFlags, GCC_EMIT_RELOCATIONS);
-	Str8 playdateLinkerScriptPath = JoinStrings2(playdateSdkDir, StrLit("\\C_API\\buildsupport\\link_map.ld"), false);
-	FixPathSlashes(playdateLinkerScriptPath, '\\');
-	AddArgStr(gcc_PlaydateDeviceLinkerFlags, GCC_LINKER_SCRIPT, playdateLinkerScriptPath);
+	AddArgStr(gcc_PlaydateDeviceLinkerFlags, GCC_LINKER_SCRIPT, JoinStrings2(playdateSdkDir, StrLit("/C_API/buildsupport/link_map.ld"), false));
 }
 
 void Fill_pdc_CommonFlags(CliArgList* pdc_CommonFlags, Str8 playdateSdkDir)

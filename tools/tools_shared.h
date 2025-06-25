@@ -290,7 +290,8 @@ static inline bool TryParseBoolArg(Str8 boolStr, bool* valueOut)
 
 static inline Str8 CopyStr8(Str8 strToCopy, bool addNullTerm)
 {
-	Str8 result;
+	Str8 result = ZEROED;
+	if (strToCopy.length == 0) { return result; }
 	result.length = strToCopy.length;
 	result.pntr = malloc(result.length + (addNullTerm ? 1 : 0));
 	memcpy(result.chars, strToCopy.chars, strToCopy.length);
@@ -392,9 +393,10 @@ static inline void FixPathSlashes(Str8 path, char slashChar)
 static inline Str8 StrReplace(Str8 haystack, Str8 target, Str8 replacement, bool addNullTerm)
 {
 	Str8 result = ZEROED;
-	for (uxx cIndex = 0; cIndex + target.length <= haystack.length; cIndex++)
+	for (uxx cIndex = 0; cIndex < haystack.length; cIndex++)
 	{
-		if (StrExactEquals(StrSlice(haystack, cIndex, cIndex+target.length), target))
+		if (cIndex + target.length <= haystack.length &&
+			StrExactEquals(StrSlice(haystack, cIndex, cIndex+target.length), target))
 		{
 			result.length += replacement.length;
 			cIndex += target.length-1;
@@ -405,7 +407,8 @@ static inline Str8 StrReplace(Str8 haystack, Str8 target, Str8 replacement, bool
 	uxx writeIndex = 0;
 	for (uxx cIndex = 0; cIndex < haystack.length; cIndex++)
 	{
-		if (StrExactEquals(StrSlice(haystack, cIndex, cIndex+target.length), target))
+		if (cIndex + target.length <= haystack.length &&
+			StrExactEquals(StrSlice(haystack, cIndex, cIndex+target.length), target))
 		{
 			memcpy(&result.chars[writeIndex], replacement.chars, replacement.length);
 			writeIndex += replacement.length;
