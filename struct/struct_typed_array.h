@@ -149,8 +149,8 @@ IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)        
 
 PEXP bool TypedArrayRangeCheck(uxx index, uxx length)
 {
-	if (index < length && index >= 0) { return true; }
-	AssertMsg(index < length && index >= 0, "Clay attempted to make an out of bounds array access. This is an internal error and is likely a bug.");
+	if (index < length) { return true; }
+	AssertMsg(index < length, "Clay attempted to make an out of bounds array access. This is an internal error and is likely a bug.");
 	return false;
 }
 

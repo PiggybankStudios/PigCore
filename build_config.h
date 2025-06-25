@@ -23,7 +23,7 @@ Description:
 #define DEBUG_BUILD   1
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             1
+#define BUILD_WINDOWS             0
 // Build binaries for Linux platform(s)
 #define BUILD_LINUX               1
 // Build binaries for OSX platform
@@ -83,15 +83,15 @@ Description:
 // Enables tests.exe being linked with box2d.lib and it's required libraries
 #define BUILD_WITH_BOX2D     0
 // Enables pig_core.dll and tests.exe using sokol_gfx.h (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL_GFX 0
+#define BUILD_WITH_SOKOL_GFX 1
 // Enables tests.exe using sokol_app.h to create and manage a graphical window
-#define BUILD_WITH_SOKOL_APP 0
+#define BUILD_WITH_SOKOL_APP 1
 // Enables tests.exe being linked with SDL.lib and it's required libraries
 #define BUILD_WITH_SDL       0
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries
 #define BUILD_WITH_OPENVR    0
 // Enables tests.exe using clay.h to render UI elements
-#define BUILD_WITH_CLAY      0
+#define BUILD_WITH_CLAY      1
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
 #define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib

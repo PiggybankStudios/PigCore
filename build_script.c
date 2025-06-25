@@ -66,6 +66,12 @@ Description:
 #define TOOL_EXE_NAME      "pig_build"
 #endif
 
+#if BUILDING_ON_LINUX
+#define LINUX_ROOT_DIR     ROOT_DIR
+#else
+#define LINUX_ROOT_DIR     NESTED_ROOT_DIR
+#endif
+
 static inline void PrintUsage()
 {
 	WriteLine_E("Usage: " TOOL_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
@@ -166,9 +172,9 @@ int main(int argc, char* argv[])
 	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
 	CliArgList clang_LinuxFlags                  = ZEROED; Fill_clang_LinuxFlags(&clang_LinuxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
-	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries);
+	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
 	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX);
-	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_SOKOL_GFX, BUILDING_ON_WINDOWS);
+	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_SOKOL_GFX, !BUILDING_ON_OSX);
 	CliArgList clang_WasmFlags                   = ZEROED; Fill_clang_WasmFlags(&clang_WasmFlags, DEBUG_BUILD);
 	CliArgList clang_WebFlags                    = ZEROED; Fill_clang_WebFlags(&clang_WebFlags, USE_EMSCRIPTEN);
 	CliArgList clang_OrcaFlags                   = ZEROED; Fill_clang_OrcaFlags(&clang_OrcaFlags, orcaSdkPath);
@@ -213,21 +219,26 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIGGEN);
 			
+			#if !BUILDING_ON_LINUX
 			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
+			#endif
 			
 			CliArgList cmd = ZEROED;
-			AddArg(&cmd, NESTED_ROOT_DIR "/piggen/piggen_main.c");
+			AddArg(&cmd, LINUX_ROOT_DIR "/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_WSL_CLANG), &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
+			Str8 clangExe = BUILDING_ON_LINUX ? StrLit(EXE_CLANG) : StrLit(EXE_WSL_CLANG);
+			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_PIGGEN);
 			
+			#if !BUILDING_ON_LINUX
 			chdir("..");
+			#endif
 		}
 		if (BUILD_OSX)
 		{
@@ -307,7 +318,7 @@ int main(int argc, char* argv[])
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
 				AddArgStr(&clang_ShaderObjects, CLI_QUOTED_ARG, oPath);
-				Str8 oPathWithFolder = JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
+				Str8 oPathWithFolder = BUILDING_ON_LINUX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
 			}
 		}
@@ -397,13 +408,15 @@ int main(int argc, char* argv[])
 			}
 			if (BUILD_LINUX)
 			{
+				#if !BUILDING_ON_LINUX
 				mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 				chdir(FOLDERNAME_LINUX);
+				#endif
 				
 				Str8 oPath = findContext.oPaths.strings[sIndex];
-				Str8 fixedSourcePath = JoinStrings2(StrLit(ROOT_DIR "/"), sourcePath, false);
+				Str8 fixedSourcePath = BUILDING_ON_LINUX ? CopyStr8(sourcePath, false) : JoinStrings2(StrLit(ROOT_DIR "/"), sourcePath, false);
 				FixPathSlashes(fixedSourcePath, '/');
-				Str8 fixedHeaderDirectory = JoinStrings2(StrLit(ROOT_DIR "/"), headerDirectory, false);
+				Str8 fixedHeaderDirectory = BUILDING_ON_LINUX ? CopyStr8(headerDirectory, false) : JoinStrings2(StrLit(ROOT_DIR "/"), headerDirectory, false);
 				FixPathSlashes(fixedHeaderDirectory, '/');
 				
 				CliArgList cmd = ZEROED;
@@ -414,10 +427,13 @@ int main(int argc, char* argv[])
 				AddArgList(&cmd, &clang_CommonFlags);
 				AddArgList(&cmd, &clang_LinuxFlags);
 				
-				RunCliProgramAndExitOnFailure(StrLit(EXE_WSL_CLANG), &cmd, StrLit("Failed to build TODO: for Linux!"));
+				Str8 clangExe = BUILDING_ON_LINUX ? StrLit(EXE_CLANG) : StrLit(EXE_WSL_CLANG);
+				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build TODO: for Linux!"));
 				AssertFileExist(oPath, true);
 				
+				#if !BUILDING_ON_LINUX
 				chdir("..");
+				#endif
 			}
 		}
 		
@@ -522,11 +538,13 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIG_CORE_SO);
 			
+			#if !BUILDING_ON_LINUX
 			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
+			#endif
 			
 			CliArgList cmd = ZEROED;
-			AddArg(&cmd, NESTED_ROOT_DIR "/dll/dll_main.c");
+			AddArg(&cmd, LINUX_ROOT_DIR "/dll/dll_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIG_CORE_SO);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
@@ -535,11 +553,14 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_WSL_CLANG), &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
+			Str8 clangExe = BUILDING_ON_LINUX ? StrLit(EXE_CLANG) : StrLit(EXE_WSL_CLANG);
+			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
 			AssertFileExist(StrLit(FILENAME_PIG_CORE_SO), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_PIG_CORE_SO);
 			
+			#if !BUILDING_ON_LINUX
 			chdir("..");
+			#endif
 		}
 	}
 	
@@ -573,11 +594,13 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_TESTS);
 			
+			#if !BUILDING_ON_LINUX
 			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
+			#endif
 			
 			CliArgList cmd = ZEROED;
-			AddArg(&cmd, NESTED_ROOT_DIR "/tests/tests_main.c");
+			AddArg(&cmd, LINUX_ROOT_DIR "/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
@@ -585,11 +608,14 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_PigCoreLibraries);
 			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_WSL_CLANG), &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
+			Str8 clangExe = BUILDING_ON_LINUX ? StrLit(EXE_CLANG) : StrLit(EXE_WSL_CLANG);
+			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_TESTS);
 			
+			#if !BUILDING_ON_LINUX
 			chdir("..");
+			#endif
 		}
 		
 		if (BUILD_OSX)

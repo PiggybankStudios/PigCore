@@ -93,6 +93,7 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 // Flags for when we are compiling the linux version of a program using Clang
 void Fill_clang_LinuxFlags(CliArgList* clang_LinuxFlags, bool DEBUG_BUILD)
 {
+	AddArgNt(clang_LinuxFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
 	AddArgNt(clang_LinuxFlags, CLANG_INCLUDE_DIR, BUILDING_ON_WINDOWS ? NESTED_ROOT_DIR : ROOT_DIR);
 	AddArg(clang_LinuxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
 	AddArg(clang_LinuxFlags, "-maes"); //For MeowHash to work we need aes support
@@ -105,10 +106,16 @@ void Fill_cl_CommonLinkerFlags(CliArgList* cl_CommonLinkerFlags, bool DEBUG_BUIL
 	AddArg(cl_CommonLinkerFlags, LINK_DISABLE_INCREMENTAL);
 }
 
-void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries)
+void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, bool BUILD_WITH_SOKOL_APP)
 {
 	AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
 	AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
+	if (BUILD_WITH_SOKOL_APP)
+	{
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "X11");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "Xi");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "Xcursor");
+	}
 }
 
 // These are all the libraries we need when compiling a Windows binary that contains code from PigCore

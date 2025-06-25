@@ -77,6 +77,7 @@ Description:
 #if !BUILDING_ON_WINDOWS
 #include <unistd.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #endif
 
 #if BUILDING_ON_WINDOWS
@@ -508,7 +509,7 @@ static inline Str8 GetFullPath(Str8 relativePath, char slashChar)
 		FixPathSlashes(result, slashChar);
 		free(relativePathNt.chars);
 	}
-	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
+	#elif (BUILDING_ON_LINUX || BUILDING_ON_OSX)
 	{
 		Str8 relativePathNt = CopyStr8(relativePath, true);
 		FixPathSlashes(relativePathNt, PATH_SEP_CHAR);
@@ -621,7 +622,7 @@ static inline void CreateAndWriteFile(Str8 filePath, Str8 contents, bool convert
 		CloseHandle(fileHandle);
 		if (convertNewLines) { free(contents.chars); }
 	}
-	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
+	#elif (BUILDING_ON_LINUX || BUILDING_ON_OSX)
 	{
 		FILE* fileHandle = fopen(filePathNt.chars, "w");
 		assert(fileHandle != nullptr);
@@ -686,7 +687,7 @@ static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool conve
 		CloseHandle(fileHandle);
 		if (convertNewLines) { free(contentsToAppend.chars); }
 	}
-	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
+	#elif (BUILDING_ON_LINUX || BUILDING_ON_OSX)
 	{
 		FILE* fileHandle = fopen(filePathNt.chars, "a");
 		assert(fileHandle != nullptr);
@@ -751,7 +752,7 @@ static inline bool DoesFileExist(Str8 filePath)
 		free(filePathNt);
 		return (fileExistsResult == TRUE);
 	}
-	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
+	#elif (BUILDING_ON_LINUX || BUILDING_ON_OSX)
 	{
 		int accessResult = access(filePathNt, F_OK);
 		free(filePathNt);
@@ -791,14 +792,10 @@ static inline FileIter StartFileIter(Str8 folderPath)
 		//NOTE: File iteration in windows requires that we have a slash on the end and a * wildcard character
 		result.folderPathWithWildcard = JoinStrings2(result.folderPathNt, StrLit("*"), true);
 	}
-	#elif BUILDING_ON_LINUX
+	#elif (BUILDING_ON_LINUX || BUILDING_ON_OSX)
 	{
 		//nothing to do
 	}
-	// #elif BUILDING_ON_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
 	#else
 	assert(false && "StartFileIter does not support the current platform yet!");
 	result.finished = true;
@@ -860,7 +857,7 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 			return true;
 		}
 	}
-	#elif BUILDING_ON_LINUX
+	#elif (BUILDING_ON_LINUX || BUILDING_ON_OSX)
 	{
 		while (true)
 		{
@@ -872,7 +869,6 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 				if (fileIter->dirHandle == nullptr)
 				{
 					free(fileIter->folderPathNt.chars); fileIter->folderPathNt.chars = nullptr;
-					free(fileIter->folderPathWithWildcard.chars); fileIter->folderPathWithWildcard.chars = nullptr;
 					fileIter->finished = true;
 					return false;
 				}
@@ -882,7 +878,6 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 			if (entry == nullptr)
 			{
 				free(fileIter->folderPathNt.chars); fileIter->folderPathNt.chars = nullptr;
-				free(fileIter->folderPathWithWildcard.chars); fileIter->folderPathWithWildcard.chars = nullptr;
 				fileIter->finished = true;
 				return false;
 			}
@@ -897,17 +892,17 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 				int statResult = stat(fullPath.chars, &statStruct);
 				if (statResult == 0)
 				{
-					if (statStruct.st_mode & S_IFDIR != 0)
+					if ((statStruct.st_mode & S_IFDIR) != 0)
 					{
 						if (isFolderOut != nullptr) { *isFolderOut = true; }
 					}
-					else if (statStruct.st_mode & S_IFREG != 0)
+					else if ((statStruct.st_mode & S_IFREG) != 0)
 					{
 						if (isFolderOut != nullptr) { *isFolderOut = false; }
 					}
 					else
 					{
-						PrintLine_W("Unknown file type for \"%.*s\"", StrPrint(fullPath));
+						PrintLine_E("Unknown file type for \"%.*s\"", fullPath.length, fullPath.chars);
 						continue;
 					}
 				}
@@ -918,10 +913,6 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 			return true;
 		}
 	}
-	// #elif BUILDING_ON_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
 	#else
 	assert(false && "StepFileIter does not support the current platform yet!");
 	fileIter->finished = true;
