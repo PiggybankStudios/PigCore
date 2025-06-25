@@ -124,7 +124,7 @@ Clay__RenderDebugLayoutData Clay__RenderDebugLayoutElementsList(i32 initialRoots
 				{
 					CLAY_TEXT(idString, offscreen ? CLAY_TEXT_CONFIG({ .textColor = CLAY__DEBUGVIEW_COLOR_3, .fontSize = 16 }) : &Clay__DebugView_TextNameConfig);
 				}
-				for (i32 elementConfigIndex = 0; elementConfigIndex < currentElement->elementConfigs.length; ++elementConfigIndex)
+				for (uxx elementConfigIndex = 0; elementConfigIndex < currentElement->elementConfigs.length; ++elementConfigIndex)
 				{
 					Clay_ElementConfig* elementConfig = Clay__ElementConfigArray_GetSlice(&currentElement->elementConfigs, elementConfigIndex);
 					if (elementConfig->type == CLAY__ELEMENT_CONFIG_TYPE_SHARED)
@@ -308,9 +308,9 @@ void Clay__RenderDebugView(void)
 	Clay_ElementId closeButtonId = Clay__HashString(CLAY_STRING("Clay__DebugViewTopHeaderCloseButtonOuter"), 0, 0);
 	if (context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
 	{
-		for (i32 i = 0; i < context->pointerOverIds.length; ++i)
+		for (uxx pIndex = 0; pIndex < context->pointerOverIds.length; ++pIndex)
 		{
-			Clay_ElementId* elementId = Clay__ElementIdArray_Get(&context->pointerOverIds, i);
+			Clay_ElementId* elementId = Clay__ElementIdArray_Get(&context->pointerOverIds, pIndex);
 			if (elementId->id == closeButtonId.id)
 			{
 				context->debugModeEnabled = false;
@@ -326,9 +326,9 @@ void Clay__RenderDebugView(void)
 	Clay_ElementId scrollId = Clay__HashString(CLAY_STRING("Clay__DebugViewOuterScrollPane"), 0, 0);
 	r32 scrollYOffset = 0;
 	bool pointerInDebugView = context->pointerInfo.position.Y < context->layoutDimensions.Height - 300;
-	for (i32 i = 0; i < context->scrollContainerDatas.length; ++i)
+	for (uxx sIndex = 0; sIndex < context->scrollContainerDatas.length; ++sIndex)
 	{
-		Clay__ScrollContainerDataInternal* scrollContainerData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, i);
+		Clay__ScrollContainerDataInternal* scrollContainerData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, sIndex);
 		if (scrollContainerData->elementId == scrollId.id)
 		{
 			if (!context->externalScrollHandlingEnabled)
@@ -500,7 +500,7 @@ void Clay__RenderDebugView(void)
 						CLAY_TEXT(CLAY_STRING(" }"), infoTextConfig);
 					}
 				}
-				for (i32 elementConfigIndex = 0; elementConfigIndex < selectedItem->layoutElement->elementConfigs.length; ++elementConfigIndex)
+				for (uxx elementConfigIndex = 0; elementConfigIndex < selectedItem->layoutElement->elementConfigs.length; ++elementConfigIndex)
 				{
 					Clay_ElementConfig* elementConfig = Clay__ElementConfigArray_GetSlice(&selectedItem->layoutElement->elementConfigs, elementConfigIndex);
 					Clay__RenderDebugViewElementConfigHeader(selectedItem->elementId.stringId, elementConfig->type);

@@ -138,13 +138,13 @@ CLAY_DECOR Clay_Context* Clay_Initialize(Arena* arena, v2 layoutDimensions, Clay
 	Clay_SetCurrentContext(context);
 	Clay__InitializePersistentMemory(context);
 	Clay__InitializeEphemeralMemory(context);
-	for (i32 i = 0; i < context->layoutElementsHashMap.allocLength; ++i)
+	for (uxx iIndex = 0; iIndex < context->layoutElementsHashMap.allocLength; ++iIndex)
 	{
-		context->layoutElementsHashMap.items[i] = -1;
+		context->layoutElementsHashMap.items[iIndex] = -1;
 	}
-	for (i32 i = 0; i < context->measureTextHashMap.allocLength; ++i)
+	for (uxx iIndex = 0; iIndex < context->measureTextHashMap.allocLength; ++iIndex)
 	{
-		context->measureTextHashMap.items[i] = 0;
+		context->measureTextHashMap.items[iIndex] = 0;
 	}
 	context->measureTextHashMapInternal.length = 1; // Reserve the 0 value to mean "no next element"
 	context->layoutDimensions = layoutDimensions;
@@ -170,14 +170,14 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, v2 scrollD
 	bool isAutoScrollingOccurring = false;
 	bool isPointerActive = enableDragScrolling && (context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED || context->pointerInfo.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME);
 	// Don't apply scroll events to ancestors of the inner element
-	i32 highestPriorityElementIndex = -1;
+	uxx highestPriorityElementIndex = UINTXX_MAX;
 	Clay__ScrollContainerDataInternal* highestPriorityScrollData = nullptr;
-	for (i32 i = 0; i < context->scrollContainerDatas.length; i++)
+	for (uxx sIndex = 0; sIndex < context->scrollContainerDatas.length; sIndex++)
 	{
-		Clay__ScrollContainerDataInternal* scrollData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, i);
+		Clay__ScrollContainerDataInternal* scrollData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, sIndex);
 		if (!scrollData->openThisFrame)
 		{
-			Clay__ScrollContainerDataInternalArray_RemoveSwapback(&context->scrollContainerDatas, i);
+			Clay__ScrollContainerDataInternalArray_RemoveSwapback(&context->scrollContainerDatas, sIndex);
 			continue;
 		}
 		scrollData->openThisFrame = false;
@@ -185,7 +185,7 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, v2 scrollD
 		// Element isn't rendered this frame but scroll offset has been retained
 		if (!hashMapItem)
 		{
-			Clay__ScrollContainerDataInternalArray_RemoveSwapback(&context->scrollContainerDatas, i);
+			Clay__ScrollContainerDataInternalArray_RemoveSwapback(&context->scrollContainerDatas, sIndex);
 			continue;
 		}
 		
@@ -255,17 +255,17 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, v2 scrollD
 			}
 		}
 		
-		for (i32 j = 0; j < context->pointerOverIds.length; ++j) // TODO n & m are small here but this being n*m gives me the creeps
+		for (uxx pIndex = 0; pIndex < context->pointerOverIds.length; ++pIndex) // TODO n & m are small here but this being n*m gives me the creeps
 		{
-			if (scrollData->layoutElement->id == Clay__ElementIdArray_Get(&context->pointerOverIds, j)->id)
+			if (scrollData->layoutElement->id == Clay__ElementIdArray_Get(&context->pointerOverIds, pIndex)->id)
 			{
-				highestPriorityElementIndex = j;
+				highestPriorityElementIndex = pIndex;
 				highestPriorityScrollData = scrollData;
 			}
 		}
 	}
 	
-	if (highestPriorityElementIndex > -1 && highestPriorityScrollData)
+	if (highestPriorityElementIndex < UINTXX_MAX && highestPriorityScrollData)
 	{
 		Clay_LayoutElement* scrollElement = highestPriorityScrollData->layoutElement;
 		Clay_ScrollElementConfig* scrollConfig = Clay__FindElementConfigWithType(scrollElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig;
@@ -386,7 +386,7 @@ CLAY_DECOR Clay_RenderCommandArray Clay_EndLayout(void)
 			message = StrLit("Clay Error: Layout elements exceeded Clay__maxElementCount");
 		}
 		Clay__AddRenderCommand(NEW_STRUCT(Clay_RenderCommand ) {
-			.boundingBox = { context->layoutDimensions.Width / 2 - 59 * 4, context->layoutDimensions.Height / 2, 0, 0 },
+			.boundingBox = NewRec(context->layoutDimensions.Width / 2 - 59 * 4, context->layoutDimensions.Height / 2, 0, 0),
 			.renderData = { .text = { .stringContents = message, .textColor = {.valueU32=0xFFFF0000}, .fontSize = 16 } }, //(255, 0, 0, 255)
 			.commandType = CLAY_RENDER_COMMAND_TYPE_TEXT
 		});
@@ -420,9 +420,9 @@ CLAY_DECOR bool Clay_Hovered(void)
 	{
 		Clay__GenerateIdForAnonymousElement(openLayoutElement);
 	}
-	for (i32 i = 0; i < context->pointerOverIds.length; ++i)
+	for (uxx iIndex = 0; iIndex < context->pointerOverIds.length; ++iIndex)
 	{
-		if (Clay__ElementIdArray_Get(&context->pointerOverIds, i)->id == openLayoutElement->id)
+		if (Clay__ElementIdArray_Get(&context->pointerOverIds, iIndex)->id == openLayoutElement->id)
 		{
 			return true;
 		}
@@ -445,9 +445,9 @@ WASM_EXPORT("Clay_PointerOver")
 CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId) // TODO return priority for separating multiple results
 {
 	Clay_Context* context = Clay_GetCurrentContext();
-	for (i32 i = 0; i < context->pointerOverIds.length; ++i)
+	for (uxx iIndex = 0; iIndex < context->pointerOverIds.length; ++iIndex)
 	{
-		if (Clay__ElementIdArray_Get(&context->pointerOverIds, i)->id == elementId.id)
+		if (Clay__ElementIdArray_Get(&context->pointerOverIds, iIndex)->id == elementId.id)
 		{
 			return true;
 		}
@@ -459,9 +459,9 @@ WASM_EXPORT("Clay_GetScrollContainerData")
 CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
-	for (i32 i = 0; i < context->scrollContainerDatas.length; ++i)
+	for (uxx sIndex = 0; sIndex < context->scrollContainerDatas.length; ++sIndex)
 	{
-		Clay__ScrollContainerDataInternal* scrollContainerData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, i);
+		Clay__ScrollContainerDataInternal* scrollContainerData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, sIndex);
 		if (scrollContainerData->elementId == id.id)
 		{
 			Clay_ScrollElementConfig* scrollConfig = Clay__FindElementConfigWithType(scrollContainerData->layoutElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig;
@@ -470,7 +470,7 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
 				return NEW_STRUCT(Clay_ScrollContainerData) {
 					.scrollTarget = &scrollContainerData->scrollTarget,
 					.scrollPosition = &scrollContainerData->scrollPosition,
-					.scrollContainerDimensions = { scrollContainerData->boundingBox.Width, scrollContainerData->boundingBox.Height },
+					.scrollContainerDimensions = NewV2(scrollContainerData->boundingBox.Width, scrollContainerData->boundingBox.Height),
 					.contentDimensions = scrollContainerData->contentSize,
 					.config = *scrollConfig,
 					.found = true
@@ -577,9 +577,9 @@ CLAY_DECOR void Clay_ResetMeasureTextCache(void)
 	context->measuredWords.length = 0;
 	context->measuredWordsFreeList.length = 0;
 	
-	for (i32 i = 0; i < context->measureTextHashMap.allocLength; ++i)
+	for (uxx mIndex = 0; mIndex < context->measureTextHashMap.allocLength; ++mIndex)
 	{
-		context->measureTextHashMap.items[i] = 0;
+		context->measureTextHashMap.items[mIndex] = 0;
 	}
 	context->measureTextHashMapInternal.length = 1; // Reserve the 0 value to mean "no next element"
 }
