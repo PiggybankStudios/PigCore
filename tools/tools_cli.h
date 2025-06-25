@@ -23,6 +23,13 @@ Description:
 #define CLI_PIPE_OUTPUT_TO_FILE "| \"[VAL]\""
 #endif
 
+//When running a program on Linux/OSX/etc. we have to specify we want to run a program out of the current working directory with "./"
+#if BUILDING_ON_WINDOWS
+#define EXEC_PROGRAM_IN_FOLDER_PREFIX ""
+#else
+#define EXEC_PROGRAM_IN_FOLDER_PREFIX "./"
+#endif
+
 #define CLI_MAX_ARGS 256
 typedef struct CliArgList CliArgList;
 struct CliArgList
@@ -192,7 +199,12 @@ void ParseAndApplyEnvironmentVariables(Str8 environmentVars)
 				// PrintLine("set %.*s=%.*s", varName.length, varName.chars, varValue.length, varValue.chars);
 				varName = CopyStr8(varName, true);
 				varValue = CopyStr8(varValue, true);
+				#if BUILDING_ON_WINDOWS
 				_putenv_s(varName.chars, varValue.chars);
+				#else
+				Str8 varEqualsValueStr = JoinStrings3(varName, StrLit("="), varValue, true);
+				putenv(varEqualsValueStr.chars);
+				#endif
 				free(varName.chars);
 				free(varValue.chars);
 			}

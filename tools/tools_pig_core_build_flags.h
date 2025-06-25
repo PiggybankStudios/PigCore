@@ -93,7 +93,7 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 // Flags for when we are compiling the linux version of a program using Clang
 void Fill_clang_LinuxFlags(CliArgList* clang_LinuxFlags, bool DEBUG_BUILD)
 {
-	AddArgNt(clang_LinuxFlags, CLANG_INCLUDE_DIR, NESTED_ROOT_DIR);
+	AddArgNt(clang_LinuxFlags, CLANG_INCLUDE_DIR, BUILDING_ON_WINDOWS ? NESTED_ROOT_DIR : ROOT_DIR);
 	AddArg(clang_LinuxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
 	AddArg(clang_LinuxFlags, "-maes"); //For MeowHash to work we need aes support
 	if (DEBUG_BUILD) { AddArgNt(clang_LinuxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
@@ -134,7 +134,9 @@ void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_R
 // These are all the libraries we need when compiling a Linux binary that contains code from PigCore
 void Fill_clang_PigCoreLibraries(CliArgList* clang_PigCoreLibraries, bool BUILD_WITH_SOKOL_GFX)
 {
+	#if BUILDING_ON_LINUX
 	AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig");
+	#endif
 	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
 }
 

@@ -63,6 +63,8 @@ Description:
 
 #if TARGET_IS_PLAYDATE
 #define THREAD_LOCAL //nothing, not supported by Playdate because there is no OS to do threading
+#elif TARGET_IS_OSX
+#define THREAD_LOCAL __thread
 #else
 #define THREAD_LOCAL thread_local
 #endif

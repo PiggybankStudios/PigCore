@@ -16,7 +16,8 @@ Description:
 #define FNV_HASH_BASE_U64   0xcbf29ce484222325ULL //= DEC(14695981039346656037)
 #define FNV_HASH_PRIME_U64  0x100000001b3ULL      //= DEC(1099511628211)
 
-#if TARGET_IS_WASM || TARGET_IS_PLAYDATE
+//NOTE: Apple's Clang does not support certain x86 instruction restrictions that meowhash relies on!
+#if TARGET_IS_WASM || TARGET_IS_PLAYDATE || (TARGET_IS_OSX && COMPILER_IS_CLANG)
 #define MEOW_HASH_AVAILABLE 0
 #else
 #define MEOW_HASH_AVAILABLE 1

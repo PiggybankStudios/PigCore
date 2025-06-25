@@ -37,7 +37,7 @@ struct OsFileIter
 	FilePath folderPathWithWildcard;
 	WIN32_FIND_DATAA findData;
 	HANDLE handle;
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	DIR* dirHandle;
 	#endif
 };
@@ -186,7 +186,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 		
 		FixPathSlashes(result);
 	}
-	#elif TARGET_IS_LINUX
+	#elif TARGET_IS_LINUX || TARGET_IS_OSX
 	{
 		FilePath relativePathNt = AllocFilePath(scratch, relativePath, true);
 		DebugAssert(PATH_MAX <= UINTXX_MAX);
@@ -240,10 +240,6 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 			}
 		}
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
 	#else
 	AssertMsg(false, "OsGetFullPath does not support the current platform yet!");
 	#endif
@@ -383,7 +379,7 @@ PEXP OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, b
 		NotNullStr(result.folderPathWithWildcard);
 		ScratchEnd(scratch);
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		ScratchBegin1(scratch, arena);
 		Str8 fullPath = OsGetFullPath(scratch, path);
@@ -392,10 +388,6 @@ PEXP OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, b
 		NotNullStr(result.folderPath);
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
 	#else
 	UNUSED(path);
 	AssertMsg(false, "OsIterateFiles does not support the current platform yet!");
@@ -473,7 +465,7 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 		}
 		Assert(false); //Shouldn't be possible to get here
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		ScratchBegin1(scratch, fileIter->arena);
 		while (true)
@@ -541,10 +533,6 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 		Assert(false); //Shouldn't be possible to get here
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
 	#else
 	UNUSED(fileIter);
 	UNUSED(isFolderOut);
@@ -675,7 +663,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		
 		CloseHandle(fileHandle);
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		Str8 fullPath = OsGetFullPath(scratch, path); //ensures null-termination
 		FILE* fileHandle = fopen(fullPath.chars, "r");
@@ -727,10 +715,6 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 			*contentsOut = StrReplace(arena, *contentsOut, StrLit("\r\n"), StrLit("\n"), true);
 		}
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
 	#else
 	UNUSED(path);
 	UNUSED(arena);
@@ -831,7 +815,7 @@ PEXP bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 		}
 		ScratchEnd(scratch);
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		ScratchBegin(scratch);
 		//NOTE: When writing files on linux we don't need to convert new-lines. We usually working with strings in memory using \n which is the line-ending style of Linux.
@@ -867,10 +851,6 @@ PEXP bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 		ScratchEnd(scratch);
 		result = true;
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
 	#else
 	UNUSED(path);
 	UNUSED(fileContents);
@@ -931,12 +911,12 @@ PEXP Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded)
 		
 		result = Result_Success;
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		if (!OsDoesFolderExist(path))
 		{
 			Str8 pathNt = AllocStrAndCopy(scratch, path.length, path.chars, true);
-			int mkdirResult = mkdir(pathNt.chars, 0700);
+			int mkdirResult = mkdir(pathNt.chars, S_IRWXU|S_IRWXG|S_IRWXO);
 			if (mkdirResult != 0)
 			{
 				ScratchEnd(scratch);

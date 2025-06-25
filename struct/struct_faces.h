@@ -23,7 +23,7 @@ union Triangle2D
 	struct { v2 Vert0, Vert1, Vert2; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Triangle2D) == sizeof(r32)*6);
+_Static_assert(sizeof(Triangle2D) == sizeof(r32)*6, "Triangle2D contains padding!");
 #endif
 
 typedef union Triangle3D Triangle3D;
@@ -34,7 +34,7 @@ union Triangle3D
 	struct { v3 Vert0, Vert1, Vert2; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Triangle3D) == sizeof(r32)*9);
+_Static_assert(sizeof(Triangle3D) == sizeof(r32)*9, "Triangle3D contains padding!");
 #endif
 
 typedef union Quad2D Quad2D;
@@ -45,7 +45,7 @@ union Quad2D
 	struct { v2 Vert0, Vert1, Vert2, Vert3; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Quad2D) == sizeof(r32)*8);
+_Static_assert(sizeof(Quad2D) == sizeof(r32)*8, "Quad2D contains padding!");
 #endif
 
 typedef union Quad3D Quad3D;
@@ -56,7 +56,7 @@ union Quad3D
 	struct { v3 Vert0, Vert1, Vert2, Vert3; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Quad3D) == sizeof(r32)*12);
+_Static_assert(sizeof(Quad3D) == sizeof(r32)*12, "Quad3D contains padding!");
 #endif
 
 // +--------------------------------------------------------------+

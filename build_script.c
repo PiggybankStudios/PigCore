@@ -35,6 +35,7 @@ Description:
 
 #define FOLDERNAME_GENERATED_CODE  "gen"
 #define FOLDERNAME_LINUX           "linux"
+#define FOLDERNAME_OSX             "osx"
 #define FOLDERNAME_WEB             "web"
 #define FOLDERNAME_ORCA            "orca"
 
@@ -98,6 +99,7 @@ int main(int argc, char* argv[])
 	// bool RUN_FUZZER               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_FUZZER"));
 	bool BUILD_WINDOWS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WINDOWS"));
 	bool BUILD_LINUX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
+	bool BUILD_OSX                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_OSX"));
 	bool BUILD_WEB                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
 	bool BUILD_ORCA               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
 	bool BUILD_PLAYDATE_DEVICE    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
@@ -113,6 +115,20 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
 	
 	free(buildConfigContents.chars);
+	
+	// +==============================+
+	// | Enforce Option Restrictions  |
+	// +==============================+
+	if (BUILD_WINDOWS && !BUILDING_ON_WINDOWS)
+	{
+		PrintLine_E("BUILD_WINDOWS does not working when building on non-Windows platforms");
+		BUILD_WINDOWS = false;
+	}
+	if (BUILD_OSX && !BUILDING_ON_OSX)
+	{
+		PrintLine_E("BUILD_OSX does not working when building on non-OSX platforms");
+		BUILD_OSX = false;
+	}
 	
 	// +==============================+
 	// |        Find SDK Paths        |
@@ -167,7 +183,12 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                       Build piggen.exe                       |
 	// +--------------------------------------------------------------+
-	if (RUN_PIGGEN && !BUILD_PIGGEN && !DoesFileExist(StrLit(FILENAME_PIGGEN_EXE))) { PrintLine("Building %s because it's missing", FILENAME_PIGGEN_EXE); BUILD_PIGGEN = true; }
+	#if BUILDING_ON_WINDOWS
+	#define RUNNABLE_FILENAME_PIGGEN FILENAME_PIGGEN_EXE
+	#else
+	#define RUNNABLE_FILENAME_PIGGEN FILENAME_PIGGEN
+	#endif
+	if (RUN_PIGGEN && !BUILD_PIGGEN && !DoesFileExist(StrLit(RUNNABLE_FILENAME_PIGGEN))) { PrintLine("Building %s because it's missing", RUNNABLE_FILENAME_PIGGEN); BUILD_PIGGEN = true; }
 	if (BUILD_PIGGEN)
 	{
 		if (BUILD_WINDOWS)
@@ -192,7 +213,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIGGEN);
 			
-			mkdir(FOLDERNAME_LINUX, 0);
+			mkdir(FOLDERNAME_LINUX, S_IRWXU|S_IRWXG|S_IRWXO);
 			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
@@ -208,6 +229,21 @@ int main(int argc, char* argv[])
 			
 			chdir("..");
 		}
+		if (BUILD_OSX)
+		{
+			PrintLine("\n[Building %s for OSX...]", FILENAME_PIGGEN);
+			
+			CliArgList cmd = ZEROED;
+			AddArg(&cmd, ROOT_DIR "/piggen/piggen_main.c");
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LinuxFlags); //TODO: If this works, we should rename this list
+			AddArgList(&cmd, &clang_LinuxCommonLibraries); //TODO: If this works, we should rename this list
+			
+			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
+			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
+			PrintLine("[Built %s for OSX!]", FILENAME_PIGGEN);
+		}
 	}
 	
 	// +--------------------------------------------------------------+
@@ -215,7 +251,7 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	if (RUN_PIGGEN)
 	{
-		PrintLine("\n[%s]", FILENAME_PIGGEN_EXE);
+		PrintLine("\n[%s]", RUNNABLE_FILENAME_PIGGEN);
 		
 		#define PIGGEN_OUTPUT_FOLDER "-o=\"[VAL]\""
 		#define PIGGEN_EXCLUDE_FOLDER "-e=\"[VAL]\""
@@ -226,13 +262,16 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/base/base_defines_check.h");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/piggen/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/tools/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/third_party/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/wasm/std/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/.git/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/_build/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/_scripts/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/_media/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/_template/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, ROOT_DIR "/_fuzzing/");
 		
-		RunCliProgramAndExitOnFailure(StrLit(FILENAME_PIGGEN_EXE), &cmd, StrLit(FILENAME_PIGGEN_EXE " Failed!"));
+		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
 	}
 	
 	// +--------------------------------------------------------------+
@@ -358,7 +397,7 @@ int main(int argc, char* argv[])
 			}
 			if (BUILD_LINUX)
 			{
-				mkdir(FOLDERNAME_LINUX, 0);
+				mkdir(FOLDERNAME_LINUX, S_IRWXU|S_IRWXG|S_IRWXO);
 				chdir(FOLDERNAME_LINUX);
 				
 				Str8 oPath = findContext.oPaths.strings[sIndex];
@@ -483,7 +522,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIG_CORE_SO);
 			
-			mkdir(FOLDERNAME_LINUX, 0);
+			mkdir(FOLDERNAME_LINUX, S_IRWXU|S_IRWXG|S_IRWXO);
 			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
@@ -534,7 +573,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_TESTS);
 			
-			mkdir(FOLDERNAME_LINUX, 0);
+			mkdir(FOLDERNAME_LINUX, S_IRWXU|S_IRWXG|S_IRWXO);
 			chdir(FOLDERNAME_LINUX);
 			
 			CliArgList cmd = ZEROED;
@@ -553,11 +592,29 @@ int main(int argc, char* argv[])
 			chdir("..");
 		}
 		
+		if (BUILD_OSX)
+		{
+			PrintLine("\n[Building %s for OSX...]", FILENAME_TESTS);
+			
+			CliArgList cmd = ZEROED;
+			AddArg(&cmd, ROOT_DIR "/tests/tests_main.c");
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgList(&cmd, &clang_PigCoreLibraries);
+			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
+			
+			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
+			AssertFileExist(StrLit(FILENAME_TESTS), true);
+			PrintLine("[Built %s for OSX!]", FILENAME_TESTS);
+		}
+		
 		if (BUILD_WEB)
 		{
 			PrintLine("\n[Building %s for Web...]", FILENAME_APP_WASM);
 			
-			mkdir(FOLDERNAME_WEB, 0);
+			mkdir(FOLDERNAME_WEB, S_IRWXU|S_IRWXG|S_IRWXO);
 			chdir(FOLDERNAME_WEB);
 			
 			// TODO: del *.wasm > NUL 2> NUL
@@ -624,7 +681,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Orca...]", FILENAME_MODULE_WASM);
 			
-			mkdir(FOLDERNAME_ORCA, 0);
+			mkdir(FOLDERNAME_ORCA, S_IRWXU|S_IRWXG|S_IRWXO);
 			chdir(FOLDERNAME_ORCA);
 			
 			CliArgList cmd = ZEROED;
@@ -673,7 +730,7 @@ int main(int argc, char* argv[])
 			AssertFileExist(StrLit(FILENAME_PDEX_ELF), true);
 			PrintLine("[Built %s for Playdate!]", FILENAME_PDEX_ELF);
 			
-			mkdir("playdate_data", 0);
+			mkdir("playdate_data", S_IRWXU|S_IRWXG|S_IRWXO);
 			CopyFileToFolder(StrLit(FILENAME_PDEX_ELF), StrLit("playdate_data"));
 		}
 		
@@ -703,7 +760,7 @@ int main(int argc, char* argv[])
 			AssertFileExist(StrLit(FILENAME_PDEX_DLL), true);
 			PrintLine("[Built %s for Playdate Simulator!]", FILENAME_PDEX_DLL);
 			
-			mkdir("playdate_data", 0);
+			mkdir("playdate_data", S_IRWXU|S_IRWXG|S_IRWXO);
 			CopyFileToFolder(StrLit(FILENAME_PDEX_DLL), StrLit("playdate_data"));
 		}
 		
@@ -727,9 +784,14 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	if (RUN_TESTS)
 	{
-		PrintLine("\n[%s]", FILENAME_TESTS_EXE);
+		#if BUILDING_ON_WINDOWS
+		#define RUNNABLE_FILENAME_TESTS FILENAME_TESTS_EXE
+		#else
+		#define RUNNABLE_FILENAME_TESTS FILENAME_TESTS
+		#endif
+		PrintLine("\n[%s]", RUNNABLE_FILENAME_TESTS);
 		CliArgList cmd = ZEROED;
-		RunCliProgramAndExitOnFailure(StrLit(FILENAME_TESTS_EXE), &cmd, StrLit(FILENAME_TESTS_EXE " Exited With Error!"));
+		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_TESTS), &cmd, StrLit(RUNNABLE_FILENAME_TESTS " Exited With Error!"));
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", TOOL_EXE_NAME);

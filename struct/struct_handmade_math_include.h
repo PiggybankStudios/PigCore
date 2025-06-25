@@ -31,7 +31,7 @@ Date:   01\15\2025
 
 //NOTE: Handmade math types use "float" members but we would normally use "r32" typedef. Double check those are the same thing
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(float) == sizeof(r32));
+_Static_assert(sizeof(float) == sizeof(r32), "float is not the same size as r32!");
 #endif
 
 #endif //  _STRUCT_HANDMADE_MATH_INCLUDE_H

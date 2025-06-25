@@ -1319,9 +1319,9 @@ int main(int argc, char* argv[])
 	RunWasmStdTests();
 	#endif
 	
-	#if TARGET_IS_OSX
-	MTLCreateSystemDefaultDevice();
-	#endif
+	// #if TARGET_IS_OSX
+	// MTLCreateSystemDefaultDevice();
+	// #endif
 	
 	// +==============================+
 	// |        VarArray Tests        |

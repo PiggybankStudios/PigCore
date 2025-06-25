@@ -23,7 +23,7 @@ union Circle
 	struct { v2 Center; r32 Radius; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Circle) == sizeof(r32)*3);
+_Static_assert(sizeof(Circle) == sizeof(r32)*3, "Circle contains padding!");
 #endif
 
 typedef union Sphere Sphere;
@@ -34,7 +34,7 @@ union Sphere
 	struct { v3 Center; r32 Radius; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Sphere) == sizeof(r32)*4);
+_Static_assert(sizeof(Sphere) == sizeof(r32)*4, "Sphere contains padding!");
 #endif
 
 // +--------------------------------------------------------------+

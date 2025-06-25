@@ -69,18 +69,11 @@ PEXP const char* GetErrnoStr(int errnoValue)
 		case EAFNOSUPPORT:    return "EAFNOSUPPORT";    //Address family not supported (POSIX.1-2001).
 		case EAGAIN:          return "EAGAIN";          //Resource temporarily unavailable (may be the same value as EWOULDBLOCK) (POSIX.1-2001).
 		case EALREADY:        return "EALREADY";        //Connection already in progress (POSIX.1-2001).
-		case EBADE:           return "EBADE";           // Invalid exchange.
 		case EBADF:           return "EBADF";           // Bad file descriptor (POSIX.1-2001).
-		case EBADFD:          return "EBADFD";          //File descriptor in bad state.
 		case EBADMSG:         return "EBADMSG";         //Bad message (POSIX.1-2001).
-		case EBADR:           return "EBADR";           // Invalid request descriptor.
-		case EBADRQC:         return "EBADRQC";         //Invalid request code.
-		case EBADSLT:         return "EBADSLT";         //Invalid slot.
 		case EBUSY:           return "EBUSY";           //Device or resource busy (POSIX.1-2001).
 		case ECANCELED:       return "ECANCELED";       //Operation canceled (POSIX.1-2001).
 		case ECHILD:          return "ECHILD";          //No child processes (POSIX.1-2001).
-		case ECHRNG:          return "ECHRNG";          //Channel number out of range.
-		case ECOMM:           return "ECOMM";           //Communication error on send.
 		case ECONNABORTED:    return "ECONNABORTED";    //Connection aborted (POSIX.1-2001).
 		case ECONNREFUSED:    return "ECONNREFUSED";    //Connection refused (POSIX.1-2001).
 		case ECONNRESET:      return "ECONNRESET";      //Connection reset (POSIX.1-2001).
@@ -96,7 +89,6 @@ PEXP const char* GetErrnoStr(int errnoValue)
 		case EFBIG:           return "EFBIG";           // File too large (POSIX.1-2001).
 		case EHOSTDOWN:       return "EHOSTDOWN";       //Host is down.
 		case EHOSTUNREACH:    return "EHOSTUNREACH";    //Host is unreachable (POSIX.1-2001).
-		case EHWPOISON:       return "EHWPOISON";       //Memory page has hardware error.
 		case EIDRM:           return "EIDRM";           //Identifier removed (POSIX.1-2001).
 		case EILSEQ:          return "EILSEQ";          //Invalid or incomplete multibyte or wide character (POSIX.1, C99). The text shown here is the glibc error description; in POSIX.1, this error is described as "Illegal byte sequence".
 		case EINPROGRESS:     return "EINPROGRESS";     //Operation in progress (POSIX.1-2001).
@@ -105,6 +97,76 @@ PEXP const char* GetErrnoStr(int errnoValue)
 		case EIO:             return "EIO";             //Input/output error (POSIX.1-2001).
 		case EISCONN:         return "EISCONN";         //Socket is connected (POSIX.1-2001).
 		case EISDIR:          return "EISDIR";          //Is a directory (POSIX.1-2001).
+		case ELOOP:           return "ELOOP";           //Too many levels of symbolic links (POSIX.1-2001).
+		case EMFILE:          return "EMFILE";          //Too many open files (POSIX.1-2001).  Commonly caused by exceeding the RLIMIT_NOFILE resource limit described in getrlimit(2).  Can also be caused by exceeding the limit specified in /proc/sys/fs/nr_open.
+		case EMLINK:          return "EMLINK";          //Too many links (POSIX.1-2001).
+		case EMSGSIZE:        return "EMSGSIZE";        //Message too long (POSIX.1-2001).
+		case EMULTIHOP:       return "EMULTIHOP";       //Multihop attempted (POSIX.1-2001).
+		case ENAMETOOLONG:    return "ENAMETOOLONG";    //Filename too long (POSIX.1-2001).
+		case ENETDOWN:        return "ENETDOWN";        //Network is down (POSIX.1-2001).
+		case ENETRESET:       return "ENETRESET";       //Connection aborted by network (POSIX.1-2001).
+		case ENETUNREACH:     return "ENETUNREACH";     //Network unreachable (POSIX.1-2001).
+		case ENFILE:          return "ENFILE";          //Too many open files in system (POSIX.1-2001).  On Linux, this is probably a result of encountering the /proc/sys/fs/file-max limit (see proc(5)).
+		case ENOBUFS:         return "ENOBUFS";         //No buffer space available (POSIX.1 (XSI STREAMS option)).
+		case ENODATA:         return "ENODATA";         //The named attribute does not exist, or the process has no access to this attribute; see xattr(7). In POSIX.1-2001 (XSI STREAMS option), this error was described as "No message is available on the STREAM head read queue".
+		case ENODEV:          return "ENODEV";          //No such device (POSIX.1-2001).
+		case ENOENT:          return "ENOENT";          //No such file or directory (POSIX.1-2001). Typically, this error results when a specified pathname does not exist, or one of the components in the directory prefix of a pathname does not exist, or the specified pathname is a dangling symbolic link.
+		case ENOEXEC:         return "ENOEXEC";         //Exec format error (POSIX.1-2001).
+		case ENOLCK:          return "ENOLCK";          //No locks available (POSIX.1-2001).
+		case ENOLINK:         return "ENOLINK";         //Link has been severed (POSIX.1-2001).
+		case ENOMEM:          return "ENOMEM";          //Not enough space/cannot allocate memory (POSIX.1-2001).
+		case ENOMSG:          return "ENOMSG";          //No message of the desired type (POSIX.1-2001).
+		case ENOPROTOOPT:     return "ENOPROTOOPT";     //Protocol not available (POSIX.1-2001).
+		case ENOSPC:          return "ENOSPC";          //No space left on device (POSIX.1-2001).
+		case ENOSR:           return "ENOSR";           //No STREAM resources (POSIX.1 (XSI STREAMS option)).
+		case ENOSTR:          return "ENOSTR";          //Not a STREAM (POSIX.1 (XSI STREAMS option)).
+		case ENOSYS:          return "ENOSYS";          //Function not implemented (POSIX.1-2001).
+		case ENOTBLK:         return "ENOTBLK";         //Block device required.
+		case ENOTCONN:        return "ENOTCONN";        //The socket is not connected (POSIX.1-2001).
+		case ENOTDIR:         return "ENOTDIR";         //Not a directory (POSIX.1-2001).
+		case ENOTEMPTY:       return "ENOTEMPTY";       //Directory not empty (POSIX.1-2001).
+		case ENOTRECOVERABLE: return "ENOTRECOVERABLE"; //State not recoverable (POSIX.1-2008).
+		case ENOTSOCK:        return "ENOTSOCK";        //Not a socket (POSIX.1-2001).
+		case ENOTSUP:         return "ENOTSUP";         //Operation not supported (POSIX.1-2001).
+		case ENOTTY:          return "ENOTTY";          //Inappropriate I/O control operation (POSIX.1-2001).
+		case ENXIO:           return "ENXIO";           //No such device or address (POSIX.1-2001).
+		#if (defined(EOPNOTSUPP) && (!defined(ENOTSUP) || ENOTSUP != EOPNOTSUPP))
+		case EOPNOTSUPP:      return "EOPNOTSUPP";      //Operation not supported on socket (POSIX.1-2001). (ENOTSUP and EOPNOTSUPP have the same value on Linux, but according to POSIX.1 these error values should be distinct.)
+		#endif
+		case EOVERFLOW:       return "EOVERFLOW";       //Value too large to be stored in data type (POSIX.1-2001).
+		case EOWNERDEAD:      return "EOWNERDEAD";      //Owner died (POSIX.1-2008).
+		case EPERM:           return "EPERM";           //Operation not permitted (POSIX.1-2001).
+		case EPFNOSUPPORT:    return "EPFNOSUPPORT";    //Protocol family not supported.
+		case EPIPE:           return "EPIPE";           //Broken pipe (POSIX.1-2001).
+		case EPROTO:          return "EPROTO";          //Protocol error (POSIX.1-2001).
+		case EPROTONOSUPPORT: return "EPROTONOSUPPORT"; //Protocol not supported (POSIX.1-2001).
+		case EPROTOTYPE:      return "EPROTOTYPE";      //Protocol wrong type for socket (POSIX.1-2001).
+		case ERANGE:          return "ERANGE";          //Result too large (POSIX.1, C99).
+		case EREMOTE:         return "EREMOTE";         //Object is remote.
+		case EROFS:           return "EROFS";           //Read-only filesystem (POSIX.1-2001).
+		case ESHUTDOWN:       return "ESHUTDOWN";       //Cannot send after transport endpoint shutdown.
+		case ESPIPE:          return "ESPIPE";          //Invalid seek (POSIX.1-2001).
+		case ESOCKTNOSUPPORT: return "ESOCKTNOSUPPORT"; //Socket type not supported.
+		case ESRCH:           return "ESRCH";           //No such process (POSIX.1-2001).
+		case ESTALE:          return "ESTALE";          //Stale file handle (POSIX.1-2001). This error can occur for NFS and for other filesystems.
+		case ETIME:           return "ETIME";           //Timer expired (POSIX.1 (XSI STREAMS option)). (POSIX.1 says "STREAM ioctl(2) timeout".)
+		case ETIMEDOUT:       return "ETIMEDOUT";       //Connection timed out (POSIX.1-2001).
+		case ETOOMANYREFS:    return "ETOOMANYREFS";    //Too many references: cannot splice.
+		case ETXTBSY:         return "ETXTBSY";         //Text file busy (POSIX.1-2001).
+		case EUSERS:          return "EUSERS";          //Too many users.
+		#if (defined(EWOULDBLOCK) && (!defined(EAGAIN) || EAGAIN != EWOULDBLOCK))
+		case EWOULDBLOCK:     return "EWOULDBLOCK";     //Operation would block (may be same value as EAGAIN) (POSIX.1-2001).
+		#endif
+		case EXDEV:           return "EXDEV";           //Invalid cross-device link (POSIX.1-2001).
+		#if TARGET_IS_LINUX
+		case EBADE:           return "EBADE";           // Invalid exchange.
+		case EBADFD:          return "EBADFD";          //File descriptor in bad state.
+		case EBADR:           return "EBADR";           // Invalid request descriptor.
+		case EBADRQC:         return "EBADRQC";         //Invalid request code.
+		case EBADSLT:         return "EBADSLT";         //Invalid slot.
+		case ECHRNG:          return "ECHRNG";          //Channel number out of range.
+		case ECOMM:           return "ECOMM";           //Communication error on send.
+		case EHWPOISON:       return "EHWPOISON";       //Memory page has hardware error.
 		case EISNAM:          return "EISNAM";          //Is a named type file.
 		case EKEYEXPIRED:     return "EKEYEXPIRED";     //Key has expired.
 		case EKEYREJECTED:    return "EKEYREJECTED";    //Key was rejected by service.
@@ -119,82 +181,22 @@ PEXP const char* GetErrnoStr(int errnoValue)
 		case ELIBSCN:         return "ELIBSCN";         //.lib section in a.out corrupted
 		case ELIBEXEC:        return "ELIBEXEC";        //Cannot exec a shared library directly.
 		case ELNRNG:          return "ELNRNG";          //Link number out of range.
-		case ELOOP:           return "ELOOP";           //Too many levels of symbolic links (POSIX.1-2001).
 		case EMEDIUMTYPE:     return "EMEDIUMTYPE";     //Wrong medium type.
-		case EMFILE:          return "EMFILE";          //Too many open files (POSIX.1-2001).  Commonly caused by exceeding the RLIMIT_NOFILE resource limit described in getrlimit(2).  Can also be caused by exceeding the limit specified in /proc/sys/fs/nr_open.
-		case EMLINK:          return "EMLINK";          //Too many links (POSIX.1-2001).
-		case EMSGSIZE:        return "EMSGSIZE";        //Message too long (POSIX.1-2001).
-		case EMULTIHOP:       return "EMULTIHOP";       //Multihop attempted (POSIX.1-2001).
-		case ENAMETOOLONG:    return "ENAMETOOLONG";    //Filename too long (POSIX.1-2001).
-		case ENETDOWN:        return "ENETDOWN";        //Network is down (POSIX.1-2001).
-		case ENETRESET:       return "ENETRESET";       //Connection aborted by network (POSIX.1-2001).
-		case ENETUNREACH:     return "ENETUNREACH";     //Network unreachable (POSIX.1-2001).
-		case ENFILE:          return "ENFILE";          //Too many open files in system (POSIX.1-2001).  On Linux, this is probably a result of encountering the /proc/sys/fs/file-max limit (see proc(5)).
 		case ENOANO:          return "ENOANO";          //No anode.
-		case ENOBUFS:         return "ENOBUFS";         //No buffer space available (POSIX.1 (XSI STREAMS option)).
-		case ENODATA:         return "ENODATA";         //The named attribute does not exist, or the process has no access to this attribute; see xattr(7). In POSIX.1-2001 (XSI STREAMS option), this error was described as "No message is available on the STREAM head read queue".
-		case ENODEV:          return "ENODEV";          //No such device (POSIX.1-2001).
-		case ENOENT:          return "ENOENT";          //No such file or directory (POSIX.1-2001). Typically, this error results when a specified pathname does not exist, or one of the components in the directory prefix of a pathname does not exist, or the specified pathname is a dangling symbolic link.
-		case ENOEXEC:         return "ENOEXEC";         //Exec format error (POSIX.1-2001).
 		case ENOKEY:          return "ENOKEY";          //Required key not available.
-		case ENOLCK:          return "ENOLCK";          //No locks available (POSIX.1-2001).
-		case ENOLINK:         return "ENOLINK";         //Link has been severed (POSIX.1-2001).
 		case ENOMEDIUM:       return "ENOMEDIUM";       //No medium found.
-		case ENOMEM:          return "ENOMEM";          //Not enough space/cannot allocate memory (POSIX.1-2001).
-		case ENOMSG:          return "ENOMSG";          //No message of the desired type (POSIX.1-2001).
 		case ENONET:          return "ENONET";          //Machine is not on the network.
 		case ENOPKG:          return "ENOPKG";          //Package not installed.
-		case ENOPROTOOPT:     return "ENOPROTOOPT";     //Protocol not available (POSIX.1-2001).
-		case ENOSPC:          return "ENOSPC";          //No space left on device (POSIX.1-2001).
-		case ENOSR:           return "ENOSR";           //No STREAM resources (POSIX.1 (XSI STREAMS option)).
-		case ENOSTR:          return "ENOSTR";          //Not a STREAM (POSIX.1 (XSI STREAMS option)).
-		case ENOSYS:          return "ENOSYS";          //Function not implemented (POSIX.1-2001).
-		case ENOTBLK:         return "ENOTBLK";         //Block device required.
-		case ENOTCONN:        return "ENOTCONN";        //The socket is not connected (POSIX.1-2001).
-		case ENOTDIR:         return "ENOTDIR";         //Not a directory (POSIX.1-2001).
-		case ENOTEMPTY:       return "ENOTEMPTY";       //Directory not empty (POSIX.1-2001).
-		case ENOTRECOVERABLE: return "ENOTRECOVERABLE"; //State not recoverable (POSIX.1-2008).
-		case ENOTSOCK:        return "ENOTSOCK";        //Not a socket (POSIX.1-2001).
-		case ENOTSUP:         return "ENOTSUP";         //Operation not supported (POSIX.1-2001).
-		case ENOTTY:          return "ENOTTY";          //Inappropriate I/O control operation (POSIX.1-2001).
 		case ENOTUNIQ:        return "ENOTUNIQ";        //Name not unique on network.
-		case ENXIO:           return "ENXIO";           //No such device or address (POSIX.1-2001).
-		#if (defined(EOPNOTSUPP) && (!defined(ENOTSUP) || ENOTSUP != EOPNOTSUPP))
-		case EOPNOTSUPP:      return "EOPNOTSUPP";      //Operation not supported on socket (POSIX.1-2001). (ENOTSUP and EOPNOTSUPP have the same value on Linux, but according to POSIX.1 these error values should be distinct.)
-		#endif
-		case EOVERFLOW:       return "EOVERFLOW";       //Value too large to be stored in data type (POSIX.1-2001).
-		case EOWNERDEAD:      return "EOWNERDEAD";      //Owner died (POSIX.1-2008).
-		case EPERM:           return "EPERM";           //Operation not permitted (POSIX.1-2001).
-		case EPFNOSUPPORT:    return "EPFNOSUPPORT";    //Protocol family not supported.
-		case EPIPE:           return "EPIPE";           //Broken pipe (POSIX.1-2001).
-		case EPROTO:          return "EPROTO";          //Protocol error (POSIX.1-2001).
-		case EPROTONOSUPPORT: return "EPROTONOSUPPORT"; //Protocol not supported (POSIX.1-2001).
-		case EPROTOTYPE:      return "EPROTOTYPE";      //Protocol wrong type for socket (POSIX.1-2001).
-		case ERANGE:          return "ERANGE";          //Result too large (POSIX.1, C99).
 		case EREMCHG:         return "EREMCHG";         //Remote address changed.
-		case EREMOTE:         return "EREMOTE";         //Object is remote.
 		case EREMOTEIO:       return "EREMOTEIO";       //Remote I/O error.
 		case ERESTART:        return "ERESTART";        //Interrupted system call should be restarted.
 		case ERFKILL:         return "ERFKILL";         //Operation not possible due to RF-kill.
-		case EROFS:           return "EROFS";           //Read-only filesystem (POSIX.1-2001).
-		case ESHUTDOWN:       return "ESHUTDOWN";       //Cannot send after transport endpoint shutdown.
-		case ESPIPE:          return "ESPIPE";          //Invalid seek (POSIX.1-2001).
-		case ESOCKTNOSUPPORT: return "ESOCKTNOSUPPORT"; //Socket type not supported.
-		case ESRCH:           return "ESRCH";           //No such process (POSIX.1-2001).
-		case ESTALE:          return "ESTALE";          //Stale file handle (POSIX.1-2001). This error can occur for NFS and for other filesystems.
 		case ESTRPIPE:        return "ESTRPIPE";        //Streams pipe error.
-		case ETIME:           return "ETIME";           //Timer expired (POSIX.1 (XSI STREAMS option)). (POSIX.1 says "STREAM ioctl(2) timeout".)
-		case ETIMEDOUT:       return "ETIMEDOUT";       //Connection timed out (POSIX.1-2001).
-		case ETOOMANYREFS:    return "ETOOMANYREFS";    //Too many references: cannot splice.
-		case ETXTBSY:         return "ETXTBSY";         //Text file busy (POSIX.1-2001).
 		case EUCLEAN:         return "EUCLEAN";         //Structure needs cleaning.
 		case EUNATCH:         return "EUNATCH";         //Protocol driver not attached.
-		case EUSERS:          return "EUSERS";          //Too many users.
-		#if (defined(EWOULDBLOCK) && (!defined(EAGAIN) || EAGAIN != EWOULDBLOCK))
-		case EWOULDBLOCK:     return "EWOULDBLOCK";     //Operation would block (may be same value as EAGAIN) (POSIX.1-2001).
-		#endif
-		case EXDEV:           return "EXDEV";           //Invalid cross-device link (POSIX.1-2001).
 		case EXFULL:          return "EXFULL";          //Exchange full.
+		#endif //TARGET_IS_LINUX
 		default: return UNKNOWN_STR;
 	}
 }

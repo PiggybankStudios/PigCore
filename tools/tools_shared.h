@@ -76,6 +76,7 @@ Description:
 
 #if !BUILDING_ON_WINDOWS
 #include <unistd.h>
+#include <sys/stat.h>
 #endif
 
 // +--------------------------------------------------------------+

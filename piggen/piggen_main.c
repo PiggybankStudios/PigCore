@@ -90,7 +90,7 @@ bool ShouldExcludePath(FilePath fileOrFolderPath)
 		VarArrayLoopGetValue(FilePath, excludePath, &piggen->excludePaths, eIndex);
 		if (StrAnyCaseStartsWith(fileOrFolderPath, excludePath))
 		{
-			// PrintLine_D("Skipping \"%.*s\"", StrPrint(filePath));
+			// PrintLine_D("Skipping \"%.*s\"", StrPrint(fileOrFolderPath));
 			return true;
 		}
 	}
@@ -100,6 +100,7 @@ bool ShouldExcludePath(FilePath fileOrFolderPath)
 //Returns number of folders searched
 uxx FindSourceFilesInFolderRecursive(FilePath folderPath, uxx maxDepth, uxx depth)
 {
+	// PrintLine_D("Searching folder \"%.*s\"", StrPrint(folderPath));
 	uxx numFoldersSearched = 1;
 	ScratchBegin1(scratch, piggen->mainArena);
 	OsFileIter fileIter = OsIterateFiles(scratch, folderPath, true, true);
@@ -161,6 +162,8 @@ int main(int argc, char* argv[])
 	ScratchBegin2(scratch3, scratch, scratch2);
 	
 	PrintLine_N("Running piggen...");
+	fflush(stdout);
+	fflush(stderr);
 	piggen = AllocType(PiggenState, scratch);
 	NotNull(piggen);
 	ClearPointer(piggen);

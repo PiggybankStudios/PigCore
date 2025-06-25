@@ -33,6 +33,8 @@ Descriptions:
 typedef unsigned char char16_t;
 #elif TARGET_IS_PLAYDATE_DEVICE
 typedef unsigned char char16_t;
+#elif TARGET_IS_OSX
+typedef uint16_t char16_t;
 #else
 #include <uchar.h> //for char16_t
 #endif

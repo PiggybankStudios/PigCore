@@ -29,7 +29,7 @@ union Rectanglef
 	struct { v2 TopLeft, Size; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Rectanglef) == sizeof(r32) * 4);
+_Static_assert(sizeof(Rectanglef) == sizeof(r32) * 4, "Rectanglef contains padding!");
 #endif
 
 typedef union Rectanglei Rectanglei;
@@ -41,7 +41,7 @@ union Rectanglei
 	struct { v2i TopLeft, Size; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Rectanglei) == sizeof(i32) * 4);
+_Static_assert(sizeof(Rectanglei) == sizeof(i32) * 4, "Rectanglei contains padding!");
 #endif
 
 typedef union Box Box;
@@ -53,7 +53,7 @@ union Box
 	struct { v3 BottomLeftBack, Size; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Box) == sizeof(r32) * 6);
+_Static_assert(sizeof(Box) == sizeof(r32) * 6, "Box contains padding!");
 #endif
 
 typedef union Boxi Boxi;
@@ -65,7 +65,7 @@ union Boxi
 	struct { v3i BottomLeftBack, Size; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Boxi) == sizeof(i32) * 6);
+_Static_assert(sizeof(Boxi) == sizeof(i32) * 6, "Boxi contains padding!");
 #endif
 
 typedef union Obb2D Obb2D;
@@ -77,7 +77,7 @@ union Obb2D
 	struct { v2 Center, Size; r32 Unused3; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Obb2D) == sizeof(r32) * 5);
+_Static_assert(sizeof(Obb2D) == sizeof(r32) * 5, "Obb2D contains padding!");
 #endif
 
 //NOTE: quat is HMM_Vec4 which has an SSE intrinsic that forces it to be 16-byte aligned
@@ -91,7 +91,7 @@ union Obb3D
 	struct { v3 Center, Size; r32 Padding5, Padding6; quat Unused5; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Obb3D) == sizeof(r32) * 12);
+_Static_assert(sizeof(Obb3D) == sizeof(r32) * 12, "Obb3D contains padding!");
 #endif
 
 typedef Rectanglef rec;

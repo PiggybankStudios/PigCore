@@ -20,7 +20,7 @@ union Line2D
 	struct { v2 Start; v2 End; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Line2D) == sizeof(r32)*4);
+_Static_assert(sizeof(Line2D) == sizeof(r32)*4, "Line2D contains padding!");
 #endif
 
 typedef union Line3D Line3D;
@@ -31,7 +31,7 @@ union Line3D
 	struct { v3 Start; v3 End; };
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Line3D) == sizeof(r32)*6);
+_Static_assert(sizeof(Line3D) == sizeof(r32)*6, "Line3D contains padding!");
 #endif
 
 // +--------------------------------------------------------------+

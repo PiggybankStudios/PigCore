@@ -84,7 +84,7 @@ union Vertex2D
 	};
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Vertex2D) == sizeof(r32)*8);
+_Static_assert(sizeof(Vertex2D) == sizeof(r32)*8, "Vertex2D contains padding!");
 #endif
 
 typedef union Vertex3D Vertex3D;
@@ -107,7 +107,7 @@ union Vertex3D
 	};
 };
 #if LANGUAGE_IS_C
-_Static_assert(sizeof(Vertex3D) == sizeof(r32)*12);
+_Static_assert(sizeof(Vertex3D) == sizeof(r32)*12, "Vertex3D contains padding!");
 #endif
 
 // +--------------------------------------------------------------+

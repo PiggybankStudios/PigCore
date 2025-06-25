@@ -24,8 +24,8 @@ Description:
 #define MyBreakMsg(message) __debugbreak()
 #define MyBreak()           MyBreakMsg("")
 #elif (TARGET_IS_OSX || TARGET_IS_LINUX)
-#define MyBreakMsg(message) raise(SIGINT)
-#define MyBreak()           MyBreakMsg("")
+#define MyBreakMsg(message) fprintf(stderr, "%s\n", ((message) != nullptr) ? (message) : "MyBreak Hit!"); raise(SIGINT)
+#define MyBreak()           MyBreakMsg(nullptr)
 #elif TARGET_IS_ORCA
 #define MyBreakMsg(message) oc_abort_ext(__FILE__, __FUNCTION__, __LINE__, message)
 #define MyBreak()           MyBreakMsg("MyBreak()")
