@@ -7,15 +7,7 @@ setlocal enabledelayedexpansion
 if not exist _build mkdir _build
 pushd _build
 set root=..
-set scripts=%root%\_scripts
-set tools=%root%\third_party\_tools\win32
 set build_config_path=%root%\build_config.h
-
-python --version > NUL 2> NUL
-if errorlevel 1 (
-	echo WARNING: Python isn't installed on this computer. Shaders cant be found and compiled, and javascript glue files can't be concatenated together for WebAssembly builds!
-)
-
 set initialized_msvc_compiler=0
 set tool_compiler_flags=/std:clatest /O2 /FC /nologo /Zi /I"%root%"
 

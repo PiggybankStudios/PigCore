@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
 			
 			PrintLine("Generating \"%.*s\"...", realHeaderPath.length, realHeaderPath.chars);
-			Str8 shdcExe = CopyStr8(StrLit(EXE_SHDC), false);
+			Str8 shdcExe = JoinStrings2(StrLit("../"), StrLit(EXE_SHDC), false);
 			FixPathSlashes(shdcExe, PATH_SEP_CHAR);
 			RunCliProgramAndExitOnFailure(shdcExe, &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
 			AssertFileExist(realHeaderPath, true);

@@ -7,7 +7,7 @@ Date:   06\19\2025
 #ifndef _TOOLS_BUILD_HELPERS_H
 #define _TOOLS_BUILD_HELPERS_H
 
-static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
+static inline Str8 ExtractStrDefine(Str8 buildConfigContents, Str8 defineName)
 {
 	Str8 defineValueStr = ZEROED;
 	if (!TryExtractDefineFrom(buildConfigContents, defineName, &defineValueStr))
@@ -15,6 +15,11 @@ static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
 		PrintLine_E("Couldn't find #define %.*s in build_config.h!", defineName.length, defineName.chars);
 		exit(4);
 	}
+	return defineValueStr;
+}
+static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
+{
+	Str8 defineValueStr = ExtractStrDefine(buildConfigContents, defineName);
 	bool result = false;
 	if (!TryParseBoolArg(defineValueStr, &result))
 	{
@@ -625,6 +630,7 @@ RECURSIVE_DIR_WALK_CALLBACK_DEF(FindShaderFilesCallback)
 	{
 		Str8 shaderName = GetFileNamePart(path, false);
 		Str8 rootPath = StrReplace(path, StrLit(".."), StrLit("[ROOT]"), false);
+		FixPathSlashes(rootPath, '/');
 		AddStr(&context->shaderPaths, rootPath);
 		AddStr(&context->headerPaths, JoinStrings2(rootPath, StrLit(".h"), true));
 		AddStr(&context->sourcePaths, JoinStrings2(rootPath, StrLit(".c"), true));
