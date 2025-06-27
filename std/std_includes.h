@@ -43,6 +43,7 @@ typedef uint16_t char16_t;
 	#include <intrin.h>
 #endif
 #if (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#include <sys/types.h>
 	#include <signal.h>
 	// Gives us getpagesize and sleep and access
 	#include <unistd.h>
@@ -57,6 +58,8 @@ typedef uint16_t char16_t;
 	#include <dlfcn.h> //needed for dlopen
 	// Needed for struct stat
 	#include <sys/stat.h>
+	// Needed for getpwuid and getuid
+	#include <pwd.h>
 #endif
 #if TARGET_IS_LINUX && !BUILD_FOR_PIGGEN
 	#include <fontconfig/fontconfig.h>

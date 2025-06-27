@@ -25,6 +25,7 @@ Description:
 #define CLANG_FULL_FILE_PATHS     "-fdiagnostics-absolute-paths" //Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 #define CLANG_INCLUDE_DIR         "-I \"[VAL]\"" //Adds an include directory to search in when resolving #includes
 #define CLANG_LIBRARY_DIR         "-L \"[VAL]\""
+#define CLANG_RPATH_DIR           "-rpath \"[VAL]\""
 #define CLANG_SYSTEM_LIBRARY      "-l[VAL]"
 #define CLANG_PRECOMPILE_ONLY     "-E"
 #define CLANG_BUILD_SHARED_LIB    "-shared"

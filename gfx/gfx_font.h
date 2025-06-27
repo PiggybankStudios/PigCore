@@ -144,6 +144,7 @@ struct PigFont
 	FontKerningTable kerningTable;
 };
 
+//NOTE: Font is defined in Xlib.h as a typedef of XID
 #if !BUILD_WITH_RAYLIB && !TARGET_IS_LINUX
 typedef PigFont Font;
 #endif

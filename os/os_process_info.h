@@ -319,8 +319,27 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		
 		ScratchEnd(scratch);
 	}
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin1(scratch, arena);
+		struct passwd* passwordEntry = getpwuid(getuid());
+		const char* homeDirNt = passwordEntry->pw_dir;
+		FilePath homeDir = AllocStr8Nt(scratch, homeDirNt);
+		NotNullStr(homeDir);
+		if (homeDir.length == 0)
+		{
+			WriteLine_E("Failed to get home directory for current user!");
+			ScratchEnd(scratch);
+			return FilePath_Empty;
+		}
+		if (DoesPathHaveTrailingSlash(homeDir)) { homeDir.length--; }
+		result = PrintInArenaStr(arena, "%.*s/.%.*s", StrPrint(homeDir), StrPrint(programName));
+		NotNullStr(result);
+		FixPathSlashes(result);
+		ScratchEnd(scratch);
+	}
 	#else
-	AssertMsg(false, "OsGetAppdataDirectory does not support the current platform yet!");
+	AssertMsg(false, "OsGetSettingsSavePath does not support the current platform yet!");
 	#endif
 	
 	return result;
