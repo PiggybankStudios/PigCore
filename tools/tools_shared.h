@@ -425,6 +425,35 @@ static inline Str8 StrReplace(Str8 haystack, Str8 target, Str8 replacement, bool
 }
 
 // +--------------------------------------------------------------+
+// |                        Print Helpers                         |
+// +--------------------------------------------------------------+
+void TwoPassPrint(Str8* resultStr, uxx* currentByteIndex, const char* formatString, ...)
+{
+	uxx printSize = 0;
+	va_list args;
+	
+	va_start(args, formatString);
+	int measureResult = vsnprintf(nullptr, 0, formatString, args);
+	va_end(args);
+	assert(measureResult >= 0);
+	
+	printSize = (uxx)measureResult;
+	if (resultStr->chars != nullptr)
+	{
+		assert(*currentByteIndex <= resultStr->length);
+		uxx spaceLeft = resultStr->length - *currentByteIndex;
+		assert(printSize <= spaceLeft);
+		va_start(args, formatString);
+		int printResult = vsnprintf(&resultStr->chars[*currentByteIndex], measureResult+1, formatString, args);
+		assert(printResult == measureResult);
+		resultStr->chars[*currentByteIndex + printSize] = '\0';
+		va_end(args);
+	}
+	
+	*currentByteIndex += printSize;
+}
+
+// +--------------------------------------------------------------+
 // |                         Line Parser                          |
 // +--------------------------------------------------------------+
 static inline LineParser NewLineParser(Str8 inputStr)
