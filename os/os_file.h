@@ -84,6 +84,8 @@ struct OsFile
 	
 	#if TARGET_IS_WINDOWS
 	HANDLE handle;
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	FILE* handle;
 	#endif
 };
 
@@ -950,6 +952,21 @@ PEXP void OsCloseFile(OsFile* file)
 		}
 		ClearPointer(file);
 	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	{
+		if (file->handle != nullptr)
+		{
+			int closeResult = fclose(file->handle);
+			Assert(closeResult == 0);
+			UNUSED(closeResult);
+		}
+		if (file->arena != nullptr && CanArenaFree(file->arena))
+		{
+			FreeFilePathWithNt(file->arena, &file->path);
+			FreeFilePathWithNt(file->arena, &file->fullPath);
+		}
+		ClearPointer(file);
+	}
 	#else
 	AssertMsg(false, "OsCloseFile does not support the current platform yet!");
 	#endif
@@ -965,7 +982,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 	#if TARGET_IS_WINDOWS
 	{
 		ScratchBegin1(scratch, arena);
-		Str8 fullPath = OsGetFullPath(scratch, path);;
+		Str8 fullPath = OsGetFullPath(scratch, path);
 		
 		DWORD desiredAccess = GENERIC_READ;
 		if (mode != OsOpenFileMode_Read) { desiredAccess |= GENERIC_WRITE; }
@@ -1054,14 +1071,62 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 		NotNullStr(openFileOut->fullPath);
 		result = true;
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// }
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	{
+		ScratchBegin1(scratch, arena);
+		Str8 fullPath = OsGetFullPath(scratch, path);
+		
+		const char* openModeStr = "r";
+		switch (mode)
+		{
+			case OsOpenFileMode_Read:   openModeStr = "r"; break;
+			case OsOpenFileMode_Create: openModeStr = "w"; break;
+			case OsOpenFileMode_Write:  openModeStr = "r+"; break;
+			case OsOpenFileMode_Append: openModeStr = "a"; break;
+			default: AssertMsg(false, "Unhandled mode passed to OsOpenFile"); break;
+		}
+		
+		FILE* fileHandle = fopen(fullPath.chars, openModeStr);
+		if (fileHandle == nullptr)
+		{
+			PrintLine_E("ERROR: Failed to open file for %s at \"%.*s\"", GetOsOpenFileModeStr(mode), StrPrint(fullPath));
+			ScratchEnd(scratch);
+			return false;
+		}
+		
+		openFileOut->handle = fileHandle;
+		openFileOut->arena = arena;
+		openFileOut->isOpen = true;
+		openFileOut->openedForWriting = (mode != OsOpenFileMode_Read);
+		openFileOut->isKnownSize = (calculateSize || mode == OsOpenFileMode_Create || mode == OsOpenFileMode_Write);
+		openFileOut->cursorIndex = 0;
+		openFileOut->fileSize = 0;
+		openFileOut->path = AllocStrAndCopy(arena, path.length, path.chars, true);
+		openFileOut->fullPath = AllocStrAndCopy(arena, fullPath.length, fullPath.chars, true);
+		
+		if (calculateSize && (mode == OsOpenFileMode_Read || mode == OsOpenFileMode_Append))
+		{
+			int seekResult = fseek(fileHandle, 0, SEEK_END);
+			Assert(seekResult == 0);
+			long fileSize = ftell(fileHandle);
+			Assert(fileSize >= 0);
+			Assert((unsigned long)fileSize <= UINTXX_MAX);
+			openFileOut->fileSize = (uxx)fileSize;
+			
+			if (mode == OsOpenFileMode_Read)
+			{
+				seekResult = fseek(fileHandle, 0, SEEK_SET); //back to the beginning of the file
+				Assert(seekResult == 0);
+			}
+			else
+			{
+				openFileOut->cursorIndex = openFileOut->fileSize;
+			}
+		}
+		
+		ScratchEnd(scratch);
+		result = true;
+	}
 	#else
 	UNUSED(arena);
 	UNUSED(path);
@@ -1127,6 +1192,41 @@ PEXP Result OsReadFromOpenFile(OsFile* file, uxx numBytes, bool convertNewLines,
 		
 		result = (partialRead ? Result_Partial : Result_Success);
 	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	{
+		Assert(file->isOpen && file->handle != nullptr);
+		Assert(!file->isKnownSize || file->cursorIndex <= file->fileSize);
+		
+		//TODO: Assert numBytes <= max of size_t
+		size_t numBytesToRead = (size_t)numBytes;
+		if (file->isKnownSize && file->cursorIndex + numBytes > file->fileSize)
+		{
+			numBytesToRead = (size_t)(file->fileSize - file->cursorIndex);
+		}
+		
+		size_t readResult = fread(
+			bufferOut, //buffer
+			1, //size
+			numBytesToRead, //count
+			file->handle //stream
+		);
+		Assert(readResult <= numBytesToRead);
+		
+		file->cursorIndex += (uxx)readResult;
+		bool partialRead = ((uxx)readResult < numBytes);
+		SetOptionalOutPntr(numBytesReadOut, (uxx)readResult);
+		
+		if (readResult == 0 && ferror(file->handle) != 0)
+		{
+			return Result_FailedToReadFile;
+		}
+		
+		//NOTE: When reading files on non-Windows environments, we expect the new-line pattern to be \n so there is nothing we need to do
+		//TODO: Are there any contexts where the calling code knows the line-endings will be Windows-style and need conversion?
+		UNUSED(convertNewLines);
+		
+		result = partialRead ? Result_Partial : Result_Success;
+	}
 	#else
 	AssertMsg(false, "OsReadFromOpenFile does not support the current platform yet!");
 	result = Result_UnsupportedPlatform;
@@ -1191,14 +1291,35 @@ PEXP bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNew
 		result = true;
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// 	//TODO: Implement me!
-	// }
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	{
+		Assert(file->handle != nullptr);
+		//NOTE: When writing to file on non-Windows environments, we don't actually need to convert new-lines to \r\n
+		UNUSED(convertNewLines);
+		
+		size_t writeResult = fwrite(
+			fileContentsPart.pntr, //ptr
+			1, //size
+			(size_t)fileContentsPart.length, //count
+			file->handle //stream
+		);
+		Assert((uxx)writeResult <= fileContentsPart.length);
+		file->cursorIndex += writeResult;
+		if (file->isKnownSize) { file->fileSize += writeResult; } //TODO: If we write into the middle of a file does it insert or overwrite?
+		
+		if (writeResult == 0)
+		{
+			WriteLine_E("ERROR: fwrite failed!");
+			return false;
+		}
+		if ((uxx)writeResult < fileContentsPart.length)
+		{
+			PrintLine_E("ERROR: Wrote %llu/%llu bytes to \"%.*s\"", (u64)writeResult, (u64)fileContentsPart.length, StrPrint(file->fullPath));
+			return false;
+		}
+		
+		result = true;
+	}
 	#else
 	UNUSED(file);
 	UNUSED(fileContentsPart);
