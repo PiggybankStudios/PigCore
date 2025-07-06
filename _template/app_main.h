@@ -12,6 +12,7 @@ struct AppData
 {
 	bool initialized;
 	RandomSeries random;
+	AppResources resources;
 };
 
 #endif //  _APP_MAIN_H

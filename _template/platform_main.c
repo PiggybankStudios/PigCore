@@ -25,6 +25,10 @@ Description:
 #include "gfx/gfx_system_global.h"
 #include "phys/phys_all.h"
 
+#if BUILD_INTO_SINGLE_UNIT
+#include "base/base_debug_output_impl.h"
+#endif
+
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/raylib.h"
 #endif
@@ -58,7 +62,7 @@ Description:
 // TODO: Add header files here
 
 #if BUILD_INTO_SINGLE_UNIT
-EXPORT_FUNC(AppGetApi) APP_GET_API_DEF(AppGetApi);
+EXPORT_FUNC APP_GET_API_DEF(AppGetApi);
 #endif
 
 // +--------------------------------------------------------------+
@@ -123,8 +127,9 @@ void RaylibLogCallback(int logLevel, const char* text, va_list args)
 }
 #endif //BUILD_WITH_RAYLIB
 
-void PlatDoUpdate(void)
+bool PlatDoUpdate(void)
 {
+	bool renderedFrame = true;
 	//TODO: Check for dll changes, reload it!
 	
 	//Swap which appInput is being written to and pass the static version to the application
@@ -162,15 +167,9 @@ void PlatDoUpdate(void)
 	platformData->oldAppInput = oldAppInput;
 	platformData->currentAppInput = newAppInput;
 	
-	bool shouldContinueRunning = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
+	renderedFrame = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
 	
-	#if BUILD_WITH_RAYLIB
-	if (!shouldContinueRunning) { CloseWindow(); }
-	#elif BUILD_WITH_SOKOL_APP
-	if (!shouldContinueRunning) { sapp_quit(); }
-	#else
-	UNUSED(shouldContinueRunning);
-	#endif
+	return renderedFrame;
 }
 
 // +--------------------------------------------------------------+

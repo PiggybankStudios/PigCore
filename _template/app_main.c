@@ -29,6 +29,7 @@ Description:
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
+#include "app_resources.h"
 #include "app_main.h"
 
 // +--------------------------------------------------------------+
@@ -46,6 +47,7 @@ static Arena* stdHeap = nullptr;
 // +--------------------------------------------------------------+
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
+#include "app_resources.c"
 #include "app_helpers.c"
 //TODO: Add source files here!
 
@@ -91,7 +93,7 @@ void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, 
 // |           AppInit            |
 // +==============================+
 // void* AppInit(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi)
-EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
+EXPORT_FUNC APP_INIT_DEF(AppInit)
 {
 	#if !BUILD_INTO_SINGLE_UNIT
 	InitScratchArenasVirtual(Gigabytes(4));
@@ -103,6 +105,8 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	AppData* appData = AllocType(AppData, inPlatformInfo->platformStdHeap);
 	ClearPointer(appData);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
+	
+	InitAppResources(&app->resources);
 	
 	#if BUILD_WITH_SOKOL_APP
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
@@ -123,12 +127,12 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 // |          AppUpdate           |
 // +==============================+
 // bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
-EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
+EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 {
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	bool shouldContinueRunning = true;
+	bool renderedFrame = true;
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
 	v2 screenCenter = Div(screenSize, 2.0f);
@@ -139,14 +143,14 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);
-	return shouldContinueRunning;
+	return renderedFrame;
 }
 
 // +==============================+
 // |          AppClosing          |
 // +==============================+
 // void AppClosing(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr)
-EXPORT_FUNC(AppClosing) APP_CLOSING_DEF(AppClosing)
+EXPORT_FUNC APP_CLOSING_DEF(AppClosing)
 {
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
@@ -166,7 +170,7 @@ EXPORT_FUNC(AppClosing) APP_CLOSING_DEF(AppClosing)
 // |          AppGetApi           |
 // +==============================+
 // AppApi AppGetApi()
-EXPORT_FUNC(AppGetApi) APP_GET_API_DEF(AppGetApi)
+EXPORT_FUNC APP_GET_API_DEF(AppGetApi)
 {
 	AppApi result = ZEROED;
 	result.AppInit = AppInit;

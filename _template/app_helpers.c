@@ -12,8 +12,8 @@ ImageData LoadImageData(Arena* arena, const char* path)
 {
 	ScratchBegin1(scratch, arena);
 	Slice fileContents = Slice_Empty;
-	bool readFileResult = OsReadFile(FilePathLit(path), scratch, false, &fileContents);
-	Assert(readFileResult);
+	Result readFileResult = TryReadAppResource(&app->resources, scratch, FilePathLit(path), false, &fileContents);
+	Assert(readFileResult == Result_Success);
 	ImageData imageData = ZEROED;
 	Result parseResult = TryParseImageFile(fileContents, arena, &imageData);
 	Assert(parseResult == Result_Success);
