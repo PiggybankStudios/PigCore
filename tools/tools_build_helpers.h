@@ -35,11 +35,13 @@ static inline void RunBatchFileAndApplyDumpedEnvironment(Str8 batchFilePath)
 {
 	CliArgList cmd = ZEROED;
 	AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_ENVIRONMENT);
+	Str8 fixedBatchFilePath = CopyStr8(batchFilePath, false);
+	FixPathSlashes(fixedBatchFilePath, PATH_SEP_CHAR);
 	
-	int statusCode = RunCliProgram(batchFilePath, &cmd); //this batch file runs emsdk_env.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what emsdk_env.bat changed
+	int statusCode = RunCliProgram(fixedBatchFilePath, &cmd); //this batch file runs emsdk_env.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what emsdk_env.bat changed
 	if (statusCode != 0)
 	{
-		PrintLine_E("%.*s failed! Status Code: %d", batchFilePath.length, batchFilePath.chars, statusCode);
+		PrintLine_E("%.*s failed! Status Code: %d", fixedBatchFilePath.length, fixedBatchFilePath.chars, statusCode);
 		exit(statusCode);
 	}
 	
@@ -52,25 +54,28 @@ static inline void RunBatchFileAndApplyDumpedEnvironment(Str8 batchFilePath)
 	
 	ParseAndApplyEnvironmentVariables(environmentFileContents);
 	
+	free(fixedBatchFilePath.chars);
 	free(environmentFileContents.chars);
 }
 
-static inline void InitializeMsvcIf(bool* isMsvcInitialized)
+static inline void InitializeMsvcIf(Str8 pigCoreFolder, bool* isMsvcInitialized)
 {
 	if (*isMsvcInitialized == false)
 	{
 		PrintLine("Initializing MSVC Compiler...");
-		RunBatchFileAndApplyDumpedEnvironment(StrLit("..\\init_msvc.bat"));
+		Str8 batchPath = JoinStrings2(pigCoreFolder, StrLit("/init_msvc.bat"), false);
+		RunBatchFileAndApplyDumpedEnvironment(batchPath);
 		*isMsvcInitialized = true;
 	}
 }
 
-static inline void InitializeEmsdkIf(bool* isEmsdkInitialized)
+static inline void InitializeEmsdkIf(Str8 pigCoreFolder, bool* isEmsdkInitialized)
 {
 	if (*isEmsdkInitialized == false)
 	{
 		PrintLine("Initializing Emscripten SDK...");
-		RunBatchFileAndApplyDumpedEnvironment(StrLit("..\\init_emsdk.bat"));
+		Str8 batchPath = JoinStrings2(pigCoreFolder, StrLit("/init_emsdk.bat"), false);
+		RunBatchFileAndApplyDumpedEnvironment(batchPath);
 		*isEmsdkInitialized = true;
 	}
 }
