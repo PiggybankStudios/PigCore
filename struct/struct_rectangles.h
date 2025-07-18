@@ -32,6 +32,18 @@ union Rectanglef
 _Static_assert(sizeof(Rectanglef) == sizeof(r32) * 4, "Rectanglef contains padding!");
 #endif
 
+typedef union RectangleR64 RectangleR64;
+union RectangleR64
+{
+	r64 Elements[4];
+	struct { r64 X, Y, Width, Height; };
+	struct { r64 Left, Top, Unused1, Unused2; };
+	struct { v2d TopLeft, Size; };
+};
+#if LANGUAGE_IS_C
+_Static_assert(sizeof(RectangleR64) == sizeof(r64) * 4, "RectangleR64 contains padding!");
+#endif
+
 typedef union Rectanglei Rectanglei;
 union Rectanglei
 {
@@ -54,6 +66,18 @@ union Box
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Box) == sizeof(r32) * 6, "Box contains padding!");
+#endif
+
+typedef union BoxR64 BoxR64;
+union BoxR64
+{
+	r64 Elements[6];
+	struct { r64 X, Y, Z, Width, Height, Depth; };
+	struct { r64 Left, Bottom, Back, Unused1, Unused2, Unused3; };
+	struct { v3d BottomLeftBack, Size; };
+};
+#if LANGUAGE_IS_C
+_Static_assert(sizeof(BoxR64) == sizeof(r64) * 6, "BoxR64 contains padding!");
 #endif
 
 typedef union Boxi Boxi;
@@ -80,8 +104,20 @@ union Obb2D
 _Static_assert(sizeof(Obb2D) == sizeof(r32) * 5, "Obb2D contains padding!");
 #endif
 
+typedef union Obb2DR64 Obb2DR64;
+union Obb2DR64
+{
+	r64 Elements[5];
+	struct { r64 X, Y, Width, Height, Rotation; };
+	struct { r64 CenterX, CenterY, Unused1, Unused2, Angle; };
+	struct { v2d Center, Size; r64 Unused3; };
+};
+#if LANGUAGE_IS_C
+_Static_assert(sizeof(Obb2DR64) == sizeof(r64) * 5, "Obb2DR64 contains padding!");
+#endif
+
 //NOTE: quat is HMM_Vec4 which has an SSE intrinsic that forces it to be 16-byte aligned
-//      thus we need a of padding between center/size and rotation
+//      thus we need a bit of padding between center/size and rotation
 typedef union Obb3D Obb3D;
 union Obb3D
 {
@@ -94,12 +130,31 @@ union Obb3D
 _Static_assert(sizeof(Obb3D) == sizeof(r32) * 12, "Obb3D contains padding!");
 #endif
 
+typedef union Obb3DR64 Obb3DR64;
+union Obb3DR64
+{
+	r64 Elements[10];
+	struct { r64 X, Y, Z, Width, Height, Depth; quatd Rotation; };
+	struct { r64 CenterX, CenterY, CenterZ, Unused1, Unused2, Unused3; quatd Unused4; };
+	struct { v3d Center, Size; quatd Unused5; };
+};
+#if LANGUAGE_IS_C
+_Static_assert(sizeof(Obb3DR64) == sizeof(r64) * 10, "Obb3DR64 contains padding!");
+#endif
+
+//NOTE: The default assumption for rectangles is r32 members
+//    'i' suffix refers to "integer" members and implicitly means 32-bit (unsigned and 64-bit integers are not yet supported)
+//    'd' suffix refers to "double" members which are 64-bit (we went with a 'd' suffix instead of something like 'r64' because a single character suffix reads a lot nicer and "double" is a well known word to refer to 64-bit floating point numbers)
 typedef Rectanglef rec;
 typedef Rectanglei reci;
+typedef RectangleR64 recd;
 typedef Box box;
 typedef Boxi boxi;
+typedef BoxR64 boxd;
 typedef Obb2D obb2;
+typedef Obb2DR64 obb2d;
 typedef Obb3D obb3;
+typedef Obb3DR64 obb3d;
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -117,6 +172,18 @@ typedef Obb3D obb3;
 	PIG_CORE_INLINE reci NewReciCenteredV(v2i center, v2i size);
 	PIG_CORE_INLINE reci NewReciBetween(i32 left, i32 top, i32 right, i32 bottom);
 	PIG_CORE_INLINE reci NewReciBetweenV(v2i topLeft, v2i bottomRight);
+	PIG_CORE_INLINE recd NewRecd(r64 x, r64 y, r64 width, r64 height);
+	PIG_CORE_INLINE recd NewRecdV(v2d topLeft, v2d size);
+	PIG_CORE_INLINE recd NewRecdCentered(r64 centerX, r64 centerY, r64 width, r64 height);
+	PIG_CORE_INLINE recd NewRecdCenteredV(v2d center, v2d size);
+	PIG_CORE_INLINE recd NewRecdBetween(r64 left, r64 top, r64 right, r64 bottom);
+	PIG_CORE_INLINE recd NewRecdBetweenV(v2d topLeft, v2d bottomRight);
+	PIG_CORE_INLINE recd NewRecd(r64 x, r64 y, r64 width, r64 height);
+	PIG_CORE_INLINE recd NewRecdV(v2d topLeft, v2d size);
+	PIG_CORE_INLINE recd NewRecdCentered(r64 centerX, r64 centerY, r64 width, r64 height);
+	PIG_CORE_INLINE recd NewRecdCenteredV(v2d center, v2d size);
+	PIG_CORE_INLINE recd NewRecdBetween(r64 left, r64 top, r64 right, r64 bottom);
+	PIG_CORE_INLINE recd NewRecdBetweenV(v2d topLeft, v2d bottomRight);
 	PIG_CORE_INLINE box NewBox(r32 x, r32 y, r32 z, r32 width, r32 height, r32 depth);
 	PIG_CORE_INLINE box NewBoxV(v3 bottomLeftBack, v3 size);
 	PIG_CORE_INLINE box NewBoxCentered(r32 centerX, r32 centerY, r32 centerZ, r32 width, r32 height, r32 depth);
@@ -129,65 +196,112 @@ typedef Obb3D obb3;
 	PIG_CORE_INLINE boxi NewBoxiCenteredV(v3i center, v3i size);
 	PIG_CORE_INLINE boxi NewBoxiBetween(i32 left, i32 bottom, i32 back, i32 right, i32 top, i32 front);
 	PIG_CORE_INLINE boxi NewBoxiBetweenV(v3i bottomLeftBack, v3i topRightFront);
+	PIG_CORE_INLINE boxd NewBoxd(r64 x, r64 y, r64 z, r64 width, r64 height, r64 depth);
+	PIG_CORE_INLINE boxd NewBoxdV(v3d bottomLeftBack, v3d size);
+	PIG_CORE_INLINE boxd NewBoxdCentered(r64 centerX, r64 centerY, r64 centerZ, r64 width, r64 height, r64 depth);
+	PIG_CORE_INLINE boxd NewBoxdCenteredV(v3d center, v3d size);
+	PIG_CORE_INLINE boxd NewBoxdBetween(r64 left, r64 bottom, r64 back, r64 right, r64 top, r64 front);
+	PIG_CORE_INLINE boxd NewBoxdBetweenV(v3d bottomLeftBack, v3d topRightFront);
 	PIG_CORE_INLINE obb2 NewObb2(r32 x, r32 y, r32 width, r32 height, r32 rotation);
 	PIG_CORE_INLINE obb2 NewObb2V(v2 center, v2 size, r32 rotation);
+	PIG_CORE_INLINE obb2d NewObb2d(r64 x, r64 y, r64 width, r64 height, r64 rotation);
+	PIG_CORE_INLINE obb2d NewObb2dV(v2d center, v2d size, r64 rotation);
 	PIG_CORE_INLINE obb3 NewObb3(r32 x, r32 y, r32 z, r32 width, r32 height, r32 depth, quat rotation);
 	PIG_CORE_INLINE obb3 NewObb3V(v3 center, v3 size, quat rotation);
+	PIG_CORE_INLINE obb3d NewObb3d(r64 x, r64 y, r64 z, r64 width, r64 height, r64 depth, quatd rotation);
+	PIG_CORE_INLINE obb3d NewObb3dV(v3d center, v3d size, quatd rotation);
 	PIG_CORE_INLINE rec ToRecFromi(reci rectangle);
+	PIG_CORE_INLINE recd ToRecdFromi(reci rectangle);
+	PIG_CORE_INLINE recd ToRecdFromf(rec rectangle);
+	PIG_CORE_INLINE rec ToRecFromd(recd rectangle);
 	PIG_CORE_INLINE reci ToReciFromf(rec rectangle);
 	PIG_CORE_INLINE rec ToRecFromV4(v4 vector);
 	PIG_CORE_INLINE v4 ToV4FromRec(rec rectangle);
 	PIG_CORE_INLINE v4r ToV4rFromRec(rec rectangle);
+	PIG_CORE_INLINE v4d ToV4dFromRecd(recd rectangle);
 	PIG_CORE_INLINE box ToBoxFromi(boxi boundingBox);
+	PIG_CORE_INLINE boxd ToBoxdFromi(boxi boundingBox);
+	PIG_CORE_INLINE boxd ToBoxdFromf(box boundingBox);
+	PIG_CORE_INLINE box ToBoxFromd(boxd boundingBox);
 	PIG_CORE_INLINE boxi ToBoxiFromf(box boundingBox);
 	PIG_CORE_INLINE obb2 ToObb2FromRec(rec rectangle);
+	PIG_CORE_INLINE obb2d ToObb2dFromRecd(recd rectangle);
 	PIG_CORE_INLINE obb3 ToObb3FromBox(box boundingBox);
+	PIG_CORE_INLINE obb3d ToObb3dFromBoxd(boxd boundingBox);
 	#if TARGET_IS_ORCA
 	PIG_CORE_INLINE oc_rect ToOcRect(rec rectangle);
 	PIG_CORE_INLINE rec ToRecFromOc(oc_rect orcaRectangle);
 	#endif //TARGET_IS_ORCA
 	PIG_CORE_INLINE rec AddRec(rec rectangle, v2 offset);
 	PIG_CORE_INLINE reci AddReci(reci rectangle, v2i offset);
+	PIG_CORE_INLINE recd AddRecd(recd rectangle, v2d offset);
 	PIG_CORE_INLINE box AddBox(box boundingBox, v3 offset);
 	PIG_CORE_INLINE boxi AddBoxi(boxi boundingBox, v3i offset);
+	PIG_CORE_INLINE boxd AddBoxd(boxd boundingBox, v3d offset);
 	PIG_CORE_INLINE obb2 AddObb2(obb2 boundingBox, v2 offset);
+	PIG_CORE_INLINE obb2d AddObb2d(obb2d boundingBox, v2d offset);
 	PIG_CORE_INLINE obb3 AddObb3(obb3 boundingBox, v3 offset);
+	PIG_CORE_INLINE obb3d AddObb3d(obb3d boundingBox, v3d offset);
 	PIG_CORE_INLINE rec SubRec(rec rectangle, v2 offset);
 	PIG_CORE_INLINE reci SubReci(reci rectangle, v2i offset);
+	PIG_CORE_INLINE recd SubRecd(recd rectangle, v2d offset);
 	PIG_CORE_INLINE box SubBox(box boundingBox, v3 offset);
 	PIG_CORE_INLINE boxi SubBoxi(boxi boundingBox, v3i offset);
+	PIG_CORE_INLINE boxd SubBoxd(boxd boundingBox, v3d offset);
 	PIG_CORE_INLINE obb2 SubObb2(obb2 boundingBox, v2 offset);
+	PIG_CORE_INLINE obb2d SubObb2d(obb2d boundingBox, v2d offset);
 	PIG_CORE_INLINE obb3 SubObb3(obb3 boundingBox, v3 offset);
+	PIG_CORE_INLINE obb3d SubObb3d(obb3d boundingBox, v3d offset);
 	PIG_CORE_INLINE rec MulRec(rec rectangle, v2 scale);
 	PIG_CORE_INLINE reci MulReci(reci rectangle, v2i scale);
+	PIG_CORE_INLINE recd MulRecd(recd rectangle, v2d scale);
 	PIG_CORE_INLINE box MulBox(box boundingBox, v3 scale);
 	PIG_CORE_INLINE boxi MulBoxi(boxi boundingBox, v3i scale);
+	PIG_CORE_INLINE boxd MulBoxd(boxd boundingBox, v3d scale);
 	PIG_CORE_INLINE obb2 MulObb2(obb2 boundingBox, v2 scale);
+	PIG_CORE_INLINE obb2d MulObb2d(obb2d boundingBox, v2d scale);
 	PIG_CORE_INLINE obb3 MulObb3(obb3 boundingBox, v3 scale);
+	PIG_CORE_INLINE obb3d MulObb3d(obb3d boundingBox, v3d scale);
 	PIG_CORE_INLINE rec DivRec(rec rectangle, v2 divisor);
 	PIG_CORE_INLINE reci DivReci(reci rectangle, v2i divisor);
+	PIG_CORE_INLINE recd DivRecd(recd rectangle, v2d divisor);
 	PIG_CORE_INLINE box DivBox(box boundingBox, v3 divisor);
 	PIG_CORE_INLINE boxi DivBoxi(boxi boundingBox, v3i divisor);
+	PIG_CORE_INLINE boxd DivBoxd(boxd boundingBox, v3d divisor);
 	PIG_CORE_INLINE obb2 DivObb2(obb2 boundingBox, v2 divisor);
+	PIG_CORE_INLINE obb2d DivObb2d(obb2d boundingBox, v2d divisor);
 	PIG_CORE_INLINE obb3 DivObb3(obb3 boundingBox, v3 divisor);
+	PIG_CORE_INLINE obb3d DivObb3d(obb3d boundingBox, v3d divisor);
 	PIG_CORE_INLINE rec ScaleRec(rec rectangle, r32 scalar);
 	PIG_CORE_INLINE reci ScaleReci(reci rectangle, i32 scalar);
+	PIG_CORE_INLINE recd ScaleRecd(recd rectangle, r64 scalar);
 	PIG_CORE_INLINE box ScaleBox(box boundingBox, r32 scalar);
 	PIG_CORE_INLINE boxi ScaleBoxi(boxi boundingBox, i32 scalar);
+	PIG_CORE_INLINE boxd ScaleBoxd(boxd boundingBox, r64 scalar);
 	PIG_CORE_INLINE obb2 ScaleObb2(obb2 boundingBox, r32 scalar);
+	PIG_CORE_INLINE obb2d ScaleObb2d(obb2d boundingBox, r64 scalar);
 	PIG_CORE_INLINE obb3 ScaleObb3(obb3 boundingBox, r32 scalar);
+	PIG_CORE_INLINE obb3d ScaleObb3d(obb3d boundingBox, r64 scalar);
 	PIG_CORE_INLINE rec ShrinkRec(rec rectangle, r32 divisor);
 	PIG_CORE_INLINE reci ShrinkReci(reci rectangle, i32 divisor);
+	PIG_CORE_INLINE recd ShrinkRecd(recd rectangle, r64 divisor);
 	PIG_CORE_INLINE box ShrinkBox(box boundingBox, r32 divisor);
 	PIG_CORE_INLINE boxi ShrinkBoxi(boxi boundingBox, i32 divisor);
+	PIG_CORE_INLINE boxd ShrinkBoxd(boxd boundingBox, r64 divisor);
 	PIG_CORE_INLINE obb2 ShrinkObb2(obb2 boundingBox, r32 divisor);
+	PIG_CORE_INLINE obb2d ShrinkObb2d(obb2d boundingBox, r64 divisor);
 	PIG_CORE_INLINE obb3 ShrinkObb3(obb3 boundingBox, r32 divisor);
+	PIG_CORE_INLINE obb3d ShrinkObb3d(obb3d boundingBox, r64 divisor);
 	PIG_CORE_INLINE bool AreEqualRec(rec left, rec right);
 	PIG_CORE_INLINE bool AreEqualReci(reci left, reci right);
+	PIG_CORE_INLINE bool AreEqualRecd(recd left, recd right);
 	PIG_CORE_INLINE bool AreEqualBox(box left, box right);
 	PIG_CORE_INLINE bool AreEqualBoxi(boxi left, boxi right);
+	PIG_CORE_INLINE bool AreEqualBoxd(boxd left, boxd right);
 	PIG_CORE_INLINE bool AreEqualObb2(obb2 left, obb2 right);
+	PIG_CORE_INLINE bool AreEqualObb2d(obb2d left, obb2d right);
 	PIG_CORE_INLINE bool AreEqualObb3(obb3 left, obb3 right);
+	PIG_CORE_INLINE bool AreEqualObb3d(obb3d left, obb3d right);
 	PIG_CORE_INLINE rec InflateRecEx(rec rectangle, r32 leftAmount, r32 rightAmount, r32 topAmount, r32 bottomAmount);
 	PIG_CORE_INLINE rec InflateRec(rec rectangle, r32 amount);
 	PIG_CORE_INLINE rec InflateRecX(rec rectangle, r32 amount);
@@ -376,6 +490,55 @@ PEXPI reci NewReciBetweenV(v2i topLeft, v2i bottomRight)
 	return result;
 }
 
+PEXPI recd NewRecd(r64 x, r64 y, r64 width, r64 height)
+{
+	recd result;
+	result.X = x;
+	result.Y = y;
+	result.Width = width;
+	result.Height = height;
+	return result;
+}
+PEXPI recd NewRecdV(v2d topLeft, v2d size)
+{
+	recd result;
+	result.TopLeft = topLeft;
+	result.Size = size;
+	return result;
+}
+PEXPI recd NewRecdCentered(r64 centerX, r64 centerY, r64 width, r64 height)
+{
+	recd result;
+	result.X = centerX - width/2.0;
+	result.Y = centerY - height/2.0;
+	result.Width = width;
+	result.Height = height;
+	return result;
+}
+PEXPI recd NewRecdCenteredV(v2d center, v2d size)
+{
+	recd result;
+	result.TopLeft = SubV2d(center, ShrinkV2d(size, 2.0));
+	result.Size = size;
+	return result;
+}
+PEXPI recd NewRecdBetween(r64 left, r64 top, r64 right, r64 bottom)
+{
+	recd result;
+	result.X = left;
+	result.Y = top;
+	result.Width = right - left;
+	result.Height = bottom - top;
+	return result;
+}
+PEXPI recd NewRecdBetweenV(v2d topLeft, v2d bottomRight)
+{
+	recd result;
+	result.TopLeft = topLeft;
+	result.Size = SubV2d(bottomRight, topLeft);
+	return result;
+}
+
 PEXPI box NewBox(r32 x, r32 y, r32 z, r32 width, r32 height, r32 depth)
 {
 	box result;
@@ -487,6 +650,61 @@ PEXPI boxi NewBoxiBetweenV(v3i bottomLeftBack, v3i topRightFront)
 	return result;
 }
 
+PEXPI boxd NewBoxd(r64 x, r64 y, r64 z, r64 width, r64 height, r64 depth)
+{
+	boxd result;
+	result.X = x;
+	result.Y = y;
+	result.Z = z;
+	result.Width = width;
+	result.Height = height;
+	result.Depth = depth;
+	return result;
+}
+PEXPI boxd NewBoxdV(v3d bottomLeftBack, v3d size)
+{
+	boxd result;
+	result.BottomLeftBack = bottomLeftBack;
+	result.Size = size;
+	return result;
+}
+PEXPI boxd NewBoxdCentered(r64 centerX, r64 centerY, r64 centerZ, r64 width, r64 height, r64 depth)
+{
+	boxd result;
+	result.X = centerX - width/2.0;
+	result.Y = centerY - height/2.0;
+	result.Z = centerZ - depth/2.0;
+	result.Width = width;
+	result.Height = height;
+	result.Depth = depth;
+	return result;
+}
+PEXPI boxd NewBoxdCenteredV(v3d center, v3d size)
+{
+	boxd result;
+	result.BottomLeftBack = SubV3d(center, ShrinkV3d(size, 2.0));
+	result.Size = size;
+	return result;
+}
+PEXPI boxd NewBoxdBetween(r64 left, r64 bottom, r64 back, r64 right, r64 top, r64 front)
+{
+	boxd result;
+	result.X = left;
+	result.Y = bottom;
+	result.Z = back;
+	result.Width = right - left;
+	result.Height = top - bottom;
+	result.Depth = front - back;
+	return result;
+}
+PEXPI boxd NewBoxdBetweenV(v3d bottomLeftBack, v3d topRightFront)
+{
+	boxd result;
+	result.BottomLeftBack = bottomLeftBack;
+	result.Size = SubV3d(topRightFront, bottomLeftBack);
+	return result;
+}
+
 PEXPI obb2 NewObb2(r32 x, r32 y, r32 width, r32 height, r32 rotation)
 {
 	obb2 result;
@@ -500,6 +718,25 @@ PEXPI obb2 NewObb2(r32 x, r32 y, r32 width, r32 height, r32 rotation)
 PEXPI obb2 NewObb2V(v2 center, v2 size, r32 rotation)
 {
 	obb2 result;
+	result.Center = center;
+	result.Size = size;
+	result.Rotation = rotation;
+	return result;
+}
+
+PEXPI obb2d NewObb2d(r64 x, r64 y, r64 width, r64 height, r64 rotation)
+{
+	obb2d result;
+	result.X = x;
+	result.Y = y;
+	result.Width = width;
+	result.Height = height;
+	result.Rotation = rotation;
+	return result;
+}
+PEXPI obb2d NewObb2dV(v2d center, v2d size, r64 rotation)
+{
+	obb2d result;
 	result.Center = center;
 	result.Size = size;
 	result.Rotation = rotation;
@@ -527,18 +764,48 @@ PEXPI obb3 NewObb3V(v3 center, v3 size, quat rotation)
 	return result;
 }
 
+PEXPI obb3d NewObb3d(r64 x, r64 y, r64 z, r64 width, r64 height, r64 depth, quatd rotation)
+{
+	obb3d result;
+	result.X = x;
+	result.Y = y;
+	result.Z = z;
+	result.Width = width;
+	result.Height = height;
+	result.Depth = depth;
+	result.Rotation = rotation;
+	return result;
+}
+PEXPI obb3d NewObb3dV(v3d center, v3d size, quatd rotation)
+{
+	obb3d result;
+	result.Center = center;
+	result.Size = size;
+	result.Rotation = rotation;
+	return result;
+}
+
 // +--------------------------------------------------------------+
 // |                 Simple Conversions and Casts                 |
 // +--------------------------------------------------------------+
 PEXPI rec ToRecFromi(reci rectangle) { return NewRec((r32)rectangle.X, (r32)rectangle.Y, (r32)rectangle.Width, (r32)rectangle.Height); }
+PEXPI recd ToRecdFromi(reci rectangle) { return NewRecd((r64)rectangle.X, (r64)rectangle.Y, (r64)rectangle.Width, (r64)rectangle.Height); }
+PEXPI recd ToRecdFromf(rec rectangle) { return NewRecd((r64)rectangle.X, (r64)rectangle.Y, (r64)rectangle.Width, (r64)rectangle.Height); }
+PEXPI rec ToRecFromd(recd rectangle) { return NewRec((r32)rectangle.X, (r32)rectangle.Y, (r32)rectangle.Width, (r32)rectangle.Height); }
 PEXPI reci ToReciFromf(rec rectangle) { return NewReci((i32)rectangle.X, (i32)rectangle.Y, (i32)rectangle.Width, (i32)rectangle.Height); }
 PEXPI rec ToRecFromV4(v4 vector) { return NewRec(vector.X, vector.Y, vector.Z, vector.W); }
 PEXPI v4 ToV4FromRec(rec rectangle) { return NewV4(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height); }
 PEXPI v4r ToV4rFromRec(rec rectangle) { return NewV4r(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height); }
+PEXPI v4d ToV4dFromRecd(recd rectangle) { return NewV4d(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height); }
 PEXPI box ToBoxFromi(boxi boundingBox) { return NewBox((r32)boundingBox.X, (r32)boundingBox.Y, (r32)boundingBox.Z, (r32)boundingBox.Width, (r32)boundingBox.Height, (r32)boundingBox.Depth); }
+PEXPI boxd ToBoxdFromi(boxi boundingBox) { return NewBoxd((r64)boundingBox.X, (r64)boundingBox.Y, (r64)boundingBox.Z, (r64)boundingBox.Width, (r64)boundingBox.Height, (r64)boundingBox.Depth); }
+PEXPI boxd ToBoxdFromf(box boundingBox) { return NewBoxd((r64)boundingBox.X, (r64)boundingBox.Y, (r64)boundingBox.Z, (r64)boundingBox.Width, (r64)boundingBox.Height, (r64)boundingBox.Depth); }
+PEXPI box ToBoxFromd(boxd boundingBox) { return NewBox((r32)boundingBox.X, (r32)boundingBox.Y, (r32)boundingBox.Z, (r32)boundingBox.Width, (r32)boundingBox.Height, (r32)boundingBox.Depth); }
 PEXPI boxi ToBoxiFromf(box boundingBox) { return NewBoxi((i32)boundingBox.X, (i32)boundingBox.Y, (i32)boundingBox.Z, (i32)boundingBox.Width, (i32)boundingBox.Height, (i32)boundingBox.Depth); }
 PEXPI obb2 ToObb2FromRec(rec rectangle) { return NewObb2(rectangle.X + rectangle.Width/2.0f, rectangle.Y + rectangle.Height/2.0f, rectangle.Width, rectangle.Height, 0.0f); }
+PEXPI obb2d ToObb2dFromRecd(recd rectangle) { return NewObb2d(rectangle.X + rectangle.Width/2.0, rectangle.Y + rectangle.Height/2.0, rectangle.Width, rectangle.Height, 0.0); }
 PEXPI obb3 ToObb3FromBox(box boundingBox) { return NewObb3(boundingBox.X + boundingBox.Width/2.0f, boundingBox.Y + boundingBox.Height/2.0f, boundingBox.Z + boundingBox.Depth/2.0f, boundingBox.Width, boundingBox.Height, boundingBox.Depth, Quat_Identity); }
+PEXPI obb3d ToObb3dFromBoxd(boxd boundingBox) { return NewObb3d(boundingBox.X + boundingBox.Width/2.0, boundingBox.Y + boundingBox.Height/2.0, boundingBox.Z + boundingBox.Depth/2.0, boundingBox.Width, boundingBox.Height, boundingBox.Depth, Quatd_Identity); }
 
 #if TARGET_IS_ORCA
 PEXPI oc_rect ToOcRect(rec rectangle) { return NEW_STRUCT(oc_rect){ .x = rectangle.X, .y = rectangle.Y, .w = rectangle.Width, .h = rectangle.Height }; }
@@ -550,52 +817,80 @@ PEXPI rec ToRecFromOc(oc_rect orcaRectangle) { return NewRec(orcaRectangle.x, or
 // +--------------------------------------------------------------+
 PEXPI rec AddRec(rec rectangle, v2 offset) { return NewRec(rectangle.X + offset.X, rectangle.Y + offset.Y, rectangle.Width, rectangle.Height); }
 PEXPI reci AddReci(reci rectangle, v2i offset) { return NewReci(rectangle.X + offset.X, rectangle.Y + offset.Y, rectangle.Width, rectangle.Height); }
+PEXPI recd AddRecd(recd rectangle, v2d offset) { return NewRecd(rectangle.X + offset.X, rectangle.Y + offset.Y, rectangle.Width, rectangle.Height); }
 PEXPI box AddBox(box boundingBox, v3 offset) { return NewBox(boundingBox.X + offset.X, boundingBox.Y + offset.Y, boundingBox.Z + offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth); }
 PEXPI boxi AddBoxi(boxi boundingBox, v3i offset) { return NewBoxi(boundingBox.X + offset.X, boundingBox.Y + offset.Y, boundingBox.Z + offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth); }
+PEXPI boxd AddBoxd(boxd boundingBox, v3d offset) { return NewBoxd(boundingBox.X + offset.X, boundingBox.Y + offset.Y, boundingBox.Z + offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth); }
 PEXPI obb2 AddObb2(obb2 boundingBox, v2 offset) { return NewObb2(boundingBox.X + offset.X, boundingBox.Y + offset.Y, boundingBox.Width, boundingBox.Height, boundingBox.Rotation); }
+PEXPI obb2d AddObb2d(obb2d boundingBox, v2d offset) { return NewObb2d(boundingBox.X + offset.X, boundingBox.Y + offset.Y, boundingBox.Width, boundingBox.Height, boundingBox.Rotation); }
 PEXPI obb3 AddObb3(obb3 boundingBox, v3 offset) { return NewObb3(boundingBox.X + offset.X, boundingBox.Y + offset.Y, boundingBox.Z + offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth, boundingBox.Rotation); }
+PEXPI obb3d AddObb3d(obb3d boundingBox, v3d offset) { return NewObb3d(boundingBox.X + offset.X, boundingBox.Y + offset.Y, boundingBox.Z + offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth, boundingBox.Rotation); }
 
 PEXPI rec SubRec(rec rectangle, v2 offset) { return NewRec(rectangle.X - offset.X, rectangle.Y - offset.Y, rectangle.Width, rectangle.Height); }
 PEXPI reci SubReci(reci rectangle, v2i offset) { return NewReci(rectangle.X - offset.X, rectangle.Y - offset.Y, rectangle.Width, rectangle.Height); }
+PEXPI recd SubRecd(recd rectangle, v2d offset) { return NewRecd(rectangle.X - offset.X, rectangle.Y - offset.Y, rectangle.Width, rectangle.Height); }
 PEXPI box SubBox(box boundingBox, v3 offset) { return NewBox(boundingBox.X - offset.X, boundingBox.Y - offset.Y, boundingBox.Z - offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth); }
 PEXPI boxi SubBoxi(boxi boundingBox, v3i offset) { return NewBoxi(boundingBox.X - offset.X, boundingBox.Y - offset.Y, boundingBox.Z - offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth); }
+PEXPI boxd SubBoxd(boxd boundingBox, v3d offset) { return NewBoxd(boundingBox.X - offset.X, boundingBox.Y - offset.Y, boundingBox.Z - offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth); }
 PEXPI obb2 SubObb2(obb2 boundingBox, v2 offset) { return NewObb2(boundingBox.X - offset.X, boundingBox.Y - offset.Y, boundingBox.Width, boundingBox.Height, boundingBox.Rotation); }
+PEXPI obb2d SubObb2d(obb2d boundingBox, v2d offset) { return NewObb2d(boundingBox.X - offset.X, boundingBox.Y - offset.Y, boundingBox.Width, boundingBox.Height, boundingBox.Rotation); }
 PEXPI obb3 SubObb3(obb3 boundingBox, v3 offset) { return NewObb3(boundingBox.X - offset.X, boundingBox.Y - offset.Y, boundingBox.Z - offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth, boundingBox.Rotation); }
+PEXPI obb3d SubObb3d(obb3d boundingBox, v3d offset) { return NewObb3d(boundingBox.X - offset.X, boundingBox.Y - offset.Y, boundingBox.Z - offset.Z, boundingBox.Width, boundingBox.Height, boundingBox.Depth, boundingBox.Rotation); }
 
 PEXPI rec MulRec(rec rectangle, v2 scale) { return NewRec(rectangle.X * scale.X, rectangle.Y * scale.Y, rectangle.Width * scale.X, rectangle.Height * scale.Y); }
 PEXPI reci MulReci(reci rectangle, v2i scale) { return NewReci(rectangle.X * scale.X, rectangle.Y * scale.Y, rectangle.Width * scale.X, rectangle.Height * scale.Y); }
+PEXPI recd MulRecd(recd rectangle, v2d scale) { return NewRecd(rectangle.X * scale.X, rectangle.Y * scale.Y, rectangle.Width * scale.X, rectangle.Height * scale.Y); }
 PEXPI box MulBox(box boundingBox, v3 scale) { return NewBox(boundingBox.X * scale.X, boundingBox.Y * scale.Y, boundingBox.Z * scale.Z, boundingBox.Width * scale.X, boundingBox.Height * scale.Y, boundingBox.Depth * scale.Z); }
 PEXPI boxi MulBoxi(boxi boundingBox, v3i scale) { return NewBoxi(boundingBox.X * scale.X, boundingBox.Y * scale.Y, boundingBox.Z * scale.Z, boundingBox.Width * scale.X, boundingBox.Height * scale.Y, boundingBox.Depth * scale.Z); }
+PEXPI boxd MulBoxd(boxd boundingBox, v3d scale) { return NewBoxd(boundingBox.X * scale.X, boundingBox.Y * scale.Y, boundingBox.Z * scale.Z, boundingBox.Width * scale.X, boundingBox.Height * scale.Y, boundingBox.Depth * scale.Z); }
 PEXPI obb2 MulObb2(obb2 boundingBox, v2 scale) { return NewObb2(boundingBox.X * scale.X, boundingBox.Y * scale.Y, boundingBox.Width * scale.X, boundingBox.Height * scale.Y, boundingBox.Rotation); }
+PEXPI obb2d MulObb2d(obb2d boundingBox, v2d scale) { return NewObb2d(boundingBox.X * scale.X, boundingBox.Y * scale.Y, boundingBox.Width * scale.X, boundingBox.Height * scale.Y, boundingBox.Rotation); }
 PEXPI obb3 MulObb3(obb3 boundingBox, v3 scale) { return NewObb3(boundingBox.X * scale.X, boundingBox.Y * scale.Y, boundingBox.Z * scale.Z, boundingBox.Width * scale.X, boundingBox.Height * scale.Y, boundingBox.Depth * scale.Z, boundingBox.Rotation); }
+PEXPI obb3d MulObb3d(obb3d boundingBox, v3d scale) { return NewObb3d(boundingBox.X * scale.X, boundingBox.Y * scale.Y, boundingBox.Z * scale.Z, boundingBox.Width * scale.X, boundingBox.Height * scale.Y, boundingBox.Depth * scale.Z, boundingBox.Rotation); }
 
 PEXPI rec DivRec(rec rectangle, v2 divisor) { return NewRec(rectangle.X / divisor.X, rectangle.Y / divisor.Y, rectangle.Width / divisor.X, rectangle.Height / divisor.Y); }
 PEXPI reci DivReci(reci rectangle, v2i divisor) { return NewReci(rectangle.X / divisor.X, rectangle.Y / divisor.Y, rectangle.Width / divisor.X, rectangle.Height / divisor.Y); }
+PEXPI recd DivRecd(recd rectangle, v2d divisor) { return NewRecd(rectangle.X / divisor.X, rectangle.Y / divisor.Y, rectangle.Width / divisor.X, rectangle.Height / divisor.Y); }
 PEXPI box DivBox(box boundingBox, v3 divisor) { return NewBox(boundingBox.X / divisor.X, boundingBox.Y / divisor.Y, boundingBox.Z / divisor.Z, boundingBox.Width / divisor.X, boundingBox.Height / divisor.Y, boundingBox.Depth / divisor.Z); }
 PEXPI boxi DivBoxi(boxi boundingBox, v3i divisor) { return NewBoxi(boundingBox.X / divisor.X, boundingBox.Y / divisor.Y, boundingBox.Z / divisor.Z, boundingBox.Width / divisor.X, boundingBox.Height / divisor.Y, boundingBox.Depth / divisor.Z); }
+PEXPI boxd DivBoxd(boxd boundingBox, v3d divisor) { return NewBoxd(boundingBox.X / divisor.X, boundingBox.Y / divisor.Y, boundingBox.Z / divisor.Z, boundingBox.Width / divisor.X, boundingBox.Height / divisor.Y, boundingBox.Depth / divisor.Z); }
 PEXPI obb2 DivObb2(obb2 boundingBox, v2 divisor) { return NewObb2(boundingBox.X / divisor.X, boundingBox.Y / divisor.Y, boundingBox.Width / divisor.X, boundingBox.Height / divisor.Y, boundingBox.Rotation); }
+PEXPI obb2d DivObb2d(obb2d boundingBox, v2d divisor) { return NewObb2d(boundingBox.X / divisor.X, boundingBox.Y / divisor.Y, boundingBox.Width / divisor.X, boundingBox.Height / divisor.Y, boundingBox.Rotation); }
 PEXPI obb3 DivObb3(obb3 boundingBox, v3 divisor) { return NewObb3(boundingBox.X / divisor.X, boundingBox.Y / divisor.Y, boundingBox.Z / divisor.Z, boundingBox.Width / divisor.X, boundingBox.Height / divisor.Y, boundingBox.Depth / divisor.Z, boundingBox.Rotation); }
+PEXPI obb3d DivObb3d(obb3d boundingBox, v3d divisor) { return NewObb3d(boundingBox.X / divisor.X, boundingBox.Y / divisor.Y, boundingBox.Z / divisor.Z, boundingBox.Width / divisor.X, boundingBox.Height / divisor.Y, boundingBox.Depth / divisor.Z, boundingBox.Rotation); }
 
 PEXPI rec ScaleRec(rec rectangle, r32 scalar) { return NewRec(rectangle.X * scalar, rectangle.Y * scalar, rectangle.Width * scalar, rectangle.Height * scalar); }
 PEXPI reci ScaleReci(reci rectangle, i32 scalar) { return NewReci(rectangle.X * scalar, rectangle.Y * scalar, rectangle.Width * scalar, rectangle.Height * scalar); }
+PEXPI recd ScaleRecd(recd rectangle, r64 scalar) { return NewRecd(rectangle.X * scalar, rectangle.Y * scalar, rectangle.Width * scalar, rectangle.Height * scalar); }
 PEXPI box ScaleBox(box boundingBox, r32 scalar) { return NewBox(boundingBox.X * scalar, boundingBox.Y * scalar, boundingBox.Z * scalar, boundingBox.Width * scalar, boundingBox.Height * scalar, boundingBox.Depth * scalar); }
 PEXPI boxi ScaleBoxi(boxi boundingBox, i32 scalar) { return NewBoxi(boundingBox.X * scalar, boundingBox.Y * scalar, boundingBox.Z * scalar, boundingBox.Width * scalar, boundingBox.Height * scalar, boundingBox.Depth * scalar); }
+PEXPI boxd ScaleBoxd(boxd boundingBox, r64 scalar) { return NewBoxd(boundingBox.X * scalar, boundingBox.Y * scalar, boundingBox.Z * scalar, boundingBox.Width * scalar, boundingBox.Height * scalar, boundingBox.Depth * scalar); }
 PEXPI obb2 ScaleObb2(obb2 boundingBox, r32 scalar) { return NewObb2(boundingBox.X * scalar, boundingBox.Y * scalar, boundingBox.Width * scalar, boundingBox.Height * scalar, boundingBox.Rotation); }
+PEXPI obb2d ScaleObb2d(obb2d boundingBox, r64 scalar) { return NewObb2d(boundingBox.X * scalar, boundingBox.Y * scalar, boundingBox.Width * scalar, boundingBox.Height * scalar, boundingBox.Rotation); }
 PEXPI obb3 ScaleObb3(obb3 boundingBox, r32 scalar) { return NewObb3(boundingBox.X * scalar, boundingBox.Y * scalar, boundingBox.Z * scalar, boundingBox.Width * scalar, boundingBox.Height * scalar, boundingBox.Depth * scalar, boundingBox.Rotation); }
+PEXPI obb3d ScaleObb3d(obb3d boundingBox, r64 scalar) { return NewObb3d(boundingBox.X * scalar, boundingBox.Y * scalar, boundingBox.Z * scalar, boundingBox.Width * scalar, boundingBox.Height * scalar, boundingBox.Depth * scalar, boundingBox.Rotation); }
 
 PEXPI rec ShrinkRec(rec rectangle, r32 divisor) { return NewRec(rectangle.X / divisor, rectangle.Y / divisor, rectangle.Width / divisor, rectangle.Height / divisor); }
 PEXPI reci ShrinkReci(reci rectangle, i32 divisor) { return NewReci(rectangle.X / divisor, rectangle.Y / divisor, rectangle.Width / divisor, rectangle.Height / divisor); }
+PEXPI recd ShrinkRecd(recd rectangle, r64 divisor) { return NewRecd(rectangle.X / divisor, rectangle.Y / divisor, rectangle.Width / divisor, rectangle.Height / divisor); }
 PEXPI box ShrinkBox(box boundingBox, r32 divisor) { return NewBox(boundingBox.X / divisor, boundingBox.Y / divisor, boundingBox.Z / divisor, boundingBox.Width / divisor, boundingBox.Height / divisor, boundingBox.Depth / divisor); }
 PEXPI boxi ShrinkBoxi(boxi boundingBox, i32 divisor) { return NewBoxi(boundingBox.X / divisor, boundingBox.Y / divisor, boundingBox.Z / divisor, boundingBox.Width / divisor, boundingBox.Height / divisor, boundingBox.Depth / divisor); }
+PEXPI boxd ShrinkBoxd(boxd boundingBox, r64 divisor) { return NewBoxd(boundingBox.X / divisor, boundingBox.Y / divisor, boundingBox.Z / divisor, boundingBox.Width / divisor, boundingBox.Height / divisor, boundingBox.Depth / divisor); }
 PEXPI obb2 ShrinkObb2(obb2 boundingBox, r32 divisor) { return NewObb2(boundingBox.X / divisor, boundingBox.Y / divisor, boundingBox.Width / divisor, boundingBox.Height / divisor, boundingBox.Rotation); }
+PEXPI obb2d ShrinkObb2d(obb2d boundingBox, r64 divisor) { return NewObb2d(boundingBox.X / divisor, boundingBox.Y / divisor, boundingBox.Width / divisor, boundingBox.Height / divisor, boundingBox.Rotation); }
 PEXPI obb3 ShrinkObb3(obb3 boundingBox, r32 divisor) { return NewObb3(boundingBox.X / divisor, boundingBox.Y / divisor, boundingBox.Z / divisor, boundingBox.Width / divisor, boundingBox.Height / divisor, boundingBox.Depth / divisor, boundingBox.Rotation); }
+PEXPI obb3d ShrinkObb3d(obb3d boundingBox, r64 divisor) { return NewObb3d(boundingBox.X / divisor, boundingBox.Y / divisor, boundingBox.Z / divisor, boundingBox.Width / divisor, boundingBox.Height / divisor, boundingBox.Depth / divisor, boundingBox.Rotation); }
 
 PEXPI bool AreEqualRec(rec left, rec right) { return (left.X == right.X && left.Y == right.Y && left.Width == right.Width && left.Height == right.Height); }
 PEXPI bool AreEqualReci(reci left, reci right) { return (left.X == right.X && left.Y == right.Y && left.Width == right.Width && left.Height == right.Height); }
+PEXPI bool AreEqualRecd(recd left, recd right) { return (left.X == right.X && left.Y == right.Y && left.Width == right.Width && left.Height == right.Height); }
 PEXPI bool AreEqualBox(box left, box right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.Width == right.Width && left.Height == right.Height && left.Depth == right.Depth); }
 PEXPI bool AreEqualBoxi(boxi left, boxi right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.Width == right.Width && left.Height == right.Height && left.Depth == right.Depth); }
+PEXPI bool AreEqualBoxd(boxd left, boxd right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.Width == right.Width && left.Height == right.Height && left.Depth == right.Depth); }
 PEXPI bool AreEqualObb2(obb2 left, obb2 right) { return (left.X == right.X && left.Y == right.Y && left.Width == right.Width && left.Height == right.Height && left.Rotation == right.Rotation); }
+PEXPI bool AreEqualObb2d(obb2d left, obb2d right) { return (left.X == right.X && left.Y == right.Y && left.Width == right.Width && left.Height == right.Height && left.Rotation == right.Rotation); }
 PEXPI bool AreEqualObb3(obb3 left, obb3 right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.Width == right.Width && left.Height == right.Height && left.Depth == right.Depth && AreEqualQuat(left.Rotation, right.Rotation)); }
+PEXPI bool AreEqualObb3d(obb3d left, obb3d right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.Width == right.Width && left.Height == right.Height && left.Depth == right.Depth && AreEqualQuat(left.Rotation, right.Rotation)); }
 
 //TODO: AreSimilarRec?
 
