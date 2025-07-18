@@ -124,9 +124,9 @@ union Vec3R64
 	struct { Vec2R64 XY; r64 _Ignored0; };
 	struct { r64 _Ignored1; Vec2R64 YZ; };
 	struct { r64 R, G, B; };
-	struct { r64 U, V, _Ignored0; };
-	struct { Vec2R64 UV; r64 _Ignored2; };
-	struct { r64 _Ignored3; Vec2R64 VW; };
+	struct { r64 U, V, _Ignored2; };
+	struct { Vec2R64 UV; r64 _Ignored3; };
+	struct { r64 _Ignored4; Vec2R64 VW; };
 	struct { r64 Width, Height, Depth; };
 };
 
@@ -287,6 +287,12 @@ typedef Vec4R64  v4d;
 	PIG_CORE_INLINE r64 LengthV2d(v2d vec2d);
 	PIG_CORE_INLINE r64 LengthV3d(v3d vec3d);
 	PIG_CORE_INLINE r64 LengthV4d(v4d vec4d);
+	PIG_CORE_INLINE v2d NormalizeV2d(v2d vec2d);
+	PIG_CORE_INLINE v3d NormalizeV3d(v3d vec2d);
+	PIG_CORE_INLINE v4d NormalizeV4d(v4d vec2d);
+	PIG_CORE_INLINE v2d LerpV2d(v2d start, v2d end, r64 amount);
+	PIG_CORE_INLINE v3d LerpV3d(v3d start, v3d end, r64 amount);
+	PIG_CORE_INLINE v4d LerpV4d(v4d start, v4d end, r64 amount);
 	PIG_CORE_INLINE v2 FloorV2(v2 vec2);
 	PIG_CORE_INLINE v3 FloorV3(v3 vec3);
 	PIG_CORE_INLINE v4 FloorV4(v4 vec4);
@@ -369,9 +375,15 @@ typedef Vec4R64  v4d;
 	PIG_CORE_INLINE void AlignV3ToV3(v3* vectorOut, v3 alignmentScale);
 	PIG_CORE_INLINE void AlignV3To(v3* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV3(v3* vectorOut);
+	PIG_CORE_INLINE void AlignV3dToV3d(v3d* vectorOut, v3d alignmentScale);
+	PIG_CORE_INLINE void AlignV3dTo(v3d* vectorOut, r64 alignmentScale);
+	PIG_CORE_INLINE void AlignV3d(v3d* vectorOut);
 	PIG_CORE_INLINE void AlignV4ToV4(v4* vectorOut, v4 alignmentScale);
 	PIG_CORE_INLINE void AlignV4To(v4* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV4(v4* vectorOut);
+	PIG_CORE_INLINE void AlignV4dToV4d(v4d* vectorOut, v4d alignmentScale);
+	PIG_CORE_INLINE void AlignV4dTo(v4d* vectorOut, r64 alignmentScale);
+	PIG_CORE_INLINE void AlignV4d(v4d* vectorOut);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -717,6 +729,14 @@ PEXPI r64 LengthV2d(v2d vec2d) { return SqrtR64((r64)LengthSquaredV2d(vec2d)); }
 PEXPI r64 LengthV3d(v3d vec3d) { return SqrtR64((r64)LengthSquaredV3d(vec3d)); }
 PEXPI r64 LengthV4d(v4d vec4d) { return SqrtR64((r64)LengthSquaredV4d(vec4d)); }
 
+PEXPI v2d NormalizeV2d(v2d vec2d) { return ScaleV2d(vec2d, LengthV2d(vec2d)); }
+PEXPI v3d NormalizeV3d(v3d vec3d) { return ScaleV3d(vec3d, LengthV3d(vec3d)); }
+PEXPI v4d NormalizeV4d(v4d vec4d) { return ScaleV4d(vec4d, LengthV4d(vec4d)); }
+
+PEXPI v2d LerpV2d(v2d start, v2d end, r64 amount) { return AddV2d(ScaleV2d(start, (1.0 - amount)), ScaleV2d(end, amount)); }
+PEXPI v3d LerpV3d(v3d start, v3d end, r64 amount) { return AddV3d(ScaleV3d(start, (1.0 - amount)), ScaleV3d(end, amount)); }
+PEXPI v4d LerpV4d(v4d start, v4d end, r64 amount) { return AddV4d(ScaleV4d(start, (1.0 - amount)), ScaleV4d(end, amount)); }
+
 // +--------------------------------------------------------------+
 // |              Componentwise Intrinsic Functions               |
 // +--------------------------------------------------------------+
@@ -795,7 +815,7 @@ PEXPI v3i ClampV3i(v3i vec3i, v3i minVec3i, v3i maxVec3i) { return NewV3i(ClampI
 PEXPI v4i ClampV4i(v4i vec4i, v4i minVec4i, v4i maxVec4i) { return NewV4i(ClampI32(vec4i.X, minVec4i.X, maxVec4i.X), ClampI32(vec4i.Y, minVec4i.Y, maxVec4i.Y), ClampI32(vec4i.Z, minVec4i.Z, maxVec4i.Z), ClampI32(vec4i.W, minVec4i.W, maxVec4i.W)); }
 PEXPI v2d ClampV2d(v2d vec2d, v2d minVec2d, v2d maxVec2d) { return NewV2d(ClampR64(vec2d.X, minVec2d.X, maxVec2d.X), ClampR64(vec2d.Y, minVec2d.Y, maxVec2d.Y)); }
 PEXPI v3d ClampV3d(v3d vec3d, v3d minVec3d, v3d maxVec3d) { return NewV3d(ClampR64(vec3d.X, minVec3d.X, maxVec3d.X), ClampR64(vec3d.Y, minVec3d.Y, maxVec3d.Y), ClampR64(vec3d.Z, minVec3d.Z, maxVec3d.Z)); }
-PEXPI v4d ClampV4d(v4d vec4d, v4d minVec4d, v4d maxVec4d) { return NewV4d(ClampR64(vec4d.X, minVec4d.X, maxVec4d.X), ClampR64(vec4d.Y, minVec4d.Y, maxVec4d.Y), ClampR64(vec4d.Z, minVec4d.Z, maxVec4d.Z), ClampR32d(vec4d.W, minVec4d.W, maxVec4d.W)); }
+PEXPI v4d ClampV4d(v4d vec4d, v4d minVec4d, v4d maxVec4d) { return NewV4d(ClampR64(vec4d.X, minVec4d.X, maxVec4d.X), ClampR64(vec4d.Y, minVec4d.Y, maxVec4d.Y), ClampR64(vec4d.Z, minVec4d.Z, maxVec4d.Z), ClampR64(vec4d.W, minVec4d.W, maxVec4d.W)); }
 
 //TODO: Should we add "Inner" and "Determinant" functions like we had in GyLib?
 
@@ -880,6 +900,15 @@ PEXPI void AlignV3ToV3(v3* vectorOut, v3 alignmentScale)
 }
 PEXPI void AlignV3To(v3* vectorOut, r32 alignmentScale) { AlignV3ToV3(vectorOut, FillV3(alignmentScale)); }
 PEXPI void AlignV3(v3* vectorOut) { AlignV3ToV3(vectorOut, V3_One); }
+PEXPI void AlignV3dToV3d(v3d* vectorOut, v3d alignmentScale)
+{
+	DebugNotNull(vectorOut);
+	if (alignmentScale.X > 0) { vectorOut->X = RoundR64(vectorOut->X * alignmentScale.X) / alignmentScale.X; }
+	if (alignmentScale.Y > 0) { vectorOut->Y = RoundR64(vectorOut->Y * alignmentScale.Y) / alignmentScale.Y; }
+	if (alignmentScale.Z > 0) { vectorOut->Z = RoundR64(vectorOut->Z * alignmentScale.Z) / alignmentScale.Z; }
+}
+PEXPI void AlignV3dTo(v3d* vectorOut, r64 alignmentScale) { AlignV3dToV3d(vectorOut, FillV3d(alignmentScale)); }
+PEXPI void AlignV3d(v3d* vectorOut) { AlignV3dToV3d(vectorOut, V3d_One); }
 
 PEXPI void AlignV4ToV4(v4* vectorOut, v4 alignmentScale)
 {
@@ -891,6 +920,16 @@ PEXPI void AlignV4ToV4(v4* vectorOut, v4 alignmentScale)
 }
 PEXPI void AlignV4To(v4* vectorOut, r32 alignmentScale) { AlignV4ToV4(vectorOut, FillV4(alignmentScale)); }
 PEXPI void AlignV4(v4* vectorOut) { AlignV4ToV4(vectorOut, V4_One); }
+PEXPI void AlignV4dToV4d(v4d* vectorOut, v4d alignmentScale)
+{
+	DebugNotNull(vectorOut);
+	if (alignmentScale.X > 0) { vectorOut->X = RoundR64(vectorOut->X * alignmentScale.X) / alignmentScale.X; }
+	if (alignmentScale.Y > 0) { vectorOut->Y = RoundR64(vectorOut->Y * alignmentScale.Y) / alignmentScale.Y; }
+	if (alignmentScale.Z > 0) { vectorOut->Z = RoundR64(vectorOut->Z * alignmentScale.Z) / alignmentScale.Z; }
+	if (alignmentScale.W > 0) { vectorOut->W = RoundR64(vectorOut->W * alignmentScale.W) / alignmentScale.W; }
+}
+PEXPI void AlignV4dTo(v4d* vectorOut, r64 alignmentScale) { AlignV4dToV4d(vectorOut, FillV4d(alignmentScale)); }
+PEXPI void AlignV4d(v4d* vectorOut) { AlignV4dToV4d(vectorOut, V4d_One); }
 
 #endif //PIG_CORE_IMPLEMENTATION
 

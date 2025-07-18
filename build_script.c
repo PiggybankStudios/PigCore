@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
 	{
 		emscriptenSdkPath = GetEmscriptenSdkPath();
 		PrintLine("Emscripten SDK path: \"%.*s\"", emscriptenSdkPath.length, emscriptenSdkPath.chars);
-		InitializeEmsdkIf(&isEmsdkInitialized);
+		InitializeEmsdkIf(StrLit(".."), &isEmsdkInitialized);
 	}
 	
 	Str8 orcaSdkPath = ZEROED;
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN_EXE);
 			
 			CliArgList cmd = ZEROED;
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
 	
 	if (BUILD_SHADERS)
 	{
-		if (BUILD_WINDOWS) { InitializeMsvcIf(&isMsvcInitialized); }
+		if (BUILD_WINDOWS) { InitializeMsvcIf(StrLit(".."), &isMsvcInitialized); }
 		
 		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
 		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
@@ -456,7 +456,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_IMGUI_OBJ);
 			
 			CliArgList cmd = ZEROED;
@@ -489,7 +489,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_PHYSX_OBJ);
 			
 			CliArgList cmd = ZEROED;
@@ -520,7 +520,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
 			CliArgList cmd = ZEROED;
@@ -579,7 +579,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS_EXE);
 			
 			CliArgList cmd = ZEROED;
