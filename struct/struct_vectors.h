@@ -114,6 +114,8 @@ union Vec2R64
 	struct { r64 X, Y; };
 	struct { r64 U, V; };
 	struct { r64 Width, Height; };
+	struct { r64 Lat, Lon; };
+	struct { r64 Latitude, Longitude; };
 };
 
 typedef union Vec3R64 Vec3R64;
