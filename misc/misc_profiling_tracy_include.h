@@ -11,7 +11,8 @@ Date:   07\18\2025
 
 #if BUILD_WITH_TRACY
 
-#define ENABLE_TRACY
+#define TRACY_ENABLE
+// #define TRACY_FIBERS
 #if PIG_CORE_BUILDING_AS_DLL
 #define TRACY_EXPORTS
 #endif
