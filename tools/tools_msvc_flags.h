@@ -48,6 +48,7 @@ Description:
 #define CL_DISABLE_LANG_CONFORMANCE_OPTION  "/Zc:[VAL]-"
 #define CL_INTERNAL_COMPILER_ERROR_BEHAVIOR "/errorReport:[VAL]"
 #define CL_FLOATING_POINT_MODEL             "/fp:[VAL]"
+#define CL_CONFIGURE_EXCEPTION_HANDLING     "/EH[VAL]"
 #define CL_LINK                             "/link"
 
 #define CL_WARNING_ENUMERATION_MUST_HAVE_UNDERLYING_TYPE 4471 //a forward declaration of an unscoped enumeration must have an underlying type

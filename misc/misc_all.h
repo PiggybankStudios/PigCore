@@ -10,6 +10,7 @@ Date:   01\05\2025
 #include "base/base_defines_check.h" //required by all the other files
 #include "base/base_macros.h" //required by misc_result.h and misc_random.h
 
+#include "misc/misc_profiling_tracy_include.h"
 #include "misc/misc_result.h"
 
 #include "base/base_typedefs.h" //required by everyone below

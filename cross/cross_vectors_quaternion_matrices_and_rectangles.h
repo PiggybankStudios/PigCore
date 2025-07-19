@@ -80,6 +80,7 @@ Date:   01\15\2025
 	// ),
 
 //TODO: This should probably handle i32 right-hand type differently, no? I tried doing this once but it seemed to give weird results. Maybe a reordering of the cases would help?
+
 #define Mul(left, right) _Generic((right), \
 	r32: _Generic((left),                  \
 		v2: HMM_MulV2F,                    \
@@ -129,7 +130,6 @@ Date:   01\15\2025
 		obb3d: MulObb3d                    \
 	)                                      \
 )((left), (right))
-
 
 //TODO: For some reason the _Generic on (right) is matching r64 case even when the right-hand argument is clearly a v3. So for now Mul does not support 64-bit types
 	 // r64: _Generic((left),
