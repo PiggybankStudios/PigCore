@@ -37,7 +37,9 @@ union RectangleR64
 {
 	r64 Elements[4];
 	struct { r64 X, Y, Width, Height; };
-	struct { r64 Left, Top, Unused1, Unused2; };
+	struct { r64 Lon, Lat, SizeLon, SizeLat; };
+	struct { r64 Longitude, Latitude, SizeLongitude, SizeLatitude; };
+	struct { r64 Left, Top, Unused5, Unused6; };
 	struct { v2d TopLeft, Size; };
 };
 #if LANGUAGE_IS_C
@@ -478,17 +480,19 @@ PEXPI rec NewRecCenteredV(v2 center, v2 size)
 PEXPI rec NewRecBetween(r32 left, r32 top, r32 right, r32 bottom)
 {
 	rec result;
-	result.X = left;
-	result.Y = top;
-	result.Width = right - left;
-	result.Height = bottom - top;
+	result.X = MinR32(left, right);
+	result.Y = MinR32(top, bottom);
+	result.Width = MaxR32(left, right) - result.X;
+	result.Height = MaxR32(top, bottom) - result.Y;
 	return result;
 }
 PEXPI rec NewRecBetweenV(v2 topLeft, v2 bottomRight)
 {
 	rec result;
-	result.TopLeft = topLeft;
-	result.Size = SubV2(bottomRight, topLeft);
+	result.X = MinR32(topLeft.X, bottomRight.X);
+	result.Y = MinR32(topLeft.Y, bottomRight.Y);
+	result.Width = MaxR32(topLeft.X, bottomRight.X) - result.X;
+	result.Height = MaxR32(topLeft.Y, bottomRight.Y) - result.Y;
 	return result;
 }
 
@@ -528,17 +532,19 @@ PEXPI reci NewReciCenteredV(v2i center, v2i size)
 PEXPI reci NewReciBetween(i32 left, i32 top, i32 right, i32 bottom)
 {
 	reci result;
-	result.X = left;
-	result.Y = top;
-	result.Width = right - left;
-	result.Height = bottom - top;
+	result.X = MinI32(left, right);
+	result.Y = MinI32(top, bottom);
+	result.Width = MaxI32(left, right) - result.X;
+	result.Height = MaxI32(top, bottom) - result.Y;
 	return result;
 }
 PEXPI reci NewReciBetweenV(v2i topLeft, v2i bottomRight)
 {
 	reci result;
-	result.TopLeft = topLeft;
-	result.Size = SubV2i(bottomRight, topLeft);
+	result.X = MinI32(topLeft.X, bottomRight.X);
+	result.Y = MinI32(topLeft.Y, bottomRight.Y);
+	result.Width = MaxI32(topLeft.X, bottomRight.X) - result.X;
+	result.Height = MaxI32(topLeft.Y, bottomRight.Y) - result.Y;
 	return result;
 }
 
@@ -577,17 +583,19 @@ PEXPI recd NewRecdCenteredV(v2d center, v2d size)
 PEXPI recd NewRecdBetween(r64 left, r64 top, r64 right, r64 bottom)
 {
 	recd result;
-	result.X = left;
-	result.Y = top;
-	result.Width = right - left;
-	result.Height = bottom - top;
+	result.X = MinR64(left, right);
+	result.Y = MinR64(top, bottom);
+	result.Width = MaxR64(left, right) - result.X;
+	result.Height = MaxR64(top, bottom) - result.Y;
 	return result;
 }
 PEXPI recd NewRecdBetweenV(v2d topLeft, v2d bottomRight)
 {
 	recd result;
-	result.TopLeft = topLeft;
-	result.Size = SubV2d(bottomRight, topLeft);
+	result.X = MinR64(topLeft.X, bottomRight.X);
+	result.Y = MinR64(topLeft.Y, bottomRight.Y);
+	result.Width = MaxR64(topLeft.X, bottomRight.X) - result.X;
+	result.Height = MaxR64(topLeft.Y, bottomRight.Y) - result.Y;
 	return result;
 }
 
@@ -630,19 +638,23 @@ PEXPI box NewBoxCenteredV(v3 center, v3 size)
 PEXPI box NewBoxBetween(r32 left, r32 bottom, r32 back, r32 right, r32 top, r32 front)
 {
 	box result;
-	result.X = left;
-	result.Y = bottom;
-	result.Z = back;
-	result.Width = right - left;
-	result.Height = top - bottom;
-	result.Depth = front - back;
+	result.X = MinR32(left, right);
+	result.Y = MinR32(bottom, top);
+	result.Z = MinR32(back, front);
+	result.Width = MaxR32(left, right) - result.X;
+	result.Height = MaxR32(bottom, top) - result.Y;
+	result.Depth = MaxR32(back, front) - result.Z;
 	return result;
 }
 PEXPI box NewBoxBetweenV(v3 bottomLeftBack, v3 topRightFront)
 {
 	box result;
-	result.BottomLeftBack = bottomLeftBack;
-	result.Size = SubV3(topRightFront, bottomLeftBack);
+	result.X = MinR32(bottomLeftBack.X, topRightFront.X);
+	result.Y = MinR32(bottomLeftBack.Y, topRightFront.Y);
+	result.Z = MinR32(bottomLeftBack.Z, topRightFront.Z);
+	result.Width = MaxR32(bottomLeftBack.X, topRightFront.X) - result.X;
+	result.Height = MaxR32(bottomLeftBack.Y, topRightFront.Y) - result.Y;
+	result.Depth = MaxR32(bottomLeftBack.Z, topRightFront.Z) - result.Z;
 	return result;
 }
 
@@ -686,19 +698,23 @@ PEXPI boxi NewBoxiCenteredV(v3i center, v3i size)
 PEXPI boxi NewBoxiBetween(i32 left, i32 bottom, i32 back, i32 right, i32 top, i32 front)
 {
 	boxi result;
-	result.X = left;
-	result.Y = bottom;
-	result.Z = back;
-	result.Width = right - left;
-	result.Height = top - bottom;
-	result.Depth = front - back;
+	result.X = MinI32(left, right);
+	result.Y = MinI32(bottom, top);
+	result.Z = MinI32(back, front);
+	result.Width = MaxI32(left, right) - result.X;
+	result.Height = MaxI32(bottom, top) - result.Y;
+	result.Depth = MaxI32(back, front) - result.Z;
 	return result;
 }
 PEXPI boxi NewBoxiBetweenV(v3i bottomLeftBack, v3i topRightFront)
 {
 	boxi result;
-	result.BottomLeftBack = bottomLeftBack;
-	result.Size = SubV3i(topRightFront, bottomLeftBack);
+	result.X = MinI32(bottomLeftBack.X, topRightFront.X);
+	result.Y = MinI32(bottomLeftBack.Y, topRightFront.Y);
+	result.Z = MinI32(bottomLeftBack.Z, topRightFront.Z);
+	result.Width = MaxI32(bottomLeftBack.X, topRightFront.X) - result.X;
+	result.Height = MaxI32(bottomLeftBack.Y, topRightFront.Y) - result.Y;
+	result.Depth = MaxI32(bottomLeftBack.Z, topRightFront.Z) - result.Z;
 	return result;
 }
 
@@ -741,19 +757,23 @@ PEXPI boxd NewBoxdCenteredV(v3d center, v3d size)
 PEXPI boxd NewBoxdBetween(r64 left, r64 bottom, r64 back, r64 right, r64 top, r64 front)
 {
 	boxd result;
-	result.X = left;
-	result.Y = bottom;
-	result.Z = back;
-	result.Width = right - left;
-	result.Height = top - bottom;
-	result.Depth = front - back;
+	result.X = MinR64(left, right);
+	result.Y = MinR64(bottom, top);
+	result.Z = MinR64(back, front);
+	result.Width = MaxR64(left, right) - result.X;
+	result.Height = MaxR64(bottom, top) - result.Y;
+	result.Depth = MaxR64(back, front) - result.Z;
 	return result;
 }
 PEXPI boxd NewBoxdBetweenV(v3d bottomLeftBack, v3d topRightFront)
 {
 	boxd result;
-	result.BottomLeftBack = bottomLeftBack;
-	result.Size = SubV3d(topRightFront, bottomLeftBack);
+	result.X = MinR64(bottomLeftBack.X, topRightFront.X);
+	result.Y = MinR64(bottomLeftBack.Y, topRightFront.Y);
+	result.Z = MinR64(bottomLeftBack.Z, topRightFront.Z);
+	result.Width = MaxR64(bottomLeftBack.X, topRightFront.X) - result.X;
+	result.Height = MaxR64(bottomLeftBack.Y, topRightFront.Y) - result.Y;
+	result.Depth = MaxR64(bottomLeftBack.Z, topRightFront.Z) - result.Z;
 	return result;
 }
 

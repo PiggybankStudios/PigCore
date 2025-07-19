@@ -114,8 +114,8 @@ union Vec2R64
 	struct { r64 X, Y; };
 	struct { r64 U, V; };
 	struct { r64 Width, Height; };
-	struct { r64 Lat, Lon; };
-	struct { r64 Latitude, Longitude; };
+	struct { r64 Lon, Lat; };
+	struct { r64 Longitude, Latitude; };
 };
 
 typedef union Vec3R64 Vec3R64;
@@ -692,9 +692,9 @@ PEXPI v4d ScaleV4d(v4d left, r64 scalar) { v4d result; result.X = left.X * scala
 PEXPI v2i ShrinkV2i(v2i left, i32 divisor) { v2i result; result.X = left.X / divisor; result.Y = left.Y / divisor; return result; }
 PEXPI v3i ShrinkV3i(v3i left, i32 divisor) { v3i result; result.X = left.X / divisor; result.Y = left.Y / divisor; result.Z = left.Z / divisor; return result; }
 PEXPI v4i ShrinkV4i(v4i left, i32 divisor) { v4i result; result.X = left.X / divisor; result.Y = left.Y / divisor; result.Z = left.Z / divisor; result.W = left.W / divisor; return result; }
-PEXPI v2d ShrinkV2d(v2d left, r64 divisor) { v2d result; result.X = left.X * divisor; result.Y = left.Y * divisor; return result; }
-PEXPI v3d ShrinkV3d(v3d left, r64 divisor) { v3d result; result.X = left.X * divisor; result.Y = left.Y * divisor; result.Z = left.Z * divisor; return result; }
-PEXPI v4d ShrinkV4d(v4d left, r64 divisor) { v4d result; result.X = left.X * divisor; result.Y = left.Y * divisor; result.Z = left.Z * divisor; result.W = left.W * divisor; return result; }
+PEXPI v2d ShrinkV2d(v2d left, r64 divisor) { v2d result; result.X = left.X / divisor; result.Y = left.Y / divisor; return result; }
+PEXPI v3d ShrinkV3d(v3d left, r64 divisor) { v3d result; result.X = left.X / divisor; result.Y = left.Y / divisor; result.Z = left.Z / divisor; return result; }
+PEXPI v4d ShrinkV4d(v4d left, r64 divisor) { v4d result; result.X = left.X / divisor; result.Y = left.Y / divisor; result.Z = left.Z / divisor; result.W = left.W / divisor; return result; }
 
 PEXPI bool AreEqualV4r(v4r left, v4r right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.W == right.W); }
 PEXPI bool AreEqualV2i(v2i left, v2i right) { return (left.X == right.X && left.Y == right.Y); }
