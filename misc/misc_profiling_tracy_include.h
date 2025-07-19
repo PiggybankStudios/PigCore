@@ -9,15 +9,14 @@ Date:   07\18\2025
 
 #include "base/base_defines_check.h"
 
-#if BUILD_WITH_TRACY
-
+#if PROFILING_ENABLED
 #define TRACY_ENABLE
-// #define TRACY_FIBERS
+#endif
+
 #if PIG_CORE_BUILDING_AS_DLL
 #define TRACY_EXPORTS
 #endif
-#include "third_party/tracy/tracy/TracyC.h"
 
-#endif //BUILD_WITH_TRACY
+#include "third_party/tracy/tracy/TracyC.h"
 
 #endif //  _MISC_PROFILING_TRACY_INCLUDE_H
