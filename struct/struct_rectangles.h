@@ -20,8 +20,8 @@ Description:
 
 //NOTE: "Rectangle" conflicts with a windows.h type so we call it Rectanglef.
 //      This is mostly fine because we usually use the shortened alias "rec"
-typedef union Rectanglef Rectanglef;
-union Rectanglef
+typedef car Rectanglef Rectanglef;
+car Rectanglef
 {
 	r32 Elements[4];
 	plex { r32 X, Y, Width, Height; };
@@ -32,8 +32,8 @@ union Rectanglef
 _Static_assert(sizeof(Rectanglef) == sizeof(r32) * 4, "Rectanglef contains padding!");
 #endif
 
-typedef union RectangleR64 RectangleR64;
-union RectangleR64
+typedef car RectangleR64 RectangleR64;
+car RectangleR64
 {
 	r64 Elements[4];
 	plex { r64 X, Y, Width, Height; };
@@ -46,8 +46,8 @@ union RectangleR64
 _Static_assert(sizeof(RectangleR64) == sizeof(r64) * 4, "RectangleR64 contains padding!");
 #endif
 
-typedef union Rectanglei Rectanglei;
-union Rectanglei
+typedef car Rectanglei Rectanglei;
+car Rectanglei
 {
 	i32 Elements[4];
 	plex { i32 X, Y, Width, Height; };
@@ -58,8 +58,8 @@ union Rectanglei
 _Static_assert(sizeof(Rectanglei) == sizeof(i32) * 4, "Rectanglei contains padding!");
 #endif
 
-typedef union Box Box;
-union Box
+typedef car Box Box;
+car Box
 {
 	r32 Elements[6];
 	plex { r32 X, Y, Z, Width, Height, Depth; };
@@ -70,8 +70,8 @@ union Box
 _Static_assert(sizeof(Box) == sizeof(r32) * 6, "Box contains padding!");
 #endif
 
-typedef union BoxR64 BoxR64;
-union BoxR64
+typedef car BoxR64 BoxR64;
+car BoxR64
 {
 	r64 Elements[6];
 	plex { r64 X, Y, Z, Width, Height, Depth; };
@@ -82,8 +82,8 @@ union BoxR64
 _Static_assert(sizeof(BoxR64) == sizeof(r64) * 6, "BoxR64 contains padding!");
 #endif
 
-typedef union Boxi Boxi;
-union Boxi
+typedef car Boxi Boxi;
+car Boxi
 {
 	i32 Elements[6];
 	plex { i32 X, Y, Z, Width, Height, Depth; };
@@ -94,8 +94,8 @@ union Boxi
 _Static_assert(sizeof(Boxi) == sizeof(i32) * 6, "Boxi contains padding!");
 #endif
 
-typedef union Obb2D Obb2D;
-union Obb2D
+typedef car Obb2D Obb2D;
+car Obb2D
 {
 	r32 Elements[5];
 	plex { r32 X, Y, Width, Height, Rotation; };
@@ -106,8 +106,8 @@ union Obb2D
 _Static_assert(sizeof(Obb2D) == sizeof(r32) * 5, "Obb2D contains padding!");
 #endif
 
-typedef union Obb2DR64 Obb2DR64;
-union Obb2DR64
+typedef car Obb2DR64 Obb2DR64;
+car Obb2DR64
 {
 	r64 Elements[5];
 	plex { r64 X, Y, Width, Height, Rotation; };
@@ -120,8 +120,8 @@ _Static_assert(sizeof(Obb2DR64) == sizeof(r64) * 5, "Obb2DR64 contains padding!"
 
 //NOTE: quat is HMM_Vec4 which has an SSE intrinsic that forces it to be 16-byte aligned
 //      thus we need a bit of padding between center/size and rotation
-typedef union Obb3D Obb3D;
-union Obb3D
+typedef car Obb3D Obb3D;
+car Obb3D
 {
 	r32 Elements[12]; //indices 8 and 9 are padding
 	plex { r32 X, Y, Z, Width, Height, Depth, Padding1, Padding2; quat Rotation; };
@@ -132,8 +132,8 @@ union Obb3D
 _Static_assert(sizeof(Obb3D) == sizeof(r32) * 12, "Obb3D contains padding!");
 #endif
 
-typedef union Obb3DR64 Obb3DR64;
-union Obb3DR64
+typedef car Obb3DR64 Obb3DR64;
+car Obb3DR64
 {
 	r64 Elements[10];
 	plex { r64 X, Y, Z, Width, Height, Depth; quatd Rotation; };

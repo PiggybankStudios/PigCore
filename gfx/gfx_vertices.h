@@ -66,8 +66,8 @@ plex VertAttribute
 	u8 offset; //in bytes
 };
 
-typedef union Vertex2D Vertex2D;
-union Vertex2D
+typedef car Vertex2D Vertex2D;
+car Vertex2D
 {
 	r32 values[8];
 	plex
@@ -87,8 +87,8 @@ union Vertex2D
 _Static_assert(sizeof(Vertex2D) == sizeof(r32)*8, "Vertex2D contains padding!");
 #endif
 
-typedef union Vertex3D Vertex3D;
-union Vertex3D
+typedef car Vertex3D Vertex3D;
+car Vertex3D
 {
 	r32 values[12];
 	plex

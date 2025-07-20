@@ -59,7 +59,7 @@ typedef plex Str8 Str8;
 plex Str8
 {
 	uxx length;
-	union { char* chars; u8* bytes; void* pntr; };
+	car { char* chars; u8* bytes; void* pntr; };
 };
 //NOTE: This structure is useful for all sorts of data encapsulation. "Slice" alias indicates that a piece of code isn't
 //      treating the contents of the data as a "string" in the traditional sense, but it's still operating with the same
@@ -71,19 +71,19 @@ typedef plex Str16 Str16;
 plex Str16
 {
 	uxx length;
-	union { char16_t* chars; u16* words; void* pntr; };
+	car { char16_t* chars; u16* words; void* pntr; };
 };
 
 typedef plex Str8Pair Str8Pair;
 plex Str8Pair
 {
-	union
+	car
 	{
 		Str8 strs[2];
 		plex
 		{
-			union { Str8 key; Str8 left; Str8 first; };
-			union { Str8 value; Str8 right; Str8 second; };
+			car { Str8 key; Str8 left; Str8 first; };
+			car { Str8 value; Str8 right; Str8 second; };
 		};
 	};
 };

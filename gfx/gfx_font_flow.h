@@ -88,7 +88,7 @@ typedef plex TextMeasure TextMeasure;
 plex TextMeasure
 {
 	rec visualRec;
-	union
+	car
 	{
 		rec logicalRec;
 		plex { r32 OffsetX, OffsetY; r32 Width, Height; };

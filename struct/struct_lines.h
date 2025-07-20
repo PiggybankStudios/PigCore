@@ -12,8 +12,8 @@ Date:   02\02\2025
 #include "base/base_macros.h"
 #include "struct/struct_vectors.h"
 
-typedef union Line2D Line2D;
-union Line2D
+typedef car Line2D Line2D;
+car Line2D
 {
 	r32 Elements[4];
 	v2 Points[2];
@@ -23,8 +23,8 @@ union Line2D
 _Static_assert(sizeof(Line2D) == sizeof(r32)*4, "Line2D contains padding!");
 #endif
 
-typedef union Line3D Line3D;
-union Line3D
+typedef car Line3D Line3D;
+car Line3D
 {
 	r32 Elements[6];
 	v3 Points[2];

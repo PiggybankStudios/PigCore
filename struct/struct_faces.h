@@ -15,8 +15,8 @@ Description:
 #include "base/base_macros.h"
 #include "struct/struct_vectors.h"
 
-typedef union Triangle2D Triangle2D;
-union Triangle2D
+typedef car Triangle2D Triangle2D;
+car Triangle2D
 {
 	r32 Values[6];
 	v2 Verts[3];
@@ -26,8 +26,8 @@ union Triangle2D
 _Static_assert(sizeof(Triangle2D) == sizeof(r32)*6, "Triangle2D contains padding!");
 #endif
 
-typedef union Triangle3D Triangle3D;
-union Triangle3D
+typedef car Triangle3D Triangle3D;
+car Triangle3D
 {
 	r32 Values[9];
 	v3 Verts[3];
@@ -37,8 +37,8 @@ union Triangle3D
 _Static_assert(sizeof(Triangle3D) == sizeof(r32)*9, "Triangle3D contains padding!");
 #endif
 
-typedef union Quad2D Quad2D;
-union Quad2D
+typedef car Quad2D Quad2D;
+car Quad2D
 {
 	r32 Values[8];
 	v2 Verts[4];
@@ -48,8 +48,8 @@ union Quad2D
 _Static_assert(sizeof(Quad2D) == sizeof(r32)*8, "Quad2D contains padding!");
 #endif
 
-typedef union Quad3D Quad3D;
-union Quad3D
+typedef car Quad3D Quad3D;
+car Quad3D
 {
 	r32 Values[12];
 	v3 Verts[4];

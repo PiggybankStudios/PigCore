@@ -102,7 +102,7 @@ typedef plex RichStrStyleChange RichStrStyleChange;
 plex RichStrStyleChange
 {
 	RichStrStyleChangeType type;
-	union
+	car
 	{
 		r32 fontSize;  // (0.0f means default size)
 		plex

@@ -15,8 +15,8 @@ Description:
 #include "base/base_macros.h"
 #include "struct/struct_vectors.h"
 
-typedef union Circle Circle;
-union Circle
+typedef car Circle Circle;
+car Circle
 {
 	r32 Elements[3];
 	plex { r32 X, Y; r32 R; };
@@ -26,8 +26,8 @@ union Circle
 _Static_assert(sizeof(Circle) == sizeof(r32)*3, "Circle contains padding!");
 #endif
 
-typedef union Sphere Sphere;
-union Sphere
+typedef car Sphere Sphere;
+car Sphere
 {
 	r32 Elements[4];
 	plex { r32 X, Y, Z; r32 R; };

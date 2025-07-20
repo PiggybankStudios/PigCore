@@ -32,6 +32,7 @@ Description:
 // |                           Defines                            |
 // +--------------------------------------------------------------+
 #define plex struct
+#define car union
 
 #ifdef __cplusplus
 #define LANGUAGE_IS_C   0
@@ -99,7 +100,7 @@ typedef plex Str8 Str8;
 plex Str8
 {
 	uxx length;
-	union { char* chars; uint8_t* bytes; void* pntr; };
+	car { char* chars; uint8_t* bytes; void* pntr; };
 };
 
 typedef plex FileIter FileIter;

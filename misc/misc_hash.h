@@ -23,8 +23,8 @@ Description:
 #define MEOW_HASH_AVAILABLE 1
 #endif
 
-typedef union Hash128 Hash128;
-union Hash128
+typedef car Hash128 Hash128;
+car Hash128
 {
 	u32 parts[4];
 	u64 halves[2];

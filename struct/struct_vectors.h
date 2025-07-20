@@ -24,8 +24,8 @@ Description:
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
 // +--------------------------------------------------------------+
-typedef union Vec2i Vec2i;
-union Vec2i
+typedef car Vec2i Vec2i;
+car Vec2i
 {
 	plex { i32 X, Y; };
 	plex { i32 U, V; };
@@ -34,8 +34,8 @@ union Vec2i
 	i32 Elements[2];
 };
 
-typedef union Vec3i Vec3i;
-union Vec3i
+typedef car Vec3i Vec3i;
+car Vec3i
 {
 	plex { i32 X, Y, Z; };
 	plex { i32 U, V, W; };
@@ -47,12 +47,12 @@ union Vec3i
 	i32 Elements[3];
 };
 
-typedef union Vec4i Vec4i;
-union Vec4i
+typedef car Vec4i Vec4i;
+car Vec4i
 {
 	plex
 	{
-		union
+		car
 		{
 			Vec3i XYZ;
 			plex { i32 X, Y, Z; };
@@ -61,7 +61,7 @@ union Vec4i
 	};
 	plex
 	{
-		union
+		car
 		{
 			Vec3i RGB;
 			plex { i32 R, G, B; };
@@ -77,14 +77,14 @@ union Vec4i
 //NOTE: Vec4Raw is exactly the same as HMM_Vec4 but it doesn't include the SSE type __m128
 //      which means it's alignment is 4 instead of 16! HMM_Vec4 is the only HMM vector
 //      type that is 16-byte aligned, so this is the only "Raw" variant we have
-typedef union Vec4Raw Vec4Raw;
-union Vec4Raw
+typedef car Vec4Raw Vec4Raw;
+car Vec4Raw
 {
 	r32 Elements[4];
 	
 	plex
 	{
-		union
+		car
 		{
 			HMM_Vec3 XYZ;
 			plex { r32 X, Y, Z; };
@@ -93,7 +93,7 @@ union Vec4Raw
 	};
 	plex
 	{
-		union
+		car
 		{
 			HMM_Vec3 RGB;
 			plex { r32 R, G, B; };
@@ -107,8 +107,8 @@ union Vec4Raw
 
 };
 
-typedef union Vec2R64 Vec2R64;
-union Vec2R64
+typedef car Vec2R64 Vec2R64;
+car Vec2R64
 {
 	r64 Elements[2];
 	plex { r64 X, Y; };
@@ -118,8 +118,8 @@ union Vec2R64
 	plex { r64 Longitude, Latitude; };
 };
 
-typedef union Vec3R64 Vec3R64;
-union Vec3R64
+typedef car Vec3R64 Vec3R64;
+car Vec3R64
 {
 	r64 Elements[3];
 	plex { r64 X, Y, Z; };
@@ -132,13 +132,13 @@ union Vec3R64
 	plex { r64 Width, Height, Depth; };
 };
 
-typedef union Vec4R64 Vec4R64;
-union Vec4R64
+typedef car Vec4R64 Vec4R64;
+car Vec4R64
 {
 	r64 Elements[4];
 	plex
 	{
-		union
+		car
 		{
 			Vec3R64 XYZ;
 			plex { r64 X, Y, Z; };
@@ -147,7 +147,7 @@ union Vec4R64
 	};
 	plex
 	{
-		union
+		car
 		{
 			Vec3R64 RGB;
 			plex { r64 R, G, B; };

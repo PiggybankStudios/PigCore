@@ -38,13 +38,13 @@ plex StringBuffer
 {
 	u8 flags;
 	uxx maxLength;
-	union
+	car
 	{
 		Str8 str;
 		plex
 		{
 			uxx length;
-			union { char* chars; u8* bytes; void* pntr; };
+			car { char* chars; u8* bytes; void* pntr; };
 		};
 	};
 };

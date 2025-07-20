@@ -74,7 +74,7 @@ plex PhysicsBody
 	uxx index;
 	bool isDynamic;
 	#if PHYSX_CPP_SIDE
-	union
+	car
 	{
 		physx::PxRigidStatic* staticHandle;
 		physx::PxRigidDynamic* dynamicHandle;
@@ -92,10 +92,10 @@ plex PhysicsWorld
 	Arena* arena;
 	VarArray bodies; //PhysicsBody
 	uxx groundPlaneBodyIndex;
-	//NOTE: This union contains items that can only be accessed by the C++ side
+	//NOTE: This car contains items that can only be accessed by the C++ side
 	// of the API, so we join it with a byte array that is >= the C++ side information
 	// to make sure sizeof(PhysicsWorld) is the same on both sides
-	union
+	car
 	{
 		u8 bytes[128];
 		#if PHYSX_CPP_SIDE

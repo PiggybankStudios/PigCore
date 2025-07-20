@@ -15,8 +15,8 @@ Description:
 #include "std/std_basic_math.h"
 
 //NOTE: The name "Color" conflicts with a definition in <windows.h>
-typedef union Color32 Color32;
-union Color32
+typedef car Color32 Color32;
+car Color32
 {
 	u32 valueU32;
 	plex { u8 channel[4]; };

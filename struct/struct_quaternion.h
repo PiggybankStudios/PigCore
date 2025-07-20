@@ -24,13 +24,13 @@ Description:
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
 // +--------------------------------------------------------------+
-typedef union QuatR64 QuatR64;
-union QuatR64
+typedef car QuatR64 QuatR64;
+car QuatR64
 {
 	r64 Elements[4];
 	plex
 	{
-		union
+		car
 		{
 			v3d XYZ;
 			plex { r64 X, Y, Z; };

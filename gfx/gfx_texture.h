@@ -63,7 +63,7 @@ plex Texture
 	sg_image image;
 	sg_sampler sampler;
 	u8 flags;
-	union
+	car
 	{
 		v2i size;
 		plex { i32 Width, Height; };
@@ -71,7 +71,7 @@ plex Texture
 	uxx numPixels;
 	uxx pixelSize;
 	uxx totalSize;
-	union { void* pixelsPntr; u8* pixelsU8; u32* pixelsU32; r32 pixelsR32; };
+	car { void* pixelsPntr; u8* pixelsU8; u32* pixelsU32; r32 pixelsR32; };
 	Str8 name;
 	#if DEBUG_BUILD
 	Str8 filePath;
