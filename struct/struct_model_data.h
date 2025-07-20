@@ -3,8 +3,8 @@ File:   struct_model_data.h
 Author: Taylor Robbins
 Date:   02\14\2025
 Description:
-	** Holds the ModelData struct which is the format that all 3D Model file
-	** format parsers produce. This struct is often then transformed into a game
+	** Holds the ModelData plex which is the format that all 3D Model file
+	** format parsers produce. This plex is often then transformed into a game
 	** specific format depending on the games needs
 */
 
@@ -24,16 +24,16 @@ Description:
 #include "struct/struct_image_data.h"
 #include "gfx/gfx_vertices.h"
 
-typedef struct ModelDataTransform ModelDataTransform;
-struct ModelDataTransform
+typedef plex ModelDataTransform ModelDataTransform;
+plex ModelDataTransform
 {
 	v3 position;
 	v3 scale;
 	quat rotation;
 };
 
-typedef struct ModelDataPart ModelDataPart;
-struct ModelDataPart
+typedef plex ModelDataPart ModelDataPart;
+plex ModelDataPart
 {
 	uxx index;
 	Str8 name;
@@ -44,8 +44,8 @@ struct ModelDataPart
 	uxx materialIndex;
 };
 
-typedef struct ModelDataMaterial ModelDataMaterial;
-struct ModelDataMaterial
+typedef plex ModelDataMaterial ModelDataMaterial;
+plex ModelDataMaterial
 {
 	uxx index;
 	Str8 name;
@@ -61,8 +61,8 @@ struct ModelDataMaterial
 	uxx ambientOcclusionTextureIndex;
 };
 
-typedef struct ModelDataTexture ModelDataTexture;
-struct ModelDataTexture
+typedef plex ModelDataTexture ModelDataTexture;
+plex ModelDataTexture
 {
 	uxx index;
 	Str8 name;
@@ -70,8 +70,8 @@ struct ModelDataTexture
 	ImageData imageData;
 };
 
-typedef struct ModelData ModelData;
-struct ModelData
+typedef plex ModelData ModelData;
+plex ModelData
 {
 	Arena* arena;
 	VarArray parts; //ModelDataPart

@@ -56,7 +56,7 @@ typedef uint16_t char16_t;
 	#include <sys/time.h>
 	#include <errno.h>
 	#include <dlfcn.h> //needed for dlopen
-	// Needed for struct stat
+	// Needed for plex stat
 	#include <sys/stat.h>
 	// Needed for getpwuid and getuid
 	#include <pwd.h>

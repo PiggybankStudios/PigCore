@@ -24,8 +24,8 @@ Description:
 
 #if BUILD_WITH_CLAY
 
-typedef struct ClayElementUserData ClayElementUserData;
-struct ClayElementUserData
+typedef plex ClayElementUserData ClayElementUserData;
+plex ClayElementUserData
 {
 	bool outsideBorder;
 };
@@ -55,15 +55,15 @@ const char* GetTextContractionStr(TextContraction enumValue)
 	}
 }
 
-typedef struct ClayTextUserData ClayTextUserData;
-struct ClayTextUserData
+typedef plex ClayTextUserData ClayTextUserData;
+plex ClayTextUserData
 {
 	TextContraction contraction;
 };
 
 #define CLAY_ELEMENT_USERDATA_TYPE ClayElementUserData
 #define CLAY_TEXT_USERDATA_TYPE ClayTextUserData
-#define CLAY_IMAGEDATA_TYPE struct Texture*
+#define CLAY_IMAGEDATA_TYPE plex Texture*
 
 #if PIG_CORE_IMPLEMENTATION
 #define CLAY_IMPLEMENTATION
@@ -81,8 +81,8 @@ struct ClayTextUserData
 #endif
 
 //TODO: We may want to make sure that ClayUI is always accessed from the same thread it was created on!
-typedef struct ClayUI ClayUI;
-struct ClayUI
+typedef plex ClayUI ClayUI;
+plex ClayUI
 {
 	Arena* arena;
 	ClayMeasureText_f* measureTextFunc;

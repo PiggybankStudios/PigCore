@@ -108,8 +108,8 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 		if (local)
 		{
 			time_t utcTime = time(NULL);
-			struct tm localTime = ZEROED;
-			struct tm* localTimeResult = localtime_r(&utcTime, &localTime); //TODO: This might be a POSIX-only thing? Maybe we should use localtime() instead?
+			plex tm localTime = ZEROED;
+			plex tm* localTimeResult = localtime_r(&utcTime, &localTime); //TODO: This might be a POSIX-only thing? Maybe we should use localtime() instead?
 			Assert(localTimeResult == &localTime);
 			long timezoneOffset = localTime.tm_gmtoff;
 			SetOptionalOutPntr(timezoneOffsetOut, (i64)timezoneOffset);
@@ -119,7 +119,7 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 		}
 		else
 		{
-			struct timeval currentTimeVal = ZEROED;
+			plex timeval currentTimeVal = ZEROED;
 			int getTimeResult = gettimeofday(&currentTimeVal, NULL);
 			result = (u64)currentTimeVal.tv_sec;
 			//TODO: tv_usec is also available from currentTimeVal

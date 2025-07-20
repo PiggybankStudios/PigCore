@@ -58,8 +58,8 @@ PEXP const char* GetVertAttributeMatchStr(VertAttributeType enumValue)
 }
 #endif
 
-typedef struct VertAttribute VertAttribute;
-struct VertAttribute
+typedef plex VertAttribute VertAttribute;
+plex VertAttribute
 {
 	VertAttributeType type;
 	u8 size; //in bytes
@@ -70,13 +70,13 @@ typedef union Vertex2D Vertex2D;
 union Vertex2D
 {
 	r32 values[8];
-	struct
+	plex
 	{
 		v2 position;
 		v2 texCoord;
 		v4r color;
 	};
-	struct
+	plex
 	{
 		r32 X, Y;
 		r32 tX, tY;
@@ -91,14 +91,14 @@ typedef union Vertex3D Vertex3D;
 union Vertex3D
 {
 	r32 values[12];
-	struct
+	plex
 	{
 		v3 position;
 		v3 normal;
 		v2 texCoord;
 		v4r color;
 	};
-	struct
+	plex
 	{
 		r32 X, Y, Z;
 		r32 nX, nY, nZ;

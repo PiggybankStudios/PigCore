@@ -54,8 +54,8 @@ PEXP const char* GetVertBufferUsageStr(VertBufferUsage enumValue)
 }
 #endif
 
-typedef struct VertBuffer VertBuffer;
-struct VertBuffer
+typedef plex VertBuffer VertBuffer;
+plex VertBuffer
 {
 	Arena* arena;
 	Result error;

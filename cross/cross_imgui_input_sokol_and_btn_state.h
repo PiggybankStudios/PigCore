@@ -13,8 +13,8 @@ Date:   02\21\2025
 
 #define IMGUI_MOUSE_SCROLL_SCALE 0.25f
 
-typedef struct ImguiInput ImguiInput;
-struct ImguiInput
+typedef plex ImguiInput ImguiInput;
+plex ImguiInput
 {
 	r32 elapsedMs;
 	KeyboardState* keyboard;
@@ -25,8 +25,8 @@ struct ImguiInput
 	bool isTyping;
 };
 
-typedef struct ImguiOutput ImguiOutput;
-struct ImguiOutput
+typedef plex ImguiOutput ImguiOutput;
+plex ImguiOutput
 {
 	bool isMouseOverImgui;
 	bool isImguiTypingFocused;

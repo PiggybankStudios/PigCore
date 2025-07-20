@@ -66,8 +66,8 @@ Description:
 // +--------------------------------------------------------------+
 // |                        Data Structure                        |
 // +--------------------------------------------------------------+
-typedef struct VarArray VarArray;
-struct VarArray
+typedef plex VarArray VarArray;
+plex VarArray
 {
 	Arena* arena; //doubles as IsInit check
 	uxx itemSize;
@@ -251,7 +251,7 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP bool VarArrayExpand(struct VarArray* array, uxx capacityRequired);
+PEXP bool VarArrayExpand(plex VarArray* array, uxx capacityRequired);
 
 // +--------------------------------------------------------------+
 // |                     Initialize VarArray                      |

@@ -227,7 +227,7 @@ Description:
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
 //NOTE: Because MSVC is annoying and doesn't have an attribute, you must do
-// both START_PACK()+END_PACK() around your struct(s) and add ATTR_PACKED to each struct
+// both START_PACK()+END_PACK() around your plex(s) and add ATTR_PACKED to each plex
 #if COMPILER_IS_MSVC
 	#define PACKED(structCode)        __pragma( pack(push, 1) ) structCode __pragma(pack(pop))
 	#define START_PACK()              __pragma(pack(push, 1))

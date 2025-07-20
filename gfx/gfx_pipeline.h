@@ -50,8 +50,8 @@ PEXP const char* GetGfxPipelineBlendModeStr(GfxPipelineBlendMode enumValue)
 }
 #endif
 
-typedef struct GfxPipelineOptions GfxPipelineOptions;
-struct GfxPipelineOptions
+typedef plex GfxPipelineOptions GfxPipelineOptions;
+plex GfxPipelineOptions
 {
 	Shader* shader;
 	uxx vertexSize;
@@ -67,8 +67,8 @@ struct GfxPipelineOptions
 	//TODO: Add indexed buffer options?
 };
 
-typedef struct GfxPipeline GfxPipeline;
-struct GfxPipeline
+typedef plex GfxPipeline GfxPipeline;
+plex GfxPipeline
 {
 	Arena* arena;
 	Result error;

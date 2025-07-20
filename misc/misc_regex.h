@@ -31,10 +31,10 @@ Description:
 //NOTE: When writing regex patterns with captures make sure you stay below this number (bump this number up as needed)
 #define MAX_NUM_REGEX_CAPTURES    8
 
-typedef struct slre_cap slre_cap;
+typedef plex slre_cap slre_cap;
 
-typedef struct RegexResult RegexResult;
-struct RegexResult
+typedef plex RegexResult RegexResult;
+plex RegexResult
 {
 	Result result; //Typically Result_Success or Result_NoMatch, other error codes for invalid regex or input
 	Str8 haystack;

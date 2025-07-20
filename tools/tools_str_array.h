@@ -7,8 +7,8 @@ Date:   06\20\2025
 #ifndef _TOOLS_STR_ARRAY_H
 #define _TOOLS_STR_ARRAY_H
 
-typedef struct StrArray StrArray;
-struct StrArray
+typedef plex StrArray StrArray;
+plex StrArray
 {
 	uxx length;
 	uxx allocLength;

@@ -322,7 +322,7 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 	#elif TARGET_IS_LINUX
 	{
 		ScratchBegin1(scratch, arena);
-		struct passwd* passwordEntry = getpwuid(getuid());
+		plex passwd* passwordEntry = getpwuid(getuid());
 		const char* homeDirNt = passwordEntry->pw_dir;
 		FilePath homeDir = AllocStr8Nt(scratch, homeDirNt);
 		NotNullStr(homeDir);

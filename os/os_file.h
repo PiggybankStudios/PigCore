@@ -21,8 +21,8 @@ Description:
 #include "misc/misc_result.h"
 #include "os/os_path.h"
 
-typedef struct OsFileIter OsFileIter;
-struct OsFileIter
+typedef plex OsFileIter OsFileIter;
+plex OsFileIter
 {
 	Arena* arena;
 	FilePath folderPath; //has a trailing slash
@@ -70,8 +70,8 @@ PEXP const char* GetOsOpenFileModeStr(OsOpenFileMode enumValue)
 }
 #endif
 
-typedef struct OsFile OsFile;
-struct OsFile
+typedef plex OsFile OsFile;
+plex OsFile
 {
 	Arena* arena;
 	bool isOpen;
@@ -89,13 +89,13 @@ struct OsFile
 	#endif
 };
 
-typedef struct OsFileWriteTime OsFileWriteTime;
-struct OsFileWriteTime
+typedef plex OsFileWriteTime OsFileWriteTime;
+plex OsFileWriteTime
 {
 	#if TARGET_IS_WINDOWS
 	FILETIME fileTime;
 	#elif TARGET_IS_LINUX
-	struct timespec timeSpec;
+	plex timespec timeSpec;
 	#else
 	u8 placeholder;
 	#endif
@@ -298,7 +298,7 @@ PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 		
 		if (isFolderOut != nullptr && result)
 		{
-			struct stat statStruct = ZEROED;
+			plex stat statStruct = ZEROED;
 			int statResult = stat(fullPath.chars, &statStruct);
 			if (statResult == 0)
 			{
@@ -503,7 +503,7 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 			NotNullStr(fullPath);
 			if (!fileIter->includeFiles || !fileIter->includeFolders || isFolderOut != nullptr)
 			{
-				struct stat statStruct = ZEROED;
+				plex stat statStruct = ZEROED;
 				int statResult = stat(fullPath.chars, &statStruct);
 				if (statResult == 0)
 				{
@@ -1362,7 +1362,7 @@ PEXP Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)
 	{
 		ScratchBegin(scratch);
 		Str8 filePathNt = AllocStrAndCopy(scratch, filePath.length, filePath.chars, true);
-		struct stat statStruct = ZEROED;
+		plex stat statStruct = ZEROED;
 		int statResult = stat(filePathNt.chars, &statStruct);
 		ScratchEnd(scratch);
 		if (statResult != 0) { return Result_NotFound; }

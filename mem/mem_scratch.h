@@ -35,8 +35,8 @@ Description:
 
 #define NUM_SCRATCH_ARENAS_PER_THREAD   3
 
-typedef struct ScratchArena ScratchArena;
-struct ScratchArena
+typedef plex ScratchArena ScratchArena;
+plex ScratchArena
 {
 	Arena* arena;
 	uxx mark;

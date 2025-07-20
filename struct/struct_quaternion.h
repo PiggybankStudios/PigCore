@@ -28,12 +28,12 @@ typedef union QuatR64 QuatR64;
 union QuatR64
 {
 	r64 Elements[4];
-	struct
+	plex
 	{
 		union
 		{
 			v3d XYZ;
-			struct { r64 X, Y, Z; };
+			plex { r64 X, Y, Z; };
 		};
 		r64 W;
 	};

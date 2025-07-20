@@ -67,10 +67,10 @@ public:
 // +--------------------------------------------------------------+
 MAYBE_START_EXTERN_C
 
-typedef struct PhysicsBody PhysicsBody;
-struct PhysicsBody
+typedef plex PhysicsBody PhysicsBody;
+plex PhysicsBody
 {
-	uxx structSize; //Filled by the C++ side, can be validated by the C side to make sure the struct is the same size of both sides
+	uxx plexSize; //Filled by the C++ side, can be validated by the C side to make sure the plex is the same size of both sides
 	uxx index;
 	bool isDynamic;
 	#if PHYSX_CPP_SIDE
@@ -85,10 +85,10 @@ struct PhysicsBody
 	#endif
 };
 
-typedef struct PhysicsWorld PhysicsWorld;
-struct PhysicsWorld
+typedef plex PhysicsWorld PhysicsWorld;
+plex PhysicsWorld
 {
-	uxx structSize; //Filled by the C++ side, can be validated by the C side to make sure the bytes array below is the right size
+	uxx plexSize; //Filled by the C++ side, can be validated by the C side to make sure the bytes array below is the right size
 	Arena* arena;
 	VarArray bodies; //PhysicsBody
 	uxx groundPlaneBodyIndex;
@@ -99,7 +99,7 @@ struct PhysicsWorld
 	{
 		u8 bytes[128];
 		#if PHYSX_CPP_SIDE
-		struct 
+		plex 
 		{
 			PigCorePhysXAllocator* allocator;
 			PigCorePhysXErrorCallback* errorCallback;
@@ -114,11 +114,11 @@ struct PhysicsWorld
 	};
 };
 
-typedef struct PhysicsBodyTransform PhysicsBodyTransform;
-struct PhysicsBodyTransform
+typedef plex PhysicsBodyTransform PhysicsBodyTransform;
+plex PhysicsBodyTransform
 {
-	struct { r32 X, Y, Z; } position;
-	struct { r32 X, Y, Z, W; } rotation;
+	plex { r32 X, Y, Z; } position;
+	plex { r32 X, Y, Z, W; } rotation;
 };
 
 // +--------------------------------------------------------------+

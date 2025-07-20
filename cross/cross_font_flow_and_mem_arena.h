@@ -9,8 +9,8 @@ Date:   02\09\2025
 
 #if BUILD_WITH_SOKOL_GFX
 
-typedef struct TextLayout TextLayout;
-struct TextLayout
+typedef plex TextLayout TextLayout;
+plex TextLayout
 {
 	Arena* arena;
 	FontFlow flow;

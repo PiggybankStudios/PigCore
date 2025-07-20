@@ -24,9 +24,9 @@ typedef union Rectanglef Rectanglef;
 union Rectanglef
 {
 	r32 Elements[4];
-	struct { r32 X, Y, Width, Height; };
-	struct { r32 Left, Top, Unused1, Unused2; };
-	struct { v2 TopLeft, Size; };
+	plex { r32 X, Y, Width, Height; };
+	plex { r32 Left, Top, Unused1, Unused2; };
+	plex { v2 TopLeft, Size; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Rectanglef) == sizeof(r32) * 4, "Rectanglef contains padding!");
@@ -36,11 +36,11 @@ typedef union RectangleR64 RectangleR64;
 union RectangleR64
 {
 	r64 Elements[4];
-	struct { r64 X, Y, Width, Height; };
-	struct { r64 Lon, Lat, SizeLon, SizeLat; };
-	struct { r64 Longitude, Latitude, SizeLongitude, SizeLatitude; };
-	struct { r64 Left, Top, Unused5, Unused6; };
-	struct { v2d TopLeft, Size; };
+	plex { r64 X, Y, Width, Height; };
+	plex { r64 Lon, Lat, SizeLon, SizeLat; };
+	plex { r64 Longitude, Latitude, SizeLongitude, SizeLatitude; };
+	plex { r64 Left, Top, Unused5, Unused6; };
+	plex { v2d TopLeft, Size; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(RectangleR64) == sizeof(r64) * 4, "RectangleR64 contains padding!");
@@ -50,9 +50,9 @@ typedef union Rectanglei Rectanglei;
 union Rectanglei
 {
 	i32 Elements[4];
-	struct { i32 X, Y, Width, Height; };
-	struct { i32 Left, Top, Unused1, Unused2; };
-	struct { v2i TopLeft, Size; };
+	plex { i32 X, Y, Width, Height; };
+	plex { i32 Left, Top, Unused1, Unused2; };
+	plex { v2i TopLeft, Size; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Rectanglei) == sizeof(i32) * 4, "Rectanglei contains padding!");
@@ -62,9 +62,9 @@ typedef union Box Box;
 union Box
 {
 	r32 Elements[6];
-	struct { r32 X, Y, Z, Width, Height, Depth; };
-	struct { r32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
-	struct { v3 BottomLeftBack, Size; };
+	plex { r32 X, Y, Z, Width, Height, Depth; };
+	plex { r32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
+	plex { v3 BottomLeftBack, Size; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Box) == sizeof(r32) * 6, "Box contains padding!");
@@ -74,9 +74,9 @@ typedef union BoxR64 BoxR64;
 union BoxR64
 {
 	r64 Elements[6];
-	struct { r64 X, Y, Z, Width, Height, Depth; };
-	struct { r64 Left, Bottom, Back, Unused1, Unused2, Unused3; };
-	struct { v3d BottomLeftBack, Size; };
+	plex { r64 X, Y, Z, Width, Height, Depth; };
+	plex { r64 Left, Bottom, Back, Unused1, Unused2, Unused3; };
+	plex { v3d BottomLeftBack, Size; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(BoxR64) == sizeof(r64) * 6, "BoxR64 contains padding!");
@@ -86,9 +86,9 @@ typedef union Boxi Boxi;
 union Boxi
 {
 	i32 Elements[6];
-	struct { i32 X, Y, Z, Width, Height, Depth; };
-	struct { i32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
-	struct { v3i BottomLeftBack, Size; };
+	plex { i32 X, Y, Z, Width, Height, Depth; };
+	plex { i32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
+	plex { v3i BottomLeftBack, Size; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Boxi) == sizeof(i32) * 6, "Boxi contains padding!");
@@ -98,9 +98,9 @@ typedef union Obb2D Obb2D;
 union Obb2D
 {
 	r32 Elements[5];
-	struct { r32 X, Y, Width, Height, Rotation; };
-	struct { r32 CenterX, CenterY, Unused1, Unused2, Angle; };
-	struct { v2 Center, Size; r32 Unused3; };
+	plex { r32 X, Y, Width, Height, Rotation; };
+	plex { r32 CenterX, CenterY, Unused1, Unused2, Angle; };
+	plex { v2 Center, Size; r32 Unused3; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Obb2D) == sizeof(r32) * 5, "Obb2D contains padding!");
@@ -110,9 +110,9 @@ typedef union Obb2DR64 Obb2DR64;
 union Obb2DR64
 {
 	r64 Elements[5];
-	struct { r64 X, Y, Width, Height, Rotation; };
-	struct { r64 CenterX, CenterY, Unused1, Unused2, Angle; };
-	struct { v2d Center, Size; r64 Unused3; };
+	plex { r64 X, Y, Width, Height, Rotation; };
+	plex { r64 CenterX, CenterY, Unused1, Unused2, Angle; };
+	plex { v2d Center, Size; r64 Unused3; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Obb2DR64) == sizeof(r64) * 5, "Obb2DR64 contains padding!");
@@ -124,9 +124,9 @@ typedef union Obb3D Obb3D;
 union Obb3D
 {
 	r32 Elements[12]; //indices 8 and 9 are padding
-	struct { r32 X, Y, Z, Width, Height, Depth, Padding1, Padding2; quat Rotation; };
-	struct { r32 CenterX, CenterY, CenterZ, Unused1, Unused2, Unused3, Padding3, Padding4; quat Unused4; };
-	struct { v3 Center, Size; r32 Padding5, Padding6; quat Unused5; };
+	plex { r32 X, Y, Z, Width, Height, Depth, Padding1, Padding2; quat Rotation; };
+	plex { r32 CenterX, CenterY, CenterZ, Unused1, Unused2, Unused3, Padding3, Padding4; quat Unused4; };
+	plex { v3 Center, Size; r32 Padding5, Padding6; quat Unused5; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Obb3D) == sizeof(r32) * 12, "Obb3D contains padding!");
@@ -136,9 +136,9 @@ typedef union Obb3DR64 Obb3DR64;
 union Obb3DR64
 {
 	r64 Elements[10];
-	struct { r64 X, Y, Z, Width, Height, Depth; quatd Rotation; };
-	struct { r64 CenterX, CenterY, CenterZ, Unused1, Unused2, Unused3; quatd Unused4; };
-	struct { v3d Center, Size; quatd Unused5; };
+	plex { r64 X, Y, Z, Width, Height, Depth; quatd Rotation; };
+	plex { r64 CenterX, CenterY, CenterZ, Unused1, Unused2, Unused3; quatd Unused4; };
+	plex { v3d Center, Size; quatd Unused5; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Obb3DR64) == sizeof(r64) * 10, "Obb3DR64 contains padding!");

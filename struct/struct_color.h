@@ -3,7 +3,7 @@ File:   struct_color.h
 Author: Taylor Robbins
 Date:   01\05\2025
 Description:
-	** Holds the Color struct which is a 32-bit value that has 4 8-bit channels
+	** Holds the Color32 plex which is a 32-bit value that has 4 8-bit channels
 	** The order of the channels 
 */
 
@@ -19,9 +19,9 @@ typedef union Color32 Color32;
 union Color32
 {
 	u32 valueU32;
-	struct { u8 channel[4]; };
-	struct { u8 b, g, r, a; };
-	struct { u8 blue, green, red, alpha; };
+	plex { u8 channel[4]; };
+	plex { u8 b, g, r, a; };
+	plex { u8 blue, green, red, alpha; };
 };
 
 // +--------------------------------------------------------------+

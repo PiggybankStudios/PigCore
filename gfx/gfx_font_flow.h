@@ -31,8 +31,8 @@ Description:
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
 #if BUILD_WITH_SOKOL_GFX
 
-typedef struct FontFlowGlyph FontFlowGlyph;
-struct FontFlowGlyph
+typedef plex FontFlowGlyph FontFlowGlyph;
+plex FontFlowGlyph
 {
 	u32 codepoint;
 	uxx byteIndex;
@@ -43,8 +43,8 @@ struct FontFlowGlyph
 	Color32 color;
 };
 
-typedef struct FontFlow FontFlow;
-struct FontFlow
+typedef plex FontFlow FontFlow;
+plex FontFlow
 {
 	PigFont* font;
 	v2 startPos;
@@ -55,8 +55,8 @@ struct FontFlow
 	FontFlowGlyph* glyphs;
 };
 
-typedef struct FontFlowState FontFlowState;
-struct FontFlowState
+typedef plex FontFlowState FontFlowState;
+plex FontFlowState
 {
 	void* contextPntr;
 	PigFont* font;
@@ -84,14 +84,14 @@ struct FontFlowState
 	v2 strikethroughStartPos;
 };
 
-typedef struct TextMeasure TextMeasure;
-struct TextMeasure
+typedef plex TextMeasure TextMeasure;
+plex TextMeasure
 {
 	rec visualRec;
 	union
 	{
 		rec logicalRec;
-		struct { r32 OffsetX, OffsetY; r32 Width, Height; };
+		plex { r32 OffsetX, OffsetY; r32 Width, Height; };
 	};
 };
 
@@ -107,8 +107,8 @@ typedef FONT_FLOW_DRAW_HIGHLIGHT_DEF(FontFlowDrawHighlight_f);
 #define FONT_FLOW_AFTER_CHAR_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, rec glyphLogicalRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
 typedef FONT_FLOW_AFTER_CHAR_DEF(FontFlowAfterChar_f);
 
-typedef struct FontFlowCallbacks FontFlowCallbacks;
-struct FontFlowCallbacks
+typedef plex FontFlowCallbacks FontFlowCallbacks;
+plex FontFlowCallbacks
 {
 	FontFlowBeforeChar_f* beforeChar;
 	FontFlowDrawChar_f* drawChar;

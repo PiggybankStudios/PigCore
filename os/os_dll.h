@@ -18,8 +18,8 @@ Date:   03\01\2025
 #include "os/os_path.h"
 
 //NOTE: The name "dll" is a misnomer on non-windows platforms. This can represent a .dll or a .so
-typedef struct OsDll OsDll;
-struct OsDll
+typedef plex OsDll OsDll;
+plex OsDll
 {
 	#if TARGET_IS_WINDOWS
 	HMODULE handle;

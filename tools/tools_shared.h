@@ -31,6 +31,8 @@ Description:
 // +--------------------------------------------------------------+
 // |                           Defines                            |
 // +--------------------------------------------------------------+
+#define plex struct
+
 #ifdef __cplusplus
 #define LANGUAGE_IS_C   0
 #define LANGUAGE_IS_CPP 1
@@ -93,15 +95,15 @@ typedef unsigned int uxx;
 
 #define UINTXX_MAX UINT_MAX
 
-typedef struct Str8 Str8;
-struct Str8
+typedef plex Str8 Str8;
+plex Str8
 {
 	uxx length;
 	union { char* chars; uint8_t* bytes; void* pntr; };
 };
 
-typedef struct FileIter FileIter;
-struct FileIter
+typedef plex FileIter FileIter;
+plex FileIter
 {
 	bool finished;
 	Str8 folderPathNt;
@@ -117,8 +119,8 @@ struct FileIter
 	#endif
 };
 
-typedef struct LineParser LineParser;
-struct LineParser
+typedef plex LineParser LineParser;
+plex LineParser
 {
 	uxx byteIndex;
 	uxx lineBeginByteIndex;
@@ -906,7 +908,7 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 				}
 			}
 			
-			struct dirent* entry = readdir(fileIter->dirHandle);
+			plex dirent* entry = readdir(fileIter->dirHandle);
 			if (entry == nullptr)
 			{
 				free(fileIter->folderPathNt.chars); fileIter->folderPathNt.chars = nullptr;
@@ -920,7 +922,7 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 			Str8 fullPath = JoinStrings2(fileIter->folderPathNt, fileName, true);
 			if (isFolderOut != nullptr)
 			{
-				struct stat statStruct = ZEROED;
+				plex stat statStruct = ZEROED;
 				int statResult = stat(fullPath.chars, &statStruct);
 				if (statResult == 0)
 				{

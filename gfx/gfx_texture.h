@@ -55,8 +55,8 @@ const char* GetTextureFlagStr(TextureFlag enumValue)
 }
 #endif
 
-typedef struct Texture Texture;
-struct Texture
+typedef plex Texture Texture;
+plex Texture
 {
 	Arena* arena;
 	Result error;
@@ -66,7 +66,7 @@ struct Texture
 	union
 	{
 		v2i size;
-		struct { i32 Width, Height; };
+		plex { i32 Width, Height; };
 	};
 	uxx numPixels;
 	uxx pixelSize;

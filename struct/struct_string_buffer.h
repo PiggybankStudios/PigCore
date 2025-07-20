@@ -33,15 +33,15 @@ enum StrBuffFlag
 	StrBuffFlag_All = 0x03,
 };
 
-typedef struct StringBuffer StringBuffer;
-struct StringBuffer
+typedef plex StringBuffer StringBuffer;
+plex StringBuffer
 {
 	u8 flags;
 	uxx maxLength;
 	union
 	{
 		Str8 str;
-		struct
+		plex
 		{
 			uxx length;
 			union { char* chars; u8* bytes; void* pntr; };

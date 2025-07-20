@@ -23,16 +23,16 @@ Description:
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
 
-typedef struct ClayUIRendererFont ClayUIRendererFont;
-struct ClayUIRendererFont
+typedef plex ClayUIRendererFont ClayUIRendererFont;
+plex ClayUIRendererFont
 {
 	u16 id;
 	PigFont* pntr;
 	u8 styleFlags;
 };
 
-typedef struct ClayUIRenderer ClayUIRenderer;
-struct ClayUIRenderer
+typedef plex ClayUIRenderer ClayUIRenderer;
+plex ClayUIRenderer
 {
 	Arena* arena;
 	ClayUI clay;

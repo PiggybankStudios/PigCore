@@ -37,8 +37,8 @@ Description:
 #define GFX_SYSTEM_RING_NUM_THICKNESSES 10 // aka 10% increments
 #define GFX_SYSTEM_RING_NUM_SIDES       32 // aka 11.25 degree increments
 
-typedef struct GfxSystemState GfxSystemState;
-struct GfxSystemState
+typedef plex GfxSystemState GfxSystemState;
+plex GfxSystemState
 {
 	bool colorWriteEnabled;
 	bool depthWriteEnabled;
@@ -71,8 +71,8 @@ struct GfxSystemState
 	v4r sourceRec; //TODO: Change this to rec type!
 };
 
-typedef struct GfxSystem GfxSystem;
-struct GfxSystem
+typedef plex GfxSystem GfxSystem;
+plex GfxSystem
 {
 	Arena* arena;
 	VarArray pipelines; //GfxPipeline

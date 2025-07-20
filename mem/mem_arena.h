@@ -89,8 +89,8 @@ PIG_CORE_INLINE const char* GetArenaTypeStr(ArenaType arenaType)
 }
 #endif
 
-typedef struct Arena Arena; //TODO: Generate this forward declaration automatically?
-struct Arena
+typedef plex Arena Arena; //TODO: Generate this forward declaration automatically?
+plex Arena
 {
 	ArenaType type;
 	#if MEM_ARENA_DEBUG_NAMES

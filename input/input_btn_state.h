@@ -16,8 +16,8 @@ Description:
 #include "base/base_assert.h"
 #include "std/std_memset.h"
 
-typedef struct BtnState BtnState;
-struct BtnState
+typedef plex BtnState BtnState;
+plex BtnState
 {
 	bool isDown;
 	bool wasDown;

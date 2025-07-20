@@ -100,13 +100,13 @@ functionDecor void arrayStructName##_Set(arrayStructName* array, uxx index, elem
 
 //TODO: Somehow we should make it so we can add semicolon after this macro and not have the compiler complain! This would make our syntax highlighting better in Sublime
 #define DECLARE_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)   \
-typedef struct                                                                   \
+typedef plex                                                                     \
 {                                                                                \
     uxx length;                                                                  \
     uxx allocLength;                                                             \
     elementType* items;                                                          \
 } arrayStructName;                                                               \
-typedef struct                                                                   \
+typedef plex                                                                     \
 {                                                                                \
     uxx length;                                                                  \
     elementType* items;                                                          \

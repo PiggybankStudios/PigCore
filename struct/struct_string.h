@@ -55,8 +55,8 @@ Description:
 // |                       String Structure                       |
 // +--------------------------------------------------------------+
 //NOTE: Str8 could hold UTF-8, ASCII, or any other encoding that uses 8-bit pieces
-typedef struct Str8 Str8;
-struct Str8
+typedef plex Str8 Str8;
+plex Str8
 {
 	uxx length;
 	union { char* chars; u8* bytes; void* pntr; };
@@ -67,20 +67,20 @@ struct Str8
 typedef Str8 Slice;
 
 //NOTE: Str16 could hold UTF-16 or USC2 or any other encoding that uses 16-bit pieces
-typedef struct Str16 Str16;
-struct Str16
+typedef plex Str16 Str16;
+plex Str16
 {
 	uxx length;
 	union { char16_t* chars; u16* words; void* pntr; };
 };
 
-typedef struct Str8Pair Str8Pair;
-struct Str8Pair
+typedef plex Str8Pair Str8Pair;
+plex Str8Pair
 {
 	union
 	{
 		Str8 strs[2];
-		struct
+		plex
 		{
 			union { Str8 key; Str8 left; Str8 first; };
 			union { Str8 value; Str8 right; Str8 second; };

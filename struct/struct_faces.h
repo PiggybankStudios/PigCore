@@ -20,7 +20,7 @@ union Triangle2D
 {
 	r32 Values[6];
 	v2 Verts[3];
-	struct { v2 Vert0, Vert1, Vert2; };
+	plex { v2 Vert0, Vert1, Vert2; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Triangle2D) == sizeof(r32)*6, "Triangle2D contains padding!");
@@ -31,7 +31,7 @@ union Triangle3D
 {
 	r32 Values[9];
 	v3 Verts[3];
-	struct { v3 Vert0, Vert1, Vert2; };
+	plex { v3 Vert0, Vert1, Vert2; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Triangle3D) == sizeof(r32)*9, "Triangle3D contains padding!");
@@ -42,7 +42,7 @@ union Quad2D
 {
 	r32 Values[8];
 	v2 Verts[4];
-	struct { v2 Vert0, Vert1, Vert2, Vert3; };
+	plex { v2 Vert0, Vert1, Vert2, Vert3; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Quad2D) == sizeof(r32)*8, "Quad2D contains padding!");
@@ -53,7 +53,7 @@ union Quad3D
 {
 	r32 Values[12];
 	v3 Verts[4];
-	struct { v3 Vert0, Vert1, Vert2, Vert3; };
+	plex { v3 Vert0, Vert1, Vert2, Vert3; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Quad3D) == sizeof(r32)*12, "Quad3D contains padding!");

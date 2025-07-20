@@ -60,23 +60,23 @@ Description:
 #pragma clang diagnostic pop
 #endif
 
-typedef struct FontCharRange FontCharRange;
-struct FontCharRange
+typedef plex FontCharRange FontCharRange;
+plex FontCharRange
 {
 	u32 startCodepoint;
 	u32 endCodepoint;
 	uxx glyphArrayStartIndex;
 };
 
-typedef struct CustomFontGlyph CustomFontGlyph;
-struct CustomFontGlyph
+typedef plex CustomFontGlyph CustomFontGlyph;
+plex CustomFontGlyph
 {
 	u32 codepoint;
 	ImageData imageData;
 	reci sourceRec;
 };
-typedef struct CustomFontCharRange CustomFontCharRange;
-struct CustomFontCharRange
+typedef plex CustomFontCharRange CustomFontCharRange;
+plex CustomFontCharRange
 {
 	u32 startCodepoint;
 	u32 endCodepoint;
@@ -85,8 +85,8 @@ struct CustomFontCharRange
 
 #define INVALID_TTF_GLYPH_INDEX INT32_MAX
 
-typedef struct FontGlyph FontGlyph;
-struct FontGlyph
+typedef plex FontGlyph FontGlyph;
+plex FontGlyph
 {
 	u32 codepoint;
 	i32 ttfGlyphIndex;
@@ -96,8 +96,8 @@ struct FontGlyph
 	rec logicalRec;
 };
 
-typedef struct FontAtlas FontAtlas;
-struct FontAtlas
+typedef plex FontAtlas FontAtlas;
+plex FontAtlas
 {
 	r32 fontSize;
 	r32 fontScale; //only used when asking stbtt for size-independent metrics
@@ -112,16 +112,16 @@ struct FontAtlas
 	r32 centerOffset;
 };
 
-typedef struct FontKerningTableEntry FontKerningTableEntry;
-struct FontKerningTableEntry
+typedef plex FontKerningTableEntry FontKerningTableEntry;
+plex FontKerningTableEntry
 {
 	u32 leftTtfGlyphIndex;
 	u32 rightTtfGlyphIndex;
 	r32 value; //must be multipled by fontScale
 };
 
-typedef struct FontKerningTable FontKerningTable;
-struct FontKerningTable
+typedef plex FontKerningTable FontKerningTable;
+plex FontKerningTable
 {
 	uxx numEntries;
 	FontKerningTableEntry* entries;
@@ -130,8 +130,8 @@ struct FontKerningTable
 //NOTE: We have a naming conflict with raylib.h if we name this "PigFont" so we are
 // naming it PigFont, but typedefing PigFont in non-raylib projects so anything outside
 // PigCore that doesn't plan to use Raylib can still use the name "PigFont"
-typedef struct PigFont PigFont;
-struct PigFont
+typedef plex PigFont PigFont;
+plex PigFont
 {
 	Arena* arena;
 	Str8 name;

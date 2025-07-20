@@ -28,8 +28,8 @@ Description:
 
 #define MAX_NUM_GEOMETRIES_PER_BODY 4
 
-typedef struct PhysicsBody PhysicsBody;
-struct PhysicsBody
+typedef plex PhysicsBody PhysicsBody;
+plex PhysicsBody
 {
 	uxx index;
 	dBodyID bodyId;
@@ -37,8 +37,8 @@ struct PhysicsBody
 	dGeomID geomIds[MAX_NUM_GEOMETRIES_PER_BODY];
 };
 
-typedef struct PhysicsWorld PhysicsWorld;
-struct PhysicsWorld
+typedef plex PhysicsWorld PhysicsWorld;
+plex PhysicsWorld
 {
 	Arena* arena;
 	dWorldID world;

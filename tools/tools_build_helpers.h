@@ -517,7 +517,7 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 			);
 		}
 		if (shaderAttributes.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderAttributeDef struct found in gfx_shader.h\n"), true);
+		AppendToFile(headerPath, StrLit("} // These should match ShaderAttributeDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	//Images
@@ -541,7 +541,7 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 			);
 		}
 		if (shaderImages.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderImageDef struct found in gfx_shader.h\n"), true);
+		AppendToFile(headerPath, StrLit("} // These should match ShaderImageDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	//Samplers
@@ -565,7 +565,7 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 			);
 		}
 		if (shaderSamplers.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderSamplerDef struct found in gfx_shader.h\n"), true);
+		AppendToFile(headerPath, StrLit("} // These should match ShaderSamplerDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	//Uniforms
@@ -598,14 +598,14 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 			);
 		}
 		if (shaderUniforms.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .blockIndex=0, .offset=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderUniformDef struct found in gfx_shader.h\n"), true);
+		AppendToFile(headerPath, StrLit("} // These should match ShaderUniformDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	free(headerFileContents.chars);
 }
 
-typedef struct FindShadersContext FindShadersContext;
-struct FindShadersContext
+typedef plex FindShadersContext FindShadersContext;
+plex FindShadersContext
 {
 	uxx ignoreListLength;
 	Str8* ignoreList;

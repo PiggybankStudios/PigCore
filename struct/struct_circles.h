@@ -19,8 +19,8 @@ typedef union Circle Circle;
 union Circle
 {
 	r32 Elements[3];
-	struct { r32 X, Y; r32 R; };
-	struct { v2 Center; r32 Radius; };
+	plex { r32 X, Y; r32 R; };
+	plex { v2 Center; r32 Radius; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Circle) == sizeof(r32)*3, "Circle contains padding!");
@@ -30,8 +30,8 @@ typedef union Sphere Sphere;
 union Sphere
 {
 	r32 Elements[4];
-	struct { r32 X, Y, Z; r32 R; };
-	struct { v3 Center; r32 Radius; };
+	plex { r32 X, Y, Z; r32 R; };
+	plex { v3 Center; r32 Radius; };
 };
 #if LANGUAGE_IS_C
 _Static_assert(sizeof(Sphere) == sizeof(r32)*4, "Sphere contains padding!");

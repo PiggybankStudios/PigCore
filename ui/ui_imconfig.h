@@ -88,8 +88,8 @@ static inline double ImRsqrt(double x)          { return 1.0 / SqrtR64(x); }
 //#define IMGUI_DISABLE_FILE_FUNCTIONS                      // Don't implement ImFileOpen/ImFileClose/ImFileRead/ImFileWrite and ImFileHandle at all (replace them with dummies)
 
 #define IMGUI_DISABLE_DEFAULT_FILE_FUNCTIONS                // Don't implement ImFileOpen/ImFileClose/ImFileRead/ImFileWrite and ImFileHandle so you can implement them yourself if you don't want to link with fopen/fclose/fread/fwrite. This will also disable the LogToTTY() function.
-typedef struct ImGuiFile ImGuiFile;
-struct ImGuiFile
+typedef plex ImGuiFile ImGuiFile;
+plex ImGuiFile
 {
 	Arena* arena;
 	bool convertNewLines;

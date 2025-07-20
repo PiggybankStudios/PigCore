@@ -14,8 +14,8 @@ Date:   02\15\2025
 #include "mem/mem_arena.h"
 #include "struct/struct_vectors.h"
 
-typedef struct ImageData ImageData;
-struct ImageData
+typedef plex ImageData ImageData;
+plex ImageData
 {
 	v2i size;
 	uxx numPixels;

@@ -18,8 +18,8 @@ Description:
 
 //TODO: Should we add a Csv parser?
 
-typedef struct LineParser LineParser;
-struct LineParser
+typedef plex LineParser LineParser;
+plex LineParser
 {
 	uxx byteIndex;
 	uxx lineBeginByteIndex;
@@ -55,16 +55,16 @@ const char* GetParsingTokenTypeStr(ParsingTokenType enumValue)
 }
 #endif
 
-typedef struct ParsingToken ParsingToken;
-struct ParsingToken
+typedef plex ParsingToken ParsingToken;
+plex ParsingToken
 {
 	ParsingTokenType type;
 	Str8 str;
 	Str8 key;
 	Str8 value;
 };
-typedef struct TextParser TextParser;
-struct TextParser
+typedef plex TextParser TextParser;
+plex TextParser
 {
 	LineParser lineParser;
 	Str8 currentLine;

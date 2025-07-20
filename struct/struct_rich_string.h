@@ -89,8 +89,8 @@ const char* GetRichStrStyleChangeTypeStr(RichStrStyleChangeType enumValue)
 #define RICH_STYLE_DEFAULT_COLOR_VALUE  0x00FFFFFF
 #define RICH_STYLE_DEFAULT_COLOR  NewColorU32(RICH_STYLE_DEFAULT_COLOR_VALUE)
 
-typedef struct RichStrStyle RichStrStyle;
-struct RichStrStyle
+typedef plex RichStrStyle RichStrStyle;
+plex RichStrStyle
 {
 	r32 fontSize;
 	u8 fontStyle;
@@ -98,14 +98,14 @@ struct RichStrStyle
 };
 
 // Each piece has a set of changes to the style, not a style directly
-typedef struct RichStrStyleChange RichStrStyleChange;
-struct RichStrStyleChange
+typedef plex RichStrStyleChange RichStrStyleChange;
+plex RichStrStyleChange
 {
 	RichStrStyleChangeType type;
 	union
 	{
 		r32 fontSize;  // (0.0f means default size)
-		struct
+		plex
 		{
 			u8 enableStyleFlags;
 			u8 disableStyleFlags;
@@ -116,8 +116,8 @@ struct RichStrStyleChange
 	};
 };
 
-typedef struct RichStrPiece RichStrPiece;
-struct RichStrPiece
+typedef plex RichStrPiece RichStrPiece;
+plex RichStrPiece
 {
 	RichStrStyleChange styleChange;
 	Str8 str;
@@ -125,8 +125,8 @@ struct RichStrPiece
 
 //NOTE: When a RichStr has only one piece we store it directly in RichStr structure in fullPiece,
 // otherwise the pieces are allocated separately but the str in each piece is just a slice of fullPiece.str
-typedef struct RichStr RichStr;
-struct RichStr
+typedef plex RichStr RichStr;
+plex RichStr
 {
 	RichStrPiece fullPiece;
 	uxx numPieces;
@@ -464,8 +464,8 @@ PEXPI void ApplyRichStyleChange(RichStrStyle* style, RichStrStyleChange styleCha
 	}
 }
 
-typedef struct RichStrParseState RichStrParseState;
-struct RichStrParseState
+typedef plex RichStrParseState RichStrParseState;
+plex RichStrParseState
 {
 	RichStr result;
 	RichStrStyleChange nextStyleChange;

@@ -28,8 +28,8 @@ extern Arena* imguiArena; //defined in ui_imgui_main.cpp
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #include "third_party/cimgui/cimgui.h"
 
-typedef struct ImguiUI ImguiUI;
-struct ImguiUI
+typedef plex ImguiUI ImguiUI;
+plex ImguiUI
 {
 	Arena* arena;
 	ImGuiContext* context;

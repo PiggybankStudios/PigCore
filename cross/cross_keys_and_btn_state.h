@@ -9,15 +9,15 @@ Date:   02\03\2025
 
 #define KEYBOARD_MAX_CHAR_INPUTS_PER_FRAME 256
 
-typedef struct KeyboardCharInput KeyboardCharInput;
-struct KeyboardCharInput
+typedef plex KeyboardCharInput KeyboardCharInput;
+plex KeyboardCharInput
 {
 	u32 codepoint;
 	u8 modifierKeys;
 };
 
-typedef struct KeyboardState KeyboardState;
-struct KeyboardState
+typedef plex KeyboardState KeyboardState;
+plex KeyboardState
 {
 	BtnState keys[Key_Count];
 	uxx numCharInputs;

@@ -27,50 +27,50 @@ Description:
 typedef union Vec2i Vec2i;
 union Vec2i
 {
-	struct { i32 X, Y; };
-	struct { i32 U, V; };
-	struct { i32 Left, Right; };
-	struct { i32 Width, Height; };
+	plex { i32 X, Y; };
+	plex { i32 U, V; };
+	plex { i32 Left, Right; };
+	plex { i32 Width, Height; };
 	i32 Elements[2];
 };
 
 typedef union Vec3i Vec3i;
 union Vec3i
 {
-	struct { i32 X, Y, Z; };
-	struct { i32 U, V, W; };
-	struct { i32 R, G, B; };
-	struct { Vec2i XY; i32 _Ignored0; };
-	struct { i32 _Ignored1; Vec2i YZ; };
-	struct { Vec2i UV; i32 _Ignored2; };
-	struct { i32 _Ignored3; Vec2i VW; };
+	plex { i32 X, Y, Z; };
+	plex { i32 U, V, W; };
+	plex { i32 R, G, B; };
+	plex { Vec2i XY; i32 _Ignored0; };
+	plex { i32 _Ignored1; Vec2i YZ; };
+	plex { Vec2i UV; i32 _Ignored2; };
+	plex { i32 _Ignored3; Vec2i VW; };
 	i32 Elements[3];
 };
 
 typedef union Vec4i Vec4i;
 union Vec4i
 {
-	struct
+	plex
 	{
 		union
 		{
 			Vec3i XYZ;
-			struct { i32 X, Y, Z; };
+			plex { i32 X, Y, Z; };
 		};
 		i32 W;
 	};
-	struct
+	plex
 	{
 		union
 		{
 			Vec3i RGB;
-			struct { i32 R, G, B; };
+			plex { i32 R, G, B; };
 		};
 		i32 A;
 	};
-	struct { Vec2i XY; i32 _Ignored0; i32 _Ignored1; };
-	struct { i32 _Ignored2; Vec2i YZ; i32 _Ignored3; };
-	struct { i32 _Ignored4; i32 _Ignored5; Vec2i ZW; };
+	plex { Vec2i XY; i32 _Ignored0; i32 _Ignored1; };
+	plex { i32 _Ignored2; Vec2i YZ; i32 _Ignored3; };
+	plex { i32 _Ignored4; i32 _Ignored5; Vec2i ZW; };
 	i32 Elements[4];
 };
 
@@ -82,28 +82,28 @@ union Vec4Raw
 {
 	r32 Elements[4];
 	
-	struct
+	plex
 	{
 		union
 		{
 			HMM_Vec3 XYZ;
-			struct { r32 X, Y, Z; };
+			plex { r32 X, Y, Z; };
 		};
 		r32 W;
 	};
-	struct
+	plex
 	{
 		union
 		{
 			HMM_Vec3 RGB;
-			struct { r32 R, G, B; };
+			plex { r32 R, G, B; };
 		};
 		r32 A;
 	};
 	
-	struct { HMM_Vec2 XY; r32 _Ignored0; r32 _Ignored1; };
-	struct { r32 _Ignored2; HMM_Vec2 YZ; r32 _Ignored3; };
-	struct { r32 _Ignored4; r32 _Ignored5; HMM_Vec2 ZW; };
+	plex { HMM_Vec2 XY; r32 _Ignored0; r32 _Ignored1; };
+	plex { r32 _Ignored2; HMM_Vec2 YZ; r32 _Ignored3; };
+	plex { r32 _Ignored4; r32 _Ignored5; HMM_Vec2 ZW; };
 
 };
 
@@ -111,52 +111,52 @@ typedef union Vec2R64 Vec2R64;
 union Vec2R64
 {
 	r64 Elements[2];
-	struct { r64 X, Y; };
-	struct { r64 U, V; };
-	struct { r64 Width, Height; };
-	struct { r64 Lon, Lat; };
-	struct { r64 Longitude, Latitude; };
+	plex { r64 X, Y; };
+	plex { r64 U, V; };
+	plex { r64 Width, Height; };
+	plex { r64 Lon, Lat; };
+	plex { r64 Longitude, Latitude; };
 };
 
 typedef union Vec3R64 Vec3R64;
 union Vec3R64
 {
 	r64 Elements[3];
-	struct { r64 X, Y, Z; };
-	struct { Vec2R64 XY; r64 _Ignored0; };
-	struct { r64 _Ignored1; Vec2R64 YZ; };
-	struct { r64 R, G, B; };
-	struct { r64 U, V, _Ignored2; };
-	struct { Vec2R64 UV; r64 _Ignored3; };
-	struct { r64 _Ignored4; Vec2R64 VW; };
-	struct { r64 Width, Height, Depth; };
+	plex { r64 X, Y, Z; };
+	plex { Vec2R64 XY; r64 _Ignored0; };
+	plex { r64 _Ignored1; Vec2R64 YZ; };
+	plex { r64 R, G, B; };
+	plex { r64 U, V, _Ignored2; };
+	plex { Vec2R64 UV; r64 _Ignored3; };
+	plex { r64 _Ignored4; Vec2R64 VW; };
+	plex { r64 Width, Height, Depth; };
 };
 
 typedef union Vec4R64 Vec4R64;
 union Vec4R64
 {
 	r64 Elements[4];
-	struct
+	plex
 	{
 		union
 		{
 			Vec3R64 XYZ;
-			struct { r64 X, Y, Z; };
+			plex { r64 X, Y, Z; };
 		};
 		r64 W;
 	};
-	struct
+	plex
 	{
 		union
 		{
 			Vec3R64 RGB;
-			struct { r64 R, G, B; };
+			plex { r64 R, G, B; };
 		};
 		r64 A;
 	};
-	struct { Vec2R64 XY; r64 _Ignored0; r64 _Ignored1; };
-	struct { r64 _Ignored2; Vec2R64 YZ; r64 _Ignored3; };
-	struct { r64 _Ignored4; r64 _Ignored5; Vec2R64 ZW; };
+	plex { Vec2R64 XY; r64 _Ignored0; r64 _Ignored1; };
+	plex { r64 _Ignored2; Vec2R64 YZ; r64 _Ignored3; };
+	plex { r64 _Ignored4; r64 _Ignored5; Vec2R64 ZW; };
 };
 
 //NOTE: The default assumption for vectors is r32 members
