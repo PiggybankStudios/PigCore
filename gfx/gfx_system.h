@@ -1225,6 +1225,8 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 // void GfxSystem_FontFlowDrawHighlightCallback(FontFlowState* state, FontFlow* flow, rec highlightRec, FontAtlas* currentAtlas)
 FONT_FLOW_DRAW_HIGHLIGHT_DEF(GfxSystem_FontFlowDrawHighlightCallback)
 {
+	UNUSED(flow);
+	UNUSED(currentAtlas);
 	NotNull(state);
 	NotNull(state->contextPntr);
 	NotNull(currentAtlas);

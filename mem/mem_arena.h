@@ -18,6 +18,7 @@ Description:
 #include "std/std_malloc.h"
 #include "std/std_memset.h"
 #include "os/os_virtual_mem.h"
+#include "misc/misc_profiling_tracy_include.h"
 
 #ifndef MEM_ARENA_DEBUG_NAMES
 #define MEM_ARENA_DEBUG_NAMES DEBUG_BUILD
@@ -477,6 +478,7 @@ PEXP uxx GetAllocSize(const Arena* arena, const void* allocPntr)
 // +--------------------------------------------------------------+
 NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverride)
 {
+	TracyCZoneN(funcZone, "AllocMemAligned", true);
 	DebugNotNull(arena);
 	
 	void* result = nullptr;
@@ -637,8 +639,6 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 		case ArenaType_StackVirtual:
 		{
 			DebugNotNull(arena->mainPntr);
-			uxx osMemPageSize = OsGetMemoryPageSize();
-			Assert(osMemPageSize > 0);
 			
 			uxx currentMisalignment = (alignment > 1) ? (uxx)((size_t)((u8*)arena->mainPntr + arena->used) % alignment) : 0;
 			uxx alignmentBytesNeeded = (currentMisalignment > 0) ? (alignment - currentMisalignment) : 0;
@@ -648,6 +648,8 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 			{
 				if (arena->used + alignedNumBytes > arena->committed)
 				{
+					uxx osMemPageSize = OsGetMemoryPageSize();
+					Assert(osMemPageSize > 0);
 					uxx numTotalPagesNeeded = CeilDivUXX(arena->used + alignedNumBytes, osMemPageSize);
 					uxx numNewPagesNeeded = numTotalPagesNeeded - (arena->committed / osMemPageSize);
 					OsCommitReservedMemory((u8*)arena->mainPntr + arena->committed, numNewPagesNeeded * osMemPageSize);
@@ -669,6 +671,7 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 			DebugNotNull(arena->mainPntr);
 			uxx osMemPageSize = OsGetMemoryPageSize();
 			Assert(osMemPageSize > 0);
+			UNUSED(osMemPageSize);
 			
 			uxx currentMisalignment = (alignment > 1) ? (uxx)((size_t)((u8*)arena->mainPntr + arena->used) % alignment) : 0;
 			uxx alignmentBytesNeeded = (currentMisalignment > 0) ? (alignment - currentMisalignment) : 0;
@@ -681,7 +684,7 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 					uxx numNewBytesNeeded = (arena->used + alignedNumBytes) - arena->committed;
 					u8* newCommittedArea = (u8*)MyMalloc(numNewBytesNeeded);
 					AssertMsg(newCommittedArea != nullptr, "Ran out of WASM memory! Stdlib malloc() return nullptr!");
-					if (newCommittedArea == nullptr) { return nullptr; }
+					if (newCommittedArea == nullptr) { break; }
 					AssertMsg(newCommittedArea == (u8*)arena->mainPntr + arena->committed, "WASM malloc did not return next chunk of memory sequentially! Someone else must have called malloc somewhere! You can only have one StackWasm arena active at a time and no-one can call std malloc besides that one arena!");
 					arena->committed += numNewBytesNeeded;
 				}
@@ -706,6 +709,7 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 		result = ((u8*)result) + ARENA_DEBUG_PADDING_SIZE;
 	}
 	
+	TracyCZoneEnd(funcZone);
 	return result;
 }
 NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes) //pre-declared at top of file
@@ -718,9 +722,20 @@ NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes) //pre-declared at top 
 // +--------------------------------------------------------------+
 PEXP void FreeMemAligned(Arena* arena, void* allocPntr, uxx allocSize, uxx alignmentOverride)
 {
+	TracyCZoneN(funcZone, "FreeMemAligned", true);
 	DebugNotNull(arena);
-	if (allocPntr == nullptr && !IsFlagSet(arena->flags, ArenaFlag_AllowNullptrFree)) { AssertMsg(allocPntr != nullptr, "Tried to free nullptr from Arena!"); return; }
-	if (allocSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize)) { AssertMsg(allocSize != 0, "Tried to free from Arena without size!"); return; }
+	if (allocPntr == nullptr && !IsFlagSet(arena->flags, ArenaFlag_AllowNullptrFree))
+	{
+		AssertMsg(allocPntr != nullptr, "Tried to free nullptr from Arena!");
+		TracyCZoneEnd(funcZone);
+		return;
+	}
+	if (allocSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize))
+	{
+		AssertMsg(allocSize != 0, "Tried to free from Arena without size!");
+		TracyCZoneEnd(funcZone);
+		return;
+	}
 	DebugNotNull(allocPntr);
 	
 	uxx alignment = (alignmentOverride != UINTXX_MAX) ? alignmentOverride : arena->alignment;
@@ -881,6 +896,8 @@ PEXP void FreeMemAligned(Arena* arena, void* allocPntr, uxx allocSize, uxx align
 			AssertMsg(false, "Arena type does not have an AllocMem implementation!");
 		} break;
 	}
+	
+	TracyCZoneEnd(funcZone);
 }
 PEXPI void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)
 {
@@ -897,24 +914,27 @@ PEXPI void FreeMemNoSize(Arena* arena, void* allocPntr)
 //TODO: Should we have alignment option here?
 NODISCARD PEXP void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSize)
 {
+	TracyCZoneN(funcZone, "ReallocMem", true);
 	DebugNotNull(arena);
 	NotNull(allocPntr);
 	void* result = nullptr;
 	
 	// Degenerate cases where we either do nothing, Alloc, or Free
-	if (oldSize == newSize) { return allocPntr; }
+	if (oldSize == newSize) { TracyCZoneEnd(funcZone); return allocPntr; }
 	if (oldSize == 0 && allocPntr == nullptr)
 	{
 		result = AllocMem(arena, newSize);
+		TracyCZoneEnd(funcZone);
 		return result;
 	}
 	if (newSize == 0)
 	{
 		FreeMem(arena, allocPntr, oldSize);
+		TracyCZoneEnd(funcZone);
 		return nullptr;
 	}
 	
-	if (oldSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize)) { AssertMsg(oldSize != 0, "Tried to Realloc in Arena without oldSize!"); return nullptr; }
+	if (oldSize == 0 && !IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize)) { AssertMsg(oldSize != 0, "Tried to Realloc in Arena without oldSize!"); TracyCZoneEnd(funcZone); return nullptr; }
 	
 	if (IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug))
 	{
@@ -1050,6 +1070,7 @@ NODISCARD PEXP void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx 
 				{
 					void* newAlloc = AllocMemAligned(arena, newSize - oldSize, 0);
 					Assert((u8*)newAlloc == (u8*)arena->mainPntr + allocIndex + oldSize);
+					UNUSED(newAlloc);
 					arena->used = allocIndex + newSize;
 					result = allocPntr;
 				}
@@ -1089,6 +1110,7 @@ NODISCARD PEXP void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx 
 		result = ((u8*)result) + ARENA_DEBUG_PADDING_SIZE;
 	}
 	
+	TracyCZoneEnd(funcZone);
 	return result;
 }
 NODISCARD PEXP void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize)
@@ -1222,6 +1244,7 @@ PEXPI bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr
 	NotNull(allocPntr);
 	Assert(allocSize > 0);
 	Assert(IsFlagSet(arena->flags, ArenaFlag_AddPaddingForDebug));
+	UNUSED(arena); //TODO: Do we want to verify that the allocPntr actually lives inside a memory region that is owned by the arena?
 	
 	u8 expectedPaddingValues[ARENA_DEBUG_PADDING_SIZE];
 	for (uxx bIndex = 0; bIndex < ARENA_DEBUG_PADDING_SIZE; bIndex++) { expectedPaddingValues[bIndex] = ARENA_DEBUG_PADDING_VALUE; }

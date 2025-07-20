@@ -584,6 +584,7 @@ PEXPI void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, con
 	uxx itemIndex = 0;
 	bool itemInArray = VarArrayGetIndexOf_(itemSize, itemAlignment, array, itemToRemove, &itemIndex);
 	Assert(itemInArray);
+	UNUSED(itemInArray);
 	VarArrayRemoveAt_(itemSize, itemAlignment, array, itemIndex);
 }
 

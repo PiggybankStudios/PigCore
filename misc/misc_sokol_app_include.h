@@ -13,6 +13,7 @@ Description:
 
 #include "build_config.h"
 #include "base/base_defines_check.h"
+#include "base/base_compiler_check.h"
 #include "base/base_assert.h"
 
 #if BUILD_WITH_SOKOL_APP && !defined(SOKOL_APP_INCLUDED)
@@ -30,13 +31,20 @@ Description:
 #endif
 
 //NOTE: We are NOT defining SOKOL_APP_IMPL here!
-#if TARGET_IS_LINUX
+#if COMPILER_IS_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
 #endif
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4189) //warning: local variable is initialized but not referenced
+#endif
 #include "third_party/sokol/sokol_app.h"
-#if TARGET_IS_LINUX
+#if COMPILER_IS_CLANG
 #pragma clang diagnostic pop
+#endif
+#if COMPILER_IS_MSVC
+#pragma warning(pop)
 #endif
 
 #endif //BUILD_WITH_SOKOL_APP

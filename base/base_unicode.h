@@ -97,6 +97,7 @@ PEXPI u32 GetUppercaseCodepoint(u32 codepoint)
 //NOTE: byteBufferOut is assumed to be 4 bytes or greater and no null-terminating character is written to the buffer
 PEXP u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions)
 {
+	UNUSED(doAssertions);
 	if (codepoint <= 0x7F)
 	{
 		//0xxx xxxx

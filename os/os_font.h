@@ -81,6 +81,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		{
 			BOOL deleteResult = DeleteObject(fontHandle);
 			Assert(deleteResult != 0);
+			UNUSED(deleteResult);
 			ScratchEnd(scratch);
 			return Result_NoForegroundWindow;
 		}
@@ -90,6 +91,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		{
 			BOOL deleteResult = DeleteObject(fontHandle);
 			Assert(deleteResult != 0);
+			UNUSED(deleteResult);
 			ScratchEnd(scratch);
 			return Result_NoDeviceContext;
 		}
@@ -100,6 +102,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 			// PrintLine_E("Failed to select platform font after creation! \"%s\"", fontNameNt.pntr);
 			BOOL deleteResult = DeleteObject(fontHandle);
 			Assert(deleteResult != 0);
+			UNUSED(deleteResult);
 			ScratchEnd(scratch);
 			return Result_Failure; //TODO: Should we give this failure a better name?
 		}
@@ -116,6 +119,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 			// PrintLine_E("Failed to get/measure platform font contents for font \"%s\"", fontNameNt.pntr);
 			BOOL deleteResult = DeleteObject(fontHandle);
 			Assert(deleteResult != 0);
+			UNUSED(deleteResult);
 			ScratchEnd(scratch);
 			return Result_FailedToReadFile;
 		}
@@ -124,6 +128,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 			// PrintLine_E("There was no file contents for font \"%s\"", fontNameNt.pntr);
 			BOOL deleteResult = DeleteObject(fontHandle);
 			Assert(deleteResult != 0);
+			UNUSED(deleteResult);
 			ScratchEnd(scratch);
 			return Result_EmptyFile;
 		}
@@ -135,6 +140,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 			// PrintLine_E("Failed to allocate space to store font file data for font \"%s\": %llu bytes", fontNameNt.pntr, fontDataSize);
 			BOOL deleteResult = DeleteObject(fontHandle);
 			Assert(deleteResult != 0);
+			UNUSED(deleteResult);
 			ScratchEnd(scratch);
 			return Result_FailedToAllocateMemory;
 		}
@@ -150,6 +156,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		
 		BOOL deleteResult = DeleteObject(fontHandle);
 		Assert(deleteResult != 0);
+		UNUSED(deleteResult);
 		
 		result = Result_Success;
 		ScratchEnd(scratch);

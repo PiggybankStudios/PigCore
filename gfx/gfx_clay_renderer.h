@@ -210,6 +210,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				AlignV2(&textPos);
 				Result drawResult = GfxSystem_DrawRichTextWithFont(system, font->pntr, fontSize, font->styleFlags, richText, textPos, drawColor);
 				Assert(drawResult == Result_Success || drawResult == Result_InvalidUtf8);
+				UNUSED(drawResult);
 				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
 					command->renderData.text.userData.contraction == TextContraction_ClipRight)
 				{

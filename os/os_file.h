@@ -185,6 +185,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 		);
 		Assert(getPathResult2+1 == getPathResult1);
 		Assert(result.chars[result.length] == '\0');
+		UNUSED(getPathResult2);
 		
 		FixPathSlashes(result);
 	}
@@ -1051,6 +1052,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 					FILE_BEGIN
 				);
 				Assert(beginMove != INVALID_SET_FILE_POINTER);
+				UNUSED(beginMove);
 				cursorIndex = 0;
 			}
 		}

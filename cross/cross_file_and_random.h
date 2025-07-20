@@ -42,6 +42,7 @@ PEXP FilePath OsGetTemporaryFolderPath(Arena* arena)
 		
 		DWORD pathLengthDword = GetTempPathA(spaceRequired, result.chars);
 		Assert(pathLengthDword == spaceRequired-1);
+		UNUSED(pathLengthDword);
 		result.chars[result.length] = '\0';
 		FixPathSlashes(result);
 		Assert(DoesPathHaveTrailingSlash(result));
@@ -107,11 +108,13 @@ PEXPI FilePath OsGetTemporaryFilePath(Arena* arena, RandomSeries* randomSeries)
 	InitArenaBuffer(&folderArena, &result.chars[0], folderLength+1);
 	FilePath folderPath = OsGetTemporaryFolderPath(&folderArena);
 	Assert(folderPath.chars == &result.chars[0]);
+	UNUSED(folderPath);
 	
 	Arena nameArena = ZEROED;
 	InitArenaBuffer(&nameArena, &result.chars[folderLength], nameLength+1);
 	Str8 fileName = OsGetTemporaryFileName(&nameArena, randomSeries);
 	Assert(fileName.chars == &result.chars[folderLength]);
+	UNUSED(fileName);
 	
 	result.chars[result.length] = '\0';
 	return result;

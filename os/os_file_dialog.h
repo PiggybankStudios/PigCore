@@ -49,6 +49,7 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 		{
 			HRESULT initResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 			Assert(SUCCEEDED(initResult));
+			UNUSED(initResult);
 			Win32_HasCoInitialized = true;
 		}
 		

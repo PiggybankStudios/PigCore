@@ -198,6 +198,7 @@ PEXPI void FreeFontAtlas(PigFont* font, FontAtlas* atlas)
 {
 	NotNull(font);
 	NotNull(atlas);
+	UNUSED(font);
 	FreeVarArray(&atlas->charRanges);
 	FreeVarArray(&atlas->glyphs);
 	FreeTexture(&atlas->texture);
@@ -322,6 +323,7 @@ PEXPI void InitFontTtfInfo(PigFont* font)
 	Assert(firstFontOffset >= 0);
 	int initFontResult = stbtt_InitFont(&font->ttfInfo, font->ttfFile.bytes, firstFontOffset);
 	Assert(initFontResult != 0);
+	UNUSED(initFontResult);
 	// int numOfFontsInTtf = stbtt_GetNumberOfFonts(font->ttfFile.bytes);
 	// PrintLine_D("There %s %d font%s in this ttf file", PluralEx(numOfFontsInTtf, "is", "are"), numOfFontsInTtf, Plural(numOfFontsInTtf, "s"));
 }
@@ -405,6 +407,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i
 		scratch //alloc_context
 	);
 	Assert(beginResult != 0);
+	UNUSED(beginResult);
 	
 	stbtt_pack_range* stbRanges = AllocArray(stbtt_pack_range, scratch, numCharRanges);
 	NotNull(stbRanges);
@@ -452,6 +455,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i
 	NotNull(rects);
 	int numRects = stbtt_PackFontRangesGatherRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
 	Assert(numRects >= 0 && (uxx)numRects == numGlyphsInRanges);
+	UNUSED(numRects);
 	uxx customGlyphIndex = 0;
 	for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
 	{

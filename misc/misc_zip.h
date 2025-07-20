@@ -96,6 +96,7 @@ PEXP void CloseZipArchive(ZipArchive* archive)
 	{
 		mz_bool endResult = mz_zip_end(&archive->zip);
 		Assert(endResult == MZ_TRUE);
+		UNUSED(endResult);
 	}
 	ClearPointer(archive);
 }
@@ -201,6 +202,7 @@ PEXP FilePath GetZipArchiveFilePath(ZipArchive* archive, Arena* pathArena, uxx f
 	if (result.chars == nullptr) { return FilePath_Empty; }
 	mz_uint secondFileNameResult = mz_zip_reader_get_filename(&archive->zip, (mz_uint)fileIndex, result.chars, (mz_uint)(result.length+1));
 	Assert(secondFileNameResult == fileNameByteLength);
+	UNUSED(secondFileNameResult);
 	
 	return result;
 }
@@ -238,6 +240,7 @@ PEXP Slice ReadZipArchiveFileAtIndex(ZipArchive* archive, Arena* fileContentsAre
 	mz_zip_archive_file_stat fileStats = ZEROED;
 	mz_bool readStatSuccess = mz_zip_reader_file_stat(&archive->zip, (mz_uint)fileIndex, &fileStats);
 	Assert(readStatSuccess == MZ_TRUE);
+	UNUSED(readStatSuccess);
 	
 	ScratchBegin1(scratch, fileContentsArena);
 	Slice result = Slice_Empty;
@@ -310,6 +313,7 @@ PEXP void CreateZipArchive(Arena* arena, ZipArchive* archiveOut)
 	archiveOut->zip.m_pIO_opaque = archiveOut;
 	mz_bool initResult = mz_zip_writer_init(&archiveOut->zip, 0);
 	Assert(initResult == MZ_TRUE);
+	UNUSED(initResult);
 }
 
 PEXP Result AddZipArchiveFile(ZipArchive* archive, FilePath fileName, Slice fileContents, bool convertNewLines)
@@ -329,6 +333,7 @@ PEXP Result AddZipArchiveFile(ZipArchive* archive, FilePath fileName, Slice file
 	FilePath fileNameNt = AllocFilePath(scratch, fileName, true);
 	mz_bool addMemSuccess = mz_zip_writer_add_mem(&archive->zip, fileNameNt.chars, fileContents.bytes, (size_t)fileContents.length, (mz_uint)MZ_DEFAULT_COMPRESSION); //TODO: Should we tune this compression level? Maybe choose MZ_BEST_SPEED sometimes?
 	Assert(addMemSuccess); //TODO: Do we want to return a failure result for this? Why would it fail?
+	UNUSED(addMemSuccess);
 	IncrementUXX(archive->numFiles);
 	
 	ScratchEnd(scratch);

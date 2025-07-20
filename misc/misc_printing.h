@@ -124,6 +124,7 @@ PEXP void PrintVa_Print(const char* formatString, va_list args, char* allocatedS
 	NotNull(allocatedSpace);
 	int printResult = MyVaListPrintf(allocatedSpace, previousResult+1, formatString, args);
 	Assert(printResult == previousResult);
+	UNUSED(printResult);
 	allocatedSpace[previousResult] = '\0';
 }
 
@@ -166,6 +167,7 @@ PEXP void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex
 			Assert(*currentByteIndex <= resultLength);
 			u64 spaceLeft = resultLength - *currentByteIndex;
 			Assert(printSize <= spaceLeft);
+			UNUSED(spaceLeft);
 			va_start(args, formatString);
 			PrintVa_Print(formatString, args, &resultPntr[*currentByteIndex], printResult);
 			va_end(args);
@@ -180,6 +182,7 @@ PEXP void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex
 			Assert(*currentByteIndex <= resultLength);
 			u64 spaceLeft = resultLength - *currentByteIndex;
 			Assert(printSize <= spaceLeft);
+			UNUSED(spaceLeft);
 			MyMemCopy(&resultPntr[*currentByteIndex], formatString, printSize);
 		}
 	}
