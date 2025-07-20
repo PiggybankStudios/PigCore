@@ -11,6 +11,7 @@ Description:
 #define _BASE_COMPILER_CHECK_H
 
 #include "build_config.h"
+#include "base/base_plex_is_struct.h"
 
 // +--------------------------------------------------------------+
 // |                      Determine LANGUAGE                      |

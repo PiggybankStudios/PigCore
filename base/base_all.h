@@ -11,6 +11,7 @@ Description:
 #ifndef _BASE_ALL_H
 #define _BASE_ALL_H
 
+#include "base/base_plex_is_struct.h"
 #include "base/base_compiler_check.h"
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
