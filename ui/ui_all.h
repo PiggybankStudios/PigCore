@@ -15,4 +15,17 @@ Date:   02\16\2025
 #include "ui/ui_clay.h"
 #include "ui/ui_imgui.h"
 
+#include "struct/struct_var_array.h"
+#include "mem/mem_arena.h"
+#include "struct/struct_string.h"
+#include "gfx/gfx_clay_renderer.h"
+#include "input/input_keys.h"
+#include "input/input_btn_state.h"
+#include "input/input_mouse_btns.h"
+#include "struct/struct_vectors.h"
+#include "gfx/gfx_font.h"
+#include "gfx/gfx_font_flow.h"
+
+#include "ui/ui_clay_textbox.h"
+
 #endif //  _UI_ALL_H

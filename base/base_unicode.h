@@ -65,6 +65,7 @@ Description:
 	u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions);
 	u8 GetCodepointUtf8Size(u32 codepoint);
 	u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut);
+	u8 GetPrevCodepointForUtf8(u64 numBytesBeforePntr, const char* strEndPntr, u32* codepointOut);
 	u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOut);
 	i32 CompareCodepoints(u32 codepoint1, u32 codepoint2);
 	bool DoesNtStrContainMultibyteUtf8Chars(const char* nullTermStr);
@@ -212,6 +213,57 @@ PEXP u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepoint
 		//Everything above this point is considered an invalid character to exist in UTF-8 encoded strings
 		return 0;
 	}
+}
+
+// This is sort of like GetCodepointForUtf8 but it walks backwards from the pointer until it finds a valid UTF-8 byte sequence
+PEXP u8 GetPrevCodepointForUtf8(u64 numBytesBeforePntr, const char* strEndPntr, u32* codepointOut)
+{
+	// The first byte is rather special in a UTF-8 character, we will call it a "prefix byte" but it probably technically should be called something like "non-continuation" byte
+	u8 codepointSize = 0;
+	for (u8 bIndex = 1; bIndex <= UTF8_MAX_CHAR_SIZE && bIndex < numBytesBeforePntr; bIndex++)
+	{
+		u8 prevByte = *(((const u8*)strEndPntr) - bIndex);
+		if (prevByte <= 127) //single byte
+		{
+			if (bIndex != 1) { return 0; } //invalid UTF-8, some number of continuation bytes preceeded by a single-byte character
+			codepointSize = 1;
+			break;
+		}
+		else if (prevByte < 0xC0) //continuation byte
+		{
+			continue;
+		}
+		else if (prevByte < 0xE0) //prefix byte that declares a 2-byte character
+		{
+			if (bIndex != 2) { return 0; } //invalid UTF-8, we may be in the middle of the character!
+			codepointSize = 2;
+			break;
+		}
+		else if (prevByte < 0xF0) //prefix byte that declares a 3-byte character
+		{
+			if (bIndex != 3) { return 0; } //invalid UTF-8, we may be in the middle of the character!
+			codepointSize = 3;
+			break;
+		}
+		else if (prevByte < 0xF8) //prefix byte that declares a 4-byte character
+		{
+			if (bIndex != 4) { return 0; } //invalid UTF-8, we may be in the middle of the character!
+			codepointSize = 4;
+			break;
+		}
+		else
+		{
+			//Everything above this point is considered an invalid character to exist in UTF-8 encoded strings
+			return 0;
+		}
+	}
+	if (codepointSize == 0) { return 0; } //invalid UTF-8, we didn't find a prefix byte within 4 bytes
+	if (codepointOut != nullptr)
+	{
+		u8 calcSize = GetCodepointForUtf8(codepointSize, strEndPntr - codepointSize, codepointOut);
+		DebugAssert(calcSize = codepointSize); UNUSED(calcSize);
+	}
+	return codepointSize;
 }
 
 //Using the startIndex as a known max length to walk backwards this function will look backwards through a string until it finds a full encoded character

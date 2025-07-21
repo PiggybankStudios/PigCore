@@ -48,6 +48,7 @@ plex FontFlow
 {
 	PigFont* font;
 	v2 startPos;
+	v2 endPos;
 	rec visualRec;
 	rec logicalRec;
 	uxx numGlyphs;
@@ -194,6 +195,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		// ClearPointer(flowOut); //NOTE: Don't clear the FontFlow since the numGlyphsAlloc/glyphs is filled by the calling code if they want us to store per-glyph information
 		flowOut->font = state->font;
 		flowOut->startPos = state->position;
+		flowOut->endPos = state->position;
 		flowOut->visualRec = NewRecV(state->position, V2_Zero);
 		flowOut->logicalRec = NewRecV(state->position, V2_Zero);
 		FontAtlas* firstAtlas = GetFontAtlas(state->font, state->startFontSize, state->startFontStyle);
@@ -204,6 +206,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		}
 		flowOut->numGlyphs = 0;
 	}
+	
+	bool drawHighlightsAfterLoop = true;
 	
 	while (state->byteIndex < state->text.fullPiece.str.length)
 	{
@@ -221,7 +225,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			{
 				DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 				//Highlight is getting disabled, return to regular drawing of characters
-				if (isHighlightedChanging) { return result; }
+				if (isHighlightedChanging) { drawHighlightsAfterLoop = false; break; }
 			}
 		}
 		
@@ -233,7 +237,12 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			if (state->byteIndex >= state->highlightRecsDrawnToByteIndex)
 			{
 				Result drawHighlightResult = DoFontFlow_HighlightRecs(state, callbacks, &state->highlightRecsDrawnToByteIndex);
-				if (drawHighlightResult != Result_Success && drawHighlightResult != Result_InvalidUtf8) { return drawHighlightResult; }
+				if (drawHighlightResult != Result_Success && drawHighlightResult != Result_InvalidUtf8)
+				{
+					result = drawHighlightResult;
+					drawHighlightsAfterLoop = false;
+					break;
+				}
 			}
 		}
 		
@@ -328,7 +337,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		}
 	}
 	
-	if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted))
+	if (flowOut != nullptr) { flowOut->endPos = state->position; }
+	
+	if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && drawHighlightsAfterLoop)
 	{
 		DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 	}

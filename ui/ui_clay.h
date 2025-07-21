@@ -59,6 +59,8 @@ typedef plex ClayTextUserData ClayTextUserData;
 plex ClayTextUserData
 {
 	TextContraction contraction;
+	plex FontFlow* flowTarget;
+	Color32 backgroundColor; //used for text that has selection
 };
 
 #define CLAY_ELEMENT_USERDATA_TYPE ClayElementUserData
@@ -107,6 +109,14 @@ typedef Clay_ElementId ClayId;
 	PIG_CORE_INLINE rec GetClayElementDrawRecStr(Str8 elementIdStr);
 	PIG_CORE_INLINE rec GetClayElementDrawRecNt(const char* elementIdStrNt);
 #endif
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+// These macros are really shorthand for multiplying by app->uiScale and dealing with how to round or clamp to good values when uiScale is very big/small
+#define UISCALE_R32(scale, pixels) RoundR32((r32)(pixels) * (scale))
+#define UISCALE_U16(scale, pixels) (u16)RoundR32i((r32)(pixels) * (scale))
+#define UISCALE_BORDER(scale, pixels) MaxU16(((pixels) > 0) ? (u16)1 : (u16)0, (u16)RoundR32i((r32)(pixels) * (scale)))
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |

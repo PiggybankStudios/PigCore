@@ -1,0 +1,449 @@
+/*
+File:   ui_clay_textbox.h
+Author: Taylor Robbins
+Date:   07\20\2025
+Description:
+	** An implementation of an editable text box for Desktop platforms that depends
+	** on Clay and gfx_system.h
+*/
+
+#ifndef _UI_CLAY_TEXTBOX_H
+#define _UI_CLAY_TEXTBOX_H
+
+#include "base/base_defines_check.h"
+#include "base/base_typedefs.h"
+#include "base/base_macros.h"
+#include "base/base_assert.h"
+#include "struct/struct_var_array.h"
+#include "mem/mem_arena.h"
+#include "struct/struct_string.h"
+#include "ui/ui_clay.h"
+#include "gfx/gfx_clay_renderer.h"
+#include "input/input_keys.h"
+#include "input/input_btn_state.h"
+#include "input/input_mouse_btns.h"
+#include "struct/struct_vectors.h"
+#include "gfx/gfx_font.h"
+#include "gfx/gfx_font_flow.h"
+
+#if BUILD_WITH_CLAY
+
+#define TEXTBOX_INNER_PADDING_X 8 //px
+#define TEXTBOX_INNER_PADDING_Y 12 //px
+
+typedef plex UiTextbox UiTextbox;
+plex UiTextbox
+{
+	Arena* arena;
+	Str8 idStr;
+	ClayId id;
+	u8 fontStyle;
+	r32 fontSize;
+	PigFont* font;
+	
+	bool isFocused;
+	
+	bool cursorActive;
+	uxx cursorStart;
+	uxx cursorEnd;
+	bool draggingWithMouse;
+	
+	FontFlow flow;
+	Str8 text;
+	VarArray textBuffer; //char
+	
+	bool textChanged;
+	bool cursorMoved;
+};
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	void FreeUiTextbox(UiTextbox* tbox);
+	void InitUiTextbox(Arena* arena, Str8 idStr, Str8 initialText, UiTextbox* tbox);
+	PIG_CORE_INLINE void UiTextboxSelectAll(UiTextbox* tbox);
+	PIG_CORE_INLINE void UiTextboxDeleteBytes(UiTextbox* tbox, uxx startIndex, uxx numBytes);
+	PIG_CORE_INLINE void UiTextboxDeleteSelected(UiTextbox* tbox);
+	PIG_CORE_INLINE uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos);
+	void DoUiTextbox(UiTextbox* tbox, ClayUIRenderer* renderer, Arena* uiArena, const KeyboardState* keyboard, const MouseState* mouse, bool* isFocused, PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale);
+#endif
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXP void FreeUiTextbox(UiTextbox* tbox)
+{
+	NotNull(tbox);
+	if (tbox->arena != nullptr)
+	{
+		FreeStr8(tbox->arena, &tbox->idStr);
+		FreeVarArray(&tbox->textBuffer);
+	}
+	ClearPointer(tbox);
+}
+
+PEXP void InitUiTextbox(Arena* arena, Str8 idStr, Str8 initialText, UiTextbox* tbox)
+{
+	NotNull(arena);
+	NotNull(tbox);
+	
+	ClearPointer(tbox);
+	tbox->arena = arena;
+	tbox->idStr = AllocStr8(arena, idStr);
+	tbox->id = ToClayId(tbox->idStr);
+	InitVarArrayWithInitial(char, &tbox->textBuffer, arena, initialText.length);
+	tbox->text = NewStr8(0, (char*)tbox->textBuffer.items);
+	if (!IsEmptyStr(initialText))
+	{
+		char* newChars = VarArrayAddMulti(char, &tbox->textBuffer, initialText.length);
+		NotNull(newChars);
+		MyMemCopy(newChars, initialText.chars, initialText.length);
+		tbox->text = NewStr8(initialText.length, newChars);
+	}
+}
+
+PEXPI void UiTextboxSelectAll(UiTextbox* tbox)
+{
+	NotNull(tbox);
+	NotNull(tbox->arena);
+	tbox->cursorActive = true;
+	tbox->cursorStart = 0;
+	tbox->cursorEnd = tbox->text.length;
+}
+
+PEXPI void UiTextboxDeleteBytes(UiTextbox* tbox, uxx startIndex, uxx numBytes)
+{
+	NotNull(tbox);
+	NotNull(tbox->arena);
+	Assert(startIndex <= tbox->text.length);
+	Assert(startIndex+numBytes <= tbox->text.length);
+	if (numBytes == 0) { return; }
+	
+	if (startIndex+numBytes < tbox->text.length)
+	{
+		MyMemMove(&tbox->text.chars[startIndex], &tbox->text.chars[startIndex+numBytes], tbox->text.length - (startIndex+numBytes));
+	}
+	tbox->text.length -= numBytes;
+	tbox->textBuffer.length -= numBytes;
+	tbox->cursorStart = startIndex;
+	tbox->cursorEnd = startIndex;
+	tbox->textChanged = true;
+	tbox->cursorMoved = true;
+}
+
+PEXPI void UiTextboxDeleteSelected(UiTextbox* tbox)
+{
+	NotNull(tbox);
+	NotNull(tbox->arena);
+	if (tbox->cursorActive && tbox->cursorEnd != tbox->cursorStart)
+	{
+		uxx cursorMin = MinUXX(tbox->cursorStart, tbox->cursorEnd);
+		uxx cursorMax = MaxUXX(tbox->cursorStart, tbox->cursorEnd);
+		UiTextboxDeleteBytes(tbox, cursorMin, cursorMax - cursorMin);
+	}
+}
+
+PEXPI uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos)
+{
+	uxx cursorIndex = tbox->text.length;
+	r32 cursorDistance = LengthV2(Sub(screenPos, tbox->flow.endPos));
+	for (uxx gIndex = 0; gIndex < tbox->flow.numGlyphs; gIndex++)
+	{
+		FontFlowGlyph* glyph = &tbox->flow.glyphs[gIndex];
+		r32 distanceToGlyphPos = LengthV2(Sub(screenPos, glyph->position));
+		if (distanceToGlyphPos < cursorDistance)
+		{
+			cursorIndex = glyph->byteIndex;
+			cursorDistance = distanceToGlyphPos;
+		}
+	}
+	return cursorIndex;
+}
+
+PEXP void DoUiTextbox(UiTextbox* tbox,
+	ClayUIRenderer* renderer, Arena* uiArena,
+	KeyboardState* keyboard, MouseState* mouse, bool* isFocused,
+	PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale)
+{
+	NotNull(tbox);
+	NotNull(tbox->arena);
+	NotNull(renderer);
+	NotNull(uiArena);
+	NotNull(keyboard);
+	NotNull(mouse);
+	NotNull(isFocused);
+	
+	if (tbox->isFocused != *isFocused) { tbox->isFocused = *isFocused; }
+	if (!tbox->isFocused && tbox->draggingWithMouse) { tbox->draggingWithMouse = false; }
+	
+	// +==============================+
+	// | Mouse Click Selects Textbox  |
+	// +==============================+
+	if (mouse->isOverWindow && IsMouseBtnPressed(mouse, MouseBtn_Left))
+	{
+		if (Clay_PointerOver(tbox->id))
+		{
+			if (!tbox->isFocused)
+			{
+				tbox->isFocused = true;
+				*isFocused = true;
+				UiTextboxSelectAll(tbox);
+			}
+			else
+			{
+				tbox->cursorEnd = UiTextboxFindClosestIndexToPos(tbox, mouse->position);
+				tbox->cursorStart = tbox->cursorEnd;
+				tbox->cursorMoved = true;
+				tbox->draggingWithMouse = true;
+			}
+		}
+		else { tbox->isFocused = false; *isFocused = false; }
+	}
+	
+	if (tbox->draggingWithMouse)
+	{
+		if (IsMouseBtnDown(mouse, MouseBtn_Left))
+		{
+			tbox->cursorEnd = UiTextboxFindClosestIndexToPos(tbox, mouse->position);
+		}
+		else { tbox->draggingWithMouse = false; }
+	}
+	
+	// +==============================+
+	// |   Escape Unfocuses Textbox   |
+	// +==============================+
+	if (tbox->isFocused && IsKeyboardKeyPressed(keyboard, Key_Escape))
+	{
+		tbox->isFocused = false;
+		*isFocused = false;
+	}
+	
+	// +==============================+
+	// |      Handle Arrow Keys       |
+	// +==============================+
+	//TODO: Handle Ctrl
+	//TODO: Handle Alt
+	if (tbox->isFocused)
+	{
+		if (IsKeyboardKeyPressed(keyboard, Key_Left))
+		{
+			if (tbox->cursorActive)
+			{
+				if (tbox->cursorStart != tbox->cursorEnd && !IsKeyboardKeyDown(keyboard, Key_Shift))
+				{
+					tbox->cursorEnd = MinUXX(tbox->cursorStart, tbox->cursorEnd);
+					tbox->cursorStart = tbox->cursorEnd;
+					tbox->cursorMoved = true;
+				}
+				else if (tbox->cursorEnd > 0)
+				{
+					//TODO: Walk left in UTF8 byte stream
+					tbox->cursorEnd--;
+					if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
+					tbox->cursorMoved = true;
+				}
+			}
+			else { tbox->cursorEnd = tbox->text.length; tbox->cursorStart = tbox->cursorEnd; tbox->cursorMoved = true; }
+		}
+		if (IsKeyboardKeyPressed(keyboard, Key_Right))
+		{
+			if (tbox->cursorActive)
+			{
+				if (tbox->cursorStart != tbox->cursorEnd && !IsKeyboardKeyDown(keyboard, Key_Shift))
+				{
+					tbox->cursorEnd = MaxUXX(tbox->cursorStart, tbox->cursorEnd);
+					tbox->cursorStart = tbox->cursorEnd;
+					tbox->cursorMoved = true;
+				}
+				else if (tbox->cursorEnd < tbox->text.length)
+				{
+					u8 codepointSize = GetCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
+					if (codepointSize == 0) { codepointSize = 1; }
+					tbox->cursorEnd += codepointSize;
+					if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
+					tbox->cursorMoved = true;
+				}
+			}
+			else { tbox->cursorEnd = tbox->text.length; tbox->cursorStart = tbox->cursorEnd; tbox->cursorMoved = true; }
+		}
+	}
+	
+	// +==============================+
+	// |        Handle Typing         |
+	// +==============================+
+	if (tbox->isFocused && tbox->cursorActive)
+	{
+		for (uxx iIndex = 0; iIndex < keyboard->numCharInputs; iIndex++)
+		{
+			KeyboardCharInput* charInput = &keyboard->charInputs[iIndex];
+			if (charInput->modifierKeys == ModifierKey_None || charInput->modifierKeys == ModifierKey_Shift)
+			{
+				u8 utf8Bytes[UTF8_MAX_CHAR_SIZE];
+				u8 codepointSize = GetUtf8BytesForCode(charInput->codepoint, &utf8Bytes[0], false);
+				if (codepointSize > 0)
+				{
+					if (tbox->cursorStart != tbox->cursorEnd)
+					{
+						UiTextboxDeleteSelected(tbox);
+						DebugAssert(tbox->cursorStart == tbox->cursorEnd);
+					}
+					
+					VarArrayAddMulti(char, &tbox->textBuffer, codepointSize);
+					tbox->text.chars = (char*)tbox->textBuffer.items;
+					tbox->text.length += codepointSize;
+					
+					if (tbox->cursorStart < tbox->text.length)
+					{
+						uxx numCharsToMove = tbox->text.length - tbox->cursorStart;
+						MyMemMove(&tbox->text.chars[tbox->text.length - numCharsToMove], &tbox->text.chars[tbox->cursorStart], numCharsToMove);
+					}
+					MyMemCopy(&tbox->text.chars[tbox->cursorStart], &utf8Bytes[0], codepointSize);
+					tbox->cursorStart += codepointSize;
+					tbox->cursorEnd += codepointSize;
+					tbox->textChanged = true;
+					tbox->cursorMoved = true;
+				}
+			}
+		}
+	}
+	
+	// +==============================+
+	// | Handle Backspace and Delete  |
+	// +==============================+
+	if (tbox->isFocused && tbox->cursorActive)
+	{
+		if (tbox->cursorEnd != tbox->cursorStart &&
+			(IsKeyboardKeyPressed(keyboard, Key_Backspace) || IsKeyboardKeyPressed(keyboard, Key_Delete)))
+		{
+			UiTextboxDeleteSelected(tbox);
+		}
+		else if (IsKeyboardKeyPressed(keyboard, Key_Backspace) && tbox->cursorEnd > 0)
+		{
+			u8 prevCodepointSize = GetPrevCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
+			if (prevCodepointSize == 0) { prevCodepointSize = 1; }
+			UiTextboxDeleteBytes(tbox, tbox->cursorEnd-prevCodepointSize, prevCodepointSize);
+		}
+		else if (IsKeyboardKeyPressed(keyboard, Key_Delete) && tbox->cursorEnd < tbox->text.length)
+		{
+			u8 nextCodepointSize = GetCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
+			if (nextCodepointSize == 0) { nextCodepointSize = 1; }
+			UiTextboxDeleteBytes(tbox, tbox->cursorEnd, nextCodepointSize);
+		}
+	}
+	
+	//TODO: Update horizontal scroll
+	//TODO: Follow cursor movements when cursor leaves viewable area
+	//TODO: Handle copy/paste/cut to/from clipboard
+	//TODO: Handle Backspace/Delete keys
+	//TODO: Mouse LeftClick (w/ drag + auto-scroll when dragging)
+	//TODO: Ctrl+A to select all
+	//TODO: Double/Triple Click to Select Word/Line
+	//TODO: Home/End to move cursor (Ctrl)
+	
+	u16 fontId = GetClayUIRendererFontId(renderer, font, fontStyle);
+	FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);
+	NotNull(fontAtlas);
+	
+	if (tbox->flow.numGlyphsAlloc < tbox->text.length)
+	{
+		uxx newNumGlyphs = tbox->flow.numGlyphsAlloc;
+		if (newNumGlyphs < 8) { newNumGlyphs = 8; }
+		while (newNumGlyphs < tbox->text.length) { newNumGlyphs *= 2; }
+		FontFlowGlyph* newGlyphs = AllocArray(FontFlowGlyph, tbox->arena, newNumGlyphs);
+		if (tbox->flow.glyphs != nullptr) { FreeArray(FontFlowGlyph, tbox->arena, tbox->flow.numGlyphsAlloc, tbox->flow.glyphs); }
+		tbox->flow.glyphs = newGlyphs;
+		tbox->flow.numGlyphsAlloc = newNumGlyphs;
+	}
+	
+	rec textboxRec = GetClayElementDrawRec(tbox->id);
+	v2 cursorRelativePos = Sub(tbox->flow.endPos, textboxRec.TopLeft);
+	for (uxx gIndex = 0; gIndex < tbox->flow.numGlyphs; gIndex++)
+	{
+		FontFlowGlyph* glyph = &tbox->flow.glyphs[gIndex];
+		if (glyph->byteIndex == tbox->cursorEnd)
+		{
+			cursorRelativePos = Sub(glyph->position, textboxRec.TopLeft);
+			break;
+		}
+	}
+	
+	CLAY({ .id = tbox->id,
+		.layout = {
+			.sizing = {
+				.width = CLAY_SIZING_GROW(0),
+				.height = CLAY_SIZING_FIXED(fontAtlas->lineHeight + UISCALE_R32(uiScale, TEXTBOX_INNER_PADDING_Y)),
+			},
+			.padding = {
+				UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X), UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X),
+				UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_Y), UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_Y),
+			},
+		},
+		.border = {
+			.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(uiScale, 1)),
+			.color = MonokaiRed,
+		},
+		.backgroundColor = MonokaiBack,
+	})
+	{
+		Str8 displayText;
+		if (tbox->cursorEnd != tbox->cursorStart)
+		{
+			uxx cursorMin = MinUXX(tbox->cursorStart, tbox->cursorEnd);
+			uxx cursorMax = MaxUXX(tbox->cursorStart, tbox->cursorEnd);
+			displayText = PrintInArenaStr(uiArena, "%.*s[highlight]%.*s[highlight]%.*s",
+				cursorMin, &tbox->text.chars[0],
+				cursorMax - cursorMin, &tbox->text.chars[cursorMin],
+				tbox->text.length - cursorMax, &tbox->text.chars[cursorMax]
+			);
+		}
+		else
+		{
+			displayText = AllocStr8(uiArena, tbox->text);
+		}
+		
+		CLAY_TEXT(
+			displayText, //TODO: Encode RichStr here to get text selection working
+			CLAY_TEXT_CONFIG({
+				.fontId = fontId,
+				.fontSize = (u16)fontSize,
+				.textColor = MonokaiWhite,
+				.wrapMode = CLAY_TEXT_WRAP_NONE,
+				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+				.userData = {
+					.contraction = TextContraction_ClipLeft,
+					.flowTarget = &tbox->flow,
+					.backgroundColor = MonokaiBack,
+				},
+			})
+		);
+		
+		if (tbox->isFocused)
+		{
+			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(uiScale, -1), fontAtlas->maxDescend - fontAtlas->lineHeight));
+			CLAY({.id = ToClayIdPrint("%.*sCursor", StrPrint(tbox->idStr)),
+				.backgroundColor = MonokaiYellow, //TODO: Change this color
+				.layout = {
+					.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 2)), .height = CLAY_SIZING_FIXED(fontAtlas->lineHeight) },
+				},
+				.floating = {
+					.attachTo = CLAY_ATTACH_TO_PARENT,
+					.offset = cursorTopLeft,
+					.zIndex = 5,
+					.attachPoints = {
+						.parent = CLAY_ATTACH_POINT_LEFT_TOP,
+						.element = CLAY_ATTACH_POINT_LEFT_TOP,
+					},
+				},
+			}) {}
+		}
+	}
+}
+
+#endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_CLAY
+
+#endif //  _UI_CLAY_TEXTBOX_H

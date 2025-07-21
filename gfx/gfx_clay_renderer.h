@@ -208,9 +208,29 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				}
 				v2 textPos = NewV2(drawRec.X + textOffset.X, drawRec.Y + textOffset.Y + drawRec.Height/2 + fontAtlas->centerOffset);
 				AlignV2(&textPos);
-				Result drawResult = GfxSystem_DrawRichTextWithFont(system, font->pntr, fontSize, font->styleFlags, richText, textPos, drawColor);
+				
+				FontFlowState state = ZEROED;
+				state.contextPntr = (void*)system;
+				state.font = font->pntr;
+				state.text = richText;
+				state.startFontSize = fontSize;
+				state.startFontStyle = font->styleFlags;
+				state.startColor = drawColor;
+				state.alignPixelSize = system->state.alignPixelSize;
+				state.position = textPos;
+				state.backgroundColor = (command->renderData.text.userData.backgroundColor.a != 0) ? command->renderData.text.userData.backgroundColor : system->state.textBackgroundColor;
+				FontFlowCallbacks callbacks = ZEROED;
+				callbacks.drawChar = GfxSystem_FontFlowDrawCharCallback;
+				callbacks.drawHighlight = GfxSystem_FontFlowDrawHighlightCallback;
+				FontFlow* flowTarget = (command->renderData.text.userData.flowTarget != nullptr) 
+					? command->renderData.text.userData.flowTarget
+					: &system->prevFontFlow;
+				
+				Result drawResult = DoFontFlow(&state, &callbacks, flowTarget);
+				
 				Assert(drawResult == Result_Success || drawResult == Result_InvalidUtf8);
 				UNUSED(drawResult);
+				
 				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
 					command->renderData.text.userData.contraction == TextContraction_ClipRight)
 				{
