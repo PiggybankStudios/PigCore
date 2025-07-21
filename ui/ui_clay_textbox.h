@@ -223,7 +223,6 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	// +==============================+
 	// |      Handle Arrow Keys       |
 	// +==============================+
-	//TODO: Handle Ctrl
 	//TODO: Handle Alt
 	//TODO: Handle key repeats
 	if (tbox->isFocused)
@@ -240,9 +239,16 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 				}
 				else if (tbox->cursorEnd > 0)
 				{
-					u8 prevCodepointSize = GetPrevCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
-					if (prevCodepointSize == 0) { prevCodepointSize = 1; }
-					tbox->cursorEnd -= prevCodepointSize;
+					if (IsKeyboardKeyDown(keyboard, Key_Control))
+					{
+						tbox->cursorEnd = FindWordBoundaryStr(tbox->text, tbox->cursorEnd, false);
+					}
+					else
+					{
+						u8 prevCodepointSize = GetPrevCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
+						if (prevCodepointSize == 0) { prevCodepointSize = 1; }
+						tbox->cursorEnd -= prevCodepointSize;
+					}
 					if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
 					tbox->cursorMoved = true;
 				}
@@ -261,9 +267,16 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 				}
 				else if (tbox->cursorEnd < tbox->text.length)
 				{
-					u8 codepointSize = GetCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
-					if (codepointSize == 0) { codepointSize = 1; }
-					tbox->cursorEnd += codepointSize;
+					if (IsKeyboardKeyDown(keyboard, Key_Control))
+					{
+						tbox->cursorEnd = FindWordBoundaryStr(tbox->text, tbox->cursorEnd, true);
+					}
+					else
+					{
+						u8 codepointSize = GetCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
+						if (codepointSize == 0) { codepointSize = 1; }
+						tbox->cursorEnd += codepointSize;
+					}
 					if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
 					tbox->cursorMoved = true;
 				}
@@ -445,7 +458,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 				.userData = {
-					.contraction = TextContraction_ClipLeft,
+					.contraction = (tbox->cursorActive && tbox->cursorEnd < tbox->text.length/2) ? TextContraction_ClipRight : TextContraction_ClipLeft,
 					.flowTarget = &tbox->flow,
 					.backgroundColor = MonokaiBack,
 				},

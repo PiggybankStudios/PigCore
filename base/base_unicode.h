@@ -73,6 +73,7 @@ Description:
 	u8 GetCodepointForUcs2(u64 maxNumWords, const u16* strPntr, u32* codepointOut);
 	PIG_CORE_INLINE u32 GetMonospaceCodepointFor(u32 codepoint);
 	PIG_CORE_INLINE u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint);
+	uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bool forward);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -420,6 +421,37 @@ PEXPI u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint)
 	if (monospaceCodepoint >= 0x1D68A && monospaceCodepoint <= 0x1D6A3) { return CharToU32('a') + (monospaceCodepoint - 0x1D68A); }
 	if (monospaceCodepoint >= 0x1D7F6 && monospaceCodepoint <= 0x1D7FF) { return CharToU32('0') + (monospaceCodepoint - 0x1D7F6); }
 	return 0;
+}
+
+// +--------------------------------------------------------------+
+// |                    Word and Subword Logic                    |
+// +--------------------------------------------------------------+
+PEXP uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bool forward)
+{
+	Assert(strPntr != nullptr || strLength == 0);
+	if (startIndex == 0 && !forward) { return startIndex; }
+	if (startIndex >= strLength && forward) { return strLength; }
+	
+	for (uxx bIndex = startIndex;
+		(forward && bIndex < strLength) || (!forward && bIndex > 0);
+		bIndex += (forward ? 1 : -1))
+	{
+		u32 nextCodepoint = 0;
+		u8 nextCodepointSize = GetCodepointForUtf8(strLength - bIndex, &strPntr[bIndex], &nextCodepoint);
+		//TODO: What do we do with invalid UTF-8?
+		u32 prevCodepoint = 0;
+		u8 prevCodepointSize = GetPrevCodepointForUtf8(bIndex, &strPntr[bIndex], &prevCodepoint);
+		//TODO: What do we do with invalid UTF-8?
+		if (!forward) { SwapVariables(u32, nextCodepoint, prevCodepoint); SwapVariables(u8, nextCodepointSize, prevCodepointSize); }
+		
+		bool isNextCharWord = IsCharAlphaNumeric(nextCodepoint);
+		bool isPrevCharWord = IsCharAlphaNumeric(prevCodepoint);
+		if (isNextCharWord != isPrevCharWord && bIndex != startIndex) { return bIndex; }
+		
+		if (nextCodepointSize > 1) { bIndex += (nextCodepointSize-1) * (forward ? 1 : -1); }
+	}
+	
+	return (forward ? strLength : 0);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

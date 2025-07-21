@@ -24,6 +24,7 @@ Description:
 	PIG_CORE_INLINE uxx FindNextUnknownCharInStr(Str8 target, uxx startIndex, Str8 knownCharsStr);
 	PIG_CORE_INLINE uxx FindNextWhitespaceInStrEx(Str8 target, uxx startIndex, bool ignoreCharsInQuotes);
 	PIG_CORE_INLINE bool FindNextWhitespaceInStr(Str8 target, uxx startIndex);
+	PIG_CORE_INLINE uxx FindWordBoundaryStr(Str8 str, uxx startIndex, bool forward);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -131,6 +132,11 @@ PEXPI uxx FindNextWhitespaceInStrEx(Str8 target, uxx startIndex, bool ignoreChar
 	return FindNextCharInStrEx(target, startIndex, StrLit(WHITESPACE_CHARS), ignoreCharsInQuotes);
 }
 PEXPI bool FindNextWhitespaceInStr(Str8 target, uxx startIndex) { return FindNextWhitespaceInStrEx(target, startIndex, false); }
+
+PEXPI uxx FindWordBoundaryStr(Str8 str, uxx startIndex, bool forward)
+{
+	return FindWordBoundary(str.length, str.chars, startIndex, forward);
+}
 
 #endif //PIG_CORE_IMPLEMENTATION
 
