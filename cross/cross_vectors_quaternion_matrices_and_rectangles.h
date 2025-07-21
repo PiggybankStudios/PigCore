@@ -215,9 +215,9 @@ Date:   01\15\2025
 		v2: HMM_NormV2,                      \
 		v3: HMM_NormV3,                      \
 		v4: HMM_NormV4,                      \
-		v2d: HMM_NormV2d,                    \
-		v3d: HMM_NormV3d,                    \
-		v4d: HMM_NormV4d,                    \
+		v2d: NormalizeV2d,                   \
+		v3d: NormalizeV3d,                   \
+		v4d: NormalizeV4d,                   \
 		quat: HMM_NormQ,                     \
 		quatd: NormalizeQuatd                \
 )(vector)

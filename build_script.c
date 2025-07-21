@@ -38,6 +38,9 @@ Description:
 
 #define FILENAME_PIGGEN_EXE        "piggen.exe"
 #define FILENAME_PIGGEN            "piggen"
+#define FILENAME_TRACY_DLL         "tracy.dll"
+#define FILENAME_TRACY_LIB         "tracy.lib"
+#define FILENAME_TRACY_SO          "tracy.so"
 #define FILENAME_IMGUI_OBJ         "imgui.obj"
 #define FILENAME_IMGUI_O           "imgui.o"
 #define FILENAME_PHYSX_OBJ         "physx_capi.obj"
@@ -81,9 +84,11 @@ int main(int argc, char* argv[])
 	Str8 buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
 	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
+	bool PROFILING_ENABLED        = ExtractBoolDefine(buildConfigContents, StrLit("PROFILING_ENABLED"));
 	bool BUILD_PIGGEN             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
 	bool BUILD_SHADERS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
 	bool RUN_PIGGEN               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
+	bool BUILD_TRACY_DLL          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TRACY_DLL"));
 	bool BUILD_IMGUI_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_IMGUI_OBJ"));
 	bool BUILD_PHYSX_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PHYSX_OBJ"));
 	bool BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
@@ -446,6 +451,44 @@ int main(int argc, char* argv[])
 		FreeStrArray(&findContext.objPaths);
 		FreeStrArray(&findContext.oPaths);
 	}
+	
+	// +--------------------------------------------------------------+
+	// |                       Build tracy.dll                        |
+	// +--------------------------------------------------------------+
+	if (PROFILING_ENABLED && !BUILD_TRACY_DLL && BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_TRACY_DLL))) { PrintLine("Building %s because it's missing", FILENAME_TRACY_DLL); BUILD_TRACY_DLL = true; }
+	if (PROFILING_ENABLED && !BUILD_TRACY_DLL && BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_TRACY_SO))) { PrintLine("Building %s because it's missing", FILENAME_TRACY_SO); BUILD_TRACY_DLL = true; }
+	if (BUILD_TRACY_DLL)
+	{
+		if (BUILD_WINDOWS)
+		{
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			PrintLine("[Building %s for Windows...]", FILENAME_TRACY_DLL);
+			
+			CliArgList cmd = ZEROED;
+			// AddArg(&cmd, CL_COMPILE);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/third_party/tracy/TracyClient.cpp");
+			AddArgNt(&cmd, CL_INCLUDE_DIR, "[ROOT]/third_party/tracy");
+			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TRACY_DLL);
+			AddArgNt(&cmd, CL_DEFINE, "TRACY_ENABLE");
+			AddArgNt(&cmd, CL_DEFINE, "TRACY_EXPORTS");
+			AddArgNt(&cmd, CL_CONFIGURE_EXCEPTION_HANDLING, "s"); //enable stack-unwinding
+			AddArgNt(&cmd, CL_CONFIGURE_EXCEPTION_HANDLING, "c"); //extern "C" functions don't through exceptions
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCppFlags);
+			AddArg(&cmd, CL_LINK);
+			AddArg(&cmd, LINK_BUILD_DLL);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
+			AssertFileExist(StrLit(FILENAME_TRACY_DLL), true);
+			PrintLine("[Built %s for Windows!]", FILENAME_TRACY_DLL);
+		}
+		if (BUILD_LINUX)
+		{
+			//TODO: Implement Linux version!
+		}
+	}
+	if (PROFILING_ENABLED) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_LIB); }
 	
 	// +--------------------------------------------------------------+
 	// |                       Build imgui.obj                        |

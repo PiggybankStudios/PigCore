@@ -146,6 +146,15 @@
 				"util/utf8.h",
 			],
 		},
+		{
+			"name": "Tracy",
+			"path": "third_party/tracy",
+			"file_exclude_patterns": [
+				"TracyClient.F90",
+				"LICENSE",
+				"*.hmm",
+			],
+		},
 	],
 	"settings":
 	{
