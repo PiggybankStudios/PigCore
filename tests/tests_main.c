@@ -558,6 +558,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main(int argc, char* argv[])
 #endif
 {
+	TracyCZoneN(Zone_Func, "main", true);
 	#if (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 	UNUSED(hInstance);
 	UNUSED(hPrevInstance);
@@ -1552,7 +1553,9 @@ int main(int argc, char* argv[])
 	}
 	#elif BUILD_WITH_SDL
 	{
+		TracyCZoneN(Zone_SDL_Init, "SDL_Init", true);
 		int initResult = SDL_Init(SDL_INIT_VIDEO);
+		TracyCZoneEnd(Zone_SDL_Init);
 		Assert(initResult >= 0);
 		SDL_Window* window = SDL_CreateWindow("Tests (SDL)", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, 0);
 		NotNull(window);
@@ -1563,6 +1566,8 @@ int main(int argc, char* argv[])
 		bool windowShouldClose = false;
 		while (!windowShouldClose)
 		{
+			TracyCFrameMark;
+			TracyCZoneN(Zone_Update, "Update", true);
 			SDL_SetRenderDrawColor(renderer, 96, 128, 255, 255);
 			SDL_RenderClear(renderer);
 			
@@ -1575,14 +1580,20 @@ int main(int argc, char* argv[])
 					default: break;
 				}
 			}
+			TracyCZoneEnd(Zone_Update);
 			
+			TracyCZoneN(Zone_Present, "Present", true);
 			SDL_RenderPresent(renderer);
+			TracyCZoneEnd(Zone_Present);
+			TracyCZoneN(Zone_Delay, "Delay", true);
 			SDL_Delay(16);
+			TracyCZoneEnd(Zone_Delay);
 		}
 	}
 	#endif
 	
 	WriteLine_I("All tests completed successfully!");
+	TracyCZoneEnd(Zone_Func);
 	return 0;
 }
 #endif //!RUN_FUZZER

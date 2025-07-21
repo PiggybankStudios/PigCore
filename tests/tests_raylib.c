@@ -24,6 +24,8 @@ void InitRaylibTests()
 
 void RunRaylibTests()
 {
+	TracyCZoneN(Zone_RaylibTests, "Raylib Tests", true);
+	
 	// +==============================+
 	// |      RayLib/Box2D Tests      |
 	// +==============================+
@@ -47,6 +49,8 @@ void RunRaylibTests()
 		
 		while (!WindowShouldClose())
 		{
+			TracyCFrameMark;
+			TracyCZoneN(Zone_Update, "Update", true);
 			v2i windowSize = NewV2i(GetRenderWidth(), GetRenderHeight());
 			
 			#if RAYLIB_3D
@@ -54,7 +58,9 @@ void RunRaylibTests()
 			if (IsKeyDown(KEY_Z)) { camera.target = NewVector3(0.0f, 0.0f, 0.0f); }
 			UpdateCamera(&camera, CAMERA_FIRST_PERSON);
 			#endif
+			TracyCZoneEnd(Zone_Update);
 			
+			TracyCZoneN(Zone_Draw, "Draw", true);
 			BeginDrawing();
 			ClearBackground(RAYWHITE);
 			
@@ -109,10 +115,13 @@ void RunRaylibTests()
 			#endif //RAYLIB_3D
 			
 			EndDrawing();
+			TracyCZoneEnd(Zone_Draw);
 		}
 		CloseWindow();
 	}
 	#endif //!BUILD_WITH_OPENVR
+	
+	TracyCZoneEnd(Zone_RaylibTests);
 }
 
 #endif //BUILD_WITH_RAYLIB

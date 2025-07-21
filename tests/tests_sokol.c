@@ -337,6 +337,8 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 // +--------------------------------------------------------------+
 bool AppFrame(void)
 {
+	TracyCFrameMark;
+	TracyCZoneN(Zone_Update, "Update", true);
 	bool frameRendered = true;
 	programTime += 16; //TODO: Calculate this!
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
@@ -397,6 +399,9 @@ bool AppFrame(void)
 	}
 	#endif
 	
+	TracyCZoneEnd(Zone_Update);
+	
+	TracyCZoneN(Zone_Draw, "Draw", true);
 	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
 	{
 		// +==============================+
@@ -623,8 +628,11 @@ bool AppFrame(void)
 		}
 	}
 	EndFrame();
+	TracyCZoneEnd(Zone_Draw);
 	
+	TracyCZoneN(Zone_Commit, "Commit", true);
 	sg_commit();
+	TracyCZoneEnd(Zone_Commit);
 	
 	// PrintLine_D("numPipelineChanges: %llu", gfx.numPipelineChanges);
 	// PrintLine_D("numBindingChanges: %llu", gfx.numBindingChanges);
@@ -642,6 +650,7 @@ bool AppFrame(void)
 // +--------------------------------------------------------------+
 void AppEvent(const sapp_event* event)
 {
+	TracyCZoneN(Zone_Func, "AppEvent", true);
 	bool handledEvent = HandleSokolKeyboardAndMouseEvents(event, programTime, NewV2i(sapp_width(), sapp_height()), &keyboard, &mouse, sapp_mouse_locked());
 	
 	if (!handledEvent)
@@ -674,6 +683,8 @@ void AppEvent(const sapp_event* event)
 			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
 		}
 	}
+	
+	TracyCZoneEnd(Zone_Func);
 }
 
 // +--------------------------------------------------------------+
@@ -681,13 +692,14 @@ void AppEvent(const sapp_event* event)
 // +--------------------------------------------------------------+
 sapp_desc sokol_main(int argc, char* argv[])
 {
+	TracyCZoneN(Zone_Func, "sokol_main", true);
 	//NOTE: The App callbacks may happen on a different thread than this one!
 	UNUSED(argc);
 	UNUSED(argv);
 	
 	MyMain(argc, argv); //call MyMain to initialize arenas and whatnot
 	
-	return (sapp_desc){
+	sapp_desc result = {
 		.init_cb = AppInit,
 		.frame_cb = AppFrame,
 		.cleanup_cb = AppCleanup,
@@ -698,6 +710,9 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.icon.sokol_default = true,
 		.logger.func = SokolLogCallback,
 	};
+	
+	TracyCZoneEnd(Zone_Func);
+	return result;
 }
 
 #endif //BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP

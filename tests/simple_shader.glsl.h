@@ -359,16 +359,16 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
 #define simple_SHADER_ATTR_DEFS { \
 	{ .name="position", .index=ATTR_simple_position }, \
 	{ .name="color0", .index=ATTR_simple_color0 }, \
-} // These should match ShaderAttributeDef struct found in gfx_shader.h
+} // These should match ShaderAttributeDef plex found in gfx_shader.h
 #define simple_SHADER_IMAGE_COUNT 0
 #define simple_SHADER_IMAGE_DEFS { \
 	{ .name=NO_ENTRIES_STR, .index=0 } \
-} // These should match ShaderImageDef struct found in gfx_shader.h
+} // These should match ShaderImageDef plex found in gfx_shader.h
 #define simple_SHADER_SAMPLER_COUNT 0
 #define simple_SHADER_SAMPLER_DEFS { \
 	{ .name=NO_ENTRIES_STR, .index=0 } \
-} // These should match ShaderSamplerDef struct found in gfx_shader.h
+} // These should match ShaderSamplerDef plex found in gfx_shader.h
 #define simple_SHADER_UNIFORM_COUNT 0
 #define simple_SHADER_UNIFORM_DEFS { \
 	{ .name=NO_ENTRIES_STR, .blockIndex=0, .offset=0 } \
-} // These should match ShaderUniformDef struct found in gfx_shader.h
+} // These should match ShaderUniformDef plex found in gfx_shader.h
