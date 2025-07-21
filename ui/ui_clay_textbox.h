@@ -178,6 +178,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	
 	if (tbox->isFocused != *isFocused) { tbox->isFocused = *isFocused; }
 	if (!tbox->isFocused && tbox->draggingWithMouse) { tbox->draggingWithMouse = false; }
+	if (!tbox->isFocused && tbox->cursorActive && tbox->cursorEnd != tbox->cursorStart) { tbox->cursorStart = tbox->cursorEnd; }
 	
 	// +==============================+
 	// | Mouse Click Selects Textbox  |
@@ -190,19 +191,17 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 			{
 				tbox->isFocused = true;
 				*isFocused = true;
-				UiTextboxSelectAll(tbox);
 			}
-			else
-			{
-				tbox->cursorEnd = UiTextboxFindClosestIndexToPos(tbox, mouse->position);
-				tbox->cursorStart = tbox->cursorEnd;
-				tbox->cursorMoved = true;
-				tbox->draggingWithMouse = true;
-			}
+			
+			tbox->cursorActive = true;
+			tbox->cursorEnd = UiTextboxFindClosestIndexToPos(tbox, mouse->position);
+			tbox->cursorStart = tbox->cursorEnd;
+			tbox->cursorMoved = true;
+			tbox->draggingWithMouse = true;
 		}
 		else { tbox->isFocused = false; *isFocused = false; }
 	}
-	
+	//TODO: Handle scrolling left/right when dragging
 	if (tbox->draggingWithMouse)
 	{
 		if (IsMouseBtnDown(mouse, MouseBtn_Left))
@@ -226,6 +225,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	// +==============================+
 	//TODO: Handle Ctrl
 	//TODO: Handle Alt
+	//TODO: Handle key repeats
 	if (tbox->isFocused)
 	{
 		if (IsKeyboardKeyPressed(keyboard, Key_Left))
@@ -240,8 +240,9 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 				}
 				else if (tbox->cursorEnd > 0)
 				{
-					//TODO: Walk left in UTF8 byte stream
-					tbox->cursorEnd--;
+					u8 prevCodepointSize = GetPrevCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
+					if (prevCodepointSize == 0) { prevCodepointSize = 1; }
+					tbox->cursorEnd -= prevCodepointSize;
 					if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
 					tbox->cursorMoved = true;
 				}
@@ -268,6 +269,39 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 				}
 			}
 			else { tbox->cursorEnd = tbox->text.length; tbox->cursorStart = tbox->cursorEnd; tbox->cursorMoved = true; }
+		}
+	}
+	
+	// +==============================+
+	// |       Handle Home/End        |
+	// +==============================+
+	if (tbox->isFocused)
+	{
+		if (IsKeyboardKeyPressed(keyboard, Key_Home))
+		{
+			tbox->cursorEnd = 0;
+			if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
+			tbox->cursorMoved = true;
+		}
+		if (IsKeyboardKeyPressed(keyboard, Key_End))
+		{
+			tbox->cursorEnd = tbox->text.length;
+			if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
+			tbox->cursorMoved = true;
+		}
+	}
+	
+	// +==============================+
+	// |        Handle Ctrl+A         |
+	// +==============================+
+	if (tbox->isFocused && IsKeyboardKeyPressed(keyboard, Key_A) && IsKeyboardKeyDown(keyboard, Key_Control))
+	{
+		if (!tbox->cursorActive || tbox->cursorStart != 0 || tbox->cursorEnd != tbox->text.length)
+		{
+			tbox->cursorActive = true;
+			tbox->cursorStart = 0;
+			tbox->cursorEnd = tbox->text.length;
+			tbox->cursorMoved = true;
 		}
 	}
 	
@@ -313,6 +347,8 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	// +==============================+
 	// | Handle Backspace and Delete  |
 	// +==============================+
+	//TODO: Handle Ctrl
+	//TODO: Handle key repeats
 	if (tbox->isFocused && tbox->cursorActive)
 	{
 		if (tbox->cursorEnd != tbox->cursorStart &&
@@ -337,11 +373,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	//TODO: Update horizontal scroll
 	//TODO: Follow cursor movements when cursor leaves viewable area
 	//TODO: Handle copy/paste/cut to/from clipboard
-	//TODO: Handle Backspace/Delete keys
-	//TODO: Mouse LeftClick (w/ drag + auto-scroll when dragging)
-	//TODO: Ctrl+A to select all
 	//TODO: Double/Triple Click to Select Word/Line
-	//TODO: Home/End to move cursor (Ctrl)
 	
 	u16 fontId = GetClayUIRendererFontId(renderer, font, fontStyle);
 	FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);

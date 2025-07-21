@@ -220,7 +220,7 @@ PEXP u8 GetPrevCodepointForUtf8(u64 numBytesBeforePntr, const char* strEndPntr, 
 {
 	// The first byte is rather special in a UTF-8 character, we will call it a "prefix byte" but it probably technically should be called something like "non-continuation" byte
 	u8 codepointSize = 0;
-	for (u8 bIndex = 1; bIndex <= UTF8_MAX_CHAR_SIZE && bIndex < numBytesBeforePntr; bIndex++)
+	for (u8 bIndex = 1; bIndex <= UTF8_MAX_CHAR_SIZE && bIndex <= numBytesBeforePntr; bIndex++)
 	{
 		u8 prevByte = *(((const u8*)strEndPntr) - bIndex);
 		if (prevByte <= 127) //single byte
