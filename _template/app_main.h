@@ -13,6 +13,9 @@ struct AppData
 	bool initialized;
 	RandomSeries random;
 	AppResources resources;
+	#if BUILD_WITH_IMGUI
+	ImguiUI* imgui;
+	#endif
 };
 
 #endif //  _APP_MAIN_H

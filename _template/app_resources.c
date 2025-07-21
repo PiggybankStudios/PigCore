@@ -14,6 +14,7 @@ Description:
 
 void InitAppResources(AppResources* resources)
 {
+	TracyCZoneN(Zone_Func, "InitAppResources", true);
 	NotNull(resources);
 	ClearPointer(resources);
 	resources->isLoadingFromDisk = (USE_BUNDLED_RESOURCES == 0);
@@ -23,28 +24,32 @@ void InitAppResources(AppResources* resources)
 	if (openResult != Result_Success) { PrintLine_E("Failed to parse builtin zip file %llu bytes as zip archive: %s", zipFileContents.length, GetResultStr(openResult)); }
 	Assert(openResult == Result_Success);
 	#endif
+	TracyCZoneEnd(Zone_Func);
 }
 
 //TODO: This returns a null-terminated fileContents when using OsReadFile but NOT when using ReadZipArchiveFileAtIndex. That's annoying for the calling code to handle when freeing!
 Result TryReadAppResource(AppResources* resources, Arena* arena, FilePath path, bool convertNewLines, Slice* fileContentsOut)
 {
+	TracyCZoneN(Zone_Func, "TryReadAppResource", true);
 	NotNull(resources);
 	Assert(arena != nullptr || fileContentsOut == nullptr);
 	NotNullStr(path);
 	#if USE_BUNDLED_RESOURCES
 	{
 		if (StrAnyCaseStartsWith(path, StrLit("resources/"))) { path = StrSliceFrom(path, 10); }
-		else { return Result_WrongFolder; }
+		else { TracyCZoneEnd(Zone_Func); return Result_WrongFolder; }
 		
 		uxx zipFileIndex = 0;
 		if (FindZipArchiveFileNamed(&resources->zipFile, path, &zipFileIndex))
 		{
-			if (fileContentsOut == nullptr) { return Result_Success; }
+			if (fileContentsOut == nullptr) { TracyCZoneEnd(Zone_Func); return Result_Success; }
 			*fileContentsOut = ReadZipArchiveFileAtIndex(&resources->zipFile, arena, zipFileIndex, convertNewLines);
+			TracyCZoneEnd(Zone_Func);
 			return Result_Success;
 		}
 		else
 		{
+			TracyCZoneEnd(Zone_Func);
 			return Result_FailedToReadFile;
 		}
 	}
@@ -53,10 +58,12 @@ Result TryReadAppResource(AppResources* resources, Arena* arena, FilePath path, 
 		if (fileContentsOut != nullptr)
 		{
 			bool readSuccess = OsReadFile(path, arena, convertNewLines, fileContentsOut);
+			TracyCZoneEnd(Zone_Func);
 			return readSuccess ? Result_Success : Result_FailedToReadFile;
 		}
 		else
 		{
+			TracyCZoneEnd(Zone_Func);
 			return OsDoesFileExist(path) ? Result_Success : Result_FailedToReadFile;
 		}
 	}

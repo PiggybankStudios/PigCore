@@ -19,12 +19,15 @@ popd
 
 COPY core\_template\build_config.h build_config.h
 COPY core\_template\build.bat build.bat
+COPY core\_template\build_script.c build_script.c
 COPY core\_template\.gitignore .gitignore
 COPY core\_template\NewPigCoreProject.sublime-project NewPigCoreProject.sublime-project
 COPY core\_template\defines.h app\defines.h
 COPY core\_template\app_main.h app\app_main.h
 COPY core\_template\app_main.c app\app_main.c
 COPY core\_template\app_helpers.c app\app_helpers.c
+COPY core\_template\app_resources.c app\app_resources.c
+COPY core\_template\app_resources.h app\app_resources.h
 COPY core\_template\platform_interface.h app\platform_interface.h
 COPY core\_template\platform_main.h app\platform_main.h
 COPY core\_template\platform_main.c app\platform_main.c

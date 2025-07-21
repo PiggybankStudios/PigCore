@@ -95,6 +95,7 @@ void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, 
 // void* AppInit(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi)
 EXPORT_FUNC APP_INIT_DEF(AppInit)
 {
+	TracyCZoneN(Zone_Func, "AppInit", true);
 	#if !BUILD_INTO_SINGLE_UNIT
 	InitScratchArenasVirtual(Gigabytes(4));
 	#endif
@@ -120,6 +121,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);
+	TracyCZoneEnd(Zone_Func);
 	return (void*)app;
 }
 
@@ -129,6 +131,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 // bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
 EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 {
+	TracyCZoneN(Zone_Func, "AppUpdate", true);
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
@@ -143,6 +146,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);
+	TracyCZoneEnd(Zone_Func);
 	return renderedFrame;
 }
 

@@ -37,6 +37,7 @@
 				"build.bat",
 				"build.sh",
 				"build_config.h",
+				"build_script.c",
 			],
 		},
 		{
