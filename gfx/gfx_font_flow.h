@@ -352,7 +352,7 @@ PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styl
 	NotNull(flowOut);
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
-	state.position = V2_Zero_Const;
+	state.position = V2_Zero;
 	state.startFontSize = fontSize;
 	state.startFontStyle = styleFlags;
 	state.text = text;
@@ -411,7 +411,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	ScratchBegin(scratch);
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
-	state.position = V2_Zero_Const;
+	state.position = V2_Zero;
 	state.startFontSize = fontSize;
 	state.startFontStyle = styleFlags;
 	state.text = ToRichStr(text);
