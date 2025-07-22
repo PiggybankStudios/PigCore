@@ -134,6 +134,7 @@ plex FontFlowCallbacks
 	PIG_CORE_INLINE Str8 ShortenTextStartToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
 	PIG_CORE_INLINE Str8 ShortenTextEndToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
 	PIG_CORE_INLINE Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, FilePath filePath, r32 maxWidth, Str8 ellipsesStr);
+	PIG_CORE_INLINE void ResetFontFlowInfo(FontFlow* flow);
 #endif
 
 // +--------------------------------------------------------------+
@@ -163,9 +164,9 @@ static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks*
 	NotNull(currentAtlas);
 	rec highlightRec = NewRec(
 		state->highlightStartPos.X,
-		state->highlightStartPos.Y - currentAtlas->centerOffset - currentAtlas->lineHeight/2.0f,
+		state->highlightStartPos.Y - currentAtlas->centerOffset - currentAtlas->lineHeight/2.0f - 1,
 		state->position.X - state->highlightStartPos.X,
-		currentAtlas->lineHeight
+		currentAtlas->lineHeight+2
 	);
 	AlignRecToV2(&highlightRec, state->alignPixelSize);
 	if (callbacks != nullptr && callbacks->drawHighlight != nullptr)
@@ -509,6 +510,16 @@ PEXPI Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, r32 font
 	uxx fileNameStartIndex = (uxx)(fileNamePart.chars - filePath.chars);
 	uxx ellipsesIndex = fileNameStartIndex / 2;
 	return ShortenTextToFitWidth(arena, font, fontSize, styleFlags, filePath, maxWidth, ellipsesStr, ellipsesIndex);
+}
+
+PEXPI void ResetFontFlowInfo(FontFlow* flow)
+{
+	NotNull(flow);
+	uxx numGlyphsAlloc = flow->numGlyphsAlloc;
+	FontFlowGlyph* glyphs = flow->glyphs;
+	ClearPointer(flow);
+	flow->numGlyphsAlloc = numGlyphsAlloc;
+	flow->glyphs = glyphs;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

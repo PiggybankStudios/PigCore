@@ -153,6 +153,8 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +===============================+
 			case CLAY_RENDER_COMMAND_TYPE_TEXT:
 			{
+				// GfxSystem_DrawRectangle(system, drawRec, ColorWithAlpha(MonokaiPurple, 0.5f));
+				
 				uxx scratchMark = ArenaGetMark(scratch);
 				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
 				RichStr richText = DecodeStrToRichStr(scratch, text);
@@ -170,11 +172,12 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					richText.numPieces > 1) //TODO: We don't support ellipses style contractions with RichStr right now!
 				{
 					rec textClipRec = NewRec(
-						FloorR32(drawRec.X),
-						FloorR32(drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset - fontAtlas->maxAscend),
-						CeilR32(drawRec.Width),
-						CeilR32(fontAtlas->maxAscend + fontAtlas->maxDescend)
+						drawRec.X,
+						drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset - fontAtlas->maxAscend,
+						drawRec.Width,
+						fontAtlas->lineHeight
 					);
+					AlignRec(&textClipRec);
 					if (command->renderData.text.userData.contraction == TextContraction_ClipLeft)
 					{
 						TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, richText);
@@ -183,7 +186,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 							textOffset.X -= (measure.Width - drawRec.Width);
 						}
 					}
-					// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(White, 0.2f));
+					// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(MonokaiPurple, 0.2f));
 					oldClipRec = GfxSystem_AddClipRec(system, ToReciFromf(textClipRec));
 				}
 				else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft)
@@ -227,6 +230,8 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					: &system->prevFontFlow;
 				
 				Result drawResult = DoFontFlow(&state, &callbacks, flowTarget);
+				
+				// GfxSystem_DrawRectangle(system, NewRecV(textPos, V2_One), MonokaiRed);
 				
 				Assert(drawResult == Result_Success || drawResult == Result_InvalidUtf8);
 				UNUSED(drawResult);
@@ -291,6 +296,10 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +==================================+
 			case CLAY_RENDER_COMMAND_TYPE_BORDER:
 			{
+				//NOTE: In order to make sure the border is shown properly we need to floor the width/height to whole numbers that are definitely within the bounds of the clip rectangle for the element
+				drawRec.Width = FloorR32(drawRec.Width);
+				drawRec.Height = FloorR32(drawRec.Height);
+				
 				Color32 drawColor = command->renderData.border.color;
 				if (command->renderData.border.cornerRadius.topLeft != 0 ||
 					command->renderData.border.cornerRadius.topRight != 0 ||

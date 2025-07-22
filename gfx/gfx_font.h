@@ -551,7 +551,10 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i
 	stbtt_GetFontVMetrics(&font->ttfInfo, &ascent, &descent, &lineGap);
 	newAtlas->maxAscend = (r32)ascent * newAtlas->fontScale;
 	newAtlas->maxDescend = (r32)(-descent) * newAtlas->fontScale;
+	newAtlas->lineHeight = newAtlas->maxAscend + newAtlas->maxDescend + ((r32)lineGap * newAtlas->fontScale);
 	
+	//TODO: This is sort of a hack and causes problems with things like highlight/clip rectangles that need to really encompass the true maxAscend
+	//      So for now we are going to only use this value to inform the centerOffset
 	//The ascent value returned by GetFontVMetrics is often way higher than all the characters we normally print
 	//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
 	//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
@@ -559,11 +562,9 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i
 	int getBoxResult = stbtt_GetCodepointBox(&font->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
 	if (getBoxResult > 0)
 	{
-		newAtlas->maxAscend = MinR32(newAtlas->maxAscend, (r32)wBoxY1 * newAtlas->fontScale);
+		r32 pretendMaxAscend = MinR32(newAtlas->maxAscend, (r32)wBoxY1 * newAtlas->fontScale);
+		newAtlas->centerOffset = pretendMaxAscend / 2.0f;
 	}
-	
-	newAtlas->lineHeight = newAtlas->maxAscend + newAtlas->maxDescend + ((r32)lineGap * newAtlas->fontScale);
-	newAtlas->centerOffset = newAtlas->maxAscend / 2.0f;
 	
 	InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
 	InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numGlyphsTotal);

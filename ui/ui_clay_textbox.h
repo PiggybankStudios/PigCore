@@ -66,7 +66,7 @@ plex UiTextbox
 	PIG_CORE_INLINE void UiTextboxDeleteBytes(UiTextbox* tbox, uxx startIndex, uxx numBytes);
 	PIG_CORE_INLINE void UiTextboxDeleteSelected(UiTextbox* tbox);
 	PIG_CORE_INLINE uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos);
-	void DoUiTextbox(UiTextbox* tbox, ClayUIRenderer* renderer, Arena* uiArena, const KeyboardState* keyboard, const MouseState* mouse, bool* isFocused, PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale);
+	void DoUiTextbox(UiTextbox* tbox, ClayUIRenderer* renderer, Arena* uiArena, const KeyboardState* keyboard, const MouseState* mouse, UiTextbox** focusedTextbox, PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale);
 #endif
 
 // +--------------------------------------------------------------+
@@ -165,7 +165,7 @@ PEXPI uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos)
 
 PEXP void DoUiTextbox(UiTextbox* tbox,
 	ClayUIRenderer* renderer, Arena* uiArena,
-	KeyboardState* keyboard, MouseState* mouse, bool* isFocused,
+	KeyboardState* keyboard, MouseState* mouse, UiTextbox** focusedTextbox,
 	PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale)
 {
 	NotNull(tbox);
@@ -174,9 +174,18 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	NotNull(uiArena);
 	NotNull(keyboard);
 	NotNull(mouse);
-	NotNull(isFocused);
+	NotNull(focusedTextbox);
 	
-	if (tbox->isFocused != *isFocused) { tbox->isFocused = *isFocused; }
+	if (tbox->isFocused != ((*focusedTextbox) == tbox))
+	{
+		tbox->isFocused = ((*focusedTextbox) == tbox);
+		if (!tbox->cursorActive)
+		{
+			tbox->cursorActive = true;
+			tbox->cursorStart = tbox->text.length;
+			tbox->cursorEnd = tbox->cursorStart;
+		}
+	}
 	if (!tbox->isFocused && tbox->draggingWithMouse) { tbox->draggingWithMouse = false; }
 	if (!tbox->isFocused && tbox->cursorActive && tbox->cursorEnd != tbox->cursorStart) { tbox->cursorStart = tbox->cursorEnd; }
 	
@@ -190,7 +199,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 			if (!tbox->isFocused)
 			{
 				tbox->isFocused = true;
-				*isFocused = true;
+				(*focusedTextbox) = tbox;
 			}
 			
 			tbox->cursorActive = true;
@@ -199,7 +208,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 			tbox->cursorMoved = true;
 			tbox->draggingWithMouse = true;
 		}
-		else { tbox->isFocused = false; *isFocused = false; }
+		else if (tbox->isFocused) { tbox->isFocused = false; (*focusedTextbox) = nullptr; }
 	}
 	//TODO: Handle scrolling left/right when dragging
 	if (tbox->draggingWithMouse)
@@ -217,7 +226,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	if (tbox->isFocused && IsKeyboardKeyPressed(keyboard, Key_Escape))
 	{
 		tbox->isFocused = false;
-		*isFocused = false;
+		(*focusedTextbox) = nullptr;
 	}
 	
 	// +==============================+
@@ -340,14 +349,14 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 					
 					VarArrayAddMulti(char, &tbox->textBuffer, codepointSize);
 					tbox->text.chars = (char*)tbox->textBuffer.items;
-					tbox->text.length += codepointSize;
 					
-					if (tbox->cursorStart < tbox->text.length)
+					if (tbox->cursorEnd < tbox->text.length)
 					{
-						uxx numCharsToMove = tbox->text.length - tbox->cursorStart;
-						MyMemMove(&tbox->text.chars[tbox->text.length - numCharsToMove], &tbox->text.chars[tbox->cursorStart], numCharsToMove);
+						uxx numCharsToMove = tbox->text.length - tbox->cursorEnd;
+						MyMemMove(&tbox->text.chars[tbox->cursorEnd + codepointSize], &tbox->text.chars[tbox->cursorEnd], numCharsToMove);
 					}
-					MyMemCopy(&tbox->text.chars[tbox->cursorStart], &utf8Bytes[0], codepointSize);
+					MyMemCopy(&tbox->text.chars[tbox->cursorEnd], &utf8Bytes[0], codepointSize);
+					tbox->text.length += codepointSize;
 					tbox->cursorStart += codepointSize;
 					tbox->cursorEnd += codepointSize;
 					tbox->textChanged = true;
@@ -405,13 +414,25 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	
 	rec textboxRec = GetClayElementDrawRec(tbox->id);
 	v2 cursorRelativePos = Sub(tbox->flow.endPos, textboxRec.TopLeft);
-	for (uxx gIndex = 0; gIndex < tbox->flow.numGlyphs; gIndex++)
+	if (tbox->text.length == 0)
 	{
-		FontFlowGlyph* glyph = &tbox->flow.glyphs[gIndex];
-		if (glyph->byteIndex == tbox->cursorEnd)
+		//When there is no text being rendered, we need to figure out the start position of the text
+		cursorRelativePos = NewV2(
+			(r32)UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X),
+			textboxRec.Height/2 + fontAtlas->centerOffset
+		);
+		AlignV2(&cursorRelativePos);
+	}
+	else
+	{
+		for (uxx gIndex = 0; gIndex < tbox->flow.numGlyphs; gIndex++)
 		{
-			cursorRelativePos = Sub(glyph->position, textboxRec.TopLeft);
-			break;
+			FontFlowGlyph* glyph = &tbox->flow.glyphs[gIndex];
+			if (glyph->byteIndex == tbox->cursorEnd)
+			{
+				cursorRelativePos = Sub(glyph->position, textboxRec.TopLeft);
+				break;
+			}
 		}
 	}
 	
@@ -425,14 +446,19 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 				UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X), UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X),
 				UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_Y), UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_Y),
 			},
+			.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+			.layoutDirection = CLAY_TOP_TO_BOTTOM,
 		},
+		.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(uiScale, 5)),
 		.border = {
 			.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(uiScale, 1)),
-			.color = MonokaiRed,
+			.color = MonokaiLightGray,
 		},
-		.backgroundColor = MonokaiBack,
+		.backgroundColor = MonokaiDarkGray,
 	})
 	{
+		//TODO: Use an RichStrEncode function here, this function would solve our escaping issues
+		//      Alternatively we should just pass RichStr as the primary str type for Clay
 		Str8 displayText;
 		if (tbox->cursorEnd != tbox->cursorStart)
 		{
@@ -450,7 +476,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 		}
 		
 		CLAY_TEXT(
-			displayText, //TODO: Encode RichStr here to get text selection working
+			displayText,
 			CLAY_TEXT_CONFIG({
 				.fontId = fontId,
 				.fontSize = (u16)fontSize,
@@ -465,7 +491,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 			})
 		);
 		
-		if (tbox->isFocused)
+		if (tbox->isFocused && tbox->cursorActive)
 		{
 			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(uiScale, -1), fontAtlas->maxDescend - fontAtlas->lineHeight));
 			CLAY({.id = ToClayIdPrint("%.*sCursor", StrPrint(tbox->idStr)),
@@ -485,6 +511,8 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 			}) {}
 		}
 	}
+	
+	ResetFontFlowInfo(&tbox->flow);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
