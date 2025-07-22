@@ -65,6 +65,8 @@ plex UiTextbox
 	PIG_CORE_INLINE void UiTextboxSelectAll(UiTextbox* tbox);
 	PIG_CORE_INLINE void UiTextboxDeleteBytes(UiTextbox* tbox, uxx startIndex, uxx numBytes);
 	PIG_CORE_INLINE void UiTextboxDeleteSelected(UiTextbox* tbox);
+	PIG_CORE_INLINE void UiTextboxClear(UiTextbox* tbox);
+	PIG_CORE_INLINE void UiTextboxSetText(UiTextbox* tbox, Str8 text);
 	PIG_CORE_INLINE uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos);
 	void DoUiTextbox(UiTextbox* tbox, ClayUIRenderer* renderer, Arena* uiArena, const KeyboardState* keyboard, const MouseState* mouse, UiTextbox** focusedTextbox, PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale);
 #endif
@@ -133,7 +135,6 @@ PEXPI void UiTextboxDeleteBytes(UiTextbox* tbox, uxx startIndex, uxx numBytes)
 	tbox->textChanged = true;
 	tbox->cursorMoved = true;
 }
-
 PEXPI void UiTextboxDeleteSelected(UiTextbox* tbox)
 {
 	NotNull(tbox);
@@ -143,6 +144,28 @@ PEXPI void UiTextboxDeleteSelected(UiTextbox* tbox)
 		uxx cursorMin = MinUXX(tbox->cursorStart, tbox->cursorEnd);
 		uxx cursorMax = MaxUXX(tbox->cursorStart, tbox->cursorEnd);
 		UiTextboxDeleteBytes(tbox, cursorMin, cursorMax - cursorMin);
+	}
+}
+PEXPI void UiTextboxClear(UiTextbox* tbox)
+{
+	UiTextboxDeleteBytes(tbox, 0, tbox->text.length);
+}
+
+PEXPI void UiTextboxSetText(UiTextbox* tbox, Str8 text)
+{
+	NotNull(tbox);
+	if (StrExactEquals(tbox->text, text)) { return; }
+	VarArrayExpand(&tbox->textBuffer, text.length);
+	tbox->textBuffer.length = text.length;
+	tbox->text.chars = (char*)tbox->textBuffer.items;
+	tbox->text.length = text.length;
+	if (text.length > 0) { MyMemCopy(tbox->text.chars, text.chars, text.length); }
+	tbox->textChanged = true;
+	if (tbox->cursorActive && (tbox->cursorEnd != tbox->text.length || tbox->cursorStart != tbox->text.length))
+	{
+		tbox->cursorEnd = tbox->text.length;
+		tbox->cursorStart = tbox->cursorEnd;
+		tbox->cursorMoved = true;
 	}
 }
 
