@@ -22,12 +22,12 @@ Date:   02\16\2025
 #include "input/input_btn_state.h"
 #include "input/input_mouse_btns.h"
 #include "struct/struct_vectors.h"
+#include "gfx/gfx_clay_renderer.h"
+#include "gfx/gfx_font.h"
 
 #include "ui/ui_clay_listview.h"
 
 #include "struct/struct_var_array.h"
-#include "gfx/gfx_clay_renderer.h"
-#include "gfx/gfx_font.h"
 #include "gfx/gfx_font_flow.h"
 
 #include "ui/ui_clay_textbox.h"

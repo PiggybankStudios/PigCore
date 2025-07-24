@@ -114,7 +114,7 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 	if (imageData != nullptr)
 	{
 		Assert(imageWidth > 0 && imageHeight > 0);
-		// PrintLine_D("imageData: %p %dx%d", imageData, imageWidth, imageHeight);
+		// PrintLine_D("imageData: %p %dx%d (%llu pixels)", imageData, imageWidth, imageHeight, (uxx)(imageWidth * imageHeight));
 		
 		ClearPointer(imageDataOut);
 		imageDataOut->size = NewV2i(imageWidth, imageHeight);

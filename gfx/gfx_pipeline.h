@@ -93,7 +93,29 @@ plex GfxPipeline
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI bool AreEqualGfxPipelineOptions(const GfxPipelineOptions* left, const GfxPipelineOptions* right) { return MyMemEquals(left, right, sizeof(GfxPipelineOptions)); }
+PEXPI bool AreEqualGfxPipelineOptions(const GfxPipelineOptions* left, const GfxPipelineOptions* right)
+{
+	#if 1
+	if (left->shader != right->shader) { return false; }
+	if (left->vertexSize != right->vertexSize) { return false; }
+	if (left->numVertAttributes != right->numVertAttributes) { return false; }
+	for (uxx aIndex = 0; aIndex < left->numVertAttributes; aIndex++)
+	{
+		if (left->vertAttributes[aIndex].type != right->vertAttributes[aIndex].type) { return false; }
+		if (left->vertAttributes[aIndex].size != right->vertAttributes[aIndex].size) { return false; }
+		if (left->vertAttributes[aIndex].offset != right->vertAttributes[aIndex].offset) { return false; }
+	}
+	if (left->colorWriteEnabled != right->colorWriteEnabled) { return false; }
+	if (left->depthWriteEnabled != right->depthWriteEnabled) { return false; }
+	if (left->depthTestEnabled != right->depthTestEnabled) { return false; }
+	if (left->cullingEnabled != right->cullingEnabled) { return false; }
+	if (left->indexedVerticesSize != right->indexedVerticesSize) { return false; }
+	if (left->blendMode != right->blendMode) { return false; }
+	return true;
+	#else
+	return MyMemEquals(left, right, sizeof(GfxPipelineOptions));
+	#endif
+}
 
 PEXP void FreeGfxPipeline(GfxPipeline* pipeline)
 {

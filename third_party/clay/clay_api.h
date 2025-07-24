@@ -63,7 +63,8 @@ CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId);
 // The returned Clay_ScrollContainerData contains a `found` bool that will be true if a scroll element was found with the provided ID.
 // An imperative function that returns true if the pointer position provided by Clay_SetPointerState is within the element with the provided ID's bounding box.
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
-CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id);
+// NOTE: If getConfig is true then Clay_GetScrollContainerData must be called AFTER the container has been declared this frame!
+CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id, bool getConfig);
 // Binds a callback function that Clay will call to determine the dimensions of a given string slice.
 // - measureTextFunction is a user provided function that adheres to the interface v2 (Str8 text, Clay_TextElementConfig* config, CLAY_MEASURE_USERDATA_TYPE userData);
 // - userData is a pointer that will be transparently passed through when the measureTextFunction is called.

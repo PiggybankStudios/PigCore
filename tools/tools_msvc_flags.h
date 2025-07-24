@@ -40,6 +40,7 @@ Description:
 #define CL_PRECOMPILE_ONLY                  "/P"
 #define CL_PRECOMPILE_PRESERVE_COMMENTS     "/C"
 #define CL_ENABLE_FUZZER                    "/fsanitize=fuzzer"
+#define CL_ENABLE_ADDRESS_SANATIZER         "/fsanitize=address"
 #define CL_ENABLE_BUFFER_SECURITY_CHECK     "/GS" //Detects some buffer overruns that overwrite a function's return address, exception handler address, or certain types of parameters
 #define CL_DISABLE_MINIMAL_REBUILD          "/Gm-" //Disables minimal rebuild (a deprecated feature), which determines whether C++ source files that include changed C++ class definitions (stored in header (.h) files) need to be recompiled.
 #define CL_ENABLE_RUNTIME_CHECKS            "/RTC[VAL]" //1 = Enable fast runtime checks (Equivalent to `/RTCsu`)

@@ -456,7 +456,7 @@ CLAY_DECOR bool Clay_PointerOver(Clay_ElementId elementId) // TODO return priori
 }
 
 WASM_EXPORT("Clay_GetScrollContainerData")
-CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id)
+CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id, bool getConfig)
 {
 	Clay_Context* context = Clay_GetCurrentContext();
 	for (uxx sIndex = 0; sIndex < context->scrollContainerDatas.length; ++sIndex)
@@ -464,15 +464,16 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
 		Clay__ScrollContainerDataInternal* scrollContainerData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, sIndex);
 		if (scrollContainerData->elementId == id.id)
 		{
-			Clay_ScrollElementConfig* scrollConfig = Clay__FindElementConfigWithType(scrollContainerData->layoutElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig;
-			if (scrollConfig != nullptr)
+			//TODO: Remove the usage of layoutElement, and don't return scrollConfig? Or make sure that layoutElement comes from this frame before passing it back to the calling code?
+			Clay_ScrollElementConfig* scrollConfig = getConfig ? Clay__FindElementConfigWithType(scrollContainerData->layoutElement, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig : nullptr;
+			if (!getConfig || scrollConfig != nullptr)
 			{
 				return NEW_STRUCT(Clay_ScrollContainerData) {
 					.scrollTarget = &scrollContainerData->scrollTarget,
 					.scrollPosition = &scrollContainerData->scrollPosition,
 					.scrollContainerDimensions = NewV2(scrollContainerData->boundingBox.Width, scrollContainerData->boundingBox.Height),
 					.contentDimensions = scrollContainerData->contentSize,
-					.config = *scrollConfig,
+					.config = (scrollConfig != nullptr ? *scrollConfig : NEW_STRUCT(Clay_ScrollElementConfig) ZEROED),
 					.found = true
 				};
 			}

@@ -517,7 +517,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 		if (tbox->isFocused && tbox->cursorActive)
 		{
 			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(uiScale, -1), fontAtlas->maxDescend - fontAtlas->lineHeight));
-			CLAY({.id = ToClayIdPrint("%.*sCursor", StrPrint(tbox->idStr)),
+			CLAY({.id = ToClayIdPrint(uiArena, "%.*sCursor", StrPrint(tbox->idStr)),
 				.backgroundColor = MonokaiYellow, //TODO: Change this color
 				.layout = {
 					.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 2)), .height = CLAY_SIZING_FIXED(fontAtlas->lineHeight) },
