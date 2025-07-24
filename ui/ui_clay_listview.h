@@ -35,7 +35,8 @@ plex UiListView
 	uxx selectionIndex; //this is only accurate after DoUiListView is called if no changes were made to the items list, otherwise use selectedIdStr as a true indicator of which item is selected
 	void* contextPntr;
 	
-	bool dragginScrollbar;
+	bool draggingScrollbar;
+	bool isDraggingSmooth;
 	v2 scrollbarGrabOffset;
 };
 
@@ -101,6 +102,48 @@ PEXP void DoUiListView(UiListView* list,
 	ClayId innerContainerId = ToClayIdPrint(uiArena, "%.*s_Inner", StrPrint(list->idStr));
 	ClayId gutterId = ToClayIdPrint(uiArena, "%.*s_ScrollGutter", StrPrint(list->idStr));
 	ClayId scrollbarId = ToClayIdPrint(uiArena, "%.*s_ScrollBar", StrPrint(list->idStr));
+	rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
+	Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(innerContainerId, false);
+	bool isScrollbarHovered = (mouse->isOverWindow && Clay_PointerOver(scrollbarId));
+	bool clickedInScrollArea = false;
+	
+	if (IsMouseBtnPressed(mouse, MouseBtn_Left) && mouse->isOverWindow && !list->draggingScrollbar)
+	{
+		if (isScrollbarHovered)
+		{
+			list->draggingScrollbar = true;
+			list->isDraggingSmooth = false;
+			list->scrollbarGrabOffset = SubV2(mouse->position, scrollbarDrawRec.TopLeft);
+			clickedInScrollArea = true;
+		}
+		else if (Clay_PointerOver(gutterId))
+		{
+			list->draggingScrollbar = true;
+			list->isDraggingSmooth = true;
+			list->scrollbarGrabOffset = ShrinkV2(scrollbarDrawRec.Size, 2);
+			clickedInScrollArea = true;
+		}
+	}
+	
+	if (list->draggingScrollbar)
+	{
+		if (scrollData.found && scrollData.contentDimensions.Height <= scrollData.scrollContainerDimensions.Height) { list->draggingScrollbar = false; }
+		else if (!IsMouseBtnDown(mouse, MouseBtn_Left)) { list->draggingScrollbar = false; }
+		else
+		{
+			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
+			r32 minY = scrollGutterDrawRec.Y;
+			r32 maxY = scrollGutterDrawRec.Y + scrollGutterDrawRec.Height - scrollbarDrawRec.Height;
+			if (maxY > minY)
+			{
+				r32 newScrollbarPos = ClampR32(mouse->position.Y - list->scrollbarGrabOffset.Y, minY, maxY);
+				r32 newScrollbarPercent = (newScrollbarPos - minY) / (maxY - minY);
+				scrollData.scrollTarget->Y = -((scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height) * newScrollbarPercent);
+				if (!list->isDraggingSmooth) { scrollData.scrollPosition->Y = scrollData.scrollTarget->Y; }
+			}
+		}
+		if (scrollData.scrollPosition->Y == scrollData.scrollTarget->Y) { list->isDraggingSmooth = false; }
+	}
 	
 	CLAY({ .id = list->id,
 		.layout = {
@@ -111,8 +154,9 @@ PEXP void DoUiListView(UiListView* list,
 		.border = { .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(uiScale, 1)), .color = MonokaiLightGray },
 	})
 	{
-		Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(innerContainerId, false);
-		
+		// +==============================+
+		// |         Render List          |
+		// +==============================+
 		CLAY({ .id = innerContainerId,
 			.layout = {
 				.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
@@ -138,7 +182,7 @@ PEXP void DoUiListView(UiListView* list,
 				}
 				bool isHovered = (mouse->isOverWindow && Clay_PointerOver(list->id) && Clay_PointerOver(fullId));
 				
-				if (isHovered && IsMouseBtnPressed(mouse, MouseBtn_Left) && !clickedOnItem)
+				if (isHovered && IsMouseBtnPressed(mouse, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea)
 				{
 					clickedOnItem = true;
 					if (!list->selectionActive || !StrExactEquals(list->selectedIdStr, itemIdStr))
@@ -190,7 +234,7 @@ PEXP void DoUiListView(UiListView* list,
 			CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(emptyRowHeight) } } }) {}
 			
 			bool isListHovered = (mouse->isOverWindow && Clay_PointerOver(list->id));
-			if (isListHovered && IsMouseBtnPressed(mouse, MouseBtn_Left) && !clickedOnItem && list->selectionActive)
+			if (isListHovered && IsMouseBtnPressed(mouse, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea && list->selectionActive)
 			{
 				FreeStr8(list->arena, &list->selectedIdStr);
 				list->selectedIdStr = Str8_Empty;
@@ -200,7 +244,7 @@ PEXP void DoUiListView(UiListView* list,
 			}
 			if (!foundSelectedItem && list->selectionActive)
 			{
-				PrintLine_D("Couldn't find \"%.*s\" out of %llu items", StrPrint(list->selectedIdStr), numItems);
+				// PrintLine_D("Couldn't find \"%.*s\" out of %llu items", StrPrint(list->selectedIdStr), numItems);
 				FreeStr8(list->arena, &list->selectedIdStr);
 				list->selectedIdStr = Str8_Empty;
 				list->selectionActive = false;
@@ -209,6 +253,9 @@ PEXP void DoUiListView(UiListView* list,
 			}
 		}
 		
+		// +==============================+
+		// |       Render Scrollbar       |
+		// +==============================+
 		//NOTE: I don't like changing the size of the innerContainer so we always have a gutter container to reserve space, even if a scrollbar is not needed,
 		//      but we only render the scrollbar inside the gutter if the list is taller than the viewable area
 		CLAY({ .id = gutterId,
@@ -242,7 +289,7 @@ PEXP void DoUiListView(UiListView* list,
 						.attachTo = CLAY_ATTACH_TO_PARENT,
 						.offset = NewV2(UISCALE_R32(uiScale, 1), scrollBarOffsetY),
 					},
-					.backgroundColor = MonokaiLightGray,
+					.backgroundColor = (isScrollbarHovered || list->draggingScrollbar) ? MonokaiWhite : MonokaiLightGray,
 					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),
 				}) {}
 			}
