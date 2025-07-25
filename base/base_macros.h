@@ -106,6 +106,11 @@ Description:
 #define Gigabytes(value) (Megabytes(value) * 1024ULL)
 #define Terabytes(value) (Gigabytes(value) * 1024ULL)
 
+#define Thousand(value) ((value) * 1000ULL)
+#define Million(value)  ((value) * 1000000ULL)
+#define Billion(value)  ((value) * 1000000000ULL)
+#define Trillion(value) ((value) * 1000000000000ULL)
+
 // Convert between radians and degrees, either with Pi32 or Pi64
 #define ToRadians32(degrees)		((degrees)/180.0f * Pi32)
 #define ToRadians64(degrees)		((degrees)/180.0 * Pi64)

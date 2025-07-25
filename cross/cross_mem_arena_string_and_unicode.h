@@ -96,7 +96,7 @@ PEXP Str16 ConvertUtf8StrToUcs2(Arena* arena, Str8 utf8Str, bool addNullTerm)
 		{
 			result.length = wordIndex;
 			if (arena == nullptr) { return result; }
-			result.chars = (char16_t*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
+			result.chars = (char16_t*)AllocMem(arena, (result.length + (addNullTerm ? 1 : 0)) * sizeof(char16_t));
 			NotNull(result.chars);
 		}
 		else

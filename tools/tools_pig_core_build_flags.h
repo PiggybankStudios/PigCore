@@ -113,7 +113,7 @@ void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, boo
 }
 
 // These are all the libraries we need when compiling a Windows binary that contains code from PigCore
-void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_RAYLIB, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SDL, bool BUILD_WITH_OPENVR, bool BUILD_WITH_IMGUI, bool BUILD_WITH_PHYSX)
+void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_RAYLIB, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SDL, bool BUILD_WITH_OPENVR, bool BUILD_WITH_IMGUI, bool BUILD_WITH_PHYSX, bool BUILD_WITH_HTTP)
 {
 	if (BUILD_WITH_RAYLIB) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "raylib.lib"); } //NOTE: raylib.lib MUST be before User32.lib and others
 	AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "Gdi32.lib"); //Needed for CreateFontA and other Windows graphics functions
@@ -130,6 +130,7 @@ void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_R
 	if (BUILD_WITH_SDL) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "SDL2.lib"); }
 	if (BUILD_WITH_OPENVR) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "openvr_api.lib"); }
 	if (BUILD_WITH_PHYSX) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "PhysX_static_64.lib"); }
+	if (BUILD_WITH_HTTP) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "Winhttp.lib"); }
 }
 
 // These are all the libraries we need when compiling a Linux binary that contains code from PigCore

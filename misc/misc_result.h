@@ -86,6 +86,7 @@ enum Result
 	Result_UnexpectedAttribute,
 	Result_InvalidInput,
 	Result_Duplicate,
+	Result_FailedToOpenRequest,
 	
 	Result_Count,
 };
@@ -155,6 +156,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_UnexpectedAttribute: return "UnexpectedAttribute";
 		case Result_InvalidInput: return "InvalidInput";
 		case Result_Duplicate: return "Duplicate";
+		case Result_FailedToOpenRequest: return "FailedToOpenRequest";
 		default: return UNKNOWN_STR;
 	}
 }

@@ -154,6 +154,9 @@ enum EscapeSequence
 	PIG_CORE_INLINE bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive);
 	PIG_CORE_INLINE uxx StrFind(Str8 haystack, Str8 needle, bool caseSensitive);
 	PIG_CORE_INLINE bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut);
+	PIG_CORE_INLINE Str8 GetUrlProtocolPart(Str8 url);
+	PIG_CORE_INLINE Str8 GetUrlHostnamePart(Str8 url);
+	PIG_CORE_INLINE Str8 GetUrlPathPart(Str8 url);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -554,6 +557,53 @@ PEXPI bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* index
 //TODO: const char* FormatRealTimeNt(const RealTime_t* realTime, MemArena_t* memArena, bool includeDayOfWeek = true, bool includeHourMinuteSecond = true, bool includeMonthDayYear = true)
 //TODO: Str8 FormatMilliseconds(uxx milliseconds, MemArena_t* memArena)
 //TODO: const char* FormatMillisecondsNt(uxx milliseconds, MemArena_t* memArena)
+
+// +--------------------------------------------------------------+
+// |                         URL Helpers                          |
+// +--------------------------------------------------------------+
+PEXPI Str8 GetUrlProtocolPart(Str8 url)
+{
+	for (uxx cIndex = 0; cIndex < url.length; cIndex++)
+	{
+		if (url.chars[cIndex] == ':')
+		{
+			Str8 result = StrSlice(url, 0, cIndex);
+			return result;
+		}
+		else if (IsCharSlash(url.chars[cIndex])) { break; }
+	}
+	return NewStr8(0, url.chars);
+}
+PEXPI Str8 GetUrlHostnamePart(Str8 url)
+{
+	uxx startIndex = 0;
+	for (uxx cIndex = 0; cIndex < url.length; cIndex++)
+	{
+		if (url.chars[cIndex] == ':' && startIndex == 0)
+		{
+			if (cIndex+1 < url.length && IsCharSlash(url.chars[cIndex+1])) { startIndex++; cIndex++; }
+			if (cIndex+1 < url.length && IsCharSlash(url.chars[cIndex+1])) { startIndex++; cIndex++; }
+			startIndex = cIndex+1;
+		}
+		else if (IsCharSlash(url.chars[cIndex])) { return StrSlice(url, startIndex, cIndex); }
+	}
+	return url;
+}
+PEXPI Str8 GetUrlPathPart(Str8 url)
+{
+	bool foundProtocol = false;
+	for (uxx cIndex = 0; cIndex < url.length; cIndex++)
+	{
+		if (url.chars[cIndex] == ':' && !foundProtocol)
+		{
+			foundProtocol = true;
+			if (cIndex+1 < url.length && IsCharSlash(url.chars[cIndex+1])) { cIndex++; }
+			if (cIndex+1 < url.length && IsCharSlash(url.chars[cIndex+1])) { cIndex++; }
+		}
+		else if (url.chars[cIndex] == '\\' || url.chars[cIndex] == '/') { return StrSliceFrom(url, cIndex); }
+	}
+	return NewStr8(0, &url.chars[url.length]);
+}
 
 #endif //PIG_CORE_IMPLEMENTATION
 
