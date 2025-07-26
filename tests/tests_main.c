@@ -657,6 +657,18 @@ int main(int argc, char* argv[])
 	
 	// TestParsingFunctions();
 	
+	VarArray testArray = ZEROED;
+	InitVarArray(char, &testArray, stdHeap);
+	void* firstElements = VarArrayAddMulti(char, &testArray, 3);
+	PrintLine_D("firstElements: %p", firstElements);
+	void* secondElements = VarArrayAddMulti(char, &testArray, 6);
+	PrintLine_D("secondElements: %p", secondElements);
+	FreeVarArray(&testArray);
+	void* allocPntr = MyMallocAligned(64, 1);
+	PrintLine_D("Allocated %p with alignment 1", allocPntr);
+	MyFreeAligned(allocPntr);
+	WriteLine_D("Freed!");
+	
 	// +==============================+
 	// |         Arena Tests          |
 	// +==============================+

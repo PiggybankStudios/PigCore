@@ -977,14 +977,14 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 			}
 			else
 			{
-				result = (newAlignment != 0) ? MyMallocAligned(newSize, newAlignment) : MyMalloc(newSize);
+				result = (newAlignment > 1) ? MyMallocAligned(newSize, newAlignment) : MyMalloc(newSize);
 				if (result == nullptr && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { }
 				if (result != nullptr)
 				{
 					if (oldSize > 0)
 					{
 						MyMemCopy(result, allocPntr, (newSize < oldSize) ? newSize : oldSize);
-						if (oldAlignment != 0) { MyFreeAligned(allocPntr); }
+						if (oldAlignment > 1) { MyFreeAligned(allocPntr); }
 						else { MyFree(allocPntr); }
 					}
 					if (newSize > oldSize) { arena->used += newSize - oldSize; }
