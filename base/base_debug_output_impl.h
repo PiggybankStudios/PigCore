@@ -21,6 +21,7 @@ Description:
 #include "std/std_memset.h"
 #include "std/std_printf.h"
 #include "misc/misc_printing.h"
+#include "os/os_threading.h"
 
 //TODO: Check if the scratch arenas have been initialized on the current thread before using them for print formatting. Maybe use a small thread_local buffer instead when that happens?
 
@@ -172,7 +173,7 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 // +==============================+
 // |       DebugPrintRouter       |
 // +==============================+
-// void DebugPrintRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* formatString, ...)
+// void DebugPrintRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, uxx printBufferLength, char* printBuffer, const char* formatString, ...)
 PEXP DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
 {
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
@@ -184,21 +185,52 @@ PEXP DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
 		(level == DbgLevel_Error   && ENABLE_DEBUG_OUTPUT_LEVEL_ERROR)   ||
 		level == DbgLevel_None || level >= DbgLevel_Count)
 	{
-		ScratchBegin(scratch);
-		PrintInArenaVa(scratch, messageStr, messageLength, formatString);
-		if (messageLength >= 0 && (messageStr != nullptr || messageLength == 0))
+		// When doing multi-threaded applications we may decide to use a buffer allocated on the stack rather than reaching for a Scratch arena (the thread may not have initialized any scratch arenas)
+		if (printBufferLength > 0 && printBuffer != nullptr)
 		{
-			DebugOutputRouter(filePath, lineNumber, funcName, level, newLine, messageStr);
+			va_list args;
+			va_start(args, formatString);
+			int printResult = MyVaListPrintf(printBuffer, printBufferLength, formatString, args);
+			va_end(args);
+			if (printResult >= 0)
+			{
+				printBuffer[printBufferLength-1] = '\0';
+				DebugOutputRouter(filePath, lineNumber, funcName, level, newLine, printBuffer);
+			}
+			else
+			{
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, "\nDEBUG_OUTPUT_BUFFER_PRINT_FAILED!\n\tFORMAT: \"");
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, formatString);
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, true, "\"");
+			}
 		}
-		#if DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE
 		else
 		{
-			DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, "\nDEBUG_OUTPUT_ARENA_PRINT_FAILED!\n\tFORMAT: \"");
-			DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, formatString);
-			DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, true, "\"");
+			ScratchBegin(scratch);
+			if (scratch != nullptr)
+			{
+				PrintInArenaVa(scratch, messageStr, messageLength, formatString);
+				if (messageLength >= 0 && (messageStr != nullptr || messageLength == 0))
+				{
+					DebugOutputRouter(filePath, lineNumber, funcName, level, newLine, messageStr);
+				}
+				#if DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE
+				else
+				{
+					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, "\nDEBUG_OUTPUT_ARENA_PRINT_FAILED!\n\tFORMAT: \"");
+					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, formatString);
+					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, true, "\"");
+				}
+				#endif
+			}
+			else
+			{
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, "\nNO_SCRATCH_FOR_PRINT!\n\tFORMAT: \"");
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, formatString);
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, true, "\"");
+			}
+			ScratchEnd(scratch);
 		}
-		#endif
-		ScratchEnd(scratch);
 	}
 }
 

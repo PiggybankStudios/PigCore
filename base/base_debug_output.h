@@ -87,7 +87,7 @@ Description:
 
 #define DEBUG_OUTPUT_HANDLER_DEF(functionName) void functionName(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* message)
 typedef DEBUG_OUTPUT_HANDLER_DEF(DebugOutput_f);
-#define DEBUG_PRINT_HANDLER_DEF(functionName) void functionName(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* formatString, ...)
+#define DEBUG_PRINT_HANDLER_DEF(functionName) void functionName(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, uxx printBufferLength, char* printBuffer, const char* formatString, ...)
 typedef DEBUG_PRINT_HANDLER_DEF(DebugPrint_f);
 
 #if DEBUG_OUTPUT_CALLBACK_GLOBAL
@@ -108,93 +108,123 @@ DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter);
 //      so it's a little less efficient than using the level specific macro. These ...At variants should be used when the level at which the
 //      output is being done is dependent upon some runtime value. For example outputting a warning or error based on some logic could do:
 //      PrintLineAt(isError ? DbgLevel_Error : DbgLevel_Warning, "%s Occurred: %s", isError ? "ERROR" : "WARNING", message);
-#define WriteAt(level, message)               DebugOutputRouter(__FILE__, __LINE__, __func__, (level), false, (message))
-#define WriteLineAt(level, message)           DebugOutputRouter(__FILE__, __LINE__, __func__, (level), true,  (message))
-#define PrintAt(level, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, (level), false, (formatString), ##__VA_ARGS__)
-#define PrintLineAt(level, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, (level), true,  (formatString), ##__VA_ARGS__)
+#define WriteAt(level, message)                                  DebugOutputRouter(__FILE__, __LINE__, __func__, (level), false, (message))
+#define WriteLineAt(level, message)                              DebugOutputRouter(__FILE__, __LINE__, __func__, (level), true,  (message))
+#define PrintAt(level, formatString, ...)                        DebugPrintRouter (__FILE__, __LINE__, __func__, (level), false, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define PrintLineAt(level, formatString, ...)                    DebugPrintRouter (__FILE__, __LINE__, __func__, (level), true,  0, nullptr, (formatString), ##__VA_ARGS__)
+#define BufferPrintAt(level, arrayBuffer, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, (level), false, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define BufferPrintLineAt(level, arrayBuffer, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, (level), true,  ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 
 #if ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG
-#define Write_D(message)               DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Debug, false, (message))
-#define WriteLine_D(message)           DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Debug, true,  (message))
-#define Print_D(formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Debug, false, (formatString), ##__VA_ARGS__)
-#define PrintLine_D(formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Debug, true,  (formatString), ##__VA_ARGS__)
+#define Write_D(message)                                  DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Debug, false, (message))
+#define WriteLine_D(message)                              DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Debug, true,  (message))
+#define Print_D(formatString, ...)                        DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Debug, false, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define PrintLine_D(formatString, ...)                    DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Debug, true,  0, nullptr, (formatString), ##__VA_ARGS__)
+#define BufferPrint_D(arrayBuffer, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Debug, false, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define BufferPrintLine_D(arrayBuffer, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Debug, true,  ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
-#define Write_D(message)               //nothing
-#define WriteLine_D(message)           //nothing
-#define Print_D(formatString, ...)     //nothing
-#define PrintLine_D(formatString, ...) //nothing
+#define Write_D(message)                                  //nothing
+#define WriteLine_D(message)                              //nothing
+#define Print_D(formatString, ...)                        //nothing
+#define PrintLine_D(formatString, ...)                    //nothing
+#define BufferPrint_D(arrayBuffer, formatString, ...)     //nothing
+#define BufferPrintLine_D(arrayBuffer, formatString, ...) //nothing
 #endif
 
 #if ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR
-#define Write_R(message)               DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Regular, false, (message))
-#define WriteLine_R(message)           DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Regular, true,  (message))
-#define Print_R(formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Regular, false, (formatString), ##__VA_ARGS__)
-#define PrintLine_R(formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Regular, true,  (formatString), ##__VA_ARGS__)
+#define Write_R(message)                                  DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Regular, false, (message))
+#define WriteLine_R(message)                              DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Regular, true,  (message))
+#define Print_R(formatString, ...)                        DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Regular, false, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define PrintLine_R(formatString, ...)                    DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Regular, true,  0, nullptr, (formatString), ##__VA_ARGS__)
+#define BufferPrint_R(arrayBuffer, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Regular, false, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define BufferPrintLine_R(arrayBuffer, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Regular, true,  ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
-#define Write_R(message)               //nothing
-#define WriteLine_R(message)           //nothing
-#define Print_R(formatString, ...)     //nothing
-#define PrintLine_R(formatString, ...) //nothing
+#define Write_R(message)                                  //nothing
+#define WriteLine_R(message)                              //nothing
+#define Print_R(formatString, ...)                        //nothing
+#define PrintLine_R(formatString, ...)                    //nothing
+#define BufferPrint_R(arrayBuffer, formatString, ...)     //nothing
+#define BufferPrintLine_R(arrayBuffer, formatString, ...) //nothing
 #endif
 
 #if ENABLE_DEBUG_OUTPUT_LEVEL_INFO
-#define Write_I(message)               DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Info, false, (message))
-#define WriteLine_I(message)           DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Info, true,  (message))
-#define Print_I(formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Info, false, (formatString), ##__VA_ARGS__)
-#define PrintLine_I(formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Info, true,  (formatString), ##__VA_ARGS__)
+#define Write_I(message)                                  DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Info, false, (message))
+#define WriteLine_I(message)                              DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Info, true,  (message))
+#define Print_I(formatString, ...)                        DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Info, false, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define PrintLine_I(formatString, ...)                    DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Info, true,  0, nullptr, (formatString), ##__VA_ARGS__)
+#define BufferPrint_I(arrayBuffer, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Info, false, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define BufferPrintLine_I(arrayBuffer, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Info, true,  ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
-#define Write_I(message)               //nothing
-#define WriteLine_I(message)           //nothing
-#define Print_I(formatString, ...)     //nothing
-#define PrintLine_I(formatString, ...) //nothing
+#define Write_I(message)                                  //nothing
+#define WriteLine_I(message)                              //nothing
+#define Print_I(formatString, ...)                        //nothing
+#define PrintLine_I(formatString, ...)                    //nothing
+#define BufferPrint_I(arrayBuffer, formatString, ...)     //nothing
+#define BufferPrintLine_I(arrayBuffer, formatString, ...) //nothing
 #endif
 
 #if ENABLE_DEBUG_OUTPUT_LEVEL_NOTIFY
-#define Write_N(message)               DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Notify, false, (message))
-#define WriteLine_N(message)           DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Notify, true,  (message))
-#define Print_N(formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Notify, false, (formatString), ##__VA_ARGS__)
-#define PrintLine_N(formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Notify, true,  (formatString), ##__VA_ARGS__)
+#define Write_N(message)                                  DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Notify, false, (message))
+#define WriteLine_N(message)                              DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Notify, true,  (message))
+#define Print_N(formatString, ...)                        DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Notify, false, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define PrintLine_N(formatString, ...)                    DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Notify, true,  0, nullptr, (formatString), ##__VA_ARGS__)
+#define BufferPrint_N(arrayBuffer, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Notify, false, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define BufferPrintLine_N(arrayBuffer, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Notify, true,  ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
-#define Write_N(message)               //nothing
-#define WriteLine_N(message)           //nothing
-#define Print_N(formatString, ...)     //nothing
-#define PrintLine_N(formatString, ...) //nothing
+#define Write_N(message)                                  //nothing
+#define WriteLine_N(message)                              //nothing
+#define Print_N(formatString, ...)                        //nothing
+#define PrintLine_N(formatString, ...)                    //nothing
+#define BufferPrint_N(arrayBuffer, formatString, ...)     //nothing
+#define BufferPrintLine_N(arrayBuffer, formatString, ...) //nothing
 #endif
 
 #if ENABLE_DEBUG_OUTPUT_LEVEL_OTHER
-#define Write_O(message)               DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Other, false, (message))
-#define WriteLine_O(message)           DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Other, true,  (message))
-#define Print_O(formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Other, false, (formatString), ##__VA_ARGS__)
-#define PrintLine_O(formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Other, true,  (formatString), ##__VA_ARGS__)
+#define Write_O(message)                                  DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Other, false, (message))
+#define WriteLine_O(message)                              DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Other, true,  (message))
+#define Print_O(formatString, ...)                        DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Other, false, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define PrintLine_O(formatString, ...)                    DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Other, true,  0, nullptr, (formatString), ##__VA_ARGS__)
+#define BufferPrint_O(arrayBuffer, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Other, false, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define BufferPrintLine_O(arrayBuffer, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Other, true,  ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
-#define Write_O(message)               //nothing
-#define WriteLine_O(message)           //nothing
-#define Print_O(formatString, ...)     //nothing
-#define PrintLine_O(formatString, ...) //nothing
+#define Write_O(message)                                  //nothing
+#define WriteLine_O(message)                              //nothing
+#define Print_O(formatString, ...)                        //nothing
+#define PrintLine_O(formatString, ...)                    //nothing
+#define BufferPrint_O(arrayBuffer, formatString, ...)     //nothing
+#define BufferPrintLine_O(arrayBuffer, formatString, ...) //nothing
 #endif
 
 #if ENABLE_DEBUG_OUTPUT_LEVEL_WARNING
-#define Write_W(message)               DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Warning, false, (message))
-#define WriteLine_W(message)           DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Warning, true,  (message))
-#define Print_W(formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Warning, false, (formatString), ##__VA_ARGS__)
-#define PrintLine_W(formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Warning, true,  (formatString), ##__VA_ARGS__)
+#define Write_W(message)                                  DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Warning, false, (message))
+#define WriteLine_W(message)                              DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Warning, true,  (message))
+#define Print_W(formatString, ...)                        DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Warning, false, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define PrintLine_W(formatString, ...)                    DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Warning, true,  0, nullptr, (formatString), ##__VA_ARGS__)
+#define BufferPrint_W(arrayBuffer, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Warning, false, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define BufferPrintLine_W(arrayBuffer, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Warning, true,  ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
-#define Write_W(message)               //nothing
-#define WriteLine_W(message)           //nothing
-#define Print_W(formatString, ...)     //nothing
-#define PrintLine_W(formatString, ...) //nothing
+#define Write_W(message)                                  //nothing
+#define WriteLine_W(message)                              //nothing
+#define Print_W(formatString, ...)                        //nothing
+#define PrintLine_W(formatString, ...)                    //nothing
+#define BufferPrint_W(arrayBuffer, formatString, ...)     //nothing
+#define BufferPrintLine_W(arrayBuffer, formatString, ...) //nothing
 #endif
 
 #if ENABLE_DEBUG_OUTPUT_LEVEL_ERROR
-#define Write_E(message)               DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Error, false, (message))
-#define WriteLine_E(message)           DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Error, true,  (message))
-#define Print_E(formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Error, false, (formatString), ##__VA_ARGS__)
-#define PrintLine_E(formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Error, true,  (formatString), ##__VA_ARGS__)
+#define Write_E(message)                                  DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Error, false, (message))
+#define WriteLine_E(message)                              DebugOutputRouter(__FILE__, __LINE__, __func__, DbgLevel_Error, true,  (message))
+#define Print_E(formatString, ...)                        DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Error, false, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define PrintLine_E(formatString, ...)                    DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Error, true,  0, nullptr, (formatString), ##__VA_ARGS__)
+#define BufferPrint_E(arrayBuffer, formatString, ...)     DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Error, false, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define BufferPrintLine_E(arrayBuffer, formatString, ...) DebugPrintRouter (__FILE__, __LINE__, __func__, DbgLevel_Error, true,  ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
-#define Write_E(message)               //nothing
-#define WriteLine_E(message)           //nothing
-#define Print_E(formatString, ...)     //nothing
-#define PrintLine_E(formatString, ...) //nothing
+#define Write_E(message)                                  //nothing
+#define WriteLine_E(message)                              //nothing
+#define Print_E(formatString, ...)                        //nothing
+#define PrintLine_E(formatString, ...)                    //nothing
+#define BufferPrint_E(arrayBuffer, formatString, ...)     //nothing
+#define BufferPrintLine_E(arrayBuffer, formatString, ...) //nothing
 #endif
 
 #endif //  _BASE_DEBUG_OUTPUT_H
