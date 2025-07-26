@@ -26,16 +26,16 @@ Description:
 #if BUILD_WITH_HTTP
 
 #define HTTP_DEFAULT_CLIENT_WIDE_STR L"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0" //TODO: Make this a different client string?
-#define HTTP_PORT  80
-#define HTTPS_PORT 443
+#define HTTP_PORT                80
+#define HTTPS_PORT               443
 #define HTTP_MAX_RESPONSE_SIZE   Megabytes(64) // This determines the virtual memory allocated for responseArena, so we only pay the memory cost of the largest response, but once we get a large response we never uncommit that memory
 
 typedef enum HttpVerb HttpVerb;
 enum HttpVerb
 {
 	HttpVerb_None = 0,
-	HttpVerb_GET,
 	HttpVerb_POST,
+	HttpVerb_GET,
 	HttpVerb_DELETE,
 	HttpVerb_Count,
 };
@@ -47,8 +47,8 @@ PEXP const char* GetHttpVerbStr(HttpVerb enumValue)
 	switch (enumValue)
 	{
 		case HttpVerb_None:   return "None";
-		case HttpVerb_GET:    return "GET";
 		case HttpVerb_POST:   return "POST";
+		case HttpVerb_GET:    return "GET";
 		case HttpVerb_DELETE: return "DELETE";
 		default: return UNKNOWN_STR;
 	}
@@ -98,7 +98,6 @@ PEXP const char* GetHttpRequestStateStr(HttpRequestState enumValue)
 typedef plex HttpRequest HttpRequest;
 plex HttpRequest
 {
-	u8 magic[4];
 	uxx id;
 	HttpRequestState state;
 	Result error;
@@ -116,8 +115,6 @@ plex HttpRequest
 	Str8 encodedHeaders;
 	#if TARGET_IS_WINDOWS
 	HINTERNET requestHandle;
-	uxx numStatusCallbacks;
-	DWORD statusCallbacks[32];
 	#endif
 	
 	VarArray responseBytes; //u8 (allocated from manager.readDataArena)
@@ -126,7 +123,6 @@ plex HttpRequest
 typedef plex HttpConnection HttpConnection;
 plex HttpConnection
 {
-	u8 magic[4];
 	bool usingSsl;
 	Str8 hostname;
 	u16 portNumber;
@@ -142,7 +138,6 @@ plex HttpConnection
 typedef plex HttpRequestManager HttpRequestManager;
 plex HttpRequestManager
 {
-	u8 magic[4];
 	Arena* arena;
 	
 	uxx nextRequestId;
@@ -322,18 +317,7 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 	
 	ThreadId threadId = OsGetCurrentThreadId();
 	bool isMainThread = (threadId == MainThreadId);
-	{
-		if (isMainThread)
-		{
-			PrintLine_D("MAIN> HttpStatus %s(%04X): %p[%u] (%p,%p)", GetWinHttpStatusStr(status), status, infoPntr, infoLength, handle, (void*)context);
-		}
-		else
-		{
-			MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "%llu> HttpStatus %s(%04X): %p[%u] (%p,%p)", (u64)threadId, GetWinHttpStatusStr(status), status, infoPntr, infoLength, handle, (void*)context);
-			printBuffer[ArrayCount(printBuffer)-1] = '\0';
-			WriteLine_D(printBuffer);
-		}
-	}
+	BufferPrintLine_D(printBuffer, "%llu> HttpStatus %s(%04X): %p[%u] (%p,%p)", isMainThread ? (u64)0 : (u64)threadId, GetWinHttpStatusStr(status), status, infoPntr, infoLength, handle, (void*)context);
 	if (status == WINHTTP_CALLBACK_STATUS_HANDLE_CREATED || status == WINHTTP_CALLBACK_STATUS_HANDLE_CLOSING)
 	{
 		//NOTE: HANDLE_CREATED callbacks happen before we have a chance to set the WINHTTP_OPTION_CONTEXT_VALUE option
@@ -345,177 +329,154 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 		return;
 	}
 	
-	#if 1
 	Assert(context != 0);
 	HttpRequestManager* manager = (HttpRequestManager*)context;
-	#else
-	UNUSED(context);
-	void* contextPntr = nullptr;
-	DWORD contextPntrSize = sizeof(void*);
-	WinHttpQueryOption(handle, WINHTTP_OPTION_CONTEXT_VALUE, (void*)&contextPntr, &contextPntrSize);
-	DebugAssert(contextPntrSize == sizeof(void*));
-	NotNull(contextPntr);
-	HttpRequestManager* manager = (HttpRequestManager*)contextPntr;
-	#endif
-	DebugAssert(manager->magic[0] == 'M' && manager->magic[1] == 'N' && manager->magic[2] == 'G' && manager->magic[3] == 'R');
+	Assert(manager->arena != nullptr);
+	Assert(manager->arena->type > ArenaType_None && manager->arena->type < ArenaType_Count); //Sanity check that the context pntr is being passed correctly by making sure the arena pointer looks valid
 	
 	bool lockedMutex = false;
-	if (!isMainThread || !manager->mainLockedMutex) { LockMutex(&manager->mutex, TIMEOUT_FOREVER); lockedMutex = true; }
-	
-	HttpRequest* currentRequest = nullptr;
-	if (manager->currentRequestIndex < manager->requests.length)
+	if (!isMainThread || !manager->mainLockedMutex)
 	{
-		currentRequest = VarArrayGet(HttpRequest, &manager->requests, manager->currentRequestIndex);
-		if (currentRequest->requestHandle == handle)
-		{
-			if (currentRequest->numStatusCallbacks < ArrayCount(currentRequest->statusCallbacks))
-			{
-				currentRequest->statusCallbacks[currentRequest->numStatusCallbacks] = status;
-				currentRequest->numStatusCallbacks++;
-			}
-			else { WriteLine_W("Exceeded max statusCallback buffer size!"); }
-		}
+		TracyCZoneN(Zone_LockMutex, "LockMutex", true);
+		LockMutex(&manager->mutex, TIMEOUT_FOREVER);
+		TracyCZoneEnd(Zone_LockMutex);
+		lockedMutex = true;
 	}
 	
-	switch (status)
 	{
-		// +==============================================+
-		// | WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE |
-		// +==============================================+
-		case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE: //NOT main thread
+		HttpRequest* request = nullptr;
+		if (manager->currentRequestIndex < manager->requests.length)
 		{
-			NotNull(currentRequest);
-			Assert(handle == currentRequest->requestHandle);
-			BOOL receiveResult = WinHttpReceiveResponse(currentRequest->requestHandle, NULL);
-			Assert(receiveResult != 0);
-			UNUSED(receiveResult);
-		} break;
+			request = VarArrayGet(HttpRequest, &manager->requests, manager->currentRequestIndex);
+			if (request->requestHandle != handle) { request = nullptr; }
+		}
 		
-		// +============================================+
-		// | WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE |
-		// +============================================+
-		case WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE: //NOT main thread
+		switch (status)
 		{
-			//NOTE: We can't call WinHttpQueryDataAvailable right now, we get a INCORRECT_HANDLE_STATE error if we try
-			//      So instead we will wait till the main thread is free to query data, at that point the query handle should be available for requesting data
-			NotNull(currentRequest);
-			Assert(handle == currentRequest->requestHandle);
-			currentRequest->receivingData = true;
-		} break;
-		
-		// +========================================+
-		// | WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE |
-		// +========================================+
-		case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: //NOT main thread
-		{
-			NotNull(currentRequest);
-			Assert(handle == currentRequest->requestHandle);
-			Assert(infoLength == sizeof(DWORD));
-			DWORD numBytesToRead = *((DWORD*)infoPntr);
-			
-			MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "%llu byte%s available", (u64)numBytesToRead, Plural(numBytesToRead, "s"));
-			printBuffer[ArrayCount(printBuffer)-1] = '\0';
-			WriteLine_D(printBuffer);
-			
-			if (numBytesToRead == 0)
+			// +==============================================+
+			// | WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE |
+			// +==============================================+
+			case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE: //NOT main thread
 			{
-				currentRequest->receivingData = false;
-				currentRequest->state = HttpRequestState_Success;
-			}
-			else
+				NotNull(request);
+				BOOL receiveResult = WinHttpReceiveResponse(request->requestHandle, NULL);
+				Assert(receiveResult != 0);
+				UNUSED(receiveResult);
+			} break;
+			
+			// +============================================+
+			// | WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE |
+			// +============================================+
+			case WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE: //NOT main thread
 			{
-				if (currentRequest->responseBytes.arena == nullptr)
-				{
-					InitVarArray(u8, &currentRequest->responseBytes, &manager->responseArena);
-				}
-				void* beforePntr = currentRequest->responseBytes.items;
-				u8* newBytesSpace = VarArrayAddMulti(u8, &currentRequest->responseBytes, (uxx)numBytesToRead);
-				NotNull(newBytesSpace);
-				Assert(beforePntr == currentRequest->responseBytes.items || beforePntr == nullptr);
-				Assert(currentRequest->responseBytes.items == manager->responseArena.mainPntr);
-				Assert(handle == currentRequest->requestHandle);
-				DWORD numBytesRead = 0;
-				BOOL readResult = WinHttpReadData(
-					currentRequest->requestHandle, //hRequest
-					newBytesSpace, //lpBuffer
-					numBytesToRead, //dwNumberOfBytesToRead
-					&numBytesRead //lpdwNumberOfBytesRead
-				);
-				Assert(readResult != 0);
-				UNUSED(readResult);
-				if (numBytesRead < numBytesToRead)
-				{
-					currentRequest->responseBytes.length -= (numBytesToRead - numBytesRead);
-				}
+				//NOTE: We can't call WinHttpQueryDataAvailable right now, we get a INCORRECT_HANDLE_STATE error if we try
+				//      So instead we will wait till the main thread is free to query data, at that point the query handle should be available for requesting data
+				NotNull(request);
+				request->receivingData = true;
+			} break;
+			
+			// +========================================+
+			// | WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE |
+			// +========================================+
+			case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: //NOT main thread
+			{
+				NotNull(request);
+				Assert(infoLength == sizeof(DWORD));
+				DWORD numBytesToRead = *((DWORD*)infoPntr);
+				BufferPrintLine_D(printBuffer, "%llu byte%s available", (u64)numBytesToRead, Plural(numBytesToRead, "s"));
 				
-				MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "Read %llu byte%s, total %llu byte%s", (u64)numBytesRead, Plural(numBytesRead, "s"), currentRequest->responseBytes.length, Plural(currentRequest->responseBytes.length, "s"));
-				printBuffer[ArrayCount(printBuffer)-1] = '\0';
-				WriteLine_D(printBuffer);
-			}
-			currentRequest->queriedData = false;
-		} break;
-		
-		// +========================================+
-		// | WINHTTP_CALLBACK_STATUS_READ_COMPLETE  |
-		// +========================================+
-		case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: //NOT main thread
-		{
-			NotNull(currentRequest);
-			Assert(handle == currentRequest->requestHandle);
-			Assert(currentRequest->receivingData);
-		} break;
-		
-		// +==================================+
-		// | WINHTTP_CALLBACK_STATUS_REDIRECT |
-		// +==================================+
-		case WINHTTP_CALLBACK_STATUS_REDIRECT: //NOT main thread
-		{
-			NotNull(currentRequest);
-			Assert(handle == currentRequest->requestHandle);
-			currentRequest->receivingData = false;
-		} break;
-		
-		// +========================================+
-		// | WINHTTP_CALLBACK_STATUS_REQUEST_ERROR  |
-		// +========================================+
-		case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: //NOT main thread
-		{
-			NotNull(currentRequest);
-			Assert(handle == currentRequest->requestHandle);
-			currentRequest->state = HttpRequestState_Failure;
-			currentRequest->error = Result_Failure; //TODO: Fill with a better errorCode!
-		} break;
-		
-		// +========================================+
-		// | WINHTTP_CALLBACK_STATUS_SECURE_FAILURE |
-		// +========================================+
-		case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE: //main thread
-		{
-			NotNull(currentRequest);
-			Assert(handle == currentRequest->requestHandle);
-			currentRequest->state = HttpRequestState_Failure;
-			currentRequest->error = Result_Failure; //TODO: Fill with a better errorCode!
-		} break;
-		
-		// default:
-		// {
-		// 	if (status != WINHTTP_CALLBACK_STATUS_HANDLE_CLOSING &&
-		// 		status != WINHTTP_CALLBACK_STATUS_HANDLE_CREATED &&
-		// 		status != WINHTTP_CALLBACK_STATUS_SENDING_REQUEST &&
-		// 		status != WINHTTP_CALLBACK_STATUS_REQUEST_SENT &&
-		// 		status != WINHTTP_CALLBACK_STATUS_RESPONSE_RECEIVED &&
-		// 		status != WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE &&
-		// 		status != WINHTTP_CALLBACK_STATUS_RESOLVING_NAME &&
-		// 		status != WINHTTP_CALLBACK_STATUS_NAME_RESOLVED &&
-		// 		status != WINHTTP_CALLBACK_STATUS_CONNECTING_TO_SERVER &&
-		// 		status != WINHTTP_CALLBACK_STATUS_CONNECTED_TO_SERVER &&
-		// 		status != WINHTTP_CALLBACK_STATUS_CLOSING_CONNECTION)
-		// 	{
-		// 		MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "HttpStatus %s(%04X): %p[%u] (%p,%p)", GetWinHttpStatusStr(status), status, infoPntr, infoLength, handle, (void*)context);
-		// 		printBuffer[ArrayCount(printBuffer)-1] = '\0';
-		// 		WriteLine_D(printBuffer);
-		// 	}
-		// } break;
+				if (numBytesToRead == 0)
+				{
+					request->receivingData = false;
+					request->state = HttpRequestState_Success;
+				}
+				else
+				{
+					if (request->responseBytes.arena == nullptr)
+					{
+						InitVarArray(u8, &request->responseBytes, &manager->responseArena);
+					}
+					void* beforePntr = request->responseBytes.items;
+					u8* newBytesSpace = VarArrayAddMulti(u8, &request->responseBytes, (uxx)numBytesToRead);
+					NotNull(newBytesSpace);
+					Assert(beforePntr == request->responseBytes.items || beforePntr == nullptr);
+					Assert(request->responseBytes.items == manager->responseArena.mainPntr);
+					Assert(handle == request->requestHandle);
+					DWORD numBytesRead = 0;
+					BOOL readResult = WinHttpReadData(
+						request->requestHandle, //hRequest
+						newBytesSpace, //lpBuffer
+						numBytesToRead, //dwNumberOfBytesToRead
+						&numBytesRead //lpdwNumberOfBytesRead
+					);
+					Assert(readResult != 0);
+					UNUSED(readResult);
+					if (numBytesRead < numBytesToRead)
+					{
+						request->responseBytes.length -= (numBytesToRead - numBytesRead);
+					}
+					
+					BufferPrintLine_D(printBuffer, "Read %llu byte%s (total %llu byte%s)", (u64)numBytesRead, Plural(numBytesRead, "s"), request->responseBytes.length, Plural(request->responseBytes.length, "s"));
+				}
+				request->queriedData = false;
+			} break;
+			
+			// +========================================+
+			// | WINHTTP_CALLBACK_STATUS_READ_COMPLETE  |
+			// +========================================+
+			case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: //NOT main thread
+			{
+				NotNull(request);
+				Assert(request->receivingData);
+			} break;
+			
+			// +==================================+
+			// | WINHTTP_CALLBACK_STATUS_REDIRECT |
+			// +==================================+
+			case WINHTTP_CALLBACK_STATUS_REDIRECT: //NOT main thread
+			{
+				NotNull(request);
+				request->receivingData = false;
+			} break;
+			
+			// +========================================+
+			// | WINHTTP_CALLBACK_STATUS_REQUEST_ERROR  |
+			// +========================================+
+			case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: //NOT main thread
+			{
+				NotNull(request);
+				request->state = HttpRequestState_Failure;
+				request->error = Result_Failure; //TODO: Fill with a better errorCode!
+			} break;
+			
+			// +========================================+
+			// | WINHTTP_CALLBACK_STATUS_SECURE_FAILURE |
+			// +========================================+
+			case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE: //main thread
+			{
+				NotNull(request);
+				request->state = HttpRequestState_Failure;
+				request->error = Result_SslProblem;
+			} break;
+			
+			// default:
+			// {
+			// 	if (status != WINHTTP_CALLBACK_STATUS_HANDLE_CLOSING &&
+			// 		status != WINHTTP_CALLBACK_STATUS_HANDLE_CREATED &&
+			// 		status != WINHTTP_CALLBACK_STATUS_SENDING_REQUEST &&
+			// 		status != WINHTTP_CALLBACK_STATUS_REQUEST_SENT &&
+			// 		status != WINHTTP_CALLBACK_STATUS_RESPONSE_RECEIVED &&
+			// 		status != WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE &&
+			// 		status != WINHTTP_CALLBACK_STATUS_RESOLVING_NAME &&
+			// 		status != WINHTTP_CALLBACK_STATUS_NAME_RESOLVED &&
+			// 		status != WINHTTP_CALLBACK_STATUS_CONNECTING_TO_SERVER &&
+			// 		status != WINHTTP_CALLBACK_STATUS_CONNECTED_TO_SERVER &&
+			// 		status != WINHTTP_CALLBACK_STATUS_CLOSING_CONNECTION)
+			// 	{
+			// 		BufferPrintLine_W(printBuffer, "HttpStatus %s(%04X): %p[%u] (%p,%p)", GetWinHttpStatusStr(status), status, infoPntr, infoLength, handle, (void*)context);
+			// 	}
+			// } break;
+		}
 	}
 	
 	if (lockedMutex) { UnlockMutex(&manager->mutex); }
@@ -531,7 +492,6 @@ PEXPI void OsInitHttpRequestManager(Arena* arena, HttpRequestManager* manager)
 	NotNull(arena);
 	NotNull(manager);
 	ClearPointer(manager);
-	manager->magic[0] = 'M'; manager->magic[1] = 'N'; manager->magic[2] = 'G'; manager->magic[3] = 'R';
 	manager->arena = arena;
 	manager->nextRequestId = 1;
 	manager->currentRequestIndex = UINTXX_MAX;
@@ -683,11 +643,9 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 	// |     Check currentRequest     |
 	// +==============================+
 	uxx doCallbackIndex = UINTXX_MAX;
-	TracyCZoneN(Zone_MutexLock, "MutexLock", true);
-	LockMutex(&manager->mutex, TIMEOUT_FOREVER);
-	TracyCZoneEnd(Zone_MutexLock);
-	manager->mainLockedMutex = true;
+	LockMutexBlockWithTracyZone(&manager->mutex, TIMEOUT_FOREVER, Zone_LockMutex, "LockMutex")
 	{
+		manager->mainLockedMutex = true;
 		TracyCZoneN(Zone_CheckCurrentRequest, "CheckCurrentRequest", true);
 		if (manager->currentRequestIndex < manager->requests.length)
 		{
@@ -721,26 +679,27 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 			{
 				if (currentRequest->receivingData && !currentRequest->queriedData)
 				{
-					WriteLine_D("Querying data...");
 					currentRequest->queriedData = true;
 					BOOL queryResult = WinHttpQueryDataAvailable(currentRequest->requestHandle, NULL);
 					if (queryResult != TRUE)
 					{
 						currentRequest->queriedData = false;
 						currentRequest->state = HttpRequestState_Failure;
-						currentRequest->error = Result_Failure; //TODO: Choose a better error code
+						currentRequest->error = Result_WinHTTPError;
 						DWORD errorCode = GetLastError();
-						PrintLine_D("QueryData Failed: %s", GetWinHttpErrorStr(errorCode));
+						PrintLine_D("WinHTTP QueryData Error: %s", GetWinHttpErrorStr(errorCode));
 					}
 					UNUSED(queryResult);
 				}
 			}
 		}
 		TracyCZoneEnd(Zone_CheckCurrentRequest);
+		manager->mainLockedMutex = false;
 	}
-	manager->mainLockedMutex = false;
-	UnlockMutex(&manager->mutex);
 	
+	// +==========================================+
+	// | Do Callbacks and Start Pending Requests  |
+	// +==========================================+
 	while (manager->currentRequestIndex >= manager->requests.length)
 	{
 		TracyCZoneN(Zone_HttpCallback, "HttpCallback", true);
@@ -766,16 +725,13 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 			VarArrayLoopGet(HttpRequest, request, &manager->requests, rIndex);
 			if (request->state == HttpRequestState_NotStarted)
 			{
-				TracyCZoneN(Zone_InnerMutexLock, "MutexLock", true);
-				LockMutex(&manager->mutex, TIMEOUT_FOREVER);
-				manager->mainLockedMutex = true;
-				TracyCZoneEnd(Zone_InnerMutexLock);
-				
-				bool startedSuccessfully = HttpRequestManagerStartRequest(manager, rIndex);
-				
-				manager->mainLockedMutex = false;
-				UnlockMutex(&manager->mutex);
-				
+				bool startedSuccessfully = false;
+				LockMutexBlockWithTracyZone(&manager->mutex, TIMEOUT_FOREVER, Zone_LockMutex2, "LockMutex")
+				{
+					manager->mainLockedMutex = true;
+					startedSuccessfully = HttpRequestManagerStartRequest(manager, rIndex);
+					manager->mainLockedMutex = false;
+				}
 				if (!startedSuccessfully) { doCallbackIndex = rIndex; }
 				foundPendingRequest = true;
 				break;
@@ -803,18 +759,16 @@ PEXP HttpRequest* OsMakeHttpRequest(HttpRequestManager* manager, const HttpReque
 	}
 	if (newRequest == nullptr)
 	{
-		LockMutex(&manager->mutex, TIMEOUT_FOREVER);
-		manager->mainLockedMutex = true;
-		
-		newRequest = VarArrayAdd(HttpRequest, &manager->requests);
-		NotNull(newRequest);
-		
-		manager->mainLockedMutex = false;
-		UnlockMutex(&manager->mutex);
+		LockMutexBlockWithTracyZone(&manager->mutex, TIMEOUT_FOREVER, Zone_LockMutex, "LockMutex")
+		{
+			manager->mainLockedMutex = true;
+			newRequest = VarArrayAdd(HttpRequest, &manager->requests);
+			NotNull(newRequest);
+			manager->mainLockedMutex = false;
+		}
 	}
 	
 	ClearPointer(newRequest);
-	newRequest->magic[0] = 'R'; newRequest->magic[1] = 'E'; newRequest->magic[2] = 'Q'; newRequest->magic[3] = 'U';
 	newRequest->id = manager->nextRequestId;
 	manager->nextRequestId++;
 	OsCopyHttpRequestArgs(manager->arena, &newRequest->args, args);
@@ -838,7 +792,6 @@ PEXP HttpRequest* OsMakeHttpRequest(HttpRequestManager* manager, const HttpReque
 	{
 		HttpConnection* newConnection = VarArrayAdd(HttpConnection, &manager->connections);
 		ClearPointer(newConnection);
-		newConnection->magic[0] = 'C'; newConnection->magic[1] = 'O'; newConnection->magic[2] = 'N'; newConnection->magic[3] = 'N';
 		newConnection->hostname = AllocStr8(manager->arena, newRequest->hostnameStr);
 		newConnection->portNumber = portNumber;
 		newConnection->usingSsl = usingSsl;
@@ -847,23 +800,23 @@ PEXP HttpRequest* OsMakeHttpRequest(HttpRequestManager* manager, const HttpReque
 		newConnection->keepaliveTime = Thousand(10); //TODO: What is this value?
 		PrintLine_D("[%llu] Connecting to %.*s%s...", manager->connections.length-1, StrPrint(newConnection->hostname), usingSsl ? " using SSL" : "");
 		#if TARGET_IS_WINDOWS
-		newConnection->hostnameWide = ConvertUtf8StrToUcs2(manager->arena, newConnection->hostname, true);
-		NotNull(newConnection->hostnameWide.chars);
+		Str16 hostnameWide = ConvertUtf8StrToUcs2(manager->arena, newConnection->hostname, true);
+		NotNull(hostnameWide.chars);
 		newConnection->handle = WinHttpConnect(
 			manager->sessionHandle, //hSession
-			newConnection->hostnameWide.chars, //pswzServerName
+			hostnameWide.chars, //pswzServerName
 			portNumber, //nServerPort
 			0 //dwReserved
 		);
 		Assert(newConnection->handle != NULL); //TODO: Is this a valid error scenario we should handle?
-		PrintLine_D("Connection Handle: %016X (pntr %p)", newConnection->handle, newConnection);
+		// PrintLine_D("Connection Handle: %016X (pntr %p)", newConnection->handle, newConnection);
 		#endif
 		connection = newConnection;
 	}
 	VarArrayGetIndexOf(HttpConnection, &manager->connections, connection, &newRequest->connectionIndex);
 	connection->lastUsedTime = programTime;
 	
-	PrintLine_D("Request to %.*s %.*s%s created (connection %llu, pntr %p)", StrPrint(newRequest->hostnameStr), StrPrint(newRequest->pathStr), usingSsl ? " using SLL" : "", newRequest->connectionIndex, newRequest);
+	PrintLine_D("Request to %.*s %.*s%s created", StrPrint(newRequest->hostnameStr), StrPrint(newRequest->pathStr), usingSsl ? " using SLL" : "");
 	//TODO: can we do WinHttpOpenRequest when another request is potentially active?
 	
 	//TODO: Should we call OsUpdateHttpRequestManager directly?

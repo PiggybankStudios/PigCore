@@ -13,6 +13,8 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
+#include "base/base_macros.h"
+#include "misc/misc_profiling_tracy_include.h"
 
 #if TARGET_HAS_THREADING
 
@@ -57,7 +59,20 @@ typedef pthread_mutex_t Mutex;
 	PIG_CORE_INLINE void InitMutex(Mutex* mutexPntr);
 	PIG_CORE_INLINE void DestroyMutex(Mutex* mutexPntr);
 	PIG_CORE_INLINE bool LockMutex(Mutex* mutexPntr, uxx timeoutMs);
+	#if PROFILING_ENABLED
+	PIG_CORE_INLINE bool LockMutexAndEndTracyZone(Mutex* mutexPntr, uxx timeoutMs, TracyCZoneCtx zone);
+	#endif
 	PIG_CORE_INLINE void UnlockMutex(Mutex* mutexPntr);
+#endif
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#define LockMutexBlock(mutexPntr, timeout) DeferIfBlockCondEnd(LockMutex((mutexPntr), (timeout)), UnlockMutex(mutexPntr))
+#if PROFILING_ENABLED
+#define LockMutexBlockWithTracyZone(mutexPntr, timeout, zoneName, zoneDisplayStr) TracyCZoneN(zoneName, zoneDisplayStr, true); DeferIfBlockCondEnd(LockMutexAndEndTracyZone((mutexPntr), (timeout), zoneName), UnlockMutex(mutexPntr))
+#else
+#define LockMutexBlockWithTracyZone(mutexPntr, timeout, zoneName, zoneDisplayStr) LockMutexBlock((mutexPntr), (timeout))
 #endif
 
 // +--------------------------------------------------------------+
@@ -177,6 +192,15 @@ PEXPI bool LockMutex(Mutex* mutexPntr, uxx timeoutMs)
 	AssertMsg(false, "LockMutex does not support the current platform yet!");
 	#endif
 }
+
+#if PROFILING_ENABLED
+PEXPI bool LockMutexAndEndTracyZone(Mutex* mutexPntr, uxx timeoutMs, TracyCZoneCtx zone)
+{
+	bool result = LockMutex(mutexPntr, timeoutMs);
+	TracyCZoneEnd(zone);
+	return result;
+}
+#endif //PROFILING_ENABLED
 
 PEXPI void UnlockMutex(Mutex* mutexPntr)
 {

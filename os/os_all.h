@@ -22,6 +22,9 @@ Description:
 #include "os/os_time.h"
 #include "os/os_error.h" //required by os_virtual_mem.h and os_file.h
 #include "os/os_virtual_mem.h"
+
+#include "misc/misc_profiling_tracy_include.h" //required by os_threading.h and os_http.h
+
 #include "os/os_threading.h" //required by os_http.h
 
 #include "mem/mem_arena.h" //required by os_path.h, os_program_args.h, os_file.h and os_process_info.h
@@ -34,7 +37,6 @@ Description:
 
 #include "os/os_program_args.h"
 
-#include "misc/misc_profiling_tracy_include.h" //required by os_http.h
 #include "mem/mem_scratch.h" //required by os_http.h and os_process_info.h
 
 #include "os/os_http.h"

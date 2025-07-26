@@ -87,6 +87,8 @@ enum Result
 	Result_InvalidInput,
 	Result_Duplicate,
 	Result_FailedToOpenRequest,
+	Result_SslProblem,
+	Result_WinHTTPError,
 	
 	Result_Count,
 };
@@ -157,6 +159,8 @@ PEXP const char* GetResultStr(Result result)
 		case Result_InvalidInput: return "InvalidInput";
 		case Result_Duplicate: return "Duplicate";
 		case Result_FailedToOpenRequest: return "FailedToOpenRequest";
+		case Result_SslProblem: return "SslProblem";
+		case Result_WinHTTPError: return "WinHTTPError";
 		default: return UNKNOWN_STR;
 	}
 }

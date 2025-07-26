@@ -61,8 +61,9 @@ Description:
 #define NEW_STRUCT(type) type
 #endif
 
-#if TARGET_IS_PLAYDATE
-#define THREAD_LOCAL //nothing, not supported by Playdate because there is no OS to do threading
+//TODO: Confirm that this works on Windows, OSX, and Linux with Clang, GCC, and MSVC compilers
+#if !TARGET_HAS_THREADING
+#define THREAD_LOCAL //nothing
 #elif TARGET_IS_OSX
 #define THREAD_LOCAL __thread
 #else
@@ -230,6 +231,19 @@ Description:
 #define IS_VAR_IN_X_BYTES_OF_STRUCT(structureName, numBytes, variableName) ((numBytes) >= STRUCT_VAR_END_OFFSET(structureName, variableName))
 
 #define SwapVariables(varType, var1, var2) do { varType tempVarWithLongNameThatWontConflict = (var2); (var2) = (var1); (var1) = tempVarWithLongNameThatWontConflict; } while(0)
+
+//Use a for loop to execute code at the end of a block (warning: if a break is hit inside the block then the endCode will NOT run!)
+#define DeferBlockEx(uniqueName, endCode)                                 for (int uniqueName = 0; uniqueName == 0; (uniqueName = 1, (endCode)))
+#define DeferBlock(endCode)                                               DeferBlockEx(DeferBlockIter, (endCode))
+//startCode runs at beginning of block
+#define DeferBlockWithStartEx(uniqueName, startCode, endCode)             for (int uniqueName = ((startCode), 0); uniqueName == 0; (uniqueName = 1, (endCode)))
+#define DeferBlockWithStart(startCode, endCode)                           DeferBlockEx(DeferBlockIter, (startCode), (endCode))
+//startCode returns bool to determine if block should run, endCode always runs
+#define DeferIfBlockEx(uniqueName, startCodeAndCondition, endCode)        for (int uniqueName = 2 * !(startCodeAndCondition); (uniqueName == 2) ? ((endCode), false) : (uniqueName == 0); (uniqueName = 1, (endCode)))
+#define DeferIfBlock(startCodeAndCondition, endCode)                      DeferIfBlockEx(DeferBlockIter, (startCodeAndCondition), (endCode))
+//startCode returns bool to determine block should run, endCode only runs if startCode returns true
+#define DeferIfBlockCondEndEx(uniqueName, startCodeAndCondition, endCode) for (int uniqueName = 1 * !(startCodeAndCondition); uniqueName == 0; (uniqueName = 1, (endCode)))
+#define DeferIfBlockCondEnd(startCodeAndCondition, endCode)               DeferIfBlockCondEndEx(DeferBlockIter, (startCodeAndCondition), (endCode))
 
 // +--------------------------------------------------------------+
 // |                  Platform Dependant Macros                   |
