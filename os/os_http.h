@@ -99,9 +99,11 @@ plex HttpRequest
 	u8 magic[4];
 	uxx id;
 	HttpRequestState state;
-	bool readingResponse;
 	Result error;
 	HttpRequestArgs args;
+	
+	bool receivingData;
+	bool queriedData;
 	
 	Str8 protocolStr;
 	Str8 hostnameStr;
@@ -115,6 +117,8 @@ plex HttpRequest
 	uxx numStatusCallbacks;
 	DWORD statusCallbacks[32];
 	#endif
+	
+	VarArray responseBytes; //u8 (allocated from manager.readDataArena)
 };
 
 typedef plex HttpConnection HttpConnection;
@@ -143,6 +147,7 @@ plex HttpRequestManager
 	VarArray requests; //HttpRequest TODO: Should we make this a BktArray?
 	uxx currentRequestIndex;
 	VarArray connections; //HttpConnection
+	Arena responseArena;
 	
 	#if TARGET_HAS_THREADING
 	Mutex mutex;
@@ -358,7 +363,7 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 	if (manager->currentRequestIndex < manager->requests.length)
 	{
 		currentRequest = VarArrayGet(HttpRequest, &manager->requests, manager->currentRequestIndex);
-		if (currentRequest->handle == handle)
+		if (currentRequest->requestHandle == handle)
 		{
 			if (currentRequest->numStatusCallbacks < ArrayCount(currentRequest->statusCallbacks))
 			{
@@ -371,6 +376,9 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 	
 	switch (status)
 	{
+		// +==============================================+
+		// | WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE |
+		// +==============================================+
 		case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE: //NOT main thread
 		{
 			NotNull(currentRequest);
@@ -380,11 +388,83 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 			UNUSED(receiveResult);
 		} break;
 		
+		// +============================================+
+		// | WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE |
+		// +============================================+
 		case WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE: //NOT main thread
+		{
+			//NOTE: We can't call WinHttpQueryDataAvailable right now, we get a INCORRECT_HANDLE_STATE error if we try
+			//      So instead we will wait till the main thread is free to query data, at that point the query handle should be available for requesting data
+			NotNull(currentRequest);
+			Assert(handle == currentRequest->requestHandle);
+			currentRequest->receivingData = true;
+		} break;
+		
+		// +========================================+
+		// | WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE |
+		// +========================================+
+		case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: //NOT main thread
 		{
 			NotNull(currentRequest);
 			Assert(handle == currentRequest->requestHandle);
-			currentRequest->readingResponse = true;
+			
+			DWORD numBytesToRead = infoLength;
+			
+			MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "%llu byte%s available", (u64)numBytesToRead, Plural(numBytesToRead, "s"));
+			printBuffer[ArrayCount(printBuffer)-1] = '\0';
+			WriteLine_D(printBuffer);
+			
+			if (numBytesToRead > 0)
+			{
+				if (currentRequest->responseBytes.arena == nullptr)
+				{
+					InitVarArray(u8, &currentRequest->responseBytes, &manager->responseArena);
+				}
+				u8* newBytesSpace = VarArrayAddMulti(u8, &currentRequest->responseBytes, (uxx)numBytesToRead);
+				NotNull(newBytesSpace);
+				Assert(handle == currentRequest->requestHandle);
+				DWORD numBytesRead = 0;
+				BOOL readResult = WinHttpReadData(
+					currentRequest->requestHandle, //hRequest
+					newBytesSpace, //lpBuffer
+					numBytesToRead, //dwNumberOfBytesToRead
+					&numBytesRead //lpdwNumberOfBytesRead
+				);
+				Assert(readResult != 0);
+				UNUSED(readResult);
+				if (numBytesRead < numBytesToRead)
+				{
+					currentRequest->responseBytes.length -= (numBytesToRead - numBytesRead);
+				}
+				
+				MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "Read %llu byte%s, total %llu byte%s", (u64)numBytesRead, Plural(numBytesRead, "s"), currentRequest->responseBytes.length, Plural(currentRequest->responseBytes.length, "s"));
+				printBuffer[ArrayCount(printBuffer)-1] = '\0';
+				WriteLine_D(printBuffer);
+			}
+			currentRequest->queriedData = false;
+		} break;
+		
+		// +========================================+
+		// | WINHTTP_CALLBACK_STATUS_READ_COMPLETE  |
+		// +========================================+
+		case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: //NOT main thread
+		{
+			NotNull(currentRequest);
+			Assert(handle == currentRequest->requestHandle);
+			Assert(currentRequest->receivingData);
+			currentRequest->receivingData = false;
+			currentRequest->state = HttpRequestState_Success;
+			manager->currentRequestIndex = UINTXX_MAX;
+		} break;
+		
+		// +==================================+
+		// | WINHTTP_CALLBACK_STATUS_REDIRECT |
+		// +==================================+
+		case WINHTTP_CALLBACK_STATUS_REDIRECT: //NOT main thread
+		{
+			NotNull(currentRequest);
+			Assert(handle == currentRequest->requestHandle);
+			currentRequest->receivingData = false;
 		} break;
 		
 		// case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: //NOT main thread
@@ -393,16 +473,6 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 		// } break;
 		
 		// case WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE: //NOT main thread
-		// {
-		// 	//TODO: Implement me!
-		// } break;
-		
-		// case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE: //NOT main thread
-		// {
-		// 	//TODO: Implement me!
-		// } break;
-		
-		// case WINHTTP_CALLBACK_STATUS_READ_COMPLETE: //NOT main thread
 		// {
 		// 	//TODO: Implement me!
 		// } break;
@@ -457,6 +527,8 @@ PEXPI void OsInitHttpRequestManager(Arena* arena, HttpRequestManager* manager)
 	PrintLine_D("Main Thread ID: %llu", (u64)MainThreadId);
 	InitMutex(&manager->mutex);
 	#endif
+	
+	InitArenaStackVirtual(&manager->responseArena, Megabytes(64));
 	
 	#if TARGET_IS_WINDOWS
 	{
@@ -597,6 +669,24 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 			{
 				doCallbackIndex = manager->currentRequestIndex;
 				manager->currentRequestIndex = UINTXX_MAX;
+			}
+			else if (currentRequest->state == HttpRequestState_InProgress)
+			{
+				if (currentRequest->receivingData && !currentRequest->queriedData)
+				{
+					WriteLine_D("Querying data...");
+					currentRequest->queriedData = true;
+					BOOL queryResult = WinHttpQueryDataAvailable(currentRequest->requestHandle, NULL);
+					if (queryResult != TRUE)
+					{
+						currentRequest->queriedData = false;
+						currentRequest->state = HttpRequestState_Failure;
+						currentRequest->error = Result_Failure; //TODO: Choose a better error code
+						DWORD errorCode = GetLastError();
+						PrintLine_D("QueryData Failed: %s", GetWinHttpErrorStr(errorCode));
+					}
+					UNUSED(queryResult);
+				}
 			}
 		}
 	}

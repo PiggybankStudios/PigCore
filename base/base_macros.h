@@ -135,6 +135,9 @@ Description:
 #define TrackMax(isFirst, trackVariable, newValue) do { if ((isFirst) || (trackVariable) < (newValue)) { (trackVariable) = (newValue); } } while(0)
 #define TrackMin(isFirst, trackVariable, newValue) do { if ((isFirst) || (trackVariable) > (newValue)) { (trackVariable) = (newValue); } } while(0)
 
+#define IsAlignedTo(pntr, alignment) ((alignment) == 0 || (((size_t)(pntr)) % (alignment)) == 0)
+#define AlignOffset(pntr, alignment) ((alignment) == 0 ? 0 : (((alignment) - (((size_t)(pntr)) % (alignment))) % alignment))
+
 #ifndef STRINGIFY_DEFINE
 #define STRINGIFY_DEFINE(define) STRINGIFY(define)
 #endif

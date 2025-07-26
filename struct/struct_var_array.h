@@ -350,40 +350,15 @@ PEXP bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared a
 	DebugAssert(newLength >= capacityRequired);
 	DebugAssert(newLength <= (UINT64_MAX / array->itemSize));
 	
-	void* newSpace = nullptr;
-	if (CanArenaAllocAligned(array->arena))
-	{
-		newSpace = AllocMemAligned(array->arena, newLength * array->itemSize, array->itemAlignment);
-	}
-	else
-	{
-		newSpace = AllocMem(array->arena, array->allocLength * array->itemSize);
-	}
+	array->items = ReallocMemAligned(array->arena, array->items, array->length * array->itemSize, array->itemAlignment, newLength * array->itemSize, array->itemAlignment);
 	
-	if (newSpace == nullptr)
+	if (array->items == nullptr)
 	{
 		// PrintLine_E("Failed to expand variable array %s to %llu items at %llu bytes each", (array->name.pntr != nullptr) ? array->name.pntr : "[unnamed]", newLength, array->itemSize);
 		AssertMsg(false, "Failed to expand VarArray!");
 		return false;
 	}
 	
-	if (array->length > 0)
-	{
-		MyMemCopy(newSpace, array->items, array->length * array->itemSize);
-	}
-	if (array->items != nullptr && CanArenaFree(array->arena))
-	{
-		if (CanArenaAllocAligned(array->arena))
-		{
-			FreeMemAligned(array->arena, array->items, array->itemSize * array->allocLength, array->itemAlignment);
-		}
-		else
-		{
-			FreeMem(array->arena, array->items, array->itemSize * array->allocLength);
-		}
-	}
-	
-	array->items = newSpace;
 	array->allocLength = newLength;
 	return true;
 }
