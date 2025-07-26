@@ -27,6 +27,7 @@ Description:
 #define HTTP_DEFAULT_CLIENT_WIDE_STR L"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0" //TODO: Make this a different client string?
 #define HTTP_PORT  80
 #define HTTPS_PORT 443
+#define HTTP_MAX_RESPONSE_SIZE   Megabytes(64) // This determines the virtual memory allocated for responseArena, so we only pay the memory cost of the largest response, but once we get a large response we never uncommit that memory
 
 typedef enum HttpVerb HttpVerb;
 enum HttpVerb
@@ -339,6 +340,7 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 		//NOTE: HANDLE_CLOSING callbacks can happen on handles that don't have a contextPntr set
 		// if (isMainThread) { PrintLine_D("%s handle %016X (on thread %llu)", status == WINHTTP_CALLBACK_STATUS_HANDLE_CREATED ? "Created" : "Closed", handle, (u64)threadId); }
 		// else { WriteLine_D("Created/Closed handle on secondary thread"); }
+		TracyCZoneEnd(Zone_Func);
 		return;
 	}
 	
@@ -407,21 +409,29 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 		{
 			NotNull(currentRequest);
 			Assert(handle == currentRequest->requestHandle);
-			
-			DWORD numBytesToRead = infoLength;
+			Assert(infoLength == sizeof(DWORD));
+			DWORD numBytesToRead = *((DWORD*)infoPntr);
 			
 			MyBufferPrintf(printBuffer, ArrayCount(printBuffer), "%llu byte%s available", (u64)numBytesToRead, Plural(numBytesToRead, "s"));
 			printBuffer[ArrayCount(printBuffer)-1] = '\0';
 			WriteLine_D(printBuffer);
 			
-			if (numBytesToRead > 0)
+			if (numBytesToRead == 0)
+			{
+				currentRequest->receivingData = false;
+				currentRequest->state = HttpRequestState_Success;
+			}
+			else
 			{
 				if (currentRequest->responseBytes.arena == nullptr)
 				{
 					InitVarArray(u8, &currentRequest->responseBytes, &manager->responseArena);
 				}
+				void* beforePntr = currentRequest->responseBytes.items;
 				u8* newBytesSpace = VarArrayAddMulti(u8, &currentRequest->responseBytes, (uxx)numBytesToRead);
 				NotNull(newBytesSpace);
+				Assert(beforePntr == currentRequest->responseBytes.items || beforePntr == nullptr);
+				Assert(currentRequest->responseBytes.items == manager->responseArena.mainPntr);
 				Assert(handle == currentRequest->requestHandle);
 				DWORD numBytesRead = 0;
 				BOOL readResult = WinHttpReadData(
@@ -452,9 +462,6 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 			NotNull(currentRequest);
 			Assert(handle == currentRequest->requestHandle);
 			Assert(currentRequest->receivingData);
-			currentRequest->receivingData = false;
-			currentRequest->state = HttpRequestState_Success;
-			manager->currentRequestIndex = UINTXX_MAX;
 		} break;
 		
 		// +==================================+
@@ -467,20 +474,27 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 			currentRequest->receivingData = false;
 		} break;
 		
-		// case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: //NOT main thread
-		// {
-		// 	//TODO: Implement me!
-		// } break;
+		// +========================================+
+		// | WINHTTP_CALLBACK_STATUS_REQUEST_ERROR  |
+		// +========================================+
+		case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR: //NOT main thread
+		{
+			NotNull(currentRequest);
+			Assert(handle == currentRequest->requestHandle);
+			currentRequest->state = HttpRequestState_Failure;
+			currentRequest->error = Result_Failure; //TODO: Fill with a better errorCode!
+		} break;
 		
-		// case WINHTTP_CALLBACK_STATUS_RECEIVING_RESPONSE: //NOT main thread
-		// {
-		// 	//TODO: Implement me!
-		// } break;
-		
-		// case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE: //main thread
-		// {
-		// 	//TODO: Implement me!
-		// } break;
+		// +========================================+
+		// | WINHTTP_CALLBACK_STATUS_SECURE_FAILURE |
+		// +========================================+
+		case WINHTTP_CALLBACK_STATUS_SECURE_FAILURE: //main thread
+		{
+			NotNull(currentRequest);
+			Assert(handle == currentRequest->requestHandle);
+			currentRequest->state = HttpRequestState_Failure;
+			currentRequest->error = Result_Failure; //TODO: Fill with a better errorCode!
+		} break;
 		
 		// default:
 		// {
@@ -528,7 +542,7 @@ PEXPI void OsInitHttpRequestManager(Arena* arena, HttpRequestManager* manager)
 	InitMutex(&manager->mutex);
 	#endif
 	
-	InitArenaStackVirtual(&manager->responseArena, Megabytes(64));
+	InitArenaStackVirtual(&manager->responseArena, HTTP_MAX_RESPONSE_SIZE);
 	
 	#if TARGET_IS_WINDOWS
 	{
@@ -541,24 +555,27 @@ PEXPI void OsInitHttpRequestManager(Arena* arena, HttpRequestManager* manager)
 		Assert(manager->sessionHandle != NULL);
 		PrintLine_D("Session handle: %016X (manager pntr: %p)", manager->sessionHandle, manager);
 		
-		DWORD callbackMask = WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS |
-			WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS |
-			WINHTTP_CALLBACK_FLAG_RESOLVE_NAME |
-			WINHTTP_CALLBACK_FLAG_CONNECT_TO_SERVER |
-			WINHTTP_CALLBACK_FLAG_DETECTING_PROXY |
-			WINHTTP_CALLBACK_FLAG_DATA_AVAILABLE |
-			WINHTTP_CALLBACK_FLAG_HEADERS_AVAILABLE |
-			WINHTTP_CALLBACK_FLAG_READ_COMPLETE |
-			WINHTTP_CALLBACK_FLAG_REQUEST_ERROR |
-			WINHTTP_CALLBACK_FLAG_SEND_REQUEST |
-			WINHTTP_CALLBACK_FLAG_SENDREQUEST_COMPLETE |
-			WINHTTP_CALLBACK_FLAG_WRITE_COMPLETE |
-			WINHTTP_CALLBACK_FLAG_RECEIVE_RESPONSE |
-			WINHTTP_CALLBACK_FLAG_CLOSE_CONNECTION |
-			WINHTTP_CALLBACK_FLAG_HANDLES |
-			WINHTTP_CALLBACK_FLAG_REDIRECT |
-			WINHTTP_CALLBACK_FLAG_INTERMEDIATE_RESPONSE |
-			WINHTTP_CALLBACK_FLAG_SECURE_FAILURE;
+		//TODO: Refine this list once we know which callbacks we actually want
+		DWORD callbackMask = (0
+			| WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS
+			| WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS
+			| WINHTTP_CALLBACK_FLAG_RESOLVE_NAME
+			| WINHTTP_CALLBACK_FLAG_CONNECT_TO_SERVER
+			| WINHTTP_CALLBACK_FLAG_DETECTING_PROXY
+			| WINHTTP_CALLBACK_FLAG_DATA_AVAILABLE
+			| WINHTTP_CALLBACK_FLAG_HEADERS_AVAILABLE
+			| WINHTTP_CALLBACK_FLAG_READ_COMPLETE
+			| WINHTTP_CALLBACK_FLAG_REQUEST_ERROR
+			| WINHTTP_CALLBACK_FLAG_SEND_REQUEST
+			| WINHTTP_CALLBACK_FLAG_SENDREQUEST_COMPLETE
+			| WINHTTP_CALLBACK_FLAG_WRITE_COMPLETE
+			| WINHTTP_CALLBACK_FLAG_RECEIVE_RESPONSE
+			| WINHTTP_CALLBACK_FLAG_CLOSE_CONNECTION
+			| WINHTTP_CALLBACK_FLAG_HANDLES
+			| WINHTTP_CALLBACK_FLAG_REDIRECT
+			| WINHTTP_CALLBACK_FLAG_INTERMEDIATE_RESPONSE
+			| WINHTTP_CALLBACK_FLAG_SECURE_FAILURE
+		);
 		
 		WINHTTP_STATUS_CALLBACK setCallbackResult = WinHttpSetStatusCallback(manager->sessionHandle, WinHttpStatusCallback, callbackMask, (DWORD_PTR)0);
 		Assert(setCallbackResult != WINHTTP_INVALID_STATUS_CALLBACK); //TODO: Call GetLastError for more info
@@ -585,6 +602,7 @@ PEXPI HttpConnection* OsFindHttpConnection(HttpRequestManager* manager, Str8 hos
 
 static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requestIndex)
 {
+	TracyCZoneN(Zone_Func, "HttpRequestManagerStartRequest", true);
 	ScratchBegin1(scratch, manager->arena);
 	HttpRequest* request = VarArrayGet(HttpRequest, &manager->requests, requestIndex);
 	Assert(request->state == HttpRequestState_NotStarted);
@@ -626,6 +644,8 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 			
 			//TODO: Do we need to lock the mutex here?
 			
+			TracyCZoneN(Zone_WinHttpSendRequest, "WinHttpSendRequest", true);
+			//TODO: This function is taking ~8ms to return! We should probably be doing this on another thread!
 			BOOL requestResult = WinHttpSendRequest(
 				request->requestHandle, //hRequest
 				headersWideStr.chars, //lpszHeaders
@@ -635,6 +655,7 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 				(DWORD)request->encodedContent.length, //dwTotalLength
 				0 //dwContext
 			);
+			TracyCZoneEnd(Zone_WinHttpSendRequest);
 			Assert(requestResult == TRUE); //TODO: Handle this error properly
 			
 			request->state = HttpRequestState_InProgress;
@@ -647,6 +668,7 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 	#endif
 	
 	ScratchEnd(scratch);
+	TracyCZoneEnd(Zone_Func);
 	return result;
 }
 
@@ -656,17 +678,41 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 	NotNull(manager->arena);
 	TracyCZoneN(Zone_Func, "OsUpdateHttpRequestManager", true);
 	
+	// +==============================+
+	// |     Check currentRequest     |
+	// +==============================+
 	uxx doCallbackIndex = UINTXX_MAX;
+	TracyCZoneN(Zone_MutexLock, "MutexLock", true);
 	LockMutex(&manager->mutex, TIMEOUT_FOREVER);
+	TracyCZoneEnd(Zone_MutexLock);
 	manager->mainLockedMutex = true;
 	{
+		TracyCZoneN(Zone_CheckCurrentRequest, "CheckCurrentRequest", true);
 		if (manager->currentRequestIndex < manager->requests.length)
 		{
 			HttpRequest* currentRequest = VarArrayGet(HttpRequest, &manager->requests, manager->currentRequestIndex);
-			if (currentRequest->state == HttpRequestState_Success ||
-				currentRequest->state == HttpRequestState_Failure ||
-				currentRequest->state == HttpRequestState_Cancelled)
+			if (currentRequest->state >= HttpRequestState_Success)
 			{
+				// Copy the responseBytes out of responseArena into the main manager->arena
+				if (currentRequest->responseBytes.arena == &manager->responseArena)
+				{
+					if (currentRequest->responseBytes.length > 0)
+					{
+						uxx numBytes = currentRequest->responseBytes.length;
+						u8* srcPntr = (u8*)currentRequest->responseBytes.items;
+						InitVarArrayWithInitial(u8, &currentRequest->responseBytes, manager->arena, numBytes);
+						u8* destPntr = VarArrayAddMulti(u8, &currentRequest->responseBytes, numBytes);
+						NotNull(destPntr);
+						MyMemCopy(destPntr, srcPntr, numBytes);
+					}
+					else
+					{
+						ClearStruct(currentRequest->responseBytes);
+					}
+					ArenaResetToMark(&manager->responseArena, 0);
+				}
+				
+				// Remember this index so we can do the callback
 				doCallbackIndex = manager->currentRequestIndex;
 				manager->currentRequestIndex = UINTXX_MAX;
 			}
@@ -689,40 +735,52 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 				}
 			}
 		}
+		TracyCZoneEnd(Zone_CheckCurrentRequest);
 	}
 	manager->mainLockedMutex = false;
 	UnlockMutex(&manager->mutex);
 	
-	if (doCallbackIndex < manager->requests.length)
-	{
-		//TODO: Implement me!
-	}
-	
 	while (manager->currentRequestIndex >= manager->requests.length)
 	{
+		TracyCZoneN(Zone_HttpCallback, "HttpCallback", true);
+		if (doCallbackIndex < manager->requests.length)
+		{
+			HttpRequest* request = VarArrayGet(HttpRequest, &manager->requests, doCallbackIndex);
+			PrintLine_D("Callback on request %llu to \"%.*s\" result=%s, got %llu byte%s",
+				request->id,
+				StrPrint(request->args.urlStr),
+				GetHttpRequestStateStr(request->state),
+				request->responseBytes.length, Plural(request->responseBytes.length, "s")
+			);
+			// Write_D("["); VarArrayLoop(&request->responseBytes, bIndex) { VarArrayLoopGetValue(u8, responseByte, &request->responseBytes, bIndex); Print_D(" %02X", responseByte); } WriteLine_D(" ]");
+			//TODO: Implement me!
+			doCallbackIndex = UINTXX_MAX;
+		}
+		TracyCZoneEnd(Zone_HttpCallback);
+		
+		TracyCZoneN(Zone_TryStartPendingRequest, "TryStartPendingRequest", true);
 		bool foundPendingRequest = false;
 		VarArrayLoop(&manager->requests, rIndex)
 		{
 			VarArrayLoopGet(HttpRequest, request, &manager->requests, rIndex);
 			if (request->state == HttpRequestState_NotStarted)
 			{
+				TracyCZoneN(Zone_InnerMutexLock, "MutexLock", true);
 				LockMutex(&manager->mutex, TIMEOUT_FOREVER);
 				manager->mainLockedMutex = true;
+				TracyCZoneEnd(Zone_InnerMutexLock);
 				
 				bool startedSuccessfully = HttpRequestManagerStartRequest(manager, rIndex);
 				
 				manager->mainLockedMutex = false;
 				UnlockMutex(&manager->mutex);
 				
-				if (!startedSuccessfully)
-				{
-					//TODO: Implement me! (Do callback)
-				}
-				
+				if (!startedSuccessfully) { doCallbackIndex = rIndex; }
 				foundPendingRequest = true;
 				break;
 			}
 		}
+		TracyCZoneEnd(Zone_TryStartPendingRequest);
 		if (!foundPendingRequest) { break; }
 	}
 	

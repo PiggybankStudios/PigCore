@@ -350,7 +350,7 @@ PEXP bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared a
 	DebugAssert(newLength >= capacityRequired);
 	DebugAssert(newLength <= (UINT64_MAX / array->itemSize));
 	
-	array->items = ReallocMemAligned(array->arena, array->items, array->length * array->itemSize, array->itemAlignment, newLength * array->itemSize, array->itemAlignment);
+	array->items = ReallocMemAligned(array->arena, array->items, array->allocLength * array->itemSize, array->itemAlignment, newLength * array->itemSize, array->itemAlignment);
 	
 	if (array->items == nullptr)
 	{
@@ -481,18 +481,12 @@ PEXP void* VarArrayAddMulti_(uxx itemSize, uxx itemAlignment, VarArray* array, u
 	if (numItems == 0) { return nullptr; }
 	if (!VarArrayExpand(array, array->length+numItems)) { return nullptr; }
 	
-	void* result = nullptr;
-	uxx numItemsBefore = array->length;
-	for (uxx iIndex = 0; iIndex < numItems; iIndex++)
-	{
-		void* newItem = VarArrayAdd_(itemSize, itemAlignment, array);
-		if (newItem == nullptr)
-		{
-			array->length = numItemsBefore;
-			return nullptr;
-		}
-		else if (result == nullptr) { result = newItem; }
-	}
+	void* result = ((u8*)array->items) + (array->length * array->itemSize);
+	array->length += numItems;
+	
+	#if VAR_ARRAY_CLEAR_ITEMS_ON_ADD
+	MyMemSet(result, VAR_ARRAY_CLEAR_ITEM_BYTE_VALUE, numItems * array->itemSize);
+	#endif
 	
 	return result;
 }
