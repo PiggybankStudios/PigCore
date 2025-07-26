@@ -35,6 +35,7 @@ Description:
 #include "os/os_program_args.h"
 
 #include "misc/misc_profiling_tracy_include.h" //required by os_http.h
+#include "mem/mem_scratch.h" //required by os_http.h and os_process_info.h
 
 #include "os/os_http.h"
 
@@ -45,7 +46,6 @@ Description:
 #include "os/os_file.h"
 #include "os/os_file_dialog.h"
 
-#include "mem/mem_scratch.h" //required by os_process_info.h
 
 #include "os/os_process_info.h"
 #include "os/os_font.h"

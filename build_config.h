@@ -15,14 +15,14 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
 
-#define BUILD_PIG_BUILD 1
+#define BUILD_PIG_BUILD 0
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
 #define DEBUG_BUILD   1
 // Enables linking with tracy.lib to enable profiling through Tracy
-#define PROFILING_ENABLED 1
+#define PROFILING_ENABLED 0
 
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS             1
@@ -48,7 +48,7 @@ Description:
 #define RUN_PIGGEN     0
 
 // Builds third_party/tracy/TracyClient.cpp in C++ mode into tracy.obj which will be linked into pig_core.dll
-#define BUILD_TRACY_DLL 1
+#define BUILD_TRACY_DLL 0
 
 // Builds ui/ui_imgui_main.cpp in C++ mode into imgui.obj which will be linked into pig_core.dll and/or tests.exe
 #define BUILD_IMGUI_OBJ 0
@@ -56,12 +56,12 @@ Description:
 #define BUILD_PHYSX_OBJ 0
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
-#define BUILD_PIG_CORE_DLL 1
+#define BUILD_PIG_CORE_DLL 0
 
 // Compiles tests/main.c
 #define BUILD_TESTS   1
 // Runs the result of compiling tests/main.c, aka the tests.exe
-#define RUN_TESTS     0
+#define RUN_TESTS     1
 
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
@@ -92,7 +92,7 @@ Description:
 // Enables tests.exe using sokol_app.h to create and manage a graphical window
 #define BUILD_WITH_SOKOL_APP 0
 // Enables tests.exe being linked with SDL.lib and it's required libraries
-#define BUILD_WITH_SDL       1
+#define BUILD_WITH_SDL       0
 // Enables tests.exe being linked with openvr_api.lib and it's required libraries
 #define BUILD_WITH_OPENVR    0
 // Enables tests.exe using clay.h to render UI elements
@@ -103,5 +103,7 @@ Description:
 #define BUILD_WITH_PHYSX     0
 // Enables using Metadesk library to parse Metadesk formatted files (md.h and md.c)
 #define BUILD_WITH_METADESK  0
+// Enables support for making HTTP (and HTTPS) requests using the OS' API (WinHTTP for Windows, ? for Linux, etc.)
+#define BUILD_WITH_HTTP      1
 
 #endif //  _BUILD_CONFIG_H
