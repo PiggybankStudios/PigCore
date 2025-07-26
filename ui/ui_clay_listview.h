@@ -21,6 +21,8 @@ Date:   07\22\2025
 #include "gfx/gfx_clay_renderer.h"
 #include "gfx/gfx_font.h"
 
+#if BUILD_WITH_CLAY
+
 typedef plex UiListView UiListView;
 plex UiListView
 {
@@ -300,5 +302,7 @@ PEXP void DoUiListView(UiListView* list,
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_CLAY
 
 #endif //  _UI_CLAY_LISTVIEW_H

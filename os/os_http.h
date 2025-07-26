@@ -17,6 +17,7 @@ Description:
 #include "std/std_memset.h"
 #include "std/std_includes.h"
 #include "mem/mem_arena.h"
+#include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
 #include "os/os_threading.h"

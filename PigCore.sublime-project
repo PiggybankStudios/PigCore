@@ -197,6 +197,7 @@
 			"BUILD_PLAYDATE_SIMULATOR",
 			"BUILD_SHADERS",
 			"BUILD_WEB",
+			"BUILD_WITH_HTTP",
 			"BUILD_WITH_OPENVR",
 			"BUILD_WITH_RAYLIB",
 			"BUILD_WITH_SOKOL",
@@ -913,6 +914,7 @@
 		"custom_functions":
 		[
 			"#define ALLOC_FUNC_DEF(functionName)",
+			"#define AlignOffset(pntr, alignment)",
 			"#define AllocArray(type, arenaPntr, count)",
 			"#define AllocArrayUnaligned(type, arenaPntr, count)",
 			"#define AllocStr8(arenaPntr, string)",
@@ -988,6 +990,7 @@
 			"#define InitVarArray(type, arrayPntr, arena)",
 			"#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded)",
 			"#define InsertIntoStrBuff(bufferPntr, index, insertNullTermStr)",
+			"#define IsAlignedTo(pntr, alignment)",
 			"#define IsEqualXor(variable1, variable2, condition1, condition2)",
 			"#define IsFlagSet(BitwiseField, Bit)",
 			"#define IsPntrWithin(regionStart, regionSize, pntr)",
