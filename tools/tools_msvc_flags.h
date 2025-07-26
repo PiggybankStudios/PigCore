@@ -61,6 +61,7 @@ Description:
 #define CL_WARNING_UNREFERENCED_FUNC_REMOVED             4505 //Unreferenced local function has been removed [W4]
 #define CL_WARNING_USAGE_OF_DEPRECATED                   4996 //Usage of deprecated function, class member, variable, or typedef [W3]
 #define CL_WARNING_ASSIGNMENT_WITHIN_CONDITIONAL_EXPR    4706 //assignment within conditional expression [W?]
+#define CL_WARNING_NAMED_TYPEDEF_IN_PARENTHESES          4115 //named type definition in parentheses
 #define CL_WARNING_SWITCH_ONLY_DEFAULT                   4065 //Switch statement contains 'default' but no 'case' labels
 #define CL_WARNING_UNREFERENCED_FUNC_PARAMETER           4100 //Unreferenced formal parameter [W4]
 #define CL_WARNING_UNREFERENCED_LCOAL_VARIABLE           4101 //Unreferenced local variable [W3]

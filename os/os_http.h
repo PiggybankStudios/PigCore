@@ -30,6 +30,9 @@ Description:
 #define HTTPS_PORT               443
 #define HTTP_MAX_RESPONSE_SIZE   Megabytes(64) // This determines the virtual memory allocated for responseArena, so we only pay the memory cost of the largest response, but once we get a large response we never uncommit that memory
 
+#define HTTP_CALLBACK_DEF(functionName) void functionName(plex HttpRequest* request)
+typedef HTTP_CALLBACK_DEF(HttpCallback_f);
+
 typedef enum HttpVerb HttpVerb;
 enum HttpVerb
 {
@@ -64,6 +67,9 @@ plex HttpRequestArgs
 	Str8Pair* headers;
 	uxx numContentItems;
 	Str8Pair* contentItems;
+	HttpCallback_f* callback;
+	void* contextPntr;
+	uxx contextId;
 };
 
 typedef enum HttpRequestState HttpRequestState;
@@ -218,6 +224,10 @@ static void FreeHttpRequest(Arena* arena, HttpRequest* request)
 		FreeStr8(arena, &request->args.contentItems[cIndex].value);
 	}
 	if (request->args.contentItems != nullptr) { FreeArray(Str8Pair, arena, request->args.numContentItems, request->args.contentItems); }
+	//NOTE: protocolStr, hostnameStr, and pathStr are all slices into args.urlStr so we don't need to free them
+	FreeStr8(arena, &request->encodedContent);
+	FreeStr8(arena, &request->encodedHeaders);
+	if (request->responseBytes.arena != nullptr) { FreeVarArray(&request->responseBytes); }
 	ClearPointer(request);
 }
 
@@ -713,7 +723,11 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 				request->responseBytes.length, Plural(request->responseBytes.length, "s")
 			);
 			// Write_D("["); VarArrayLoop(&request->responseBytes, bIndex) { VarArrayLoopGetValue(u8, responseByte, &request->responseBytes, bIndex); Print_D(" %02X", responseByte); } WriteLine_D(" ]");
-			//TODO: Implement me!
+			if (request->args.callback != nullptr)
+			{
+				request->args.callback(request);
+			}
+			FreeHttpRequest(manager->arena, request);
 			doCallbackIndex = UINTXX_MAX;
 		}
 		TracyCZoneEnd(Zone_HttpCallback);

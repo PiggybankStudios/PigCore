@@ -102,10 +102,14 @@ Description:
 // Shorthand for writing things like (4 * 1024 * 1024) as Megabytes(4).
 // Can be used for more than just memory sizes but these powers of 1024 are often
 // used when partitioning memory because they relate to binary bit patterns
-#define Kilobytes(value) ((value) * 1024ULL)
-#define Megabytes(value) (Kilobytes(value) * 1024ULL)
-#define Gigabytes(value) (Megabytes(value) * 1024ULL)
-#define Terabytes(value) (Gigabytes(value) * 1024ULL)
+#define Kilo(value) ((value) * 1024ULL)
+#define Mega(value) (Kilo(value) * 1024ULL)
+#define Giga(value) (Mega(value) * 1024ULL)
+#define Tera(value) (Giga(value) * 1024ULL)
+#define Kilobytes(value) Kilo(value)
+#define Megabytes(value) Mega(value)
+#define Gigabytes(value) Giga(value)
+#define Terabytes(value) Tera(value)
 
 #define Thousand(value) ((value) * 1000ULL)
 #define Million(value)  ((value) * 1000000ULL)
