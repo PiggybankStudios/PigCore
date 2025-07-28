@@ -91,7 +91,6 @@ PEXPI ThreadId OsGetCurrentThreadId()
 	{
     	int returnCode = pthread_threadid_np(pthread_self(), &result);
     	Assert(returnCode == 0);
-    	UNUSED(returnCode);
 	}
 	#else
 	AssertMsg(false, "OsGetCurrentThreadId does not support the current platform yet!");
@@ -118,7 +117,6 @@ PEXPI void InitMutex(Mutex* mutexPntr)
 		//TODO: Test this code
 		int initResult = pthread_mutex_init(mutexPntr, NULL);
 		DebugAssert(initResult == 0);
-		UNUSED(initResult);
 	}
 	#else
 	AssertMsg(false, "InitMutex does not support the current platform yet!");
@@ -133,7 +131,6 @@ PEXPI void DestroyMutex(Mutex* mutexPntr)
 		DebugAssert(*mutexPntr != NULL);
 		BOOL closeResult = CloseHandle(*mutexPntr);
 		Assert(closeResult != 0);
-		UNUSED(closeResult);
 		*mutexPntr = NULL;
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
@@ -141,7 +138,6 @@ PEXPI void DestroyMutex(Mutex* mutexPntr)
 		//TODO: Test this code
 		int destroyResult = pthread_mutex_destroy(mutexPntr);
 		DebugAssert(destroyResult == 0);
-		UNUSED(destroyResult);
 	}
 	#else
 	AssertMsg(false, "DestroyMutex does not support the current platform yet!");
@@ -208,13 +204,11 @@ PEXPI void UnlockMutex(Mutex* mutexPntr)
 	{
 		BOOL releaseResult = ReleaseMutex(*mutexPntr);
 		DebugAssert(releaseResult != 0);
-		UNUSED(releaseResult);
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		int unlockResult = pthread_mutex_unlock(mutexPntr);
 		DebugAssert(unlockResult == 0);
-		UNUSED(unlockResult);
 	}
 	#else
 	AssertMsg(false, "UnlockMutex does not support the current platform yet!");

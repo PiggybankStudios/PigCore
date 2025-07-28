@@ -61,10 +61,10 @@ Description:
 #define DebugAssert(condition) Assert(condition)
 #define DebugNotNull(variable) NotNull(variable)
 #else
-#define DebugStaticAssert(condition) //nothing
-#define DebugAssertMsg(condition, message) //nothing
-#define DebugAssert(condition) //nothing
-#define DebugNotNull(variable) //nothing
+#define DebugStaticAssert(condition)       //nothing
+#define DebugAssertMsg(condition, message) sizeof(condition) //NOTE: Doing sizeof on the condition ensures that the unused variable warning is satiated while not causing any consequences of potentially running the condition code
+#define DebugAssert(condition)             sizeof(condition)
+#define DebugNotNull(variable)             sizeof(variable)
 #endif
 
 #else //!ASSERTIONS_ENABLED
@@ -72,13 +72,13 @@ Description:
 #define MyBreakMsg(message)                //nothing
 #define MyBreak()                          //nothing
 #define StaticAssert(condition)            //nothing
-#define AssertMsg(condition, message)      //nothing
-#define Assert(condition)                  //nothing
-#define NotNull(variable)                  //nothing
+#define AssertMsg(condition, message)      sizeof(condition)
+#define Assert(condition)                  sizeof(condition)
+#define NotNull(variable)                  sizeof(variable)
 #define DebugStaticAssert(condition)       //nothing
-#define DebugAssertMsg(condition, message) //nothing
-#define DebugAssert(condition)             //nothing
-#define DebugNotNull(variable)             //nothing
+#define DebugAssertMsg(condition, message) sizeof(condition)
+#define DebugAssert(condition)             sizeof(condition)
+#define DebugNotNull(variable)             sizeof(variable)
 
 #endif //ASSERTIONS_ENABLED
 

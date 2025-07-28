@@ -100,6 +100,7 @@ PEXP void DoUiListView(UiListView* list,
 	r32 uiScale, Clay_SizingAxis listWidth, Clay_SizingAxis listHeight, u16 itemGap,
 	uxx numItems, UiListViewItem* items)
 {
+	UNUSED(keyboard);
 	ScratchBegin1(scratch, uiArena);
 	ClayId innerContainerId = ToClayIdPrint(uiArena, "%.*s_Inner", StrPrint(list->idStr));
 	ClayId gutterId = ToClayIdPrint(uiArena, "%.*s_ScrollGutter", StrPrint(list->idStr));

@@ -92,7 +92,6 @@ PEXP void* OsReserveMemory(uxx numBytes)
 	void* result = nullptr;
 	uxx pageSize = OsGetMemoryPageSize();
 	Assert(numBytes % pageSize == 0);
-	UNUSED(pageSize);
 	
 	#if TARGET_IS_WINDOWS
 	{
@@ -191,7 +190,6 @@ PEXP void OsDecommitReservedMemory(void* memoryPntr, uxx committedSize)
 			MEM_DECOMMIT //dwFreeType
 		);
 		Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
-		UNUSED(freeResult);
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
@@ -211,7 +209,6 @@ PEXP void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 	uxx pageSize = OsGetMemoryPageSize();
 	Assert((uxx)memoryPntr % pageSize == 0);
 	Assert(reservedSize % pageSize == 0);
-	UNUSED(pageSize);
 	
 	#if TARGET_IS_WINDOWS
 	{
@@ -221,7 +218,6 @@ PEXP void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 			MEM_RELEASE //dwFreeType
 		);
 		Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
-		UNUSED(freeResult);
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{

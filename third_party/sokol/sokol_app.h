@@ -7685,7 +7685,7 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
                 {
                     _sapp_win32_timing_measure();
                     bool frameResult = _sapp_frame();
-                    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
+                    UNUSED(frameResult); //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
                     #if defined(SOKOL_D3D11)
                         // present with DXGI_PRESENT_DO_NOT_WAIT
                         _sapp_d3d11_present(true);

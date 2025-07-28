@@ -262,7 +262,7 @@ PEXP u8 GetPrevCodepointForUtf8(u64 numBytesBeforePntr, const char* strEndPntr, 
 	if (codepointOut != nullptr)
 	{
 		u8 calcSize = GetCodepointForUtf8(codepointSize, strEndPntr - codepointSize, codepointOut);
-		DebugAssert(calcSize = codepointSize); UNUSED(calcSize);
+		DebugAssert(calcSize = codepointSize);
 	}
 	return codepointSize;
 }

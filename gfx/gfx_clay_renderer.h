@@ -237,11 +237,9 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					: &system->prevFontFlow;
 				
 				Result drawResult = DoFontFlow(&state, &callbacks, flowTarget);
+				Assert(drawResult == Result_Success || drawResult == Result_InvalidUtf8);
 				
 				// GfxSystem_DrawRectangle(system, NewRecV(textPos, V2_One), MonokaiRed);
-				
-				Assert(drawResult == Result_Success || drawResult == Result_InvalidUtf8);
-				UNUSED(drawResult);
 				
 				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
 					command->renderData.text.userData.contraction == TextContraction_ClipRight)

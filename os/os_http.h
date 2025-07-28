@@ -250,7 +250,6 @@ PEXPI void OsFreeHttpRequestManager(HttpRequestManager* manager)
 		#if TARGET_IS_WINDOWS
 		BOOL closeResult = WinHttpCloseHandle(manager->sessionHandle);
 		Assert(closeResult == TRUE);
-		UNUSED(closeResult);
 		#endif
 	}
 	ClearPointer(manager);
@@ -371,7 +370,6 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 				NotNull(request);
 				BOOL receiveResult = WinHttpReceiveResponse(request->requestHandle, NULL);
 				Assert(receiveResult != 0);
-				UNUSED(receiveResult);
 			} break;
 			
 			// +============================================+
@@ -420,7 +418,6 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 						&numBytesRead //lpdwNumberOfBytesRead
 					);
 					Assert(readResult != 0);
-					UNUSED(readResult);
 					if (numBytesRead < numBytesToRead)
 					{
 						request->responseBytes.length -= (numBytesToRead - numBytesRead);
@@ -647,6 +644,7 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 {
 	NotNull(manager);
 	NotNull(manager->arena);
+	UNUSED(programTime);
 	TracyCZoneN(Zone_Func, "OsUpdateHttpRequestManager", true);
 	
 	// +==============================+
@@ -699,7 +697,6 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 						DWORD errorCode = GetLastError();
 						PrintLine_D("WinHTTP QueryData Error: %s", GetWinHttpErrorStr(errorCode));
 					}
-					UNUSED(queryResult);
 				}
 			}
 		}

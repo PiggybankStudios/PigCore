@@ -672,7 +672,6 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 			DebugNotNull(arena->mainPntr);
 			uxx osMemPageSize = OsGetMemoryPageSize();
 			Assert(osMemPageSize > 0);
-			UNUSED(osMemPageSize);
 			
 			uxx currentMisalignment = (alignment > 1) ? (uxx)((size_t)((u8*)arena->mainPntr + arena->used) % alignment) : 0;
 			uxx alignmentBytesNeeded = (currentMisalignment > 0) ? (alignment - currentMisalignment) : 0;
@@ -1016,7 +1015,7 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 				NotNull(arena->freeFunc);
 				void* newSpace = arena->allocFunc(newSize);
 				if (newSpace == nullptr) { break; }
-				Assert(allocPntr == nullptr || oldSize > 0)
+				Assert(allocPntr == nullptr || oldSize > 0);
 				if (allocPntr != nullptr) { MyMemCopy(newSpace, allocPntr, oldSize); }
 				result = newSpace;
 			}
@@ -1089,7 +1088,6 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 				{
 					void* newAlloc = AllocMemAligned(arena, newSize - oldSize, 0);
 					Assert((u8*)newAlloc == (u8*)arena->mainPntr + allocIndex + oldSize);
-					UNUSED(newAlloc);
 					arena->used = allocIndex + newSize;
 					result = allocPntr;
 				}

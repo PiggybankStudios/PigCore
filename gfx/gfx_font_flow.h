@@ -361,7 +361,6 @@ PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styl
 	
 	Result flowResult = DoFontFlow(&state, nullptr, flowOut);
 	Assert(flowResult == Result_Success || flowResult == Result_InvalidUtf8);
-	UNUSED(flowResult);
 	
 	TextMeasure result = ZEROED;
 	result.visualRec = flowOut->visualRec;
@@ -428,7 +427,6 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	NotNull(flow.glyphs);
 	Result flowResult = DoFontFlow(&state, nullptr, &flow);
 	Assert(flowResult == Result_Success || flowResult == Result_InvalidUtf8);
-	UNUSED(flowResult);
 	AssertMsg(flow.numGlyphs <= flow.numGlyphsAlloc, "We shouldn't have more glyphs than there are number of bytes in the string!");
 	
 	if (flow.logicalRec.Width <= maxWidth)
