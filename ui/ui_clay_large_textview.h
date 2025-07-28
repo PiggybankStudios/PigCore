@@ -26,6 +26,8 @@ Description:
 #include "gfx/gfx_font_flow.h"
 #include "ui/ui_clay.h"
 
+#if BUILD_WITH_CLAY
+
 typedef plex UiLargeTextLine UiLargeTextLine;
 plex UiLargeTextLine
 {
@@ -523,5 +525,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_CLAY
 
 #endif //  _UI_CLAY_LARGE_TEXTVIEW_H
