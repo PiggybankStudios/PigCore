@@ -368,77 +368,77 @@ typedef Obb3DR64 obb3d;
 // +--------------------------------------------------------------+
 // |                   Simple Value Definitions                   |
 // +--------------------------------------------------------------+
-#define Rec_Zero NewRec(0.0f, 0.0f, 0.0f, 0.0f)
-#define Rec_Default NewRec(0.0f, 0.0f, 1.0f, 1.0f)
-#define Rec_UnitRec NewRec(-1.0f, -1.0f, 2.0f, 2.0f)
-#define Rec_Zero_Const (rec){{ 0.0f, 0.0f, 0.0f, 0.0f }}
-#define Rec_Default_Const (rec){{ 0.0f, 0.0f, 1.0f, 1.0f }}
-#define Rec_UnitRec_Const (rec){{ -1.0f, -1.0f, 2.0f, 2.0f }}
+#define Rec_Zero          NewRec(0.0f, 0.0f, 0.0f, 0.0f)
+#define Rec_Default       NewRec(0.0f, 0.0f, 1.0f, 1.0f)
+#define Rec_UnitRec       NewRec(-1.0f, -1.0f, 2.0f, 2.0f)
+#define Rec_Zero_Const    { .X=0.0f,.Y=0.0f,.Width=0.0f,.Height=0.0f }
+#define Rec_Default_Const { .X=0.0f,.Y=0.0f,.Width=1.0f,.Height=1.0f }
+#define Rec_UnitRec_Const { .X=-1.0f,.Y=-1.0f,.Width=2.0f,.Height=2.0f }
 
 #define Reci_Zero NewReci(0, 0, 0, 0)
 #define Reci_Default NewReci(0, 0, 1, 1)
 #define Reci_UnitRec NewReci(-1, -1, 2, 2)
-#define Reci_Zero_Const (reci){{ 0, 0, 0, 0 }}
-#define Reci_Default_Const (reci){{ 0, 0, 1, 1 }}
-#define Reci_UnitRec_Const (reci){{ -1, -1, 2, 2 }}
+#define Reci_Zero_Const    { .X=0,.Y=0,.Width=0,.Height=0 }
+#define Reci_Default_Const { .X=0,.Y=0,.Width=1,.Height=1 }
+#define Reci_UnitRec_Const { .X=-1,.Y=-1,.Width=2,.Height=2 }
 
 #define Recd_Zero NewRecd(0.0, 0.0, 0.0, 0.0)
 #define Recd_Default NewRecd(0.0, 0.0, 1.0, 1.0)
 #define Recd_UnitRec NewRecd(-1.0, -1.0, 2.0, 2.0)
-#define Recd_Zero_Const (recd){{ 0.0, 0.0, 0.0, 0.0 }}
-#define Recd_Default_Const (recd){{ 0.0, 0.0, 1.0, 1.0 }}
-#define Recd_UnitRec_Const (recd){{ -1.0, -1.0, 2.0, 2.0 }}
+#define Recd_Zero_Const    { .X=0.0,.Y=0.0,.Width=0.0,.Height=0.0 }
+#define Recd_Default_Const { .X=0.0,.Y=0.0,.Width=1.0,.Height=1.0 }
+#define Recd_UnitRec_Const { .X=-1.0,.Y=-1.0,.Width=2.0,.Height=2.0 }
 
 #define Box_Zero NewBox(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
 #define Box_Default NewBox(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f)
 #define Box_UnitBox NewBox(-1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f)
-#define Box_Zero_Const (box){ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
-#define Box_Default_Const (box){{ 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f }}
-#define Box_UnitBox_Const (box){{ -1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f }}
+#define Box_Zero_Const    { .X=0.0f,.Y=0.0f,.Z=0.0f,.Width=0.0f,.Height=0.0f,.Depth=0.0f }
+#define Box_Default_Const { .X=0.0f,.Y=0.0f,.Z=0.0f,.Width=1.0f,.Height=1.0f,.Depth=1.0f }
+#define Box_UnitBox_Const { .X=-1.0f,.Y=-1.0f,.Z=-1.0f,.Width=2.0f,.Height=2.0f,.Depth=2.0f }
 
 #define Boxi_Zero NewBoxi(0, 0, 0, 0, 0, 0)
 #define Boxi_Default NewBoxi(0, 0, 0, 1, 1, 1)
 #define Boxi_UnitBox NewBoxi(-1, -1, -1, 2, 2, 2)
-#define Boxi_Zero_Const (boxi){{ 0, 0, 0, 0, 0, 0 }}
-#define Boxi_Default_Const (boxi){{ 0, 0, 0, 1, 1, 1 }}
-#define Boxi_UnitBox_Const (boxi){{ -1, -1, -1, 2, 2, 2 }}
+#define Boxi_Zero_Const    { .X=0,.Y=0,.Z=0,.Width=0,.Height=0,.Depth=0 }
+#define Boxi_Default_Const { .X=0,.Y=0,.Z=0,.Width=1,.Height=1,.Depth=1 }
+#define Boxi_UnitBox_Const { .X=-1,.Y=-1,.Z=-1,.Width=2,.Height=2,.Depth=2 }
 
 #define Boxd_Zero NewBoxd(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 #define Boxd_Default NewBoxd(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
 #define Boxd_UnitBox NewBoxd(-1.0, -1.0, -1.0, 2.0, 2.0, 2.0)
-#define Boxd_Zero_Const (boxd){ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define Boxd_Default_Const (boxd){{ 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }}
-#define Boxd_UnitBox_Const (boxd){{ -1.0, -1.0, -1.0, 2.0, 2.0, 2.0 }}
+#define Boxd_Zero_Const    { .X=0.0,.Y=0.0,.Z=0.0,.Width=0.0,.Height=0.0,.Depth=0.0 }
+#define Boxd_Default_Const { .X=0.0,.Y=0.0,.Z=0.0,.Width=1.0,.Height=1.0,.Depth=1.0 }
+#define Boxd_UnitBox_Const { .X=-1.0,.Y=-1.0,.Z=-1.0,.Width=2.0,.Height=2.0,.Depth=2.0 }
 
 #define Obb2_Zero NewObb2(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
 #define Obb2_Default NewObb2(0.5f, 0.5f, 1.0f, 1.0f, 0.0f)
 #define Obb2_UnitBox NewObb2(0.0f, 0.0f, 2.0f, 2.0f, 0.0f)
-#define Obb2_Zero_Const (obb2){{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }}
-#define Obb2_Default_Const (obb2){{ 0.5f, 0.5f, 1.0f, 1.0f, 0.0f }}
-#define Obb2_UnitBox_Const (obb2){{ 0.0f, 0.0f, 2.0f, 2.0f, 0.0f }}
+#define Obb2_Zero_Const    { .X=0.0f,.Y=0.0f,.Width=0.0f,.Height=0.0f,.Rotation=0.0f }
+#define Obb2_Default_Const { .X=0.5f,.Y=0.5f,.Width=1.0f,.Height=1.0f,.Rotation=0.0f }
+#define Obb2_UnitBox_Const { .X=0.0f,.Y=0.0f,.Width=2.0f,.Height=2.0f,.Rotation=0.0f }
 
 #define Obb2d_Zero NewObb2d(0.0, 0.0, 0.0, 0.0, 0.0)
 #define Obb2d_Default NewObb2d(0.5, 0.5, 1.0, 1.0, 0.0)
 #define Obb2d_UnitBox NewObb2d(0.0, 0.0, 2.0, 2.0, 0.0)
-#define Obb2d_Zero_Const (obb2d){{ 0.0, 0.0, 0.0, 0.0, 0.0 }}
-#define Obb2d_Default_Const (obb2d){{ 0.5, 0.5, 1.0, 1.0, 0.0 }}
-#define Obb2d_UnitBox_Const (obb2d){{ 0.0, 0.0, 2.0, 2.0, 0.0 }}
+#define Obb2d_Zero_Const    { .X=0.0,.Y=0.0,.Width=0.0,.Height=0.0,.Rotation=0.0 }
+#define Obb2d_Default_Const { .X=0.5,.Y=0.5,.Width=1.0,.Height=1.0,.Rotation=0.0 }
+#define Obb2d_UnitBox_Const { .X=0.0,.Y=0.0,.Width=2.0,.Height=2.0,.Rotation=0.0 }
 
 #define Obb3_Zero NewObb3(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, Quat_Identity)
 #define Obb3_Default NewObb3(0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, Quat_Identity)
 #define Obb3_UnitBox NewObb3(0.0f, 0.0f, 0.0f, 2.0f, 2.0f, 2.0f, Quat_Identity)
 //TODO: For some reason these curly brack initializations only work if we have name designations?
-#define Obb3_Zero_Const (obb3){ .X=0.0f, .Y=0.0f, .Z=0.0f, .Width=0.0f, .Height=0.0f, .Depth=0.0f, .Padding1=0.0f, .Padding2=0.0f, .Rotation=Quat_Identity_Const }
-#define Obb3_Default_Const (obb3){ .X=0.5f, .Y=0.5f, .Z=0.5f, .Width=1.0f, .Height=1.0f, .Depth=1.0f, .Padding1=0.0f, .Padding2=0.0f, .Rotation=Quat_Identity_Const }
-#define Obb3_UnitBox_Const (obb3){ .X=0.0f, .Y=0.0f, .Z=0.0f, .Width=2.0f, .Height=2.0f, .Depth=2.0f, .Padding1=0.0f, .Padding2=0.0f, .Rotation=Quat_Identity_Const }
+#define Obb3_Zero_Const    { .X=0.0f,.Y=0.0f,.Z=0.0f,.Width=0.0f,.Height=0.0f,.Depth=0.0f,.Padding1=0.0f,.Padding2=0.0f,.Rotation=Quat_Identity_Const }
+#define Obb3_Default_Const { .X=0.5f,.Y=0.5f,.Z=0.5f,.Width=1.0f,.Height=1.0f,.Depth=1.0f,.Padding1=0.0f,.Padding2=0.0f,.Rotation=Quat_Identity_Const }
+#define Obb3_UnitBox_Const { .X=0.0f,.Y=0.0f,.Z=0.0f,.Width=2.0f,.Height=2.0f,.Depth=2.0f,.Padding1=0.0f,.Padding2=0.0f,.Rotation=Quat_Identity_Const }
 
 #define Obb3d_Zero NewObb3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Quatd_Identity)
 #define Obb3d_Default NewObb3d(0.5, 0.5, 0.5, 1.0, 1.0, 1.0, Quatd_Identity)
 #define Obb3d_UnitBox NewObb3d(0.0, 0.0, 0.0, 2.0, 2.0, 2.0, Quatd_Identity)
 //TODO: For some reason these curly brack initializations only work if we have name designations?
-#define Obb3d_Zero_Const (obb3d){ .X=0.0, .Y=0.0, .Z=0.0, .Width=0.0, .Height=0.0, .Depth=0.0, .Padding1=0.0, .Padding2=0.0, .Rotation=Quatd_Identity_Const }
-#define Obb3d_Default_Const (obb3d){ .X=0.5, .Y=0.5, .Z=0.5, .Width=1.0, .Height=1.0, .Depth=1.0, .Padding1=0.0, .Padding2=0.0, .Rotation=Quatd_Identity_Const }
-#define Obb3d_UnitBox_Const (obb3d){ .X=0.0, .Y=0.0, .Z=0.0, .Width=2.0, .Height=2.0, .Depth=2.0, .Padding1=0.0, .Padding2=0.0, .Rotation=Quatd_Identity_Const }
+#define Obb3d_Zero_Const    { .X=0.0,.Y=0.0,.Z=0.0,.Width=0.0,.Height=0.0,.Depth=0.0,.Padding1=0.0,.Padding2=0.0,.Rotation=Quatd_Identity_Const }
+#define Obb3d_Default_Const { .X=0.5,.Y=0.5,.Z=0.5,.Width=1.0,.Height=1.0,.Depth=1.0,.Padding1=0.0,.Padding2=0.0,.Rotation=Quatd_Identity_Const }
+#define Obb3d_UnitBox_Const { .X=0.0,.Y=0.0,.Z=0.0,.Width=2.0,.Height=2.0,.Depth=2.0,.Padding1=0.0,.Padding2=0.0,.Rotation=Quatd_Identity_Const }
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |

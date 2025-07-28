@@ -1,8 +1,10 @@
 // raddbg 0.9.20 project file
 
+recent_file: path: "tests/tests_main.c"
+recent_file: path: "../Crest/core/tests/tests_main.c"
+recent_file: path: "gfx/gfx_system.h"
 recent_file: path: "mem/mem_arena.h"
 recent_file: path: "struct/struct_var_array.h"
-recent_file: path: "tests/tests_main.c"
 recent_file: path: "third_party/sokol/sokol_gfx.h"
 target:
 {
@@ -10,9 +12,4 @@ target:
   working_directory: _build
   enabled: 1
   label: Tests
-}
-breakpoint:
-{
-  source_location: "tests/tests_main.c:660:1"
-  hit_count: 1
 }

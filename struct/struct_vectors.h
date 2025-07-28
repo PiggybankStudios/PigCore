@@ -474,7 +474,8 @@ typedef Vec4R64  v4d;
 #define V2_Right         NewV2( 1.0f,  0.0f)
 #define V2_Up            NewV2( 0.0f, -1.0f)
 #define V2_Down          NewV2( 0.0f,  1.0f)
-#define V2_Zero_Const        {{ 0.0f,  0.0f}}
+#define V2_Zero_Const    { .X=0.0f,.Y=0.0f }
+#define V2_One_Const     { .X=1.0f,.Y=1.0f }
 
 #define V2i_Zero          NewV2i( 0,  0)
 #define V2i_One           NewV2i( 1,  1)
@@ -482,7 +483,8 @@ typedef Vec4R64  v4d;
 #define V2i_Right         NewV2i( 1,  0)
 #define V2i_Up            NewV2i( 0, -1)
 #define V2i_Down          NewV2i( 0,  1)
-#define V2i_Zero_Const         {{ 0,  0}}
+#define V2i_Zero_Const     { .X=0,.Y=0 }
+#define V2i_One_Const      { .X=1,.Y=1 }
 
 #define V2d_Zero          NewV2d( 0.0,  0.0)
 #define V2d_One           NewV2d( 1.0,  1.0)
@@ -491,7 +493,8 @@ typedef Vec4R64  v4d;
 #define V2d_Right         NewV2d( 1.0,  0.0)
 #define V2d_Up            NewV2d( 0.0, -1.0)
 #define V2d_Down          NewV2d( 0.0,  1.0)
-#define V2d_Zero_Const         {{ 0.0,  0.0}}
+#define V2d_Zero_Const     { .X=0.0,.Y=0.0 }
+#define V2d_One_Const      { .X=1.0,.Y=1.0 }
 
 //NOTE: See struct_directions.h for an explanation of the coordinate system handed-ness and up direction
 #define V3_Zero          NewV3( 0.0f,  0.0f,  0.0f)
@@ -507,7 +510,8 @@ typedef Vec4R64  v4d;
 #define V3_Up            NewV3( 0.0f,  1.0f,  0.0f)
 #define V3_Backward      NewV3( 0.0f,  0.0f, -1.0f)
 #define V3_Forward       NewV3( 0.0f,  0.0f,  1.0f)
-#define V3_Zero_Const        {{ 0.0f,  0.0f,  0.0f}}
+#define V3_Zero_Const     { .X=0.0f,.Y=0.0f,.Z=0.0f }
+#define V3_One_Const      { .X=1.0f,.Y=1.0f,.Z=1.0f }
 
 #define V3i_Zero          NewV3i( 0,  0,  0)
 #define V3i_One           NewV3i( 1,  1,  1)
@@ -521,7 +525,8 @@ typedef Vec4R64  v4d;
 #define V3i_Up            NewV3i( 0,  1,  0)
 #define V3i_Backward      NewV3i( 0,  0, -1)
 #define V3i_Forward       NewV3i( 0,  0,  1)
-#define V3i_Zero_Const         {{ 0,  0,  0}}
+#define V3i_Zero_Const      { .X=0,.Y=0,.Z=0 }
+#define V3i_One_Const       { .X=1,.Y=1,.Z=1 }
 
 #define V3d_Zero          NewV3d( 0.0,  0.0,  0.0)
 #define V3d_One           NewV3d( 1.0,  1.0,  1.0)
@@ -536,7 +541,8 @@ typedef Vec4R64  v4d;
 #define V3d_Up            NewV3d( 0.0,  1.0,  0.0)
 #define V3d_Backward      NewV3d( 0.0,  0.0, -1.0)
 #define V3d_Forward       NewV3d( 0.0,  0.0,  1.0)
-#define V3d_Zero_Const         {{ 0.0,  0.0,  0.0}}
+#define V3d_Zero_Const      { .X=0.0,.Y=0.0,.Z=0.0 }
+#define V3d_One_Const       { .X=1.0,.Y=1.0,.Z=1.0 }
 
 #define V4_Zero          NewV4( 0.0f,  0.0f,  0.0f, 0.0f)
 #define V4_One           NewV4( 1.0f,  1.0f,  1.0f, 1.0f)
@@ -553,7 +559,8 @@ typedef Vec4R64  v4d;
 #define V4_Forward       NewV4( 0.0f,  0.0f,  1.0f, 0.0f)
 #define V4_Prevward      NewV4( 0.0f,  0.0f,  0.0f,-1.0f)
 #define V4_Nextward      NewV4( 0.0f,  0.0f,  0.0f, 1.0f)
-#define V4_Zero_Const     {{{{{ 0.0f,  0.0f,  0.0f}}},0.0f}}
+#define V4_Zero_Const   { .X=0.0f,.Y=0.0f,.Z=0.0f,.W=0.0f }
+#define V4_One_Const    { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
 
 #define V4i_Zero          NewV4i( 0,  0,  0, 0)
 #define V4i_One           NewV4i( 1,  1,  1, 0)
@@ -569,7 +576,8 @@ typedef Vec4R64  v4d;
 #define V4i_Forward       NewV4i( 0,  0,  1, 0)
 #define V4i_Prevward      NewV4i( 0,  0,  0,-1)
 #define V4i_Nextward      NewV4i( 0,  0,  0, 1)
-#define V4i_Zero_Const      {{{{{ 0,  0,  0}}},0}}
+#define V4i_Zero_Const    { .X=0,.Y=0,.Z=0,.W=0 }
+#define V4i_One_Const     { .X=1,.Y=1,.Z=1,.W=1 }
 
 #define V4d_Zero          NewV4d( 0.0,  0.0,  0.0, 0.0)
 #define V4d_One           NewV4d( 1.0,  1.0,  1.0, 1.0)
@@ -586,7 +594,8 @@ typedef Vec4R64  v4d;
 #define V4d_Forward       NewV4d( 0.0,  0.0,  1.0, 0.0)
 #define V4d_Prevward      NewV4d( 0.0,  0.0,  0.0,-1.0)
 #define V4d_Nextward      NewV4d( 0.0,  0.0,  0.0, 1.0)
-#define V4d_Zero_Const      {{{{{ 0.0,  0.0,  0.0}}}, 0.0}}
+#define V4d_Zero_Const    { .X=0.0,.Y=0.0,.Z=0.0,.W=0.0 }
+#define V4d_One_Const     { .X=1.0,.Y=1.0,.Z=1.0,.W=1.0 }
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |

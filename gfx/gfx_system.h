@@ -737,12 +737,12 @@ PEXP void GfxSystem_DrawTexturedRectangleEx(GfxSystem* system, rec rectangle, Co
 }
 PEXPI void GfxSystem_DrawTexturedRectangle(GfxSystem* system, rec rectangle, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : (rec)Rec_Zero_Const;
 	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawRectangle(GfxSystem* system, rec rectangle, Color32 color)
 {
-	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, nullptr, (rec)Rec_Zero_Const);
 }
 
 PEXPI void GfxSystem_DrawTexturedRectangleOutlineSidesEx(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color, bool outside, Texture* texture, rec sourceRec)
@@ -786,7 +786,7 @@ PEXPI void GfxSystem_DrawTexturedRectangleOutlineSidesEx(GfxSystem* system, rec 
 }
 PEXPI void GfxSystem_DrawTexturedRectangleOutlineSides(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : (rec)Rec_Zero_Const;
 	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, leftThickness, rightThickness, topThickness, bottomThickness, color, true, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawTexturedRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside, Texture* texture, rec sourceRec)
@@ -795,24 +795,24 @@ PEXPI void GfxSystem_DrawTexturedRectangleOutlineEx(GfxSystem* system, rec recta
 }
 PEXPI void GfxSystem_DrawTexturedRectangleOutline(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : (rec)Rec_Zero_Const;
 	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, borderThickness, borderThickness, borderThickness, borderThickness, color, true, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawRectangleOutlineSidesEx(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color, bool outside)
 {
-	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, leftThickness, rightThickness, topThickness, bottomThickness, color, outside, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, leftThickness, rightThickness, topThickness, bottomThickness, color, outside, nullptr, (rec)Rec_Zero_Const);
 }
 PEXPI void GfxSystem_DrawRectangleOutlineSides(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color)
 {
-	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, leftThickness, rightThickness, topThickness, bottomThickness, color, true, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, leftThickness, rightThickness, topThickness, bottomThickness, color, true, nullptr, (rec)Rec_Zero_Const);
 }
 PEXPI void GfxSystem_DrawRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside)
 {
-	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, borderThickness, borderThickness, borderThickness, borderThickness, color, outside, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, borderThickness, borderThickness, borderThickness, borderThickness, color, outside, nullptr, (rec)Rec_Zero_Const);
 }
 PEXPI void GfxSystem_DrawRectangleOutline(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color)
 {
-	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, borderThickness, borderThickness, borderThickness, borderThickness, color, true, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, borderThickness, borderThickness, borderThickness, borderThickness, color, true, nullptr, (rec)Rec_Zero_Const);
 }
 
 PEXPI void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture, rec sourceRec)
@@ -842,12 +842,12 @@ PEXPI void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Col
 }
 PEXPI void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : (rec)Rec_Zero_Const;
 	GfxSystem_DrawTexturedObb2Ex(system, boundingBox, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color)
 {
-	GfxSystem_DrawTexturedObb2Ex(system, boundingBox, color, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedObb2Ex(system, boundingBox, color, nullptr, (rec)Rec_Zero_Const);
 }
 
 PEXPI void GfxSystem_DrawLine(GfxSystem* system, v2 startPos, v2 endPos, r32 thickness, Color32 color)
@@ -908,7 +908,7 @@ PEXP void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, 
 }
 PEXPI void GfxSystem_DrawTexturedCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : (rec)Rec_Zero_Const;
 	GfxSystem_DrawTexturedCirclePieceEx(system, circle, angleMin, angleMax, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawTexturedCircleEx(GfxSystem* system, Circle circle, Color32 color, Texture* texture, rec sourceRec)
@@ -917,16 +917,16 @@ PEXPI void GfxSystem_DrawTexturedCircleEx(GfxSystem* system, Circle circle, Colo
 }
 PEXPI void GfxSystem_DrawTexturedCircle(GfxSystem* system, Circle circle, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : (rec)Rec_Zero_Const;
 	GfxSystem_DrawTexturedCirclePieceEx(system, circle, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color)
 {
-	GfxSystem_DrawTexturedCirclePieceEx(system, circle, angleMin, angleMax, color, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedCirclePieceEx(system, circle, angleMin, angleMax, color, nullptr, (rec)Rec_Zero_Const);
 }
 PEXPI void GfxSystem_DrawCircle(GfxSystem* system, Circle circle, Color32 color)
 {
-	GfxSystem_DrawTexturedCirclePieceEx(system, circle, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedCirclePieceEx(system, circle, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, nullptr, (rec)Rec_Zero_Const);
 }
 
 PEXP void GfxSystem_DrawTexturedRoundedRectangleEx(GfxSystem* system, rec rectangle, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color, Texture* texture, rec sourceRec)
@@ -1002,11 +1002,11 @@ PEXPI void GfxSystem_DrawTexturedRoundedRectangle(GfxSystem* system, rec rectang
 }
 PEXPI void GfxSystem_DrawRoundedRectangleEx(GfxSystem* system, rec rectangle, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color)
 {
-	GfxSystem_DrawTexturedRoundedRectangleEx(system, rectangle, radiusTL, radiusTR, radiusBR, radiusBL, color, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRoundedRectangleEx(system, rectangle, radiusTL, radiusTR, radiusBR, radiusBL, color, nullptr, (rec)Rec_Zero_Const);
 }
 PEXPI void GfxSystem_DrawRoundedRectangle(GfxSystem* system, rec rectangle, r32 radius, Color32 color)
 {
-	GfxSystem_DrawTexturedRoundedRectangleEx(system, rectangle, radius, radius, radius, radius, color, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRoundedRectangleEx(system, rectangle, radius, radius, radius, radius, color, nullptr, (rec)Rec_Zero_Const);
 }
 
 PEXP void GfxSystem_DrawTexturedRingPieceEx(GfxSystem* system, Circle circle, r32 thickness, r32 angleMin, r32 angleMax, Color32 color, Texture* texture, rec sourceRec)
@@ -1068,7 +1068,7 @@ PEXP void GfxSystem_DrawTexturedRingPieceEx(GfxSystem* system, Circle circle, r3
 }
 PEXPI void GfxSystem_DrawTexturedRingPiece(GfxSystem* system, Circle circle, r32 thickness, r32 angleMin, r32 angleMax, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : (rec)Rec_Zero_Const;
 	GfxSystem_DrawTexturedRingPieceEx(system, circle, thickness, angleMin, angleMax, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawTexturedRingEx(GfxSystem* system, Circle circle, r32 thickness, Color32 color, Texture* texture, rec sourceRec)
@@ -1077,16 +1077,16 @@ PEXPI void GfxSystem_DrawTexturedRingEx(GfxSystem* system, Circle circle, r32 th
 }
 PEXPI void GfxSystem_DrawTexturedRing(GfxSystem* system, Circle circle, r32 thickness, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Default_Const;
+	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : (rec)Rec_Zero_Const;
 	GfxSystem_DrawTexturedRingPieceEx(system, circle, thickness, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawRingPiece(GfxSystem* system, Circle circle, r32 thickness, r32 angleMin, r32 angleMax, Color32 color)
 {
-	GfxSystem_DrawTexturedRingPieceEx(system, circle, thickness, angleMin, angleMax, color, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRingPieceEx(system, circle, thickness, angleMin, angleMax, color, nullptr, (rec)Rec_Zero_Const);
 }
 PEXPI void GfxSystem_DrawRing(GfxSystem* system, Circle circle, r32 thickness, Color32 color)
 {
-	GfxSystem_DrawTexturedRingPieceEx(system, circle, thickness, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRingPieceEx(system, circle, thickness, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, nullptr, (rec)Rec_Zero_Const);
 }
 
 PEXP void GfxSystem_DrawTexturedRoundedRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 thickness, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color, bool outside, Texture* texture, rec sourceRec)
@@ -1152,11 +1152,11 @@ PEXPI void GfxSystem_DrawTexturedRoundedRectangleOutline(GfxSystem* system, rec 
 }
 PEXPI void GfxSystem_DrawRoundedRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 thickness, r32 radiusTL, r32 radiusTR, r32 radiusBR, r32 radiusBL, Color32 color, bool outside)
 {
-	GfxSystem_DrawTexturedRoundedRectangleOutlineEx(system, rectangle, thickness, radiusTL, radiusTR, radiusBR, radiusBL, color, outside, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRoundedRectangleOutlineEx(system, rectangle, thickness, radiusTL, radiusTR, radiusBR, radiusBL, color, outside, nullptr, (rec)Rec_Zero_Const);
 }
 PEXPI void GfxSystem_DrawRoundedRectangleOutline(GfxSystem* system, rec rectangle, r32 thickness, r32 radius, Color32 color)
 {
-	GfxSystem_DrawTexturedRoundedRectangleOutlineEx(system, rectangle, thickness, radius, radius, radius, radius, color, true, nullptr, Rec_Default_Const);
+	GfxSystem_DrawTexturedRoundedRectangleOutlineEx(system, rectangle, thickness, radius, radius, radius, radius, color, true, nullptr, (rec)Rec_Zero_Const);
 }
 
 PEXPI void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth)

@@ -74,10 +74,10 @@ typedef QuatR64 quatd;
 #define ToQuatFromAxis(axis, angle) HMM_QFromAxisAngle_LH((axis), (angle))
 
 #define Quat_Identity NewQuat(0.0f, 0.0f, 0.0f, 1.0f)
-#define Quat_Identity_Const (quat){{{{{ 0.0f, 0.0f, 0.0f }}}, 1.0f }}
+#define Quat_Identity_Const { .X=0.0f,.Y=0.0f,.Z=0.0f,.W=1.0f }
 
 #define Quatd_Identity NewQuatd(0.0, 0.0, 0.0, 1.0)
-#define Quatd_Identity_Const (quatd){{{{{ 0.0, 0.0, 0.0 }}}, 1.0 }}
+#define Quatd_Identity_Const { .X=0.0,.Y=0.0,.Z=0.0,.W=1.0 }
 
 #define AddQuat(left, right) HMM_AddQ((left), (right))
 #define SubQuat(left, right) HMM_SubQ((left), (right))

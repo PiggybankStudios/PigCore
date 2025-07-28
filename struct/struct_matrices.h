@@ -60,14 +60,41 @@ typedef HMM_Mat4 mat4;
 #define FillDiagonalMat4(value) HMM_M4D(value)
 
 #define Mat2_Zero FillMat2(0.0f)
-#define Mat3_Zero FillMat3(0.0f)
-#define Mat4_Zero FillMat4(0.0f)
-
 #define Mat2_Identity FillDiagonalMat2(1.0f)
+#define Mat2_Zero_Const {                   \
+	.Columns[0].X=0.0f, .Columns[1].X=0.0f, \
+	.Columns[0].Y=0.0f, .Columns[1].Y=0.0f  \
+}
+#define Mat2_Identity_Const {               \
+	.Columns[0].X=1.0f, .Columns[1].X=0.0f, \
+	.Columns[0].Y=0.0f, .Columns[1].Y=1.0f  \
+}
 #define Mat3_Identity FillDiagonalMat3(1.0f)
+#define Mat3_Zero FillMat3(0.0f)
+#define Mat3_Zero_Const {                                       \
+	.Columns[0].X=0.0f, .Columns[1].X=0.0f, .Columns[2].X=0.0f, \
+	.Columns[0].Y=0.0f, .Columns[1].Y=0.0f, .Columns[2].Y=0.0f, \
+	.Columns[0].Z=0.0f, .Columns[1].Z=0.0f, .Columns[2].Z=0.0f  \
+}
+#define Mat3_Identity_Const {                                   \
+	.Columns[0].X=1.0f, .Columns[1].X=0.0f, .Columns[2].X=0.0f, \
+	.Columns[0].Y=0.0f, .Columns[1].Y=1.0f, .Columns[2].Y=0.0f, \
+	.Columns[0].Z=0.0f, .Columns[1].Z=0.0f, .Columns[2].Z=1.0f  \
+}
 #define Mat4_Identity FillDiagonalMat4(1.0f)
-
-//TODO: Would we ever use MatN_Zero_Const and MatN_Identity_Const?
+#define Mat4_Zero FillMat4(0.0f)
+#define Mat4_Zero_Const {                                                           \
+	.Columns[0].X=0.0f, .Columns[1].X=0.0f, .Columns[2].X=0.0f, .Columns[3].X=0.0f, \
+	.Columns[0].Y=0.0f, .Columns[1].Y=0.0f, .Columns[2].Y=0.0f, .Columns[3].Y=0.0f, \
+	.Columns[0].Z=0.0f, .Columns[1].Z=0.0f, .Columns[2].Z=0.0f, .Columns[3].Z=0.0f, \
+	.Columns[0].W=0.0f, .Columns[1].W=0.0f, .Columns[2].W=0.0f, .Columns[3].W=0.0f  \
+}
+#define Mat4_Identity_Const {                                                       \
+	.Columns[0].X=1.0f, .Columns[1].X=0.0f, .Columns[2].X=0.0f, .Columns[3].X=0.0f, \
+	.Columns[0].Y=0.0f, .Columns[1].Y=1.0f, .Columns[2].Y=0.0f, .Columns[3].Y=0.0f, \
+	.Columns[0].Z=0.0f, .Columns[1].Z=0.0f, .Columns[2].Z=1.0f, .Columns[3].Z=0.0f, \
+	.Columns[0].W=0.0f, .Columns[1].W=0.0f, .Columns[2].W=0.0f, .Columns[3].W=1.0f  \
+}
 
 #define AddMat2(left, right) HMM_AddM2((left), (right))
 #define AddMat3(left, right) HMM_AddM3((left), (right))
