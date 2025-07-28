@@ -20,6 +20,7 @@ Description:
 #include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_system.h"
 #include "ui/ui_clay.h"
+#include "misc/misc_profiling_tracy_include.h"
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
 
@@ -158,6 +159,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +===============================+
 			case CLAY_RENDER_COMMAND_TYPE_TEXT:
 			{
+				TracyCZoneN(Zone_COMMAND_TEXT, "TEXT", true);
 				// GfxSystem_DrawRectangle(system, drawRec, ColorWithAlpha(MonokaiPurple, 0.25f));
 				
 				uxx scratchMark = ArenaGetMark(scratch);
@@ -247,6 +249,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					GfxSystem_SetClipRec(system, oldClipRec);
 				}
 				ArenaResetToMark(scratch, scratchMark);
+				TracyCZoneEnd(Zone_COMMAND_TEXT);
 			} break;
 			
 			// +================================+
@@ -254,10 +257,12 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +================================+
 			case CLAY_RENDER_COMMAND_TYPE_IMAGE:
 			{
+				TracyCZoneN(Zone_COMMAND_IMAGE, "IMAGE", true);
 				Texture* texturePntr = (Texture*)command->renderData.image.imageData;
 				Color32 drawColor = command->renderData.image.backgroundColor;
 				if (drawColor.valueU32 == 0) { drawColor = White; } //default value means "untinted"
 				GfxSystem_DrawTexturedRectangle(system, drawRec, drawColor, texturePntr);
+				TracyCZoneEnd(Zone_COMMAND_IMAGE);
 			} break;
 			
 			// +========================================+
@@ -265,11 +270,13 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +========================================+
 			case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
 			{
+				TracyCZoneN(Zone_COMMAND_SCISSOR_START, "SCISSOR_START", true);
 				// r32 oldDepth = system->state.depth;
 				// GfxSystem_SetDepth(system, 0.0f);
 				// GfxSystem_DrawRectangleOutlineEx(system, drawRec, 1, MonokaiRed, false);
 				GfxSystem_SetClipRec(system, ToReciFromf(drawRec));
 				// GfxSystem_SetDepth(system, oldDepth);
+				TracyCZoneEnd(Zone_COMMAND_SCISSOR_START);
 			} break;
 			
 			// +======================================+
@@ -277,7 +284,9 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +======================================+
 			case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
 			{
+				TracyCZoneN(Zone_COMMAND_SCISSOR_END, "SCISSOR_END", true);
 				GfxSystem_DisableClipRec(system);
+				TracyCZoneEnd(Zone_COMMAND_SCISSOR_END);
 			} break;
 			
 			// +====================================+
@@ -285,6 +294,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +====================================+
 			case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
 			{
+				TracyCZoneN(Zone_COMMAND_RECTANGLE, "RECTANGLE", true);
 				Color32 drawColor = command->renderData.rectangle.backgroundColor;
 				GfxSystem_DrawRoundedRectangleEx(system,
 					drawRec,
@@ -294,6 +304,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					command->renderData.rectangle.cornerRadius.bottomLeft,
 					drawColor
 				);
+				TracyCZoneEnd(Zone_COMMAND_RECTANGLE);
 			} break;
 			
 			// +==================================+
@@ -301,6 +312,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			// +==================================+
 			case CLAY_RENDER_COMMAND_TYPE_BORDER:
 			{
+				TracyCZoneN(Zone_COMMAND_BORDER, "BORDER", true);
 				//NOTE: In order to make sure the border is shown properly we need to floor the width/height to whole numbers that are definitely within the bounds of the clip rectangle for the element
 				drawRec.Width = FloorR32(drawRec.Width);
 				drawRec.Height = FloorR32(drawRec.Height);
@@ -336,6 +348,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						command->userData.outsideBorder
 					);
 				}
+				TracyCZoneEnd(Zone_COMMAND_BORDER);
 			} break;
 			
 			// +==================================+
