@@ -20,6 +20,8 @@ Description:
 #include "std/std_memset.h"
 #include "mem/mem_arena.h"
 #include "struct/struct_string.h"
+#include "struct/struct_vectors.h"
+#include "struct/struct_rectangles.h"
 #include "struct/struct_var_array.h"
 #include "gfx/gfx_font_flow.h"
 #include "ui/ui_clay.h"
@@ -30,8 +32,16 @@ plex UiLargeTextLine
 	Str8 line;
 	uxx startIndex;
 	uxx endIndex;
-	r32 verticalOffset;
+	
+	bool measured;
+	PigFont* font;
+	r32 fontSize;
+	u8 fontStyle;
+	r32 maxWidth; //value of 0 means no word wrapping
 	TextMeasure measure;
+	
+	r32 verticalOffset;
+	r32 height;
 };
 
 typedef plex UiLargeText UiLargeText;
@@ -39,12 +49,16 @@ plex UiLargeText
 {
 	Arena* arena;
 	Str8 text;
+	
+	uxx scrollLineIndex;
+	r32 scrollLineOffset;
+	
 	bool selectionActive;
 	uxx selectionStart;
 	uxx selectionEnd;
-	r32 measureMaxWidth; //value of 0 means no word wrapping
-	r32 totalHeight;
+	
 	VarArray lines; //UiLargeTextLine
+	r32 totalHeight;
 };
 
 typedef plex UiLargeTextView UiLargeTextView;
@@ -63,7 +77,9 @@ plex UiLargeTextView
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void FreeUiLargeText(UiLargeText* text);
 	PIG_CORE_INLINE void FreeUiLargeTextView(UiLargeTextView* tview);
-	void UpdateUiLargeTextView(UiLargeTextView* tview, ClayUIRenderer* renderer, Arena* uiArena, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, Clay_SizingAxis viewWidth, Clay_SizingAxis viewHeight, UiLargeText* text);
+	PIG_CORE_INLINE void InitUiLargeText(Arena* arena, Str8 textStr, UiLargeText* text);
+	PIG_CORE_INLINE void InitUiLargeTextView(Arena* arena, Str8 idStr, UiLargeTextView* tview);
+	void DoUiLargeTextView(UiLargeTextView* tview, ClayUIRenderer* renderer, Arena* uiArena, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, Clay_SizingAxis viewWidth, Clay_SizingAxis viewHeight, UiLargeText* text, PigFont* font, r32 fontSize, u8 fontStyle);
 #endif
 
 // +--------------------------------------------------------------+
@@ -92,6 +108,41 @@ PEXPI void FreeUiLargeTextView(UiLargeTextView* tview)
 	ClearPointer(tview);
 }
 
+PEXPI void InitUiLargeText(Arena* arena, Str8 textStr, UiLargeText* text)
+{
+	NotNull(arena);
+	NotNull(text);
+	ClearPointer(text);
+	text->arena = arena;
+	text->text = AllocStr8(arena, textStr);
+	uxx numLines = 1;
+	for (uxx cIndex = 0; cIndex < text->text.length; cIndex++)
+	{
+		if (text->text.chars[cIndex] == '\n') { numLines++; }
+		if (text->text.chars[cIndex] == '\r' && cIndex+1 < text->text.length && text->text.chars[cIndex+1] == '\n') { numLines++; cIndex++; }
+	}
+	InitVarArrayWithInitial(UiLargeTextLine, &text->lines, arena, numLines);
+	
+	uxx lineStart = 0;
+	for (uxx cIndex = 0; cIndex <= text->text.length; cIndex++)
+	{
+		if (cIndex == text->text.length ||
+			text->text.chars[cIndex] == '\n' || 
+			(text->text.chars[cIndex] == '\r' && cIndex+1 < text->text.length && text->text.chars[cIndex+1] == '\n'))
+		{
+			UiLargeTextLine* newLine = VarArrayAdd(UiLargeTextLine, &text->lines);
+			NotNull(newLine);
+			ClearPointer(newLine);
+			newLine->startIndex = lineStart;
+			newLine->endIndex = cIndex;
+			newLine->line = StrSlice(text->text, newLine->startIndex, newLine->endIndex);
+			if (cIndex+1 < text->text.length && text->text.chars[cIndex] == '\r' && text->text.chars[cIndex+1] == '\n') { cIndex++; }
+			lineStart = cIndex+1;
+		}
+	}
+	Assert(text->lines.length == numLines);
+}
+
 PEXPI void InitUiLargeTextView(Arena* arena, Str8 idStr, UiLargeTextView* tview)
 {
 	NotNull(arena);
@@ -100,11 +151,11 @@ PEXPI void InitUiLargeTextView(Arena* arena, Str8 idStr, UiLargeTextView* tview)
 	tview->arena = arena;
 }
 
-PEXP void UpdateUiLargeTextView(UiLargeTextView* tview,
+PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 	ClayUIRenderer* renderer, Arena* uiArena,
 	KeyboardState* keyboard, MouseState* mouse,
 	r32 uiScale, Clay_SizingAxis viewWidth, Clay_SizingAxis viewHeight,
-	UiLargeText* text)
+	UiLargeText* text, PigFont* font, r32 fontSize, u8 fontStyle)
 {
 	NotNull(tview);
 	NotNull(tview->arena);
@@ -118,9 +169,38 @@ PEXP void UpdateUiLargeTextView(UiLargeTextView* tview,
 	ClayId scrollContainerId = ToClayId(scrollContainerIdStr);
 	ClayId contentId = ToClayId(contentIdStr);
 	rec containerRec = GetClayElementDrawRec(scrollContainerId);
+	u16 fontId = (font != nullptr) ? GetClayUIRendererFontId(renderer, font, fontStyle) : 0;
+	
+	if (text != nullptr)
+	{
+		NotNull(font);
+		FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);
+		NotNull(fontAtlas);
+		
+		r32 verticalOffset = 0;
+		VarArrayLoop(&text->lines, lIndex)
+		{
+			VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
+			if (!line->measured || line->font != font || line->fontSize != fontSize || line->fontStyle != fontStyle)
+			{
+				//TODO: Once we have support for word wrapping in MeasureText we should pass the line->maxWidth
+				r32 maxWidth = tview->wordWrapEnabled ? containerRec.Width : 0.0f;
+				line->measure = MeasureTextEx(font, fontSize, fontStyle, false, line->line);
+				line->measured = true;
+				line->maxWidth = maxWidth;
+				line->font = font;
+				line->fontSize = fontSize;
+				line->fontStyle = fontStyle;
+				line->height = MaxR32(line->measure.logicalRec.Height, fontAtlas->lineHeight);
+			}
+			line->verticalOffset = verticalOffset;
+			verticalOffset += line->height;
+		}
+		text->totalHeight = verticalOffset;
+	}
 	
 	v2 contentSize = V2_Zero;
-	if (!tview->wordWrapEnabled && containerRec.width > 0) { contentSize.Width = containerRec.Width; }
+	if (!tview->wordWrapEnabled && containerRec.Width > 0) { contentSize.Width = containerRec.Width; }
 	if (text != nullptr) { contentSize.Height = text->totalHeight; }
 	
 	CLAY({ .id = tview->id,
@@ -136,7 +216,7 @@ PEXP void UpdateUiLargeTextView(UiLargeTextView* tview,
 			.layout = {
 				.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
 			},
-			.scroll = { .vertical = true, .horizontal = !tview->wordWrapEnabled, scrollLag = 5.0f },
+			.scroll = { .vertical = true, .horizontal = !tview->wordWrapEnabled, .scrollLag = 5.0f },
 		})
 		{
 			CLAY({ .id = contentId,
@@ -146,6 +226,45 @@ PEXP void UpdateUiLargeTextView(UiLargeTextView* tview,
 			})
 			{
 				rec contentRec = GetClayElementDrawRec(contentId);
+				if (text != nullptr)
+				{
+					v2 textOffset = contentRec.TopLeft;
+					VarArrayLoop(&text->lines, lIndex)
+					{
+						VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
+						rec lineRec = NewRecV(
+							AddV2(textOffset, NewV2(0, line->verticalOffset)),
+							NewV2(tview->wordWrapEnabled ? containerRec.Width : line->measure.logicalRec.Width, line->height)
+						);
+						
+						if (lineRec.Y >= containerRec.Y + containerRec.Height) { break; }
+						if (lineRec.Y + lineRec.Height >= containerRec.Y)
+						{
+							// v2 textPos = AddV2(lineRec.TopLeft, NewV2(0, -line->measure.logicalRec.Y));
+							CLAY({
+								.layout = {
+									.sizing = { .width = CLAY_SIZING_FIXED(lineRec.Width), .height = CLAY_SIZING_FIXED(lineRec.Height) },
+								},
+								.floating = {
+									.attachTo = CLAY_ATTACH_TO_PARENT,
+									.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
+									.offset = SubV2(lineRec.TopLeft, contentRec.TopLeft),
+								},
+							})
+							{
+								CLAY_TEXT(
+									line->line,
+									CLAY_TEXT_CONFIG({
+										.fontId = fontId,
+										.fontSize = (u16)fontSize,
+										.textColor = MonokaiWhite,
+										.wrapMode = CLAY_TEXT_WRAP_NONE,
+										.textAlignment = CLAY_TEXT_ALIGN_LEFT,
+								}));
+							}
+						}
+					}
+				}
 			}
 		}
 	}
