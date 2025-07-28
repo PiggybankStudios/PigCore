@@ -151,6 +151,7 @@ plex RichStr
 	PIG_CORE_INLINE void FreeRichStr(Arena* arena, RichStr* richStrPntr);
 	PIG_CORE_INLINE RichStr NewRichStr(Arena* arena, uxx numPieces, const RichStrPiece* pieces);
 	PIG_CORE_INLINE RichStrPiece* GetRichStrPiece(RichStr* richStr, uxx pieceIndex);
+	PIG_CORE_INLINE RichStrPiece* GetRichStrPieceForByteIndex(RichStr* richStr, uxx byteIndex, uxx* pieceIndexOut);
 	PIG_CORE_INLINE RichStr AllocRichStr(Arena* arena, RichStr richStr);
 	RichStr ToRichStrWithHighlight(Arena* arena, Str8 string, uxx highlightStartIndex, uxx highlightEndIndex);
 	RichStr RichStrSlice(Arena* arena, RichStr baseString, uxx startIndex, uxx endIndex);
@@ -314,6 +315,31 @@ PEXPI RichStrPiece* GetRichStrPiece(RichStr* richStr, uxx pieceIndex)
 		return &richStr->pieces[pieceIndex];
 	}
 	else { return &richStr->fullPiece; }
+}
+
+PEXPI RichStrPiece* GetRichStrPieceForByteIndex(RichStr* richStr, uxx byteIndex, uxx* pieceIndexOut)
+{
+	NotNull(richStr);
+	if (richStr->numPieces > 1)
+	{
+		NotNull(richStr->pieces);
+		for (uxx pIndex = 0; pIndex < richStr->numPieces; pIndex++)
+		{
+			if (byteIndex < richStr->pieces[pIndex].str.length)
+			{
+				SetOptionalOutPntr(pieceIndexOut, byteIndex);
+				return &richStr->pieces[pIndex];
+			}
+			byteIndex -= richStr->pieces[pIndex].str.length;
+		}
+		SetOptionalOutPntr(pieceIndexOut, richStr->pieces[richStr->numPieces-1].str.length + byteIndex);
+		return &richStr->pieces[richStr->numPieces-1];
+	}
+	else
+	{
+		SetOptionalOutPntr(pieceIndexOut, byteIndex);
+		return &richStr->fullPiece;
+	}
 }
 
 PEXPI RichStr AllocRichStr(Arena* arena, RichStr richStr)

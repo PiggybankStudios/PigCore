@@ -176,12 +176,14 @@ plex GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawRoundedRectangleOutline(GfxSystem* system, rec rectangle, r32 thickness, r32 radius, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth);
 	PIG_CORE_INLINE void GfxSystem_SetTextBackgroundColor(GfxSystem* system, Color32 color);
-	Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color);
+	Result GfxSystem_DrawWrappedRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, r32 wrapWidth, Color32 color);
+	PIG_CORE_INLINE Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextAtSize(GfxSystem* system, r32 fontSize, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextBold(GfxSystem* system, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextItalic(GfxSystem* system, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawText(GfxSystem* system, Str8 text, v2 position, Color32 color);
+	PIG_CORE_INLINE Result GfxSystem_DrawWrappedText(GfxSystem* system, Str8 text, v2 position, r32 wrapWidth, Color32 color);
 #endif
 
 // +--------------------------------------------------------------+
@@ -1234,7 +1236,7 @@ FONT_FLOW_DRAW_HIGHLIGHT_DEF(GfxSystem_FontFlowDrawHighlightCallback)
 	GfxSystem_DrawRectangle(system, highlightRec, state->currentStyle.color);
 }
 
-PEXP Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color)
+PEXP Result GfxSystem_DrawWrappedRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, r32 wrapWidth, Color32 color)
 {
 	NotNull(system);
 	NotNull(font);
@@ -1249,6 +1251,7 @@ PEXP Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32
 	state.startColor = color;
 	state.alignPixelSize = system->state.alignPixelSize;
 	state.position = position;
+	state.wrapWidth = wrapWidth;
 	state.backgroundColor = system->state.textBackgroundColor;
 	FontFlowCallbacks callbacks = ZEROED;
 	callbacks.drawChar = GfxSystem_FontFlowDrawCharCallback;
@@ -1258,33 +1261,43 @@ PEXP Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32
 	
 	return result;
 }
+PEXP Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color)
+{
+	return GfxSystem_DrawWrappedRichTextWithFont(system, font, fontSize, styleFlags, text, position, 0.0f, color);
+}
 PEXPI Result GfxSystem_DrawTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, v2 position, Color32 color)
 {
-	return GfxSystem_DrawRichTextWithFont(system, font, fontSize, styleFlags, ToRichStr(text), position, color);
+	return GfxSystem_DrawWrappedRichTextWithFont(system, font, fontSize, styleFlags, ToRichStr(text), position, 0.0f, color);
 }
 PEXPI Result GfxSystem_DrawTextAtSize(GfxSystem* system, r32 fontSize, Str8 text, v2 position, Color32 color)
 {
 	NotNull(system);
 	NotNull(system->state.font);
-	return GfxSystem_DrawRichTextWithFont(system, system->state.font, fontSize, system->state.fontStyleFlags, ToRichStr(text), position, color);
+	return GfxSystem_DrawWrappedRichTextWithFont(system, system->state.font, fontSize, system->state.fontStyleFlags, ToRichStr(text), position, 0.0f, color);
 }
 PEXPI Result GfxSystem_DrawTextBold(GfxSystem* system, Str8 text, v2 position, Color32 color)
 {
 	NotNull(system);
 	NotNull(system->state.font);
-	return GfxSystem_DrawRichTextWithFont(system, system->state.font, system->state.fontSize, (system->state.fontStyleFlags | FontStyleFlag_Bold), ToRichStr(text), position, color);
+	return GfxSystem_DrawWrappedRichTextWithFont(system, system->state.font, system->state.fontSize, (system->state.fontStyleFlags | FontStyleFlag_Bold), ToRichStr(text), position, 0.0f, color);
 }
 PEXPI Result GfxSystem_DrawTextItalic(GfxSystem* system, Str8 text, v2 position, Color32 color)
 {
 	NotNull(system);
 	NotNull(system->state.font);
-	return GfxSystem_DrawRichTextWithFont(system, system->state.font, system->state.fontSize, (system->state.fontStyleFlags | FontStyleFlag_Italic), ToRichStr(text), position, color);
+	return GfxSystem_DrawWrappedRichTextWithFont(system, system->state.font, system->state.fontSize, (system->state.fontStyleFlags | FontStyleFlag_Italic), ToRichStr(text), position, 0.0f, color);
 }
 PEXPI Result GfxSystem_DrawText(GfxSystem* system, Str8 text, v2 position, Color32 color)
 {
 	NotNull(system);
 	NotNull(system->state.font);
-	return GfxSystem_DrawRichTextWithFont(system, system->state.font, system->state.fontSize, system->state.fontStyleFlags, ToRichStr(text), position, color);
+	return GfxSystem_DrawWrappedRichTextWithFont(system, system->state.font, system->state.fontSize, system->state.fontStyleFlags, ToRichStr(text), position, 0.0f, color);
+}
+PEXPI Result GfxSystem_DrawWrappedText(GfxSystem* system, Str8 text, v2 position, r32 wrapWidth, Color32 color)
+{
+	NotNull(system);
+	NotNull(system->state.font);
+	return GfxSystem_DrawWrappedRichTextWithFont(system, system->state.font, system->state.fontSize, system->state.fontStyleFlags, ToRichStr(text), position, wrapWidth, color);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
