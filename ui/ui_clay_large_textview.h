@@ -37,7 +37,7 @@ plex UiLargeTextLine
 	PigFont* font;
 	r32 fontSize;
 	u8 fontStyle;
-	r32 maxWidth; //value of 0 means no word wrapping
+	r32 wrapWidth; //value of 0 means no word wrapping
 	TextMeasure measure;
 	
 	r32 verticalOffset;
@@ -52,12 +52,14 @@ plex UiLargeText
 	
 	uxx scrollLineIndex;
 	r32 scrollLineOffset;
+	r32 prevScrollContainerPositionY;
 	
 	bool selectionActive;
 	uxx selectionStart;
 	uxx selectionEnd;
 	
 	VarArray lines; //UiLargeTextLine
+	r32 maxLineWidth;
 	r32 totalHeight;
 };
 
@@ -69,6 +71,13 @@ plex UiLargeTextView
 	ClayId id;
 	bool wordWrapEnabled;
 	UiLargeText* text;
+	
+	bool draggingHoriScrollbar;
+	bool isDraggingHoriSmooth;
+	v2 horiScrollbarGrabOffset;
+	bool draggingVertScrollbar;
+	bool isDraggingVertSmooth;
+	v2 vertScrollbarGrabOffset;
 };
 
 // +--------------------------------------------------------------+
@@ -149,6 +158,7 @@ PEXPI void InitUiLargeTextView(Arena* arena, Str8 idStr, UiLargeTextView* tview)
 	NotNull(tview);
 	ClearPointer(tview);
 	tview->arena = arena;
+	tview->idStr = AllocStr8(arena, idStr);
 }
 
 PEXP void DoUiLargeTextView(UiLargeTextView* tview,
@@ -157,6 +167,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 	r32 uiScale, Clay_SizingAxis viewWidth, Clay_SizingAxis viewHeight,
 	UiLargeText* text, PigFont* font, r32 fontSize, u8 fontStyle)
 {
+	UNUSED(keyboard);
 	NotNull(tview);
 	NotNull(tview->arena);
 	NotNull(renderer);
@@ -166,10 +177,96 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 	if (text != nullptr && text->arena == nullptr) { text = nullptr; }
 	Str8 scrollContainerIdStr = PrintInArenaStr(uiArena, "%.*s_Scroll", StrPrint(tview->idStr));
 	Str8 contentIdStr = PrintInArenaStr(uiArena, "%.*s_Content", StrPrint(tview->idStr));
+	Str8 horiGutterIdStr = PrintInArenaStr(uiArena, "%.*s_HScrollGutter", StrPrint(tview->idStr));
+	Str8 vertGutterIdStr = PrintInArenaStr(uiArena, "%.*s_VScrollGutter", StrPrint(tview->idStr));
+	Str8 horiScrollbarIdStr = PrintInArenaStr(uiArena, "%.*s_HScrollBar", StrPrint(tview->idStr));
+	Str8 vertScrollbarIdStr = PrintInArenaStr(uiArena, "%.*s_VScrollBar", StrPrint(tview->idStr));
 	ClayId scrollContainerId = ToClayId(scrollContainerIdStr);
 	ClayId contentId = ToClayId(contentIdStr);
+	ClayId horiGutterId = ToClayId(horiGutterIdStr);
+	ClayId vertGutterId = ToClayId(vertGutterIdStr);
+	ClayId horiScrollbarId = ToClayId(horiScrollbarIdStr);
+	ClayId vertScrollbarId = ToClayId(vertScrollbarIdStr);
 	rec containerRec = GetClayElementDrawRec(scrollContainerId);
+	rec horiScrollbarDrawRec = GetClayElementDrawRec(horiScrollbarId);
+	rec vertScrollbarDrawRec = GetClayElementDrawRec(vertScrollbarId);
+	Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(scrollContainerId, false);
+	bool isHoriScrollbarHovered = (mouse->isOverWindow && Clay_PointerOver(horiScrollbarId));
+	bool isVertScrollbarHovered = (mouse->isOverWindow && Clay_PointerOver(vertScrollbarId));
 	u16 fontId = (font != nullptr) ? GetClayUIRendererFontId(renderer, font, fontStyle) : 0;
+	
+	if (IsMouseBtnPressed(mouse, MouseBtn_Left) && mouse->isOverWindow)
+	{
+		if (!tview->draggingHoriScrollbar)
+		{
+			if (isHoriScrollbarHovered)
+			{
+				tview->draggingHoriScrollbar = true;
+				tview->isDraggingHoriSmooth = false;
+				tview->horiScrollbarGrabOffset = SubV2(mouse->position, horiScrollbarDrawRec.TopLeft);
+			}
+			else if (Clay_PointerOver(horiGutterId))
+			{
+				tview->draggingHoriScrollbar = true;
+				tview->isDraggingHoriSmooth = true;
+				tview->horiScrollbarGrabOffset = ShrinkV2(horiScrollbarDrawRec.Size, 2);
+			}
+		}
+		if (!tview->draggingVertScrollbar)
+		{
+			if (isVertScrollbarHovered)
+			{
+				tview->draggingVertScrollbar = true;
+				tview->isDraggingVertSmooth = false;
+				tview->vertScrollbarGrabOffset = SubV2(mouse->position, vertScrollbarDrawRec.TopLeft);
+			}
+			else if (Clay_PointerOver(vertGutterId))
+			{
+				tview->draggingVertScrollbar = true;
+				tview->isDraggingVertSmooth = true;
+				tview->vertScrollbarGrabOffset = ShrinkV2(vertScrollbarDrawRec.Size, 2);
+			}
+		}
+	}
+	
+	if (tview->draggingHoriScrollbar)
+	{
+		if (scrollData.found && scrollData.contentDimensions.Width <= scrollData.scrollContainerDimensions.Width) { tview->draggingHoriScrollbar = false; }
+		else if (!IsMouseBtnDown(mouse, MouseBtn_Left)) { tview->draggingHoriScrollbar = false; }
+		else
+		{
+			rec scrollGutterDrawRec = GetClayElementDrawRec(horiGutterId);
+			r32 minX = scrollGutterDrawRec.X;
+			r32 maxX = scrollGutterDrawRec.X + scrollGutterDrawRec.Width - horiScrollbarDrawRec.Width;
+			if (maxX > minX)
+			{
+				r32 newScrollbarPos = ClampR32(mouse->position.X - tview->horiScrollbarGrabOffset.X, minX, maxX);
+				r32 newScrollbarPercent = (newScrollbarPos - minX) / (maxX - minX);
+				scrollData.scrollTarget->X = -((scrollData.contentDimensions.Width - scrollData.scrollContainerDimensions.Width) * newScrollbarPercent);
+				if (!tview->isDraggingHoriSmooth) { scrollData.scrollPosition->X = scrollData.scrollTarget->X; }
+			}
+		}
+		if (AbsR32(scrollData.scrollPosition->X - scrollData.scrollTarget->X) < 1.0f) { tview->isDraggingHoriSmooth = false; }
+	}
+	if (tview->draggingVertScrollbar)
+	{
+		if (scrollData.found && scrollData.contentDimensions.Height <= scrollData.scrollContainerDimensions.Height) { tview->draggingVertScrollbar = false; }
+		else if (!IsMouseBtnDown(mouse, MouseBtn_Left)) { tview->draggingVertScrollbar = false; }
+		else
+		{
+			rec scrollGutterDrawRec = GetClayElementDrawRec(vertGutterId);
+			r32 minY = scrollGutterDrawRec.Y;
+			r32 maxY = scrollGutterDrawRec.Y + scrollGutterDrawRec.Height - vertScrollbarDrawRec.Height;
+			if (maxY > minY)
+			{
+				r32 newScrollbarPos = ClampR32(mouse->position.Y - tview->vertScrollbarGrabOffset.Y, minY, maxY);
+				r32 newScrollbarPercent = (newScrollbarPos - minY) / (maxY - minY);
+				scrollData.scrollTarget->Y = -((scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height) * newScrollbarPercent);
+				if (!tview->isDraggingVertSmooth) { scrollData.scrollPosition->Y = scrollData.scrollTarget->Y; }
+			}
+		}
+		if (AbsR32(scrollData.scrollPosition->Y - scrollData.scrollTarget->Y) < 1.0f) { tview->isDraggingVertSmooth = false; }
+	}
 	
 	if (text != nullptr)
 	{
@@ -177,22 +274,40 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 		FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);
 		NotNull(fontAtlas);
 		
+		if (text->lines.length == 0)
+		{
+			text->scrollLineIndex = 0;
+			text->scrollLineOffset = 0.0f;
+		}
+		else if (text->scrollLineIndex >= text->lines.length)
+		{
+			text->scrollLineIndex = text->lines.length-1;
+			text->scrollLineOffset = 0.0f;
+		}
+		
+		text->maxLineWidth = 0.0f;
 		r32 verticalOffset = 0;
 		VarArrayLoop(&text->lines, lIndex)
 		{
 			VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
 			if (!line->measured || line->font != font || line->fontSize != fontSize || line->fontStyle != fontStyle)
 			{
-				//TODO: Once we have support for word wrapping in MeasureText we should pass the line->maxWidth
-				r32 maxWidth = tview->wordWrapEnabled ? containerRec.Width : 0.0f;
+				//TODO: Once we have support for word wrapping in MeasureText we should pass the line->wrapWidth
+				r32 wrapWidth = tview->wordWrapEnabled ? containerRec.Width : 0.0f;
 				line->measure = MeasureTextEx(font, fontSize, fontStyle, false, line->line);
 				line->measured = true;
-				line->maxWidth = maxWidth;
+				line->wrapWidth = wrapWidth;
 				line->font = font;
 				line->fontSize = fontSize;
 				line->fontStyle = fontStyle;
 				line->height = MaxR32(line->measure.logicalRec.Height, fontAtlas->lineHeight);
 			}
+			if (lIndex == text->scrollLineIndex)
+			{
+				r32 verticalOffsetDiff = line->verticalOffset - verticalOffset;
+				text->prevScrollContainerPositionY += verticalOffsetDiff;
+			}
+			text->maxLineWidth = MaxR32(text->maxLineWidth, line->measure.logicalRec.Width);
 			line->verticalOffset = verticalOffset;
 			verticalOffset += line->height;
 		}
@@ -200,71 +315,208 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 	}
 	
 	v2 contentSize = V2_Zero;
-	if (!tview->wordWrapEnabled && containerRec.Width > 0) { contentSize.Width = containerRec.Width; }
-	if (text != nullptr) { contentSize.Height = text->totalHeight; }
+	if (tview->wordWrapEnabled) { contentSize.Width = containerRec.Width; }
+	if (text != nullptr)
+	{
+		contentSize.Height = text->totalHeight;
+		if (!tview->wordWrapEnabled) { contentSize.Width = text->maxLineWidth; }
+	}
 	
 	CLAY({ .id = tview->id,
 		.layout = {
 			.sizing = { .width = viewWidth, .height = viewHeight },
+			.layoutDirection = CLAY_LEFT_TO_RIGHT,
 			.padding = CLAY_PADDING_ALL(UISCALE_BORDER(uiScale, 1)),
 		},
 		.backgroundColor = MonokaiDarkGray,
 		.border = { .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(uiScale, 1)), .color = MonokaiLightGray },
 	})
 	{
-		CLAY({ .id = scrollContainerId,
-			.layout = {
-				.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-			},
-			.scroll = { .vertical = true, .horizontal = !tview->wordWrapEnabled, .scrollLag = 5.0f },
-		})
+		CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) }, .layoutDirection = CLAY_TOP_TO_BOTTOM } })
 		{
-			CLAY({ .id = contentId,
+			CLAY({ .id = scrollContainerId,
 				.layout = {
-					.sizing = { .width = CLAY_SIZING_FIXED(contentSize.Width), .height = CLAY_SIZING_FIXED(contentSize.Height) },
+					.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
 				},
+				.scroll = { .vertical = true, .horizontal = !tview->wordWrapEnabled, .scrollLag = 5.0f },
 			})
 			{
-				rec contentRec = GetClayElementDrawRec(contentId);
-				if (text != nullptr)
+				scrollData = Clay_GetScrollContainerData(scrollContainerId, false);
+				// Handle scroll changes moving our scrollLineIndex/scrollLineOffset
+				if (scrollData.found && scrollData.scrollPosition->Y != text->prevScrollContainerPositionY)
 				{
-					v2 textOffset = contentRec.TopLeft;
-					VarArrayLoop(&text->lines, lIndex)
+					r32 scrollChange = scrollData.scrollPosition->Y - text->prevScrollContainerPositionY;
+					if (scrollChange > 0.0f)
 					{
-						VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
-						rec lineRec = NewRecV(
-							AddV2(textOffset, NewV2(0, line->verticalOffset)),
-							NewV2(tview->wordWrapEnabled ? containerRec.Width : line->measure.logicalRec.Width, line->height)
-						);
-						
-						if (lineRec.Y >= containerRec.Y + containerRec.Height) { break; }
-						if (lineRec.Y + lineRec.Height >= containerRec.Y)
+						while (scrollChange > 0 && text->scrollLineIndex+1 < text->lines.length)
 						{
-							// v2 textPos = AddV2(lineRec.TopLeft, NewV2(0, -line->measure.logicalRec.Y));
-							CLAY({
-								.layout = {
-									.sizing = { .width = CLAY_SIZING_FIXED(lineRec.Width), .height = CLAY_SIZING_FIXED(lineRec.Height) },
-								},
-								.floating = {
-									.attachTo = CLAY_ATTACH_TO_PARENT,
-									.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
-									.offset = SubV2(lineRec.TopLeft, contentRec.TopLeft),
-								},
-							})
+							UiLargeTextLine* line = VarArrayGet(UiLargeTextLine, &text->lines, text->scrollLineIndex);
+							if (text->scrollLineOffset + scrollChange >= line->height)
 							{
-								CLAY_TEXT(
-									line->line,
-									CLAY_TEXT_CONFIG({
-										.fontId = fontId,
-										.fontSize = (u16)fontSize,
-										.textColor = MonokaiWhite,
-										.wrapMode = CLAY_TEXT_WRAP_NONE,
-										.textAlignment = CLAY_TEXT_ALIGN_LEFT,
-								}));
+								text->scrollLineIndex++;
+								scrollChange -= (line->height - text->scrollLineOffset);
+								text->scrollLineOffset = 0.0f;
+							}
+							else { break; }
+						}
+						text->scrollLineOffset += scrollChange;
+					}
+					else
+					{
+						while (scrollChange < 0 && text->scrollLineIndex > 0)
+						{
+							if (scrollChange <= text->scrollLineOffset)
+							{
+								text->scrollLineIndex--;
+								scrollChange += text->scrollLineOffset;
+								text->scrollLineOffset = VarArrayGet(UiLargeTextLine, &text->lines, text->scrollLineIndex)->height;
+							}
+							else { break; }
+						}
+						text->scrollLineOffset = MaxR32(0.0f, text->scrollLineOffset + scrollChange);
+					}
+				}
+				
+				// +==============================+
+				// |        Render Content        |
+				// +==============================+
+				CLAY({ .id = contentId,
+					.layout = {
+						.sizing = {
+							.width = CLAY_SIZING_FIXED(contentSize.Width),
+							.height = CLAY_SIZING_FIXED(contentSize.Height)
+						},
+					},
+				})
+				{
+					rec contentRec = GetClayElementDrawRec(contentId);
+					if (text != nullptr)
+					{
+						v2 textOffset = contentRec.TopLeft;
+						//TODO: This loop should eventually jump straight to scrollLineIndex
+						VarArrayLoop(&text->lines, lIndex)
+						{
+							VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
+							rec lineRec = NewRecV(
+								AddV2(textOffset, NewV2(0, line->verticalOffset)),
+								NewV2(tview->wordWrapEnabled ? containerRec.Width : line->measure.logicalRec.Width, line->height)
+							);
+							r32 extraRenderHeight = MaxR32(100, containerRec.Height);
+							
+							if (lineRec.Y >= containerRec.Y + containerRec.Height + extraRenderHeight) { break; }
+							if (lineRec.Y + lineRec.Height >= containerRec.Y - extraRenderHeight)
+							{
+								// v2 textPos = AddV2(lineRec.TopLeft, NewV2(0, -line->measure.logicalRec.Y));
+								CLAY({
+									.layout = {
+										.sizing = { .width = CLAY_SIZING_FIXED(lineRec.Width), .height = CLAY_SIZING_FIXED(lineRec.Height) },
+									},
+									.floating = {
+										.attachTo = CLAY_ATTACH_TO_PARENT,
+										.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
+										.offset = SubV2(lineRec.TopLeft, contentRec.TopLeft),
+										.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+									},
+								})
+								{
+									CLAY_TEXT(
+										line->line,
+										CLAY_TEXT_CONFIG({
+											.fontId = fontId,
+											.fontSize = (u16)fontSize,
+											.textColor = MonokaiWhite,
+											.wrapMode = CLAY_TEXT_WRAP_NONE,
+											.textAlignment = CLAY_TEXT_ALIGN_LEFT,
+									}));
+								}
 							}
 						}
 					}
 				}
+			}
+			
+			// +==============================+
+			// |    Render Hori Scrollbar     |
+			// +==============================+
+			//NOTE: I don't like changing the size of the innerContainer so we always have a gutter container to reserve space, even if a scrollbar is not needed,
+			//      but we only render the scrollbar inside the gutter if the list is taller than the viewable area
+			CLAY({ .id = horiGutterId,
+				.layout = {
+					.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 8 + (1*2))) },
+					.padding = { .left = UISCALE_U16(uiScale, 1), .right = UISCALE_U16(uiScale, 1), }
+				},
+			})
+			{
+				if (scrollData.found && scrollData.contentDimensions.Width > scrollData.scrollContainerDimensions.Width)
+				{
+					r32 scrollbarXPercent = 0.0f;
+					r32 scrollbarSizePercent = 1.0f;
+					if (scrollData.found && scrollData.contentDimensions.Width > scrollData.scrollContainerDimensions.Width)
+					{
+						scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.Width / scrollData.contentDimensions.Width, 0.0f, 1.0f);
+						scrollbarXPercent = ClampR32(-scrollData.scrollPosition->X / (scrollData.contentDimensions.Width - scrollData.scrollContainerDimensions.Width), 0.0f, 1.0f);
+					}
+					rec scrollGutterDrawRec = GetClayElementDrawRec(horiGutterId);
+					v2 scrollBarSize = NewV2(
+						MaxR32(MinR32(UISCALE_R32(uiScale, 20), scrollGutterDrawRec.Width*0.25f), scrollGutterDrawRec.Width * scrollbarSizePercent),
+						UISCALE_R32(uiScale, 8)
+					);
+					r32 scrollBarOffsetX = ClampR32((scrollGutterDrawRec.Width - scrollBarSize.Width) * scrollbarXPercent, 0.0f, scrollGutterDrawRec.Width);
+					
+					CLAY({ .id = horiScrollbarId,
+						.layout = {
+							.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.X), .height = CLAY_SIZING_FIXED(scrollBarSize.Y) },
+						},
+						.floating = {
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+							.offset = NewV2(scrollBarOffsetX, UISCALE_R32(uiScale, 1)),
+						},
+						.backgroundColor = (isHoriScrollbarHovered || tview->draggingHoriScrollbar) ? MonokaiWhite : MonokaiLightGray,
+						.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),
+					}) {}
+				}
+			}
+		}
+		
+		// +==============================+
+		// |    Render Vert Scrollbar     |
+		// +==============================+
+		//NOTE: I don't like changing the size of the innerContainer so we always have a gutter container to reserve space, even if a scrollbar is not needed,
+		//      but we only render the scrollbar inside the gutter if the list is taller than the viewable area
+		CLAY({ .id = vertGutterId,
+			.layout = {
+				.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 8 + (1*2))), .height = CLAY_SIZING_GROW(0) },
+				.padding = { .left = UISCALE_U16(uiScale, 1), .right = UISCALE_U16(uiScale, 1), }
+			},
+		})
+		{
+			if (scrollData.found && scrollData.contentDimensions.Height > scrollData.scrollContainerDimensions.Height)
+			{
+				r32 scrollbarYPercent = 0.0f;
+				r32 scrollbarSizePercent = 1.0f;
+				if (scrollData.found && scrollData.contentDimensions.Height > scrollData.scrollContainerDimensions.Height)
+				{
+					scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.Height / scrollData.contentDimensions.Height, 0.0f, 1.0f);
+					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->Y / (scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height), 0.0f, 1.0f);
+				}
+				rec scrollGutterDrawRec = GetClayElementDrawRec(vertGutterId);
+				v2 scrollBarSize = NewV2(
+					UISCALE_R32(uiScale, 8),
+					MaxR32(MinR32(UISCALE_R32(uiScale, 20), scrollGutterDrawRec.Height*0.25f), scrollGutterDrawRec.Height * scrollbarSizePercent)
+				);
+				r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
+				
+				CLAY({ .id = vertScrollbarId,
+					.layout = {
+						.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.X), .height = CLAY_SIZING_FIXED(scrollBarSize.Y) },
+					},
+					.floating = {
+						.attachTo = CLAY_ATTACH_TO_PARENT,
+						.offset = NewV2(UISCALE_R32(uiScale, 1), scrollBarOffsetY),
+					},
+					.backgroundColor = (isVertScrollbarHovered || tview->draggingVertScrollbar) ? MonokaiWhite : MonokaiLightGray,
+					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),
+				}) {}
 			}
 		}
 	}
