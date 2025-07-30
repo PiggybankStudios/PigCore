@@ -104,6 +104,6 @@ Description:
 // Enables using Metadesk library to parse Metadesk formatted files (md.h and md.c)
 #define BUILD_WITH_METADESK  0
 // Enables support for making HTTP (and HTTPS) requests using the OS' API (WinHTTP for Windows, ? for Linux, etc.)
-#define BUILD_WITH_HTTP      1
+#define BUILD_WITH_HTTP      0
 
 #endif //  _BUILD_CONFIG_H

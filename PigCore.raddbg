@@ -1,13 +1,16 @@
 // raddbg 0.9.20 project file
 
-recent_file: path: "gfx/gfx_font_flow.h"
 recent_file: path: "struct/struct_rich_string.h"
-recent_file: path: "gfx/gfx_system.h"
+recent_file: path: "tests/tests_main.c"
+recent_file: path: "base/base_debug_output_impl.h"
+recent_file: path: "misc/misc_printing.h"
+recent_file: path: "../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/stdio.h"
 recent_file: path: "tests/tests_sokol.c"
+recent_file: path: "gfx/gfx_font_flow.h"
+recent_file: path: "gfx/gfx_system.h"
 recent_file: path: "struct/struct_string.h"
 recent_file: path: "std/std_basic_math.h"
 recent_file: path: "struct/struct_color.h"
-recent_file: path: "tests/tests_main.c"
 recent_file: path: "../Crest/core/tests/tests_main.c"
 recent_file: path: "mem/mem_arena.h"
 recent_file: path: "struct/struct_var_array.h"
@@ -18,6 +21,11 @@ target:
   working_directory: _build
   enabled: 1
   label: Tests
+}
+type_view:
+{
+  type: Str8
+  expr: "rows($, array($.chars, $.length), $.length)"
 }
 type_view:
 {
@@ -37,6 +45,11 @@ type_view:
 }
 type_view:
 {
+  type: Vec4Raw
+  expr: "rows($, $.X, $.Y, $.Z, $.W)"
+}
+type_view:
+{
   type: Vec2i
   expr: "rows($, $.X, $.Y)"
 }
@@ -44,6 +57,11 @@ type_view:
 {
   type: Vec3i
   expr: "rows($, $.X, $.Y, $.Z)"
+}
+type_view:
+{
+  type: Vec4i
+  expr: "rows($, $.X, $.Y, $.Z, $.W)"
 }
 type_view:
 {
@@ -55,3 +73,14 @@ type_view:
   type: Vec3R64
   expr: "rows($, $.X, $.Y, $.Z)"
 }
+type_view:
+{
+  type: Vec4R64
+  expr: "rows($, $.X, $.Y, $.Z, $.W)"
+}
+type_view:
+{
+  type: Color32
+  expr: "rows($, color((($.valueU32&0x00FFFFFF) << 8) | (($.valueU32&0xFF000000)>>24)), hex(r), hex(g), hex(b), hex(a))"
+}
+theme: 4coder

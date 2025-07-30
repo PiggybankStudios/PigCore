@@ -8,6 +8,11 @@ Description:
 	** a section of bold characters embedded in a string of non-bold
 	** characters. Or we can have different colors for different
 	** portions of the text.
+	
+	** NOTE: Upon revisiting RichStr when implementing EncodeRichStr I found the
+	** design of this system somewhat confusing. Either we should document the
+	** reasons for the design choices and tradeoffs or we should consider rewriting
+	** this system to make it simpler.
 */
 
 #ifndef _STRUCT_RICH_STRING_H
@@ -159,6 +164,8 @@ plex RichStr
 	PIG_CORE_INLINE RichStr RichStrSliceFrom(Arena* arena, RichStr baseString, uxx startIndex);
 	PIG_CORE_INLINE bool IsFontStyleFlagChangingInRichStrStyleChange(const RichStrStyle* style, u8 defaultFontStyle, RichStrStyleChange styleChange, u8 fontStyleFlag);
 	PIG_CORE_INLINE void ApplyRichStyleChange(RichStrStyle* style, RichStrStyleChange change, r32 defaultFontSize, u8 defaultFontStyle, Color32 defaultColor);
+	RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString);
+	Str8 EncodeRichStr(Arena* arena, RichStr richStr, bool useBackspaceAndBellChars, bool addNullTerm);
 #endif
 
 #define RichStrStyleChange_None NewRichStrStyleChange(RichStrStyleChangeType_None, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f)
@@ -501,20 +508,43 @@ plex RichStrParseState
 	u8 utf8ByteSize;
 	uxx pieceIndex;
 	u8 enabledFlags;
+	bool prevCharWasEscape;
 };
 
 static void TwoPassRichStrPiece(RichStrParseState* state, u8 pass, uxx bIndex)
 {
 	Str8 pieceStr = StrSlice(state->encodedString, state->pieceStartIndex, bIndex);
+	uxx numEscapeSequences = 0;
+	for (uxx cIndex = 0; cIndex < pieceStr.length; cIndex++)
+	{
+		if (pieceStr.chars[cIndex] == '\\' && cIndex+1 < pieceStr.length &&
+			(pieceStr.chars[cIndex+1] == '\\' || pieceStr.chars[cIndex+1] == '[' || pieceStr.chars[cIndex+1] == ']'))
+		{
+			numEscapeSequences++;
+			cIndex++;
+		}
+	}
 	if (pass == 1)
 	{
 		DebugAssert(state->pieceIndex < state->result.numPieces);
 		RichStrPiece* piece = GetRichStrPiece(&state->result, state->pieceIndex);
-		piece->str = StrSliceLength(state->result.fullPiece.str, state->fullStrByteIndex, pieceStr.length);
-		MyMemCopy(piece->str.chars, pieceStr.chars, pieceStr.length);
+		piece->str = StrSliceLength(state->result.fullPiece.str, state->fullStrByteIndex, pieceStr.length - numEscapeSequences);
+		uxx writeIndex = 0;
+		for (uxx cIndex = 0; cIndex < pieceStr.length; cIndex++)
+		{
+			if (pieceStr.chars[cIndex] == '\\' && cIndex+1 < pieceStr.length &&
+				(pieceStr.chars[cIndex+1] == '\\' || pieceStr.chars[cIndex+1] == '[' || pieceStr.chars[cIndex+1] == ']'))
+			{
+				continue; //skip writing the backslashes that served as escapes
+			}
+			Assert(writeIndex < pieceStr.length - numEscapeSequences);
+			piece->str.chars[writeIndex] = pieceStr.chars[cIndex];
+			writeIndex++;
+		}
+		Assert(writeIndex == pieceStr.length - numEscapeSequences);
 		piece->styleChange = state->nextStyleChange;
 	}
-	state->fullStrByteIndex += pieceStr.length;
+	state->fullStrByteIndex += pieceStr.length - numEscapeSequences;
 	state->pieceStartIndex = bIndex + state->utf8ByteSize;
 	state->pieceIndex++;
 }
@@ -585,7 +615,7 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 					FlagSet(state.enabledFlags, FontStyleFlag_Italic);
 				}
 			}
-			else if (codepoint == '[')
+			else if (codepoint == '[' && !state.prevCharWasEscape)
 			{
 				RichStrStyleChange styleChange = RichStrStyleChange_None_Const;
 				uxx styleChangePartLength = 0;
@@ -658,12 +688,6 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 								styleChange.type = RichStrStyleChangeType_Alpha;
 								styleChange.alpha = valueR32;
 							}
-							else if (TryParseU8Ex(valuePart, &valueU8, nullptr, true, false, false))
-							{
-								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
-								styleChange.type = RichStrStyleChangeType_Alpha;
-								styleChange.alpha = (r32)valueU8 / 255.0f;
-							}
 						}
 						else if (StrAnyCaseEquals(namePart, StrLit("size")))
 						{
@@ -730,6 +754,7 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 				}
 			}
 			
+			state.prevCharWasEscape = (codepoint == '\\' && !state.prevCharWasEscape);
 			if (state.utf8ByteSize > 1) { bIndex += state.utf8ByteSize-1; }
 		}
 		if (state.pieceStartIndex < encodedString.length)
@@ -759,6 +784,136 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 		}
 	}
 	return state.result;
+}
+
+PEXP Str8 EncodeRichStr(Arena* arena, RichStr richStr, bool useBackspaceAndBellChars, bool addNullTerm)
+{
+	Str8 result = Str8_Empty;
+	for (u8 pass = 0; pass < 2; pass++)
+	{
+		uxx encodedByteIndex = 0;
+		for (uxx pIndex = 0; pIndex < richStr.numPieces; pIndex++)
+		{
+			RichStrPiece* piece = GetRichStrPiece(&richStr, pIndex);
+			if (piece->styleChange.type != RichStrStyleChangeType_None)
+			{
+				if (piece->styleChange.type == RichStrStyleChangeType_FontStyle)
+				{
+					if (piece->styleChange.enableStyleFlags != 0x00)
+					{
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[bold=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[italic=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[underline=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[strike=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[outline=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[highlight=1]"); }
+					}
+					else if (piece->styleChange.disableStyleFlags != 0x00)
+					{
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[bold=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[italic=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[underline=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[strike=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[outline=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[highlight=0]"); }
+					}
+					else if (piece->styleChange.defaultStyleFlags != 0x00)
+					{
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(result.chars, result.length, &encodedByteIndex, useBackspaceAndBellChars ? "\b" : "[bold]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(result.chars, result.length, &encodedByteIndex, useBackspaceAndBellChars ? "\a" : "[italic]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[underline]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[strike]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[outline]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[highlight]"); }
+					}
+				}
+				else if (piece->styleChange.type == RichStrStyleChangeType_FontSize)
+				{
+					if (piece->styleChange.fontSize == 0.0f)
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[size]");
+					}
+					else
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[size=%.0f]", piece->styleChange.fontSize);
+					}
+				}
+				else if (piece->styleChange.type == RichStrStyleChangeType_Alpha)
+				{
+					if (piece->styleChange.alpha == -1.0f)
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[alpha]");
+					}
+					else
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[alpha=%g]", piece->styleChange.alpha);
+					}
+				}
+				else if (piece->styleChange.type == RichStrStyleChangeType_ColorAndAlpha)
+				{
+					if (piece->styleChange.color.valueU32 == RICH_STYLE_DEFAULT_COLOR.valueU32)
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[color]");
+					}
+					else if (piece->styleChange.color.a == 0xFF)
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[color=%02X%02X%02X]", piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
+					}
+					else
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[color=%02X%02X%02X%02X]", piece->styleChange.color.a, piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
+					}
+				}
+				else if (piece->styleChange.type == RichStrStyleChangeType_Color)
+				{
+					if (piece->styleChange.color.valueU32 == RICH_STYLE_DEFAULT_COLOR.valueU32)
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[rgb]");
+					}
+					else
+					{
+						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[rgb=%02X%02X%02X]", piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
+					}
+				}
+				else { DebugAssert(false); }
+			}
+			
+			//Push all characters, add backslashes before '[' to escape them
+			for (uxx cIndex = 0; cIndex < piece->str.length; cIndex++)
+			{
+				if (piece->str.chars[cIndex] == '[' || piece->str.chars[cIndex] == '\\')
+				{
+					if (result.chars != nullptr)
+					{
+						Assert(encodedByteIndex+1 <= result.length);
+						result.chars[encodedByteIndex] = '\\';
+					}
+					encodedByteIndex += 1;
+				}
+				
+				if (result.chars != nullptr)
+				{
+					Assert(encodedByteIndex+1 <= result.length);
+					result.chars[encodedByteIndex] = piece->str.chars[cIndex];
+				}
+				encodedByteIndex += 1;
+			}
+		}
+		
+		if (pass == 0)
+		{
+			result.length = encodedByteIndex;
+			if (arena == nullptr || result.length == 0) { return result; }
+			result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
+			NotNull(result.chars);
+		}
+		else
+		{
+			Assert(encodedByteIndex == result.length);
+			if (addNullTerm) { result.chars[result.length-1] = '\0'; }
+		}
+	}
+	return result;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
