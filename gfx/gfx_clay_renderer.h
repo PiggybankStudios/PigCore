@@ -72,10 +72,10 @@ PEXPI Clay_ImageElementConfig ToClayImage(Texture* texture)
 PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 {
 	ScratchBegin(scratch);
+	NotNull(config);
 	NotNull(userData);
 	ClayUIRenderer* renderer = (ClayUIRenderer*)userData;
-	Str8 textStr = NewStr8((uxx)text.length, text.chars);
-	RichStr richTextStr = DecodeStrToRichStr(scratch, textStr);
+	RichStr richText = config->userData.richText ? DecodeStrToRichStr(scratch, text) : ToRichStr(text);
 	Assert(config->fontId < renderer->fonts.length);
 	ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)config->fontId);
 	r32 fontSize = (r32)config->fontSize;
@@ -87,7 +87,7 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	//      glyphWidth when measured as a word, but the advanceX will be used to shift the following space/words in the full string resulting in a larger full-text size
 	//      The cater to Clay we need to include the advanceX of the last character in the measurement
 	const bool includeAdvanceX = true;
-	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, includeAdvanceX, richTextStr);
+	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, includeAdvanceX, richText);
 	
 	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
@@ -164,7 +164,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				
 				uxx scratchMark = ArenaGetMark(scratch);
 				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
-				RichStr richText = DecodeStrToRichStr(scratch, text);
+				RichStr richText = command->renderData.text.userData.richText ? DecodeStrToRichStr(scratch, text) : ToRichStr(text);
 				u16 fontId = command->renderData.text.fontId;
 				r32 fontSize = (r32)command->renderData.text.fontSize;
 				Assert(fontId < renderer->fonts.length);

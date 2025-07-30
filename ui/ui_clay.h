@@ -61,6 +61,7 @@ plex ClayTextUserData
 	TextContraction contraction;
 	plex FontFlow* flowTarget;
 	Color32 backgroundColor; //used for text that has selection
+	bool richText;
 };
 
 #define CLAY_ELEMENT_USERDATA_TYPE ClayElementUserData

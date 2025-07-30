@@ -150,6 +150,7 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 			.fontId = clayFont,
 			.fontSize = 18,
 			.textColor = textColor,
+			.userData = { .richText = true },
 		})
 	);
 	ScratchEnd(scratch);
