@@ -480,26 +480,22 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 		.backgroundColor = MonokaiDarkGray,
 	})
 	{
-		//TODO: Use an RichStrEncode function here, this function would solve our escaping issues
-		//      Alternatively we should just pass RichStr as the primary str type for Clay
-		Str8 displayText;
-		if (tbox->cursorEnd != tbox->cursorStart)
+		RichStr richText = ToRichStr(tbox->text);
+		if (tbox->cursorActive && tbox->cursorEnd != tbox->cursorStart)
 		{
 			uxx cursorMin = MinUXX(tbox->cursorStart, tbox->cursorEnd);
 			uxx cursorMax = MaxUXX(tbox->cursorStart, tbox->cursorEnd);
-			displayText = PrintInArenaStr(uiArena, "%.*s[highlight]%.*s[highlight]%.*s",
-				cursorMin, &tbox->text.chars[0],
-				cursorMax - cursorMin, &tbox->text.chars[cursorMin],
-				tbox->text.length - cursorMax, &tbox->text.chars[cursorMax]
-			);
+			RichStrPiece pieces[3];
+			pieces[0] = (RichStrPiece){ .str = StrSlice(tbox->text, 0, cursorMin) };
+			pieces[1] = (RichStrPiece){ .str = StrSlice(tbox->text, cursorMin, cursorMax), .styleChange = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Highlighted) };
+			pieces[2] = (RichStrPiece){ .str = StrSliceFrom(tbox->text, cursorMax), .styleChange = NewRichStrStyleChangeDefaultFlags(FontStyleFlag_Highlighted) };
+			richText = NewRichStr(uiArena, ArrayCount(pieces), &pieces[0]);
 		}
-		else
-		{
-			displayText = AllocStr8(uiArena, tbox->text);
-		}
+		// Str8 EncodeRichStr(Arena* arena, RichStr richStr, bool useBackspaceAndBellChars, bool addNullTerm)
+		Str8 encodedRichText = EncodeRichStr(uiArena, richText, false, false);
 		
 		CLAY_TEXT(
-			displayText,
+			encodedRichText,
 			CLAY_TEXT_CONFIG({
 				.fontId = fontId,
 				.fontSize = (u16)fontSize,
@@ -510,6 +506,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 					.contraction = (tbox->cursorActive && tbox->cursorEnd < tbox->text.length/2) ? TextContraction_ClipRight : TextContraction_ClipLeft,
 					.flowTarget = &tbox->flow,
 					.backgroundColor = MonokaiBack,
+					.richText = true,
 				},
 			})
 		);
