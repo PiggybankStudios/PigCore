@@ -29,26 +29,27 @@ static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
 	return result;
 }
 
-#define FILENAME_ENVIRONMENT "environment.txt"
-
-static inline void RunBatchFileAndApplyDumpedEnvironment(Str8 batchFilePath)
+static inline void RunBatchFileAndApplyDumpedEnvironment(Str8 batchFilePath, Str8 environmentFilePath, bool skipRunningIfFileExists)
 {
 	CliArgList cmd = ZEROED;
-	AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_ENVIRONMENT);
+	AddArgStr(&cmd, CLI_QUOTED_ARG, environmentFilePath);
 	Str8 fixedBatchFilePath = CopyStr8(batchFilePath, false);
 	FixPathSlashes(fixedBatchFilePath, PATH_SEP_CHAR);
 	
-	int statusCode = RunCliProgram(fixedBatchFilePath, &cmd); //this batch file runs emsdk_env.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what emsdk_env.bat changed
-	if (statusCode != 0)
+	if (!DoesFileExist(environmentFilePath) || !skipRunningIfFileExists)
 	{
-		PrintLine_E("%.*s failed! Status Code: %d", fixedBatchFilePath.length, fixedBatchFilePath.chars, statusCode);
-		exit(statusCode);
+		int statusCode = RunCliProgram(fixedBatchFilePath, &cmd); //this batch file runs emsdk_env.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what emsdk_env.bat changed
+		if (statusCode != 0)
+		{
+			PrintLine_E("%.*s failed! Status Code: %d", fixedBatchFilePath.length, fixedBatchFilePath.chars, statusCode);
+			exit(statusCode);
+		}
 	}
 	
 	Str8 environmentFileContents = ZEROED;
-	if (!TryReadFile(StrLit(FILENAME_ENVIRONMENT), &environmentFileContents))
+	if (!TryReadFile(environmentFilePath, &environmentFileContents))
 	{
-		PrintLine_E("%.*s did not create \"%s\"! Or we can't open it for some reason", batchFilePath.length, batchFilePath.chars, FILENAME_ENVIRONMENT);
+		PrintLine_E("%.*s did not create \"%.*s\"! Or we can't open it for some reason", batchFilePath.length, batchFilePath.chars, environmentFilePath.length, environmentFilePath.chars);
 		exit(4);
 	}
 	
@@ -64,7 +65,7 @@ static inline void InitializeMsvcIf(Str8 pigCoreFolder, bool* isMsvcInitialized)
 	{
 		PrintLine("Initializing MSVC Compiler...");
 		Str8 batchPath = JoinStrings2(pigCoreFolder, StrLit("/init_msvc.bat"), false);
-		RunBatchFileAndApplyDumpedEnvironment(batchPath);
+		RunBatchFileAndApplyDumpedEnvironment(batchPath, StrLit("msvc_environment.txt"), true);
 		*isMsvcInitialized = true;
 	}
 }
@@ -75,7 +76,7 @@ static inline void InitializeEmsdkIf(Str8 pigCoreFolder, bool* isEmsdkInitialize
 	{
 		PrintLine("Initializing Emscripten SDK...");
 		Str8 batchPath = JoinStrings2(pigCoreFolder, StrLit("/init_emsdk.bat"), false);
-		RunBatchFileAndApplyDumpedEnvironment(batchPath);
+		RunBatchFileAndApplyDumpedEnvironment(batchPath, StrLit("emsdk_environment.txt"), false);
 		*isEmsdkInitialized = true;
 	}
 }

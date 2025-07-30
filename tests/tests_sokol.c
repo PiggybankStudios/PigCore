@@ -474,7 +474,7 @@ bool AppFrame(void)
 			v2 textPos = NewV2(50, 50);
 			r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 			if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
-			RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=26]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
+			RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
 			// #define DrawWrappedRichTextWithFont(font, fontSize, styleFlags, text, position, wrapWidth, color)
 			DrawWrappedRichTextWithFont(
 				&testFont, 18, FontStyleFlag_None,
