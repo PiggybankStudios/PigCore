@@ -63,6 +63,7 @@ PEXP void DoUiCheckbox(Str8 idStr, bool* isChecked,
 		.layout = {
 			.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0) },
 			.layoutDirection = (isVerticallyAligned ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT),
+			.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 			.childGap = UISCALE_U16(uiScale, isVerticallyAligned ? 2 : 6),
 		},
 	})
@@ -98,7 +99,7 @@ PEXP void DoUiCheckbox(Str8 idStr, bool* isChecked,
 		{
 			if (checkboxTexture != nullptr && (*isChecked))
 			{
-				
+				//TODO: Draw checkboxTexture inside the switch area, to the left of the circle
 			}
 			
 			r32 dotSize = UISCALE_R32(uiScale, boxSize - (borderSize*4));

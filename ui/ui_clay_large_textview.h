@@ -303,7 +303,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 				line->font = font;
 				line->fontSize = fontSize;
 				line->fontStyle = fontStyle;
-				line->height = MaxR32(line->measure.logicalRec.Height, fontAtlas->lineHeight);
+				line->height = CeilR32(line->measure.logicalRec.Height / fontAtlas->lineHeight) * fontAtlas->lineHeight;
 			}
 			if (lIndex == text->scrollLineIndex)
 			{
@@ -423,7 +423,6 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 										.offset = SubV2(lineRec.TopLeft, contentRec.TopLeft),
 										.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
 									},
-									.backgroundColor = MonokaiPurple,
 								})
 								{
 									CLAY_TEXT(
