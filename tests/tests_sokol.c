@@ -475,7 +475,6 @@ bool AppFrame(void)
 			r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 			if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
 			RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
-			// #define DrawWrappedRichTextWithFont(font, fontSize, styleFlags, text, position, wrapWidth, color)
 			DrawWrappedRichTextWithFont(
 				&testFont, 18, FontStyleFlag_None,
 				loremIpsumRich,
@@ -483,6 +482,10 @@ bool AppFrame(void)
 				wrapWidth,
 				MonokaiWhite
 			);
+			rec logicalRec = gfx.prevFontFlow.logicalRec;
+			rec visualRec = gfx.prevFontFlow.visualRec;
+			DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
+			DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
 			DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
 			
 			#if 0
