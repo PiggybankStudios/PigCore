@@ -182,7 +182,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					{
 						rec textClipRec = NewRec(
 							drawRec.X,
-							drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset - fontAtlas->maxAscend,
+							drawRec.Y + fontAtlas->lineHeight/2 + fontAtlas->centerOffset - fontAtlas->maxAscend,
 							drawRec.Width,
 							fontAtlas->lineHeight
 						);
