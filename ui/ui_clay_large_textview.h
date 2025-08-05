@@ -423,6 +423,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 										.offset = SubV2(lineRec.TopLeft, contentRec.TopLeft),
 										.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
 									},
+									// .backgroundColor = ColorWithAlpha(((lIndex%2) == 0) ? MonokaiGray1 : MonokaiGray2, 0.25f),
 								})
 								{
 									CLAY_TEXT(

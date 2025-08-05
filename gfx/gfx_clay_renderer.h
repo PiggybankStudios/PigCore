@@ -91,7 +91,7 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	
 	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
-	v2 result = NewV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(measure.Height));
+	v2 result = NewV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.Height, measure.visualRec.Height)));
 	ScratchEnd(scratch);
 	return result;
 }
@@ -160,7 +160,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			case CLAY_RENDER_COMMAND_TYPE_TEXT:
 			{
 				TracyCZoneN(Zone_COMMAND_TEXT, "TEXT", true);
-				// GfxSystem_DrawRectangle(system, drawRec, ColorWithAlpha(MonokaiPurple, 0.25f));
+				// GfxSystem_DrawRectangle(system, drawRec, ColorWithAlpha(MonokaiGreen, 0.25f));
 				
 				uxx scratchMark = ArenaGetMark(scratch);
 				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
@@ -173,7 +173,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
 				NotNull(fontAtlas);
 				reci oldClipRec = ZEROED;
-				v2 textOffset = V2_Zero;
+				r32 textOffsetX = 0.0f;
 				if (command->renderData.text.userData.wrapWidth == 0.0f)
 				{
 					if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
@@ -192,7 +192,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 							TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, false, 0, richText);
 							if (measure.Width > drawRec.Width)
 							{
-								textOffset.X -= (measure.Width - drawRec.Width);
+								textOffsetX -= (measure.Width - drawRec.Width);
 							}
 						}
 						// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(MonokaiPurple, 0.2f));
@@ -219,7 +219,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						richText = ToRichStr(text);
 					}
 				}
-				v2 textPos = NewV2(drawRec.X + textOffset.X, drawRec.Y + textOffset.Y + drawRec.Height/2 + fontAtlas->centerOffset);
+				v2 textPos = NewV2(drawRec.X + textOffsetX, drawRec.Y + fontAtlas->lineHeight/2 + fontAtlas->centerOffset);
 				AlignV2(&textPos);
 				
 				FontFlowState state = ZEROED;
