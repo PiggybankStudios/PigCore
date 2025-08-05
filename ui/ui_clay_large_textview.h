@@ -24,6 +24,7 @@ Description:
 #include "struct/struct_rectangles.h"
 #include "struct/struct_var_array.h"
 #include "gfx/gfx_font_flow.h"
+#include "gfx/gfx_clay_renderer.h"
 #include "ui/ui_clay.h"
 
 #if BUILD_WITH_CLAY
@@ -289,14 +290,14 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 		
 		text->maxLineWidth = 0.0f;
 		r32 verticalOffset = 0;
+		r32 wrapWidth = tview->wordWrapEnabled ? containerRec.Width : 0.0f;
 		VarArrayLoop(&text->lines, lIndex)
 		{
 			VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
-			if (!line->measured || line->font != font || line->fontSize != fontSize || line->fontStyle != fontStyle)
+			if (!line->measured || line->font != font || line->fontSize != fontSize || line->fontStyle != fontStyle || line->wrapWidth != wrapWidth)
 			{
-				//TODO: Once we have support for word wrapping in MeasureText we should pass the line->wrapWidth
-				r32 wrapWidth = tview->wordWrapEnabled ? containerRec.Width : 0.0f;
-				line->measure = MeasureTextEx(font, fontSize, fontStyle, false, line->line);
+				// PrintLine_D("Measuring line %llu with wrapWidth=%g", lIndex, wrapWidth);
+				line->measure = MeasureTextEx(font, fontSize, fontStyle, false, wrapWidth, line->line);
 				line->measured = true;
 				line->wrapWidth = wrapWidth;
 				line->font = font;
@@ -385,7 +386,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 				CLAY({ .id = contentId,
 					.layout = {
 						.sizing = {
-							.width = CLAY_SIZING_FIXED(contentSize.Width),
+							.width = tview->wordWrapEnabled ? CLAY_SIZING_GROW(0) : CLAY_SIZING_FIXED(contentSize.Width),
 							.height = CLAY_SIZING_FIXED(contentSize.Height)
 						},
 					},
@@ -408,10 +409,13 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 							if (lineRec.Y >= containerRec.Y + containerRec.Height + extraRenderHeight) { break; }
 							if (lineRec.Y + lineRec.Height >= containerRec.Y - extraRenderHeight)
 							{
-								// v2 textPos = AddV2(lineRec.TopLeft, NewV2(0, -line->measure.logicalRec.Y));
+								//NOTE: When doing word wrapping (no horizontal scrolling) we need to set width to GROW not FIXED because
+								//      Clay will push the container off the rightside of the window if it thinks it needs to contain the content
+								//      and this causes us to never shrink and re-measure at a smaller wrapWidth
+								Clay_SizingAxis lineContainerWidth = tview->wordWrapEnabled ? CLAY_SIZING_GROW(0) : CLAY_SIZING_FIXED(lineRec.Width);
 								CLAY({
 									.layout = {
-										.sizing = { .width = CLAY_SIZING_FIXED(lineRec.Width), .height = CLAY_SIZING_FIXED(lineRec.Height) },
+										.sizing = { .width = lineContainerWidth, .height = CLAY_SIZING_FIXED(lineRec.Height) },
 									},
 									.floating = {
 										.attachTo = CLAY_ATTACH_TO_PARENT,
@@ -419,6 +423,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 										.offset = SubV2(lineRec.TopLeft, contentRec.TopLeft),
 										.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
 									},
+									.backgroundColor = MonokaiPurple,
 								})
 								{
 									CLAY_TEXT(
@@ -429,6 +434,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 											.textColor = MonokaiWhite,
 											.wrapMode = CLAY_TEXT_WRAP_NONE,
 											.textAlignment = CLAY_TEXT_ALIGN_LEFT,
+											.userData = { .wrapWidth = line->wrapWidth },
 									}));
 								}
 							}

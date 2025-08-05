@@ -87,7 +87,7 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	//      glyphWidth when measured as a word, but the advanceX will be used to shift the following space/words in the full string resulting in a larger full-text size
 	//      The cater to Clay we need to include the advanceX of the last character in the measurement
 	const bool includeAdvanceX = true;
-	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, includeAdvanceX, richText);
+	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, includeAdvanceX, config->userData.wrapWidth, richText);
 	
 	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
@@ -174,47 +174,50 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				NotNull(fontAtlas);
 				reci oldClipRec = ZEROED;
 				v2 textOffset = V2_Zero;
-				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
-					command->renderData.text.userData.contraction == TextContraction_ClipRight ||
-					richText.numPieces > 1) //TODO: We don't support ellipses style contractions with RichStr right now!
+				if (command->renderData.text.userData.wrapWidth == 0.0f)
 				{
-					rec textClipRec = NewRec(
-						drawRec.X,
-						drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset - fontAtlas->maxAscend,
-						drawRec.Width,
-						fontAtlas->lineHeight
-					);
-					AlignRec(&textClipRec);
-					if (command->renderData.text.userData.contraction == TextContraction_ClipLeft)
+					if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
+						command->renderData.text.userData.contraction == TextContraction_ClipRight ||
+						richText.numPieces > 1) //TODO: We don't support ellipses style contractions with RichStr right now!
 					{
-						TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, false, richText);
-						if (measure.Width > drawRec.Width)
+						rec textClipRec = NewRec(
+							drawRec.X,
+							drawRec.Y + drawRec.Height/2 + fontAtlas->centerOffset - fontAtlas->maxAscend,
+							drawRec.Width,
+							fontAtlas->lineHeight
+						);
+						AlignRec(&textClipRec);
+						if (command->renderData.text.userData.contraction == TextContraction_ClipLeft)
 						{
-							textOffset.X -= (measure.Width - drawRec.Width);
+							TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, false, 0, richText);
+							if (measure.Width > drawRec.Width)
+							{
+								textOffset.X -= (measure.Width - drawRec.Width);
+							}
 						}
+						// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(MonokaiPurple, 0.2f));
+						oldClipRec = GfxSystem_AddClipRec(system, ToReciFromf(textClipRec));
 					}
-					// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(MonokaiPurple, 0.2f));
-					oldClipRec = GfxSystem_AddClipRec(system, ToReciFromf(textClipRec));
-				}
-				else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft)
-				{
-					text = ShortenTextStartToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
-					richText = ToRichStr(text);
-				}
-				else if (command->renderData.text.userData.contraction == TextContraction_EllipseMiddle)
-				{
-					text = ShortenTextToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR), text.length/2);
-					richText = ToRichStr(text);
-				}
-				else if (command->renderData.text.userData.contraction == TextContraction_EllipseRight)
-				{
-					text = ShortenTextEndToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
-					richText = ToRichStr(text);
-				}
-				else if (command->renderData.text.userData.contraction == TextContraction_EllipseFilePath)
-				{
-					text = ShortenFilePathToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
-					richText = ToRichStr(text);
+					else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft)
+					{
+						text = ShortenTextStartToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
+						richText = ToRichStr(text);
+					}
+					else if (command->renderData.text.userData.contraction == TextContraction_EllipseMiddle)
+					{
+						text = ShortenTextToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR), text.length/2);
+						richText = ToRichStr(text);
+					}
+					else if (command->renderData.text.userData.contraction == TextContraction_EllipseRight)
+					{
+						text = ShortenTextEndToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
+						richText = ToRichStr(text);
+					}
+					else if (command->renderData.text.userData.contraction == TextContraction_EllipseFilePath)
+					{
+						text = ShortenFilePathToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
+						richText = ToRichStr(text);
+					}
 				}
 				v2 textPos = NewV2(drawRec.X + textOffset.X, drawRec.Y + textOffset.Y + drawRec.Height/2 + fontAtlas->centerOffset);
 				AlignV2(&textPos);
@@ -227,6 +230,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				state.startFontStyle = font->styleFlags;
 				state.startColor = drawColor;
 				state.alignPixelSize = system->state.alignPixelSize;
+				state.wrapWidth = command->renderData.text.userData.wrapWidth;
 				state.position = textPos;
 				state.backgroundColor = (command->renderData.text.userData.backgroundColor.a != 0) ? command->renderData.text.userData.backgroundColor : system->state.textBackgroundColor;
 				FontFlowCallbacks callbacks = ZEROED;

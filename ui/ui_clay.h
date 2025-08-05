@@ -62,6 +62,7 @@ plex ClayTextUserData
 	plex FontFlow* flowTarget;
 	Color32 backgroundColor; //used for text that has selection
 	bool richText;
+	r32 wrapWidth; //Using this wrapWidth bypasses Clay's word wrapping behavior so it should only be used when the parent container has already been vertically sized based off previous MeasureText call with wrapWidth set
 };
 
 #define CLAY_ELEMENT_USERDATA_TYPE ClayElementUserData
