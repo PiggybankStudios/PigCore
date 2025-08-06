@@ -345,10 +345,12 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 			})
 			{
 				scrollData = Clay_GetScrollContainerData(scrollContainerId, false);
+				r32 scrollY = (-scrollData.scrollPosition->Y);
 				// Handle scroll changes moving our scrollLineIndex/scrollLineOffset
-				if (scrollData.found && scrollData.scrollPosition->Y != text->prevScrollContainerPositionY)
+				if (scrollData.found && scrollY != text->prevScrollContainerPositionY)
 				{
-					r32 scrollChange = scrollData.scrollPosition->Y - text->prevScrollContainerPositionY;
+					r32 scrollChange = scrollY - text->prevScrollContainerPositionY;
+					// PrintLine_D("Scrolled %g (%g -> %g)", scrollChange, text->prevScrollContainerPositionY, scrollY);
 					if (scrollChange > 0.0f)
 					{
 						while (scrollChange > 0 && text->scrollLineIndex+1 < text->lines.length)
@@ -357,6 +359,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 							if (text->scrollLineOffset + scrollChange >= line->height)
 							{
 								text->scrollLineIndex++;
+								PrintLine_D("Moving down %llu", text->scrollLineIndex);
 								scrollChange -= (line->height - text->scrollLineOffset);
 								text->scrollLineOffset = 0.0f;
 							}
@@ -368,9 +371,10 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 					{
 						while (scrollChange < 0 && text->scrollLineIndex > 0)
 						{
-							if (scrollChange <= text->scrollLineOffset)
+							if (-scrollChange > text->scrollLineOffset)
 							{
 								text->scrollLineIndex--;
+								PrintLine_D("Moving up %llu", text->scrollLineIndex);
 								scrollChange += text->scrollLineOffset;
 								text->scrollLineOffset = VarArrayGet(UiLargeTextLine, &text->lines, text->scrollLineIndex)->height;
 							}
@@ -378,6 +382,8 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 						}
 						text->scrollLineOffset = MaxR32(0.0f, text->scrollLineOffset + scrollChange);
 					}
+					
+					text->prevScrollContainerPositionY = scrollY;
 				}
 				
 				// +==============================+
@@ -423,7 +429,7 @@ PEXP void DoUiLargeTextView(UiLargeTextView* tview,
 										.offset = SubV2(lineRec.TopLeft, contentRec.TopLeft),
 										.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
 									},
-									// .backgroundColor = ColorWithAlpha(((lIndex%2) == 0) ? MonokaiGray1 : MonokaiGray2, 0.25f),
+									// .backgroundColor = ColorWithAlpha(MonokaiWhite, ((lIndex%2) == 0) ? 0.25f : 0.1f),
 								})
 								{
 									CLAY_TEXT(

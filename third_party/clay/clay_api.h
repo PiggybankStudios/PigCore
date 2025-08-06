@@ -69,6 +69,10 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
 // - measureTextFunction is a user provided function that adheres to the interface v2 (Str8 text, Clay_TextElementConfig* config, CLAY_MEASURE_USERDATA_TYPE userData);
 // - userData is a pointer that will be transparently passed through when the measureTextFunction is called.
 CLAY_DECOR void Clay_SetMeasureTextFunction(ClayMeasureText_f* measureTextFunction, CLAY_MEASURE_USERDATA_TYPE userData);
+// NOTE: Added by Taylor
+// This callback allows the application to augment the hash given the contents of the CLAY_TEXT_USERDATA_TYPE inside the Clay_TextElementConfig
+// This hash is used to cache the MeasureText results so anything inside the userData that affects measurement should be included in the hash
+CLAY_DECOR void Clay_SetHashTextUserDataFunction(ClayHashTextUserData_f* hashTextUserDataFunction);
 // Experimental - Used in cases where Clay needs to integrate with a system that manages its own scrolling containers externally.
 // Please reach out if you plan to use this function, as it may be subject to change.
 CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(v2 (*queryScrollOffsetFunction)(u32 elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData), CLAY_QUERYSCROLL_USERDATA_TYPE userData);

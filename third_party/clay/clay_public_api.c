@@ -14,6 +14,10 @@ CLAY_DECOR void Clay_SetMeasureTextFunction(ClayMeasureText_f* measureTextFuncti
 	Clay__MeasureText = measureTextFunction;
 	context->measureTextUserData = userData;
 }
+CLAY_DECOR void Clay_SetHashTextUserDataFunction(ClayHashTextUserData_f* hashTextUserDataFunction)
+{
+	Clay__HashTextUserData = hashTextUserDataFunction;
+}
 CLAY_DECOR void Clay_SetQueryScrollOffsetFunction(v2 (*queryScrollOffsetFunction)(u32 elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData), CLAY_QUERYSCROLL_USERDATA_TYPE userData)
 {
 	Clay_Context* context = Clay_GetCurrentContext();

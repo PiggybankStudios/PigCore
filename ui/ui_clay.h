@@ -131,6 +131,25 @@ static void ClayErrorCallback(Clay_ErrorData errorData)
 	//TODO: Implement me better!
 }
 
+// +==============================+
+// |       HashTextUserData       |
+// +==============================+
+// u32 HashTextUserData(u32 currentHash, Clay_TextElementConfig* config)
+static CLAY_HASH_TEXT_USERDATA_DEF(HashTextUserData)
+{
+	u32 result = currentHash;
+	
+	result += config->userData.richText ? 17 : 0;
+	result += (result << 10);
+	result ^= (result >> 6);
+	
+	result += *((u32*)&config->userData.wrapWidth);
+	result += (result << 10);
+	result ^= (result >> 6);
+	
+	return result;
+}
+
 // +--------------------------------------------------------------+
 // |                       Type Conversions                       |
 // +--------------------------------------------------------------+
@@ -159,6 +178,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureText
 	clayOut->context = Clay_Initialize(arena, windowSize, (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
 	
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
+	Clay_SetHashTextUserDataFunction(HashTextUserData);
 }
 
 PEXPI bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling)
