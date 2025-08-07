@@ -22,10 +22,13 @@ Description:
 #include "struct/struct_var_array.h"
 #include "os/os_threading.h"
 #include "misc/misc_profiling_tracy_include.h"
+#include "misc/misc_two_pass.h"
 
 #if BUILD_WITH_HTTP
 
-#define HTTP_DEFAULT_CLIENT_WIDE_STR L"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0" //TODO: Make this a different client string?
+// We used to use "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"
+#define HTTP_DEFAULT_USER_AGENT_STR       "PigCore/1.0"
+#define HTTP_DEFAULT_USER_AGENT_WIDE_STR L"PigCore/1.0"
 #define HTTP_PORT                80
 #define HTTPS_PORT               443
 #define HTTP_MAX_RESPONSE_SIZE   Megabytes(64) // This determines the virtual memory allocated for responseArena, so we only pay the memory cost of the largest response, but once we get a large response we never uncommit that memory
@@ -40,6 +43,7 @@ enum HttpVerb
 	HttpVerb_POST,
 	HttpVerb_GET,
 	HttpVerb_DELETE,
+	//TODO: Should we support HEAD, PUT, CONNECT, OPTIONS, and TRACE? Or others registered at https://www.iana.org/assignments/http-methods/http-methods.xhtml
 	HttpVerb_Count,
 };
 #if !PIG_CORE_IMPLEMENTATION
@@ -117,8 +121,6 @@ plex HttpRequest
 	Str8 pathStr;
 	uxx connectionIndex;
 	
-	Str8 encodedContent;
-	Str8 encodedHeaders;
 	#if TARGET_IS_WINDOWS
 	HINTERNET requestHandle;
 	#endif
@@ -195,6 +197,7 @@ PEXPI void OsCopyHttpRequestArgs(Arena* arena, HttpRequestArgs* dest, const Http
 			dest->headers[hIndex].value = AllocStr8(arena, source->headers[hIndex].value);
 		}
 	}
+	else { dest->headers = nullptr; } //ensure the pointer is cleared so FreeHttpRequest doesn't get mad
 	if (dest->numContentItems > 0)
 	{
 		dest->contentItems = AllocArray(Str8Pair, arena, dest->numContentItems);
@@ -205,6 +208,7 @@ PEXPI void OsCopyHttpRequestArgs(Arena* arena, HttpRequestArgs* dest, const Http
 			dest->contentItems[cIndex].value = AllocStr8(arena, source->contentItems[cIndex].value);
 		}
 	}
+	else { dest->contentItems = nullptr; } //ensure the pointer is cleared so FreeHttpRequest doesn't get mad
 }
 
 static void FreeHttpRequest(Arena* arena, HttpRequest* request)
@@ -217,16 +221,14 @@ static void FreeHttpRequest(Arena* arena, HttpRequest* request)
 		FreeStr8(arena, &request->args.headers[hIndex].key);
 		FreeStr8(arena, &request->args.headers[hIndex].value);
 	}
-	if (request->args.headers != nullptr) { FreeArray(Str8Pair, arena, request->args.numHeaders, request->args.headers); }
+	if (request->args.headers != nullptr) { Assert(request->args.numHeaders > 0); FreeArray(Str8Pair, arena, request->args.numHeaders, request->args.headers); }
 	for (uxx cIndex = 0; cIndex < request->args.numContentItems; cIndex++)
 	{
 		FreeStr8(arena, &request->args.contentItems[cIndex].key);
 		FreeStr8(arena, &request->args.contentItems[cIndex].value);
 	}
-	if (request->args.contentItems != nullptr) { FreeArray(Str8Pair, arena, request->args.numContentItems, request->args.contentItems); }
+	if (request->args.contentItems != nullptr) { Assert(request->args.numContentItems > 0); FreeArray(Str8Pair, arena, request->args.numContentItems, request->args.contentItems); }
 	//NOTE: protocolStr, hostnameStr, and pathStr are all slices into args.urlStr so we don't need to free them
-	FreeStr8(arena, &request->encodedContent);
-	FreeStr8(arena, &request->encodedHeaders);
 	if (request->responseBytes.arena != nullptr) { FreeVarArray(&request->responseBytes); }
 	ClearPointer(request);
 }
@@ -514,7 +516,8 @@ PEXPI void OsInitHttpRequestManager(Arena* arena, HttpRequestManager* manager)
 	
 	#if TARGET_IS_WINDOWS
 	{
-		manager->sessionHandle = WinHttpOpen(HTTP_DEFAULT_CLIENT_WIDE_STR,
+		manager->sessionHandle = WinHttpOpen(
+			HTTP_DEFAULT_USER_AGENT_WIDE_STR,
 			WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
 			WINHTTP_NO_PROXY_NAME,
 			WINHTTP_NO_PROXY_BYPASS,
@@ -568,6 +571,55 @@ PEXPI HttpConnection* OsFindHttpConnection(HttpRequestManager* manager, Str8 hos
 	return nullptr;
 }
 
+static Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm)
+{
+	Assert(numHeaders == 0 || headers != nullptr);
+	TwoPassStr8Loop(result, arena, addNullTerm)
+	{
+		for (uxx hIndex = 0; hIndex < numHeaders; hIndex++)
+		{
+			//TODO: Should we escape characters in the key and value strings? Esp. ':', '\n' and '\r'?
+			TwoPassStr(&result, headers[hIndex].key);
+			TwoPassChar(&result, ':');
+			TwoPassStr(&result, headers[hIndex].value);
+			if (hIndex+1 < numHeaders) { TwoPassStrNt(&result, "\r\n"); }
+		}
+		TwoPassStr8LoopEnd(&result);
+	}
+	return result.str;
+}
+
+#if 0
+static Str8 EscapeUrlArgumentStr(Arena* arena, Str8 key, Str8 value)
+{
+	Str8 result = Str8_Empty;
+	for (u8 pass = 0; pass < 2; pass++)
+	{
+		uxx byteIndex = 0;
+		for (uxx keyIndex = 0; keyIndex < key.length; keyIndex++)
+		{
+			u32 codepoint = 0;
+			u8 codepointSize = GetCodepointForUtf8Str(key, keyIndex, &codepoint);
+			if (IsCharAlphaNumeric(codepoint))
+			{
+				
+			}
+			if (codepointSize > 1) { keyIndex += codepointSize-1; }
+		}
+		
+		if (pass == 1) { Assert(byteIndex+1 <= result.length); result.chars[byteIndex] = '='; }
+		byteIndex++;
+		
+		
+	}
+}
+
+static Str8 EncodeHttpContentUrlStyle(Arena* arena, uxx numItems, const Str8Pair* contentItems, bool addNullTerm)
+{
+	
+}
+#endif
+
 static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requestIndex)
 {
 	TracyCZoneN(Zone_Func, "HttpRequestManagerStartRequest", true);
@@ -607,8 +659,9 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 			PrintLine_D("Request handle: %016X", request->requestHandle);
 			WinHttpSetOption(request->requestHandle, WINHTTP_OPTION_CONTEXT_VALUE, (void*)&manager, sizeof(void*));
 			
-			Str16 headersWideStr = Str16Lit(L""); // TODO: Fill this out!
-			//TODO: Fill out request->encodedData
+			Str8 encodedHeaders = EncodeHttpHeaders(scratch, request->args.numHeaders, request->args.headers, false);
+			Str16 encodedHeaders16 = ConvertUtf8StrToUcs2(scratch, encodedHeaders, true);
+			Str8 encodedContent = StrLit(""); //TODO: Fill this out!
 			
 			//TODO: Do we need to lock the mutex here?
 			
@@ -616,11 +669,11 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 			//TODO: This function is taking ~8ms to return! We should probably be doing this on another thread!
 			BOOL requestResult = WinHttpSendRequest(
 				request->requestHandle, //hRequest
-				headersWideStr.chars, //lpszHeaders
-				(DWORD)-1, //dwHeadersLength
-				request->encodedContent.chars, //lpOptional
-				(DWORD)request->encodedContent.length, //dwOptionalLength
-				(DWORD)request->encodedContent.length, //dwTotalLength
+				encodedHeaders16.chars, //lpszHeaders
+				(DWORD)encodedHeaders16.length, //dwHeadersLength
+				encodedContent.chars, //lpOptional
+				(DWORD)encodedContent.length, //dwOptionalLength
+				(DWORD)encodedContent.length, //dwTotalLength
 				0 //dwContext
 			);
 			TracyCZoneEnd(Zone_WinHttpSendRequest);
@@ -791,9 +844,6 @@ PEXP HttpRequest* OsMakeHttpRequest(HttpRequestManager* manager, const HttpReque
 	Assert(!IsEmptyStr(newRequest->hostnameStr));
 	newRequest->pathStr = GetUrlPathPart(newRequest->args.urlStr);
 	if (IsEmptyStr(newRequest->pathStr)) { newRequest->pathStr = StrLit("/"); }
-	
-	// TODO: Str8 encodedContent;
-	// TODO: Str8 encodedHeaders;
 	
 	bool usingSsl = StrExactEquals(newRequest->protocolStr, StrLit("https"));
 	u16 portNumber = usingSsl ? HTTPS_PORT : HTTP_PORT;
