@@ -29,7 +29,6 @@ Description:
 	Str8 PrintInArenaStr(Arena* arena, const char* formatString, ...);
 	int PrintVa_Measure(const char* formatString, va_list args);
 	void PrintVa_Print(const char* formatString, va_list args, char* allocatedSpace, int previousResult);
-	void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex, const char* formatString, ...);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -125,66 +124,6 @@ PEXP void PrintVa_Print(const char* formatString, va_list args, char* allocatedS
 	int printResult = MyVaListPrintf(allocatedSpace, previousResult+1, formatString, args);
 	Assert(printResult == previousResult);
 	allocatedSpace[previousResult] = '\0';
-}
-
-// Sometimes we want to do a single memory allocation for a collection of strings
-// TwoPassPrint is meant to be put inside a loop that runs twice, first pass it only
-// does measurements of how many chars are needed for each print, and second pass it
-// expects an allocation to have been made and it will start putting the actual
-// formatted strings into the allocated buffer
-// Example:
-// 	Str8 result = Str8_Empty;
-// 	for (u8 pass = 0; pass < 2; pass++)
-// 	{
-// 		u64 charIndex = 0;
-// 		VarArrayLoop(&stringArray, sIndex)
-// 		{
-// 			VarArrayLoopGet(Str8, str, &stringArray, sIndex);
-// 			TwoPassPrint(result.chars, result.length, &charIndex, "%s%.*s", (sIndex > 0) ? "-" : "", StrPrint(str));
-// 		}
-// 		if (pass == 0) { result.chars = (char*)AllocMem(memArena, charIndex+1); result.length = charIndex; }
-// 		else { Assert(charIndex == result.length); result.chars[result.length] = '\0'; }
-// 	}
-PEXP void TwoPassPrint(char* resultPntr, u64 resultLength, u64* currentByteIndex, const char* formatString, ...)
-{
-	Assert(resultPntr == nullptr || resultLength > 0);
-	NotNull(currentByteIndex);
-	NotNull(formatString);
-	
-	u64 printSize = 0;
-	va_list args;
-	
-	va_start(args, formatString);
-	int printResult = PrintVa_Measure(formatString, args);
-	va_end(args);
-	
-	if (printResult >= 0)
-	{
-		printSize = (u64)printResult;
-		if (resultPntr != nullptr)
-		{
-			Assert(*currentByteIndex <= resultLength);
-			u64 spaceLeft = resultLength - *currentByteIndex;
-			Assert(printSize <= spaceLeft);
-			va_start(args, formatString);
-			PrintVa_Print(formatString, args, &resultPntr[*currentByteIndex], printResult);
-			va_end(args);
-		}
-	}
-	else
-	{
-		//Print error. Use the formatString as a stand-in to indicate an error has occurred in the print formatting
-		printSize = MyStrLength64(formatString);
-		if (resultPntr != nullptr)
-		{
-			Assert(*currentByteIndex <= resultLength);
-			u64 spaceLeft = resultLength - *currentByteIndex;
-			Assert(printSize <= spaceLeft);
-			MyMemCopy(&resultPntr[*currentByteIndex], formatString, printSize);
-		}
-	}
-	
-	*currentByteIndex += printSize;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

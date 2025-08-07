@@ -788,10 +788,8 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 
 PEXP Str8 EncodeRichStr(Arena* arena, RichStr richStr, bool useBackspaceAndBellChars, bool addNullTerm)
 {
-	Str8 result = Str8_Empty;
-	for (u8 pass = 0; pass < 2; pass++)
+	TwoPassStr8Loop(result, arena, addNullTerm)
 	{
-		uxx encodedByteIndex = 0;
 		for (uxx pIndex = 0; pIndex < richStr.numPieces; pIndex++)
 		{
 			RichStrPiece* piece = GetRichStrPiece(&richStr, pIndex);
@@ -801,78 +799,78 @@ PEXP Str8 EncodeRichStr(Arena* arena, RichStr richStr, bool useBackspaceAndBellC
 				{
 					if (piece->styleChange.enableStyleFlags != 0x00)
 					{
-						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[bold=1]"); }
-						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[italic=1]"); }
-						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[underline=1]"); }
-						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[strike=1]"); }
-						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[outline=1]"); }
-						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[highlight=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(&result, "[bold=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(&result, "[italic=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(&result, "[underline=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(&result, "[strike=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(&result, "[outline=1]"); }
+						if (IsFlagSet(piece->styleChange.enableStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(&result, "[highlight=1]"); }
 					}
 					else if (piece->styleChange.disableStyleFlags != 0x00)
 					{
-						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[bold=0]"); }
-						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[italic=0]"); }
-						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[underline=0]"); }
-						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[strike=0]"); }
-						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[outline=0]"); }
-						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[highlight=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(&result, "[bold=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(&result, "[italic=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(&result, "[underline=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(&result, "[strike=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(&result, "[outline=0]"); }
+						if (IsFlagSet(piece->styleChange.disableStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(&result, "[highlight=0]"); }
 					}
 					else if (piece->styleChange.defaultStyleFlags != 0x00)
 					{
-						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(result.chars, result.length, &encodedByteIndex, useBackspaceAndBellChars ? "\b" : "[bold]"); }
-						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(result.chars, result.length, &encodedByteIndex, useBackspaceAndBellChars ? "\a" : "[italic]"); }
-						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[underline]"); }
-						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[strike]"); }
-						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[outline]"); }
-						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[highlight]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Bold))          { TwoPassPrint(&result, useBackspaceAndBellChars ? "\b" : "[bold]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Italic))        { TwoPassPrint(&result, useBackspaceAndBellChars ? "\a" : "[italic]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Underline))     { TwoPassPrint(&result, "[underline]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Strikethrough)) { TwoPassPrint(&result, "[strike]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Outline))       { TwoPassPrint(&result, "[outline]"); }
+						if (IsFlagSet(piece->styleChange.defaultStyleFlags, FontStyleFlag_Highlighted))   { TwoPassPrint(&result, "[highlight]"); }
 					}
 				}
 				else if (piece->styleChange.type == RichStrStyleChangeType_FontSize)
 				{
 					if (piece->styleChange.fontSize == 0.0f)
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[size]");
+						TwoPassPrint(&result, "[size]");
 					}
 					else
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[size=%.0f]", piece->styleChange.fontSize);
+						TwoPassPrint(&result, "[size=%.0f]", piece->styleChange.fontSize);
 					}
 				}
 				else if (piece->styleChange.type == RichStrStyleChangeType_Alpha)
 				{
 					if (piece->styleChange.alpha == -1.0f)
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[alpha]");
+						TwoPassPrint(&result, "[alpha]");
 					}
 					else
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[alpha=%g]", piece->styleChange.alpha);
+						TwoPassPrint(&result, "[alpha=%g]", piece->styleChange.alpha);
 					}
 				}
 				else if (piece->styleChange.type == RichStrStyleChangeType_ColorAndAlpha)
 				{
 					if (piece->styleChange.color.valueU32 == RICH_STYLE_DEFAULT_COLOR.valueU32)
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[color]");
+						TwoPassPrint(&result, "[color]");
 					}
 					else if (piece->styleChange.color.a == 0xFF)
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[color=%02X%02X%02X]", piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
+						TwoPassPrint(&result, "[color=%02X%02X%02X]", piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
 					}
 					else
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[color=%02X%02X%02X%02X]", piece->styleChange.color.a, piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
+						TwoPassPrint(&result, "[color=%02X%02X%02X%02X]", piece->styleChange.color.a, piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
 					}
 				}
 				else if (piece->styleChange.type == RichStrStyleChangeType_Color)
 				{
 					if (piece->styleChange.color.valueU32 == RICH_STYLE_DEFAULT_COLOR.valueU32)
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[rgb]");
+						TwoPassPrint(&result, "[rgb]");
 					}
 					else
 					{
-						TwoPassPrint(result.chars, result.length, &encodedByteIndex, "[rgb=%02X%02X%02X]", piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
+						TwoPassPrint(&result, "[rgb=%02X%02X%02X]", piece->styleChange.color.r, piece->styleChange.color.g, piece->styleChange.color.b);
 					}
 				}
 				else { DebugAssert(false); }
@@ -881,39 +879,14 @@ PEXP Str8 EncodeRichStr(Arena* arena, RichStr richStr, bool useBackspaceAndBellC
 			//Push all characters, add backslashes before '[' to escape them
 			for (uxx cIndex = 0; cIndex < piece->str.length; cIndex++)
 			{
-				if (piece->str.chars[cIndex] == '[' || piece->str.chars[cIndex] == '\\')
-				{
-					if (result.chars != nullptr)
-					{
-						Assert(encodedByteIndex+1 <= result.length);
-						result.chars[encodedByteIndex] = '\\';
-					}
-					encodedByteIndex += 1;
-				}
-				
-				if (result.chars != nullptr)
-				{
-					Assert(encodedByteIndex+1 <= result.length);
-					result.chars[encodedByteIndex] = piece->str.chars[cIndex];
-				}
-				encodedByteIndex += 1;
+				if (piece->str.chars[cIndex] == '[' || piece->str.chars[cIndex] == '\\') { TwoPassChar(&result, '\\'); }
+				TwoPassChar(&result, piece->str.chars[cIndex]);
 			}
 		}
 		
-		if (pass == 0)
-		{
-			result.length = encodedByteIndex;
-			if (arena == nullptr || result.length == 0) { return result; }
-			result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
-			NotNull(result.chars);
-		}
-		else
-		{
-			Assert(encodedByteIndex == result.length);
-			if (addNullTerm) { result.chars[result.length-1] = '\0'; }
-		}
+		TwoPassStr8LoopEnd(&result);
 	}
-	return result;
+	return result.str;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
