@@ -4,6 +4,18 @@ Author: Taylor Robbins
 Date:   07\24\2025
 Description:
 	** Wraps the API for making HTTP requests (including SSL, aka HTTPS) for each OS (WinHTTP on Windows, ? on Linux, etc.)
+References:
+	RFC 3986: "Uniform Resource Identifier (URI): Generic Syntax" (https://datatracker.ietf.org/doc/html/rfc3986)
+		** 2.1: For consistency, URI producers and normalizers should use uppercase hexadecimal digits for all percent-encodings.
+		** 2.2: Reserved characters = ':' '/' '?' '#' '[' ']' '@' '!' '$' '&' '\'' '(' ')' '*' '+' ',' ';' '='
+		** 2.3: Unreserved characters = ALPHA DIGIT '-' '.' '_' '~'
+		** 3.0: The generic URI syntax consists of a hierarchical sequence of components referred to as the scheme, authority, path, query, and fragment.
+		**       foo://example.com:8042/over/there?name=ferret#nose
+		**       \_/   \______________/\_________/ \_________/ \__/
+		**        |           |            |            |        |
+		**     scheme     authority       path        query   fragment
+	RFC 1866: Hypertext Markup Language - 2.0 (Obseleted by 2854) (https://datatracker.ietf.org/doc/html/rfc1866)
+	RFC 2854: The 'text/html' Media Type (https://datatracker.ietf.org/doc/html/rfc2854)
 */
 
 #ifndef _OS_HTTP_H
@@ -120,6 +132,7 @@ plex HttpRequest
 	Str8 hostnameStr;
 	Str8 pathStr;
 	uxx connectionIndex;
+	Str8 encodedContent;
 	
 	#if TARGET_IS_WINDOWS
 	HINTERNET requestHandle;
@@ -229,6 +242,7 @@ static void FreeHttpRequest(Arena* arena, HttpRequest* request)
 	}
 	if (request->args.contentItems != nullptr) { Assert(request->args.numContentItems > 0); FreeArray(Str8Pair, arena, request->args.numContentItems, request->args.contentItems); }
 	//NOTE: protocolStr, hostnameStr, and pathStr are all slices into args.urlStr so we don't need to free them
+	FreeStr8(arena, &request->encodedContent);
 	if (request->responseBytes.arena != nullptr) { FreeVarArray(&request->responseBytes); }
 	ClearPointer(request);
 }
@@ -589,36 +603,79 @@ static Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* head
 	return result.str;
 }
 
-#if 0
-static Str8 EscapeUrlArgumentStr(Arena* arena, Str8 key, Str8 value)
+//NOTE: Encoding spaces as '+' character is defined only for 'application/x-www-form-urlencoded' technically, so "proper" encoding may prefer %20 instead
+static Str8 EscapeUrlArgumentStr(Arena* arena, Str8 key, Str8 value, bool encodeSpacesAsPlus, bool addNullTerm)
 {
-	Str8 result = Str8_Empty;
-	for (u8 pass = 0; pass < 2; pass++)
+	TwoPassStr8Loop(result, arena, addNullTerm)
 	{
-		uxx byteIndex = 0;
 		for (uxx keyIndex = 0; keyIndex < key.length; keyIndex++)
 		{
 			u32 codepoint = 0;
 			u8 codepointSize = GetCodepointForUtf8Str(key, keyIndex, &codepoint);
-			if (IsCharAlphaNumeric(codepoint))
+			if (IsCharAlphaNumeric(codepoint) ||
+				codepoint == '-' || codepoint == '.' || codepoint == '_' || codepoint == '~') //these are all unreserved characters according to RFC 3986 section 2.3
 			{
-				
+				TwoPassBytes(&result, codepointSize, &key.chars[keyIndex]);
+			}
+			else if (codepoint == ' ' && encodeSpacesAsPlus) { TwoPassChar(&result, '+'); } //this is allowed in media type application/x-www-form-urlencoded
+			else
+			{
+				for (u8 byteIndex = 0; byteIndex < codepointSize; byteIndex++)
+				{
+					TwoPassChar(&result, '%');
+					TwoPassPrint(&result, "%02X", key.chars[keyIndex + byteIndex]);
+				}
 			}
 			if (codepointSize > 1) { keyIndex += codepointSize-1; }
 		}
 		
-		if (pass == 1) { Assert(byteIndex+1 <= result.length); result.chars[byteIndex] = '='; }
-		byteIndex++;
+		if (!IsEmptyStr(value))
+		{
+			TwoPassChar(&result, '=');
+			
+			for (uxx valueIndex = 0; valueIndex < value.length; valueIndex++)
+			{
+				u32 codepoint = 0;
+				u8 codepointSize = GetCodepointForUtf8Str(value, valueIndex, &codepoint);
+				if (IsCharAlphaNumeric(codepoint) ||
+					codepoint == '-' || codepoint == '.' || codepoint == '_' || codepoint == '~') //these are all unreserved characters according to RFC 3986 section 2.3
+				{
+					TwoPassBytes(&result, codepointSize, &value.chars[valueIndex]);
+				}
+				else if (codepoint == ' ' && encodeSpacesAsPlus) { TwoPassChar(&result, '+'); } //this is allowed in media type application/x-www-form-urlencoded
+				else
+				{
+					for (u8 byteIndex = 0; byteIndex < codepointSize; byteIndex++)
+					{
+						TwoPassPrint(&result, "%%%02X", value.chars[valueIndex + byteIndex]);
+					}
+				}
+				if (codepointSize > 1) { valueIndex += codepointSize-1; }
+			}
+		}
 		
-		
+		TwoPassStr8LoopEnd(&result);
 	}
+	return result.str;
 }
 
 static Str8 EncodeHttpContentUrlStyle(Arena* arena, uxx numItems, const Str8Pair* contentItems, bool addNullTerm)
 {
-	
+	TwoPassStr8Loop(result, arena, addNullTerm)
+	{
+		for (uxx iIndex = 0; iIndex < numItems; iIndex++)
+		{
+			if (!IsEmptyStr(contentItems[iIndex].key))
+			{
+				if (result.index > 0) { TwoPassChar(&result, '&'); }
+				CreateTwoPassInnerArena(&result, innerArena);
+				result.index += EscapeUrlArgumentStr(innerArena, contentItems[iIndex].key, contentItems[iIndex].value, true, false).length;
+			}
+		}
+		TwoPassStr8LoopEnd(&result);
+	}
+	return result.str;
 }
-#endif
 
 static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requestIndex)
 {
@@ -661,7 +718,7 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 			
 			Str8 encodedHeaders = EncodeHttpHeaders(scratch, request->args.numHeaders, request->args.headers, false);
 			Str16 encodedHeaders16 = ConvertUtf8StrToUcs2(scratch, encodedHeaders, true);
-			Str8 encodedContent = StrLit(""); //TODO: Fill this out!
+			request->encodedContent = EncodeHttpContentUrlStyle(manager->arena, request->args.numContentItems, request->args.contentItems, true);
 			
 			//TODO: Do we need to lock the mutex here?
 			
@@ -671,9 +728,9 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 				request->requestHandle, //hRequest
 				encodedHeaders16.chars, //lpszHeaders
 				(DWORD)encodedHeaders16.length, //dwHeadersLength
-				encodedContent.chars, //lpOptional
-				(DWORD)encodedContent.length, //dwOptionalLength
-				(DWORD)encodedContent.length, //dwTotalLength
+				request->encodedContent.chars, //lpOptional
+				(DWORD)request->encodedContent.length, //dwOptionalLength
+				(DWORD)request->encodedContent.length, //dwTotalLength
 				0 //dwContext
 			);
 			TracyCZoneEnd(Zone_WinHttpSendRequest);
