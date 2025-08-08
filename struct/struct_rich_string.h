@@ -681,7 +681,6 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 						else if (StrAnyCaseEquals(namePart, StrLit("alpha")))
 						{
 							r32 valueR32 = 0.0f;
-							u8 valueU8 = 0;
 							if (TryParseR32(valuePart, &valueR32, nullptr))
 							{
 								styleChangePartLength = (nextPipeIndex + 1) - bIndex;

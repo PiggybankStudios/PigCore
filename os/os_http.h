@@ -57,6 +57,7 @@ plex HttpRequestArgs
 	Str8 urlStr;
 	uxx numHeaders;
 	Str8Pair* headers;
+	MimeType contentEncoding;
 	uxx numContentItems;
 	Str8Pair* contentItems;
 	HttpCallback_f* callback;
@@ -578,7 +579,6 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 	#if TARGET_IS_WINDOWS
 	{
 		Str16 verbStrWide = ConvertUtf8StrToUcs2(scratch, verbStr, true);
-		Str8 pathParamsAndAnchorStr = Str8_Empty;
 		RangeUXX pathRange = SliceToRangeUXX(request->args.urlStr, request->pathStr);
 		RangeUXX parametersRange = SliceToRangeUXX(request->args.urlStr, request->parametersStr);
 		RangeUXX pathWithParamsRange = BothRangeUXX(pathRange, parametersRange);
@@ -604,12 +604,24 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 		}
 		else
 		{
-			PrintLine_D("Request handle: %016X", request->requestHandle);
+			// PrintLine_D("Request handle: %016X", request->requestHandle);
 			WinHttpSetOption(request->requestHandle, WINHTTP_OPTION_CONTEXT_VALUE, (void*)&manager, sizeof(void*));
 			
-			Str8 encodedHeaders = EncodeHttpHeaders(scratch, request->args.numHeaders, request->args.headers, false);
+			//TODO: We should ensure that the requested headers don't contain an entry for "Content-Type"
+			const uxx numExtraHeaders = 1; //One extra header for Content-Type
+			uxx numAllHeaders = request->args.numHeaders + numExtraHeaders;
+			Str8Pair* allHeaders = AllocArray(Str8Pair, scratch, numAllHeaders);
+			NotNull(allHeaders);
+			if (request->args.numHeaders > 0) { MyMemCopy(allHeaders, request->args.headers, sizeof(Str8Pair) * request->args.numHeaders); }
+			allHeaders[request->args.numHeaders + 0].key = StrLit("Content-Type");
+			allHeaders[request->args.numHeaders + 0].value = StrLit(GetMimeTypeOfficialName(request->args.contentEncoding));
+			Str8 encodedHeaders = EncodeHttpHeaders(scratch, numAllHeaders, allHeaders, false);
 			Str16 encodedHeaders16 = ConvertUtf8StrToUcs2(scratch, encodedHeaders, true);
-			request->encodedContent = EncodeHttpContentUrlStyle(manager->arena, request->args.numContentItems, request->args.contentItems, true);
+			request->encodedContent = EncodeHttpKeyValuePairContent(manager->arena,
+				request->args.numContentItems, request->args.contentItems,
+				request->args.contentEncoding,
+				true //addNullTerm
+			);
 			
 			//TODO: Do we need to lock the mutex here?
 			
@@ -762,6 +774,7 @@ PEXP HttpRequest* OsMakeHttpRequest(HttpRequestManager* manager, const HttpReque
 	NotNull(manager->arena);
 	Assert(!IsEmptyStr(args->urlStr));
 	ScratchBegin1(scratch, manager->arena);
+	Assert(args->contentEncoding != MimeType_None && args->contentEncoding < MimeType_Count);
 	
 	HttpRequest* newRequest = nullptr;
 	VarArrayLoop(&manager->requests, rIndex)

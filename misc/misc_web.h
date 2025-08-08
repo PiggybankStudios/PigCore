@@ -54,6 +54,37 @@ PEXP const char* GetHttpVerbStr(HttpVerb enumValue)
 }
 #endif
 
+//See: https://www.iana.org/assignments/media-types/media-types.xhtml
+typedef enum MimeType MimeType;
+enum MimeType
+{
+	MimeType_None = 0,
+	MimeType_FormUrlEncoded, //application/x-www-form-urlencoded
+	MimeType_Count,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetMimeTypeStr(MimeType enumValue);
+const char* GetMimeTypeOfficialName(MimeType enumValue);
+#else
+PEXP const char* GetMimeTypeStr(MimeType enumValue)
+{
+	switch (enumValue)
+	{
+		case MimeType_None:           return "None";
+		case MimeType_FormUrlEncoded: return "FormUrlEncoded";
+		default: return UNKNOWN_STR;
+	}
+}
+PEXP const char* GetMimeTypeOfficialName(MimeType enumValue)
+{
+	switch (enumValue)
+	{
+		case MimeType_FormUrlEncoded: return "application/x-www-form-urlencoded"; //https://www.iana.org/assignments/media-types/application/x-www-form-urlencoded
+		default: return "";
+	}
+}
+#endif
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -65,8 +96,8 @@ PEXP const char* GetHttpVerbStr(HttpVerb enumValue)
 	PIG_CORE_INLINE Str8 GetUriParametersPart(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriAnchorPart(Str8 uriStr);
 	Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm);
-	Str8 EscapeUrlArgumentStr(Arena* arena, Str8 key, Str8 value, bool encodeSpacesAsPlus, bool addNullTerm);
-	Str8 EncodeHttpContentUrlStyle(Arena* arena, uxx numItems, const Str8Pair* contentItems, bool addNullTerm);
+	Str8 EscapeStr_FormUrlEncoding(Arena* arena, Str8 str, bool addNullTerm);
+	Str8 EncodeHttpKeyValuePairContent(Arena* arena, uxx numItems, const Str8Pair* contentItems, MimeType encoding, bool addNullTerm);
 #endif
 
 // +--------------------------------------------------------------+
@@ -181,78 +212,71 @@ PEXP Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* header
 	return result.str;
 }
 
-//NOTE: Encoding spaces as '+' character is defined only for 'application/x-www-form-urlencoded' technically, so "proper" encoding may prefer %20 instead
-PEXP Str8 EscapeUrlArgumentStr(Arena* arena, Str8 key, Str8 value, bool encodeSpacesAsPlus, bool addNullTerm)
+PEXPI Str8 EscapeStr_FormUrlEncoding(Arena* arena, Str8 str, bool addNullTerm)
 {
 	TwoPassStr8Loop(result, arena, addNullTerm)
 	{
-		for (uxx keyIndex = 0; keyIndex < key.length; keyIndex++)
+		for (uxx cIndex = 0; cIndex < str.length; cIndex++)
 		{
 			u32 codepoint = 0;
-			u8 codepointSize = GetCodepointForUtf8Str(key, keyIndex, &codepoint);
+			u8 codepointSize = GetCodepointForUtf8Str(str, cIndex, &codepoint);
 			if (IsCharAlphaNumeric(codepoint) ||
 				codepoint == '-' || codepoint == '.' || codepoint == '_' || codepoint == '~') //these are all unreserved characters according to RFC 3986 section 2.3
 			{
-				TwoPassBytes(&result, codepointSize, &key.chars[keyIndex]);
+				TwoPassBytes(&result, codepointSize, &str.chars[cIndex]);
 			}
-			else if (codepoint == ' ' && encodeSpacesAsPlus) { TwoPassChar(&result, '+'); } //this is allowed in media type application/x-www-form-urlencoded
+			else if (codepoint == ' ') { TwoPassChar(&result, '+'); } //this is allowed in media type application/x-www-form-urlencoded
 			else
 			{
 				for (u8 byteIndex = 0; byteIndex < codepointSize; byteIndex++)
 				{
 					TwoPassChar(&result, '%');
-					TwoPassPrint(&result, "%02X", key.chars[keyIndex + byteIndex]);
+					TwoPassPrint(&result, "%02X", str.chars[cIndex + byteIndex]);
 				}
 			}
-			if (codepointSize > 1) { keyIndex += codepointSize-1; }
+			if (codepointSize > 1) { cIndex += codepointSize-1; }
 		}
-		
-		if (!IsEmptyStr(value))
-		{
-			TwoPassChar(&result, '=');
-			
-			for (uxx valueIndex = 0; valueIndex < value.length; valueIndex++)
-			{
-				u32 codepoint = 0;
-				u8 codepointSize = GetCodepointForUtf8Str(value, valueIndex, &codepoint);
-				if (IsCharAlphaNumeric(codepoint) ||
-					codepoint == '-' || codepoint == '.' || codepoint == '_' || codepoint == '~') //these are all unreserved characters according to RFC 3986 section 2.3
-				{
-					TwoPassBytes(&result, codepointSize, &value.chars[valueIndex]);
-				}
-				else if (codepoint == ' ' && encodeSpacesAsPlus) { TwoPassChar(&result, '+'); } //this is allowed in media type application/x-www-form-urlencoded
-				else
-				{
-					for (u8 byteIndex = 0; byteIndex < codepointSize; byteIndex++)
-					{
-						TwoPassPrint(&result, "%%%02X", value.chars[valueIndex + byteIndex]);
-					}
-				}
-				if (codepointSize > 1) { valueIndex += codepointSize-1; }
-			}
-		}
-		
 		TwoPassStr8LoopEnd(&result);
 	}
 	return result.str;
 }
 
-PEXP Str8 EncodeHttpContentUrlStyle(Arena* arena, uxx numItems, const Str8Pair* contentItems, bool addNullTerm)
+PEXP Str8 EncodeHttpKeyValuePairContent(Arena* arena, uxx numItems, const Str8Pair* contentItems, MimeType encoding, bool addNullTerm)
 {
-	TwoPassStr8Loop(result, arena, addNullTerm)
+	Str8 result = Str8_Empty;
+	
+	switch (encoding)
 	{
-		for (uxx iIndex = 0; iIndex < numItems; iIndex++)
+		case MimeType_FormUrlEncoded:
 		{
-			if (!IsEmptyStr(contentItems[iIndex].key))
+			TwoPassStr8Loop(twoPass, arena, addNullTerm)
 			{
-				if (result.index > 0) { TwoPassChar(&result, '&'); }
-				CreateTwoPassInnerArena(&result, innerArena);
-				result.index += EscapeUrlArgumentStr(innerArena, contentItems[iIndex].key, contentItems[iIndex].value, true, false).length;
+				for (uxx iIndex = 0; iIndex < numItems; iIndex++)
+				{
+					if (!IsEmptyStr(contentItems[iIndex].key))
+					{
+						if (twoPass.index > 0) { TwoPassChar(&twoPass, '&'); }
+						
+						CreateTwoPassInnerArena(&twoPass, keyArena);
+						twoPass.index += EscapeStr_FormUrlEncoding(keyArena, contentItems[iIndex].key, false).length;
+						
+						if (contentItems[iIndex].value.length > 0)
+						{
+							TwoPassChar(&twoPass, '=');
+							CreateTwoPassInnerArena(&twoPass, valueArena);
+							twoPass.index += EscapeStr_FormUrlEncoding(valueArena, contentItems[iIndex].value, false).length;
+						}
+					}
+				}
+				TwoPassStr8LoopEnd(&twoPass);
 			}
-		}
-		TwoPassStr8LoopEnd(&result);
+			result = twoPass.str;
+		} break;
+		
+		default: { AssertMsg(false, "EncodeHttpKeyValuePairContent does not have an implementation for the requested encoding!"); } break;
 	}
-	return result.str;
+	
+	return result;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
