@@ -119,6 +119,12 @@ plex TwoPassStr8
 	(twoPassStrPntr)->index += (numBytes);                                                                                          \
 } while(0)
 
+//NOTE: When calling functions that do TwoPass internally from within another function that does TwoPass
+#define CreateTwoPassInnerArena(twoPassStrPntr, arenaPntrName) Arena arenaPntrName#_Local;                                                                 \
+	InitArenaBuffer(&arenaPntrName#_Local, &(twoPassStrPntr)->str.chars[(twoPassStrPntr)->index], (twoPassStrPntr)->str.length - (twoPassStrPntr)->index); \
+	FlagSet(arenaPntrName#_Local.flags, ArenaFlag_SingleAlloc);                                                                                            \
+	Arena* arenaPntrName = (pass == 1) ? &arenaPntrName#_Local : nullptr;
+
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
