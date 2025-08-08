@@ -16,13 +16,14 @@ Description:
 
 #include "struct/struct_color.h"
 
-#include "std/std_basic_math.h" //Needed by struct_directions.h
+#include "std/std_basic_math.h" //Needed by struct_directions.h and struct_ranges.h
 
 #include "struct/struct_directions.h"
 
 #include "base/base_macros.h" //Needed by many of the files below
 #include "base/base_assert.h" //Needed by many of the files below
 
+#include "struct/struct_ranges.h"
 #include "struct/struct_typed_array.h"
 
 #include "base/base_char.h" //Needed by struct_string.h

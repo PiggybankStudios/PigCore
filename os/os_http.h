@@ -35,44 +35,17 @@ References:
 #include "os/os_threading.h"
 #include "misc/misc_profiling_tracy_include.h"
 #include "misc/misc_two_pass.h"
+#include "misc/misc_web.h"
 
 #if BUILD_WITH_HTTP
 
 // We used to use "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"
 #define HTTP_DEFAULT_USER_AGENT_STR       "PigCore/1.0"
 #define HTTP_DEFAULT_USER_AGENT_WIDE_STR L"PigCore/1.0"
-#define HTTP_PORT                80
-#define HTTPS_PORT               443
 #define HTTP_MAX_RESPONSE_SIZE   Megabytes(64) // This determines the virtual memory allocated for responseArena, so we only pay the memory cost of the largest response, but once we get a large response we never uncommit that memory
 
 #define HTTP_CALLBACK_DEF(functionName) void functionName(plex HttpRequest* request)
 typedef HTTP_CALLBACK_DEF(HttpCallback_f);
-
-typedef enum HttpVerb HttpVerb;
-enum HttpVerb
-{
-	HttpVerb_None = 0,
-	HttpVerb_POST,
-	HttpVerb_GET,
-	HttpVerb_DELETE,
-	//TODO: Should we support HEAD, PUT, CONNECT, OPTIONS, and TRACE? Or others registered at https://www.iana.org/assignments/http-methods/http-methods.xhtml
-	HttpVerb_Count,
-};
-#if !PIG_CORE_IMPLEMENTATION
-const char* GetHttpVerbStr(HttpVerb enumValue);
-#else
-PEXP const char* GetHttpVerbStr(HttpVerb enumValue)
-{
-	switch (enumValue)
-	{
-		case HttpVerb_None:   return "None";
-		case HttpVerb_POST:   return "POST";
-		case HttpVerb_GET:    return "GET";
-		case HttpVerb_DELETE: return "DELETE";
-		default: return UNKNOWN_STR;
-	}
-}
-#endif
 
 typedef plex HttpRequestArgs HttpRequestArgs;
 plex HttpRequestArgs
@@ -585,98 +558,6 @@ PEXPI HttpConnection* OsFindHttpConnection(HttpRequestManager* manager, Str8 hos
 	return nullptr;
 }
 
-static Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm)
-{
-	Assert(numHeaders == 0 || headers != nullptr);
-	TwoPassStr8Loop(result, arena, addNullTerm)
-	{
-		for (uxx hIndex = 0; hIndex < numHeaders; hIndex++)
-		{
-			//TODO: Should we escape characters in the key and value strings? Esp. ':', '\n' and '\r'?
-			TwoPassStr(&result, headers[hIndex].key);
-			TwoPassChar(&result, ':');
-			TwoPassStr(&result, headers[hIndex].value);
-			if (hIndex+1 < numHeaders) { TwoPassStrNt(&result, "\r\n"); }
-		}
-		TwoPassStr8LoopEnd(&result);
-	}
-	return result.str;
-}
-
-//NOTE: Encoding spaces as '+' character is defined only for 'application/x-www-form-urlencoded' technically, so "proper" encoding may prefer %20 instead
-static Str8 EscapeUrlArgumentStr(Arena* arena, Str8 key, Str8 value, bool encodeSpacesAsPlus, bool addNullTerm)
-{
-	TwoPassStr8Loop(result, arena, addNullTerm)
-	{
-		for (uxx keyIndex = 0; keyIndex < key.length; keyIndex++)
-		{
-			u32 codepoint = 0;
-			u8 codepointSize = GetCodepointForUtf8Str(key, keyIndex, &codepoint);
-			if (IsCharAlphaNumeric(codepoint) ||
-				codepoint == '-' || codepoint == '.' || codepoint == '_' || codepoint == '~') //these are all unreserved characters according to RFC 3986 section 2.3
-			{
-				TwoPassBytes(&result, codepointSize, &key.chars[keyIndex]);
-			}
-			else if (codepoint == ' ' && encodeSpacesAsPlus) { TwoPassChar(&result, '+'); } //this is allowed in media type application/x-www-form-urlencoded
-			else
-			{
-				for (u8 byteIndex = 0; byteIndex < codepointSize; byteIndex++)
-				{
-					TwoPassChar(&result, '%');
-					TwoPassPrint(&result, "%02X", key.chars[keyIndex + byteIndex]);
-				}
-			}
-			if (codepointSize > 1) { keyIndex += codepointSize-1; }
-		}
-		
-		if (!IsEmptyStr(value))
-		{
-			TwoPassChar(&result, '=');
-			
-			for (uxx valueIndex = 0; valueIndex < value.length; valueIndex++)
-			{
-				u32 codepoint = 0;
-				u8 codepointSize = GetCodepointForUtf8Str(value, valueIndex, &codepoint);
-				if (IsCharAlphaNumeric(codepoint) ||
-					codepoint == '-' || codepoint == '.' || codepoint == '_' || codepoint == '~') //these are all unreserved characters according to RFC 3986 section 2.3
-				{
-					TwoPassBytes(&result, codepointSize, &value.chars[valueIndex]);
-				}
-				else if (codepoint == ' ' && encodeSpacesAsPlus) { TwoPassChar(&result, '+'); } //this is allowed in media type application/x-www-form-urlencoded
-				else
-				{
-					for (u8 byteIndex = 0; byteIndex < codepointSize; byteIndex++)
-					{
-						TwoPassPrint(&result, "%%%02X", value.chars[valueIndex + byteIndex]);
-					}
-				}
-				if (codepointSize > 1) { valueIndex += codepointSize-1; }
-			}
-		}
-		
-		TwoPassStr8LoopEnd(&result);
-	}
-	return result.str;
-}
-
-static Str8 EncodeHttpContentUrlStyle(Arena* arena, uxx numItems, const Str8Pair* contentItems, bool addNullTerm)
-{
-	TwoPassStr8Loop(result, arena, addNullTerm)
-	{
-		for (uxx iIndex = 0; iIndex < numItems; iIndex++)
-		{
-			if (!IsEmptyStr(contentItems[iIndex].key))
-			{
-				if (result.index > 0) { TwoPassChar(&result, '&'); }
-				CreateTwoPassInnerArena(&result, innerArena);
-				result.index += EscapeUrlArgumentStr(innerArena, contentItems[iIndex].key, contentItems[iIndex].value, true, false).length;
-			}
-		}
-		TwoPassStr8LoopEnd(&result);
-	}
-	return result.str;
-}
-
 static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requestIndex)
 {
 	TracyCZoneN(Zone_Func, "HttpRequestManagerStartRequest", true);
@@ -693,11 +574,18 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 	#if TARGET_IS_WINDOWS
 	{
 		Str16 verbStrWide = ConvertUtf8StrToUcs2(scratch, verbStr, true);
-		Str16 pathStrWide = ConvertUtf8StrToUcs2(scratch, request->pathStr, true);
+		Str8 pathParamsAndAnchorStr = Str8_Empty;
+		if (request->pathStr.chars != nullptr)
+		{
+			Assert(IsSliceFromStr(request->urlStr, request->pathStr));
+			pathParamsAndAnchorStr = StrSliceFromPntr(request->args.urlStr, request->pathStr.chars);
+		}
+		Str16 pathParamsAndAnchorStrWide = ConvertUtf8StrToUcs2(scratch, pathParamsAndAnchorStr, true);
+		
 		PrintLine_D("Using Connection[%llu] handle: %016X", request->connectionIndex, connection->handle);
 		request->requestHandle = WinHttpOpenRequest(connection->handle,
 			verbStrWide.chars,
-			pathStrWide.chars,
+			pathParamsAndAnchorStrWide.chars,
 			NULL,
 			WINHTTP_NO_REFERER,
 			WINHTTP_DEFAULT_ACCEPT_TYPES,
@@ -894,12 +782,13 @@ PEXP HttpRequest* OsMakeHttpRequest(HttpRequestManager* manager, const HttpReque
 	manager->nextRequestId++;
 	OsCopyHttpRequestArgs(manager->arena, &newRequest->args, args);
 	newRequest->state = HttpRequestState_NotStarted;
-	newRequest->protocolStr = GetUrlProtocolPart(newRequest->args.urlStr);
-	if (IsEmptyStr(newRequest->protocolStr)) { newRequest->protocolStr = StrLit("http"); }
-	Assert(StrExactEquals(newRequest->protocolStr, StrLit("http")) || StrExactEquals(newRequest->protocolStr, StrLit("https")));
-	newRequest->hostnameStr = GetUrlHostnamePart(newRequest->args.urlStr);
+	UriParts uriParts = GetUriParts(newRequest->args.urlStr);
+	newRequest->protocolStr = uriParts.protocol;
+	if (IsEmptyStr(newRequest->protocolStr)) { newRequest->protocolStr = StrLit("https"); }
+	Assert(StrExactEquals(newRequest->protocolStr, StrLit("http")) || StrExactEquals(newRequest->protocolStr, StrLit("https"))); //TODO: Report this as an error!
+	newRequest->hostnameStr = uriParts.hostname;
 	Assert(!IsEmptyStr(newRequest->hostnameStr));
-	newRequest->pathStr = GetUrlPathPart(newRequest->args.urlStr);
+	newRequest->pathStr = uriParts.path; //TODO: Should we join include the query parameters and anchor as part of this?
 	if (IsEmptyStr(newRequest->pathStr)) { newRequest->pathStr = StrLit("/"); }
 	
 	bool usingSsl = StrExactEquals(newRequest->protocolStr, StrLit("https"));

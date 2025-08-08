@@ -28,8 +28,12 @@ Date:   01\05\2025
 
 #include "misc/misc_standard_colors.h"
 
+#include "struct/struct_string.h" //required by misc_web.h, misc_printing.h and misc_parsing.h
+#include "struct/struct_ranges.h" //required by misc_web.h
+
+#include "misc/misc_web.h"
+
 #include "std/std_includes.h" //required by misc_printing.h
-#include "struct/struct_string.h" //required by misc_printing.h and misc_parsing.h
 #include "std/std_printf.h" //required by misc_printing.h and misc_parsing.h
 #include "mem/mem_arena.h" //required by misc_printing.h
 

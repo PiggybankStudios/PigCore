@@ -38,6 +38,7 @@ Description:
 #include "os/os_program_args.h"
 
 #include "mem/mem_scratch.h" //required by os_http.h and os_process_info.h
+#include "misc/misc_web.h" //required by os_http.h
 
 #include "os/os_http.h"
 

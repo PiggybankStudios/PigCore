@@ -130,7 +130,9 @@ enum EscapeSequence
 	PIG_CORE_INLINE Str8 TrimWhitespaceAndNewLines(Str8 target);
 	PIG_CORE_INLINE Str8 TrimWhitespace(Str8 target);
 	PIG_CORE_INLINE Str8 StrSlice(Str8 target, uxx startIndex, uxx endIndex);
+	PIG_CORE_INLINE Str8 StrSlicePntrs(Str8 target, const void* startPntr, const void* endPntr);
 	PIG_CORE_INLINE Str8 StrSliceFrom(Str8 target, uxx startIndex);
+	PIG_CORE_INLINE Str8 StrSliceFromPntr(Str8 target, const void* startPntr);
 	PIG_CORE_INLINE Str8 StrSliceLength(Str8 target, uxx startIndex, uxx length);
 	PIG_CORE_INLINE Str8 StrSliceMaxLength(Str8 target, uxx startIndex, uxx maxLength);
 	PIG_CORE_INLINE bool StrExactEquals(Str8 left, Str8 right);
@@ -154,9 +156,6 @@ enum EscapeSequence
 	PIG_CORE_INLINE bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive);
 	PIG_CORE_INLINE uxx StrFind(Str8 haystack, Str8 needle, bool caseSensitive);
 	PIG_CORE_INLINE bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut);
-	PIG_CORE_INLINE Str8 GetUrlProtocolPart(Str8 url);
-	PIG_CORE_INLINE Str8 GetUrlHostnamePart(Str8 url);
-	PIG_CORE_INLINE Str8 GetUrlPathPart(Str8 url);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -180,6 +179,8 @@ enum EscapeSequence
 //      Use the format specifier %.*s and then this macro in the var-args
 #define StrPrint(string)   (int)(string).length, (string).chars
 #define StrPntrPrint(strPntr) (int)(strPntr)->length, (strPntr)->chars
+
+#define IsSliceFromStr(str, slice) ((slice).length == 0 || IsSizedPntrWithin((str).chars, (str).length, (slice).chars, (slice).length))
 
 #define AssertNullTerm(string)      Assert(IsNullTerminated(string))
 #define NotNullStr(string)          Assert(!IsNullStr(string))
@@ -347,9 +348,20 @@ PEXPI Str8 StrSlice(Str8 target, uxx startIndex, uxx endIndex)
 	DebugAssert(startIndex <= endIndex);
 	return NewStr8(endIndex - startIndex, target.chars + startIndex);
 }
+PEXPI Str8 StrSlicePntrs(Str8 target, const void* startPntr, const void* endPntr)
+{
+	Assert(IsPntrWithin(target.chars, target.length, startPntr));
+	Assert(IsPntrWithin(target.chars, target.length, endPntr));
+	return StrSlice(target, (uxx)(startPntr - target.chars), (uxx)(endPntr - target.chars));
+}
 PEXPI Str8 StrSliceFrom(Str8 target, uxx startIndex)
 {
 	return StrSlice(target, startIndex, target.length);
+}
+PEXPI Str8 StrSliceFromPntr(Str8 target, const void* startPntr)
+{
+	Assert(IsPntrWithin(target.chars, target.length, startPntr));
+	return StrSliceFrom(target, (uxx)(startPntr - target.chars));
 }
 PEXPI Str8 StrSliceLength(Str8 target, uxx startIndex, uxx length)
 {
@@ -557,53 +569,6 @@ PEXPI bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* index
 //TODO: const char* FormatRealTimeNt(const RealTime_t* realTime, MemArena_t* memArena, bool includeDayOfWeek = true, bool includeHourMinuteSecond = true, bool includeMonthDayYear = true)
 //TODO: Str8 FormatMilliseconds(uxx milliseconds, MemArena_t* memArena)
 //TODO: const char* FormatMillisecondsNt(uxx milliseconds, MemArena_t* memArena)
-
-// +--------------------------------------------------------------+
-// |                         URL Helpers                          |
-// +--------------------------------------------------------------+
-PEXPI Str8 GetUrlProtocolPart(Str8 url)
-{
-	for (uxx cIndex = 0; cIndex < url.length; cIndex++)
-	{
-		if (url.chars[cIndex] == ':')
-		{
-			Str8 result = StrSlice(url, 0, cIndex);
-			return result;
-		}
-		else if (IsCharSlash(url.chars[cIndex])) { break; }
-	}
-	return NewStr8(0, url.chars);
-}
-PEXPI Str8 GetUrlHostnamePart(Str8 url)
-{
-	uxx startIndex = 0;
-	for (uxx cIndex = 0; cIndex < url.length; cIndex++)
-	{
-		if (url.chars[cIndex] == ':' && startIndex == 0)
-		{
-			if (cIndex+1 < url.length && IsCharSlash(url.chars[cIndex+1])) { startIndex++; cIndex++; }
-			if (cIndex+1 < url.length && IsCharSlash(url.chars[cIndex+1])) { startIndex++; cIndex++; }
-			startIndex = cIndex+1;
-		}
-		else if (IsCharSlash(url.chars[cIndex])) { return StrSlice(url, startIndex, cIndex); }
-	}
-	return url;
-}
-PEXPI Str8 GetUrlPathPart(Str8 url)
-{
-	bool foundProtocol = false;
-	for (uxx cIndex = 0; cIndex < url.length; cIndex++)
-	{
-		if (url.chars[cIndex] == ':' && !foundProtocol)
-		{
-			foundProtocol = true;
-			if (cIndex+1 < url.length && IsCharSlash(url.chars[cIndex+1])) { cIndex++; }
-			if (cIndex+1 < url.length && IsCharSlash(url.chars[cIndex+1])) { cIndex++; }
-		}
-		else if (url.chars[cIndex] == '\\' || url.chars[cIndex] == '/') { return StrSliceFrom(url, cIndex); }
-	}
-	return NewStr8(0, &url.chars[url.length]);
-}
 
 #endif //PIG_CORE_IMPLEMENTATION
 
