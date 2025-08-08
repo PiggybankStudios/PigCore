@@ -3,7 +3,7 @@ File:   os_http.h
 Author: Taylor Robbins
 Date:   07\24\2025
 Description:
-	** Wraps the API for making HTTP requests (including SSL, aka HTTPS) for each OS (WinHTTP on Windows, ? on Linux, etc.)
+	** Wraps the API for making HTTP requests (including TLS\SSL, aka HTTPS) for each OS (WinHTTP on Windows, ? on Linux, etc.)
 References:
 	RFC 3986: "Uniform Resource Identifier (URI): Generic Syntax" (https://datatracker.ietf.org/doc/html/rfc3986)
 		** 2.1: For consistency, URI producers and normalizers should use uppercase hexadecimal digits for all percent-encodings.
@@ -16,6 +16,8 @@ References:
 		**     scheme     authority       path        query   fragment
 	RFC 1866: Hypertext Markup Language - 2.0 (Obseleted by 2854) (https://datatracker.ietf.org/doc/html/rfc1866)
 	RFC 2854: The 'text/html' Media Type (https://datatracker.ietf.org/doc/html/rfc2854)
+	Accepted Media Types: https://www.iana.org/assignments/media-types/media-types.xhtml
+		** application/x-www-form-urlencoded => WHATWG: Anne_van_Kesteren https://www.iana.org/assignments/media-types/application/x-www-form-urlencoded
 */
 
 #ifndef _OS_HTTP_H
@@ -42,6 +44,7 @@ References:
 // We used to use "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"
 #define HTTP_DEFAULT_USER_AGENT_STR       "PigCore/1.0"
 #define HTTP_DEFAULT_USER_AGENT_WIDE_STR L"PigCore/1.0"
+
 #define HTTP_MAX_RESPONSE_SIZE   Megabytes(64) // This determines the virtual memory allocated for responseArena, so we only pay the memory cost of the largest response, but once we get a large response we never uncommit that memory
 
 #define HTTP_CALLBACK_DEF(functionName) void functionName(plex HttpRequest* request)
@@ -577,7 +580,7 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 		Str8 pathParamsAndAnchorStr = Str8_Empty;
 		if (request->pathStr.chars != nullptr)
 		{
-			Assert(IsSliceFromStr(request->urlStr, request->pathStr));
+			Assert(IsSliceFromStr(request->args.urlStr, request->pathStr));
 			pathParamsAndAnchorStr = StrSliceFromPntr(request->args.urlStr, request->pathStr.chars);
 		}
 		Str16 pathParamsAndAnchorStrWide = ConvertUtf8StrToUcs2(scratch, pathParamsAndAnchorStr, true);

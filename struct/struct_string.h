@@ -352,7 +352,7 @@ PEXPI Str8 StrSlicePntrs(Str8 target, const void* startPntr, const void* endPntr
 {
 	Assert(IsPntrWithin(target.chars, target.length, startPntr));
 	Assert(IsPntrWithin(target.chars, target.length, endPntr));
-	return StrSlice(target, (uxx)(startPntr - target.chars), (uxx)(endPntr - target.chars));
+	return StrSlice(target, (uxx)((char*)startPntr - target.chars), (uxx)((char*)endPntr - target.chars));
 }
 PEXPI Str8 StrSliceFrom(Str8 target, uxx startIndex)
 {
@@ -361,7 +361,7 @@ PEXPI Str8 StrSliceFrom(Str8 target, uxx startIndex)
 PEXPI Str8 StrSliceFromPntr(Str8 target, const void* startPntr)
 {
 	Assert(IsPntrWithin(target.chars, target.length, startPntr));
-	return StrSliceFrom(target, (uxx)(startPntr - target.chars));
+	return StrSliceFrom(target, (uxx)((char*)startPntr - target.chars));
 }
 PEXPI Str8 StrSliceLength(Str8 target, uxx startIndex, uxx length)
 {
