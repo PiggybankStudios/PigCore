@@ -63,9 +63,11 @@ static inline void InitializeMsvcIf(Str8 pigCoreFolder, bool* isMsvcInitialized)
 {
 	if (*isMsvcInitialized == false)
 	{
-		PrintLine("Initializing MSVC Compiler...");
 		Str8 batchPath = JoinStrings2(pigCoreFolder, StrLit("/init_msvc.bat"), false);
-		RunBatchFileAndApplyDumpedEnvironment(batchPath, StrLit("msvc_environment.txt"), true);
+		Str8 environmentPath = StrLit("msvc_environment.txt");
+		if (DoesFileExist(environmentPath)) { WriteLine("Loading MSVC Environment..."); }
+		else { WriteLine("Initializing MSVC Compiler..."); }
+		RunBatchFileAndApplyDumpedEnvironment(batchPath, environmentPath, true);
 		*isMsvcInitialized = true;
 	}
 }
