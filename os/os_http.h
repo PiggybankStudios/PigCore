@@ -107,6 +107,7 @@ plex HttpRequest
 	Str8 protocolStr;
 	Str8 hostnameStr;
 	Str8 pathStr;
+	Str8 parametersStr;
 	uxx connectionIndex;
 	Str8 encodedContent;
 	
@@ -578,17 +579,16 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 	{
 		Str16 verbStrWide = ConvertUtf8StrToUcs2(scratch, verbStr, true);
 		Str8 pathParamsAndAnchorStr = Str8_Empty;
-		if (request->pathStr.chars != nullptr)
-		{
-			Assert(IsSliceFromStr(request->args.urlStr, request->pathStr));
-			pathParamsAndAnchorStr = StrSliceFromPntr(request->args.urlStr, request->pathStr.chars);
-		}
-		Str16 pathParamsAndAnchorStrWide = ConvertUtf8StrToUcs2(scratch, pathParamsAndAnchorStr, true);
+		RangeUXX pathRange = SliceToRangeUXX(request->args.urlStr, request->pathStr);
+		RangeUXX parametersRange = SliceToRangeUXX(request->args.urlStr, request->parametersStr);
+		RangeUXX pathWithParamsRange = BothRangeUXX(pathRange, parametersRange);
+		Str8 pathWithParamsStr = StrSlice(request->args.urlStr, pathWithParamsRange.min, pathWithParamsRange.max);
+		Str16 pathWithParamsStrWide = ConvertUtf8StrToUcs2(scratch, pathWithParamsStr, true);
 		
 		PrintLine_D("Using Connection[%llu] handle: %016X", request->connectionIndex, connection->handle);
 		request->requestHandle = WinHttpOpenRequest(connection->handle,
 			verbStrWide.chars,
-			pathParamsAndAnchorStrWide.chars,
+			pathWithParamsStrWide.chars,
 			NULL,
 			WINHTTP_NO_REFERER,
 			WINHTTP_DEFAULT_ACCEPT_TYPES,
@@ -791,8 +791,10 @@ PEXP HttpRequest* OsMakeHttpRequest(HttpRequestManager* manager, const HttpReque
 	Assert(StrExactEquals(newRequest->protocolStr, StrLit("http")) || StrExactEquals(newRequest->protocolStr, StrLit("https"))); //TODO: Report this as an error!
 	newRequest->hostnameStr = uriParts.hostname;
 	Assert(!IsEmptyStr(newRequest->hostnameStr));
-	newRequest->pathStr = uriParts.path; //TODO: Should we join include the query parameters and anchor as part of this?
+	newRequest->pathStr = uriParts.path;
 	if (IsEmptyStr(newRequest->pathStr)) { newRequest->pathStr = StrLit("/"); }
+	newRequest->parametersStr = uriParts.parameters;
+	//TODO: Should we save the uriParts.anchor? How do we send this to WinHTTP? It doesn't seem to work when we include it in the path+query_params that we pass to WinHttpOpenRequest
 	
 	bool usingSsl = StrExactEquals(newRequest->protocolStr, StrLit("https"));
 	u16 portNumber = usingSsl ? HTTPS_PORT : HTTP_PORT;

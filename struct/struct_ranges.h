@@ -299,3 +299,7 @@ PEXPI RangeR64 ClampAboveRangeR64(RangeR64 range, r64 minValue)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_RANGES_H
+
+#if defined(_STRUCT_STRING_H) && defined(_STRUCT_RANGES_H)
+#include "cross/cross_string_and_ranges.h"
+#endif
