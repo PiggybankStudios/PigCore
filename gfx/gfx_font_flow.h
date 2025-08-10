@@ -257,7 +257,6 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		}
 		
 		ApplyRichStyleChange(&state->currentStyle, currentPiece->styleChange, state->startFontSize, state->startFontStyle, state->startColor);
-		if (currentPiece->str.length == 0) { state->textPieceIndex++; state->textPieceByteIndex = 0; continue; }
 		
 		if (!state->drawingHighlightRecs && isHighlightedChanging && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && callbacks != nullptr && callbacks->drawHighlight != nullptr)
 		{
@@ -299,144 +298,152 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			state->wordWrapByteIndexIsLineEnd = true;
 		}
 		
-		u32 codepoint = 0;
-		u8 utf8ByteSize = GetCodepointForUtf8Str(currentPiece->str, state->textPieceByteIndex, &codepoint);
-		if (utf8ByteSize == 0)
+		if (state->textPieceByteIndex < currentPiece->str.length)
 		{
-			//TODO: Should we handle invalid UTF-8 differently?
-			codepoint = CharToU32(currentPiece->str.chars[state->textPieceByteIndex]);
-			utf8ByteSize = 1;
-			if (result == Result_Success) { result = Result_InvalidUtf8; }
-		}
-		
-		if (codepoint == '\n' && state->findingNextWordBeforeWrap) //TODO: Should we handle \r\n new-line sequence?
-		{
-			state->byteIndex += utf8ByteSize;
-			break;
-		}
-		if (prevCodepoint != UINT32_MAX && state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f)
-		{
-			bool isNextCharWord = IsCharAlphaNumeric(codepoint);
-			bool isPrevCharWord = IsCharAlphaNumeric(prevCodepoint);
-			bool isNextCharWhitespace = IsCharWhitespace(codepoint, true);
-			bool isPrevCharWhitespace = IsCharWhitespace(prevCodepoint, true);
-			if (isNextCharWord != isPrevCharWord || isNextCharWhitespace != isPrevCharWhitespace) { lastWordEndIndex = state->byteIndex; }
-		}
-		
-		if (callbacks != nullptr && callbacks->beforeChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
-		{
-			callbacks->beforeChar(state, flowOut, codepoint);
-		}
-		if (state->byteIndex >= state->text.fullPiece.str.length) { break; }
-		
-		r32 kerning = 0.0f;
-		rec glyphDrawRec = Rec_Zero;
-		rec glyphLogicalRec = Rec_Zero;
-		FontAtlas* fontAtlas = nullptr;
-		FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &fontAtlas);
-		if (fontGlyph != nullptr)
-		{
-			state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->lineHeight);
-			
-			if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->fontScale == fontAtlas->fontScale) //TODO: Should we check the style flags match?
+			u32 codepoint = 0;
+			u8 utf8ByteSize = GetCodepointForUtf8Str(currentPiece->str, state->textPieceByteIndex, &codepoint);
+			if (utf8ByteSize == 0)
 			{
-				kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->fontScale, state->prevGlyph, fontGlyph);
-				state->position.X += kerning;
-				// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
+				//TODO: Should we handle invalid UTF-8 differently?
+				codepoint = CharToU32(currentPiece->str.chars[state->textPieceByteIndex]);
+				utf8ByteSize = 1;
+				if (result == Result_Success) { result = Result_InvalidUtf8; }
 			}
 			
-			glyphDrawRec = NewRecV(Add(state->position, fontGlyph->renderOffset), ToV2Fromi(fontGlyph->atlasSourceRec.Size));
-			glyphLogicalRec = NewRecV(Add(state->position, fontGlyph->logicalRec.TopLeft), fontGlyph->logicalRec.Size);
-			if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
-			if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
-			
-			// If the character can't fit within wrapWidth, then figure out where to break the line
-			if (state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f &&
-				glyphLogicalRec.X + glyphLogicalRec.Width >= state->startPos.X + state->wrapWidth)
+			if (codepoint == '\n' && state->findingNextWordBeforeWrap) //TODO: Should we handle \r\n new-line sequence?
 			{
-				//Either wrap at the last word boundary, or if there was no word boundary this line then wrap before this character
-				//TODO: Sublime seems to not use the last word boundary if it only was like 1-3 characters before the boundary
-				//		(and there was plenty of more horizontal space to be used) Maybe we should do something similar?
-				if (lastWordEndIndex != UINTXX_MAX)
-				{
-					state->byteIndex = lastWordEndIndex;
-				}
-				
-				// Consume any whitespace and up to one new-line character as part of the line break
-				bool foundNewLine = false;
-				while (state->byteIndex < state->text.fullPiece.str.length)
-				{
-					uxx pieceByteIndex = 0;
-					RichStrPiece* richStrPiece = GetRichStrPieceForByteIndex(&state->text, state->byteIndex, &pieceByteIndex);
-					NotNull(richStrPiece);
-					u32 maybeSpaceCodepoint = 0;
-					u8 maybeSpaceUtf8ByteSize = GetCodepointForUtf8Str(richStrPiece->str, pieceByteIndex, &maybeSpaceCodepoint);
-					if (IsCharWhitespace(maybeSpaceCodepoint, !foundNewLine))
-					{
-						state->byteIndex += maybeSpaceUtf8ByteSize;
-						if (maybeSpaceCodepoint == '\n') { foundNewLine = true; }
-					}
-					else { break; }
-				}
-				
+				state->byteIndex += utf8ByteSize;
 				break;
 			}
-			
-			if (callbacks != nullptr && callbacks->drawChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
+			if (prevCodepoint != UINT32_MAX && state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f)
 			{
-				callbacks->drawChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph);
+				bool isNextCharWord = IsCharAlphaNumeric(codepoint);
+				bool isPrevCharWord = IsCharAlphaNumeric(prevCodepoint);
+				bool isNextCharWhitespace = IsCharWhitespace(codepoint, true);
+				bool isPrevCharWhitespace = IsCharWhitespace(prevCodepoint, true);
+				if (isNextCharWord != isPrevCharWord || isNextCharWhitespace != isPrevCharWhitespace) { lastWordEndIndex = state->byteIndex; }
 			}
 			
-			//TODO: Draw Strikethrough
-			//TODO: Draw Underline
-			//TODO: Draw Highlight
-			
-			if (flowOut != nullptr)
+			if (callbacks != nullptr && callbacks->beforeChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
 			{
-				if (state->glyphIndex < flowOut->numGlyphsAlloc)
+				callbacks->beforeChar(state, flowOut, codepoint);
+			}
+			if (state->byteIndex >= state->text.fullPiece.str.length) { break; }
+			
+			r32 kerning = 0.0f;
+			rec glyphDrawRec = Rec_Zero;
+			rec glyphLogicalRec = Rec_Zero;
+			FontAtlas* fontAtlas = nullptr;
+			FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &fontAtlas);
+			if (fontGlyph != nullptr)
+			{
+				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->lineHeight);
+				
+				if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->fontScale == fontAtlas->fontScale) //TODO: Should we check the style flags match?
 				{
-					NotNull(flowOut->glyphs);
-					FontFlowGlyph* flowGlyph = &flowOut->glyphs[state->glyphIndex];
-					ClearPointer(flowGlyph);
-					flowGlyph->codepoint = codepoint;
-					flowGlyph->byteIndex = state->byteIndex;
-					flowGlyph->atlas = fontAtlas;
-					flowGlyph->glyph = fontGlyph;
-					flowGlyph->position = state->position;
-					flowGlyph->drawRec = glyphDrawRec;
-					flowGlyph->color = state->currentStyle.color;
+					kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->fontScale, state->prevGlyph, fontGlyph);
+					state->position.X += kerning;
+					// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
 				}
 				
-				flowOut->logicalRec = BothRec(flowOut->logicalRec, glyphLogicalRec);
-				if (flowOut->numGlyphs == 0) { flowOut->visualRec = glyphDrawRec; }
-				else { flowOut->visualRec = BothRec(flowOut->visualRec, glyphDrawRec); }
-				flowOut->numGlyphs++;
+				glyphDrawRec = NewRecV(Add(state->position, fontGlyph->renderOffset), ToV2Fromi(fontGlyph->atlasSourceRec.Size));
+				glyphLogicalRec = NewRecV(Add(state->position, fontGlyph->logicalRec.TopLeft), fontGlyph->logicalRec.Size);
+				if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
+				if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
+				
+				// If the character can't fit within wrapWidth, then figure out where to break the line
+				if (state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f &&
+					glyphLogicalRec.X + glyphLogicalRec.Width >= state->startPos.X + state->wrapWidth)
+				{
+					//Either wrap at the last word boundary, or if there was no word boundary this line then wrap before this character
+					//TODO: Sublime seems to not use the last word boundary if it only was like 1-3 characters before the boundary
+					//		(and there was plenty of more horizontal space to be used) Maybe we should do something similar?
+					if (lastWordEndIndex != UINTXX_MAX)
+					{
+						state->byteIndex = lastWordEndIndex;
+					}
+					
+					// Consume any whitespace and up to one new-line character as part of the line break
+					bool foundNewLine = false;
+					while (state->byteIndex < state->text.fullPiece.str.length)
+					{
+						uxx pieceByteIndex = 0;
+						RichStrPiece* richStrPiece = GetRichStrPieceForByteIndex(&state->text, state->byteIndex, &pieceByteIndex);
+						NotNull(richStrPiece);
+						u32 maybeSpaceCodepoint = 0;
+						u8 maybeSpaceUtf8ByteSize = GetCodepointForUtf8Str(richStrPiece->str, pieceByteIndex, &maybeSpaceCodepoint);
+						if (IsCharWhitespace(maybeSpaceCodepoint, !foundNewLine))
+						{
+							state->byteIndex += maybeSpaceUtf8ByteSize;
+							if (maybeSpaceCodepoint == '\n') { foundNewLine = true; }
+						}
+						else { break; }
+					}
+					
+					break;
+				}
+				
+				if (callbacks != nullptr && callbacks->drawChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
+				{
+					callbacks->drawChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph);
+				}
+				
+				//TODO: Draw Strikethrough
+				//TODO: Draw Underline
+				//TODO: Draw Highlight
+				
+				if (flowOut != nullptr)
+				{
+					if (state->glyphIndex < flowOut->numGlyphsAlloc)
+					{
+						NotNull(flowOut->glyphs);
+						FontFlowGlyph* flowGlyph = &flowOut->glyphs[state->glyphIndex];
+						ClearPointer(flowGlyph);
+						flowGlyph->codepoint = codepoint;
+						flowGlyph->byteIndex = state->byteIndex;
+						flowGlyph->atlas = fontAtlas;
+						flowGlyph->glyph = fontGlyph;
+						flowGlyph->position = state->position;
+						flowGlyph->drawRec = glyphDrawRec;
+						flowGlyph->color = state->currentStyle.color;
+					}
+					
+					flowOut->logicalRec = BothRec(flowOut->logicalRec, glyphLogicalRec);
+					if (flowOut->numGlyphs == 0) { flowOut->visualRec = glyphDrawRec; }
+					else { flowOut->visualRec = BothRec(flowOut->visualRec, glyphDrawRec); }
+					flowOut->numGlyphs++;
+				}
+				
+				state->position.X += fontGlyph->advanceX;
+				state->glyphIndex++;
+			}
+			else
+			{
+				//TODO: What should we do if we don't find the glyph? Render a default character maybe?
 			}
 			
-			state->position.X += fontGlyph->advanceX;
-			state->glyphIndex++;
+			state->charIndex++;
+			state->byteIndex += utf8ByteSize;
+			state->textPieceByteIndex += utf8ByteSize;
+			
+			if (callbacks != nullptr && callbacks->afterChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
+			{
+				callbacks->afterChar(state, flowOut, glyphDrawRec, glyphLogicalRec, codepoint, fontAtlas, fontGlyph, kerning);
+			}
+			
+			if (fontGlyph != nullptr)
+			{
+				state->prevGlyphAtlas = fontAtlas;
+				state->prevGlyph = fontGlyph;
+			}
+			
+			prevCodepoint = codepoint;
 		}
 		else
 		{
-			//TODO: What should we do if we don't find the glyph? Render a default character maybe?
+			state->textPieceIndex++;
+			state->textPieceByteIndex = 0;
 		}
-		
-		state->charIndex++;
-		state->byteIndex += utf8ByteSize;
-		state->textPieceByteIndex += utf8ByteSize;
-		if (state->textPieceByteIndex >= currentPiece->str.length) { state->textPieceIndex++; state->textPieceByteIndex = 0; }
-		
-		if (callbacks != nullptr && callbacks->afterChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
-		{
-			callbacks->afterChar(state, flowOut, glyphDrawRec, glyphLogicalRec, codepoint, fontAtlas, fontGlyph, kerning);
-		}
-		
-		if (fontGlyph != nullptr)
-		{
-			state->prevGlyphAtlas = fontAtlas;
-			state->prevGlyph = fontGlyph;
-		}
-		prevCodepoint = codepoint;
 	}
 	
 	if (flowOut != nullptr) { flowOut->endPos = state->position; }
