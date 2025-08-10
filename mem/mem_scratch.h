@@ -149,3 +149,7 @@ PEXPI void ReleaseScratchArena(ScratchArena* scratchArena)
 #if defined(_MEM_SCRATCH_H) && defined(_UI_CLAY_H)
 #include "cross/cross_scratch_and_clay.h"
 #endif
+
+#if defined(_STRUCT_RICH_STRING_H) && defined(_MEM_SCRATCH_H) && defined(_STRUCT_RANGES_H)
+#include "cross/cross_rich_string_scratch_and_ranges.h"
+#endif

@@ -47,16 +47,24 @@ Description:
 #define ClearStruct(Structure) MyMemSet(&(Structure), '\0', sizeof((Structure)))
 #define ClearPointer(Pointer)  MyMemSet((Pointer), '\0', sizeof(*(Pointer)));
 
-#define SwapPointers(varType, pntr1, pntr2) do                                 \
+#define SwapPntrVars(varType, pntrVar1, pntrVar2) do                              \
+{                                                                                 \
+	varType tempVarWithLongNameThatWontConflict;                                  \
+	MyMemCopy(&tempVarWithLongNameThatWontConflict, (pntrVar2), sizeof(varType)); \
+	MyMemCopy((pntrVar2), (pntrVar1), sizeof(varType));                           \
+	MyMemCopy((pntrVar1), &tempVarWithLongNameThatWontConflict, sizeof(varType)); \
+	varType* tempPntrWithLongNameThatWontConflict;                                \
+	tempPntrWithLongNameThatWontConflict = (pntrVar2);                            \
+	(pntrVar2) = (pntrVar1);                                                      \
+	(pntrVar1) = tempPntrWithLongNameThatWontConflict;                            \
+} while(0)
+
+#define SwapPntrs(varType, pntr1, pntr2) do                                    \
 {                                                                              \
 	varType tempVarWithLongNameThatWontConflict;                               \
 	MyMemCopy(&tempVarWithLongNameThatWontConflict, (pntr2), sizeof(varType)); \
 	MyMemCopy((pntr2), (pntr1), sizeof(varType));                              \
 	MyMemCopy((pntr1), &tempVarWithLongNameThatWontConflict, sizeof(varType)); \
-	varType* tempPntrWithLongNameThatWontConflict;                             \
-	tempPntrWithLongNameThatWontConflict = (pntr2);                            \
-	(pntr2) = (pntr1);                                                         \
-	(pntr1) = tempPntrWithLongNameThatWontConflict;                            \
 } while(0)
 
 #endif //  _STD_MEMSET_H

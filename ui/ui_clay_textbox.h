@@ -23,6 +23,7 @@ Description:
 #include "input/input_btn_state.h"
 #include "input/input_mouse_btns.h"
 #include "struct/struct_vectors.h"
+#include "struct/struct_ranges.h"
 #include "gfx/gfx_font.h"
 #include "gfx/gfx_font_flow.h"
 
@@ -52,6 +53,8 @@ plex UiTextbox
 	Str8 text;
 	VarArray textBuffer; //char
 	
+	VarArray syntaxRanges; //RichStrStyleChangeRange
+	
 	bool textChanged;
 	bool cursorMoved;
 };
@@ -68,6 +71,8 @@ plex UiTextbox
 	PIG_CORE_INLINE void UiTextboxClear(UiTextbox* tbox);
 	PIG_CORE_INLINE void UiTextboxSetText(UiTextbox* tbox, Str8 text);
 	PIG_CORE_INLINE uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos);
+	PIG_CORE_INLINE void UiTextboxClearSyntaxRanges(UiTextbox* tbox);
+	PIG_CORE_INLINE void UiTextboxAddSyntaxRange(UiTextbox* tbox, RangeUXX range, RichStrStyleChange style);
 	void DoUiTextbox(UiTextbox* tbox, ClayUIRenderer* renderer, Arena* uiArena, const KeyboardState* keyboard, const MouseState* mouse, UiTextbox** focusedTextbox, PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale);
 #endif
 
@@ -83,6 +88,7 @@ PEXP void FreeUiTextbox(UiTextbox* tbox)
 	{
 		FreeStr8(tbox->arena, &tbox->idStr);
 		FreeVarArray(&tbox->textBuffer);
+		FreeVarArray(&tbox->syntaxRanges);
 	}
 	ClearPointer(tbox);
 }
@@ -97,6 +103,7 @@ PEXP void InitUiTextbox(Arena* arena, Str8 idStr, Str8 initialText, UiTextbox* t
 	tbox->idStr = AllocStr8(arena, idStr);
 	tbox->id = ToClayId(tbox->idStr);
 	InitVarArrayWithInitial(char, &tbox->textBuffer, arena, initialText.length);
+	InitVarArray(RichStrStyleChangeRange, &tbox->syntaxRanges, arena);
 	tbox->text = NewStr8(0, (char*)tbox->textBuffer.items);
 	if (!IsEmptyStr(initialText))
 	{
@@ -171,6 +178,7 @@ PEXPI void UiTextboxSetText(UiTextbox* tbox, Str8 text)
 
 PEXPI uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos)
 {
+	NotNull(tbox);
 	uxx cursorIndex = tbox->text.length;
 	r32 cursorDistance = LengthV2(Sub(screenPos, tbox->flow.endPos));
 	for (uxx gIndex = 0; gIndex < tbox->flow.numGlyphs; gIndex++)
@@ -184,6 +192,23 @@ PEXPI uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos)
 		}
 	}
 	return cursorIndex;
+}
+
+PEXPI void UiTextboxClearSyntaxRanges(UiTextbox* tbox)
+{
+	NotNull(tbox);
+	NotNull(tbox->arena);
+	VarArrayClear(&tbox->syntaxRanges);
+}
+PEXPI void UiTextboxAddSyntaxRange(UiTextbox* tbox, RangeUXX range, RichStrStyleChange style)
+{
+	NotNull(tbox);
+	NotNull(tbox->arena);
+	RichStrStyleChangeRange* newRange = VarArrayAdd(RichStrStyleChangeRange, &tbox->syntaxRanges);
+	NotNull(newRange);
+	ClearPointer(newRange);
+	newRange->range = range;
+	newRange->style = style;
 }
 
 PEXP void DoUiTextbox(UiTextbox* tbox,
@@ -480,23 +505,32 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 		.backgroundColor = MonokaiDarkGray,
 	})
 	{
-		//TODO: Use an RichStrEncode function here, this function would solve our escaping issues
-		//      Alternatively we should just pass RichStr as the primary str type for Clay
-		RichStr highlightedText = ToRichStr(tbox->text);
+		uxx numStyleRanges = 0;
+		RichStrStyleChangeRange* styleRanges = AllocArray(RichStrStyleChangeRange, uiArena, 1 + tbox->syntaxRanges.length);
+		NotNull(styleRanges);
+		
 		if (tbox->cursorActive && tbox->cursorEnd != tbox->cursorStart)
 		{
-			uxx cursorMin = MinUXX(tbox->cursorStart, tbox->cursorEnd);
-			uxx cursorMax = MaxUXX(tbox->cursorStart, tbox->cursorEnd);
-			RichStrPiece pieces[3];
-			pieces[0] = (RichStrPiece){ .str = StrSlice(tbox->text, 0, cursorMin) };
-			pieces[1] = (RichStrPiece){ .str = StrSlice(tbox->text, cursorMin, cursorMax), .styleChange = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Highlighted) };
-			pieces[2] = (RichStrPiece){ .str = StrSliceFrom(tbox->text, cursorMax), .styleChange = NewRichStrStyleChangeDisableFlags(FontStyleFlag_Highlighted) };
-			highlightedText = NewRichStr(uiArena, ArrayCount(pieces), &pieces[0]);
+			styleRanges[numStyleRanges].range = NewRangeUXX(tbox->cursorStart, tbox->cursorEnd);
+			styleRanges[numStyleRanges].style = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Highlighted);
+			numStyleRanges++;
 		}
-		Str8 displayText = EncodeRichStr(uiArena, highlightedText, false, false);
+		VarArrayLoop(&tbox->syntaxRanges, rIndex)
+		{
+			VarArrayLoopGet(RichStrStyleChangeRange, syntaxRange, &tbox->syntaxRanges, rIndex);
+			MyMemCopy(&styleRanges[numStyleRanges], syntaxRange, sizeof(RichStrStyleChangeRange));
+			numStyleRanges++;
+		}
 		
+		RichStr richText = ToRichStr(tbox->text);
+		if (numStyleRanges > 0)
+		{
+			richText = NewRichStrFromRanges(uiArena, tbox->text, numStyleRanges, &styleRanges[0]);
+		}
+		
+		Str8 encodedRichText = EncodeRichStr(uiArena, richText, false, false);
 		CLAY_TEXT(
-			displayText,
+			encodedRichText,
 			CLAY_TEXT_CONFIG({
 				.fontId = fontId,
 				.fontSize = (u16)fontSize,

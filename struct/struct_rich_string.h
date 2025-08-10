@@ -117,7 +117,7 @@ plex RichStrStyleChange
 			u8 defaultStyleFlags;
 		};
 		Color32 color; // (TransparentWhite means default color)
-		r32 alpha;
+		r32 alpha; // (-1.0f means default alpha)
 	};
 };
 
@@ -151,6 +151,7 @@ plex RichStr
 	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeColor(Color32 color, bool includeAlpha);
 	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeAlpha(r32 alpha);
 	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeAlphaU8(u8 alpha);
+	PIG_CORE_INLINE RichStrStyleChange OppositeRichStrStyleChange(RichStrStyleChange change);
 	PIG_CORE_INLINE RichStr ToRichStrEx(Str8 string, RichStrStyleChange styleChange);
 	PIG_CORE_INLINE RichStr ToRichStr(Str8 string);
 	PIG_CORE_INLINE void FreeRichStr(Arena* arena, RichStr* richStrPntr);
@@ -228,6 +229,41 @@ PEXPI RichStrStyleChange NewRichStrStyleChangeAlpha(r32 alpha)
 PEXPI RichStrStyleChange NewRichStrStyleChangeAlphaU8(u8 alpha)
 {
 	return NewRichStrStyleChange(RichStrStyleChangeType_Alpha, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, (r32)alpha / 255.0f);
+}
+
+PEXPI RichStrStyleChange OppositeRichStrStyleChange(RichStrStyleChange change)
+{
+	RichStrStyleChange result = RichStrStyleChange_None_Const;
+	result.type = change.type;
+	if (change.type == RichStrStyleChangeType_FontSize)
+	{
+		result.fontSize = 0.0f;
+	}
+	else if (change.type == RichStrStyleChangeType_FontStyle)
+	{
+		if (change.enableStyleFlags != 0x00)
+		{
+			result.disableStyleFlags = change.enableStyleFlags;
+		}
+		else if (change.disableStyleFlags != 0x00)
+		{
+			result.enableStyleFlags = change.disableStyleFlags;
+		}
+		else { result.defaultStyleFlags = change.defaultStyleFlags; }
+	}
+	else if (change.type == RichStrStyleChangeType_Color)
+	{
+		result.color = RICH_STYLE_DEFAULT_COLOR;
+	}
+	else if (change.type == RichStrStyleChangeType_ColorAndAlpha)
+	{
+		result.color = RICH_STYLE_DEFAULT_COLOR;
+	}
+	else if (change.type == RichStrStyleChangeType_Alpha)
+	{
+		result.alpha = -1.0f;
+	}
+	return result;
 }
 
 PEXPI RichStr ToRichStrEx(Str8 string, RichStrStyleChange styleChange)
@@ -891,3 +927,7 @@ PEXP Str8 EncodeRichStr(Arena* arena, RichStr richStr, bool useBackspaceAndBellC
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_RICH_STRING_H
+
+#if defined(_STRUCT_RICH_STRING_H) && defined(_MEM_SCRATCH_H) && defined(_STRUCT_RANGES_H)
+#include "cross/cross_rich_string_scratch_and_ranges.h"
+#endif

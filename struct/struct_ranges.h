@@ -92,6 +92,10 @@ car RangeR64
 	PIG_CORE_INLINE RangeIXX ClampAboveRangeIXX(RangeIXX range, ixx minValue);
 	PIG_CORE_INLINE RangeR32 ClampAboveRangeR32(RangeR32 range, r32 minValue);
 	PIG_CORE_INLINE RangeR64 ClampAboveRangeR64(RangeR64 range, r64 minValue);
+	PIG_CORE_INLINE RangeUXX ClampRangeToRangeUXX(RangeUXX range, RangeUXX limits);
+	PIG_CORE_INLINE RangeIXX ClampRangeToRangeIXX(RangeIXX range, RangeIXX limits);
+	PIG_CORE_INLINE RangeR32 ClampRangeToRangeR32(RangeR32 range, RangeR32 limits);
+	PIG_CORE_INLINE RangeR64 ClampRangeToRangeR64(RangeR64 range, RangeR64 limits);
 #endif
 
 // +--------------------------------------------------------------+
@@ -296,10 +300,31 @@ PEXPI RangeR64 ClampAboveRangeR64(RangeR64 range, r64 minValue)
 	return NewRangeR64(MaxR64(range.min, minValue), MaxR64(range.max, minValue));
 }
 
+PEXPI RangeUXX ClampRangeToRangeUXX(RangeUXX range, RangeUXX limits)
+{
+	return NewRangeUXX(MaxUXX(range.min, limits.min), MinUXX(range.max, limits.max));
+}
+PEXPI RangeIXX ClampRangeToRangeIXX(RangeIXX range, RangeIXX limits)
+{
+	return NewRangeIXX(MaxIXX(range.min, limits.min), MinIXX(range.max, limits.max));
+}
+PEXPI RangeR32 ClampRangeToRangeR32(RangeR32 range, RangeR32 limits)
+{
+	return NewRangeR32(MaxR32(range.min, limits.min), MinR32(range.max, limits.max));
+}
+PEXPI RangeR64 ClampRangeToRangeR64(RangeR64 range, RangeR64 limits)
+{
+	return NewRangeR64(MaxR64(range.min, limits.min), MinR64(range.max, limits.max));
+}
+
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_RANGES_H
 
 #if defined(_STRUCT_STRING_H) && defined(_STRUCT_RANGES_H)
 #include "cross/cross_string_and_ranges.h"
+#endif
+
+#if defined(_STRUCT_RICH_STRING_H) && defined(_MEM_SCRATCH_H) && defined(_STRUCT_RANGES_H)
+#include "cross/cross_rich_string_scratch_and_ranges.h"
 #endif

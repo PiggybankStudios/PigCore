@@ -155,6 +155,7 @@ enum EscapeSequence
 	PIG_CORE_INLINE bool StrEndsWith(Str8 target, Str8 suffix, bool caseSensitive);
 	PIG_CORE_INLINE bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive);
 	PIG_CORE_INLINE uxx StrFind(Str8 haystack, Str8 needle, bool caseSensitive);
+	PIG_CORE_INLINE uxx StrFindAfter(Str8 haystack, uxx startIndex, Str8 needle, bool caseSensitive);
 	PIG_CORE_INLINE bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut);
 #endif //!PIG_CORE_IMPLEMENTATION
 
@@ -497,6 +498,10 @@ PEXPI bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive)
 PEXPI uxx StrFind(Str8 haystack, Str8 needle, bool caseSensitive)
 {
 	return (caseSensitive ? StrExactFind(haystack, needle) : StrAnyCaseFind(haystack, needle));
+}
+PEXPI uxx StrFindAfter(Str8 haystack, uxx startIndex, Str8 needle, bool caseSensitive)
+{
+	return startIndex + StrFind(StrSliceFrom(haystack, startIndex), needle, caseSensitive);
 }
 PEXPI bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut)
 {
