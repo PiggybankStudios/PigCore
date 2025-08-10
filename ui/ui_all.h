@@ -26,6 +26,7 @@ Date:   02\16\2025
 #include "gfx/gfx_font.h"
 
 #include "ui/ui_clay_checkbox.h"
+#include "ui/ui_clay_hoverable.h"
 
 #include "struct/struct_vectors.h"
 #include "struct/struct_rectangles.h"
