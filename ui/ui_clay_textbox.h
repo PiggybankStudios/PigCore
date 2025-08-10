@@ -270,7 +270,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	// +==============================+
 	// |   Escape Unfocuses Textbox   |
 	// +==============================+
-	if (tbox->isFocused && IsKeyboardKeyPressed(context->keyboard, Key_Escape))
+	if (tbox->isFocused && IsKeyboardKeyPressed(context->keyboard, Key_Escape, false))
 	{
 		tbox->isFocused = false;
 		(*context->focusedUiElementPntr) = nullptr;
@@ -283,7 +283,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	//TODO: Handle key repeats
 	if (tbox->isFocused)
 	{
-		if (IsKeyboardKeyPressed(context->keyboard, Key_Left))
+		if (IsKeyboardKeyPressed(context->keyboard, Key_Left, true))
 		{
 			if (tbox->cursorActive)
 			{
@@ -311,7 +311,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 			}
 			else { tbox->cursorEnd = tbox->text.length; tbox->cursorStart = tbox->cursorEnd; tbox->cursorMoved = true; }
 		}
-		if (IsKeyboardKeyPressed(context->keyboard, Key_Right))
+		if (IsKeyboardKeyPressed(context->keyboard, Key_Right, true))
 		{
 			if (tbox->cursorActive)
 			{
@@ -346,13 +346,13 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	// +==============================+
 	if (tbox->isFocused)
 	{
-		if (IsKeyboardKeyPressed(context->keyboard, Key_Home))
+		if (IsKeyboardKeyPressed(context->keyboard, Key_Home, true))
 		{
 			tbox->cursorEnd = 0;
 			if (!IsKeyboardKeyDown(context->keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
 			tbox->cursorMoved = true;
 		}
-		if (IsKeyboardKeyPressed(context->keyboard, Key_End))
+		if (IsKeyboardKeyPressed(context->keyboard, Key_End, true))
 		{
 			tbox->cursorEnd = tbox->text.length;
 			if (!IsKeyboardKeyDown(context->keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
@@ -363,7 +363,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	// +==============================+
 	// |        Handle Ctrl+A         |
 	// +==============================+
-	if (tbox->isFocused && IsKeyboardKeyPressed(context->keyboard, Key_A) && IsKeyboardKeyDown(context->keyboard, Key_Control))
+	if (tbox->isFocused && IsKeyboardKeyPressed(context->keyboard, Key_A, true) && IsKeyboardKeyDown(context->keyboard, Key_Control))
 	{
 		if (!tbox->cursorActive || tbox->cursorStart != 0 || tbox->cursorEnd != tbox->text.length)
 		{
@@ -421,17 +421,17 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	if (tbox->isFocused && tbox->cursorActive)
 	{
 		if (tbox->cursorEnd != tbox->cursorStart &&
-			(IsKeyboardKeyPressed(context->keyboard, Key_Backspace) || IsKeyboardKeyPressed(context->keyboard, Key_Delete)))
+			(IsKeyboardKeyPressed(context->keyboard, Key_Backspace, true) || IsKeyboardKeyPressed(context->keyboard, Key_Delete, true)))
 		{
 			UiTextboxDeleteSelected(tbox);
 		}
-		else if (IsKeyboardKeyPressed(context->keyboard, Key_Backspace) && tbox->cursorEnd > 0)
+		else if (IsKeyboardKeyPressed(context->keyboard, Key_Backspace, true) && tbox->cursorEnd > 0)
 		{
 			u8 prevCodepointSize = GetPrevCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
 			if (prevCodepointSize == 0) { prevCodepointSize = 1; }
 			UiTextboxDeleteBytes(tbox, tbox->cursorEnd-prevCodepointSize, prevCodepointSize);
 		}
-		else if (IsKeyboardKeyPressed(context->keyboard, Key_Delete) && tbox->cursorEnd < tbox->text.length)
+		else if (IsKeyboardKeyPressed(context->keyboard, Key_Delete, true) && tbox->cursorEnd < tbox->text.length)
 		{
 			u8 nextCodepointSize = GetCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
 			if (nextCodepointSize == 0) { nextCodepointSize = 1; }

@@ -116,7 +116,7 @@ PEXPI void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
-	if (UpdateBtnState(&mouse->btns[btn], currentTime, pressed))
+	if (UpdateBtnState(&mouse->btns[btn], currentTime, pressed, false))
 	{
 		mouse->clickStartPositions[btn] = mouse->position;
 	}
