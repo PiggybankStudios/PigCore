@@ -21,7 +21,7 @@ Description:
 #include "gfx/gfx_clay_renderer.h"
 #include "ui/ui_clay.h"
 
-#if BUILD_WITH_CLAY
+#if BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -121,6 +121,6 @@ PEXP void DoUiCheckbox(UiWidgetContext* context, Str8 idStr, bool* isChecked, r3
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_CLAY
+#endif //BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 #endif //  _UI_CLAY_CHECKBOX_H

@@ -89,6 +89,7 @@ PEXP const char* GetMimeTypeOfficialName(MimeType enumValue)
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	uxx GetUriErrors(Arena* arena, Str8 uriStr, StrRange** errorsOut);
 	UriParts GetUriParts(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriProtocolPart(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriHostnamePart(Str8 uriStr);
@@ -105,11 +106,63 @@ PEXP const char* GetMimeTypeOfficialName(MimeType enumValue)
 // +--------------------------------------------------------------+
 #define HTTP_PORT   80
 #define HTTPS_PORT  443
+#define MAX_CHECK_URI_ERRORS 32 //errors
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+PEXP uxx GetUriErrors(Arena* arena, Str8 uriStr, StrRange** errorsOut)
+{
+	uxx numErrors = 0;
+	StrRange* errors = AllocArray(StrRange, arena, MAX_CHECK_URI_ERRORS);
+	NotNull(errors);
+	
+	for (uxx cIndex = 0; cIndex < uriStr.length; cIndex++)
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(uriStr, cIndex, &codepoint);
+		
+		if (!IsCharAlphaNumeric(codepoint) &&
+			codepoint != ':' &&
+			codepoint != '/' &&
+			codepoint != '?' &&
+			codepoint != '#' &&
+			codepoint != '[' &&
+			codepoint != ']' &&
+			codepoint != '@' &&
+			codepoint != '!' &&
+			codepoint != '$' &&
+			codepoint != '&' &&
+			codepoint != '\'' &&
+			codepoint != '(' &&
+			codepoint != ')' &&
+			codepoint != '*' &&
+			codepoint != '+' &&
+			codepoint != ',' &&
+			codepoint != ';' &&
+			codepoint != '=' &&
+			codepoint != '-' &&
+			codepoint != '.' &&
+			codepoint != '_' &&
+			codepoint != '~')
+		{
+			if (numErrors < MAX_CHECK_URI_ERRORS)
+			{
+				errors[numErrors].range = NewRangeUXX(cIndex, cIndex + codepointSize);
+				errors[numErrors].str = PrintInArenaStr(arena, "Invalid character: \'%.*s\'", codepointSize, &uriStr.chars[cIndex]);
+				numErrors++;
+			}
+		}
+		
+		if (codepointSize > 1) { cIndex += codepointSize-1; }
+	}
+	
+	if ((numErrors == 0 || errorsOut == nullptr) && CanArenaFree(arena)) { FreeArray(StrRange, arena, MAX_CHECK_URI_ERRORS, errors); }
+	SetOptionalOutPntr(errorsOut, errors);
+	return numErrors;
+}
 
 PEXP UriParts GetUriParts(Str8 uriStr)
 {

@@ -89,6 +89,7 @@ PEXP Str16 ConvertUtf8StrToUcs2(Arena* arena, Str8 utf8Str, bool addNullTerm)
 				Assert(result.length >= wordIndex + numWords);
 				MyMemCopy(&result.chars[wordIndex], &encodeBuffer[0], numWords * sizeof(u16));
 			}
+			if (codepointSize > 1) { cIndex += codepointSize-1; }
 			wordIndex += numWords;
 		}
 		

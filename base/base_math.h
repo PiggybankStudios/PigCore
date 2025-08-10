@@ -39,10 +39,12 @@ Description:
 	PIG_CORE_INLINE u16 ClampU16(u16 value, u16 min, u16 max);
 	PIG_CORE_INLINE u32 ClampU32(u32 value, u32 min, u32 max);
 	PIG_CORE_INLINE u64 ClampU64(u64 value, u64 min, u64 max);
+	PIG_CORE_INLINE uxx ClampUXX(uxx value, uxx min, uxx max);
 	PIG_CORE_INLINE i8  ClampI8(i8   value, i8  min, i8  max);
 	PIG_CORE_INLINE i16 ClampI16(i16 value, i16 min, i16 max);
 	PIG_CORE_INLINE i32 ClampI32(i32 value, i32 min, i32 max);
 	PIG_CORE_INLINE i64 ClampI64(i64 value, i64 min, i64 max);
+	PIG_CORE_INLINE ixx ClampIXX(ixx value, ixx min, ixx max);
 	PIG_CORE_INLINE r32 ClampR32(r32 value, r32 min, r32 max);
 	PIG_CORE_INLINE r64 ClampR64(r64 value, r64 min, r64 max);
 	PIG_CORE_INLINE r32 LerpR32(r32 val1, r32 val2, r32 amount);
@@ -132,10 +134,12 @@ PEXPI u8  ClampU8(u8   value, u8  min, u8  max) { return (value < min) ? min : (
 PEXPI u16 ClampU16(u16 value, u16 min, u16 max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI u32 ClampU32(u32 value, u32 min, u32 max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI u64 ClampU64(u64 value, u64 min, u64 max) { return (value < min) ? min : ((value > max) ? max : value); }
+PEXPI uxx ClampUXX(uxx value, uxx min, uxx max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI i8  ClampI8(i8   value, i8  min, i8  max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI i16 ClampI16(i16 value, i16 min, i16 max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI i32 ClampI32(i32 value, i32 min, i32 max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI i64 ClampI64(i64 value, i64 min, i64 max) { return (value < min) ? min : ((value > max) ? max : value); }
+PEXPI ixx ClampIXX(ixx value, ixx min, ixx max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI r32 ClampR32(r32 value, r32 min, r32 max) { return (value < min) ? min : ((value > max) ? max : value); }
 PEXPI r64 ClampR64(r64 value, r64 min, r64 max) { return (value < min) ? min : ((value > max) ? max : value); }
 

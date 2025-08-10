@@ -28,7 +28,7 @@ Description:
 #include "ui/ui_clay.h"
 #include "ui/ui_clay_widget_context.h"
 
-#if BUILD_WITH_CLAY
+#if BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 typedef plex UiLargeTextLine UiLargeTextLine;
 plex UiLargeTextLine
@@ -534,6 +534,6 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_CLAY
+#endif //BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 #endif //  _UI_CLAY_LARGE_TEXTVIEW_H

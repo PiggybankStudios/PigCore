@@ -68,12 +68,11 @@ PEXP RichStr NewRichStrFromRanges(Arena* arena, Str8 str, uxx numRanges, const R
 	NotNull(edges);
 	for (uxx rIndex = 0; rIndex < numRanges; rIndex++)
 	{
-		Assert(ranges[rIndex].range.min <= str.length);
-		Assert(ranges[rIndex].range.max <= str.length);
+		RangeUXX clampedRange = ClampRangeToRangeUXX(ranges[rIndex].range, NewRangeUXX(0, str.length));
 		RichStrStyleChangeEdge* edge1 = &edges[rIndex*2 + 0];
 		RichStrStyleChangeEdge* edge2 = &edges[rIndex*2 + 1];
-		edge1->index = ranges[rIndex].range.min; edge1->range = &ranges[rIndex]; edge1->begin = true;
-		edge2->index = ranges[rIndex].range.max; edge2->range = &ranges[rIndex]; edge2->begin = false;
+		edge1->index = clampedRange.min; edge1->range = &ranges[rIndex]; edge1->begin = true;
+		edge2->index = clampedRange.max; edge2->range = &ranges[rIndex]; edge2->begin = false;
 	}
 	
 	//TODO: Use an actual good sorting algorithm (this is "Selection Sort")

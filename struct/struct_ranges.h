@@ -13,6 +13,7 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
+#include "base/base_math.h"
 #include "std/std_basic_math.h"
 
 typedef car RangeUXX RangeUXX;
@@ -302,19 +303,19 @@ PEXPI RangeR64 ClampAboveRangeR64(RangeR64 range, r64 minValue)
 
 PEXPI RangeUXX ClampRangeToRangeUXX(RangeUXX range, RangeUXX limits)
 {
-	return NewRangeUXX(MaxUXX(range.min, limits.min), MinUXX(range.max, limits.max));
+	return NewRangeUXX(ClampUXX(range.min, limits.min, limits.max), ClampUXX(range.max, limits.min, limits.max));
 }
 PEXPI RangeIXX ClampRangeToRangeIXX(RangeIXX range, RangeIXX limits)
 {
-	return NewRangeIXX(MaxIXX(range.min, limits.min), MinIXX(range.max, limits.max));
+	return NewRangeIXX(ClampIXX(range.min, limits.min, limits.max), ClampIXX(range.max, limits.min, limits.max));
 }
 PEXPI RangeR32 ClampRangeToRangeR32(RangeR32 range, RangeR32 limits)
 {
-	return NewRangeR32(MaxR32(range.min, limits.min), MinR32(range.max, limits.max));
+	return NewRangeR32(ClampR32(range.min, limits.min, limits.max), ClampR32(range.max, limits.min, limits.max));
 }
 PEXPI RangeR64 ClampRangeToRangeR64(RangeR64 range, RangeR64 limits)
 {
-	return NewRangeR64(MaxR64(range.min, limits.min), MinR64(range.max, limits.max));
+	return NewRangeR64(ClampR64(range.min, limits.min, limits.max), ClampR64(range.max, limits.min, limits.max));
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

@@ -22,7 +22,7 @@ Date:   07\22\2025
 #include "gfx/gfx_clay_renderer.h"
 #include "gfx/gfx_font.h"
 
-#if BUILD_WITH_CLAY
+#if BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 typedef plex UiListView UiListView;
 plex UiListView
@@ -303,6 +303,6 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_CLAY
+#endif //BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 #endif //  _UI_CLAY_LISTVIEW_H

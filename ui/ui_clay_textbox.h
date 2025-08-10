@@ -28,7 +28,7 @@ Description:
 #include "gfx/gfx_font.h"
 #include "gfx/gfx_font_flow.h"
 
-#if BUILD_WITH_CLAY
+#if BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 #define TEXTBOX_INNER_PADDING_X 8 //px
 #define TEXTBOX_INNER_PADDING_Y 12 //px
@@ -54,6 +54,7 @@ plex UiTextbox
 	Str8 text;
 	VarArray textBuffer; //char
 	
+	bool displayRedOutline;
 	VarArray syntaxRanges; //RichStrStyleChangeRange
 	
 	bool textChanged;
@@ -499,7 +500,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(uiScale, 5)),
 		.border = {
 			.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(uiScale, 1)),
-			.color = MonokaiLightGray,
+			.color = tbox->displayRedOutline ? MonokaiMagenta : MonokaiLightGray,
 		},
 		.backgroundColor = MonokaiDarkGray,
 	})
@@ -571,6 +572,6 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_CLAY
+#endif //BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 #endif //  _UI_CLAY_TEXTBOX_H
