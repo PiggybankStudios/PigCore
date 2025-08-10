@@ -18,6 +18,7 @@ Description:
 #include "mem/mem_arena.h"
 #include "struct/struct_string.h"
 #include "ui/ui_clay.h"
+#include "ui/ui_clay_widget_context.h"
 #include "gfx/gfx_clay_renderer.h"
 #include "input/input_keys.h"
 #include "input/input_btn_state.h"
@@ -73,7 +74,7 @@ plex UiTextbox
 	PIG_CORE_INLINE uxx UiTextboxFindClosestIndexToPos(UiTextbox* tbox, v2 screenPos);
 	PIG_CORE_INLINE void UiTextboxClearSyntaxRanges(UiTextbox* tbox);
 	PIG_CORE_INLINE void UiTextboxAddSyntaxRange(UiTextbox* tbox, RangeUXX range, RichStrStyleChange style);
-	void DoUiTextbox(UiTextbox* tbox, ClayUIRenderer* renderer, Arena* uiArena, const KeyboardState* keyboard, const MouseState* mouse, UiTextbox** focusedTextbox, PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale);
+	void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale);
 #endif
 
 // +--------------------------------------------------------------+
@@ -211,22 +212,20 @@ PEXPI void UiTextboxAddSyntaxRange(UiTextbox* tbox, RangeUXX range, RichStrStyle
 	newRange->style = style;
 }
 
-PEXP void DoUiTextbox(UiTextbox* tbox,
-	ClayUIRenderer* renderer, Arena* uiArena,
-	KeyboardState* keyboard, MouseState* mouse, UiTextbox** focusedTextbox,
-	PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale)
+PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, u8 fontStyle, r32 fontSize, r32 uiScale)
 {
+	NotNull(context);
+	NotNull(context->uiArena);
+	NotNull(context->renderer);
+	NotNull(context->keyboard);
+	NotNull(context->mouse);
+	NotNull(context->focusedUiElementPntr);
 	NotNull(tbox);
 	NotNull(tbox->arena);
-	NotNull(renderer);
-	NotNull(uiArena);
-	NotNull(keyboard);
-	NotNull(mouse);
-	NotNull(focusedTextbox);
 	
-	if (tbox->isFocused != ((*focusedTextbox) == tbox))
+	if (tbox->isFocused != ((*context->focusedUiElementPntr) == tbox))
 	{
-		tbox->isFocused = ((*focusedTextbox) == tbox);
+		tbox->isFocused = ((*context->focusedUiElementPntr) == tbox);
 		if (!tbox->cursorActive)
 		{
 			tbox->cursorActive = true;
@@ -240,30 +239,30 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	// +==============================+
 	// | Mouse Click Selects Textbox  |
 	// +==============================+
-	if (mouse->isOverWindow && IsMouseBtnPressed(mouse, MouseBtn_Left))
+	if (context->mouse->isOverWindow && IsMouseBtnPressed(context->mouse, MouseBtn_Left))
 	{
 		if (Clay_PointerOver(tbox->id))
 		{
 			if (!tbox->isFocused)
 			{
 				tbox->isFocused = true;
-				(*focusedTextbox) = tbox;
+				(*context->focusedUiElementPntr) = tbox;
 			}
 			
 			tbox->cursorActive = true;
-			tbox->cursorEnd = UiTextboxFindClosestIndexToPos(tbox, mouse->position);
+			tbox->cursorEnd = UiTextboxFindClosestIndexToPos(tbox, context->mouse->position);
 			tbox->cursorStart = tbox->cursorEnd;
 			tbox->cursorMoved = true;
 			tbox->draggingWithMouse = true;
 		}
-		else if (tbox->isFocused) { tbox->isFocused = false; (*focusedTextbox) = nullptr; }
+		else if (tbox->isFocused) { tbox->isFocused = false; (*context->focusedUiElementPntr) = nullptr; }
 	}
 	//TODO: Handle scrolling left/right when dragging
 	if (tbox->draggingWithMouse)
 	{
-		if (IsMouseBtnDown(mouse, MouseBtn_Left))
+		if (IsMouseBtnDown(context->mouse, MouseBtn_Left))
 		{
-			tbox->cursorEnd = UiTextboxFindClosestIndexToPos(tbox, mouse->position);
+			tbox->cursorEnd = UiTextboxFindClosestIndexToPos(tbox, context->mouse->position);
 		}
 		else { tbox->draggingWithMouse = false; }
 	}
@@ -271,10 +270,10 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	// +==============================+
 	// |   Escape Unfocuses Textbox   |
 	// +==============================+
-	if (tbox->isFocused && IsKeyboardKeyPressed(keyboard, Key_Escape))
+	if (tbox->isFocused && IsKeyboardKeyPressed(context->keyboard, Key_Escape))
 	{
 		tbox->isFocused = false;
-		(*focusedTextbox) = nullptr;
+		(*context->focusedUiElementPntr) = nullptr;
 	}
 	
 	// +==============================+
@@ -284,11 +283,11 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	//TODO: Handle key repeats
 	if (tbox->isFocused)
 	{
-		if (IsKeyboardKeyPressed(keyboard, Key_Left))
+		if (IsKeyboardKeyPressed(context->keyboard, Key_Left))
 		{
 			if (tbox->cursorActive)
 			{
-				if (tbox->cursorStart != tbox->cursorEnd && !IsKeyboardKeyDown(keyboard, Key_Shift))
+				if (tbox->cursorStart != tbox->cursorEnd && !IsKeyboardKeyDown(context->keyboard, Key_Shift))
 				{
 					tbox->cursorEnd = MinUXX(tbox->cursorStart, tbox->cursorEnd);
 					tbox->cursorStart = tbox->cursorEnd;
@@ -296,7 +295,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 				}
 				else if (tbox->cursorEnd > 0)
 				{
-					if (IsKeyboardKeyDown(keyboard, Key_Control))
+					if (IsKeyboardKeyDown(context->keyboard, Key_Control))
 					{
 						tbox->cursorEnd = FindWordBoundaryStr(tbox->text, tbox->cursorEnd, false);
 					}
@@ -306,17 +305,17 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 						if (prevCodepointSize == 0) { prevCodepointSize = 1; }
 						tbox->cursorEnd -= prevCodepointSize;
 					}
-					if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
+					if (!IsKeyboardKeyDown(context->keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
 					tbox->cursorMoved = true;
 				}
 			}
 			else { tbox->cursorEnd = tbox->text.length; tbox->cursorStart = tbox->cursorEnd; tbox->cursorMoved = true; }
 		}
-		if (IsKeyboardKeyPressed(keyboard, Key_Right))
+		if (IsKeyboardKeyPressed(context->keyboard, Key_Right))
 		{
 			if (tbox->cursorActive)
 			{
-				if (tbox->cursorStart != tbox->cursorEnd && !IsKeyboardKeyDown(keyboard, Key_Shift))
+				if (tbox->cursorStart != tbox->cursorEnd && !IsKeyboardKeyDown(context->keyboard, Key_Shift))
 				{
 					tbox->cursorEnd = MaxUXX(tbox->cursorStart, tbox->cursorEnd);
 					tbox->cursorStart = tbox->cursorEnd;
@@ -324,7 +323,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 				}
 				else if (tbox->cursorEnd < tbox->text.length)
 				{
-					if (IsKeyboardKeyDown(keyboard, Key_Control))
+					if (IsKeyboardKeyDown(context->keyboard, Key_Control))
 					{
 						tbox->cursorEnd = FindWordBoundaryStr(tbox->text, tbox->cursorEnd, true);
 					}
@@ -334,7 +333,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 						if (codepointSize == 0) { codepointSize = 1; }
 						tbox->cursorEnd += codepointSize;
 					}
-					if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
+					if (!IsKeyboardKeyDown(context->keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
 					tbox->cursorMoved = true;
 				}
 			}
@@ -347,16 +346,16 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	// +==============================+
 	if (tbox->isFocused)
 	{
-		if (IsKeyboardKeyPressed(keyboard, Key_Home))
+		if (IsKeyboardKeyPressed(context->keyboard, Key_Home))
 		{
 			tbox->cursorEnd = 0;
-			if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
+			if (!IsKeyboardKeyDown(context->keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
 			tbox->cursorMoved = true;
 		}
-		if (IsKeyboardKeyPressed(keyboard, Key_End))
+		if (IsKeyboardKeyPressed(context->keyboard, Key_End))
 		{
 			tbox->cursorEnd = tbox->text.length;
-			if (!IsKeyboardKeyDown(keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
+			if (!IsKeyboardKeyDown(context->keyboard, Key_Shift)) { tbox->cursorStart = tbox->cursorEnd; }
 			tbox->cursorMoved = true;
 		}
 	}
@@ -364,7 +363,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	// +==============================+
 	// |        Handle Ctrl+A         |
 	// +==============================+
-	if (tbox->isFocused && IsKeyboardKeyPressed(keyboard, Key_A) && IsKeyboardKeyDown(keyboard, Key_Control))
+	if (tbox->isFocused && IsKeyboardKeyPressed(context->keyboard, Key_A) && IsKeyboardKeyDown(context->keyboard, Key_Control))
 	{
 		if (!tbox->cursorActive || tbox->cursorStart != 0 || tbox->cursorEnd != tbox->text.length)
 		{
@@ -380,9 +379,9 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	// +==============================+
 	if (tbox->isFocused && tbox->cursorActive)
 	{
-		for (uxx iIndex = 0; iIndex < keyboard->numCharInputs; iIndex++)
+		for (uxx iIndex = 0; iIndex < context->keyboard->numCharInputs; iIndex++)
 		{
-			KeyboardCharInput* charInput = &keyboard->charInputs[iIndex];
+			KeyboardCharInput* charInput = &context->keyboard->charInputs[iIndex];
 			if (charInput->modifierKeys == ModifierKey_None || charInput->modifierKeys == ModifierKey_Shift)
 			{
 				u8 utf8Bytes[UTF8_MAX_CHAR_SIZE];
@@ -422,17 +421,17 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	if (tbox->isFocused && tbox->cursorActive)
 	{
 		if (tbox->cursorEnd != tbox->cursorStart &&
-			(IsKeyboardKeyPressed(keyboard, Key_Backspace) || IsKeyboardKeyPressed(keyboard, Key_Delete)))
+			(IsKeyboardKeyPressed(context->keyboard, Key_Backspace) || IsKeyboardKeyPressed(context->keyboard, Key_Delete)))
 		{
 			UiTextboxDeleteSelected(tbox);
 		}
-		else if (IsKeyboardKeyPressed(keyboard, Key_Backspace) && tbox->cursorEnd > 0)
+		else if (IsKeyboardKeyPressed(context->keyboard, Key_Backspace) && tbox->cursorEnd > 0)
 		{
 			u8 prevCodepointSize = GetPrevCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
 			if (prevCodepointSize == 0) { prevCodepointSize = 1; }
 			UiTextboxDeleteBytes(tbox, tbox->cursorEnd-prevCodepointSize, prevCodepointSize);
 		}
-		else if (IsKeyboardKeyPressed(keyboard, Key_Delete) && tbox->cursorEnd < tbox->text.length)
+		else if (IsKeyboardKeyPressed(context->keyboard, Key_Delete) && tbox->cursorEnd < tbox->text.length)
 		{
 			u8 nextCodepointSize = GetCodepointForUtf8Str(tbox->text, tbox->cursorEnd, nullptr);
 			if (nextCodepointSize == 0) { nextCodepointSize = 1; }
@@ -445,7 +444,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	//TODO: Handle copy/paste/cut to/from clipboard
 	//TODO: Double/Triple Click to Select Word/Line
 	
-	u16 fontId = GetClayUIRendererFontId(renderer, font, fontStyle);
+	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
 	FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);
 	NotNull(fontAtlas);
 	
@@ -506,7 +505,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 	})
 	{
 		uxx numStyleRanges = 0;
-		RichStrStyleChangeRange* styleRanges = AllocArray(RichStrStyleChangeRange, uiArena, 1 + tbox->syntaxRanges.length);
+		RichStrStyleChangeRange* styleRanges = AllocArray(RichStrStyleChangeRange, context->uiArena, 1 + tbox->syntaxRanges.length);
 		NotNull(styleRanges);
 		
 		if (tbox->cursorActive && tbox->cursorEnd != tbox->cursorStart)
@@ -525,10 +524,10 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 		RichStr richText = ToRichStr(tbox->text);
 		if (numStyleRanges > 0)
 		{
-			richText = NewRichStrFromRanges(uiArena, tbox->text, numStyleRanges, &styleRanges[0]);
+			richText = NewRichStrFromRanges(context->uiArena, tbox->text, numStyleRanges, &styleRanges[0]);
 		}
 		
-		Str8 encodedRichText = EncodeRichStr(uiArena, richText, false, false);
+		Str8 encodedRichText = EncodeRichStr(context->uiArena, richText, false, false);
 		CLAY_TEXT(
 			encodedRichText,
 			CLAY_TEXT_CONFIG({
@@ -549,7 +548,7 @@ PEXP void DoUiTextbox(UiTextbox* tbox,
 		if (tbox->isFocused && tbox->cursorActive)
 		{
 			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(uiScale, -1), fontAtlas->maxDescend - fontAtlas->lineHeight));
-			CLAY({.id = ToClayIdPrint(uiArena, "%.*sCursor", StrPrint(tbox->idStr)),
+			CLAY({.id = ToClayIdPrint(context->uiArena, "%.*sCursor", StrPrint(tbox->idStr)),
 				.backgroundColor = MonokaiYellow, //TODO: Change this color
 				.layout = {
 					.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 2)), .height = CLAY_SIZING_FIXED(fontAtlas->lineHeight) },

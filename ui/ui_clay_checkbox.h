@@ -27,7 +27,7 @@ Description:
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	void DoUiCheckbox(Str8 idStr, bool* isChecked, ClayUIRenderer* renderer, Arena* uiArena, MouseState* mouse, r32 uiScale, r32 boxSize, Texture* checkboxTexture, Str8 label, Dir2 labelSide, PigFont* font, r32 fontSize, u8 fontStyle);
+	void DoUiCheckbox(UiWidgetContext* context, Str8 idStr, bool* isChecked, r32 boxSize, Texture* checkboxTexture, Str8 label, Dir2 labelSide, PigFont* font, r32 fontSize, u8 fontStyle);
 #endif
 
 // +--------------------------------------------------------------+
@@ -35,29 +35,28 @@ Description:
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP void DoUiCheckbox(Str8 idStr, bool* isChecked,
-	ClayUIRenderer* renderer, Arena* uiArena, MouseState* mouse,
-	r32 uiScale, r32 boxSize, Texture* checkboxTexture,
-	Str8 label, Dir2 labelSide, PigFont* font, r32 fontSize, u8 fontStyle)
+PEXP void DoUiCheckbox(UiWidgetContext* context, Str8 idStr, bool* isChecked, r32 boxSize, Texture* checkboxTexture, Str8 label, Dir2 labelSide, PigFont* font, r32 fontSize, u8 fontStyle)
 {
+	NotNull(context);
+	NotNull(context->uiArena);
+	NotNull(context->mouse);
 	NotNullStr(idStr);
 	NotNull(isChecked);
-	NotNull(uiArena);
 	NotNullStr(label);
 	Assert(IsEmptyStr(label) || font != nullptr);
-	Assert(font == nullptr || renderer != nullptr);
-	u16 fontId = (font != nullptr) ? GetClayUIRendererFontId(renderer, font, fontStyle) : 0;
+	Assert(font == nullptr || context->renderer != nullptr);
+	u16 fontId = (font != nullptr) ? GetClayUIRendererFontId(context->renderer, font, fontStyle) : 0;
 	bool isVerticallyAligned = (labelSide == Dir2_Up || labelSide == Dir2_Down);
 	
-	Str8 containerIdStr = AllocStr8(uiArena, idStr);
-	Str8 boxIdStr = PrintInArenaStr(uiArena, "%.*s_Box", StrPrint(idStr));
+	Str8 containerIdStr = AllocStr8(context->uiArena, idStr);
+	Str8 boxIdStr = PrintInArenaStr(context->uiArena, "%.*s_Box", StrPrint(idStr));
 	ClayId containerId = ToClayId(containerIdStr);
 	ClayId boxId = ToClayId(boxIdStr);
-	bool isHovered = (mouse->isOverWindow && Clay_PointerOver(containerId));
+	bool isHovered = (context->mouse->isOverWindow && Clay_PointerOver(containerId));
 	Color32 greenColor = NewColor(44, 91, 54, 255);
 	Color32 borderColor = ColorLerpSimple((*isChecked) ? greenColor : MonokaiDarkGray, MonokaiWhite, isHovered ? 0.7f : 0.2f);
 	
-	if (isHovered && IsMouseBtnPressed(mouse, MouseBtn_Left))
+	if (isHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left))
 	{
 		*isChecked = !(*isChecked);
 	}
@@ -67,14 +66,14 @@ PEXP void DoUiCheckbox(Str8 idStr, bool* isChecked,
 			.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0) },
 			.layoutDirection = (isVerticallyAligned ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT),
 			.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
-			.childGap = UISCALE_U16(uiScale, isVerticallyAligned ? 2 : 6),
+			.childGap = UISCALE_U16(context->uiScale, isVerticallyAligned ? 2 : 6),
 		},
 	})
 	{
 		#define LABEL_CODE() do { if (!IsEmptyStr(label))                                                   \
 		{                                                                                                   \
 			CLAY_TEXT(                                                                                      \
-				AllocStr8(uiArena, label),                                                                  \
+				AllocStr8(context->uiArena, label),                                                                  \
 				CLAY_TEXT_CONFIG({                                                                          \
 					.fontId = fontId,                                                                       \
 					.fontSize = (u16)fontSize,                                                              \
@@ -87,17 +86,17 @@ PEXP void DoUiCheckbox(Str8 idStr, bool* isChecked,
 		bool doesLabelComeBefore = (labelSide == Dir2_Left || labelSide == Dir2_Up);
 		if (doesLabelComeBefore) { LABEL_CODE(); }
 		
-		u16 borderSize = UISCALE_BORDER(uiScale, 1);
+		u16 borderSize = UISCALE_BORDER(context->uiScale, 1);
 		CLAY({ .id = boxId,
 			.layout = {
-				.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, boxSize*2)), .height = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, boxSize)) },
+				.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, boxSize*2)), .height = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, boxSize)) },
 				.childAlignment = { .x = (*isChecked) ? CLAY_ALIGN_X_RIGHT : CLAY_ALIGN_X_LEFT, .y = CLAY_ALIGN_Y_CENTER },
 				.padding = CLAY_PADDING_ALL(borderSize*2),
 			},
 			.backgroundColor = (*isChecked) ? greenColor : Transparent,
 			.border = { .width = CLAY_BORDER_OUTSIDE(borderSize), .color = borderColor },
 			.userData = { .outsideBorder = true },
-			.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(uiScale, boxSize/2)),
+			.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(context->uiScale, boxSize/2)),
 		})
 		{
 			if (checkboxTexture != nullptr && (*isChecked))
@@ -105,7 +104,7 @@ PEXP void DoUiCheckbox(Str8 idStr, bool* isChecked,
 				//TODO: Draw checkboxTexture inside the switch area, to the left of the circle
 			}
 			
-			r32 dotSize = UISCALE_R32(uiScale, boxSize - (borderSize*4));
+			r32 dotSize = UISCALE_R32(context->uiScale, boxSize - (borderSize*4));
 			CLAY({
 				.layout = {
 					.sizing = { .width = CLAY_SIZING_FIXED(dotSize), .height = CLAY_SIZING_FIXED(dotSize) },

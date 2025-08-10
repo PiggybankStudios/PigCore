@@ -18,6 +18,7 @@ Date:   02\16\2025
 #include "mem/mem_arena.h"
 #include "struct/struct_string.h"
 #include "ui/ui_clay.h"
+#include "ui/ui_clay_widget_context.h"
 #include "input/input_keys.h"
 #include "input/input_btn_state.h"
 #include "input/input_mouse_btns.h"

@@ -14,6 +14,7 @@ Date:   07\22\2025
 #include "mem/mem_arena.h"
 #include "struct/struct_string.h"
 #include "ui/ui_clay.h"
+#include "ui/ui_clay_widget_context.h"
 #include "input/input_keys.h"
 #include "input/input_btn_state.h"
 #include "input/input_mouse_btns.h"
@@ -67,7 +68,7 @@ plex UiListViewItem
 #if !PIG_CORE_IMPLEMENTATION
 	void FreeUiListView(UiListView* list);
 	void InitUiListView(Arena* arena, Str8 idStr, UiListView* list);
-	void DoUiListView(UiListView* list, ClayUIRenderer* renderer, Arena* uiArena, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, Clay_SizingAxis listWidth, Clay_SizingAxis listHeight, u16 itemGap, uxx numItems, UiListViewItem* items);
+	void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAxis listWidth, Clay_SizingAxis listHeight, u16 itemGap, uxx numItems, UiListViewItem* items);
 #endif
 
 // +--------------------------------------------------------------+
@@ -94,29 +95,27 @@ PEXP void InitUiListView(Arena* arena, Str8 idStr, UiListView* list)
 }
 
 //NOTE: Font info is only required if the items do not have a render callback
-PEXP void DoUiListView(UiListView* list,
-	ClayUIRenderer* renderer, Arena* uiArena,
-	KeyboardState* keyboard, MouseState* mouse,
-	r32 uiScale, Clay_SizingAxis listWidth, Clay_SizingAxis listHeight, u16 itemGap,
-	uxx numItems, UiListViewItem* items)
+PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAxis listWidth, Clay_SizingAxis listHeight, u16 itemGap, uxx numItems, UiListViewItem* items)
 {
-	UNUSED(keyboard);
-	ScratchBegin1(scratch, uiArena);
-	ClayId innerContainerId = ToClayIdPrint(uiArena, "%.*s_Inner", StrPrint(list->idStr));
-	ClayId gutterId = ToClayIdPrint(uiArena, "%.*s_ScrollGutter", StrPrint(list->idStr));
-	ClayId scrollbarId = ToClayIdPrint(uiArena, "%.*s_ScrollBar", StrPrint(list->idStr));
+	NotNull(context);
+	NotNull(context->uiArena);
+	NotNull(context->mouse);
+	ScratchBegin1(scratch, context->uiArena);
+	ClayId innerContainerId = ToClayIdPrint(context->uiArena, "%.*s_Inner", StrPrint(list->idStr));
+	ClayId gutterId = ToClayIdPrint(context->uiArena, "%.*s_ScrollGutter", StrPrint(list->idStr));
+	ClayId scrollbarId = ToClayIdPrint(context->uiArena, "%.*s_ScrollBar", StrPrint(list->idStr));
 	rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
 	Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(innerContainerId, false);
-	bool isScrollbarHovered = (mouse->isOverWindow && Clay_PointerOver(scrollbarId));
+	bool isScrollbarHovered = (context->mouse->isOverWindow && Clay_PointerOver(scrollbarId));
 	bool clickedInScrollArea = false;
 	
-	if (IsMouseBtnPressed(mouse, MouseBtn_Left) && mouse->isOverWindow && !list->draggingScrollbar)
+	if (IsMouseBtnPressed(context->mouse, MouseBtn_Left) && context->mouse->isOverWindow && !list->draggingScrollbar)
 	{
 		if (isScrollbarHovered)
 		{
 			list->draggingScrollbar = true;
 			list->isDraggingSmooth = false;
-			list->scrollbarGrabOffset = SubV2(mouse->position, scrollbarDrawRec.TopLeft);
+			list->scrollbarGrabOffset = SubV2(context->mouse->position, scrollbarDrawRec.TopLeft);
 			clickedInScrollArea = true;
 		}
 		else if (Clay_PointerOver(gutterId))
@@ -131,7 +130,7 @@ PEXP void DoUiListView(UiListView* list,
 	if (list->draggingScrollbar)
 	{
 		if (scrollData.found && scrollData.contentDimensions.Height <= scrollData.scrollContainerDimensions.Height) { list->draggingScrollbar = false; }
-		else if (!IsMouseBtnDown(mouse, MouseBtn_Left)) { list->draggingScrollbar = false; }
+		else if (!IsMouseBtnDown(context->mouse, MouseBtn_Left)) { list->draggingScrollbar = false; }
 		else
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
@@ -139,7 +138,7 @@ PEXP void DoUiListView(UiListView* list,
 			r32 maxY = scrollGutterDrawRec.Y + scrollGutterDrawRec.Height - scrollbarDrawRec.Height;
 			if (maxY > minY)
 			{
-				r32 newScrollbarPos = ClampR32(mouse->position.Y - list->scrollbarGrabOffset.Y, minY, maxY);
+				r32 newScrollbarPos = ClampR32(context->mouse->position.Y - list->scrollbarGrabOffset.Y, minY, maxY);
 				r32 newScrollbarPercent = (newScrollbarPos - minY) / (maxY - minY);
 				scrollData.scrollTarget->Y = -((scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height) * newScrollbarPercent);
 				if (!list->isDraggingSmooth) { scrollData.scrollPosition->Y = scrollData.scrollTarget->Y; }
@@ -151,10 +150,10 @@ PEXP void DoUiListView(UiListView* list,
 	CLAY({ .id = list->id,
 		.layout = {
 			.sizing = { .width = listWidth, .height = listHeight },
-			.padding = CLAY_PADDING_ALL(UISCALE_BORDER(uiScale, 1)),
+			.padding = CLAY_PADDING_ALL(UISCALE_BORDER(context->uiScale, 1)),
 		},
 		.backgroundColor = MonokaiDarkGray,
-		.border = { .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(uiScale, 1)), .color = MonokaiLightGray },
+		.border = { .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)), .color = MonokaiLightGray },
 	})
 	{
 		// +==============================+
@@ -175,7 +174,7 @@ PEXP void DoUiListView(UiListView* list,
 			{
 				UiListViewItem* item = &items[iIndex];
 				Str8 itemIdStr = IsEmptyStr(item->idStr) ? PrintInArenaStr(scratch, "Item%llu", iIndex) : item->idStr;
-				Str8 fullIdStr = PrintInArenaStr(uiArena, "%.*s_Item_%.*s", StrPrint(list->idStr), StrPrint(itemIdStr));
+				Str8 fullIdStr = PrintInArenaStr(context->uiArena, "%.*s_Item_%.*s", StrPrint(list->idStr), StrPrint(itemIdStr));
 				ClayId fullId = ToClayIdEx(fullIdStr, iIndex);
 				bool isSelected = (list->selectionActive && StrExactEquals(list->selectedIdStr, itemIdStr));
 				if (isSelected)
@@ -183,9 +182,9 @@ PEXP void DoUiListView(UiListView* list,
 					foundSelectedItem = true;
 					list->selectionIndex = iIndex;
 				}
-				bool isHovered = (mouse->isOverWindow && Clay_PointerOver(list->id) && Clay_PointerOver(fullId));
+				bool isHovered = (context->mouse->isOverWindow && Clay_PointerOver(list->id) && Clay_PointerOver(fullId));
 				
-				if (isHovered && IsMouseBtnPressed(mouse, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea)
+				if (isHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea)
 				{
 					clickedOnItem = true;
 					if (!list->selectionActive || !StrExactEquals(list->selectedIdStr, itemIdStr))
@@ -203,7 +202,7 @@ PEXP void DoUiListView(UiListView* list,
 					.layout = {
 						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
 						.layoutDirection = CLAY_LEFT_TO_RIGHT,
-						.padding = CLAY_PADDING_ALL(UISCALE_U16(uiScale, 4)),
+						.padding = CLAY_PADDING_ALL(UISCALE_U16(context->uiScale, 4)),
 						.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 					},
 					.backgroundColor = (isSelected ? MonokaiLightGray : (isHovered ? MonokaiBack : Transparent)),
@@ -215,9 +214,9 @@ PEXP void DoUiListView(UiListView* list,
 					}
 					else
 					{
-						NotNull(renderer);
+						NotNull(context->renderer);
 						NotNull(item->font);
-						u16 fontId = GetClayUIRendererFontId(renderer, item->font, item->fontStyle);
+						u16 fontId = GetClayUIRendererFontId(context->renderer, item->font, item->fontStyle);
 						CLAY_TEXT(
 							item->displayStr,
 							CLAY_TEXT_CONFIG({
@@ -233,11 +232,11 @@ PEXP void DoUiListView(UiListView* list,
 			}
 			
 			// Add an empty container to the bottom of the list to make sure we have some space that the user can click to deselect
-			r32 emptyRowHeight = MinR32(scrollData.scrollContainerDimensions.Height*0.25f, UISCALE_R32(uiScale, 30.0f));
+			r32 emptyRowHeight = MinR32(scrollData.scrollContainerDimensions.Height*0.25f, UISCALE_R32(context->uiScale, 30.0f));
 			CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(emptyRowHeight) } } }) {}
 			
-			bool isListHovered = (mouse->isOverWindow && Clay_PointerOver(list->id));
-			if (isListHovered && IsMouseBtnPressed(mouse, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea && list->selectionActive)
+			bool isListHovered = (context->mouse->isOverWindow && Clay_PointerOver(list->id));
+			if (isListHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea && list->selectionActive)
 			{
 				FreeStr8(list->arena, &list->selectedIdStr);
 				list->selectedIdStr = Str8_Empty;
@@ -263,8 +262,8 @@ PEXP void DoUiListView(UiListView* list,
 		//      but we only render the scrollbar inside the gutter if the list is taller than the viewable area
 		CLAY({ .id = gutterId,
 			.layout = {
-				.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 8 + (1*2))), .height = CLAY_SIZING_GROW(0) },
-				.padding = { .left = UISCALE_U16(uiScale, 1), .right = UISCALE_U16(uiScale, 1), }
+				.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, 8 + (1*2))), .height = CLAY_SIZING_GROW(0) },
+				.padding = { .left = UISCALE_U16(context->uiScale, 1), .right = UISCALE_U16(context->uiScale, 1), }
 			},
 		})
 		{
@@ -279,7 +278,7 @@ PEXP void DoUiListView(UiListView* list,
 				}
 				rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
 				v2 scrollBarSize = NewV2(
-					UISCALE_R32(uiScale, 8),
+					UISCALE_R32(context->uiScale, 8),
 					scrollGutterDrawRec.Height * scrollbarSizePercent
 				);
 				r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
@@ -290,7 +289,7 @@ PEXP void DoUiListView(UiListView* list,
 					},
 					.floating = {
 						.attachTo = CLAY_ATTACH_TO_PARENT,
-						.offset = NewV2(UISCALE_R32(uiScale, 1), scrollBarOffsetY),
+						.offset = NewV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
 					},
 					.backgroundColor = (isScrollbarHovered || list->draggingScrollbar) ? MonokaiWhite : MonokaiLightGray,
 					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),
