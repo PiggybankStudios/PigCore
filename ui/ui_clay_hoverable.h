@@ -81,18 +81,18 @@ PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContex
 				.id = tooltipId,
 				.layout = {
 					.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0), },
-					.padding = CLAY_PADDING_ALL(UISCALE_U16(context->uiScale, 8)),
+					// .padding = CLAY_PADDING_ALL(UISCALE_U16(context->uiScale, 8)),
 				},
-				.border = {
-					.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)),
-					.color = MonokaiWhite,
-				},
+				// .border = {
+				// 	.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)),
+				// 	.color = MonokaiWhite,
+				// },
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,
 					.attachPoints = { .parent = CLAY_ATTACH_POINT_RIGHT_BOTTOM, .element = CLAY_ATTACH_POINT_RIGHT_TOP },
 					.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
 				},
-				.backgroundColor = MonokaiDarkGray,
+				// .backgroundColor = MonokaiDarkGray,
 			});
 			return UiHoverableSection_Tooltip;
 		}

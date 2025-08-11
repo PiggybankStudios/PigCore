@@ -38,6 +38,7 @@ plex RichStrStyleChangeEdge
 #if PIG_CORE_IMPLEMENTATION
 
 //TODO: This doesn't account for multiple ranges that change the same style option and overlap (like multiple ranges that affect fontSize)
+//TODO: Should we combine ranges that have the same style change and are back-to-back into a single piece? (using CombineOverlappingAndConsecutiveRangesUXX?)
 //
 //"Some longer string with overlapping style changes!"
 //      [____________________________]

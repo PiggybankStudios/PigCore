@@ -97,6 +97,7 @@ car RangeR64
 	PIG_CORE_INLINE RangeIXX ClampRangeToRangeIXX(RangeIXX range, RangeIXX limits);
 	PIG_CORE_INLINE RangeR32 ClampRangeToRangeR32(RangeR32 range, RangeR32 limits);
 	PIG_CORE_INLINE RangeR64 ClampRangeToRangeR64(RangeR64 range, RangeR64 limits);
+	uxx CombineOverlappingAndConsecutiveRangesUXX(uxx numRanges, RangeUXX* ranges);
 #endif
 
 // +--------------------------------------------------------------+
@@ -316,6 +317,29 @@ PEXPI RangeR32 ClampRangeToRangeR32(RangeR32 range, RangeR32 limits)
 PEXPI RangeR64 ClampRangeToRangeR64(RangeR64 range, RangeR64 limits)
 {
 	return NewRangeR64(ClampR64(range.min, limits.min, limits.max), ClampR64(range.max, limits.min, limits.max));
+}
+
+PEXP uxx CombineOverlappingAndConsecutiveRangesUXX(uxx numRanges, RangeUXX* ranges)
+{
+	bool merged = false;
+	for (uxx rIndex = 0; rIndex < numRanges; rIndex += (merged ? 0 : 1))
+	{
+		RangeUXX* range1Pntr = &ranges[rIndex];
+		merged = false;
+		for (uxx rIndex2 = rIndex+1; rIndex2 < numRanges; rIndex2++)
+		{
+			RangeUXX* range2Pntr = &ranges[rIndex2];
+			if (DoesOverlapRangeUXX(*range1Pntr, *range2Pntr, true))
+			{
+				*range1Pntr = BothRangeUXX(*range1Pntr, *range2Pntr);
+				merged = true;
+				if (rIndex2+1 < numRanges) { MyMemMove(&ranges[rIndex2], &ranges[rIndex2+1], sizeof(RangeUXX) * (numRanges - (rIndex2+1))); }
+				numRanges--;
+				break;
+			}
+		}
+	}
+	return numRanges;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

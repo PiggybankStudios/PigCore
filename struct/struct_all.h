@@ -36,6 +36,7 @@ Description:
 #include "mem/mem_arena.h" //Needed by many of the files below
 #include "std/std_memset.h" //Needed by many of the files below
 
+#include "struct/struct_string_error_list.h"
 #include "struct/struct_var_array.h"
 
 #include "std/std_trig.h" //Needed by many of the files below

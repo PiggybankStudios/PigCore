@@ -17,6 +17,7 @@ Description:
 #include "struct/struct_ranges.h"
 #include "mem/mem_arena.h"
 #include "misc/misc_two_pass.h"
+#include "struct/struct_string_error_list.h"
 
 typedef plex UriParts UriParts;
 plex UriParts
@@ -89,13 +90,13 @@ PEXP const char* GetMimeTypeOfficialName(MimeType enumValue)
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	uxx GetUriErrors(Arena* arena, Str8 uriStr, StrRange** errorsOut);
 	UriParts GetUriParts(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriProtocolPart(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriHostnamePart(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriPathPart(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriParametersPart(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriAnchorPart(Str8 uriStr);
+	uxx GetUriErrors(Str8 uriStr, StrErrorList* list);
 	Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm);
 	Str8 EscapeStr_FormUrlEncoding(Arena* arena, Str8 str, bool addNullTerm);
 	Str8 EncodeHttpKeyValuePairContent(Arena* arena, uxx numItems, const Str8Pair* contentItems, MimeType encoding, bool addNullTerm);
@@ -106,63 +107,11 @@ PEXP const char* GetMimeTypeOfficialName(MimeType enumValue)
 // +--------------------------------------------------------------+
 #define HTTP_PORT   80
 #define HTTPS_PORT  443
-#define MAX_CHECK_URI_ERRORS 32 //errors
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
-
-PEXP uxx GetUriErrors(Arena* arena, Str8 uriStr, StrRange** errorsOut)
-{
-	uxx numErrors = 0;
-	StrRange* errors = AllocArray(StrRange, arena, MAX_CHECK_URI_ERRORS);
-	NotNull(errors);
-	
-	for (uxx cIndex = 0; cIndex < uriStr.length; cIndex++)
-	{
-		u32 codepoint = 0;
-		u8 codepointSize = GetCodepointForUtf8Str(uriStr, cIndex, &codepoint);
-		
-		if (!IsCharAlphaNumeric(codepoint) &&
-			codepoint != ':' &&
-			codepoint != '/' &&
-			codepoint != '?' &&
-			codepoint != '#' &&
-			codepoint != '[' &&
-			codepoint != ']' &&
-			codepoint != '@' &&
-			codepoint != '!' &&
-			codepoint != '$' &&
-			codepoint != '&' &&
-			codepoint != '\'' &&
-			codepoint != '(' &&
-			codepoint != ')' &&
-			codepoint != '*' &&
-			codepoint != '+' &&
-			codepoint != ',' &&
-			codepoint != ';' &&
-			codepoint != '=' &&
-			codepoint != '-' &&
-			codepoint != '.' &&
-			codepoint != '_' &&
-			codepoint != '~')
-		{
-			if (numErrors < MAX_CHECK_URI_ERRORS)
-			{
-				errors[numErrors].range = NewRangeUXX(cIndex, cIndex + codepointSize);
-				errors[numErrors].str = PrintInArenaStr(arena, "Invalid character: \'%.*s\'", codepointSize, &uriStr.chars[cIndex]);
-				numErrors++;
-			}
-		}
-		
-		if (codepointSize > 1) { cIndex += codepointSize-1; }
-	}
-	
-	if ((numErrors == 0 || errorsOut == nullptr) && CanArenaFree(arena)) { FreeArray(StrRange, arena, MAX_CHECK_URI_ERRORS, errors); }
-	SetOptionalOutPntr(errorsOut, errors);
-	return numErrors;
-}
 
 PEXP UriParts GetUriParts(Str8 uriStr)
 {
@@ -246,6 +195,86 @@ PEXPI Str8 GetUriHostnamePart(Str8 uriStr) { return GetUriParts(uriStr).hostname
 PEXPI Str8 GetUriPathPart(Str8 uriStr) { return GetUriParts(uriStr).path; }
 PEXPI Str8 GetUriParametersPart(Str8 uriStr) { return GetUriParts(uriStr).parameters; }
 PEXPI Str8 GetUriAnchorPart(Str8 uriStr) { return GetUriParts(uriStr).anchor; }
+
+//TODO: This function is sort of a haphazard collection of possible error scenarios that I could think of. They're not directly based on things in specifications like RFC 3986
+PEXP uxx GetUriErrors(Str8 uriStr, StrErrorList* list)
+{
+	NotNull(list);
+	NotNull(list->arena);
+	
+	if (uriStr.length == 0)
+	{
+		AddStrError(list, RangeUXX_Zero, StrLit("Uri cannot be empty"));
+	}
+	
+	UriParts parts = GetUriParts(uriStr);
+	RangeUXX hostnameRange = SliceToRangeUXX(uriStr, parts.hostname);
+	
+	if (parts.hostname.length == 0)
+	{
+		AddStrError(list, hostnameRange, StrLit("Missing hostname (\"www.website.com\" part)"));
+	}
+	if (parts.hostname.length >= 1)
+	{
+		char firstChar = uriStr.chars[hostnameRange.min];
+		char lastChar = uriStr.chars[hostnameRange.max-1];
+		if (!IsCharAlphaNumeric(firstChar))
+		{
+			AddStrErrorPrint(list, NewRangeUXX(hostnameRange.min, hostnameRange.min+1), "Hostname cannot start with '%c'", firstChar);
+		}
+		if (!IsCharAlphaNumeric(lastChar))
+		{
+			AddStrErrorPrint(list, NewRangeUXX(hostnameRange.max-1, hostnameRange.max), "Hostname cannot end with '%c'", lastChar);
+		}
+		uxx numColonsFound = 0;
+		for (uxx cIndex = hostnameRange.min; cIndex < hostnameRange.max; cIndex++)
+		{
+			if (uriStr.chars[cIndex] == ':')
+			{
+				if (numColonsFound == 0)
+				{
+					RangeUXX portRange = NewRangeUXX(cIndex+1, hostnameRange.max);
+					Str8 portStr = StrSliceRange(uriStr, portRange);
+					Result parseResult = Result_None;
+					if (!TryParseU16Ex(portStr, nullptr, &parseResult, false, false, true))
+					{
+						AddStrErrorPrint(list, portRange, "Invalid port \"%.*s\" (%s)", StrPrint(portStr), GetResultStr(parseResult));
+					}
+				}
+				else
+				{
+					AddStrError(list, NewRangeUXX(cIndex, cIndex+1), StrLit("Multiple ':' characters not allowed in hostname"));
+				}
+				numColonsFound++;
+			}
+		}
+	}
+	
+	u32 prevCodepoint = 0;
+	for (uxx cIndex = 0; cIndex < uriStr.length; cIndex++)
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(uriStr, cIndex, &codepoint);
+		
+		if (!IsCharAlphaNumeric(codepoint) &&
+			codepoint != ':' && codepoint != '/' && codepoint != '?' && codepoint != '#' && codepoint != '[' && codepoint != ']' &&
+			codepoint != '@' && codepoint != '!' && codepoint != '$' && codepoint != '&' && codepoint != '\'' && codepoint != '(' &&
+			codepoint != ')' && codepoint != '*' && codepoint != '+' && codepoint != ',' && codepoint != ';' && codepoint != '=' &&
+			codepoint != '-' && codepoint != '.' && codepoint != '_' && codepoint != '~')
+		{
+			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &uriStr.chars[cIndex]);
+		}
+		if (codepoint == '.' && prevCodepoint == '.' && cIndex >= hostnameRange.min && cIndex < hostnameRange.max)
+		{
+			AddStrError(list, NewRangeUXX(cIndex-1, cIndex+1), StrLit("Two '.' in a row is not allowed in hostname"));
+		}
+		
+		if (codepointSize > 1) { cIndex += codepointSize-1; }
+		prevCodepoint = codepoint;
+	}
+	
+	return list->numErrors;
+}
 
 PEXP Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm)
 {
