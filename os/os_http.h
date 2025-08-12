@@ -5,6 +5,7 @@ Date:   07\24\2025
 Description:
 	** Wraps the API for making HTTP requests (including TLS\SSL, aka HTTPS) for each OS (WinHTTP on Windows, ? on Linux, etc.)
 References:
+	RFC 7230: "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing" (https://datatracker.ietf.org/doc/html/rfc7230)
 	RFC 3986: "Uniform Resource Identifier (URI): Generic Syntax" (https://datatracker.ietf.org/doc/html/rfc3986)
 		** 2.1: For consistency, URI producers and normalizers should use uppercase hexadecimal digits for all percent-encodings.
 		** 2.2: Reserved characters = ':' '/' '?' '#' '[' ']' '@' '!' '$' '&' '\'' '(' ')' '*' '+' ',' ';' '='
@@ -16,6 +17,7 @@ References:
 		**     scheme     authority       path        query   fragment
 	RFC 1866: Hypertext Markup Language - 2.0 (Obseleted by 2854) (https://datatracker.ietf.org/doc/html/rfc1866)
 	RFC 2854: The 'text/html' Media Type (https://datatracker.ietf.org/doc/html/rfc2854)
+	RFC 2045:  Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies (https://datatracker.ietf.org/doc/html/rfc2045)
 	Accepted Media Types: https://www.iana.org/assignments/media-types/media-types.xhtml
 		** application/x-www-form-urlencoded => WHATWG: Anne_van_Kesteren https://www.iana.org/assignments/media-types/application/x-www-form-urlencoded
 */

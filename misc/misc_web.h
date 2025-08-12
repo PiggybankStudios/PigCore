@@ -97,6 +97,8 @@ PEXP const char* GetMimeTypeOfficialName(MimeType enumValue)
 	PIG_CORE_INLINE Str8 GetUriParametersPart(Str8 uriStr);
 	PIG_CORE_INLINE Str8 GetUriAnchorPart(Str8 uriStr);
 	uxx GetUriErrors(Str8 uriStr, StrErrorList* list);
+	uxx GetHttpHeaderKeyErrors(Str8 key, StrErrorList* list);
+	uxx GetHttpHeaderValueErrors(Str8 value, StrErrorList* list);
 	Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm);
 	Str8 EscapeStr_FormUrlEncoding(Arena* arena, Str8 str, bool addNullTerm);
 	Str8 EncodeHttpKeyValuePairContent(Arena* arena, uxx numItems, const Str8Pair* contentItems, MimeType encoding, bool addNullTerm);
@@ -260,7 +262,7 @@ PEXP uxx GetUriErrors(Str8 uriStr, StrErrorList* list)
 			codepoint != ':' && codepoint != '/' && codepoint != '?' && codepoint != '#' && codepoint != '[' && codepoint != ']' &&
 			codepoint != '@' && codepoint != '!' && codepoint != '$' && codepoint != '&' && codepoint != '\'' && codepoint != '(' &&
 			codepoint != ')' && codepoint != '*' && codepoint != '+' && codepoint != ',' && codepoint != ';' && codepoint != '=' &&
-			codepoint != '-' && codepoint != '.' && codepoint != '_' && codepoint != '~')
+			codepoint != '-' && codepoint != '.' && codepoint != '_' && codepoint != '~' && codepoint != '%')
 		{
 			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &uriStr.chars[cIndex]);
 		}
@@ -268,11 +270,60 @@ PEXP uxx GetUriErrors(Str8 uriStr, StrErrorList* list)
 		{
 			AddStrError(list, NewRangeUXX(cIndex-1, cIndex+1), StrLit("Two '.' in a row is not allowed in hostname"));
 		}
+		if (codepoint == '%')
+		{
+			if (cIndex + 3 > uriStr.length)
+			{
+				AddStrError(list, NewRangeUXX(cIndex, uriStr.length), StrLit("Character '%' cannot occur at end of uri"));
+			}
+			else if (!IsCharHexadecimal(uriStr.chars[cIndex+1]) || !IsCharHexadecimal(uriStr.chars[cIndex+2]))
+			{
+				AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex+3), "Invalid characters after '%%' (expected 2 hex chars): \"%.*s\"", 2, &uriStr.chars[cIndex+1]);
+			}
+		}
 		
 		if (codepointSize > 1) { cIndex += codepointSize-1; }
 		prevCodepoint = codepoint;
 	}
 	
+	return list->numErrors;
+}
+
+PEXP uxx GetHttpHeaderKeyErrors(Str8 key, StrErrorList* list)
+{
+	NotNull(list);
+	NotNull(list->arena);
+	for (uxx cIndex = 0; cIndex < key.length; cIndex++)
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(key, cIndex, &codepoint);
+		//TODO: It seems like we can't have all URI reserved and unreserved characters for the name key, for example ':' definitely can't be allowed, so which characters are allowed exactly?
+		if (!IsCharAlphaNumeric(codepoint) && codepoint != '-' && codepoint != '_')
+		{
+			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &key.chars[cIndex]);
+		}
+		if (codepointSize > 1) { cIndex += codepointSize-1; }
+	}
+	return list->numErrors;
+}
+PEXP uxx GetHttpHeaderValueErrors(Str8 value, StrErrorList* list)
+{
+	NotNull(list);
+	NotNull(list->arena);
+	for (uxx cIndex = 0; cIndex < value.length; cIndex++)
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(value, cIndex, &codepoint);
+		if (!IsCharAlphaNumeric(codepoint) && codepoint != ' ' &&
+			codepoint != ':' && codepoint != '/' && codepoint != '?' && codepoint != '#' && codepoint != '[' && codepoint != ']' &&
+			codepoint != '@' && codepoint != '!' && codepoint != '$' && codepoint != '&' && codepoint != '(' && codepoint != '\'' &&
+			codepoint != ')' && codepoint != '*' && codepoint != '+' && codepoint != ',' && codepoint != ';' && codepoint != '=' &&
+			codepoint != '-' && codepoint != '.' && codepoint != '_' && codepoint != '~' && codepoint != '%')
+		{
+			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &value.chars[cIndex]);
+		}
+		if (codepointSize > 1) { cIndex += codepointSize-1; }
+	}
 	return list->numErrors;
 }
 

@@ -27,16 +27,16 @@ enum UiHoverableSection
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContext* context, Str8 idStr, Dir2 preferredTooltipSide);
+	UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContext* context, Str8 idStr, Dir2 preferredTooltipSide, bool openOverride);
 #endif
 
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define DoUiHoverableInterleaved(sectionVarName, context, idStr, preferredTooltipSide) for (                           \
-	UiHoverableSection sectionVarName = UiHoverableSection_None;                                                       \
-	(sectionVarName = DoUiHoverable(sectionVarName, context, idStr, preferredTooltipSide)) != UiHoverableSection_None; \
-	/* nothing here */                                                                                                 \
+#define DoUiHoverableInterleaved(sectionVarName, context, idStr, preferredTooltipSide, openOverride) for (                           \
+	UiHoverableSection sectionVarName = UiHoverableSection_None;                                                                     \
+	(sectionVarName = DoUiHoverable(sectionVarName, context, idStr, preferredTooltipSide, openOverride)) != UiHoverableSection_None; \
+	/* nothing here */                                                                                                               \
 )
 #define DoUiHoverableSection(sectionVarName, enumValue) if (sectionVarName == UiHoverableSection_##enumValue)
 
@@ -45,7 +45,7 @@ enum UiHoverableSection
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContext* context, Str8 idStr, Dir2 preferredTooltipSide)
+PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContext* context, Str8 idStr, Dir2 preferredTooltipSide, bool openOverride)
 {
 	NotNull(context);
 	NotNull(context->uiArena);
@@ -54,15 +54,12 @@ PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContex
 	if (section == UiHoverableSection_None)
 	{
 		ClayId id = ToClayId(idStr);
-		// bool isHovered = (context->mouse->isOverWindow && Clay_PointerOver(id));
-		
 		Clay__OpenElement();
 		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 			.id = id,
 			.layout = {
 				.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0), },
 			},
-			// .backgroundColor = isHovered ? ColorWithAlpha(MonokaiWhite, 0.5f) : Transparent,
 		});
 		return UiHoverableSection_HoverArea;
 	}
@@ -71,28 +68,21 @@ PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContex
 		Clay__CloseElement();
 		
 		ClayId id = ToClayId(idStr);
-		ClayId tooltipId = ToClayIdPrint(context->uiArena, "%.*s_Tooltip", StrPrint(idStr));
 		bool isHovered = (context->mouse->isOverWindow && Clay_PointerOver(id));
-		
-		if (isHovered)
+		if (isHovered || openOverride)
 		{
+			ClayId tooltipId = ToClayIdPrint(context->uiArena, "%.*s_Tooltip", StrPrint(idStr));
 			Clay__OpenElement();
 			Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 				.id = tooltipId,
 				.layout = {
 					.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0), },
-					// .padding = CLAY_PADDING_ALL(UISCALE_U16(context->uiScale, 8)),
 				},
-				// .border = {
-				// 	.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)),
-				// 	.color = MonokaiWhite,
-				// },
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,
 					.attachPoints = { .parent = CLAY_ATTACH_POINT_RIGHT_BOTTOM, .element = CLAY_ATTACH_POINT_RIGHT_TOP },
 					.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
 				},
-				// .backgroundColor = MonokaiDarkGray,
 			});
 			return UiHoverableSection_Tooltip;
 		}
