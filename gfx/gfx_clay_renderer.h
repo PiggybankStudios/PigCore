@@ -297,6 +297,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
 			{
 				TracyCZoneN(Zone_COMMAND_RECTANGLE, "RECTANGLE", true);
+				AlignRec(&drawRec);
 				Color32 drawColor = command->renderData.rectangle.backgroundColor;
 				GfxSystem_DrawRoundedRectangleEx(system,
 					drawRec,
@@ -315,9 +316,10 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			case CLAY_RENDER_COMMAND_TYPE_BORDER:
 			{
 				TracyCZoneN(Zone_COMMAND_BORDER, "BORDER", true);
+				AlignRec(&drawRec);
 				//NOTE: In order to make sure the border is shown properly we need to floor the width/height to whole numbers that are definitely within the bounds of the clip rectangle for the element
-				drawRec.Width = FloorR32(drawRec.Width);
-				drawRec.Height = FloorR32(drawRec.Height);
+				// drawRec.Width = FloorR32(drawRec.Width);
+				// drawRec.Height = FloorR32(drawRec.Height);
 				
 				Color32 drawColor = command->renderData.border.color;
 				if (command->renderData.border.cornerRadius.topLeft != 0 ||
