@@ -49,6 +49,10 @@ Description:
 #define UNICODE_RIGHT_ARROW_CODEPOINT 0x203A //Technically called "Single Right-Pointing Angle Quotation Mark"
 #define UNICODE_RIGHT_ARROW_STR       "\xE2\x80\xBA" //UTF-8 encoding
 
+//NOTE: This character is not available in most Windows fonts as far as I can tell
+#define UNICODE_CHECK_MARK_CODEPOINT 0x2713
+#define UNICODE_CHECK_MARK_STR       "\xE2\x9C\x93" //UTF-8 encoding
+
 // Basic Multilingual Plane Private Use Area: 0xE000-0xF8FF
 #define CUSTOM_CODEPOINT_START        0xE000
 #define CUSTOM_CODEPOINT_END          0xF900

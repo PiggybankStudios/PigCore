@@ -20,6 +20,8 @@ References:
 	RFC 2045:  Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies (https://datatracker.ietf.org/doc/html/rfc2045)
 	Accepted Media Types: https://www.iana.org/assignments/media-types/media-types.xhtml
 		** application/x-www-form-urlencoded => WHATWG: Anne_van_Kesteren https://www.iana.org/assignments/media-types/application/x-www-form-urlencoded
+	List of HTTP Status Codes: https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+	List of HTTP Header Fields: https://en.wikipedia.org/wiki/List_of_HTTP_header_fields
 */
 
 #ifndef _OS_HTTP_H
@@ -119,6 +121,12 @@ plex HttpRequest
 	#endif
 	
 	VarArray responseBytes; //u8 (allocated from manager.readDataArena)
+	u16 statusCode;
+	Str8 statusCodeStr;
+	bool responseHeadersAvailable;
+	Str8 responseHeadersStr;
+	uxx numResponseHeaders;
+	Str8Pair* responseHeaders;
 };
 
 typedef plex HttpConnection HttpConnection;
@@ -224,6 +232,8 @@ static void FreeHttpRequest(Arena* arena, HttpRequest* request)
 	//NOTE: protocolStr, hostnameStr, and pathStr are all slices into args.urlStr so we don't need to free them
 	FreeStr8(arena, &request->encodedContent);
 	if (request->responseBytes.arena != nullptr) { FreeVarArray(&request->responseBytes); }
+	FreeStr8(arena, &request->responseHeadersStr);
+	if (request->responseHeaders != nullptr) { FreeArray(Str8Pair, arena, request->numResponseHeaders, request->responseHeaders); }
 	ClearPointer(request);
 }
 
@@ -318,7 +328,7 @@ static const char* GetWinHttpErrorStr(DWORD errorCode)
 static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD status, LPVOID infoPntr, DWORD infoLength)
 {
 	TracyCZoneN(Zone_Func, "WinHttpStatusCallback", true);
-	char printBuffer[128];
+	char printBuffer[512];
 	
 	ThreadId threadId = OsGetCurrentThreadId();
 	bool isMainThread = (threadId == MainThreadId);
@@ -460,6 +470,15 @@ static void WinHttpStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD sta
 				NotNull(request);
 				request->state = HttpRequestState_Failure;
 				request->error = Result_SslProblem;
+			} break;
+			
+			// +============================================+
+			// | WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE  |
+			// +============================================+
+			case WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE:
+			{
+				NotNull(request);
+				request->responseHeadersAvailable = true;
 			} break;
 			
 			// default:
@@ -673,9 +692,86 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 		if (manager->currentRequestIndex < manager->requests.length)
 		{
 			HttpRequest* currentRequest = VarArrayGet(HttpRequest, &manager->requests, manager->currentRequestIndex);
+			
+			if (currentRequest->responseHeadersAvailable)
+			{
+				currentRequest->responseHeadersAvailable = false;
+				
+				// +==============================+
+				// |     Get HTTP Status Code     |
+				// +==============================+
+				if (currentRequest->statusCode == 0)
+				{
+					DWORD statusCode = 0;
+					DWORD statusCodeSize = sizeof(statusCode);
+					BOOL queryResult = WinHttpQueryHeaders(
+						currentRequest->requestHandle, //hRequest
+						WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, //dwInfoLevel
+						WINHTTP_HEADER_NAME_BY_INDEX, //pwszName
+						&statusCode, //lpBuffer
+						&statusCodeSize, //lpdwBufferLength
+						WINHTTP_NO_HEADER_INDEX //lpdwIndex
+					);
+					Assert(queryResult == TRUE);
+					Assert(statusCodeSize == sizeof(DWORD));
+					Assert(statusCode < 600); //TODO: Do codes above 600 exist?
+					currentRequest->statusCode = (u16)statusCode;
+					// PrintLine_D("Status Code: %u", currentRequest->statusCode);
+					
+					//TODO: Can we get the statusCode readable string?
+				}
+				
+				// +==============================+
+				// |     Get Response Headers     |
+				// +==============================+
+				if (currentRequest->responseHeadersStr.length == 0)
+				{
+					ScratchBegin1(scratch, manager->arena);
+					
+					DWORD headersByteLength = 0;
+					BOOL queryResult1 = WinHttpQueryHeaders(
+						currentRequest->requestHandle, //hRequest
+						WINHTTP_QUERY_RAW_HEADERS_CRLF, //dwInfoLevel
+						WINHTTP_HEADER_NAME_BY_INDEX, //pwszName
+						nullptr, //lpBuffer
+						&headersByteLength, //lpdwBufferLength
+						WINHTTP_NO_HEADER_INDEX //lpdwIndex
+					);
+					Assert(queryResult1 == FALSE);
+					Assert(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
+					if (headersByteLength > 0)
+					{
+						DWORD wideHeadersByteLength = headersByteLength;
+						char16_t* wideBuffer = AllocArray(char16_t, scratch, (uxx)(wideHeadersByteLength / sizeof(char16_t)));
+						NotNull(wideBuffer);
+						BOOL queryResult2 = WinHttpQueryHeaders(
+							currentRequest->requestHandle, //hRequest
+							WINHTTP_QUERY_RAW_HEADERS_CRLF, //dwInfoLevel
+							WINHTTP_HEADER_NAME_BY_INDEX, //pwszName
+							wideBuffer, //lpBuffer
+							&wideHeadersByteLength, //lpdwBufferLength
+							WINHTTP_NO_HEADER_INDEX //lpdwIndex
+						);
+						Assert(queryResult2 == TRUE);
+						Str16 headersWideStr = NewStr16(wideHeadersByteLength/sizeof(char16_t), wideBuffer);
+						currentRequest->responseHeadersStr = ConvertUcs2StrToUtf8(manager->arena, headersWideStr, false);
+						currentRequest->numResponseHeaders = DecodeHttpHeaders(manager->arena, currentRequest->responseHeadersStr, false, &currentRequest->responseHeaders);
+						// PrintLine_D("Headers [%llu]:\n%.*s\n\n", currentRequest->responseHeadersStr.length, StrPrint(currentRequest->responseHeadersStr));
+					}
+					
+					ScratchEnd(scratch);
+				}
+			}
+			
 			if (currentRequest->state >= HttpRequestState_Success)
 			{
-				// Copy the responseBytes out of responseArena into the main manager->arena
+				// Remember this index so we can do the callback
+				doCallbackIndex = manager->currentRequestIndex;
+				manager->currentRequestIndex = UINTXX_MAX;
+				
+				// +==========================================+
+				// | Move Response Bytes out of responseArena |
+				// +==========================================+
 				if (currentRequest->responseBytes.arena == &manager->responseArena)
 				{
 					if (currentRequest->responseBytes.length > 0)
@@ -693,13 +789,12 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 					}
 					ArenaResetToMark(&manager->responseArena, 0);
 				}
-				
-				// Remember this index so we can do the callback
-				doCallbackIndex = manager->currentRequestIndex;
-				manager->currentRequestIndex = UINTXX_MAX;
 			}
 			else if (currentRequest->state == HttpRequestState_InProgress)
 			{
+				// +================================+
+				// | Call WinHttpQueryDataAvailable |
+				// +================================+
 				if (currentRequest->receivingData && !currentRequest->queriedData)
 				{
 					currentRequest->queriedData = true;

@@ -102,6 +102,7 @@ PEXP const char* GetMimeTypeOfficialName(MimeType enumValue)
 	Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm);
 	Str8 EscapeStr_FormUrlEncoding(Arena* arena, Str8 str, bool addNullTerm);
 	Str8 EncodeHttpKeyValuePairContent(Arena* arena, uxx numItems, const Str8Pair* contentItems, MimeType encoding, bool addNullTerm);
+	uxx DecodeHttpHeaders(Arena* arena, Str8 encodedHeadersStr, bool allocatePairSlices, Str8Pair** headersOut);
 #endif
 
 // +--------------------------------------------------------------+
@@ -410,6 +411,56 @@ PEXP Str8 EncodeHttpKeyValuePairContent(Arena* arena, uxx numItems, const Str8Pa
 	}
 	
 	return result;
+}
+
+PEXP uxx DecodeHttpHeaders(Arena* arena, Str8 encodedHeadersStr, bool allocatePairSlices, Str8Pair** headersOut)
+{
+	bool foundColonOnThisLine = false;
+	uxx numHeaders = 0;
+	for (uxx cIndex = 0; cIndex < encodedHeadersStr.length; cIndex++)
+	{
+		if (encodedHeadersStr.chars[cIndex] == ':') { foundColonOnThisLine = true; }
+		if (encodedHeadersStr.chars[cIndex] == '\n' ||
+			(cIndex+1 < encodedHeadersStr.length && encodedHeadersStr.chars[cIndex+0] == '\r' && encodedHeadersStr.chars[cIndex+1] == '\n'))
+		{
+			if (foundColonOnThisLine) { numHeaders++; }
+			foundColonOnThisLine = false;
+			if (cIndex+1 < encodedHeadersStr.length && encodedHeadersStr.chars[cIndex+0] == '\r' && encodedHeadersStr.chars[cIndex+1] == '\n') { cIndex++; }
+		}
+	}
+	
+	if (arena == nullptr || numHeaders == 0) { return numHeaders; }
+	Str8Pair* results = AllocArray(Str8Pair, arena, numHeaders);
+	
+	uxx lineStartIndex = 0;
+	uxx colonIndex = encodedHeadersStr.length;
+	uxx headerIndex = 0;
+	for (uxx cIndex = 0; cIndex < encodedHeadersStr.length; cIndex++)
+	{
+		if (encodedHeadersStr.chars[cIndex] == ':') { colonIndex = cIndex; }
+		if (encodedHeadersStr.chars[cIndex] == '\n' ||
+			(cIndex+1 < encodedHeadersStr.length && encodedHeadersStr.chars[cIndex+0] == '\r' && encodedHeadersStr.chars[cIndex+1] == '\n'))
+		{
+			if (colonIndex >= lineStartIndex && colonIndex < cIndex)
+			{
+				Assert(headerIndex < numHeaders);
+				results[headerIndex].key = StrSlice(encodedHeadersStr, lineStartIndex, colonIndex);
+				results[headerIndex].value = StrSlice(encodedHeadersStr, colonIndex+1, cIndex);
+				if (allocatePairSlices)
+				{
+					results[headerIndex].key = AllocStr8(arena, results[headerIndex].key);
+					results[headerIndex].value = AllocStr8(arena, results[headerIndex].value);
+				}
+				headerIndex++;
+			}
+			if (cIndex+1 < encodedHeadersStr.length && encodedHeadersStr.chars[cIndex+0] == '\r' && encodedHeadersStr.chars[cIndex+1] == '\n') { cIndex++; }
+			lineStartIndex = cIndex+1;
+		}
+	}
+	
+	Assert(headerIndex == numHeaders);
+	SetOptionalOutPntr(headersOut, results);
+	return numHeaders;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
