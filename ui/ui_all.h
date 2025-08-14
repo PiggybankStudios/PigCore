@@ -27,6 +27,7 @@ Date:   02\16\2025
 
 #include "ui/ui_clay_checkbox.h"
 #include "ui/ui_clay_hoverable.h"
+#include "ui/ui_clay_resizable_split.h"
 
 #include "struct/struct_vectors.h"
 #include "struct/struct_rectangles.h"

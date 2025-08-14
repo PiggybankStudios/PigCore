@@ -10,6 +10,37 @@ Date:   02\03\2025
 #include "base/base_defines_check.h"
 #include "base/base_macros.h"
 
+typedef enum CursorShape CursorShape;
+enum CursorShape
+{
+	CursorShape_Default = 0,
+	CursorShape_Point,
+	CursorShape_IBeam,
+	CursorShape_ResizeHori,
+	CursorShape_ResizeVert,
+	CursorShape_ResizeDiagNwSe, //TODO: This is the naming conventions others use, can we think of a better one? Maybe "LeanLeft" and "LeanRight"?
+	CursorShape_ResizeDiagSwNe, //TODO: This is the naming conventions others use, can we think of a better one? Maybe "LeanLeft" and "LeanRight"?
+	CursorShape_Count,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetCursorShapeStr(CursorShape enumValue);
+#else
+PEXP const char* GetCursorShapeStr(CursorShape enumValue)
+{
+	switch (enumValue)
+	{
+		case CursorShape_Default:        return "Default";
+		case CursorShape_Point:          return "Point";
+		case CursorShape_IBeam:          return "IBeam";
+		case CursorShape_ResizeHori:     return "ResizeHori";
+		case CursorShape_ResizeVert:     return "ResizeVert";
+		case CursorShape_ResizeDiagNwSe: return "ResizeDiagNwSe";
+		case CursorShape_ResizeDiagSwNe: return "ResizeDiagSwNe";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
 typedef enum MouseBtn MouseBtn;
 enum MouseBtn
 {

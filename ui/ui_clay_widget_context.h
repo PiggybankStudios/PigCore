@@ -30,13 +30,14 @@ plex UiWidgetContext
 	MouseState* mouse;
 	r32 uiScale;
 	void** focusedUiElementPntr;
+	CursorShape cursorShape;
 };
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr);
+	PIG_CORE_INLINE UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr, CursorShape cursorShape);
 #endif
 
 // +--------------------------------------------------------------+
@@ -44,7 +45,7 @@ plex UiWidgetContext
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr)
+PEXPI UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr, CursorShape cursorShape)
 {
 	UiWidgetContext result = ZEROED;
 	result.uiArena = uiArena;
@@ -53,6 +54,7 @@ PEXPI UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* rendere
 	result.mouse = mouse;
 	result.uiScale = uiScale;
 	result.focusedUiElementPntr = focusedUiElementPntr;
+	result.cursorShape = cursorShape;
 	return result;
 }
 

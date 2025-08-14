@@ -12,6 +12,14 @@ Description:
 #ifndef _UI_CLAY_RESIZABLE_SPLIT_H
 #define _UI_CLAY_RESIZABLE_SPLIT_H
 
+#include "base/base_defines_check.h"
+#include "base/base_typedefs.h"
+#include "struct/struct_string.h"
+#include "ui/ui_clay.h"
+#include "ui/ui_clay_widget_context.h"
+
+#if BUILD_WITH_CLAY
+
 typedef enum UiResizableSplitSection UiResizableSplitSection;
 enum UiResizableSplitSection
 {
@@ -22,63 +30,161 @@ enum UiResizableSplitSection
 	UiResizableSplitSection_Bottom = UiResizableSplitSection_Right,
 };
 
-PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section, UiWidgetContext* context, Str8 idStr, bool horizontal, r32* splitPercent)
+typedef plex UiResizableSplit UiResizableSplit;
+plex UiResizableSplit
 {
+	Arena* arena;
+	Str8 idStr;
+	bool horizontal;
+	r32 dividerPadding; //auto-scaled by context->uiScale in Do function
+	r32 splitPercent;
+	bool resizing;
+	r32 resizingMouseOffset;
+};
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE void FreeUiResizableSplit(UiResizableSplit* split);
+	PIG_CORE_INLINE void InitUiResizableSplit(Arena* arena, Str8 idStr, r32 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split);
+	UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section, UiWidgetContext* context, UiResizableSplit* split);
+#endif
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#define DoUiResizableSplitInterleaved(sectionVarName, context, splitPntr) for (                                    \
+	UiResizableSplitSection sectionVarName = UiResizableSplitSection_None;                                         \
+	(sectionVarName = DoUiResizableSplit(sectionVarName, (context), (splitPntr))) != UiResizableSplitSection_None; \
+	/* nothing here */                                                                                             \
+)
+#define DoUiResizableSplitSection(sectionVarName, enumValue) if (sectionVarName == UiResizableSplitSection_##enumValue)
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXPI void FreeUiResizableSplit(UiResizableSplit* split)
+{
+	NotNull(split);
+	if (split->arena != nullptr)
+	{
+		FreeStr8(split->arena, &split->idStr);
+	}
+	ClearPointer(split);
+}
+
+PEXPI void InitUiResizableSplit(Arena* arena, Str8 idStr, r32 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split)
+{
+	NotNull(arena);
+	NotNull(split);
+	NotEmptyStr(idStr);
+	ClearPointer(split);
+	split->arena = arena;
+	split->idStr = AllocStr8(arena, idStr);
+	NotNull(split->idStr.chars);
+	split->dividerPadding = dividerPadding;
+	split->splitPercent = defaultSplitPercent;
+}
+
+PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section, UiWidgetContext* context, UiResizableSplit* split)
+{
+	NotNull(context);
+	NotNull(context->mouse);
+	NotNull(split);
+	NotNull(split->arena);
+	Str8 firstSectionIdStr = PrintInArenaStr(context->uiArena, "%.*s_%s", StrPrint(split->idStr), split->horizontal ? "Left" : "Top");
+	Str8 secondSectionIdStr = PrintInArenaStr(context->uiArena, "%.*s_%s", StrPrint(split->idStr), split->horizontal ? "Right" : "Bottom");
+	Str8 dividerIdStr = PrintInArenaStr(context->uiArena, "%.*s_Divider", StrPrint(split->idStr));
+	ClayId outerId = ToClayId(split->idStr);
+	ClayId firstSectionId = ToClayId(firstSectionIdStr);
+	ClayId secondSectionId = ToClayId(secondSectionIdStr);
+	ClayId dividerId = ToClayId(dividerIdStr);
+	
 	if (section == UiResizableSplitSection_None)
 	{
-		Str8 firstSectionIdStr = PrintInArenaStr(context->uiArena, "%.*s_%s", StrPrint(idStr), horizontal ? "Left" : "Top");
-		
 		Clay__OpenElement();
-		Clay__ConfigureOpenElement({ .id = ToClayId(firstSectionIdStr),
+		Clay__ConfigureOpenElement((Clay_ElementDeclaration){ .id = outerId,
 			.layout = {
-				.sizing = {
-					.width  = horizontal ? CLAY_SIZING_PERCENT(*splitPercent) : CLAY_SIZING_GROW(0),
-					.height = horizontal ? CLAY_SIZING_GROW(0) : CLAY_SIZING_PERCENT(*splitPercent),
-				},
-				.layoutDirection = horizontal ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT,
+				.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+				.layoutDirection = split->horizontal ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
+				.childGap = dividerPadding,
 			},
 		});
+		
+		Clay__OpenElement();
+		Clay__ConfigureOpenElement((Clay_ElementDeclaration){ .id = firstSectionId,
+			.layout = {
+				.sizing = {
+					.width  = split->horizontal ? CLAY_SIZING_PERCENT(split->splitPercent) : CLAY_SIZING_GROW(0),
+					.height = split->horizontal ? CLAY_SIZING_GROW(0) : CLAY_SIZING_PERCENT(split->splitPercent),
+				},
+				.layoutDirection = split->horizontal ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT,
+			},
+		});
+		return UiResizableSplitSection_Left;
 	}
 	else if (section == UiResizableSplitSection_Left)
 	{
 		Clay__CloseElement();
 		
-		Str8 secondSectionIdStr = PrintInArenaStr(context->uiArena, "%.*s_%s", StrPrint(idStr), horizontal ? "Right" : "Bottom");
-		ClayId secondSectionId = ToClayId(secondSectionIdStr);
-		rec secondSectionRec = GetClayElementDrawRec(secondSectionId);
-		
-		if (!AreEqualV2(secondSectionRec.Size, V2_Zero))
-		{
-			CLAY({ .id = ToClayId(idStr),
-				.layout = {
-					.sizing = {
-						.width  = CLAY_SIZING_FIXED(horizontal ? 4 : secondSectionRec.Width),
-						.height = CLAY_SIZING_FIXED(horizontal ? secondSectionRec.Height : 4),
-					},
-				},
-				.floating = {
-					.attachTo = CLAY_ATTACH_TO_ELEMENT_WITH_ID,
-					.elementId = secondSectionId.id,
-					.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_CENTER_TOP },
-				},
-			}) {}
-		}
-		
 		Clay__OpenElement();
-		Clay__ConfigureOpenElement({ .id = secondSectionId,
+		Clay__ConfigureOpenElement((Clay_ElementDeclaration){ .id = secondSectionId,
 			.layout = {
 				.sizing = {
-					.width = horizontal ? CLAY_SIZING_PERCENT(1.0f - (*splitPercent)) : CLAY_SIZING_GROW(0),
-					.height = horizontal ? CLAY_SIZING_GROW(0) : CLAY_SIZING_PERCENT(1.0f - (*splitPercent)),
+					.width = split->horizontal ? CLAY_SIZING_PERCENT(1.0f - split->splitPercent) : CLAY_SIZING_GROW(0),
+					.height = split->horizontal ? CLAY_SIZING_GROW(0) : CLAY_SIZING_PERCENT(1.0f - split->splitPercent),
 				},
-				.layoutDirection = horizontal ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT,
+				.layoutDirection = split->horizontal ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT,
 			},
 		});
+		return UiResizableSplitSection_Right;
 	}
 	else if (section == UiResizableSplitSection_Right)
 	{
 		Clay__CloseElement();
+		
+		rec secondSectionRec = GetClayElementDrawRec(secondSectionId);
+		if (!AreEqualV2(secondSectionRec.Size, V2_Zero))
+		{
+			r32 dividerPadding = UISCALE(context->uiScale, split->dividerPadding);
+			r32 handleWidth = MaxR32(UISCALE_R32(context->uiScale, 4), dividerPadding);
+			CLAY({ .id = dividerId,
+				.layout = {
+					.sizing = {
+						.width  = CLAY_SIZING_FIXED(split->horizontal ? handleWidth : secondSectionRec.Width),
+						.height = CLAY_SIZING_FIXED(split->horizontal ? secondSectionRec.Height : handleWidth),
+					},
+				},
+				.floating = {
+					.attachTo = CLAY_ATTACH_TO_ELEMENT_WITH_ID,
+					.parentId = secondSectionId.id,
+					.offset = NewV2(split->horizontal ? -(dividerPadding/2.0f) : 0, split->horizontal ? 0 : -(dividerPadding/2.0f)),
+					.attachPoints = {
+						.parent = CLAY_ATTACH_POINT_LEFT_TOP,
+						.element = split->horizontal ? CLAY_ATTACH_POINT_CENTER_TOP : CLAY_ATTACH_POINT_LEFT_CENTER,
+					},
+				},
+			}) {}
+			
+			if (context->mouse->isOverWindow && Clay_PointerOver(dividerId))
+			{
+				context->cursorShape = (split->horizontal ? CursorShape_ResizeHori : CursorShape_ResizeVert);
+			}
+		}
+		
+		Clay__CloseElement();
+		
+		return UiResizableSplitSection_None;
 	}
+	
+	return UiResizableSplitSection_None;
 }
+
+#endif
+
+#endif //BUILD_WITH_CLAY
 
 #endif //  _UI_CLAY_RESIZABLE_SPLIT_H
