@@ -120,6 +120,8 @@ typedef Clay_ElementId ClayId;
 #define UISCALE_U16(scale, pixels) (u16)RoundR32i((r32)(pixels) * (scale))
 #define UISCALE_BORDER(scale, pixels) MaxU16(((pixels) > 0) ? (u16)1 : (u16)0, (u16)RoundR32i((r32)(pixels) * (scale)))
 
+#define CLAY_BOX(size, color) do { CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(size), .height = CLAY_SIZING_FIXED(size) } }, .backgroundColor = (color) }) {} } while(0)
+
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
