@@ -40,6 +40,7 @@ Description:
 #define CLANG_ALLOW_UNDEFINED     "-Wl,--allow-undefined"
 #define CLANG_NO_STD_LIBRARIES    "--no-standard-libraries"
 #define CLANG_NO_STD_INCLUDES     "--no-standard-includes"
+#define CLANG_RPATH_DIR           "-rpath \"[VAL]\""
 
 #define CLANG_WARNING_SWITCH_MISSING_CASES          "switch" //8 enumeration values not handled in switch: 'ArenaType_None', 'ArenaType_Funcs', 'ArenaType_Generic'...
 #define CLANG_WARNING_UNUSED_FUNCTION               "unused-function" //unused function 'MeowExpandSeed'
