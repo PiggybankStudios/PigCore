@@ -51,7 +51,7 @@ plex UiResizableSplit
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void FreeUiResizableSplit(UiResizableSplit* split);
-	PIG_CORE_INLINE void InitUiResizableSplit(Arena* arena, Str8 idStr, u16 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split);
+	PIG_CORE_INLINE void InitUiResizableSplit(Arena* arena, Str8 idStr, bool horizontal, u16 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split);
 	UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section, UiWidgetContext* context, UiResizableSplit* split);
 #endif
 
@@ -80,7 +80,7 @@ PEXPI void FreeUiResizableSplit(UiResizableSplit* split)
 	ClearPointer(split);
 }
 
-PEXPI void InitUiResizableSplit(Arena* arena, Str8 idStr, u16 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split)
+PEXPI void InitUiResizableSplit(Arena* arena, Str8 idStr, bool horizontal, u16 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split)
 {
 	NotNull(arena);
 	NotNull(split);
@@ -89,6 +89,7 @@ PEXPI void InitUiResizableSplit(Arena* arena, Str8 idStr, u16 dividerPadding, r3
 	split->arena = arena;
 	split->idStr = AllocStr8(arena, idStr);
 	NotNull(split->idStr.chars);
+	split->horizontal = horizontal;
 	split->dividerPadding = dividerPadding;
 	split->splitPercent = defaultSplitPercent;
 	split->minSplitPercent = 0.0f;
@@ -181,7 +182,6 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 			if (context->mouse->isOverWindow && Clay_PointerOver(dividerId))
 			{
 				context->cursorShape = (split->horizontal ? CursorShape_ResizeHori : CursorShape_ResizeVert);
-				
 				if (IsMouseBtnPressed(context->mouse, MouseBtn_Left))
 				{
 					split->resizing = true;
@@ -193,6 +193,7 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 			{
 				if (IsMouseBtnDown(context->mouse, MouseBtn_Left))
 				{
+					context->cursorShape = (split->horizontal ? CursorShape_ResizeHori : CursorShape_ResizeVert);
 					split->splitPercent = ClampR32(
 						split->horizontal ? (context->mouse->position.X - outerRec.X) / outerRec.Width : (context->mouse->position.Y - outerRec.Y) / outerRec.Height,
 						split->minSplitPercent, split->maxSplitPercent
