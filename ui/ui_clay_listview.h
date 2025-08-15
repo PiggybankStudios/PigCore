@@ -31,6 +31,10 @@ plex UiListView
 	Str8 idStr;
 	ClayId id;
 	r32 smoothScrollDivisor;
+	u16 itemPaddingLeft;
+	u16 itemPaddingRight;
+	u16 itemPaddingTop;
+	u16 itemPaddingBottom;
 	
 	bool selectionActive;
 	Str8 selectedIdStr;
@@ -92,6 +96,10 @@ PEXP void InitUiListView(Arena* arena, Str8 idStr, UiListView* list)
 	list->idStr = AllocStr8(arena, idStr);
 	list->id = ToClayId(list->idStr);
 	list->smoothScrollDivisor = 5.0f;
+	list->itemPaddingLeft = 4;
+	list->itemPaddingRight = 4;
+	list->itemPaddingTop = 4;
+	list->itemPaddingBottom = 4;
 }
 
 //NOTE: Font info is only required if the items do not have a render callback
@@ -202,7 +210,12 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 					.layout = {
 						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
 						.layoutDirection = CLAY_LEFT_TO_RIGHT,
-						.padding = CLAY_PADDING_ALL(UISCALE_U16(context->uiScale, 4)),
+						.padding = {
+							.left   = UISCALE_U16(context->uiScale, list->itemPaddingLeft),
+							.right  = UISCALE_U16(context->uiScale, list->itemPaddingRight),
+							.top    = UISCALE_U16(context->uiScale, list->itemPaddingTop),
+							.bottom = UISCALE_U16(context->uiScale, list->itemPaddingBottom),
+						},
 						.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 					},
 					.backgroundColor = (isSelected ? MonokaiLightGray : (isHovered ? MonokaiBack : Transparent)),
