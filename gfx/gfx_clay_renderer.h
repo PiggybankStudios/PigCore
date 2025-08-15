@@ -273,11 +273,16 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
 			{
 				TracyCZoneN(Zone_COMMAND_SCISSOR_START, "SCISSOR_START", true);
-				// r32 oldDepth = system->state.depth;
-				// GfxSystem_SetDepth(system, 0.0f);
-				// GfxSystem_DrawRectangleOutlineEx(system, drawRec, 1, MonokaiRed, false);
-				GfxSystem_SetClipRec(system, ToReciFromf(drawRec));
-				// GfxSystem_SetDepth(system, oldDepth);
+				//NOTE: Negative or infinite values for clip rectangle cause OpenGL errors so we guard against that
+				//TODO: We should change Clay so it never produces SCISSOR_START commands with 0 or infinite size
+				if (drawRec.Width > 0 && drawRec.Height > 0 && !IsInfiniteOrNanR32(drawRec.Width) && !IsInfiniteOrNanR32(drawRec.Height))
+				{
+					// r32 oldDepth = system->state.depth;
+					// GfxSystem_SetDepth(system, 0.0f);
+					// GfxSystem_DrawRectangleOutlineEx(system, drawRec, 1, MonokaiRed, false);
+					GfxSystem_SetClipRec(system, ToReciFromf(drawRec));
+					// GfxSystem_SetDepth(system, oldDepth);
+				}
 				TracyCZoneEnd(Zone_COMMAND_SCISSOR_START);
 			} break;
 			
@@ -298,15 +303,18 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			{
 				TracyCZoneN(Zone_COMMAND_RECTANGLE, "RECTANGLE", true);
 				AlignRec(&drawRec);
-				Color32 drawColor = command->renderData.rectangle.backgroundColor;
-				GfxSystem_DrawRoundedRectangleEx(system,
-					drawRec,
-					command->renderData.rectangle.cornerRadius.topLeft,
-					command->renderData.rectangle.cornerRadius.topRight,
-					command->renderData.rectangle.cornerRadius.bottomRight,
-					command->renderData.rectangle.cornerRadius.bottomLeft,
-					drawColor
-				);
+				if (!IsInfiniteOrNanR32(drawRec.Width) && !IsInfiniteOrNanR32(drawRec.Height))
+				{
+					Color32 drawColor = command->renderData.rectangle.backgroundColor;
+					GfxSystem_DrawRoundedRectangleEx(system,
+						drawRec,
+						command->renderData.rectangle.cornerRadius.topLeft,
+						command->renderData.rectangle.cornerRadius.topRight,
+						command->renderData.rectangle.cornerRadius.bottomRight,
+						command->renderData.rectangle.cornerRadius.bottomLeft,
+						drawColor
+					);
+				}
 				TracyCZoneEnd(Zone_COMMAND_RECTANGLE);
 			} break;
 			
@@ -317,40 +325,40 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			{
 				TracyCZoneN(Zone_COMMAND_BORDER, "BORDER", true);
 				AlignRec(&drawRec);
-				//NOTE: In order to make sure the border is shown properly we need to floor the width/height to whole numbers that are definitely within the bounds of the clip rectangle for the element
-				// drawRec.Width = FloorR32(drawRec.Width);
-				// drawRec.Height = FloorR32(drawRec.Height);
 				
-				Color32 drawColor = command->renderData.border.color;
-				if (command->renderData.border.cornerRadius.topLeft != 0 ||
-					command->renderData.border.cornerRadius.topRight != 0 ||
-					command->renderData.border.cornerRadius.bottomLeft != 0 ||
-					command->renderData.border.cornerRadius.bottomRight != 0)
+				if (!IsInfiniteOrNanR32(drawRec.Width) && !IsInfiniteOrNanR32(drawRec.Height))
 				{
-					//TODO: Should we just assert that all the widths are the same? We probably don't need to support variable side widths AND corner radius at the same time, right?
-					r32 borderThickness = MaxR32(MaxR32(command->renderData.border.width.left, command->renderData.border.width.right), MaxR32(command->renderData.border.width.top, command->renderData.border.width.bottom));
-					GfxSystem_DrawRoundedRectangleOutlineEx(system,
-						drawRec,
-						borderThickness,
-						command->renderData.border.cornerRadius.topLeft,
-						command->renderData.border.cornerRadius.topRight,
-						command->renderData.border.cornerRadius.bottomRight,
-						command->renderData.border.cornerRadius.bottomLeft,
-						drawColor,
-						command->userData.outsideBorder
-					);
-				}
-				else
-				{
-					GfxSystem_DrawRectangleOutlineSidesEx(system,
-						drawRec,
-						command->renderData.border.width.left,
-						command->renderData.border.width.right,
-						command->renderData.border.width.top,
-						command->renderData.border.width.bottom,
-						drawColor,
-						command->userData.outsideBorder
-					);
+					Color32 drawColor = command->renderData.border.color;
+					if (command->renderData.border.cornerRadius.topLeft != 0 ||
+						command->renderData.border.cornerRadius.topRight != 0 ||
+						command->renderData.border.cornerRadius.bottomLeft != 0 ||
+						command->renderData.border.cornerRadius.bottomRight != 0)
+					{
+						//TODO: Should we just assert that all the widths are the same? We probably don't need to support variable side widths AND corner radius at the same time, right?
+						r32 borderThickness = MaxR32(MaxR32(command->renderData.border.width.left, command->renderData.border.width.right), MaxR32(command->renderData.border.width.top, command->renderData.border.width.bottom));
+						GfxSystem_DrawRoundedRectangleOutlineEx(system,
+							drawRec,
+							borderThickness,
+							command->renderData.border.cornerRadius.topLeft,
+							command->renderData.border.cornerRadius.topRight,
+							command->renderData.border.cornerRadius.bottomRight,
+							command->renderData.border.cornerRadius.bottomLeft,
+							drawColor,
+							command->userData.outsideBorder
+						);
+					}
+					else
+					{
+						GfxSystem_DrawRectangleOutlineSidesEx(system,
+							drawRec,
+							command->renderData.border.width.left,
+							command->renderData.border.width.right,
+							command->renderData.border.width.top,
+							command->renderData.border.width.bottom,
+							drawColor,
+							command->userData.outsideBorder
+						);
+					}
 				}
 				TracyCZoneEnd(Zone_COMMAND_BORDER);
 			} break;
