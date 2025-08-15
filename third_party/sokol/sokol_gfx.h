@@ -4821,6 +4821,13 @@ inline int sg_append_buffer(sg_buffer buf_id, const sg_range& data) { return sg_
         #define GL_LINEAR_MIPMAP_NEAREST 0x2701
         #define GL_EXTENSIONS 0x1F03
         #define GL_NO_ERROR 0
+        #define GL_INVALID_ENUM 0x0500
+		#define GL_INVALID_VALUE 0x0501
+		#define GL_INVALID_OPERATION 0x0502
+		#define GL_STACK_OVERFLOW 0x0503
+		#define GL_STACK_UNDERFLOW 0x0504
+		#define GL_OUT_OF_MEMORY 0x0505
+		#define GL_INVALID_FRAMEBUFFER_OPERATION 0x0506
         #define GL_REPLACE 0x1E01
         #define GL_KEEP 0x1E00
         #define GL_CCW 0x0901
