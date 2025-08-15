@@ -36,8 +36,12 @@ plex UiResizableSplit
 	Arena* arena;
 	Str8 idStr;
 	bool horizontal;
-	r32 dividerPadding; //auto-scaled by context->uiScale in Do function
+	u16 dividerPadding; //auto-scaled by context->uiScale in Do function
 	r32 splitPercent;
+	r32 minSplitPercent;
+	r32 maxSplitPercent;
+	r32 minFirstSplitSize;
+	r32 minSecondSplitSize;
 	bool resizing;
 	r32 resizingMouseOffset;
 };
@@ -47,7 +51,7 @@ plex UiResizableSplit
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void FreeUiResizableSplit(UiResizableSplit* split);
-	PIG_CORE_INLINE void InitUiResizableSplit(Arena* arena, Str8 idStr, r32 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split);
+	PIG_CORE_INLINE void InitUiResizableSplit(Arena* arena, Str8 idStr, u16 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split);
 	UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section, UiWidgetContext* context, UiResizableSplit* split);
 #endif
 
@@ -76,7 +80,7 @@ PEXPI void FreeUiResizableSplit(UiResizableSplit* split)
 	ClearPointer(split);
 }
 
-PEXPI void InitUiResizableSplit(Arena* arena, Str8 idStr, r32 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split)
+PEXPI void InitUiResizableSplit(Arena* arena, Str8 idStr, u16 dividerPadding, r32 defaultSplitPercent, UiResizableSplit* split)
 {
 	NotNull(arena);
 	NotNull(split);
@@ -87,6 +91,10 @@ PEXPI void InitUiResizableSplit(Arena* arena, Str8 idStr, r32 dividerPadding, r3
 	NotNull(split->idStr.chars);
 	split->dividerPadding = dividerPadding;
 	split->splitPercent = defaultSplitPercent;
+	split->minSplitPercent = 0.0f;
+	split->maxSplitPercent = 1.0f;
+	split->minFirstSplitSize = 0.0f;
+	split->minSecondSplitSize = 0.0f;
 }
 
 PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section, UiWidgetContext* context, UiResizableSplit* split)
@@ -110,7 +118,7 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 			.layout = {
 				.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
 				.layoutDirection = split->horizontal ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
-				.childGap = dividerPadding,
+				.childGap = UISCALE_U16(context->uiScale, split->dividerPadding),
 			},
 		});
 		
@@ -146,10 +154,11 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 	{
 		Clay__CloseElement();
 		
+		rec outerRec = GetClayElementDrawRec(outerId);
 		rec secondSectionRec = GetClayElementDrawRec(secondSectionId);
 		if (!AreEqualV2(secondSectionRec.Size, V2_Zero))
 		{
-			r32 dividerPadding = UISCALE(context->uiScale, split->dividerPadding);
+			r32 dividerPadding = UISCALE_R32(context->uiScale, (r32)split->dividerPadding);
 			r32 handleWidth = MaxR32(UISCALE_R32(context->uiScale, 4), dividerPadding);
 			CLAY({ .id = dividerId,
 				.layout = {
@@ -172,7 +181,39 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 			if (context->mouse->isOverWindow && Clay_PointerOver(dividerId))
 			{
 				context->cursorShape = (split->horizontal ? CursorShape_ResizeHori : CursorShape_ResizeVert);
+				
+				if (IsMouseBtnPressed(context->mouse, MouseBtn_Left))
+				{
+					split->resizing = true;
+					split->resizingMouseOffset = split->horizontal ? (context->mouse->position.X - secondSectionRec.X) : (context->mouse->position.Y - secondSectionRec.Y);
+				}
 			}
+			
+			if (split->resizing)
+			{
+				if (IsMouseBtnDown(context->mouse, MouseBtn_Left))
+				{
+					split->splitPercent = ClampR32(
+						split->horizontal ? (context->mouse->position.X - outerRec.X) / outerRec.Width : (context->mouse->position.Y - outerRec.Y) / outerRec.Height,
+						split->minSplitPercent, split->maxSplitPercent
+					);
+				}
+				else { split->resizing = false; }
+			}
+		}
+		else { split->resizing = false; }
+		
+		if (outerRec.Width > 0 && outerRec.Height > 0)
+		{
+			r32 minPercent = MaxR32(split->minSplitPercent, split->minFirstSplitSize / (split->horizontal ? outerRec.Width : outerRec.Height));
+			r32 maxPercent = MinR32(split->maxSplitPercent, 1.0f - (split->minSecondSplitSize / (split->horizontal ? outerRec.Width : outerRec.Height)));
+			if (minPercent >= maxPercent) //handle degenerate scenarios (like outerRec.Width < split->minFirstSplitSize)
+			{
+				minPercent = (minPercent + maxPercent)/2.0f;
+				if (minPercent < 0.0f || minPercent > 1.0f) { minPercent = 0.5f; }
+				maxPercent = minPercent;
+			}
+			split->splitPercent = ClampR32(split->splitPercent, minPercent, maxPercent);
 		}
 		
 		Clay__CloseElement();
