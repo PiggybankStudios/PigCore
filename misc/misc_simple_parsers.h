@@ -69,6 +69,7 @@ plex TextParser
 	LineParser lineParser;
 	Str8 currentLine;
 	uxx byteIndex;
+	bool noComments;
 };
 
 // +--------------------------------------------------------------+
@@ -103,6 +104,7 @@ PEXPI TextParser NewTextParser(Str8 inputStr)
 	NotNullStr(inputStr);
 	TextParser result = ZEROED;
 	result.lineParser = NewLineParser(inputStr);
+	result.noComments = false;
 	return result;
 }
 
@@ -187,7 +189,8 @@ PEXP bool TextParserGetToken(TextParser* parser, ParsingToken* tokenOut)
 		
 		//TODO: This doesn't handle if a // shows up inside something like a string where it shouldn't be treated as a comment
 		uxx commentStartIndex = 0;
-		bool lineContainsComment = StrTryExactFind(line, StrLit("//"), &commentStartIndex);
+		bool lineContainsComment = false;
+		if (!parser->noComments) { lineContainsComment = StrTryExactFind(line, StrLit("//"), &commentStartIndex); }
 		
 		if (lineContainsComment && commentStartIndex == 0)
 		{
@@ -206,26 +209,12 @@ PEXP bool TextParserGetToken(TextParser* parser, ParsingToken* tokenOut)
 		uxx colonIndex = 0;
 		bool lineContainsColon = StrTryExactFind(line, StrLit(":"), &colonIndex);
 		
-		if (lineContainsColon)
-		{
-			ClearPointer(tokenOut);
-			tokenOut->type = ParsingTokenType_KeyValuePair;
-			tokenOut->str = line;
-			tokenOut->key = StrSlice(line, 0, colonIndex);
-			tokenOut->value = StrSlice(line, colonIndex+1, line.length);
-			tokenOut->key = TrimWhitespace(tokenOut->key);
-			tokenOut->value = TrimWhitespace(tokenOut->value);
-			parser->byteIndex += numTrimmedWhitespaceChars + line.length;
-			return true;
-		}
-		
 		if (StrStartsWith(line, StrLit("#"), false))
 		{
 			ClearPointer(tokenOut);
 			tokenOut->type = ParsingTokenType_FilePrefix;
 			tokenOut->str = line;
-			tokenOut->value = StrSliceFrom(line, 1);
-			tokenOut->value = TrimWhitespace(tokenOut->value);
+			tokenOut->value = TrimWhitespace(StrSliceFrom(line, 1));
 			parser->byteIndex += numTrimmedWhitespaceChars + line.length;
 			return true;
 		}
@@ -234,7 +223,18 @@ PEXP bool TextParserGetToken(TextParser* parser, ParsingToken* tokenOut)
 			ClearPointer(tokenOut);
 			tokenOut->type = ParsingTokenType_Directive;
 			tokenOut->str = line;
-			tokenOut->value = StrSliceFrom(line, 1);
+			tokenOut->value = TrimWhitespace(StrSliceFrom(line, 1));
+			parser->byteIndex += numTrimmedWhitespaceChars + line.length;
+			return true;
+		}
+		else if (lineContainsColon)
+		{
+			ClearPointer(tokenOut);
+			tokenOut->type = ParsingTokenType_KeyValuePair;
+			tokenOut->str = line;
+			tokenOut->key = StrSlice(line, 0, colonIndex);
+			tokenOut->value = StrSlice(line, colonIndex+1, line.length);
+			tokenOut->key = TrimWhitespace(tokenOut->key);
 			tokenOut->value = TrimWhitespace(tokenOut->value);
 			parser->byteIndex += numTrimmedWhitespaceChars + line.length;
 			return true;

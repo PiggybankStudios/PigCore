@@ -89,6 +89,8 @@ enum Result
 	Result_FailedToOpenRequest,
 	Result_SslProblem,
 	Result_WinHTTPError,
+	Result_MissingItems,
+	Result_MissingPart,
 	
 	Result_Count,
 };
@@ -161,6 +163,8 @@ PEXP const char* GetResultStr(Result result)
 		case Result_FailedToOpenRequest: return "FailedToOpenRequest";
 		case Result_SslProblem: return "SslProblem";
 		case Result_WinHTTPError: return "WinHTTPError";
+		case Result_MissingItems: return "MissingItems";
+		case Result_MissingPart: return "MissingPart";
 		default: return UNKNOWN_STR;
 	}
 }
