@@ -11,6 +11,7 @@ Description:
 
 #define EXE_MSVC_CL    "cl"
 #define EXE_MSVC_LINK  "LINK"
+#define EXE_MSVC_RC    "rc"
 
 // +==============================+
 // |           CL Flags           |
@@ -94,5 +95,11 @@ Description:
 #define LINK_INCREMENTAL_FILE_NAME     "/ILK:\"[VAL]\""
 #define LINK_IMPORT_LIBRARY_FILE       "/IMPLIB:\"[VAL]\"" //Specify the name of the import library (the .lib that pairs with a .dll)
 #define LINK_DEBUG_INFO_FILE           "/PDB:\"[VAL]\""
+
+// +==============================+
+// |           RC Flags           |
+// +==============================+
+#define RC_NO_LOGO      "/nologo"
+#define RC_OUTPUT_FILE  "/Fo\"[VAL]\""
 
 #endif //  _TOOLS_MSVC_FLAGS_H
