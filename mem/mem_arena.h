@@ -1074,24 +1074,20 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 		// +====================================+
 		case ArenaType_StackVirtual:
 		{
-			//TODO: Should we be silently ignoring scenarios where we can't free things? Esp. when newSize == 0
+			//TODO: Should we be silently ignoring scenarios where we can't free things?
 			DebugNotNull(arena->mainPntr);
 			uxx allocIndex = (uxx)((u8*)allocPntr - (u8*)arena->mainPntr);
 			// If the allocation is the last thing on the arena, then we can actually just grow it
-			if (oldSize > 0 && allocIndex + oldSize == arena->used)
+			if (oldSize > 0 && allocIndex + oldSize == arena->used && IsAlignedTo(allocPntr, newAlignment))
 			{
-				if (newSize == 0)
+				if (newSize > oldSize)
 				{
-					FreeMem(arena, allocPntr, oldSize);
-				}
-				else if (newSize > oldSize)
-				{
-					void* newAlloc = AllocMemAligned(arena, newSize - oldSize, 0);
+					void* newAlloc = AllocMemAligned(arena, newSize - oldSize, 0); //we're re-using the page committing logic by calling AllocMemAligned here
 					Assert((u8*)newAlloc == (u8*)arena->mainPntr + allocIndex + oldSize);
 					arena->used = allocIndex + newSize;
 					result = allocPntr;
 				}
-				else if (newSize < oldSize)
+				else //if (newSize < oldSize)
 				{
 					//TODO: Do we want to uncommit committed pages?
 					arena->used = allocIndex + newSize;
@@ -1101,7 +1097,7 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 			//Otherwise a Realloc is the same as a call to Alloc, the old allocation will be "forgotten"
 			else if (newSize > 0)
 			{
-				result = AllocMem(arena, newSize);
+				result = AllocMemAligned(arena, newSize, newAlignmentOverride);
 			}
 			if (result == nullptr && newSize > 0 && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to reallocate in StackVirtual Arena!"); }
 		} break;
