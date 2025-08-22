@@ -1057,6 +1057,7 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 			else if (newSize > 0)
 			{
 				result = AllocMemAligned(arena, newSize, newAlignmentOverride);
+				if (oldSize > 0) { MyMemCopy(result, allocPntr, (oldSize <= newSize) ? oldSize : newSize); }
 			}
 			if (result == nullptr && newSize > 0 && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to reallocate in Stack Arena!"); }
 		} break;
@@ -1098,6 +1099,7 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 			else if (newSize > 0)
 			{
 				result = AllocMemAligned(arena, newSize, newAlignmentOverride);
+				if (oldSize > 0) { MyMemCopy(result, allocPntr, (oldSize <= newSize) ? oldSize : newSize); }
 			}
 			if (result == nullptr && newSize > 0 && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to reallocate in StackVirtual Arena!"); }
 		} break;
