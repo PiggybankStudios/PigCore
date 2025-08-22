@@ -66,6 +66,8 @@ Description:
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
 #define DUMP_PREPROCESSOR 0
+// Generates assembly listing files for all compilation units
+#define DUMP_ASSEMBLY 0
 // After .wasm file(s) are generated, we will run wasm2wat on them to make a .wat
 // file (a text format of WebAssembly that is readable, mostly for debugging purposes)
 #define CONVERT_WASM_TO_WAT 0

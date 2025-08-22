@@ -697,6 +697,7 @@ int main(int argc, char* argv[])
 	{
 		ScratchBegin(scratch);
 		Str8 encodedString = StrLit("Op[rgb=FF00FF]e[highlight]n [alpha=0.5][size=10]\bCo[rgb]lor\b[size]![highlight]");
+		// Str8 encodedString = StrLit("\\[");
 		PrintLine_D("Original: \"%.*s\"", StrPrint(encodedString));
 		
 		RichStr richStr = DecodeStrToRichStr(scratch, encodedString);

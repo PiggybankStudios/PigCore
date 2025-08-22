@@ -21,6 +21,8 @@ Description:
 #include "mem/mem_arena.h"
 #include "gfx/gfx_clay_renderer.h"
 
+#if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
+
 typedef plex UiWidgetContext UiWidgetContext;
 plex UiWidgetContext
 {
@@ -59,5 +61,7 @@ PEXPI UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* rendere
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
 
 #endif //  _UI_CLAY_WIDGET_CONTEXT_H

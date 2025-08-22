@@ -15,6 +15,8 @@ Date:   08\10\2025
 #include "struct/struct_directions.h"
 #include "struct/struct_string.h"
 
+#if BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
+
 typedef enum UiHoverableSection UiHoverableSection;
 enum UiHoverableSection
 {
@@ -178,5 +180,7 @@ PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContex
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
 #endif //  _UI_CLAY_HOVERABLE_H

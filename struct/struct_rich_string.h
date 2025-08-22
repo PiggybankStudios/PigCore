@@ -799,11 +799,6 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 		
 		if (pass == 0)
 		{
-			if (state.pieceIndex <= 1)
-			{
-				state.result = AllocRichStr(arena, ToRichStr(encodedString));
-				break;
-			}
 			state.result.fullPiece.str.length = state.fullStrByteIndex;
 			if (state.result.fullPiece.str.length == 0) { break; }
 			state.result.fullPiece.str.chars = (char*)AllocMem(arena, state.result.fullPiece.str.length);
