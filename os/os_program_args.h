@@ -16,16 +16,16 @@ Date:   02\25\2025
 #include "struct/struct_var_array.h"
 #include "misc/misc_parsing.h"
 
-typedef struct ProgramArg ProgramArg;
-struct ProgramArg
+typedef plex ProgramArg ProgramArg;
+plex ProgramArg
 {
 	Str8 rawString;
 	Str8 name;
 	Str8 value;
 };
 
-typedef struct ProgramArgs ProgramArgs;
-struct ProgramArgs
+typedef plex ProgramArgs ProgramArgs;
+plex ProgramArgs
 {
 	Arena* arena;
 	VarArray args; //ProgramArg

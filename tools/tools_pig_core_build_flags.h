@@ -11,7 +11,7 @@ Description:
 #ifndef _TOOLS_PIG_CORE_BUILD_FLAGS_H
 #define _TOOLS_PIG_CORE_BUILD_FLAGS_H
 
-void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR)
+void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY)
 {
 	AddArg(cl_CommonFlags, DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
 	AddArg(cl_CommonFlags, CL_FULL_FILE_PATHS); //we need full file paths in errors for Sublime Text to be able to parse the errors and display them in the editor
@@ -20,6 +20,7 @@ void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP
 	if (!DEBUG_BUILD) { AddArgNt(cl_CommonFlags, CL_OPTIMIZATION_LEVEL, "y"); }
 	if (!DEBUG_BUILD) { AddArgNt(cl_CommonFlags, CL_OPTIMIZATION_LEVEL, "t"); }
 	AddArgNt(cl_CommonFlags, CL_WARNING_LEVEL, "X"); //Treat all warnings as errors
+	if (DUMP_ASSEMBLY) { AddArgNt(cl_CommonFlags, CL_GENERATE_ASSEMB_LISTING, "s"); } //Generate assembly listing files with source code included
 	AddArgInt(cl_CommonFlags, CL_WARNING_LEVEL, 4); //Use warning level 4, then disable various warnings we don't care about
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_LOGICAL_OP_ON_ADDRESS_OF_STR_CONST);
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_NAMELESS_STRUCT_OR_UNION);
@@ -28,6 +29,7 @@ void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_UNREFERENCED_FUNC_REMOVED);
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_USAGE_OF_DEPRECATED);
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_ASSIGNMENT_WITHIN_CONDITIONAL_EXPR);
+	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_NAMED_TYPEDEF_IN_PARENTHESES);
 	AddArgInt(cl_CommonFlags, CL_ENABLE_WARNING, CL_WARNING_SWITCH_FALLTHROUGH);
 	AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]");
 	if (DEBUG_BUILD)
@@ -113,7 +115,7 @@ void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, boo
 }
 
 // These are all the libraries we need when compiling a Windows binary that contains code from PigCore
-void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_RAYLIB, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SDL, bool BUILD_WITH_OPENVR, bool BUILD_WITH_IMGUI, bool BUILD_WITH_PHYSX)
+void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_RAYLIB, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SDL, bool BUILD_WITH_OPENVR, bool BUILD_WITH_IMGUI, bool BUILD_WITH_PHYSX, bool BUILD_WITH_HTTP)
 {
 	if (BUILD_WITH_RAYLIB) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "raylib.lib"); } //NOTE: raylib.lib MUST be before User32.lib and others
 	AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "Gdi32.lib"); //Needed for CreateFontA and other Windows graphics functions
@@ -130,6 +132,7 @@ void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_R
 	if (BUILD_WITH_SDL) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "SDL2.lib"); }
 	if (BUILD_WITH_OPENVR) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "openvr_api.lib"); }
 	if (BUILD_WITH_PHYSX) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "PhysX_static_64.lib"); }
+	if (BUILD_WITH_HTTP) { AddArgNt(cl_PigCoreLibraries, CLI_QUOTED_ARG, "Winhttp.lib"); }
 }
 
 // These are all the libraries we need when compiling a Linux binary that contains code from PigCore

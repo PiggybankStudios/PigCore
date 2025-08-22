@@ -45,16 +45,16 @@ const char* SourceFileExtensions[] = {
 	".hpp",
 };
 
-typedef struct SnippetPiece SnippetPiece;
-struct SnippetPiece
+typedef plex SnippetPiece SnippetPiece;
+plex SnippetPiece
 {
 	MD_Node* rootNode;
 	Str8 typeStr;
 	bool hasGenerated;
 	Str8 code;
 };
-typedef struct Snippet Snippet;
-struct Snippet
+typedef plex Snippet Snippet;
+plex Snippet
 {
 	Arena* arena;
 	FilePath genFilePath;
@@ -68,8 +68,8 @@ struct Snippet
 	VarArray pieces; //SnippetPiece
 };
 
-typedef struct PiggenState PiggenState;
-struct PiggenState
+typedef plex PiggenState PiggenState;
+plex PiggenState
 {
 	Arena* mainArena; //really this is just scratch[0]
 	ProgramArgs args;

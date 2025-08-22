@@ -60,23 +60,23 @@ Description:
 #pragma clang diagnostic pop
 #endif
 
-typedef struct FontCharRange FontCharRange;
-struct FontCharRange
+typedef plex FontCharRange FontCharRange;
+plex FontCharRange
 {
 	u32 startCodepoint;
 	u32 endCodepoint;
 	uxx glyphArrayStartIndex;
 };
 
-typedef struct CustomFontGlyph CustomFontGlyph;
-struct CustomFontGlyph
+typedef plex CustomFontGlyph CustomFontGlyph;
+plex CustomFontGlyph
 {
 	u32 codepoint;
 	ImageData imageData;
 	reci sourceRec;
 };
-typedef struct CustomFontCharRange CustomFontCharRange;
-struct CustomFontCharRange
+typedef plex CustomFontCharRange CustomFontCharRange;
+plex CustomFontCharRange
 {
 	u32 startCodepoint;
 	u32 endCodepoint;
@@ -85,8 +85,8 @@ struct CustomFontCharRange
 
 #define INVALID_TTF_GLYPH_INDEX INT32_MAX
 
-typedef struct FontGlyph FontGlyph;
-struct FontGlyph
+typedef plex FontGlyph FontGlyph;
+plex FontGlyph
 {
 	u32 codepoint;
 	i32 ttfGlyphIndex;
@@ -96,8 +96,8 @@ struct FontGlyph
 	rec logicalRec;
 };
 
-typedef struct FontAtlas FontAtlas;
-struct FontAtlas
+typedef plex FontAtlas FontAtlas;
+plex FontAtlas
 {
 	r32 fontSize;
 	r32 fontScale; //only used when asking stbtt for size-independent metrics
@@ -112,16 +112,16 @@ struct FontAtlas
 	r32 centerOffset;
 };
 
-typedef struct FontKerningTableEntry FontKerningTableEntry;
-struct FontKerningTableEntry
+typedef plex FontKerningTableEntry FontKerningTableEntry;
+plex FontKerningTableEntry
 {
 	u32 leftTtfGlyphIndex;
 	u32 rightTtfGlyphIndex;
 	r32 value; //must be multipled by fontScale
 };
 
-typedef struct FontKerningTable FontKerningTable;
-struct FontKerningTable
+typedef plex FontKerningTable FontKerningTable;
+plex FontKerningTable
 {
 	uxx numEntries;
 	FontKerningTableEntry* entries;
@@ -130,8 +130,8 @@ struct FontKerningTable
 //NOTE: We have a naming conflict with raylib.h if we name this "PigFont" so we are
 // naming it PigFont, but typedefing PigFont in non-raylib projects so anything outside
 // PigCore that doesn't plan to use Raylib can still use the name "PigFont"
-typedef struct PigFont PigFont;
-struct PigFont
+typedef plex PigFont PigFont;
+plex PigFont
 {
 	Arena* arena;
 	Str8 name;
@@ -144,6 +144,7 @@ struct PigFont
 	FontKerningTable kerningTable;
 };
 
+//NOTE: Font is defined in Xlib.h as a typedef of XID
 #if !BUILD_WITH_RAYLIB && !TARGET_IS_LINUX
 typedef PigFont Font;
 #endif
@@ -197,6 +198,7 @@ PEXPI void FreeFontAtlas(PigFont* font, FontAtlas* atlas)
 {
 	NotNull(font);
 	NotNull(atlas);
+	UNUSED(font);
 	FreeVarArray(&atlas->charRanges);
 	FreeVarArray(&atlas->glyphs);
 	FreeTexture(&atlas->texture);
@@ -461,7 +463,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i
 			const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
 			DebugAssert(customGlyphIndex < numGlyphsInCustomRanges);
 			stbrp_rect* customGlyphRec = &rects[numGlyphsInRanges + customGlyphIndex];
-			reci sourceRec = AreEqual(customGlyph->sourceRec, Reci_Zero_Const)
+			reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
 				? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
 				: customGlyph->sourceRec;
 			Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
@@ -505,7 +507,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i
 			const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
 			DebugAssert(customGlyphIndex < numGlyphsInCustomRanges);
 			stbrp_rect* customGlyphRec = &rects[numGlyphsInRanges + customGlyphIndex];
-			reci sourceRec = AreEqual(customGlyph->sourceRec, Reci_Zero_Const)
+			reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
 				? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
 				: customGlyph->sourceRec;
 			Assert(customGlyphRec->w == (int)sourceRec.Width);
@@ -546,7 +548,10 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i
 	stbtt_GetFontVMetrics(&font->ttfInfo, &ascent, &descent, &lineGap);
 	newAtlas->maxAscend = (r32)ascent * newAtlas->fontScale;
 	newAtlas->maxDescend = (r32)(-descent) * newAtlas->fontScale;
+	newAtlas->lineHeight = newAtlas->maxAscend + newAtlas->maxDescend + ((r32)lineGap * newAtlas->fontScale);
 	
+	//TODO: This is sort of a hack and causes problems with things like highlight/clip rectangles that need to really encompass the true maxAscend
+	//      So for now we are going to only use this value to inform the centerOffset
 	//The ascent value returned by GetFontVMetrics is often way higher than all the characters we normally print
 	//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
 	//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
@@ -554,11 +559,9 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i
 	int getBoxResult = stbtt_GetCodepointBox(&font->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
 	if (getBoxResult > 0)
 	{
-		newAtlas->maxAscend = MinR32(newAtlas->maxAscend, (r32)wBoxY1 * newAtlas->fontScale);
+		r32 pretendMaxAscend = MinR32(newAtlas->maxAscend, (r32)wBoxY1 * newAtlas->fontScale);
+		newAtlas->centerOffset = pretendMaxAscend / 2.0f;
 	}
-	
-	newAtlas->lineHeight = newAtlas->maxAscend + newAtlas->maxDescend + ((r32)lineGap * newAtlas->fontScale);
-	newAtlas->centerOffset = newAtlas->maxAscend / 2.0f;
 	
 	InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
 	InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numGlyphsTotal);

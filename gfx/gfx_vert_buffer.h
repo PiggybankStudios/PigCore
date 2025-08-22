@@ -54,8 +54,8 @@ PEXP const char* GetVertBufferUsageStr(VertBufferUsage enumValue)
 }
 #endif
 
-typedef struct VertBuffer VertBuffer;
-struct VertBuffer
+typedef plex VertBuffer VertBuffer;
+plex VertBuffer
 {
 	Arena* arena;
 	Result error;
@@ -71,8 +71,8 @@ struct VertBuffer
 	uxx numVertices;
 	uxx numIndices;
 	//These are only filled if makeCopy was true when buffer was created
-	union { void* verticesPntr; Vertex2D* vertices2D; Vertex3D* vertices3D; };
-	union { void* indicesPntr; i32* indicesI32; i16* indicesI16; };
+	car { void* verticesPntr; Vertex2D* vertices2D; Vertex3D* vertices3D; };
+	car { void* indicesPntr; i32* indicesI32; i16* indicesI16; };
 };
 
 // +--------------------------------------------------------------+

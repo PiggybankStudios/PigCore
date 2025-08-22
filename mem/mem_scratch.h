@@ -35,8 +35,8 @@ Description:
 
 #define NUM_SCRATCH_ARENAS_PER_THREAD   3
 
-typedef struct ScratchArena ScratchArena;
-struct ScratchArena
+typedef plex ScratchArena ScratchArena;
+plex ScratchArena
 {
 	Arena* arena;
 	uxx mark;
@@ -91,6 +91,7 @@ PEXP void InitScratchArenas(uxx stackSizePerArena, Arena* sourceArena)
 	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
 	{
 		InitArenaStack(&scratchArenasArray[aIndex], stackSizePerArena, sourceArena);
+		NotNull(scratchArenasArray[aIndex].mainPntr);
 	}
 }
 //TODO: Add an option for StackPaged once that's implemented
@@ -99,6 +100,7 @@ PEXP void InitScratchArenasVirtual(uxx virtualSizePerArena)
 	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
 	{
 		InitArenaStackVirtual(&scratchArenasArray[aIndex], virtualSizePerArena);
+		NotNull(scratchArenasArray[aIndex].mainPntr);
 	}
 }
 
@@ -109,6 +111,7 @@ PEXPI Arena* GetScratch2(const Arena* conflict1, const Arena* conflict2, uxx* ma
 		: (conflict1 != &scratchArenasArray[1] && conflict2 != &scratchArenasArray[1])
 			? &scratchArenasArray[1]
 			: &scratchArenasArray[2];
+	if (result->mainPntr == nullptr) { SetOptionalOutPntr(markOut, 0); return nullptr; }
 	SetOptionalOutPntr(markOut, ArenaGetMark(result));
 	return result;
 }
@@ -126,7 +129,7 @@ PEXPI ScratchArena GetScratchArena() { return GetScratchArena2(nullptr, nullptr)
 
 PEXPI void ReleaseScratchArena(ScratchArena* scratchArena)
 {
-	NotNull(scratchArena->arena);
+	if (scratchArena->arena == nullptr) { return; }
 	ArenaResetToMark(scratchArena->arena, scratchArena->mark);
 	ClearPointer(scratchArena);
 }
@@ -145,4 +148,8 @@ PEXPI void ReleaseScratchArena(ScratchArena* scratchArena)
 
 #if defined(_MEM_SCRATCH_H) && defined(_UI_CLAY_H)
 #include "cross/cross_scratch_and_clay.h"
+#endif
+
+#if defined(_STRUCT_RICH_STRING_H) && defined(_MEM_SCRATCH_H) && defined(_STRUCT_RANGES_H)
+#include "cross/cross_rich_string_scratch_and_ranges.h"
 #endif

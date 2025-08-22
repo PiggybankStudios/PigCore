@@ -34,17 +34,17 @@ Description:
 //NOTE: These types are used in the generated shader header files and are passed to
 //      the InitShader function, inside we unpack these Def types and fill out the
 //      real types that will live inside the Shader struct at runtime.
-typedef struct ShaderImageDef ShaderImageDef;
-struct ShaderImageDef { const char* name; uxx index; };
-typedef struct ShaderSamplerDef ShaderSamplerDef;
-struct ShaderSamplerDef { const char* name; uxx index; };
-typedef struct ShaderAttributeDef ShaderAttributeDef;
-struct ShaderAttributeDef { const char* name; uxx index; };
-typedef struct ShaderUniformDef ShaderUniformDef;
-struct ShaderUniformDef { const char* name; u8 blockIndex; uxx offset; uxx size; };
+typedef plex ShaderImageDef ShaderImageDef;
+plex ShaderImageDef { const char* name; uxx index; };
+typedef plex ShaderSamplerDef ShaderSamplerDef;
+plex ShaderSamplerDef { const char* name; uxx index; };
+typedef plex ShaderAttributeDef ShaderAttributeDef;
+plex ShaderAttributeDef { const char* name; uxx index; };
+typedef plex ShaderUniformDef ShaderUniformDef;
+plex ShaderUniformDef { const char* name; u8 blockIndex; uxx offset; uxx size; };
 
-typedef struct ShaderMetadata ShaderMetadata;
-struct ShaderMetadata
+typedef plex ShaderMetadata ShaderMetadata;
+plex ShaderMetadata
 {
 	uxx numImages;
 	const ShaderImageDef* imageDefs;
@@ -56,23 +56,23 @@ struct ShaderMetadata
 	const ShaderAttributeDef* attributeDefs;
 };
 
-typedef struct ShaderImage ShaderImage;
-struct ShaderImage
+typedef plex ShaderImage ShaderImage;
+plex ShaderImage
 {
 	Str8 name;
 	uxx index;
 	uxx sizeUniformIndex;
 };
 
-typedef struct ShaderSampler ShaderSampler;
-struct ShaderSampler
+typedef plex ShaderSampler ShaderSampler;
+plex ShaderSampler
 {
 	Str8 name;
 	uxx index;
 };
 
-typedef struct ShaderAttribute ShaderAttribute;
-struct ShaderAttribute
+typedef plex ShaderAttribute ShaderAttribute;
+plex ShaderAttribute
 {
 	Str8 name;
 	uxx index;
@@ -134,8 +134,8 @@ uxx GetShaderUniformMatchSize(ShaderUniformType enumValue)
 }
 #endif
 
-typedef struct ShaderUniform ShaderUniform;
-struct ShaderUniform
+typedef plex ShaderUniform ShaderUniform;
+plex ShaderUniform
 {
 	ShaderUniformType type;
 	Str8 name;
@@ -144,16 +144,16 @@ struct ShaderUniform
 	uxx size;
 };
 
-typedef struct ShaderUniformBlock ShaderUniformBlock;
-struct ShaderUniformBlock
+typedef plex ShaderUniformBlock ShaderUniformBlock;
+plex ShaderUniformBlock
 {
 	bool valueChanged;
 	uxx numUniforms;
 	Slice value;
 };
 
-typedef struct Shader Shader;
-struct Shader
+typedef plex Shader Shader;
+plex Shader
 {
 	Arena* arena;
 	Result error;

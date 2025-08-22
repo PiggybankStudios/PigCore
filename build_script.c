@@ -38,6 +38,9 @@ Description:
 
 #define FILENAME_PIGGEN_EXE        "piggen.exe"
 #define FILENAME_PIGGEN            "piggen"
+#define FILENAME_TRACY_DLL         "tracy.dll"
+#define FILENAME_TRACY_LIB         "tracy.lib"
+#define FILENAME_TRACY_SO          "tracy.so"
 #define FILENAME_IMGUI_OBJ         "imgui.obj"
 #define FILENAME_IMGUI_O           "imgui.o"
 #define FILENAME_PHYSX_OBJ         "physx_capi.obj"
@@ -81,15 +84,18 @@ int main(int argc, char* argv[])
 	Str8 buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
 	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
+	bool PROFILING_ENABLED        = ExtractBoolDefine(buildConfigContents, StrLit("PROFILING_ENABLED"));
 	bool BUILD_PIGGEN             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
 	bool BUILD_SHADERS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
 	bool RUN_PIGGEN               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
+	bool BUILD_TRACY_DLL          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TRACY_DLL"));
 	bool BUILD_IMGUI_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_IMGUI_OBJ"));
 	bool BUILD_PHYSX_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PHYSX_OBJ"));
 	bool BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
 	bool BUILD_TESTS              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
 	bool RUN_TESTS                = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
 	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
+	bool DUMP_ASSEMBLY            = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
 	bool CONVERT_WASM_TO_WAT      = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
 	bool USE_EMSCRIPTEN           = ExtractBoolDefine(buildConfigContents, StrLit("USE_EMSCRIPTEN"));
 	// bool ENABLE_AUTO_PROFILE      = ExtractBoolDefine(buildConfigContents, StrLit("ENABLE_AUTO_PROFILE"));
@@ -110,6 +116,7 @@ int main(int argc, char* argv[])
 	// bool BUILD_WITH_CLAY          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
 	bool BUILD_WITH_IMGUI         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
 	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
+	bool BUILD_WITH_HTTP          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
 	
 	free(buildConfigContents.chars);
 	
@@ -135,7 +142,7 @@ int main(int argc, char* argv[])
 	{
 		emscriptenSdkPath = GetEmscriptenSdkPath();
 		PrintLine("Emscripten SDK path: \"%.*s\"", emscriptenSdkPath.length, emscriptenSdkPath.chars);
-		InitializeEmsdkIf(&isEmsdkInitialized);
+		InitializeEmsdkIf(StrLit(".."), &isEmsdkInitialized);
 	}
 	
 	Str8 orcaSdkPath = ZEROED;
@@ -157,14 +164,14 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |       Fill CliArgLists       |
 	// +==============================+
-	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
+	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY);
 	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
 	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
 	CliArgList clang_LinuxFlags                  = ZEROED; Fill_clang_LinuxFlags(&clang_LinuxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
 	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
-	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX);
+	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
 	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX, !BUILDING_ON_OSX);
 	CliArgList clang_WasmFlags                   = ZEROED; Fill_clang_WasmFlags(&clang_WasmFlags, DEBUG_BUILD);
 	CliArgList clang_WebFlags                    = ZEROED; Fill_clang_WebFlags(&clang_WebFlags, USE_EMSCRIPTEN);
@@ -190,7 +197,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN_EXE);
 			
 			CliArgList cmd = ZEROED;
@@ -198,6 +205,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIGGEN_EXE);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
+			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "piggen.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "Shlwapi.lib"); //Needed for PathFileExistsA
@@ -330,7 +338,7 @@ int main(int argc, char* argv[])
 	
 	if (BUILD_SHADERS)
 	{
-		if (BUILD_WINDOWS) { InitializeMsvcIf(&isMsvcInitialized); }
+		if (BUILD_WINDOWS) { InitializeMsvcIf(StrLit(".."), &isMsvcInitialized); }
 		
 		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
 		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
@@ -448,6 +456,45 @@ int main(int argc, char* argv[])
 	}
 	
 	// +--------------------------------------------------------------+
+	// |                       Build tracy.dll                        |
+	// +--------------------------------------------------------------+
+	if (PROFILING_ENABLED && !BUILD_TRACY_DLL && BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_TRACY_DLL))) { PrintLine("Building %s because it's missing", FILENAME_TRACY_DLL); BUILD_TRACY_DLL = true; }
+	if (PROFILING_ENABLED && !BUILD_TRACY_DLL && BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_TRACY_SO))) { PrintLine("Building %s because it's missing", FILENAME_TRACY_SO); BUILD_TRACY_DLL = true; }
+	if (BUILD_TRACY_DLL)
+	{
+		if (BUILD_WINDOWS)
+		{
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			PrintLine("[Building %s for Windows...]", FILENAME_TRACY_DLL);
+			
+			CliArgList cmd = ZEROED;
+			// AddArg(&cmd, CL_COMPILE);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/third_party/tracy/TracyClient.cpp");
+			AddArgNt(&cmd, CL_INCLUDE_DIR, "[ROOT]/third_party/tracy");
+			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TRACY_DLL);
+			AddArgNt(&cmd, CL_DEFINE, "TRACY_ENABLE");
+			AddArgNt(&cmd, CL_DEFINE, "TRACY_EXPORTS");
+			AddArgNt(&cmd, CL_CONFIGURE_EXCEPTION_HANDLING, "s"); //enable stack-unwinding
+			AddArgNt(&cmd, CL_CONFIGURE_EXCEPTION_HANDLING, "c"); //extern "C" functions don't through exceptions
+			AddArgList(&cmd, &cl_CommonFlags);
+			AddArgList(&cmd, &cl_LangCppFlags);
+			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "tracy.asm"); }
+			AddArg(&cmd, CL_LINK);
+			AddArg(&cmd, LINK_BUILD_DLL);
+			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
+			AssertFileExist(StrLit(FILENAME_TRACY_DLL), true);
+			PrintLine("[Built %s for Windows!]", FILENAME_TRACY_DLL);
+		}
+		if (BUILD_LINUX)
+		{
+			//TODO: Implement Linux version!
+		}
+	}
+	if (PROFILING_ENABLED) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_LIB); }
+	
+	// +--------------------------------------------------------------+
 	// |                       Build imgui.obj                        |
 	// +--------------------------------------------------------------+
 	if (BUILD_WITH_IMGUI && !BUILD_IMGUI_OBJ && BUILD_WINDOWS && !DoesFileExist(StrLit(FILENAME_IMGUI_OBJ))) { PrintLine("Building %s because it's missing", FILENAME_IMGUI_OBJ); BUILD_IMGUI_OBJ = true; }
@@ -456,7 +503,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_IMGUI_OBJ);
 			
 			CliArgList cmd = ZEROED;
@@ -466,6 +513,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CL_OBJ_FILE, FILENAME_IMGUI_OBJ);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCppFlags);
+			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "imgui.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
@@ -489,7 +537,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_PHYSX_OBJ);
 			
 			CliArgList cmd = ZEROED;
@@ -499,6 +547,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CL_OBJ_FILE, FILENAME_PHYSX_OBJ);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCppFlags);
+			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "physx.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
@@ -520,7 +569,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
 			CliArgList cmd = ZEROED;
@@ -528,6 +577,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIG_CORE_DLL);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
+			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "pig_core.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArg(&cmd, LINK_BUILD_DLL);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
@@ -579,7 +629,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS_EXE);
 			
 			CliArgList cmd = ZEROED;
@@ -587,6 +637,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TESTS_EXE);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
+			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "tests.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgList(&cmd, &cl_PigCoreLibraries);

@@ -79,6 +79,18 @@ enum Result
 	Result_NoMoreBytes,
 	Result_Partial,
 	Result_WrongFolder,
+	Result_StackOverflow,
+	Result_UnexpectedEndElement,
+	Result_WrongEndElementType,
+	Result_MissingEndElement,
+	Result_UnexpectedAttribute,
+	Result_InvalidInput,
+	Result_Duplicate,
+	Result_FailedToOpenRequest,
+	Result_SslProblem,
+	Result_WinHTTPError,
+	Result_MissingItems,
+	Result_MissingPart,
 	
 	Result_Count,
 };
@@ -141,6 +153,18 @@ PEXP const char* GetResultStr(Result result)
 		case Result_NoMoreBytes: return "NoMoreBytes";
 		case Result_Partial: return "Partial";
 		case Result_WrongFolder: return "WrongFolder";
+		case Result_StackOverflow: return "StackOverflow";
+		case Result_UnexpectedEndElement: return "UnexpectedEndElement";
+		case Result_WrongEndElementType: return "WrongEndElementType";
+		case Result_MissingEndElement: return "MissingEndElement";
+		case Result_UnexpectedAttribute: return "UnexpectedAttribute";
+		case Result_InvalidInput: return "InvalidInput";
+		case Result_Duplicate: return "Duplicate";
+		case Result_FailedToOpenRequest: return "FailedToOpenRequest";
+		case Result_SslProblem: return "SslProblem";
+		case Result_WinHTTPError: return "WinHTTPError";
+		case Result_MissingItems: return "MissingItems";
+		case Result_MissingPart: return "MissingPart";
 		default: return UNKNOWN_STR;
 	}
 }

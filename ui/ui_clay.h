@@ -24,8 +24,8 @@ Description:
 
 #if BUILD_WITH_CLAY
 
-typedef struct ClayElementUserData ClayElementUserData;
-struct ClayElementUserData
+typedef plex ClayElementUserData ClayElementUserData;
+plex ClayElementUserData
 {
 	bool outsideBorder;
 };
@@ -55,15 +55,19 @@ const char* GetTextContractionStr(TextContraction enumValue)
 	}
 }
 
-typedef struct ClayTextUserData ClayTextUserData;
-struct ClayTextUserData
+typedef plex ClayTextUserData ClayTextUserData;
+plex ClayTextUserData
 {
 	TextContraction contraction;
+	plex FontFlow* flowTarget;
+	Color32 backgroundColor; //used for text that has selection
+	bool richText;
+	r32 wrapWidth; //Using this wrapWidth bypasses Clay's word wrapping behavior so it should only be used when the parent container has already been vertically sized based off previous MeasureText call with wrapWidth set
 };
 
 #define CLAY_ELEMENT_USERDATA_TYPE ClayElementUserData
 #define CLAY_TEXT_USERDATA_TYPE ClayTextUserData
-#define CLAY_IMAGEDATA_TYPE struct Texture*
+#define CLAY_IMAGEDATA_TYPE plex Texture*
 
 #if PIG_CORE_IMPLEMENTATION
 #define CLAY_IMPLEMENTATION
@@ -81,8 +85,8 @@ struct ClayTextUserData
 #endif
 
 //TODO: We may want to make sure that ClayUI is always accessed from the same thread it was created on!
-typedef struct ClayUI ClayUI;
-struct ClayUI
+typedef plex ClayUI ClayUI;
+plex ClayUI
 {
 	Arena* arena;
 	ClayMeasureText_f* measureTextFunc;
@@ -109,6 +113,16 @@ typedef Clay_ElementId ClayId;
 #endif
 
 // +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+// These macros are really shorthand for multiplying by app->uiScale and dealing with how to round or clamp to good values when uiScale is very big/small
+#define UISCALE_R32(scale, pixels) RoundR32((r32)(pixels) * (scale))
+#define UISCALE_U16(scale, pixels) (u16)RoundR32i((r32)(pixels) * (scale))
+#define UISCALE_BORDER(scale, pixels) MaxU16(((pixels) > 0) ? (u16)1 : (u16)0, (u16)RoundR32i((r32)(pixels) * (scale)))
+
+#define CLAY_BOX(size, color) do { CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(size), .height = CLAY_SIZING_FIXED(size) } }, .backgroundColor = (color) }) {} } while(0)
+
+// +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
@@ -117,6 +131,25 @@ static void ClayErrorCallback(Clay_ErrorData errorData)
 {
 	PrintLine_E("Clay Error: %s", errorData.errorText.chars);
 	//TODO: Implement me better!
+}
+
+// +==============================+
+// |       HashTextUserData       |
+// +==============================+
+// u32 HashTextUserData(u32 currentHash, Clay_TextElementConfig* config)
+static CLAY_HASH_TEXT_USERDATA_DEF(HashTextUserData)
+{
+	u32 result = currentHash;
+	
+	result += config->userData.richText ? 17 : 0;
+	result += (result << 10);
+	result ^= (result >> 6);
+	
+	result += *((u32*)&config->userData.wrapWidth);
+	result += (result << 10);
+	result ^= (result >> 6);
+	
+	return result;
 }
 
 // +--------------------------------------------------------------+
@@ -147,6 +180,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureText
 	clayOut->context = Clay_Initialize(arena, windowSize, (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
 	
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
+	Clay_SetHashTextUserDataFunction(HashTextUserData);
 }
 
 PEXPI bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling)

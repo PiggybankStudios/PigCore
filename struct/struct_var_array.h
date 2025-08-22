@@ -6,13 +6,19 @@ Description:
 	** Defines a VarArray structure which is an array that can reallocate as it
 	** grows larger allowing for any number of elements to be pushed on, as long
 	** as the Arena backing the array can allocate more memory.
+	** The Var in the name means "Variable" because the size is variable.
+	
 	** This is a C structure, not a C++ templated class like vector<T> so we cannot
-	** be really type safe without a lot of work. Instead we use the size of the elements
+	** be really type safe without a lot of work. Instead we use the size+alignment of the elements
 	** as a rough heuristic to Assert on before doing pointer casting to any particular type,
 	** and we use preprocessor macros to tie the pointer cast and sizeof together.
 	** The macros also allow us to inject func+file+line information into the call
 	** when doing debug builds so we can diagnose which call site caused a problem.
-	** To help combat this we will also make some specific 
+	
+	** NOTE: A major restriction of VarArray is that you cannot hold an item pointer
+	** through a call to VarArrayAdd because the items may be reallocated during the Add.
+	** BktArray allows for holding item pointers across Add calls at the sacrifice of
+	** the single contiguous memory guarantee that VarArray has
 */
 
 //TODO: Add VarArraySet which memcpy's some value into a slot
@@ -66,8 +72,8 @@ Description:
 // +--------------------------------------------------------------+
 // |                        Data Structure                        |
 // +--------------------------------------------------------------+
-typedef struct VarArray VarArray;
-struct VarArray
+typedef plex VarArray VarArray;
+plex VarArray
 {
 	Arena* arena; //doubles as IsInit check
 	uxx itemSize;
@@ -207,6 +213,14 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 #else
 #define VarArrayAddMulti(type, arrayPntr, numItems) VarArrayAddMulti_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (numItems))
 #endif
+//NOTE: valuesPntr should never point to elements in the arrayPntr! We will access the valuesPntr AFTER the Add meaning the items may be reallocated and the pointer would be invalid!
+//      You can make a call to VarArrayGet for the valuesPntr argument, that call will be done after the Add so it will be safe
+#define VarArrayAddValues(type, arrayPntr, numValues, valuesPntr) do                    \
+{                                                                                       \
+	type* addedItemsPntr_NOCONFLICT = VarArrayAddMulti(type, (arrayPntr), (numValues)); \
+	DebugNotNull(addedItemsPntr_NOCONFLICT);                                            \
+	MyMemCopy(addedItemsPntr_NOCONFLICT, (valuesPntr), sizeof(type) * (numValues));     \
+} while(0)
 
 #if LANGUAGE_IS_C
 #define VarArrayInsert(type, arrayPntr, index) (type*)VarArrayInsert_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (index))
@@ -251,7 +265,7 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP bool VarArrayExpand(struct VarArray* array, uxx capacityRequired);
+PEXP bool VarArrayExpand(plex VarArray* array, uxx capacityRequired);
 
 // +--------------------------------------------------------------+
 // |                     Initialize VarArray                      |
@@ -350,40 +364,15 @@ PEXP bool VarArrayExpand(VarArray* array, uxx capacityRequired) //pre-declared a
 	DebugAssert(newLength >= capacityRequired);
 	DebugAssert(newLength <= (UINT64_MAX / array->itemSize));
 	
-	void* newSpace = nullptr;
-	if (CanArenaAllocAligned(array->arena))
-	{
-		newSpace = AllocMemAligned(array->arena, newLength * array->itemSize, array->itemAlignment);
-	}
-	else
-	{
-		newSpace = AllocMem(array->arena, array->allocLength * array->itemSize);
-	}
+	array->items = ReallocMemAligned(array->arena, array->items, array->allocLength * array->itemSize, array->itemAlignment, newLength * array->itemSize, array->itemAlignment);
 	
-	if (newSpace == nullptr)
+	if (array->items == nullptr)
 	{
 		// PrintLine_E("Failed to expand variable array %s to %llu items at %llu bytes each", (array->name.pntr != nullptr) ? array->name.pntr : "[unnamed]", newLength, array->itemSize);
 		AssertMsg(false, "Failed to expand VarArray!");
 		return false;
 	}
 	
-	if (array->length > 0)
-	{
-		MyMemCopy(newSpace, array->items, array->length * array->itemSize);
-	}
-	if (array->items != nullptr && CanArenaFree(array->arena))
-	{
-		if (CanArenaAllocAligned(array->arena))
-		{
-			FreeMemAligned(array->arena, array->items, array->itemSize * array->allocLength, array->itemAlignment);
-		}
-		else
-		{
-			FreeMem(array->arena, array->items, array->itemSize * array->allocLength);
-		}
-	}
-	
-	array->items = newSpace;
 	array->allocLength = newLength;
 	return true;
 }
@@ -413,6 +402,7 @@ PEXP bool VarArrayContains_(uxx itemSize, uxx itemAlignment, VarArray* array, co
 	return true;
 }
 
+//TODO: Should we return the uxx index and use something like array->length as the "not in array" value? (We decided to do this for BktArray)
 PEXPI bool VarArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemInQuestion, uxx* indexOut)
 {
 	if (!VarArrayContains_(itemSize, itemAlignment, array, itemInQuestion)) { return false; }
@@ -465,7 +455,7 @@ PEXPI void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array,
 }
 
 // +--------------------------------------------------------------+
-// |                     Add Item to VarArray                     |
+// |                   Add Item(s) to VarArray                    |
 // +--------------------------------------------------------------+
 //NOTE: This always asserts on failure to allocate since VarArrayExpand defaults to asserting
 PEXP void* VarArrayAdd_(uxx itemSize, uxx itemAlignment, VarArray* array)
@@ -506,24 +496,21 @@ PEXP void* VarArrayAddMulti_(uxx itemSize, uxx itemAlignment, VarArray* array, u
 	if (numItems == 0) { return nullptr; }
 	if (!VarArrayExpand(array, array->length+numItems)) { return nullptr; }
 	
-	void* result = nullptr;
-	uxx numItemsBefore = array->length;
-	for (uxx iIndex = 0; iIndex < numItems; iIndex++)
-	{
-		void* newItem = VarArrayAdd_(itemSize, itemAlignment, array);
-		if (newItem == nullptr)
-		{
-			array->length = numItemsBefore;
-			return nullptr;
-		}
-		else if (result == nullptr) { result = newItem; }
-	}
+	void* result = ((u8*)array->items) + (array->length * array->itemSize);
+	array->length += numItems;
+	
+	#if VAR_ARRAY_CLEAR_ITEMS_ON_ADD
+	MyMemSet(result, VAR_ARRAY_CLEAR_ITEM_BYTE_VALUE, numItems * array->itemSize);
+	#endif
 	
 	return result;
 }
 
+
+//TODO: VarArrayAddArray?
+
 // +--------------------------------------------------------------+
-// |                  Insert Item Into VarArray                   |
+// |                 Insert Item(s) Into VarArray                 |
 // +--------------------------------------------------------------+
 PEXP void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
 {
@@ -552,8 +539,10 @@ PEXP void* VarArrayInsert_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx
 	return result;
 }
 
+//TODO: VarArrayInsertMulti?
+
 // +--------------------------------------------------------------+
-// |               Remove Item at Index in VarArray               |
+// |                  Remove Item(s) in VarArray                  |
 // +--------------------------------------------------------------+
 PEXP void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, uxx index)
 {
@@ -576,9 +565,6 @@ PEXP void VarArrayRemoveAt_(uxx itemSize, uxx itemAlignment, VarArray* array, ux
 	array->length--;
 }
 
-// +--------------------------------------------------------------+
-// |               Remove Item by Pntr in VarArray                |
-// +--------------------------------------------------------------+
 PEXPI void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* itemToRemove)
 {
 	uxx itemIndex = 0;
@@ -586,6 +572,11 @@ PEXPI void VarArrayRemove_(uxx itemSize, uxx itemAlignment, VarArray* array, con
 	Assert(itemInArray);
 	VarArrayRemoveAt_(itemSize, itemAlignment, array, itemIndex);
 }
+
+//TODO: VarArrayRemoveValue?
+
+//TODO: VarArrayRemoveAtMulti?
+//TODO: VarArrayRemoveMulti?
 
 // +--------------------------------------------------------------+
 // |                 Copy VarArray Into New Arena                 |

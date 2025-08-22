@@ -55,23 +55,23 @@ const char* GetTextureFlagStr(TextureFlag enumValue)
 }
 #endif
 
-typedef struct Texture Texture;
-struct Texture
+typedef plex Texture Texture;
+plex Texture
 {
 	Arena* arena;
 	Result error;
 	sg_image image;
 	sg_sampler sampler;
 	u8 flags;
-	union
+	car
 	{
 		v2i size;
-		struct { i32 Width, Height; };
+		plex { i32 Width, Height; };
 	};
 	uxx numPixels;
 	uxx pixelSize;
 	uxx totalSize;
-	union { void* pixelsPntr; u8* pixelsU8; u32* pixelsU32; r32 pixelsR32; };
+	car { void* pixelsPntr; u8* pixelsU8; u32* pixelsU32; r32 pixelsR32; };
 	Str8 name;
 	#if DEBUG_BUILD
 	Str8 filePath;

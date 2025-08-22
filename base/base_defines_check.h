@@ -123,6 +123,10 @@ Description:
 #define PREFER_OPENGL_OVER_D3D11 0
 #endif
 
+#ifndef BUILD_WITH_HTTP
+#define BUILD_WITH_HTTP 0
+#endif
+
 // +--------------------------------------------------------------+
 // |                       Check Conflicts                        |
 // +--------------------------------------------------------------+

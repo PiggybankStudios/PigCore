@@ -32,16 +32,16 @@ Description:
 #define EXEC_PROGRAM_IN_FOLDER_PREFIX "./"
 #endif
 
-typedef struct CliArg CliArg;
-struct CliArg
+typedef plex CliArg CliArg;
+plex CliArg
 {
 	Str8 format;
 	Str8 value;
 };
 
 #define CLI_MAX_ARGS 256
-typedef struct CliArgList CliArgList;
-struct CliArgList
+typedef plex CliArgList CliArgList;
+plex CliArgList
 {
 	Str8 rootDirPath;
 	char pathSepChar;

@@ -61,8 +61,9 @@ Description:
 #define NEW_STRUCT(type) type
 #endif
 
-#if TARGET_IS_PLAYDATE
-#define THREAD_LOCAL //nothing, not supported by Playdate because there is no OS to do threading
+//TODO: Confirm that this works on Windows, OSX, and Linux with Clang, GCC, and MSVC compilers
+#if !TARGET_HAS_THREADING
+#define THREAD_LOCAL //nothing
 #elif TARGET_IS_OSX
 #define THREAD_LOCAL __thread
 #else
@@ -101,10 +102,19 @@ Description:
 // Shorthand for writing things like (4 * 1024 * 1024) as Megabytes(4).
 // Can be used for more than just memory sizes but these powers of 1024 are often
 // used when partitioning memory because they relate to binary bit patterns
-#define Kilobytes(value) ((value) * 1024ULL)
-#define Megabytes(value) (Kilobytes(value) * 1024ULL)
-#define Gigabytes(value) (Megabytes(value) * 1024ULL)
-#define Terabytes(value) (Gigabytes(value) * 1024ULL)
+#define Kilo(value) ((value) * 1024ULL)
+#define Mega(value) (Kilo(value) * 1024ULL)
+#define Giga(value) (Mega(value) * 1024ULL)
+#define Tera(value) (Giga(value) * 1024ULL)
+#define Kilobytes(value) Kilo(value)
+#define Megabytes(value) Mega(value)
+#define Gigabytes(value) Giga(value)
+#define Terabytes(value) Tera(value)
+
+#define Thousand(value) ((value) * 1000ULL)
+#define Million(value)  ((value) * 1000000ULL)
+#define Billion(value)  ((value) * 1000000000ULL)
+#define Trillion(value) ((value) * 1000000000000ULL)
 
 // Convert between radians and degrees, either with Pi32 or Pi64
 #define ToRadians32(degrees)		((degrees)/180.0f * Pi32)
@@ -129,6 +139,9 @@ Description:
 // accept the first value regardless of the current value in the trackVariable
 #define TrackMax(isFirst, trackVariable, newValue) do { if ((isFirst) || (trackVariable) < (newValue)) { (trackVariable) = (newValue); } } while(0)
 #define TrackMin(isFirst, trackVariable, newValue) do { if ((isFirst) || (trackVariable) > (newValue)) { (trackVariable) = (newValue); } } while(0)
+
+#define IsAlignedTo(pntr, alignment) ((alignment) == 0 || (((size_t)(pntr)) % (alignment)) == 0)
+#define AlignOffset(pntr, alignment) ((alignment) == 0 ? 0 : (((alignment) - (((size_t)(pntr)) % (alignment))) % alignment))
 
 #ifndef STRINGIFY_DEFINE
 #define STRINGIFY_DEFINE(define) STRINGIFY(define)
@@ -223,11 +236,24 @@ Description:
 
 #define SwapVariables(varType, var1, var2) do { varType tempVarWithLongNameThatWontConflict = (var2); (var2) = (var1); (var1) = tempVarWithLongNameThatWontConflict; } while(0)
 
+//Use a for loop to execute code at the end of a block (warning: if a break is hit inside the block then the endCode will NOT run!)
+#define DeferBlockEx(uniqueName, endCode)                                 for (int uniqueName = 0; uniqueName == 0; (uniqueName = 1, (endCode)))
+#define DeferBlock(endCode)                                               DeferBlockEx(DeferBlockIter, (endCode))
+//startCode runs at beginning of block
+#define DeferBlockWithStartEx(uniqueName, startCode, endCode)             for (int uniqueName = ((startCode), 0); uniqueName == 0; (uniqueName = 1, (endCode)))
+#define DeferBlockWithStart(startCode, endCode)                           DeferBlockEx(DeferBlockIter, (startCode), (endCode))
+//startCode returns bool to determine if block should run, endCode always runs
+#define DeferIfBlockEx(uniqueName, startCodeAndCondition, endCode)        for (int uniqueName = 2 * !(startCodeAndCondition); (uniqueName == 2) ? ((endCode), false) : (uniqueName == 0); (uniqueName = 1, (endCode)))
+#define DeferIfBlock(startCodeAndCondition, endCode)                      DeferIfBlockEx(DeferBlockIter, (startCodeAndCondition), (endCode))
+//startCode returns bool to determine block should run, endCode only runs if startCode returns true
+#define DeferIfBlockCondEndEx(uniqueName, startCodeAndCondition, endCode) for (int uniqueName = 1 * !(startCodeAndCondition); uniqueName == 0; (uniqueName = 1, (endCode)))
+#define DeferIfBlockCondEnd(startCodeAndCondition, endCode)               DeferIfBlockCondEndEx(DeferBlockIter, (startCodeAndCondition), (endCode))
+
 // +--------------------------------------------------------------+
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
 //NOTE: Because MSVC is annoying and doesn't have an attribute, you must do
-// both START_PACK()+END_PACK() around your struct(s) and add ATTR_PACKED to each struct
+// both START_PACK()+END_PACK() around your plex(s) and add ATTR_PACKED to each plex
 #if COMPILER_IS_MSVC
 	#define PACKED(structCode)        __pragma( pack(push, 1) ) structCode __pragma(pack(pop))
 	#define START_PACK()              __pragma(pack(push, 1))

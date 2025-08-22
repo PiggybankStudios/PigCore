@@ -72,8 +72,8 @@ PEXP const char* GetRandomSeriesTypeAcronymStr(RandomSeriesType enumValue)
 }
 #endif
 
-typedef struct RandomSeries RandomSeries;
-struct RandomSeries
+typedef plex RandomSeries RandomSeries;
+plex RandomSeries
 {
 	RandomSeriesType type;
 	bool seeded;

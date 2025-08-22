@@ -44,8 +44,9 @@ VertBuffer sphereBuffer;
 u64 programTime = 0;
 MouseState mouse = ZEROED;
 KeyboardState keyboard = ZEROED;
-v3 cameraPos = V3_Zero_Const;
+v3 cameraPos = {.X=0.0f, .Y=1.0f, .Z=0.0f};
 v3 cameraLookDir = V3_Zero_Const;
+v2 wrapPos = V2_Zero_Const;
 #if BUILD_WITH_CLAY
 ClayUIRenderer clay = ZEROED;
 u16 clayFont = 0;
@@ -149,6 +150,7 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 			.fontId = clayFont,
 			.fontSize = 18,
 			.textColor = textColor,
+			.userData = { .richText = true },
 		})
 	);
 	ScratchEnd(scratch);
@@ -257,6 +259,12 @@ void AppInit(void)
 	Assert(bakeResult5 == Result_Success);
 	RemoveAttachedTtfFile(&testFont);
 	
+	Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 26, FontStyleFlag_Bold);
+	Assert(attachResult6 == Result_Success);
+	Result bakeResult6 = BakeFontAtlas(&testFont, 26, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+	Assert(bakeResult6 == Result_Success);
+	RemoveAttachedTtfFile(&testFont);
+	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
 	for (uxx iIndex = 0; iIndex < cubeMesh.numIndices; iIndex++)
@@ -337,10 +345,15 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 // +--------------------------------------------------------------+
 bool AppFrame(void)
 {
+	TracyCFrameMark;
+	TracyCZoneN(Zone_Update, "Update", true);
+	ScratchBegin(scratch);
 	bool frameRendered = true;
 	programTime += 16; //TODO: Calculate this!
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
+	
+	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
 	
 	if (IsKeyboardKeyPressed(&keyboard, Key_F)) { sapp_lock_mouse(!sapp_mouse_locked()); }
 	if (IsKeyboardKeyPressed(&keyboard, Key_Escape) && sapp_mouse_locked()) { sapp_lock_mouse(false); }
@@ -397,6 +410,9 @@ bool AppFrame(void)
 	}
 	#endif
 	
+	TracyCZoneEnd(Zone_Update);
+	
+	TracyCZoneN(Zone_Draw, "Draw", true);
 	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
 	{
 		// +==============================+
@@ -453,6 +469,24 @@ bool AppFrame(void)
 			SetProjectionMat(projMat);
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
+			
+			BindFont(&testFont);
+			v2 textPos = NewV2(50, 50);
+			r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
+			if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
+			RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
+			DrawWrappedRichTextWithFont(
+				&testFont, 18, FontStyleFlag_None,
+				loremIpsumRich,
+				textPos,
+				wrapWidth,
+				MonokaiWhite
+			);
+			rec logicalRec = gfx.prevFontFlow.logicalRec;
+			rec visualRec = gfx.prevFontFlow.visualRec;
+			DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
+			DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
+			DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
 			
 			#if 0
 			v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
@@ -623,8 +657,11 @@ bool AppFrame(void)
 		}
 	}
 	EndFrame();
+	TracyCZoneEnd(Zone_Draw);
 	
+	TracyCZoneN(Zone_Commit, "Commit", true);
 	sg_commit();
+	TracyCZoneEnd(Zone_Commit);
 	
 	// PrintLine_D("numPipelineChanges: %llu", gfx.numPipelineChanges);
 	// PrintLine_D("numBindingChanges: %llu", gfx.numBindingChanges);
@@ -634,6 +671,7 @@ bool AppFrame(void)
 	gfx.numDrawCalls = 0;
 	RefreshMouseState(&mouse, sapp_mouse_locked(), NewV2(sapp_widthf()/2.0f, sapp_heightf()/2.0f));
 	RefreshKeyboardState(&keyboard);
+	ScratchEnd(scratch);
 	return frameRendered;
 }
 
@@ -642,6 +680,7 @@ bool AppFrame(void)
 // +--------------------------------------------------------------+
 void AppEvent(const sapp_event* event)
 {
+	TracyCZoneN(Zone_Func, "AppEvent", true);
 	bool handledEvent = HandleSokolKeyboardAndMouseEvents(event, programTime, NewV2i(sapp_width(), sapp_height()), &keyboard, &mouse, sapp_mouse_locked());
 	
 	if (!handledEvent)
@@ -674,6 +713,8 @@ void AppEvent(const sapp_event* event)
 			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
 		}
 	}
+	
+	TracyCZoneEnd(Zone_Func);
 }
 
 // +--------------------------------------------------------------+
@@ -681,13 +722,14 @@ void AppEvent(const sapp_event* event)
 // +--------------------------------------------------------------+
 sapp_desc sokol_main(int argc, char* argv[])
 {
+	TracyCZoneN(Zone_Func, "sokol_main", true);
 	//NOTE: The App callbacks may happen on a different thread than this one!
 	UNUSED(argc);
 	UNUSED(argv);
 	
 	MyMain(argc, argv); //call MyMain to initialize arenas and whatnot
 	
-	return (sapp_desc){
+	sapp_desc result = {
 		.init_cb = AppInit,
 		.frame_cb = AppFrame,
 		.cleanup_cb = AppCleanup,
@@ -698,6 +740,9 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.icon.sokol_default = true,
 		.logger.func = SokolLogCallback,
 	};
+	
+	TracyCZoneEnd(Zone_Func);
+	return result;
 }
 
 #endif //BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP

@@ -69,8 +69,8 @@ enum cTokenFlags
 	cTokenFlag_Count                   = 3,
 };
 
-typedef struct cToken cToken;
-struct cToken
+typedef plex cToken cToken;
+plex cToken
 {
 	uxx index; //index in the tokens VarArray
 	cTokenType type;
@@ -80,8 +80,8 @@ struct cToken
 	Str8 str; //allocated on tokenizer arena
 };
 
-typedef struct cTokenizer cTokenizer;
-struct cTokenizer
+typedef plex cTokenizer cTokenizer;
+plex cTokenizer
 {
 	Arena* arena;
 	Str8 inputStr;

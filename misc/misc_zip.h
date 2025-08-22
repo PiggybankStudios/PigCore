@@ -51,8 +51,8 @@ Description:
 	#endif
 #endif //PIG_CORE_IMPLEMENTATION
 
-typedef struct ZipArchive ZipArchive;
-struct ZipArchive
+typedef plex ZipArchive ZipArchive;
+plex ZipArchive
 {
 	Arena* arena;
 	bool isWriter;

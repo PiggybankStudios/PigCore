@@ -23,16 +23,16 @@ Description:
 #define MEOW_HASH_AVAILABLE 1
 #endif
 
-typedef union Hash128 Hash128;
-union Hash128
+typedef car Hash128 Hash128;
+car Hash128
 {
 	u32 parts[4];
 	u64 halves[2];
-	struct { u32 part0; u32 part1; u32 part2; u32 part3; };
-	struct { u32 first; u32 second; u32 third; u32 fourth; };
-	struct { u64 left; u64 right; };
-	struct { u64 lower; u64 upper; };
-	struct { u64 half1; u64 half2; };
+	plex { u32 part0; u32 part1; u32 part2; u32 part3; };
+	plex { u32 first; u32 second; u32 third; u32 fourth; };
+	plex { u64 left; u64 right; };
+	plex { u64 lower; u64 upper; };
+	plex { u64 half1; u64 half2; };
 };
 
 // +--------------------------------------------------------------+

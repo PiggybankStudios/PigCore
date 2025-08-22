@@ -7,6 +7,8 @@ Date:   01\15\2025
 #ifndef _CROSS_QUATERNION_AND_MATRICES_H
 #define _CROSS_QUATERNION_AND_MATRICES_H
 
+//TODO: Should we add functions for quatd? Maybe once we have 64-bit matrices?
+
 #if !PIG_CORE_IMPLEMENTATION
 	quat QuatFromMat3(mat3 matrix3);
 #endif

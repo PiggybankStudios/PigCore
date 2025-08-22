@@ -7,8 +7,8 @@ Date:   02\03\2025
 #ifndef _CROSS_MOUSE_BTNS_BTN_STATE_AND_VECTORS_H
 #define _CROSS_MOUSE_BTNS_BTN_STATE_AND_VECTORS_H
 
-typedef struct MouseState MouseState;
-struct MouseState
+typedef plex MouseState MouseState;
+plex MouseState
 {
 	v2 position;
 	v2 prevPosition;
@@ -116,7 +116,7 @@ PEXPI void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
-	if (UpdateBtnState(&mouse->btns[btn], currentTime, pressed))
+	if (UpdateBtnState(&mouse->btns[btn], currentTime, pressed, false))
 	{
 		mouse->clickStartPositions[btn] = mouse->position;
 	}

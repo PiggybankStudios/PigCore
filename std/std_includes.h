@@ -43,6 +43,7 @@ typedef uint16_t char16_t;
 	#include <intrin.h>
 #endif
 #if (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#include <sys/types.h>
 	#include <signal.h>
 	// Gives us getpagesize and sleep and access
 	#include <unistd.h>
@@ -50,13 +51,16 @@ typedef uint16_t char16_t;
 	#include <dirent.h>
 	// Gives us mmap
 	#include <sys/mman.h>
-	// Needed for time_t and time()
+	// Needed for time_t, time(), timespec, and clock_gettime()
 	#include <time.h>
 	#include <sys/time.h>
 	#include <errno.h>
 	#include <dlfcn.h> //needed for dlopen
-	// Needed for struct stat
+	// Needed for plex stat
 	#include <sys/stat.h>
+	// Needed for getpwuid and getuid
+	#include <pwd.h>
+	#include <pthread.h>
 #endif
 #if TARGET_IS_LINUX && !BUILD_FOR_PIGGEN
 	#include <fontconfig/fontconfig.h>
@@ -118,6 +122,10 @@ typedef uint16_t char16_t;
 	#include <Shlobj.h> //for SHGetSpecialFolderPathA
 	#include <Shlwapi.h> //for PathFileExistsA
 	#include <shobjidl_core.h> //for CoInitializeEx, etc. in OsDoOpenFileDialog
+	
+	#if BUILD_WITH_HTTP
+	#include <Winhttp.h>
+	#endif
 #endif
 
 #endif //  _STD_INCLUDES_H

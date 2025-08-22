@@ -1,0 +1,563 @@
+/*
+File:   misc_web.h
+Author: Taylor Robbins
+Date:   08\08\2025
+Description:
+	** Contains various helper functions and types related to web tech (primarily HTTP, TLS, IP Addresses, etc.)
+*/
+
+#ifndef _MISC_WEB_H
+#define _MISC_WEB_H
+
+#include "base/base_defines_check.h"
+#include "base/base_typedefs.h"
+#include "base/base_assert.h"
+#include "base/base_macros.h"
+#include "struct/struct_string.h"
+#include "struct/struct_ranges.h"
+#include "mem/mem_arena.h"
+#include "misc/misc_two_pass.h"
+#include "struct/struct_string_error_list.h"
+
+typedef plex UriParts UriParts;
+plex UriParts
+{
+	Str8 protocol; //aka scheme, ex. "https"
+	Str8 hostname; //aka authority ex. "www.website.com:1000"
+	Str8 path; //ex. "/blog/post198"
+	Str8 parameters; //aka query, ex. "key=value&q=value+with+spaces"
+	Str8 anchor; //aka fragment, ex. "section-1.1"
+};
+
+typedef enum HttpVerb HttpVerb;
+enum HttpVerb
+{
+	HttpVerb_None = 0,
+	HttpVerb_POST,
+	HttpVerb_GET,
+	HttpVerb_DELETE,
+	//TODO: Should we support HEAD, PUT, CONNECT, OPTIONS, and TRACE? Or others registered at https://www.iana.org/assignments/http-methods/http-methods.xhtml
+	HttpVerb_Count,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetHttpVerbStr(HttpVerb enumValue);
+#else
+PEXP const char* GetHttpVerbStr(HttpVerb enumValue)
+{
+	switch (enumValue)
+	{
+		case HttpVerb_None:   return "None";
+		case HttpVerb_POST:   return "POST";
+		case HttpVerb_GET:    return "GET";
+		case HttpVerb_DELETE: return "DELETE";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
+//See: https://www.iana.org/assignments/media-types/media-types.xhtml
+typedef enum MimeType MimeType;
+enum MimeType
+{
+	MimeType_None = 0,
+	MimeType_FormUrlEncoded, //application/x-www-form-urlencoded
+	MimeType_Count,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetMimeTypeStr(MimeType enumValue);
+const char* GetMimeTypeOfficialName(MimeType enumValue);
+#else
+PEXP const char* GetMimeTypeStr(MimeType enumValue)
+{
+	switch (enumValue)
+	{
+		case MimeType_None:           return "None";
+		case MimeType_FormUrlEncoded: return "FormUrlEncoded";
+		default: return UNKNOWN_STR;
+	}
+}
+PEXP const char* GetMimeTypeOfficialName(MimeType enumValue)
+{
+	switch (enumValue)
+	{
+		case MimeType_FormUrlEncoded: return "application/x-www-form-urlencoded"; //https://www.iana.org/assignments/media-types/application/x-www-form-urlencoded
+		default: return "";
+	}
+}
+#endif
+
+// +--------------------------------------------------------------+
+// |                 Header Function Declarations                 |
+// +--------------------------------------------------------------+
+#if !PIG_CORE_IMPLEMENTATION
+	UriParts GetUriParts(Str8 uriStr);
+	PIG_CORE_INLINE Str8 GetUriProtocolPart(Str8 uriStr);
+	PIG_CORE_INLINE Str8 GetUriHostnamePart(Str8 uriStr);
+	PIG_CORE_INLINE Str8 GetUriPathPart(Str8 uriStr);
+	PIG_CORE_INLINE Str8 GetUriParametersPart(Str8 uriStr);
+	PIG_CORE_INLINE Str8 GetUriAnchorPart(Str8 uriStr);
+	uxx GetUriErrors(Str8 uriStr, StrErrorList* list);
+	uxx GetHttpHeaderKeyErrors(Str8 key, StrErrorList* list);
+	uxx GetHttpHeaderValueErrors(Str8 value, StrErrorList* list);
+	Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm);
+	Str8 EscapeStr_FormUrlEncoding(Arena* arena, Str8 str, bool addNullTerm);
+	Str8 EncodeHttpKeyValuePairContent(Arena* arena, uxx numItems, const Str8Pair* contentItems, MimeType encoding, bool addNullTerm);
+	uxx DecodeHttpHeaders(Arena* arena, Str8 encodedHeadersStr, bool allocatePairSlices, Str8Pair** headersOut);
+	const char* GetHttpStatusCodeDescription(u16 code);
+#endif
+
+// +--------------------------------------------------------------+
+// |                           Defines                            |
+// +--------------------------------------------------------------+
+#define HTTP_PORT   80
+#define HTTPS_PORT  443
+
+// +--------------------------------------------------------------+
+// |                   Function Implementations                   |
+// +--------------------------------------------------------------+
+#if PIG_CORE_IMPLEMENTATION
+
+PEXP UriParts GetUriParts(Str8 uriStr)
+{
+	NotNullStr(uriStr);
+	bool foundProtocolColon = false;
+	bool foundPathSlash = false;
+	bool foundParametersQuestion = false;
+	bool foundAnchorPound = false;
+	RangeUXX protocolRange = RangeUXX_Zero_Const;
+	RangeUXX hostnameRange = NewRangeUXX(0, uriStr.length);
+	RangeUXX pathRange = NewRangeUXX(uriStr.length, uriStr.length);
+	RangeUXX parametersRange = NewRangeUXX(uriStr.length, uriStr.length);
+	RangeUXX anchorRange = NewRangeUXX(uriStr.length, uriStr.length);
+	
+	for (uxx cIndex = 0; cIndex < uriStr.length; cIndex++)
+	{
+		char character = uriStr.chars[cIndex];
+		if (!foundAnchorPound)
+		{
+			if (character == '#')
+			{
+				foundAnchorPound = true;
+				anchorRange = NewRangeUXX(cIndex+1, uriStr.length);
+				protocolRange = ClampBelowRangeUXX(protocolRange, cIndex);
+				hostnameRange = ClampBelowRangeUXX(hostnameRange, cIndex);
+				pathRange = ClampBelowRangeUXX(pathRange, cIndex);
+				parametersRange = ClampBelowRangeUXX(parametersRange, cIndex);
+			}
+			else if (!foundParametersQuestion)
+			{
+				if (character == '?')
+				{
+					foundParametersQuestion = true;
+					parametersRange = NewRangeUXX(cIndex+1, uriStr.length);
+					protocolRange = ClampBelowRangeUXX(protocolRange, cIndex);
+					hostnameRange = ClampBelowRangeUXX(hostnameRange, cIndex);
+					pathRange = ClampBelowRangeUXX(pathRange, cIndex);
+				}
+				else if (!foundPathSlash)
+				{
+					if (character == '/')
+					{
+						foundPathSlash = true;
+						pathRange = NewRangeUXX(cIndex, uriStr.length);
+						protocolRange = ClampBelowRangeUXX(protocolRange, cIndex);
+						hostnameRange = ClampBelowRangeUXX(hostnameRange, cIndex);
+					}
+					else if (!foundProtocolColon)
+					{
+						if (character == ':')
+						{
+							foundProtocolColon = true;
+							protocolRange = NewRangeUXX(0, cIndex);
+							if (cIndex+2 < uriStr.length && uriStr.chars[cIndex+1] == '/' && uriStr.chars[cIndex+2] == '/')
+							{
+								hostnameRange = ClampAboveRangeUXX(hostnameRange, cIndex+3);
+								cIndex += 2;
+							}
+							else
+							{
+								hostnameRange = ClampAboveRangeUXX(hostnameRange, cIndex+1);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	UriParts result;
+	result.protocol = StrSlice(uriStr, protocolRange.min, protocolRange.max);
+	result.hostname = StrSlice(uriStr, hostnameRange.min, hostnameRange.max);
+	result.path = StrSlice(uriStr, pathRange.min, pathRange.max);
+	result.parameters = StrSlice(uriStr, parametersRange.min, parametersRange.max);
+	result.anchor = StrSlice(uriStr, anchorRange.min, anchorRange.max);
+	return result;
+}
+
+PEXPI Str8 GetUriProtocolPart(Str8 uriStr) { return GetUriParts(uriStr).protocol; }
+PEXPI Str8 GetUriHostnamePart(Str8 uriStr) { return GetUriParts(uriStr).hostname; }
+PEXPI Str8 GetUriPathPart(Str8 uriStr) { return GetUriParts(uriStr).path; }
+PEXPI Str8 GetUriParametersPart(Str8 uriStr) { return GetUriParts(uriStr).parameters; }
+PEXPI Str8 GetUriAnchorPart(Str8 uriStr) { return GetUriParts(uriStr).anchor; }
+
+//TODO: This function is sort of a haphazard collection of possible error scenarios that I could think of. They're not directly based on things in specifications like RFC 3986
+PEXP uxx GetUriErrors(Str8 uriStr, StrErrorList* list)
+{
+	NotNull(list);
+	NotNull(list->arena);
+	
+	if (uriStr.length == 0)
+	{
+		AddStrError(list, RangeUXX_Zero, StrLit("Uri cannot be empty"));
+	}
+	
+	UriParts parts = GetUriParts(uriStr);
+	RangeUXX hostnameRange = SliceToRangeUXX(uriStr, parts.hostname);
+	
+	if (parts.hostname.length == 0)
+	{
+		AddStrError(list, hostnameRange, StrLit("Missing hostname (\"www.website.com\" part)"));
+	}
+	if (parts.hostname.length >= 1)
+	{
+		char firstChar = uriStr.chars[hostnameRange.min];
+		char lastChar = uriStr.chars[hostnameRange.max-1];
+		if (!IsCharAlphaNumeric(firstChar))
+		{
+			AddStrErrorPrint(list, NewRangeUXX(hostnameRange.min, hostnameRange.min+1), "Hostname cannot start with '%c'", firstChar);
+		}
+		if (!IsCharAlphaNumeric(lastChar))
+		{
+			AddStrErrorPrint(list, NewRangeUXX(hostnameRange.max-1, hostnameRange.max), "Hostname cannot end with '%c'", lastChar);
+		}
+		uxx numColonsFound = 0;
+		for (uxx cIndex = hostnameRange.min; cIndex < hostnameRange.max; cIndex++)
+		{
+			if (uriStr.chars[cIndex] == ':')
+			{
+				if (numColonsFound == 0)
+				{
+					RangeUXX portRange = NewRangeUXX(cIndex+1, hostnameRange.max);
+					Str8 portStr = StrSliceRange(uriStr, portRange);
+					Result parseResult = Result_None;
+					if (!TryParseU16Ex(portStr, nullptr, &parseResult, false, false, true))
+					{
+						AddStrErrorPrint(list, portRange, "Invalid port \"%.*s\" (%s)", StrPrint(portStr), GetResultStr(parseResult));
+					}
+				}
+				else
+				{
+					AddStrError(list, NewRangeUXX(cIndex, cIndex+1), StrLit("Multiple ':' characters not allowed in hostname"));
+				}
+				numColonsFound++;
+			}
+		}
+	}
+	
+	u32 prevCodepoint = 0;
+	for (uxx cIndex = 0; cIndex < uriStr.length; cIndex++)
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(uriStr, cIndex, &codepoint);
+		
+		if (!IsCharAlphaNumeric(codepoint) &&
+			codepoint != ':' && codepoint != '/' && codepoint != '?' && codepoint != '#' && codepoint != '[' && codepoint != ']' &&
+			codepoint != '@' && codepoint != '!' && codepoint != '$' && codepoint != '&' && codepoint != '\'' && codepoint != '(' &&
+			codepoint != ')' && codepoint != '*' && codepoint != '+' && codepoint != ',' && codepoint != ';' && codepoint != '=' &&
+			codepoint != '-' && codepoint != '.' && codepoint != '_' && codepoint != '~' && codepoint != '%')
+		{
+			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &uriStr.chars[cIndex]);
+		}
+		if (codepoint == '.' && prevCodepoint == '.' && cIndex >= hostnameRange.min && cIndex < hostnameRange.max)
+		{
+			AddStrError(list, NewRangeUXX(cIndex-1, cIndex+1), StrLit("Two '.' in a row is not allowed in hostname"));
+		}
+		if (codepoint == '%')
+		{
+			if (cIndex + 3 > uriStr.length)
+			{
+				AddStrError(list, NewRangeUXX(cIndex, uriStr.length), StrLit("Character '%' cannot occur at end of uri"));
+			}
+			else if (!IsCharHexadecimal(uriStr.chars[cIndex+1]) || !IsCharHexadecimal(uriStr.chars[cIndex+2]))
+			{
+				AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex+3), "Invalid characters after '%%' (expected 2 hex chars): \"%.*s\"", 2, &uriStr.chars[cIndex+1]);
+			}
+		}
+		
+		if (codepointSize > 1) { cIndex += codepointSize-1; }
+		prevCodepoint = codepoint;
+	}
+	
+	return list->numErrors;
+}
+
+PEXP uxx GetHttpHeaderKeyErrors(Str8 key, StrErrorList* list)
+{
+	NotNull(list);
+	NotNull(list->arena);
+	for (uxx cIndex = 0; cIndex < key.length; cIndex++)
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(key, cIndex, &codepoint);
+		//TODO: It seems like we can't have all URI reserved and unreserved characters for the name key, for example ':' definitely can't be allowed, so which characters are allowed exactly?
+		if (!IsCharAlphaNumeric(codepoint) && codepoint != '-' && codepoint != '_')
+		{
+			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &key.chars[cIndex]);
+		}
+		if (codepointSize > 1) { cIndex += codepointSize-1; }
+	}
+	return list->numErrors;
+}
+PEXP uxx GetHttpHeaderValueErrors(Str8 value, StrErrorList* list)
+{
+	NotNull(list);
+	NotNull(list->arena);
+	for (uxx cIndex = 0; cIndex < value.length; cIndex++)
+	{
+		u32 codepoint = 0;
+		u8 codepointSize = GetCodepointForUtf8Str(value, cIndex, &codepoint);
+		if (!IsCharAlphaNumeric(codepoint) && codepoint != ' ' &&
+			codepoint != ':' && codepoint != '/' && codepoint != '?' && codepoint != '#' && codepoint != '[' && codepoint != ']' &&
+			codepoint != '@' && codepoint != '!' && codepoint != '$' && codepoint != '&' && codepoint != '(' && codepoint != '\'' &&
+			codepoint != ')' && codepoint != '*' && codepoint != '+' && codepoint != ',' && codepoint != ';' && codepoint != '=' &&
+			codepoint != '-' && codepoint != '.' && codepoint != '_' && codepoint != '~' && codepoint != '%')
+		{
+			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &value.chars[cIndex]);
+		}
+		if (codepointSize > 1) { cIndex += codepointSize-1; }
+	}
+	return list->numErrors;
+}
+
+PEXP Str8 EncodeHttpHeaders(Arena* arena, uxx numHeaders, const Str8Pair* headers, bool addNullTerm)
+{
+	Assert(numHeaders == 0 || headers != nullptr);
+	TwoPassStr8Loop(result, arena, addNullTerm)
+	{
+		for (uxx hIndex = 0; hIndex < numHeaders; hIndex++)
+		{
+			//TODO: Should we escape characters in the key and value strings? Esp. ':', '\n' and '\r'?
+			TwoPassStr(&result, headers[hIndex].key);
+			TwoPassChar(&result, ':');
+			TwoPassStr(&result, headers[hIndex].value);
+			if (hIndex+1 < numHeaders) { TwoPassStrNt(&result, "\r\n"); }
+		}
+		TwoPassStr8LoopEnd(&result);
+	}
+	return result.str;
+}
+
+PEXPI Str8 EscapeStr_FormUrlEncoding(Arena* arena, Str8 str, bool addNullTerm)
+{
+	TwoPassStr8Loop(result, arena, addNullTerm)
+	{
+		for (uxx cIndex = 0; cIndex < str.length; cIndex++)
+		{
+			u32 codepoint = 0;
+			u8 codepointSize = GetCodepointForUtf8Str(str, cIndex, &codepoint);
+			if (IsCharAlphaNumeric(codepoint) ||
+				codepoint == '-' || codepoint == '.' || codepoint == '_' || codepoint == '~') //these are all unreserved characters according to RFC 3986 section 2.3
+			{
+				TwoPassBytes(&result, codepointSize, &str.chars[cIndex]);
+			}
+			else if (codepoint == ' ') { TwoPassChar(&result, '+'); } //this is allowed in media type application/x-www-form-urlencoded
+			else
+			{
+				for (u8 byteIndex = 0; byteIndex < codepointSize; byteIndex++)
+				{
+					TwoPassChar(&result, '%');
+					TwoPassPrint(&result, "%02X", str.chars[cIndex + byteIndex]);
+				}
+			}
+			if (codepointSize > 1) { cIndex += codepointSize-1; }
+		}
+		TwoPassStr8LoopEnd(&result);
+	}
+	return result.str;
+}
+
+PEXP Str8 EncodeHttpKeyValuePairContent(Arena* arena, uxx numItems, const Str8Pair* contentItems, MimeType encoding, bool addNullTerm)
+{
+	Str8 result = Str8_Empty;
+	
+	switch (encoding)
+	{
+		case MimeType_FormUrlEncoded:
+		{
+			TwoPassStr8Loop(twoPass, arena, addNullTerm)
+			{
+				for (uxx iIndex = 0; iIndex < numItems; iIndex++)
+				{
+					if (!IsEmptyStr(contentItems[iIndex].key))
+					{
+						if (twoPass.index > 0) { TwoPassChar(&twoPass, '&'); }
+						
+						CreateTwoPassInnerArena(&twoPass, keyArena);
+						twoPass.index += EscapeStr_FormUrlEncoding(keyArena, contentItems[iIndex].key, false).length;
+						
+						if (contentItems[iIndex].value.length > 0)
+						{
+							TwoPassChar(&twoPass, '=');
+							CreateTwoPassInnerArena(&twoPass, valueArena);
+							twoPass.index += EscapeStr_FormUrlEncoding(valueArena, contentItems[iIndex].value, false).length;
+						}
+					}
+				}
+				TwoPassStr8LoopEnd(&twoPass);
+			}
+			result = twoPass.str;
+		} break;
+		
+		default: { AssertMsg(false, "EncodeHttpKeyValuePairContent does not have an implementation for the requested encoding!"); } break;
+	}
+	
+	return result;
+}
+
+PEXP uxx DecodeHttpHeaders(Arena* arena, Str8 encodedHeadersStr, bool allocatePairSlices, Str8Pair** headersOut)
+{
+	bool foundColonOnThisLine = false;
+	uxx numHeaders = 0;
+	for (uxx cIndex = 0; cIndex < encodedHeadersStr.length; cIndex++)
+	{
+		if (encodedHeadersStr.chars[cIndex] == ':') { foundColonOnThisLine = true; }
+		if (encodedHeadersStr.chars[cIndex] == '\n' ||
+			(cIndex+1 < encodedHeadersStr.length && encodedHeadersStr.chars[cIndex+0] == '\r' && encodedHeadersStr.chars[cIndex+1] == '\n'))
+		{
+			if (foundColonOnThisLine) { numHeaders++; }
+			foundColonOnThisLine = false;
+			if (cIndex+1 < encodedHeadersStr.length && encodedHeadersStr.chars[cIndex+0] == '\r' && encodedHeadersStr.chars[cIndex+1] == '\n') { cIndex++; }
+		}
+	}
+	
+	if (arena == nullptr || numHeaders == 0) { return numHeaders; }
+	Str8Pair* results = AllocArray(Str8Pair, arena, numHeaders);
+	
+	uxx lineStartIndex = 0;
+	uxx colonIndex = encodedHeadersStr.length;
+	uxx headerIndex = 0;
+	for (uxx cIndex = 0; cIndex < encodedHeadersStr.length; cIndex++)
+	{
+		if (encodedHeadersStr.chars[cIndex] == ':') { colonIndex = cIndex; }
+		if (encodedHeadersStr.chars[cIndex] == '\n' ||
+			(cIndex+1 < encodedHeadersStr.length && encodedHeadersStr.chars[cIndex+0] == '\r' && encodedHeadersStr.chars[cIndex+1] == '\n'))
+		{
+			if (colonIndex >= lineStartIndex && colonIndex < cIndex)
+			{
+				Assert(headerIndex < numHeaders);
+				results[headerIndex].key = StrSlice(encodedHeadersStr, lineStartIndex, colonIndex);
+				results[headerIndex].value = StrSlice(encodedHeadersStr, colonIndex+1, cIndex);
+				if (allocatePairSlices)
+				{
+					results[headerIndex].key = AllocStr8(arena, results[headerIndex].key);
+					results[headerIndex].value = AllocStr8(arena, results[headerIndex].value);
+				}
+				headerIndex++;
+			}
+			if (cIndex+1 < encodedHeadersStr.length && encodedHeadersStr.chars[cIndex+0] == '\r' && encodedHeadersStr.chars[cIndex+1] == '\n') { cIndex++; }
+			lineStartIndex = cIndex+1;
+		}
+	}
+	
+	Assert(headerIndex == numHeaders);
+	SetOptionalOutPntr(headersOut, results);
+	return numHeaders;
+}
+
+//See https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+PEXP const char* GetHttpStatusCodeDescription(u16 code)
+{
+	switch (code)
+	{
+		case 100: return "Continue";
+		case 101: return "Switching Protocols";
+		case 102: return "Processing";
+		case 103: return "Early Hints";
+		
+		case 200: return "OK";
+		case 201: return "Created";
+		case 202: return "Accepted";
+		case 203: return "Non-Authoritative Information";
+		case 204: return "No Content";
+		case 205: return "Reset Content";
+		case 206: return "Partial Content";
+		case 207: return "Multi-Status";
+		case 208: return "Already Reported";
+		case 211: return "This is fine"; //unofficial
+		case 226: return "IM Used";
+		
+		case 300: return "Multiple Choices";
+		case 301: return "Moved Permanently";
+		case 302: return "Found";
+		case 303: return "See Other";
+		case 304: return "Not Modified";
+		case 305: return "Use Proxy";
+		case 306: return "Switch Proxy";
+		case 307: return "Temporary Redirect";
+		case 308: return "Permanent Redirect";
+		
+		case 400: return "Bad Request";
+		case 401: return "Unauthorized";
+		case 402: return "Payment Required";
+		case 403: return "Forbidden";
+		case 404: return "Not Found";
+		case 405: return "Method Not Allowed";
+		case 406: return "Not Acceptable";
+		case 407: return "Proxy Authentication Required";
+		case 408: return "Request Timeout";
+		case 409: return "Conflict";
+		case 410: return "Gone";
+		case 411: return "Length Required";
+		case 412: return "Precondition Failed";
+		case 413: return "Payload Too Large";
+		case 414: return "URI Too Long";
+		case 415: return "Unsupported Media Type";
+		case 416: return "Range Not Satisfiable";
+		case 417: return "Expectation Failed";
+		case 418: return "I'm a teapot";
+		case 419: return "Page Expired"; //unofficial
+		case 420: return "Method Failure/Enhance Your Calm"; //unofficial
+		case 421: return "Misdirected Request";
+		case 422: return "Unprocessable Content";
+		case 423: return "Locked";
+		case 424: return "Failed Dependency";
+		case 425: return "Too Early";
+		case 426: return "Upgrade Required";
+		case 428: return "Precondition Required";
+		case 429: return "Too Many Requests";
+		case 430: return "Shopify Security Rejection"; //unofficial
+		case 431: return "Request Header Fields Too Large";
+		case 450: return "Blocked by Windows Parental Controls"; //unofficial
+		case 451: return "Unavailable For Legal Reasons";
+		case 498: return "Invalid Token"; //unofficial
+		case 499: return "Token Required"; //unofficial
+		
+		case 500: return "Internal Server Error";
+		case 501: return "Not Implemented";
+		case 502: return "Bad Gateway";
+		case 503: return "Service Unavailable";
+		case 504: return "Gateway Timeout";
+		case 505: return "HTTP Version Not Supported";
+		case 506: return "Variant Also Negotiates";
+		case 507: return "Insufficient Storage";
+		case 508: return "Loop Detected";
+		case 509: return "Bandwidth Limit Exceeded"; //unofficial
+		case 510: return "Not Extended";
+		case 511: return "Network Authentication Required";
+		case 529: return "Site is overloaded"; //unofficial
+		case 530: return "Site is frozen/Origin DNS Error"; //unofficial
+		case 540: return "Temporarily Disabled"; //unofficial
+		case 598: return "Network read timeout error"; //unofficial
+		case 599: return "Network Connect Timeout Error"; //unofficial
+		
+		case 783: return "Unexpected Token"; //unofficial
+		
+		case 999: return "Non-standard"; //unofficial
+		
+		default: return nullptr;
+	}
+}
+
+#endif //PIG_CORE_IMPLEMENTATION
+
+#endif //  _MISC_WEB_H

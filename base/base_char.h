@@ -57,6 +57,7 @@ Description:
 	PIG_CORE_INLINE bool IsCharSyntax(u32 codepoint);
 	PIG_CORE_INLINE bool IsCharPunctuationStart(u32 codepoint);
 	PIG_CORE_INLINE bool IsCharPunctuationEnd(u32 codepoint);
+	PIG_CORE_INLINE bool IsCharSlash(u32 codepoint);
 	bool IsValidIdentifier(uxx strLength, const char* strPntr, bool allowEmpty, bool allowDashes, bool allowSpaces);
 #endif //!PIG_CORE_IMPLEMENTATION
 
@@ -195,6 +196,10 @@ PEXPI bool IsCharPunctuationStart(u32 codepoint)
 PEXPI bool IsCharPunctuationEnd(u32 codepoint)
 {
 	return (codepoint == ')' || codepoint == ']' || codepoint == '>' || codepoint == '}' || codepoint == '"');
+}
+PEXPI bool IsCharSlash(u32 codepoint)
+{
+	return (codepoint == '\\' || codepoint == '/');
 }
 
 PEXP bool IsValidIdentifier(uxx strLength, const char* strPntr, bool allowEmpty, bool allowDashes, bool allowSpaces)

@@ -139,7 +139,11 @@ u32 Clay__HashTextWithConfig(Str8* text, Clay_TextElementConfig* config)
 	hash += (hash << 10);
 	hash ^= (hash >> 6);
 	
-	//TODO: We may want to hash the userData pointer here?
+	//TODO: This should be changed so it's generic or maybe a callback. Directly accessing userData members inside Clay source means you can't change CLAY_TEXT_USERDATA_TYPE to anything besides ClayTextUserData
+	if (Clay__HashTextUserData != nullptr)
+	{
+		hash = Clay__HashTextUserData(hash, config);
+	}
 	
 	hash += (hash << 3);
 	hash ^= (hash >> 11);

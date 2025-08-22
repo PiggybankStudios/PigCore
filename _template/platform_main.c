@@ -25,6 +25,10 @@ Description:
 #include "gfx/gfx_system_global.h"
 #include "phys/phys_all.h"
 
+#if BUILD_INTO_SINGLE_UNIT
+#include "base/base_debug_output_impl.h"
+#endif
+
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/raylib.h"
 #endif
@@ -58,7 +62,7 @@ Description:
 // TODO: Add header files here
 
 #if BUILD_INTO_SINGLE_UNIT
-EXPORT_FUNC(AppGetApi) APP_GET_API_DEF(AppGetApi);
+EXPORT_FUNC APP_GET_API_DEF(AppGetApi);
 #endif
 
 // +--------------------------------------------------------------+
@@ -123,8 +127,11 @@ void RaylibLogCallback(int logLevel, const char* text, va_list args)
 }
 #endif //BUILD_WITH_RAYLIB
 
-void PlatDoUpdate(void)
+bool PlatDoUpdate(void)
 {
+	TracyCFrameMark;
+	TracyCZoneN(Zone_Func, "PlatDoUpdate", true);
+	bool renderedFrame = true;
 	//TODO: Check for dll changes, reload it!
 	
 	//Swap which appInput is being written to and pass the static version to the application
@@ -162,15 +169,10 @@ void PlatDoUpdate(void)
 	platformData->oldAppInput = oldAppInput;
 	platformData->currentAppInput = newAppInput;
 	
-	bool shouldContinueRunning = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
+	renderedFrame = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
 	
-	#if BUILD_WITH_RAYLIB
-	if (!shouldContinueRunning) { CloseWindow(); }
-	#elif BUILD_WITH_SOKOL_APP
-	if (!shouldContinueRunning) { sapp_quit(); }
-	#else
-	UNUSED(shouldContinueRunning);
-	#endif
+	TracyCZoneEnd(Zone_Func);
+	return renderedFrame;
 }
 
 // +--------------------------------------------------------------+
@@ -182,6 +184,7 @@ void PlatSappInit(void)
 int main()
 #endif
 {
+	TracyCZoneN(Zone_Func, "main", true);
 	Arena stdHeapLocal = ZEROED;
 	InitArenaStdHeap(&stdHeapLocal);
 	platformData = AllocType(PlatformData, &stdHeapLocal);
@@ -257,6 +260,7 @@ int main()
 	//TODO: Should we do an early call into app dll to get options?
 	
 	#if BUILD_WITH_SOKOL_GFX
+	TracyCZoneN(Zone_InitSokolGfx, "InitSokolGfx", true);
 	InitSokolGraphics((sg_desc){
 		// .buffer_pool_size = ?; //int
 		// .image_pool_size = ?; //int
@@ -278,6 +282,7 @@ int main()
 		
 	});
 	InitGfxSystem(stdHeap, &gfx);
+	TracyCZoneEnd(Zone_InitSokolGfx);
 	#if DEBUG_BUILD
 	gfx.prevFontFlow.numGlyphsAlloc = 256;
 	gfx.prevFontFlow.glyphs = AllocArray(FontFlowGlyph, stdHeap, gfx.prevFontFlow.numGlyphsAlloc);
@@ -315,6 +320,8 @@ int main()
 	#if !BUILD_WITH_SOKOL_APP
 	return 0;
 	#endif
+	
+	TracyCZoneEnd(Zone_Func);
 }
 
 #if BUILD_WITH_SOKOL_APP
@@ -327,6 +334,7 @@ void PlatSappCleanup(void)
 
 void PlatSappEvent(const sapp_event* event)
 {
+	TracyCZoneN(Zone_Func, "PlatSappEvent", true);
 	bool handledEvent = false;
 	
 	if (platformData->currentAppInput != nullptr)
@@ -334,6 +342,7 @@ void PlatSappEvent(const sapp_event* event)
 		handledEvent = HandleSokolKeyboardAndMouseEvents(
 			event,
 			platformData->currentAppInput->programTime, //TODO: Calculate a more accurate programTime to pass here!
+			platformData->currentAppInput->screenSize,
 			&platformData->currentAppInput->keyboard,
 			&platformData->currentAppInput->mouse,
 			sapp_mouse_locked()
@@ -389,6 +398,8 @@ void PlatSappEvent(const sapp_event* event)
 			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
 		}
 	}
+	
+	TracyCZoneEnd(Zone_Func);
 }
 
 sapp_desc sokol_main(int argc, char* argv[])

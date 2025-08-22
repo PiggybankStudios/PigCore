@@ -13,14 +13,19 @@ Description:
 
 #include "base/base_compiler_check.h" //required by all the other files
 #include "base/base_defines_check.h" //required by all the other files
-#include "base/base_typedefs.h" //required by os_error.h, os_virtual_mem.h, os_file.h and os_process_info.h
-#include "base/base_macros.h" //required by os_error.h, os_virtual_mem.h, os_path.h and os_file.h
-#include "std/std_includes.h" //required by os_error.h, os_virtual_mem.h, os_path.h, os_file.h and os_process_info.h
-#include "base/base_assert.h" //required by os_virtual_mem.h, os_path.h and os_file.h
+#include "base/base_typedefs.h" //required by most files
+#include "base/base_macros.h" //required by most files
+#include "std/std_memset.h" //required by most files
+#include "std/std_includes.h" //required by most files
+#include "base/base_assert.h" //required by most files
 
 #include "os/os_time.h"
 #include "os/os_error.h" //required by os_virtual_mem.h and os_file.h
 #include "os/os_virtual_mem.h"
+
+#include "misc/misc_profiling_tracy_include.h" //required by os_threading.h and os_http.h
+
+#include "os/os_threading.h" //required by os_http.h
 
 #include "mem/mem_arena.h" //required by os_path.h, os_program_args.h, os_file.h and os_process_info.h
 #include "struct/struct_string.h" //required by os_path.h, os_program_args.h, os_file.h and os_orca.h
@@ -32,6 +37,11 @@ Description:
 
 #include "os/os_program_args.h"
 
+#include "mem/mem_scratch.h" //required by os_http.h and os_process_info.h
+#include "misc/misc_web.h" //required by os_http.h
+
+#include "os/os_http.h"
+
 #include "misc/misc_result.h" //required by os_dll.h, os_file.h, os_file_dialog.h and os_process_info.h
 #include "base/base_debug_output.h" //required by os_file.h
 
@@ -39,7 +49,6 @@ Description:
 #include "os/os_file.h"
 #include "os/os_file_dialog.h"
 
-#include "mem/mem_scratch.h" //required by os_process_info.h
 
 #include "os/os_process_info.h"
 #include "os/os_font.h"

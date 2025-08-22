@@ -260,7 +260,7 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 			bool isKeyDown = (event->type == SAPP_EVENTTYPE_KEY_DOWN);
 			Key primaryKey = GetKeyFromSokolKeycodeEx(event->key_code, 0);
 			Key altKey = GetKeyFromSokolKeycodeEx(event->key_code, 1);
-			if (primaryKey != Key_None) { UpdateKeyboardKey(keyboard, currentTime, primaryKey, isKeyDown); }
+			if (primaryKey != Key_None) { UpdateKeyboardKey(keyboard, currentTime, primaryKey, isKeyDown, event->key_repeat); }
 			if (altKey != Key_None)
 			{
 				// When two keycodes are mapped to one Key, we have to avoid producing an early release event if both keys were
@@ -271,7 +271,7 @@ PEXP bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 current
 				if (otherPrimaryKey == primaryKey) { otherPrimaryKey = GetNonAltKeyForKey(altKey, 1); }
 				bool isOtherPrimaryKeyDown = false;
 				if (otherPrimaryKey != Key_None) { isOtherPrimaryKeyDown = keyboard->keys[otherPrimaryKey].isDown; }
-				UpdateKeyboardKey(keyboard, currentTime, altKey, isKeyDown || isOtherPrimaryKeyDown);
+				UpdateKeyboardKey(keyboard, currentTime, altKey, isKeyDown || isOtherPrimaryKeyDown, event->key_repeat);
 			}
 			handled = true;
 		} break;

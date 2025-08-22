@@ -11,6 +11,7 @@ Description:
 #define _BASE_COMPILER_CHECK_H
 
 #include "build_config.h"
+#include "base/base_plex_is_struct.h"
 
 // +--------------------------------------------------------------+
 // |                      Determine LANGUAGE                      |
@@ -140,6 +141,12 @@ Description:
 #define TARGET_HAS_OFFICIAL_STDLIB 0
 #else
 #define TARGET_HAS_OFFICIAL_STDLIB 1
+#endif
+
+#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX || TARGET_IS_OSX)
+#define TARGET_HAS_THREADING 1
+#else
+#define TARGET_HAS_THREADING 0
 #endif
 
 #if (TARGET_IS_WEB && !COMPILER_IS_EMSCRIPTEN)

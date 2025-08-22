@@ -31,6 +31,9 @@ Description:
 // +--------------------------------------------------------------+
 // |                           Defines                            |
 // +--------------------------------------------------------------+
+#define plex struct
+#define car union
+
 #ifdef __cplusplus
 #define LANGUAGE_IS_C   0
 #define LANGUAGE_IS_CPP 1
@@ -93,15 +96,15 @@ typedef unsigned int uxx;
 
 #define UINTXX_MAX UINT_MAX
 
-typedef struct Str8 Str8;
-struct Str8
+typedef plex Str8 Str8;
+plex Str8
 {
 	uxx length;
-	union { char* chars; uint8_t* bytes; void* pntr; };
+	car { char* chars; uint8_t* bytes; void* pntr; };
 };
 
-typedef struct FileIter FileIter;
-struct FileIter
+typedef plex FileIter FileIter;
+plex FileIter
 {
 	bool finished;
 	Str8 folderPathNt;
@@ -117,8 +120,8 @@ struct FileIter
 	#endif
 };
 
-typedef struct LineParser LineParser;
-struct LineParser
+typedef plex LineParser LineParser;
+plex LineParser
 {
 	uxx byteIndex;
 	uxx lineBeginByteIndex;
@@ -422,6 +425,35 @@ static inline Str8 StrReplace(Str8 haystack, Str8 target, Str8 replacement, bool
 	}
 	if (addNullTerm) { result.chars[result.length] = '\0'; }
 	return result;
+}
+
+// +--------------------------------------------------------------+
+// |                        Print Helpers                         |
+// +--------------------------------------------------------------+
+void TwoPassPrint(Str8* resultStr, uxx* currentByteIndex, const char* formatString, ...)
+{
+	uxx printSize = 0;
+	va_list args;
+	
+	va_start(args, formatString);
+	int measureResult = vsnprintf(nullptr, 0, formatString, args);
+	va_end(args);
+	assert(measureResult >= 0);
+	
+	printSize = (uxx)measureResult;
+	if (resultStr->chars != nullptr)
+	{
+		assert(*currentByteIndex <= resultStr->length);
+		uxx spaceLeft = resultStr->length - *currentByteIndex;
+		assert(printSize <= spaceLeft);
+		va_start(args, formatString);
+		int printResult = vsnprintf(&resultStr->chars[*currentByteIndex], measureResult+1, formatString, args);
+		assert(printResult == measureResult);
+		resultStr->chars[*currentByteIndex + printSize] = '\0';
+		va_end(args);
+	}
+	
+	*currentByteIndex += printSize;
 }
 
 // +--------------------------------------------------------------+
@@ -877,7 +909,7 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 				}
 			}
 			
-			struct dirent* entry = readdir(fileIter->dirHandle);
+			plex dirent* entry = readdir(fileIter->dirHandle);
 			if (entry == nullptr)
 			{
 				free(fileIter->folderPathNt.chars); fileIter->folderPathNt.chars = nullptr;
@@ -891,7 +923,7 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 			Str8 fullPath = JoinStrings2(fileIter->folderPathNt, fileName, true);
 			if (isFolderOut != nullptr)
 			{
-				struct stat statStruct = ZEROED;
+				plex stat statStruct = ZEROED;
 				int statResult = stat(fullPath.chars, &statStruct);
 				if (statResult == 0)
 				{

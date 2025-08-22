@@ -49,6 +49,10 @@ Description:
 #define UNICODE_RIGHT_ARROW_CODEPOINT 0x203A //Technically called "Single Right-Pointing Angle Quotation Mark"
 #define UNICODE_RIGHT_ARROW_STR       "\xE2\x80\xBA" //UTF-8 encoding
 
+//NOTE: This character is not available in most Windows fonts as far as I can tell
+#define UNICODE_CHECK_MARK_CODEPOINT 0x2713
+#define UNICODE_CHECK_MARK_STR       "\xE2\x9C\x93" //UTF-8 encoding
+
 // Basic Multilingual Plane Private Use Area: 0xE000-0xF8FF
 #define CUSTOM_CODEPOINT_START        0xE000
 #define CUSTOM_CODEPOINT_END          0xF900
@@ -65,6 +69,7 @@ Description:
 	u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions);
 	u8 GetCodepointUtf8Size(u32 codepoint);
 	u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut);
+	u8 GetPrevCodepointForUtf8(u64 numBytesBeforePntr, const char* strEndPntr, u32* codepointOut);
 	u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOut);
 	i32 CompareCodepoints(u32 codepoint1, u32 codepoint2);
 	bool DoesNtStrContainMultibyteUtf8Chars(const char* nullTermStr);
@@ -72,6 +77,7 @@ Description:
 	u8 GetCodepointForUcs2(u64 maxNumWords, const u16* strPntr, u32* codepointOut);
 	PIG_CORE_INLINE u32 GetMonospaceCodepointFor(u32 codepoint);
 	PIG_CORE_INLINE u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint);
+	uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bool forward);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -97,6 +103,7 @@ PEXPI u32 GetUppercaseCodepoint(u32 codepoint)
 //NOTE: byteBufferOut is assumed to be 4 bytes or greater and no null-terminating character is written to the buffer
 PEXP u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions)
 {
+	UNUSED(doAssertions);
 	if (codepoint <= 0x7F)
 	{
 		//0xxx xxxx
@@ -211,6 +218,57 @@ PEXP u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepoint
 		//Everything above this point is considered an invalid character to exist in UTF-8 encoded strings
 		return 0;
 	}
+}
+
+// This is sort of like GetCodepointForUtf8 but it walks backwards from the pointer until it finds a valid UTF-8 byte sequence
+PEXP u8 GetPrevCodepointForUtf8(u64 numBytesBeforePntr, const char* strEndPntr, u32* codepointOut)
+{
+	// The first byte is rather special in a UTF-8 character, we will call it a "prefix byte" but it probably technically should be called something like "non-continuation" byte
+	u8 codepointSize = 0;
+	for (u8 bIndex = 1; bIndex <= UTF8_MAX_CHAR_SIZE && bIndex <= numBytesBeforePntr; bIndex++)
+	{
+		u8 prevByte = *(((const u8*)strEndPntr) - bIndex);
+		if (prevByte <= 127) //single byte
+		{
+			if (bIndex != 1) { return 0; } //invalid UTF-8, some number of continuation bytes preceeded by a single-byte character
+			codepointSize = 1;
+			break;
+		}
+		else if (prevByte < 0xC0) //continuation byte
+		{
+			continue;
+		}
+		else if (prevByte < 0xE0) //prefix byte that declares a 2-byte character
+		{
+			if (bIndex != 2) { return 0; } //invalid UTF-8, we may be in the middle of the character!
+			codepointSize = 2;
+			break;
+		}
+		else if (prevByte < 0xF0) //prefix byte that declares a 3-byte character
+		{
+			if (bIndex != 3) { return 0; } //invalid UTF-8, we may be in the middle of the character!
+			codepointSize = 3;
+			break;
+		}
+		else if (prevByte < 0xF8) //prefix byte that declares a 4-byte character
+		{
+			if (bIndex != 4) { return 0; } //invalid UTF-8, we may be in the middle of the character!
+			codepointSize = 4;
+			break;
+		}
+		else
+		{
+			//Everything above this point is considered an invalid character to exist in UTF-8 encoded strings
+			return 0;
+		}
+	}
+	if (codepointSize == 0) { return 0; } //invalid UTF-8, we didn't find a prefix byte within 4 bytes
+	if (codepointOut != nullptr)
+	{
+		u8 calcSize = GetCodepointForUtf8(codepointSize, strEndPntr - codepointSize, codepointOut);
+		DebugAssert(calcSize == codepointSize);
+	}
+	return codepointSize;
 }
 
 //Using the startIndex as a known max length to walk backwards this function will look backwards through a string until it finds a full encoded character
@@ -367,6 +425,37 @@ PEXPI u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint)
 	if (monospaceCodepoint >= 0x1D68A && monospaceCodepoint <= 0x1D6A3) { return CharToU32('a') + (monospaceCodepoint - 0x1D68A); }
 	if (monospaceCodepoint >= 0x1D7F6 && monospaceCodepoint <= 0x1D7FF) { return CharToU32('0') + (monospaceCodepoint - 0x1D7F6); }
 	return 0;
+}
+
+// +--------------------------------------------------------------+
+// |                    Word and Subword Logic                    |
+// +--------------------------------------------------------------+
+PEXP uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bool forward)
+{
+	Assert(strPntr != nullptr || strLength == 0);
+	if (startIndex == 0 && !forward) { return startIndex; }
+	if (startIndex >= strLength && forward) { return strLength; }
+	
+	for (uxx bIndex = startIndex;
+		(forward && bIndex < strLength) || (!forward && bIndex > 0);
+		bIndex += (forward ? 1 : -1))
+	{
+		u32 nextCodepoint = 0;
+		u8 nextCodepointSize = GetCodepointForUtf8(strLength - bIndex, &strPntr[bIndex], &nextCodepoint);
+		//TODO: What do we do with invalid UTF-8?
+		u32 prevCodepoint = 0;
+		u8 prevCodepointSize = GetPrevCodepointForUtf8(bIndex, &strPntr[bIndex], &prevCodepoint);
+		//TODO: What do we do with invalid UTF-8?
+		if (!forward) { SwapVariables(u32, nextCodepoint, prevCodepoint); SwapVariables(u8, nextCodepointSize, prevCodepointSize); }
+		
+		bool isNextCharWord = IsCharAlphaNumeric(nextCodepoint);
+		bool isPrevCharWord = IsCharAlphaNumeric(prevCodepoint);
+		if (isNextCharWord != isPrevCharWord && bIndex != startIndex) { return bIndex; }
+		
+		if (nextCodepointSize > 1) { bIndex += (nextCodepointSize-1) * (forward ? 1 : -1); }
+	}
+	
+	return (forward ? strLength : 0);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

@@ -29,7 +29,7 @@ NOTE: This file may need to be included manually if you include raylib.h AFTER i
 #define Vector2_Right         NewVector2( 1.0f,  0.0f)
 #define Vector2_Up            NewVector2( 0.0f, -1.0f)
 #define Vector2_Down          NewVector2( 0.0f,  1.0f)
-#define Vector2_Zero_Const     (Vector2){ 0.0f,  0.0f}
+#define Vector2_Zero_Const           {.x=0.0f,.y=0.0f}
 
 //NOTE: See struct_directions.h for an explanation of the coordinate system handed-ness and up direction
 #define Vector3_Zero          NewVector3( 0.0f,  0.0f,  0.0f)
@@ -45,7 +45,7 @@ NOTE: This file may need to be included manually if you include raylib.h AFTER i
 #define Vector3_Up            NewVector3( 0.0f,  1.0f,  0.0f)
 #define Vector3_Backward      NewVector3( 0.0f,  0.0f, -1.0f)
 #define Vector3_Forward       NewVector3( 0.0f,  0.0f,  1.0f)
-#define Vector3_Zero_Const     (Vector3){ 0.0f,  0.0f,  0.0f}
+#define Vector3_Zero_Const          {.x=0.0f,.y=0.0f,.z=0.0f}
 
 #define Vector4_Zero          NewVector4( 0.0f,  0.0f,  0.0f, 0.0f)
 #define Vector4_One           NewVector4( 1.0f,  1.0f,  1.0f, 1.0f)
@@ -62,7 +62,7 @@ NOTE: This file may need to be included manually if you include raylib.h AFTER i
 #define Vector4_Forward       NewVector4( 0.0f,  0.0f,  1.0f, 0.0f)
 #define Vector4_Prevward      NewVector4( 0.0f,  0.0f,  0.0f,-1.0f)
 #define Vector4_Nextward      NewVector4( 0.0f,  0.0f,  0.0f, 1.0f)
-#define Vector4_Zero_Cons    t (Vector4){ 0.0f,  0.0f,  0.0f, 0.0f}
+#define Vector4_Zero_Const        {.x=0.0f,.y=0.0f,.z=0.0f,.w=0.0f}
 
 #if PIG_CORE_IMPLEMENTATION
 

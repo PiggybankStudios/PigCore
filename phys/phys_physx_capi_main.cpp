@@ -47,7 +47,7 @@ PEXP PhysicsWorld* InitPhysicsPhysX(Arena* arena)
 	PhysicsWorld* result = AllocType(PhysicsWorld, arena);
 	NotNull(result);
 	ClearPointer(result);
-	result->structSize = sizeof(PhysicsWorld);
+	result->plexSize = sizeof(PhysicsWorld);
 	result->arena = arena;
 	result->allocator = new PigCorePhysXAllocator(arena);
 	result->errorCallback = new PigCorePhysXErrorCallback();
@@ -110,7 +110,7 @@ static PhysicsBody* AddRigidStaticToWorld(PhysicsWorld* world, physx::PxRigidSta
 	PhysicsBody* newBody = VarArrayAdd(PhysicsBody, &world->bodies);
 	NotNull(newBody);
 	ClearPointer(newBody);
-	newBody->structSize = sizeof(PhysicsBody);
+	newBody->plexSize = sizeof(PhysicsBody);
 	newBody->index = world->bodies.length-1;
 	newBody->isDynamic = false;
 	newBody->staticHandle = rigidStatic;
@@ -124,7 +124,7 @@ static PhysicsBody* AddRigidDynamicToWorld(PhysicsWorld* world, physx::PxRigidDy
 	PhysicsBody* newBody = VarArrayAdd(PhysicsBody, &world->bodies);
 	NotNull(newBody);
 	ClearPointer(newBody);
-	newBody->structSize = sizeof(PhysicsBody);
+	newBody->plexSize = sizeof(PhysicsBody);
 	newBody->index = world->bodies.length-1;
 	newBody->isDynamic = true;
 	newBody->dynamicHandle = rigidDynamic;

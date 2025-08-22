@@ -55,11 +55,11 @@ Description:
 // |                       String Structure                       |
 // +--------------------------------------------------------------+
 //NOTE: Str8 could hold UTF-8, ASCII, or any other encoding that uses 8-bit pieces
-typedef struct Str8 Str8;
-struct Str8
+typedef plex Str8 Str8;
+plex Str8
 {
 	uxx length;
-	union { char* chars; u8* bytes; void* pntr; };
+	car { char* chars; u8* bytes; void* pntr; };
 };
 //NOTE: This structure is useful for all sorts of data encapsulation. "Slice" alias indicates that a piece of code isn't
 //      treating the contents of the data as a "string" in the traditional sense, but it's still operating with the same
@@ -67,23 +67,23 @@ struct Str8
 typedef Str8 Slice;
 
 //NOTE: Str16 could hold UTF-16 or USC2 or any other encoding that uses 16-bit pieces
-typedef struct Str16 Str16;
-struct Str16
+typedef plex Str16 Str16;
+plex Str16
 {
 	uxx length;
-	union { char16_t* chars; u16* words; void* pntr; };
+	car { char16_t* chars; u16* words; void* pntr; };
 };
 
-typedef struct Str8Pair Str8Pair;
-struct Str8Pair
+typedef plex Str8Pair Str8Pair;
+plex Str8Pair
 {
-	union
+	car
 	{
 		Str8 strs[2];
-		struct
+		plex
 		{
-			union { Str8 key; Str8 left; Str8 first; };
-			union { Str8 value; Str8 right; Str8 second; };
+			car { Str8 key; Str8 left; Str8 first; };
+			car { Str8 value; Str8 right; Str8 second; };
 		};
 	};
 };
@@ -130,7 +130,9 @@ enum EscapeSequence
 	PIG_CORE_INLINE Str8 TrimWhitespaceAndNewLines(Str8 target);
 	PIG_CORE_INLINE Str8 TrimWhitespace(Str8 target);
 	PIG_CORE_INLINE Str8 StrSlice(Str8 target, uxx startIndex, uxx endIndex);
+	PIG_CORE_INLINE Str8 StrSlicePntrs(Str8 target, const void* startPntr, const void* endPntr);
 	PIG_CORE_INLINE Str8 StrSliceFrom(Str8 target, uxx startIndex);
+	PIG_CORE_INLINE Str8 StrSliceFromPntr(Str8 target, const void* startPntr);
 	PIG_CORE_INLINE Str8 StrSliceLength(Str8 target, uxx startIndex, uxx length);
 	PIG_CORE_INLINE Str8 StrSliceMaxLength(Str8 target, uxx startIndex, uxx maxLength);
 	PIG_CORE_INLINE bool StrExactEquals(Str8 left, Str8 right);
@@ -153,6 +155,7 @@ enum EscapeSequence
 	PIG_CORE_INLINE bool StrEndsWith(Str8 target, Str8 suffix, bool caseSensitive);
 	PIG_CORE_INLINE bool StrContains(Str8 haystack, Str8 needle, bool caseSensitive);
 	PIG_CORE_INLINE uxx StrFind(Str8 haystack, Str8 needle, bool caseSensitive);
+	PIG_CORE_INLINE uxx StrFindAfter(Str8 haystack, uxx startIndex, Str8 needle, bool caseSensitive);
 	PIG_CORE_INLINE bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut);
 #endif //!PIG_CORE_IMPLEMENTATION
 
@@ -177,6 +180,8 @@ enum EscapeSequence
 //      Use the format specifier %.*s and then this macro in the var-args
 #define StrPrint(string)   (int)(string).length, (string).chars
 #define StrPntrPrint(strPntr) (int)(strPntr)->length, (strPntr)->chars
+
+#define IsSliceFromStr(str, slice) ((slice).length == 0 || IsSizedPntrWithin((str).chars, (str).length, (slice).chars, (slice).length))
 
 #define AssertNullTerm(string)      Assert(IsNullTerminated(string))
 #define NotNullStr(string)          Assert(!IsNullStr(string))
@@ -344,9 +349,20 @@ PEXPI Str8 StrSlice(Str8 target, uxx startIndex, uxx endIndex)
 	DebugAssert(startIndex <= endIndex);
 	return NewStr8(endIndex - startIndex, target.chars + startIndex);
 }
+PEXPI Str8 StrSlicePntrs(Str8 target, const void* startPntr, const void* endPntr)
+{
+	Assert(IsPntrWithin(target.chars, target.length, startPntr));
+	Assert(IsPntrWithin(target.chars, target.length, endPntr));
+	return StrSlice(target, (uxx)((char*)startPntr - target.chars), (uxx)((char*)endPntr - target.chars));
+}
 PEXPI Str8 StrSliceFrom(Str8 target, uxx startIndex)
 {
 	return StrSlice(target, startIndex, target.length);
+}
+PEXPI Str8 StrSliceFromPntr(Str8 target, const void* startPntr)
+{
+	Assert(IsPntrWithin(target.chars, target.length, startPntr));
+	return StrSliceFrom(target, (uxx)((char*)startPntr - target.chars));
 }
 PEXPI Str8 StrSliceLength(Str8 target, uxx startIndex, uxx length)
 {
@@ -483,6 +499,10 @@ PEXPI uxx StrFind(Str8 haystack, Str8 needle, bool caseSensitive)
 {
 	return (caseSensitive ? StrExactFind(haystack, needle) : StrAnyCaseFind(haystack, needle));
 }
+PEXPI uxx StrFindAfter(Str8 haystack, uxx startIndex, Str8 needle, bool caseSensitive)
+{
+	return startIndex + StrFind(StrSliceFrom(haystack, startIndex), needle, caseSensitive);
+}
 PEXPI bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut)
 {
 	uxx index = (caseSensitive ? StrExactFind(haystack, needle) : StrAnyCaseFind(haystack, needle));
@@ -565,6 +585,10 @@ PEXPI bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* index
 
 #if defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
 #include "cross/cross_string_and_unicode.h"
+#endif
+
+#if defined(_STRUCT_STRING_H) && defined(_STRUCT_RANGES_H)
+#include "cross/cross_string_and_ranges.h"
 #endif
 
 #if defined(_STRUCT_STRING_H) && defined(_STRUCT_TYPED_ARRAY_H)

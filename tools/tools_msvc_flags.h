@@ -21,6 +21,8 @@ Description:
 #define CL_OBJ_FILE                         "/Fo\"[VAL]\""
 #define CL_BINARY_FILE                      "/Fe\"[VAL]\""
 #define CL_PDB_FILE                         "/Fd\"[VAL]\""
+#define CL_GENERATE_ASSEMB_LISTING          "/FA[VAL]" //(assembly always included) c = include machine code, s = include source code, u = encode as UTF-8
+#define CL_ASSEMB_LISTING_FILE              "/Fa\"[VAL]\""
 #define CL_LANG_VERSION                     "/std:[VAL]" //clatest, c++20
 #define CL_EXPERIMENTAL                     "/experimental:[VAL]" //c11atomics
 #define CL_DISABLE_WARNING                  "/wd[VAL]"
@@ -41,6 +43,7 @@ Description:
 #define CL_PRECOMPILE_ONLY                  "/P"
 #define CL_PRECOMPILE_PRESERVE_COMMENTS     "/C"
 #define CL_ENABLE_FUZZER                    "/fsanitize=fuzzer"
+#define CL_ENABLE_ADDRESS_SANATIZER         "/fsanitize=address"
 #define CL_ENABLE_BUFFER_SECURITY_CHECK     "/GS" //Detects some buffer overruns that overwrite a function's return address, exception handler address, or certain types of parameters
 #define CL_DISABLE_MINIMAL_REBUILD          "/Gm-" //Disables minimal rebuild (a deprecated feature), which determines whether C++ source files that include changed C++ class definitions (stored in header (.h) files) need to be recompiled.
 #define CL_ENABLE_RUNTIME_CHECKS            "/RTC[VAL]" //1 = Enable fast runtime checks (Equivalent to `/RTCsu`)
@@ -49,6 +52,7 @@ Description:
 #define CL_DISABLE_LANG_CONFORMANCE_OPTION  "/Zc:[VAL]-"
 #define CL_INTERNAL_COMPILER_ERROR_BEHAVIOR "/errorReport:[VAL]"
 #define CL_FLOATING_POINT_MODEL             "/fp:[VAL]"
+#define CL_CONFIGURE_EXCEPTION_HANDLING     "/EH[VAL]"
 #define CL_LINK                             "/link"
 
 #define CL_WARNING_ENUMERATION_MUST_HAVE_UNDERLYING_TYPE 4471 //a forward declaration of an unscoped enumeration must have an underlying type
@@ -60,6 +64,7 @@ Description:
 #define CL_WARNING_UNREFERENCED_FUNC_REMOVED             4505 //Unreferenced local function has been removed [W4]
 #define CL_WARNING_USAGE_OF_DEPRECATED                   4996 //Usage of deprecated function, class member, variable, or typedef [W3]
 #define CL_WARNING_ASSIGNMENT_WITHIN_CONDITIONAL_EXPR    4706 //assignment within conditional expression [W?]
+#define CL_WARNING_NAMED_TYPEDEF_IN_PARENTHESES          4115 //named type definition in parentheses
 #define CL_WARNING_SWITCH_ONLY_DEFAULT                   4065 //Switch statement contains 'default' but no 'case' labels
 #define CL_WARNING_UNREFERENCED_FUNC_PARAMETER           4100 //Unreferenced formal parameter [W4]
 #define CL_WARNING_UNREFERENCED_LCOAL_VARIABLE           4101 //Unreferenced local variable [W3]

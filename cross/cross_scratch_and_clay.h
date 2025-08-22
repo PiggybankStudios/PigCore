@@ -15,8 +15,8 @@ Date:   02\16\2025
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE ClayId ToClayIdPrintEx(uxx index, const char* formatString, ...);
-	PIG_CORE_INLINE ClayId ToClayIdPrint(const char* formatString, ...);
+	PIG_CORE_INLINE ClayId ToClayIdPrintEx(Arena* arena, uxx index, const char* formatString, ...);
+	PIG_CORE_INLINE ClayId ToClayIdPrint(Arena* arena, const char* formatString, ...);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -24,22 +24,18 @@ Date:   02\16\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI ClayId ToClayIdPrintEx(uxx index, const char* formatString, ...)
+PEXPI ClayId ToClayIdPrintEx(Arena* arena, uxx index, const char* formatString, ...)
 {
-	ScratchBegin(scratch);
-	PrintInArenaVa(scratch, formattedString, formattedStringLength, formatString);
+	PrintInArenaVa(arena, formattedString, formattedStringLength, formatString);
 	Assert(formattedStringLength >= 0);
 	ClayId result = ToClayIdEx(NewStr8((uxx)formattedStringLength, formattedString), index);
-	ScratchEnd(scratch);
 	return result;
 }
-PEXPI ClayId ToClayIdPrint(const char* formatString, ...)
+PEXPI ClayId ToClayIdPrint(Arena* arena, const char* formatString, ...)
 {
-	ScratchBegin(scratch);
-	PrintInArenaVa(scratch, formattedString, formattedStringLength, formatString);
+	PrintInArenaVa(arena, formattedString, formattedStringLength, formatString);
 	Assert(formattedStringLength >= 0);
 	ClayId result = ToClayIdEx(NewStr8((uxx)formattedStringLength, formattedString), 0);
-	ScratchEnd(scratch);
 	return result;
 }
 

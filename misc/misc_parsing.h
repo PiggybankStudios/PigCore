@@ -53,6 +53,15 @@ Description:
 #endif
 
 // +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#if TARGET_IS_32BIT
+#define TryParseUXX(str, valueOutPntr, errorOutPntr) TryParseU32((str), (u32*)(valueOutPntr), (errorOutPntr))
+#else
+#define TryParseUXX(str, valueOutPntr, errorOutPntr) TryParseU64((str), (u64*)(valueOutPntr), (errorOutPntr))
+#endif
+
+// +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION

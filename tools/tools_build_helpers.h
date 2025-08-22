@@ -29,48 +29,56 @@ static inline bool ExtractBoolDefine(Str8 buildConfigContents, Str8 defineName)
 	return result;
 }
 
-#define FILENAME_ENVIRONMENT "environment.txt"
-
-static inline void RunBatchFileAndApplyDumpedEnvironment(Str8 batchFilePath)
+static inline void RunBatchFileAndApplyDumpedEnvironment(Str8 batchFilePath, Str8 environmentFilePath, bool skipRunningIfFileExists)
 {
 	CliArgList cmd = ZEROED;
-	AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_ENVIRONMENT);
+	AddArgStr(&cmd, CLI_QUOTED_ARG, environmentFilePath);
+	Str8 fixedBatchFilePath = CopyStr8(batchFilePath, false);
+	FixPathSlashes(fixedBatchFilePath, PATH_SEP_CHAR);
 	
-	int statusCode = RunCliProgram(batchFilePath, &cmd); //this batch file runs emsdk_env.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what emsdk_env.bat changed
-	if (statusCode != 0)
+	if (!DoesFileExist(environmentFilePath) || !skipRunningIfFileExists)
 	{
-		PrintLine_E("%.*s failed! Status Code: %d", batchFilePath.length, batchFilePath.chars, statusCode);
-		exit(statusCode);
+		int statusCode = RunCliProgram(fixedBatchFilePath, &cmd); //this batch file runs emsdk_env.bat and then dumps it's environment variables to environment.txt. We can then open and parse that file and change our environment to match what emsdk_env.bat changed
+		if (statusCode != 0)
+		{
+			PrintLine_E("%.*s failed! Status Code: %d", fixedBatchFilePath.length, fixedBatchFilePath.chars, statusCode);
+			exit(statusCode);
+		}
 	}
 	
 	Str8 environmentFileContents = ZEROED;
-	if (!TryReadFile(StrLit(FILENAME_ENVIRONMENT), &environmentFileContents))
+	if (!TryReadFile(environmentFilePath, &environmentFileContents))
 	{
-		PrintLine_E("%.*s did not create \"%s\"! Or we can't open it for some reason", batchFilePath.length, batchFilePath.chars, FILENAME_ENVIRONMENT);
+		PrintLine_E("%.*s did not create \"%.*s\"! Or we can't open it for some reason", batchFilePath.length, batchFilePath.chars, environmentFilePath.length, environmentFilePath.chars);
 		exit(4);
 	}
 	
 	ParseAndApplyEnvironmentVariables(environmentFileContents);
 	
+	free(fixedBatchFilePath.chars);
 	free(environmentFileContents.chars);
 }
 
-static inline void InitializeMsvcIf(bool* isMsvcInitialized)
+static inline void InitializeMsvcIf(Str8 pigCoreFolder, bool* isMsvcInitialized)
 {
 	if (*isMsvcInitialized == false)
 	{
-		PrintLine("Initializing MSVC Compiler...");
-		RunBatchFileAndApplyDumpedEnvironment(StrLit("..\\init_msvc.bat"));
+		Str8 batchPath = JoinStrings2(pigCoreFolder, StrLit("/init_msvc.bat"), false);
+		Str8 environmentPath = StrLit("msvc_environment.txt");
+		if (DoesFileExist(environmentPath)) { WriteLine("Loading MSVC Environment..."); }
+		else { WriteLine("Initializing MSVC Compiler..."); }
+		RunBatchFileAndApplyDumpedEnvironment(batchPath, environmentPath, true);
 		*isMsvcInitialized = true;
 	}
 }
 
-static inline void InitializeEmsdkIf(bool* isEmsdkInitialized)
+static inline void InitializeEmsdkIf(Str8 pigCoreFolder, bool* isEmsdkInitialized)
 {
 	if (*isEmsdkInitialized == false)
 	{
 		PrintLine("Initializing Emscripten SDK...");
-		RunBatchFileAndApplyDumpedEnvironment(StrLit("..\\init_emsdk.bat"));
+		Str8 batchPath = JoinStrings2(pigCoreFolder, StrLit("/init_emsdk.bat"), false);
+		RunBatchFileAndApplyDumpedEnvironment(batchPath, StrLit("emsdk_environment.txt"), false);
 		*isEmsdkInitialized = true;
 	}
 }
@@ -512,7 +520,7 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 			);
 		}
 		if (shaderAttributes.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderAttributeDef struct found in gfx_shader.h\n"), true);
+		AppendToFile(headerPath, StrLit("} // These should match ShaderAttributeDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	//Images
@@ -536,7 +544,7 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 			);
 		}
 		if (shaderImages.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderImageDef struct found in gfx_shader.h\n"), true);
+		AppendToFile(headerPath, StrLit("} // These should match ShaderImageDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	//Samplers
@@ -560,7 +568,7 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 			);
 		}
 		if (shaderSamplers.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderSamplerDef struct found in gfx_shader.h\n"), true);
+		AppendToFile(headerPath, StrLit("} // These should match ShaderSamplerDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	//Uniforms
@@ -593,14 +601,14 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 			);
 		}
 		if (shaderUniforms.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .blockIndex=0, .offset=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderUniformDef struct found in gfx_shader.h\n"), true);
+		AppendToFile(headerPath, StrLit("} // These should match ShaderUniformDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	free(headerFileContents.chars);
 }
 
-typedef struct FindShadersContext FindShadersContext;
-struct FindShadersContext
+typedef plex FindShadersContext FindShadersContext;
+plex FindShadersContext
 {
 	uxx ignoreListLength;
 	Str8* ignoreList;

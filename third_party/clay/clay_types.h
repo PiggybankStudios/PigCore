@@ -671,6 +671,9 @@ struct Clay_ErrorHandler
 #define CLAY_MEASURE_TEXT_DEF(functionName) v2 functionName(Str8 text, Clay_TextElementConfig* config, CLAY_MEASURE_USERDATA_TYPE userData)
 typedef CLAY_MEASURE_TEXT_DEF(ClayMeasureText_f);
 
+#define CLAY_HASH_TEXT_USERDATA_DEF(functionName) u32 functionName(u32 currentHash, Clay_TextElementConfig* config)
+typedef CLAY_HASH_TEXT_USERDATA_DEF(ClayHashTextUserData_f);
+
 typedef struct Clay__Warning Clay__Warning;
 struct Clay__Warning
 {

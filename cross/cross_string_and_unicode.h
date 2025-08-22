@@ -16,6 +16,7 @@ Description:
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE u8 GetCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut);
+	PIG_CORE_INLINE u8 GetPrevCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut);
 	bool DoesStrContainMultibyteUtf8Chars(Str8 str);
 	uxx FindNextCharInStrEx(Str8 target, uxx startIndex, Str8 searchCharsStr, bool ignoreCharsInQuotes);
 	PIG_CORE_INLINE uxx FindNextCharInStr(Str8 target, uxx startIndex, Str8 searchCharsStr);
@@ -23,6 +24,7 @@ Description:
 	PIG_CORE_INLINE uxx FindNextUnknownCharInStr(Str8 target, uxx startIndex, Str8 knownCharsStr);
 	PIG_CORE_INLINE uxx FindNextWhitespaceInStrEx(Str8 target, uxx startIndex, bool ignoreCharsInQuotes);
 	PIG_CORE_INLINE bool FindNextWhitespaceInStr(Str8 target, uxx startIndex);
+	PIG_CORE_INLINE uxx FindWordBoundaryStr(Str8 str, uxx startIndex, bool forward);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -34,6 +36,11 @@ PEXPI u8 GetCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut)
 {
 	Assert(index <= str.length);
 	return GetCodepointForUtf8(str.length - index, str.chars + index, codepointOut);
+}
+PEXPI u8 GetPrevCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut)
+{
+	Assert(index <= str.length);
+	return GetPrevCodepointForUtf8(index, str.chars + index, codepointOut);
 }
 
 PEXP bool DoesStrContainMultibyteUtf8Chars(Str8 str)
@@ -125,6 +132,11 @@ PEXPI uxx FindNextWhitespaceInStrEx(Str8 target, uxx startIndex, bool ignoreChar
 	return FindNextCharInStrEx(target, startIndex, StrLit(WHITESPACE_CHARS), ignoreCharsInQuotes);
 }
 PEXPI bool FindNextWhitespaceInStr(Str8 target, uxx startIndex) { return FindNextWhitespaceInStrEx(target, startIndex, false); }
+
+PEXPI uxx FindWordBoundaryStr(Str8 str, uxx startIndex, bool forward)
+{
+	return FindWordBoundary(str.length, str.chars, startIndex, forward);
+}
 
 #endif //PIG_CORE_IMPLEMENTATION
 

@@ -16,14 +16,16 @@ Description:
 
 #include "struct/struct_color.h"
 
-#include "std/std_basic_math.h" //Needed by struct_directions.h
+#include "std/std_basic_math.h" //Needed by struct_directions.h and struct_ranges.h
 
 #include "struct/struct_directions.h"
 
 #include "base/base_macros.h" //Needed by many of the files below
 #include "base/base_assert.h" //Needed by many of the files below
 
+#include "struct/struct_ranges.h"
 #include "struct/struct_typed_array.h"
+#include "struct/struct_pointer_remap.h"
 
 #include "base/base_char.h" //Needed by struct_string.h
 #include "std/std_memset.h" //Needed by struct_string.h and struct_string_buffer.h
@@ -35,7 +37,9 @@ Description:
 #include "mem/mem_arena.h" //Needed by many of the files below
 #include "std/std_memset.h" //Needed by many of the files below
 
+#include "struct/struct_string_error_list.h"
 #include "struct/struct_var_array.h"
+#include "struct/struct_bkt_array.h"
 
 #include "std/std_trig.h" //Needed by many of the files below
 

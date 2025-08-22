@@ -30,8 +30,8 @@ Description:
 #define BOX_MESH_BOTTOM_FACE_INDEX      5
 #define BOX_MESH_INDICES_PER_FACE       6
 
-typedef struct GeneratedMesh GeneratedMesh;
-struct GeneratedMesh
+typedef plex GeneratedMesh GeneratedMesh;
+plex GeneratedMesh
 {
 	Arena* arena;
 	uxx numVertices;
