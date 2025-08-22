@@ -61,12 +61,19 @@ plex BktArray
 	PIG_CORE_INLINE uxx BktArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, const BktArray* array, const void* itemInQuestion);
 	PIG_CORE_INLINE bool BktArrayContains_(uxx itemSize, uxx itemAlignment, const BktArray* array, const void* itemInQuestion);
 	PIG_CORE_INLINE void* BktArrayAdd_(uxx itemSize, uxx itemAlignment, BktArray* array);
+	PIG_CORE_INLINE void* BktArrayAddSomewhere_(uxx itemSize, uxx itemAlignment, BktArray* array);
 	void* BktArrayAddMulti_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx numItems);
 	PIG_CORE_INLINE void* BktArrayAddArray_(uxx itemSize, uxx itemAlignment, BktArray* destArray, const BktArray* srcArray);
 	void BktArrayRemoveAt_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx index);
 	PIG_CORE_INLINE void BktArrayRemove_(uxx itemSize, uxx itemAlignment, BktArray* array, const void* itemToRemove);
 	PIG_CORE_INLINE void BktArrayCopy(Arena* arena, BktArray* destArray, const BktArray* srcArray);
 	void* BktArrayInsert_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx index);
+	PIG_CORE_INLINE void BktArrayCondenseInto(BktArray* array, Arena* intoArena, bool freeMemory);
+	PIG_CORE_INLINE void BktArrayCondense(BktArray* array);
+	PIG_CORE_INLINE void BktArrayDropEmptyBuckets(BktArray* array);
+	PIG_CORE_INLINE uxx BktArrayGetBucketIndexAt(BktArray* array, uxx itemIndex, uxx* innerIndexOut);
+	PIG_CORE_INLINE uxx BktArrayGetBucketIndex(BktArray* array, const void* itemPntr, uxx* innerIndexOut);
+	PIG_CORE_INLINE BktArrayBkt* BktArrayGetBucket(BktArray* array, uxx bucketIndex);
 #endif
 
 // +--------------------------------------------------------------+
@@ -99,8 +106,10 @@ plex BktArray
 
 #if LANGUAGE_IS_C
 #define BktArrayAdd(type, arrayPntr) (type*)BktArrayAdd_(sizeof(type), (uxx)_Alignof(type), (arrayPntr))
+#define BktArrayAddSomewhere(type, arrayPntr) (type*)BktArrayAddSomewhere_(sizeof(type), (uxx)_Alignof(type), (arrayPntr))
 #else
 #define BktArrayAdd(type, arrayPntr) (type*)BktArrayAdd_(sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr))
+#define BktArrayAddSomewhere(type, arrayPntr) (type*)BktArrayAddSomewhere_(sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr))
 #endif
 #define BktArrayAddValue(type, arrayPntr, value) do                  \
 {                                                                    \
@@ -110,6 +119,15 @@ plex BktArray
 	type* addedItemPntr_NOCONFLICT = BktArrayAdd(type, (arrayPntr)); \
 	DebugNotNull(addedItemPntr_NOCONFLICT);                          \
 	*addedItemPntr_NOCONFLICT = valueBeforeAdd_NOCONFLICT;           \
+} while(0)
+#define BktArrayAddValueSomewhere(type, arrayPntr, value) do                  \
+{                                                                             \
+	/* We must evaluate (value) before manipulating the array */              \
+	/* because it may access/refer to elements in the array   */              \
+	type valueBeforeAdd_NOCONFLICT = (value);                                 \
+	type* addedItemPntr_NOCONFLICT = BktArrayAddSomewhere(type, (arrayPntr)); \
+	DebugNotNull(addedItemPntr_NOCONFLICT);                                   \
+	*addedItemPntr_NOCONFLICT = valueBeforeAdd_NOCONFLICT;                    \
 } while(0)
 // This is simply an alias of BktArrayAddValue, but it's here to match the name of BktArrayPop below
 #define BktArrayPush(type, arrayPntr, value) BktArrayAddValue(type, (arrayPntr), (value))
@@ -353,6 +371,41 @@ PEXPI void* BktArrayAdd_(uxx itemSize, uxx itemAlignment, BktArray* array)
 	return result;
 }
 
+PEXPI void* BktArrayAddSomewhere_(uxx itemSize, uxx itemAlignment, BktArray* array)
+{
+	#if DEBUG_BUILD
+	NotNull(array);
+	NotNull(array->arena);
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BktArrayAddSomewhere. Make sure you're accessing the BktArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayAddSomewhere. Make sure you're accessing the BktArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
+	
+	void* result = nullptr;
+	BktArrayBkt* bucket = array->firstBucket;
+	while (bucket != nullptr)
+	{
+		if (bucket->length < bucket->allocLength)
+		{
+			result = BktArrayBktGetItemPntr(array, bucket, bucket->length);
+			bucket->length++;
+			array->length++;
+			break;
+		}
+		bucket = bucket->next;
+	}
+	
+	if (result == nullptr)
+	{
+		DebugAssert(array->length == array->allocLength);
+		result = BktArrayAdd_(itemSize, itemAlignment, array);
+	}
+	
+	return result;
+}
+
 //NOTE: This function returns a single pointer, meaning all items need to be in the same bucket, we may "waste" space if existing buckets don't have enough space for all items in which case we'll allocate a new bucket even when there was some space left
 PEXP void* BktArrayAddMulti_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx numItems)
 {
@@ -552,7 +605,7 @@ PEXPI void BktArrayCopy(Arena* arena, BktArray* destArray, const BktArray* srcAr
 	BktArrayAddArray_(srcArray->itemSize, srcArray->itemAlignment, destArray, srcArray);
 }
 
-//TODO: If we keep inserting at 0 this may perform terribly?
+//TODO: If we keep inserting at 0 this performs terribly once we have two full buckets at the beginning. We end up generating a new empty bucket at the end on every insert
 PEXP void* BktArrayInsert_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx index)
 {
 	#if DEBUG_BUILD
@@ -668,10 +721,139 @@ PEXP void* BktArrayInsert_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx
 }
 
 //TODO: InsertMulti? InsertArray?
-//TODO: GetBucket? GetBucketIndex?
-//TODO: InsertSomewhere?
-//TODO: Drop Empty Buckets?
-//TODO: Condense?
+
+PEXPI void BktArrayCondenseInto(BktArray* array, Arena* intoArena, bool freeMemory)
+{
+	DebugNotNull(array);
+	DebugNotNull(array->arena);
+	if (intoArena == nullptr) { intoArena = array->arena; }
+	
+	BktArrayBkt* newBucket = nullptr;
+	if (array->length > 0)
+	{
+		uxx newBucketSize = array->length;
+		newBucket = (BktArrayBkt*)AllocMemAligned(intoArena, BktArrayAllocSize(array, newBucketSize), array->itemAlignment);
+		NotNull(newBucket);
+		ClearPointer(newBucket);
+		newBucket->allocLength = newBucketSize;
+		u8* newItemsBase = BktArrayBktGetItemPntr(array, newBucket, 0);
+		uxx writeIndex = 0;
+		BktArrayBkt* bucket = array->firstBucket;
+		while (bucket != nullptr)
+		{
+			if (bucket->length > 0)
+			{
+				Assert(writeIndex + bucket->length <= newBucketSize);
+				u8* itemsBase = BktArrayBktGetItemPntr(array, bucket, 0);
+				MyMemCopy(newItemsBase + (array->itemSize * writeIndex), itemsBase, array->itemSize * bucket->length);
+				writeIndex += bucket->length;
+			}
+			bucket = bucket->next;
+		}
+		Assert(writeIndex == array->length);
+		newBucket->length = writeIndex;
+	}
+	
+	if (CanArenaFree(array->arena) && freeMemory)
+	{
+		BktArrayBkt* bucket = array->firstBucket;
+		while (bucket != nullptr)
+		{
+			BktArrayBkt* nextBucket = bucket->next;
+			FreeMemAligned(array->arena, bucket, BktArrayAllocSize(array, bucket->allocLength), array->itemAlignment);
+			bucket = nextBucket;
+		}
+	}
+	
+	array->arena = intoArena;
+	array->firstBucket = newBucket;
+	array->lastBucket = newBucket;
+	array->numBuckets = (newBucket != nullptr) ? 1 : 0;
+	array->allocLength = (newBucket != nullptr) ? newBucket->allocLength : 0;
+}
+PEXPI void BktArrayCondense(BktArray* array) { BktArrayCondenseInto(array, nullptr, true); }
+
+PEXPI void BktArrayDropEmptyBuckets(BktArray* array)
+{
+	NotNull(array);
+	NotNull(array->arena);
+	BktArrayBkt* prevBucket = nullptr;
+	BktArrayBkt* bucket = array->firstBucket;
+	while (bucket != nullptr)
+	{
+		BktArrayBkt* nextBucket = bucket->next;
+		if (bucket->length == 0)
+		{
+			if (prevBucket != nullptr) { prevBucket->next = bucket->next; }
+			else { array->firstBucket = bucket->next; }
+			if (array->lastBucket == bucket) { array->lastBucket = bucket->next; }
+			array->numBuckets--;
+			array->allocLength -= bucket->allocLength;
+			if (CanArenaFree(array->arena)) { FreeMemAligned(array->arena, bucket, BktArrayAllocSize(array, bucket->allocLength), array->itemAlignment); }
+		}
+		else { prevBucket = bucket; }
+		bucket = nextBucket;
+	}
+}
+
+PEXPI uxx BktArrayGetBucketIndexAt(BktArray* array, uxx itemIndex, uxx* innerIndexOut)
+{
+	NotNull(array);
+	NotNull(array->arena);
+	Assert(itemIndex < array->length);
+	BktArrayBkt* bucket = array->firstBucket;
+	uxx baseIndex = 0;
+	uxx bucketIndex = 0;
+	while (bucket != nullptr)
+	{
+		if (itemIndex < baseIndex + bucket->length)
+		{
+			SetOptionalOutPntr(innerIndexOut, itemIndex - baseIndex);
+			return bucketIndex;
+		}
+		baseIndex += bucket->length;
+		bucket = bucket->next;
+		bucketIndex++;
+	}
+	SetOptionalOutPntr(innerIndexOut, 0);
+	return array->numBuckets;
+}
+PEXPI uxx BktArrayGetBucketIndex(BktArray* array, const void* itemPntr, uxx* innerIndexOut)
+{
+	NotNull(array);
+	NotNull(array->arena);
+	BktArrayBkt* bucket = array->firstBucket;
+	uxx bucketIndex = 0;
+	while (bucket != nullptr)
+	{
+		u8* itemsBase = BktArrayBktGetItemPntr(array, bucket, 0);
+		if (IsPntrWithin(itemsBase, array->itemSize * bucket->allocLength, itemPntr))
+		{
+			SetOptionalOutPntr(innerIndexOut, (uxx)((u8*)itemPntr - itemsBase) / array->itemSize);
+			return bucketIndex;
+		}
+		bucket = bucket->next;
+		bucketIndex++;
+	}
+	SetOptionalOutPntr(innerIndexOut, 0);
+	return array->numBuckets;
+}
+
+PEXPI BktArrayBkt* BktArrayGetBucket(BktArray* array, uxx bucketIndex)
+{
+	NotNull(array);
+	NotNull(array->arena);
+	if (bucketIndex >= array->numBuckets) { return nullptr; }
+	BktArrayBkt* bucket = array->firstBucket;
+	uxx currBucketIndex = 0;
+	while (bucket != nullptr)
+	{
+		if (currBucketIndex == bucketIndex) { return bucket; }
+		bucket = bucket->next;
+		currBucketIndex++;
+	}
+	return nullptr;
+}
 
 #endif //PIG_CORE_IMPLEMENTATION
 
