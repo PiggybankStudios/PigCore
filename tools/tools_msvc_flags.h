@@ -20,6 +20,8 @@ Description:
 #define CL_OBJ_FILE                         "/Fo\"[VAL]\""
 #define CL_BINARY_FILE                      "/Fe\"[VAL]\""
 #define CL_PDB_FILE                         "/Fd\"[VAL]\""
+#define CL_GENERATE_ASSEMB_LISTING          "/FA[VAL]" //(assembly always included) c = include machine code, s = include source code, u = encode as UTF-8
+#define CL_ASSEMB_LISTING_FILE              "/Fa\"[VAL]\""
 #define CL_LANG_VERSION                     "/std:[VAL]" //clatest, c++20
 #define CL_EXPERIMENTAL                     "/experimental:[VAL]" //c11atomics
 #define CL_DISABLE_WARNING                  "/wd[VAL]"

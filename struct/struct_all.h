@@ -25,6 +25,7 @@ Description:
 
 #include "struct/struct_ranges.h"
 #include "struct/struct_typed_array.h"
+#include "struct/struct_pointer_remap.h"
 
 #include "base/base_char.h" //Needed by struct_string.h
 #include "std/std_memset.h" //Needed by struct_string.h and struct_string_buffer.h

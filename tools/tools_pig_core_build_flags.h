@@ -11,7 +11,7 @@ Description:
 #ifndef _TOOLS_PIG_CORE_BUILD_FLAGS_H
 #define _TOOLS_PIG_CORE_BUILD_FLAGS_H
 
-void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR)
+void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY)
 {
 	AddArg(cl_CommonFlags, DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
 	AddArg(cl_CommonFlags, CL_FULL_FILE_PATHS); //we need full file paths in errors for Sublime Text to be able to parse the errors and display them in the editor
@@ -20,6 +20,7 @@ void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP
 	if (!DEBUG_BUILD) { AddArgNt(cl_CommonFlags, CL_OPTIMIZATION_LEVEL, "y"); }
 	if (!DEBUG_BUILD) { AddArgNt(cl_CommonFlags, CL_OPTIMIZATION_LEVEL, "t"); }
 	AddArgNt(cl_CommonFlags, CL_WARNING_LEVEL, "X"); //Treat all warnings as errors
+	if (DUMP_ASSEMBLY) { AddArgNt(cl_CommonFlags, CL_GENERATE_ASSEMB_LISTING, "s"); } //Generate assembly listing files with source code included
 	AddArgInt(cl_CommonFlags, CL_WARNING_LEVEL, 4); //Use warning level 4, then disable various warnings we don't care about
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_LOGICAL_OP_ON_ADDRESS_OF_STR_CONST);
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_NAMELESS_STRUCT_OR_UNION);
