@@ -21,6 +21,7 @@ Description:
 #include "struct/struct_var_array.h"
 #include "struct/struct_rich_string.h"
 #include "gfx/gfx_texture.h"
+#include "base/base_unicode.h"
 
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
 #if BUILD_WITH_SOKOL_GFX
@@ -183,11 +184,12 @@ typedef PigFont Font;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define FontCharRange_ASCII    NewFontCharRange(0x20, 0x7E)
-#define FontCharRange_LatinExt NewFontCharRangeLength(0xA0, 96)
-#define FontCharRange_Cyrillic NewFontCharRangeLength(0x400, 256)
-#define FontCharRange_Hiragana NewFontCharRangeLength(0x3041, 95)
-#define FontCharRange_Katakana NewFontCharRangeLength(0x30A0, 95)
+#define FontCharRange_ASCII                 NewFontCharRange(UNICODE_PRINTABLE_ASCII_START, UNICODE_PRINTABLE_ASCII_COUNT)
+#define FontCharRange_LatinSupplementAccent NewFontCharRangeLength(UNICODE_LATIN1_SUPPLEMENT_ACCENT_START, UNICODE_LATIN1_SUPPLEMENT_ACCENT_COUNT)
+#define FontCharRange_LatinExtA             NewFontCharRangeLength(UNICODE_LATIN_EXT_A_START, UNICODE_LATIN_EXT_A_COUNT)
+#define FontCharRange_Cyrillic              NewFontCharRangeLength(UNICODE_CYRILLIC_START, UNICODE_CYRILLIC_COUNT)
+#define FontCharRange_Hiragana              NewFontCharRangeLength(UNICODE_HIRAGANA_START, UNICODE_HIRAGANA_COUNT)
+#define FontCharRange_Katakana              NewFontCharRangeLength(UNICODE_KATAKANA_START, UNICODE_KATAKANA_COUNT)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
