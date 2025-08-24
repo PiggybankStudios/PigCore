@@ -43,9 +43,10 @@ Date:   01\05\2025
 #include "misc/misc_two_pass.h"
 #include "misc/misc_file_watch.h"
 
-#include "struct/struct_vectors.h" //required by misc_noise.h
+#include "struct/struct_vectors.h" //required by misc_noise.h and misc_triangulation.h
 
 #include "misc/misc_noise.h"
+#include "misc/misc_triangulation.h"
 #include "misc/misc_zip.h"
 
 #include "base/base_char.h" //required by misc_parsing.h
