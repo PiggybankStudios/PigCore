@@ -124,6 +124,7 @@ plex OsFileWriteTime
 	bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines);
 	PIG_CORE_INLINE bool OsWriteTextFile(FilePath path, Str8 fileContents);
 	PIG_CORE_INLINE bool OsWriteBinFile(FilePath path, Str8 fileContents);
+	PIG_CORE_INLINE bool OsCopyFile(FilePath fromPath, FilePath toPath);
 	Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded);
 	void OsCloseFile(OsFile* file);
 	bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut);
@@ -868,6 +869,15 @@ PEXPI bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile
 //TODO: Can we do some sort of asynchronous file write function? Like a fire and forget style thing?
 //      This would probably require the code to know if an operation on that file is already in
 //      progress, otherwise we may run into conflicts with order of operations
+
+PEXPI bool OsCopyFile(FilePath fromPath, FilePath toPath)
+{
+	ScratchBegin(scratch);
+	Slice fileContents = Slice_Empty;
+	if (!OsReadBinFile(fromPath, scratch, &fileContents)) { ScratchEnd(scratch); return false; }
+	if (!OsWriteBinFile(toPath, fileContents)) { ScratchEnd(scratch); return false; }
+	return true;
+}
 
 // +--------------------------------------------------------------+
 // |                        Create Folders                        |

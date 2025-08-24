@@ -34,6 +34,7 @@ plex OsDll
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	void OsUnloadDll(OsDll* dll);
 	Result OsLoadDll(FilePath path, OsDll* dllOut);
 	void* OsFindDllFunc(OsDll* dll, Str8 funcName);
 #endif
@@ -43,10 +44,26 @@ plex OsDll
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-// PEXP void OsCloseDll(OsDll* dll)
-// {
-//	TODO: Implement me!
-// }
+PEXP void OsUnloadDll(OsDll* dll)
+{
+	#if TARGET_IS_WINDOWS
+	{
+		Assert(dll->handle != NULL);
+		BOOL freeResult = FreeLibrary(dll->handle);
+		Assert(freeResult != 0);
+		ClearPointer(dll);
+	}
+	#elif TARGET_IS_LINUX
+	{
+		Assert(dll->handle != nullptr);
+		int closeResult = dlclose(dll->handle);
+		Assert(closeResult == 0);
+	}
+	#else
+	UNUSED(path);
+	AssertMsg(false, "OsUnloadDll does not support the current platform yet!");
+	#endif
+}
 
 PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
 {
