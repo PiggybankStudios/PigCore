@@ -367,8 +367,10 @@ typedef Vec4R64  v4d;
 	PIG_CORE_INLINE v2d PerpLeftV2d(v2d vec2d);
 	PIG_CORE_INLINE v2 Vec2Rotate(v2 vec2, r32 angle);
 	PIG_CORE_INLINE v2d Vec2dRotate(v2d vec2d, r64 angle);
-	PIG_CORE_INLINE r32 Vec3AngleBetween(v3 left, v3 right);
-	PIG_CORE_INLINE r64 Vec3dAngleBetween(v3d left, v3d right);
+	PIG_CORE_INLINE r32 AngleBetweenV2(v2 left, v2 right);
+	PIG_CORE_INLINE r64 AngleBetweenV2d(v2d left, v2d right);
+	PIG_CORE_INLINE r32 AngleBetweenV3(v3 left, v3 right);
+	PIG_CORE_INLINE r64 AngleBetweenV3d(v3d left, v3d right);
 	PIG_CORE_INLINE v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius);
 	PIG_CORE_INLINE v3d Vec3dFrom2Angles(r64 facingDirection, r64 rotationUpDown, r64 radius);
 	PIG_CORE_INLINE void AlignV2ToV2(v2* vectorOut, v2 alignmentScale);
@@ -435,12 +437,12 @@ typedef Vec4R64  v4d;
 #define AreEqualV3(left, right) HMM_EqV3((left), (right))
 #define AreEqualV4(left, right) HMM_EqV4((left), (right))
 
-#define AreSimilarV2(left, right, tolerance) return (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)))
-#define AreSimilarV3(left, right, tolerance) return (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)) && AreSimilarR32((left).Z, (right).Z, (tolerance)))
-#define AreSimilarV4(left, right, tolerance) return (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)) && AreSimilarR32((left).Z, (right).Z, (tolerance)) && AreSimilarR32((left).W, (right).W, (tolerance)))
-#define AreSimilarV2d(left, right, tolerance) return (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)))
-#define AreSimilarV3d(left, right, tolerance) return (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)))
-#define AreSimilarV4d(left, right, tolerance) return (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)) && AreSimilarR64((left).W, (right).W, (tolerance)))
+#define AreSimilarV2(left, right, tolerance) (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)))
+#define AreSimilarV3(left, right, tolerance) (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)) && AreSimilarR32((left).Z, (right).Z, (tolerance)))
+#define AreSimilarV4(left, right, tolerance) (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)) && AreSimilarR32((left).Z, (right).Z, (tolerance)) && AreSimilarR32((left).W, (right).W, (tolerance)))
+#define AreSimilarV2d(left, right, tolerance) (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)))
+#define AreSimilarV3d(left, right, tolerance) (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)))
+#define AreSimilarV4d(left, right, tolerance) (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)) && AreSimilarR64((left).W, (right).W, (tolerance)))
 
 #define DotV2(left, right) HMM_DotV2((left), (right))
 #define DotV3(left, right) HMM_DotV3((left), (right))
@@ -853,11 +855,24 @@ PEXPI v2d Vec2dRotate(v2d vec2d, r64 angle)
 	);
 }
 
-PEXPI r32 Vec3AngleBetween(v3 left, v3 right)
+PEXPI r32 AngleBetweenV2(v2 left, v2 right)
+{
+	r32 dotProduct = DotV2(left, right);
+	if (dotProduct == -1) { return Pi32; }
+	return SignOfR32(left.X * right.Y - left.Y * right.X) * AcosR32(dotProduct / (LengthV2(left) * LengthV2(right)));
+}
+PEXPI r64 AngleBetweenV2d(v2d left, v2d right)
+{
+	r64 dotProduct = DotV2d(left, right);
+	if (dotProduct == -1) { return Pi64; }
+	return SignOfR64(left.X * right.Y - left.Y * right.X) * AcosR64(dotProduct / (LengthV2d(left) * LengthV2d(right)));
+}
+
+PEXPI r32 AngleBetweenV3(v3 left, v3 right)
 {
 	return AcosR32(DotV3(left, right) / (LengthV3(left) * LengthV3(right)));
 }
-PEXPI r64 Vec3dAngleBetween(v3d left, v3d right)
+PEXPI r64 AngleBetweenV3d(v3d left, v3d right)
 {
 	return AcosR64(DotV3d(left, right) / (LengthV3d(left) * LengthV3d(right)));
 }
