@@ -1,7 +1,8 @@
-// raddbg 0.9.20 project file
+// raddbg 0.9.21 project file
 
-recent_file: path: "struct/struct_rich_string.h"
+recent_file: path: "mem/mem_arena.h"
 recent_file: path: "tests/tests_main.c"
+recent_file: path: "struct/struct_rich_string.h"
 recent_file: path: "base/base_debug_output_impl.h"
 recent_file: path: "misc/misc_printing.h"
 recent_file: path: "../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/stdio.h"
@@ -12,7 +13,6 @@ recent_file: path: "struct/struct_string.h"
 recent_file: path: "std/std_basic_math.h"
 recent_file: path: "struct/struct_color.h"
 recent_file: path: "../Crest/core/tests/tests_main.c"
-recent_file: path: "mem/mem_arena.h"
 recent_file: path: "struct/struct_var_array.h"
 recent_file: path: "third_party/sokol/sokol_gfx.h"
 target:
@@ -84,3 +84,14 @@ type_view:
   expr: "rows($, color((($.valueU32&0x00FFFFFF) << 8) | (($.valueU32&0xFF000000)>>24)), hex(r), hex(g), hex(b), hex(a))"
 }
 theme: 4coder
+breakpoint:
+{
+  source_location: "mem/mem_arena.h:727:1"
+  enabled: 1
+  hit_count: 1
+}
+breakpoint:
+{
+  source_location: "tests/tests_main.c:1214:1"
+  hit_count: 1
+}

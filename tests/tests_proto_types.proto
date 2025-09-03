@@ -25,4 +25,5 @@ message ProtoFileHeader
 	required bool v_bool = 13;
 	required FileType v_file_type = 14;
 	optional int32 new_field = 15 [default = -1];
+	optional string v_string = 16;
 }

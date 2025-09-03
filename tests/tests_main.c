@@ -1139,6 +1139,7 @@ int main(int argc, char* argv[])
 	{
 		ScratchBegin(scratch);
 		const u8 oldVersionBytes[] = { 0x09, 0x18, 0x2D, 0x44, 0x54, 0xFB, 0x21, 0x09, 0x40, 0x15, 0xDB, 0x0F, 0x49, 0x40, 0x18, 0x80, 0x08, 0x20, 0xA4, 0x03, 0x28, 0x45, 0x30, 0x6F, 0x38, 0x53, 0x40, 0x89, 0x01, 0x4D, 0xC0, 0xC6, 0x2D, 0x00, 0x51, 0x00, 0xF2, 0x05, 0x2A, 0x01, 0x00, 0x00, 0x00, 0x5D, 0x80, 0x7B, 0xE1, 0xFF, 0x61, 0x00, 0x6C, 0xCA, 0x88, 0xFF, 0xFF, 0xFF, 0xFF, 0x68, 0x01, 0x70, 0x01 };
+		Slice oldVersionSlice = NewStr8(ArrayCount(oldVersionBytes), oldVersionBytes);
 		
 		PrintLine_D("Protobuf-C Version: %s", protobuf_c_version());
 		ProtoFileHeader fileHeader = PROTO_FILE_HEADER__INIT;
@@ -1156,40 +1157,45 @@ int main(int argc, char* argv[])
 		fileHeader.v_sfixed64 = -(i64)Billion(2);
 		fileHeader.v_bool = true;
 		fileHeader.v_file_type = PROTO_FILE_HEADER__FILE_TYPE__PNG;
+		fileHeader.has_new_field = true;
 		fileHeader.new_field = 54321;
+		fileHeader.v_string = "Hello from inside!";
 		
+		#if 1
+		Slice packedSlice = ProtobufPackInArena(proto_file_header, scratch, &fileHeader);
+		PrintLine_D("fileHeader packed %llu bytes", packedSlice.length);
+		#else
 		uxx packedSize = (uxx)proto_file_header__get_packed_size(&fileHeader);
 		PrintLine_D("fileHeader packed size: %llu bytes", packedSize);
-		#if 0
-		PbBuffer* packedBuffer = AllocPbBuffer(scratch, packedSize);
-		NotNull(packedBuffer);
-		#else
-		u8* packedBytes = AllocArray(u8, scratch, packedSize);
-		PbBuffer packedBufferStruct = NewPbBuffer_Const(packedSize, packedBytes);
-		PbBuffer* packedBuffer = &packedBufferStruct;
+		PbBuffer packedBuffer = NewPbBufferInArena(scratch, packedSize);
+		NotNull(packedBuffer.pntr);
+		proto_file_header__pack_to_buffer(&fileHeader, &packedBuffer.buffer);
+		Assert(packedBuffer.length == packedBuffer.allocLength);
+		Slice packedSlice = NewStr8(packedSize, packedBuffer.pntr);
 		#endif
-		proto_file_header__pack_to_buffer(&fileHeader, &packedBuffer->buffer);
-		Assert(packedBuffer->length == packedBuffer->allocLength);
 		
 		// PrintLine_D("Packed fileHeader: %02X %02X %02X %02X ... %02X %02X %02X %02X",
-		// 	packedBuffer->pntr[0], packedBuffer->pntr[1], packedBuffer->pntr[2], packedBuffer->pntr[3],
-		// 	packedBuffer->pntr[packedBuffer->length-4], packedBuffer->pntr[packedBuffer->length-3], packedBuffer->pntr[packedBuffer->length-2], packedBuffer->pntr[packedBuffer->length-1]
+		// 	packedSlice.bytes[0], packedSlice.bytes[1], packedSlice.bytes[2], packedSlice.bytes[3],
+		// 	packedSlice.bytes[packedSlice.length-4], packedSlice.bytes[packedSlice.length-3], packedSlice.bytes[packedSlice.length-2], packedSlice.bytes[packedSlice.length-1]
 		// );
-		// Write_D("{"); for (uxx bIndex = 0; bIndex < packedSize; bIndex++) { Print_D(" 0x%02X,", packedBuffer->pntr[bIndex]); } WriteLine_D(" }");
-		// packedBuffer->pntr[15] = 0x00; //Introduce a corruption to test failed deserialization
+		// Write_D("{"); for (uxx bIndex = 0; bIndex < packedSlice.length; bIndex++) { Print_D(" 0x%02X,", packedSlice.bytes[bIndex]); } WriteLine_D(" }");
+		// packedSlice.bytes[15] = 0x00; //Introduce a corruption to test failed deserialization
 		
-		ProtobufCAllocator scratchAllocator = ProtobufAllocatorFromArena(scratch);
-		#if 0
-		PrintLine_D("Deserializing %llu bytes...", packedSize);
-		ProtoFileHeader* deserHeader = proto_file_header__unpack(&scratchAllocator, packedSize, packedBuffer->pntr);
+		// Arena* arenaPntr = stdHeap;
+		Arena* arenaPntr = scratch;
+		uxx arenaUsageBefore = arenaPntr->used;
+		#if 1
+		PrintLine_D("Deserializing new %llu bytes...", packedSlice.length);
+		ProtoFileHeader* deserHeader = ProtobufUnpackInArena(ProtoFileHeader, proto_file_header, arenaPntr, packedSlice);
 		#else
-		PrintLine_D("Deserializing old %llu bytes...", ArrayCount(oldVersionBytes));
-		ProtoFileHeader* deserHeader = proto_file_header__unpack(&scratchAllocator, ArrayCount(oldVersionBytes), oldVersionBytes);
+		PrintLine_D("Deserializing old %llu bytes...", oldVersionSlice.length);
+		ProtoFileHeader* deserHeader = ProtobufUnpackInArena(ProtoFileHeader, proto_file_header, arenaPntr, oldVersionSlice);
 		#endif
 		if (deserHeader == nullptr) { WriteLine_E("Failed to deserialize!"); }
 		else
 		{
-			PrintLine_D("Deserialized %llu bytes to %p:", packedSize, deserHeader);
+			PrintLine_D("Deserialized %llu bytes to %p:", packedSlice.length, deserHeader);
+			PrintLine_D("Used %llu bytes from arena", arenaPntr->used - arenaUsageBefore);
 			PrintLine_D("v_double = %lf", deserHeader->v_double);
 			PrintLine_D("v_float = %f", deserHeader->v_float);
 			PrintLine_D("v_int32 = %d", deserHeader->v_int32);
@@ -1205,6 +1211,12 @@ int main(int argc, char* argv[])
 			PrintLine_D("v_bool = %s", deserHeader->v_bool ? "True" : "False");
 			PrintLine_D("v_file_type = %d", deserHeader->v_file_type);
 			PrintLine_D("new_field = %d", deserHeader->new_field);
+			PrintLine_D("v_string = \"%s\"", deserHeader->v_string);
+			
+			// FlagSet(arenaPntr->flags, ArenaFlag_AllowFreeWithoutSize);
+			// ProtobufCAllocator stdAllocator = ProtobufAllocatorFromArena(arenaPntr);
+			// proto_file_header__free_unpacked(deserHeader, &stdAllocator);
+			// PrintLine_D("Before %llu bytes -> After %llu bytes", arenaUsageBefore, arenaPntr->used);
 		}
 		
 		ScratchEnd(scratch);

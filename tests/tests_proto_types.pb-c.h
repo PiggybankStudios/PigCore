@@ -49,10 +49,11 @@ struct  ProtoFileHeader
   ProtoFileHeader__FileType v_file_type;
   protobuf_c_boolean has_new_field;
   int32_t new_field;
+  char *v_string;
 };
 #define PROTO_FILE_HEADER__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&proto_file_header__descriptor) \
-    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PROTO_FILE_HEADER__FILE_TYPE__NONE, 0, -1 }
+    , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PROTO_FILE_HEADER__FILE_TYPE__NONE, 0, -1, NULL }
 
 
 /* ProtoFileHeader methods */

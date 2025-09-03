@@ -85,7 +85,7 @@ const ProtobufCEnumDescriptor proto_file_header__file_type__descriptor =
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };
 static const int32_t proto_file_header__new_field__default_value = -1;
-static const ProtobufCFieldDescriptor proto_file_header__field_descriptors[15] =
+static const ProtobufCFieldDescriptor proto_file_header__field_descriptors[16] =
 {
   {
     "v_double",
@@ -267,6 +267,18 @@ static const ProtobufCFieldDescriptor proto_file_header__field_descriptors[15] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "v_string",
+    16,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(ProtoFileHeader, v_string),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned proto_file_header__field_indices_by_name[] = {
   14,   /* field[14] = new_field */
@@ -282,13 +294,14 @@ static const unsigned proto_file_header__field_indices_by_name[] = {
   11,   /* field[11] = v_sfixed64 */
   6,   /* field[6] = v_sint32 */
   7,   /* field[7] = v_sint64 */
+  15,   /* field[15] = v_string */
   4,   /* field[4] = v_uint32 */
   5,   /* field[5] = v_uint64 */
 };
 static const ProtobufCIntRange proto_file_header__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 15 }
+  { 0, 16 }
 };
 const ProtobufCMessageDescriptor proto_file_header__descriptor =
 {
@@ -298,7 +311,7 @@ const ProtobufCMessageDescriptor proto_file_header__descriptor =
   "ProtoFileHeader",
   "",
   sizeof(ProtoFileHeader),
-  15,
+  16,
   proto_file_header__field_descriptors,
   proto_file_header__field_indices_by_name,
   1,  proto_file_header__number_ranges,
