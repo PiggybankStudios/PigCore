@@ -19,6 +19,16 @@ struct SqliteFileHandle
 	OsFile file;
 };
 
+static int SqliteCallback(void *NotUsed, int argc, char** argv, char** azColName)
+{
+	UNUSED(NotUsed);
+	for (int i=0; i < argc; i++)
+	{
+		PrintLine_E("%s = %s", azColName[i], argv[i] ? argv[i] : "NULL");
+	}
+	return 0;
+}
+
 int Sqlite_FileOpen(sqlite3_vfs* fileSystem, sqlite3_filename filePathPntr, sqlite3_file* filePntr, int flags, int* outFlagsPntr)
 {
 	NotNull(filePathPntr);

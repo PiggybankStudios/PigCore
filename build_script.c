@@ -94,6 +94,7 @@ int main(int argc, char* argv[])
 	bool BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
 	bool BUILD_TESTS              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
 	bool RUN_TESTS                = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
+	bool GENERATE_PROTOBUF        = ExtractBoolDefine(buildConfigContents, StrLit("GENERATE_PROTOBUF"));
 	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
 	bool DUMP_ASSEMBLY            = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
 	bool CONVERT_WASM_TO_WAT      = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
@@ -117,6 +118,7 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_IMGUI         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
 	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
 	bool BUILD_WITH_HTTP          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
+	bool BUILD_WITH_PROTOBUF      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PROTOBUF"));
 	
 	free(buildConfigContents.chars);
 	
@@ -183,6 +185,63 @@ int main(int argc, char* argv[])
 	CliArgList gcc_PlaydateDeviceCompilerFlags   = ZEROED; Fill_gcc_PlaydateDeviceCompilerFlags(&gcc_PlaydateDeviceCompilerFlags);
 	CliArgList gcc_PlaydateDeviceLinkerFlags     = ZEROED; Fill_gcc_PlaydateDeviceLinkerFlags(&gcc_PlaydateDeviceLinkerFlags, playdateSdkDir);
 	CliArgList pdc_CommonFlags                   = ZEROED; Fill_pdc_CommonFlags(&pdc_CommonFlags, playdateSdkDir);
+	
+	if (BUILD_WITH_PROTOBUF)
+	{
+		//NOTE: Generated .pb-c.h files contain an #include that doesn't go through "third_party/protobuf_c/" so we add this as an
+		//      include directory explicitly and from there it can find <protobuf-c/protobuf-c.h>
+		AddArgNt(&cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/third_party/protobuf_c");
+		AddArgNt(&clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/protobuf_c");
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                   Generate Protobuf Files                    |
+	// +--------------------------------------------------------------+
+	if (GENERATE_PROTOBUF)
+	{
+		WriteLine("\n[Generating Protobuf...]");
+		
+		#define PROTOC_C_OUT_PATH "--c_out=\"[VAL]\""
+		#define PROTOC_PLUGIN_EXE_PATH "--plugin=\"[VAL]\""
+		#define PROTOC_PROTO_PATH "--proto_path=\"[VAL]\""
+		#define PROTOC_ERROR_FORMAT "--error_format=[VAL]"
+		
+		#if BUILDING_ON_WINDOWS
+		Str8 protocExe = StrLit("wsl protoc");
+		#else
+		Str8 protocExe = StrLit("protoc");
+		#endif
+		
+		CliArgList proto_CommonFlags = ZEROED;
+		AddArgNt(&proto_CommonFlags, PROTOC_PLUGIN_EXE_PATH, "[ROOT]/third_party/_tools/linux/protoc-gen-c");
+		AddArgNt(&proto_CommonFlags, PROTOC_ERROR_FORMAT, "msvs");
+		AddArgNt(&proto_CommonFlags, PROTOC_PROTO_PATH, "[ROOT]");
+		
+		//NOTE: For some reason when [ROOT] folder is given as the first proto_path it likes to make a folder next to the .proto file with the name of the folder it resides in (like making "parse" folder next to "parse/parse_proto_google_types.proto")
+		//      To counteract this, we add the primary folder proto_path first THEN add proto_CommonFlags which includes [ROOT] as a place to look for import resolves
+		
+		//TODO: The functions inside the generated files are not dllexport and will not be available to apps linking with pig_core.dll!
+		
+		//TODO: Rather than manually running on a specific set of .proto files, we should resursively search the folders and find all .proto files
+		{
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, PROTOC_PROTO_PATH, "[ROOT]/parse");
+			AddArgList(&cmd, &proto_CommonFlags);
+			AddArgNt(&cmd, PROTOC_C_OUT_PATH, "[ROOT]/parse");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/parse/parse_proto_google_types.proto");
+			RunCliProgramAndExitOnFailure(protocExe, &cmd, StrLit("protoc Failed on parse_proto_google_types.proto!"));
+		}
+		{
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, PROTOC_PROTO_PATH, "[ROOT]/tests");
+			AddArgList(&cmd, &proto_CommonFlags);
+			AddArgNt(&cmd, PROTOC_C_OUT_PATH, "[ROOT]/tests");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_proto_types.proto");
+			RunCliProgramAndExitOnFailure(protocExe, &cmd, StrLit("protoc Failed on tests_proto_types.proto!"));
+		}
+	}
 	
 	// +--------------------------------------------------------------+
 	// |                       Build piggen.exe                       |

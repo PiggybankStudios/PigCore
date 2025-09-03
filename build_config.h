@@ -63,6 +63,8 @@ Description:
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS     1
 
+// Runs protoc --c_out (which uses protoc-gen-c plugin) to generate pb-c.h and pb-c.c files from all .proto files
+#define GENERATE_PROTOBUF 1
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
 #define DUMP_PREPROCESSOR 0
@@ -107,5 +109,7 @@ Description:
 #define BUILD_WITH_METADESK  0
 // Enables support for making HTTP (and HTTPS) requests using the OS' API (WinHTTP for Windows, ? for Linux, etc.)
 #define BUILD_WITH_HTTP      0
+// Enables support for encoding/decoding Googles's protocol buffers using protobuf-c library
+#define BUILD_WITH_PROTOBUF  1
 
 #endif //  _BUILD_CONFIG_H

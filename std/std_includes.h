@@ -61,6 +61,7 @@ typedef uint16_t char16_t;
 	// Needed for getpwuid and getuid
 	#include <pwd.h>
 	#include <pthread.h>
+	#include <sys/syscall.h> //needed for syscall(SYS_gettid) in os_threading.h
 #endif
 #if TARGET_IS_LINUX && !BUILD_FOR_PIGGEN
 	#include <fontconfig/fontconfig.h>

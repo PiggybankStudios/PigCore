@@ -68,6 +68,11 @@ Description:
 #endif
 #endif
 
+#if BUILD_WITH_PROTOBUF
+#include "tests_proto_types.pb-c.h"
+#include "tests_proto_types.pb-c.c"
+#endif //BUILD_WITH_PROTOBUF
+
 #define SQLITE_ENABLED 0
 
 #if SQLITE_ENABLED
@@ -178,16 +183,6 @@ DEBUG_OUTPUT_HANDLER_DEF(TestsDebugOutputCallback)
 	#endif
 }
 #endif
-
-static int SqliteCallback(void *NotUsed, int argc, char** argv, char** azColName)
-{
-	UNUSED(NotUsed);
-	for (int i=0; i < argc; i++)
-	{
-		PrintLine_E("%s = %s", azColName[i], argv[i] ? argv[i] : "NULL");
-	}
-	return 0;
-}
 
 static void PrintRichStr(RichStr richStr)
 {
@@ -1132,6 +1127,85 @@ int main(int argc, char* argv[])
 		bool writeTempSuccess = OsWriteToOpenTextFile(&tempFile, StrLit("Help!\n\nI'm\ntrapped\nin\na computer!"));
 		AssertMsg(writeTempSuccess, "OsWriteToOpenFile failed!");
 		OsCloseFile(&tempFile);
+		
+		ScratchEnd(scratch);
+	}
+	#endif
+	
+	// +==============================+
+	// |        Protobuf Tests        |
+	// +==============================+
+	#if BUILD_WITH_PROTOBUF
+	{
+		ScratchBegin(scratch);
+		const u8 oldVersionBytes[] = { 0x09, 0x18, 0x2D, 0x44, 0x54, 0xFB, 0x21, 0x09, 0x40, 0x15, 0xDB, 0x0F, 0x49, 0x40, 0x18, 0x80, 0x08, 0x20, 0xA4, 0x03, 0x28, 0x45, 0x30, 0x6F, 0x38, 0x53, 0x40, 0x89, 0x01, 0x4D, 0xC0, 0xC6, 0x2D, 0x00, 0x51, 0x00, 0xF2, 0x05, 0x2A, 0x01, 0x00, 0x00, 0x00, 0x5D, 0x80, 0x7B, 0xE1, 0xFF, 0x61, 0x00, 0x6C, 0xCA, 0x88, 0xFF, 0xFF, 0xFF, 0xFF, 0x68, 0x01, 0x70, 0x01 };
+		
+		PrintLine_D("Protobuf-C Version: %s", protobuf_c_version());
+		ProtoFileHeader fileHeader = PROTO_FILE_HEADER__INIT;
+		fileHeader.v_double = Pi64;
+		fileHeader.v_float = Pi32;
+		fileHeader.v_int32 = 1024;
+		fileHeader.v_int64 = 4202;
+		fileHeader.v_uint32 = 69;
+		fileHeader.v_uint64 = 111;
+		fileHeader.v_sint32 = -42;
+		fileHeader.v_sint64 = -69;
+		fileHeader.v_fixed32 = Million(3);
+		fileHeader.v_fixed64 = Billion(5);
+		fileHeader.v_sfixed32 = -(i32)Million(2);
+		fileHeader.v_sfixed64 = -(i64)Billion(2);
+		fileHeader.v_bool = true;
+		fileHeader.v_file_type = PROTO_FILE_HEADER__FILE_TYPE__PNG;
+		fileHeader.new_field = 54321;
+		
+		uxx packedSize = (uxx)proto_file_header__get_packed_size(&fileHeader);
+		PrintLine_D("fileHeader packed size: %llu bytes", packedSize);
+		#if 0
+		PbBuffer* packedBuffer = AllocPbBuffer(scratch, packedSize);
+		NotNull(packedBuffer);
+		#else
+		u8* packedBytes = AllocArray(u8, scratch, packedSize);
+		PbBuffer packedBufferStruct = NewPbBuffer_Const(packedSize, packedBytes);
+		PbBuffer* packedBuffer = &packedBufferStruct;
+		#endif
+		proto_file_header__pack_to_buffer(&fileHeader, &packedBuffer->buffer);
+		Assert(packedBuffer->length == packedBuffer->allocLength);
+		
+		// PrintLine_D("Packed fileHeader: %02X %02X %02X %02X ... %02X %02X %02X %02X",
+		// 	packedBuffer->pntr[0], packedBuffer->pntr[1], packedBuffer->pntr[2], packedBuffer->pntr[3],
+		// 	packedBuffer->pntr[packedBuffer->length-4], packedBuffer->pntr[packedBuffer->length-3], packedBuffer->pntr[packedBuffer->length-2], packedBuffer->pntr[packedBuffer->length-1]
+		// );
+		// Write_D("{"); for (uxx bIndex = 0; bIndex < packedSize; bIndex++) { Print_D(" 0x%02X,", packedBuffer->pntr[bIndex]); } WriteLine_D(" }");
+		// packedBuffer->pntr[15] = 0x00; //Introduce a corruption to test failed deserialization
+		
+		ProtobufCAllocator scratchAllocator = ProtobufAllocatorFromArena(scratch);
+		#if 0
+		PrintLine_D("Deserializing %llu bytes...", packedSize);
+		ProtoFileHeader* deserHeader = proto_file_header__unpack(&scratchAllocator, packedSize, packedBuffer->pntr);
+		#else
+		PrintLine_D("Deserializing old %llu bytes...", ArrayCount(oldVersionBytes));
+		ProtoFileHeader* deserHeader = proto_file_header__unpack(&scratchAllocator, ArrayCount(oldVersionBytes), oldVersionBytes);
+		#endif
+		if (deserHeader == nullptr) { WriteLine_E("Failed to deserialize!"); }
+		else
+		{
+			PrintLine_D("Deserialized %llu bytes to %p:", packedSize, deserHeader);
+			PrintLine_D("v_double = %lf", deserHeader->v_double);
+			PrintLine_D("v_float = %f", deserHeader->v_float);
+			PrintLine_D("v_int32 = %d", deserHeader->v_int32);
+			PrintLine_D("v_int64 = %lld", deserHeader->v_int64);
+			PrintLine_D("v_uint32 = %u", deserHeader->v_uint32);
+			PrintLine_D("v_uint64 = %llu", deserHeader->v_uint64);
+			PrintLine_D("v_sint32 = %d", deserHeader->v_sint32);
+			PrintLine_D("v_sint64 = %lld", deserHeader->v_sint64);
+			PrintLine_D("v_fixed32 = %u", deserHeader->v_fixed32);
+			PrintLine_D("v_fixed64 = %llu", deserHeader->v_fixed64);
+			PrintLine_D("v_sfixed32 = %d", deserHeader->v_sfixed32);
+			PrintLine_D("v_sfixed64 = %lld", deserHeader->v_sfixed64);
+			PrintLine_D("v_bool = %s", deserHeader->v_bool ? "True" : "False");
+			PrintLine_D("v_file_type = %d", deserHeader->v_file_type);
+			PrintLine_D("new_field = %d", deserHeader->new_field);
+		}
 		
 		ScratchEnd(scratch);
 	}
