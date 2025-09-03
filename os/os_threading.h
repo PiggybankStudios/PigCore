@@ -89,8 +89,11 @@ PEXPI ThreadId OsGetCurrentThreadId()
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
-    	int returnCode = pthread_threadid_np(pthread_self(), &result);
-    	Assert(returnCode == 0);
+		result = syscall(SYS_gettid); //TODO: This is technically pid_t which may not be pthread_t?
+		//TODO: Should we do either of these instead?
+		// result = pthread_self();
+		// int returnCode = pthread_threadid_np(pthread_self(), &result);
+		// Assert(returnCode == 0);
 	}
 	#else
 	AssertMsg(false, "OsGetCurrentThreadId does not support the current platform yet!");
@@ -178,7 +181,7 @@ PEXPI bool LockMutex(Mutex* mutexPntr, uxx timeoutMs)
 			clock_gettime(CLOCK_REALTIME, &absTimeout);
 			absTimeout.tv_sec += (timeoutMs / Thousand(1));
 			absTimeout.tv_nsec += (timeoutMs % Thousand(1)) * Million(1);
-			if (absTimeout.tv_nsec >= Billion(1)) { absTimeout.tv_sec++; absTimeout.tv_nsec -= Billion(1); }
+			if ((u64)absTimeout.tv_nsec >= Billion(1)) { absTimeout.tv_sec++; absTimeout.tv_nsec -= Billion(1); }
 			int lockResult = pthread_mutex_timedlock(mutexPntr, &absTimeout);
 			DebugAssert(lockResult == 0 || lockResult == ETIMEDOUT);
 			return (lockResult == 0);

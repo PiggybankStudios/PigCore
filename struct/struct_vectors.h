@@ -884,7 +884,7 @@ PEXPI v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius)
 	return NewV3(
 		CosR32(facingDirection) * circleRadius,
 		SinR32(facingDirection) * circleRadius,
-		SinR32(rotationUpDown)
+		SinR32(rotationUpDown) //TODO: Should this be multiplied by radius?
 	);
 }
 PEXPI v3d Vec3dFrom2Angles(r64 facingDirection, r64 rotationUpDown, r64 radius)
