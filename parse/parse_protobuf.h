@@ -16,8 +16,16 @@ Description:
 #include "base/base_assert.h"
 #include "std/std_memset.h"
 #include "mem/mem_arena.h"
+#include "base/base_debug_output.h"
 
 #if BUILD_WITH_PROTOBUF
+
+#if PIG_CORE_BUILDING_AS_DLL
+#define PROTOBUF_C_USE_SHARED_LIB
+#endif
+#define PROTOBUF_C_HEADER_DECOR PEXP
+#define PROTOBUF_C_SOURCE_DECOR PEXP
+#define PROTOBUF_C_UNPACK_ERROR(...) PrintLine_E("ProtobufError: " __VA_ARGS__)
 
 #if COMPILER_IS_MSVC
 #pragma warning(push)
@@ -119,11 +127,6 @@ PEXPI void FreePbBuffer(Arena* arena, PbBuffer* buffer)
 {
 	NotNull(arena);
 	NotNull(buffer);
-	#if LANGUAGE_IS_C
-	uxx headerAlignment = (uxx)_Alignof(PbBuffer);
-	#else
-	uxx headerAlignment = (uxx)std::alignment_of<PbBuffer>();
-	#endif
 	FreeArray(u8, arena, buffer->allocLength, buffer->pntr);
 	ClearPointer(buffer);
 }

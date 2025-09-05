@@ -212,14 +212,11 @@ size_t foo__bar__baz_bah__pack_to_buffer
 
 PROTOBUF_C__BEGIN_DECLS
 
-#if defined(_WIN32) && defined(PROTOBUF_C_USE_SHARED_LIB)
-# ifdef PROTOBUF_C_EXPORT
-#  define PROTOBUF_C__API __declspec(dllexport)
-# else
-#  define PROTOBUF_C__API __declspec(dllimport)
-# endif
-#else
-# define PROTOBUF_C__API
+#ifndef PROTOBUF_C_HEADER_DECOR
+# define PROTOBUF_C_HEADER_DECOR //nothing
+#endif
+#ifndef PROTOBUF_C_SOURCE_DECOR
+# define PROTOBUF_C_SOURCE_DECOR //nothing
 #endif
 
 #if !defined(PROTOBUF_C__NO_DEPRECATED) && \
@@ -776,7 +773,7 @@ struct ProtobufCServiceDescriptor {
  *
  * \return A string containing the version number of protobuf-c.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 const char *
 protobuf_c_version(void);
 
@@ -787,7 +784,7 @@ protobuf_c_version(void);
  * \return A 32 bit unsigned integer containing the version number of
  *      protobuf-c, represented in base-10 as (MAJOR*1E6) + (MINOR*1E3) + PATCH.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 uint32_t
 protobuf_c_version_number(void);
 
@@ -822,7 +819,7 @@ protobuf_c_version_number(void);
  * \retval NULL
  *      If not found or if the optimize_for = CODE_SIZE option was set.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 const ProtobufCEnumValue *
 protobuf_c_enum_descriptor_get_value_by_name(
 	const ProtobufCEnumDescriptor *desc,
@@ -843,7 +840,7 @@ protobuf_c_enum_descriptor_get_value_by_name(
  * \retval NULL
  *      If not found.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 const ProtobufCEnumValue *
 protobuf_c_enum_descriptor_get_value(
 	const ProtobufCEnumDescriptor *desc,
@@ -862,7 +859,7 @@ protobuf_c_enum_descriptor_get_value(
  * \retval NULL
  *      If not found or if the optimize_for = CODE_SIZE option was set.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 const ProtobufCFieldDescriptor *
 protobuf_c_message_descriptor_get_field_by_name(
 	const ProtobufCMessageDescriptor *desc,
@@ -881,7 +878,7 @@ protobuf_c_message_descriptor_get_field_by_name(
  * \retval NULL
  *      If not found.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 const ProtobufCFieldDescriptor *
 protobuf_c_message_descriptor_get_field(
 	const ProtobufCMessageDescriptor *desc,
@@ -895,7 +892,7 @@ protobuf_c_message_descriptor_get_field(
  * \return
  *      Number of bytes.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 size_t
 protobuf_c_message_get_packed_size(const ProtobufCMessage *message);
 
@@ -915,7 +912,7 @@ protobuf_c_message_get_packed_size(const ProtobufCMessage *message);
  * \return
  *      Number of bytes stored in `out`.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 size_t
 protobuf_c_message_pack(const ProtobufCMessage *message, uint8_t *out);
 
@@ -932,7 +929,7 @@ protobuf_c_message_pack(const ProtobufCMessage *message, uint8_t *out);
  * \return
  *      Number of bytes passed to the virtual buffer.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 size_t
 protobuf_c_message_pack_to_buffer(
 	const ProtobufCMessage *message,
@@ -955,7 +952,7 @@ protobuf_c_message_pack_to_buffer(
  * \retval NULL
  *      If an error occurred during unpacking.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 ProtobufCMessage *
 protobuf_c_message_unpack(
 	const ProtobufCMessageDescriptor *descriptor,
@@ -975,7 +972,7 @@ protobuf_c_message_unpack(
  *      `ProtobufCAllocator` to use for memory deallocation. May be NULL to
  *      specify the default allocator.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 void
 protobuf_c_message_free_unpacked(
 	ProtobufCMessage *message,
@@ -992,7 +989,7 @@ protobuf_c_message_free_unpacked(
  * \retval FALSE
  *      Message is invalid.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 protobuf_c_boolean
 protobuf_c_message_check(const ProtobufCMessage *);
 
@@ -1007,7 +1004,7 @@ protobuf_c_message_check(const ProtobufCMessage *);
  * \param message
  *      Allocated block of memory of size `descriptor->sizeof_message`.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 void
 protobuf_c_message_init(
 	const ProtobufCMessageDescriptor *descriptor,
@@ -1019,7 +1016,7 @@ protobuf_c_message_init(
  * \param service
  *      The service object to free.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 void
 protobuf_c_service_destroy(ProtobufCService *service);
 
@@ -1036,7 +1033,7 @@ protobuf_c_service_destroy(ProtobufCService *service);
  * \retval NULL
  *      If not found or if the optimize_for = CODE_SIZE option was set.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 const ProtobufCMethodDescriptor *
 protobuf_c_service_descriptor_get_method_by_name(
 	const ProtobufCServiceDescriptor *desc,
@@ -1081,21 +1078,21 @@ do {                                                                    \
  * \param data
  *      Data to append.
  */
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 void
 protobuf_c_buffer_simple_append(
 	ProtobufCBuffer *buffer,
 	size_t len,
 	const unsigned char *data);
 
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 void
 protobuf_c_service_generated_init(
 	ProtobufCService *service,
 	const ProtobufCServiceDescriptor *descriptor,
 	ProtobufCServiceDestroy destroy);
 
-PROTOBUF_C__API
+PROTOBUF_C_HEADER_DECOR
 void
 protobuf_c_service_invoke_internal(
 	ProtobufCService *service,

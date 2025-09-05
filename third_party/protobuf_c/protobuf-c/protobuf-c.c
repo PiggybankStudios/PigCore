@@ -133,12 +133,14 @@ const char protobuf_c_empty_string[] = "";
 
 /* --- version --- */
 
+PROTOBUF_C_SOURCE_DECOR
 const char *
 protobuf_c_version(void)
 {
 	return PROTOBUF_C_VERSION;
 }
 
+PROTOBUF_C_SOURCE_DECOR
 uint32_t
 protobuf_c_version_number(void)
 {
@@ -187,6 +189,7 @@ static ProtobufCAllocator protobuf_c__allocator = {
 
 /* === buffer-simple === */
 
+PROTOBUF_C_SOURCE_DECOR
 void
 protobuf_c_buffer_simple_append(ProtobufCBuffer *buffer,
 				size_t len, const uint8_t *data)
@@ -705,6 +708,7 @@ unknown_field_get_packed_size(const ProtobufCMessageUnknownField *field)
 /*
  * Calculate the serialized size of the message.
  */
+PROTOBUF_C_SOURCE_DECOR
 size_t protobuf_c_message_get_packed_size(const ProtobufCMessage *message)
 {
 	unsigned i;
@@ -1468,6 +1472,7 @@ unknown_field_pack(const ProtobufCMessageUnknownField *field, uint8_t *out)
 
 /**@}*/
 
+PROTOBUF_C_SOURCE_DECOR
 size_t
 protobuf_c_message_pack(const ProtobufCMessage *message, uint8_t *out)
 {
@@ -1954,6 +1959,7 @@ unknown_field_pack_to_buffer(const ProtobufCMessageUnknownField *field,
 
 /**@}*/
 
+PROTOBUF_C_SOURCE_DECOR
 size_t
 protobuf_c_message_pack_to_buffer(const ProtobufCMessage *message,
 				  ProtobufCBuffer *buffer)
@@ -3024,6 +3030,7 @@ message_init_generic(const ProtobufCMessageDescriptor *desc,
 #define REQUIRED_FIELD_BITMAP_IS_SET(index)	\
 	(required_fields_bitmap[(index)/8] & (1UL<<((index)%8)))
 
+PROTOBUF_C_SOURCE_DECOR
 ProtobufCMessage *
 protobuf_c_message_unpack(const ProtobufCMessageDescriptor *desc,
 			  ProtobufCAllocator *allocator,
@@ -3322,6 +3329,7 @@ error_cleanup_during_scan:
 	return NULL;
 }
 
+PROTOBUF_C_SOURCE_DECOR
 void
 protobuf_c_message_free_unpacked(ProtobufCMessage *message,
 				 ProtobufCAllocator *allocator)
@@ -3411,6 +3419,7 @@ protobuf_c_message_free_unpacked(ProtobufCMessage *message,
 	do_free(allocator, message);
 }
 
+PROTOBUF_C_SOURCE_DECOR
 void
 protobuf_c_message_init(const ProtobufCMessageDescriptor * descriptor,
 			void *message)
@@ -3418,6 +3427,7 @@ protobuf_c_message_init(const ProtobufCMessageDescriptor * descriptor,
 	descriptor->message_init((ProtobufCMessage *) (message));
 }
 
+PROTOBUF_C_SOURCE_DECOR
 protobuf_c_boolean
 protobuf_c_message_check(const ProtobufCMessage *message)
 {
@@ -3505,6 +3515,7 @@ typedef void (*GenericHandler) (void *service,
 				const ProtobufCMessage *input,
 				ProtobufCClosure closure,
 				void *closure_data);
+PROTOBUF_C_SOURCE_DECOR
 void
 protobuf_c_service_invoke_internal(ProtobufCService *service,
 				   unsigned method_index,
@@ -3536,6 +3547,7 @@ protobuf_c_service_invoke_internal(ProtobufCService *service,
 	(*handler)(service, input, closure, closure_data);
 }
 
+PROTOBUF_C_SOURCE_DECOR
 void
 protobuf_c_service_generated_init(ProtobufCService *service,
 				  const ProtobufCServiceDescriptor *descriptor,
@@ -3548,6 +3560,7 @@ protobuf_c_service_generated_init(ProtobufCService *service,
 	memset(service + 1, 0, descriptor->n_methods * sizeof(GenericHandler));
 }
 
+PROTOBUF_C_SOURCE_DECOR
 void protobuf_c_service_destroy(ProtobufCService *service)
 {
 	service->destroy(service);
@@ -3555,6 +3568,7 @@ void protobuf_c_service_destroy(ProtobufCService *service)
 
 /* --- querying the descriptors --- */
 
+PROTOBUF_C_SOURCE_DECOR
 const ProtobufCEnumValue *
 protobuf_c_enum_descriptor_get_value_by_name(const ProtobufCEnumDescriptor *desc,
 					     const char *name)
@@ -3585,6 +3599,7 @@ protobuf_c_enum_descriptor_get_value_by_name(const ProtobufCEnumDescriptor *desc
 	return NULL;
 }
 
+PROTOBUF_C_SOURCE_DECOR
 const ProtobufCEnumValue *
 protobuf_c_enum_descriptor_get_value(const ProtobufCEnumDescriptor *desc,
 				     int value)
@@ -3595,6 +3610,7 @@ protobuf_c_enum_descriptor_get_value(const ProtobufCEnumDescriptor *desc,
 	return desc->values + rv;
 }
 
+PROTOBUF_C_SOURCE_DECOR
 const ProtobufCFieldDescriptor *
 protobuf_c_message_descriptor_get_field_by_name(const ProtobufCMessageDescriptor *desc,
 						const char *name)
@@ -3629,6 +3645,7 @@ protobuf_c_message_descriptor_get_field_by_name(const ProtobufCMessageDescriptor
 	return NULL;
 }
 
+PROTOBUF_C_SOURCE_DECOR
 const ProtobufCFieldDescriptor *
 protobuf_c_message_descriptor_get_field(const ProtobufCMessageDescriptor *desc,
 					unsigned value)
@@ -3639,6 +3656,7 @@ protobuf_c_message_descriptor_get_field(const ProtobufCMessageDescriptor *desc,
 	return desc->fields + rv;
 }
 
+PROTOBUF_C_SOURCE_DECOR
 const ProtobufCMethodDescriptor *
 protobuf_c_service_descriptor_get_method_by_name(const ProtobufCServiceDescriptor *desc,
 						 const char *name)
