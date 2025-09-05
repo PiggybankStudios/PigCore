@@ -376,6 +376,9 @@ typedef Vec4R64  v4d;
 	PIG_CORE_INLINE void AlignV2ToV2(v2* vectorOut, v2 alignmentScale);
 	PIG_CORE_INLINE void AlignV2To(v2* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV2(v2* vectorOut);
+	PIG_CORE_INLINE void AlignV2dToV2d(v2d* vectorOut, v2d alignmentScale);
+	PIG_CORE_INLINE void AlignV2dTo(v2d* vectorOut, r64 alignmentScale);
+	PIG_CORE_INLINE void AlignV2d(v2d* vectorOut);
 	PIG_CORE_INLINE void AlignV3ToV3(v3* vectorOut, v3 alignmentScale);
 	PIG_CORE_INLINE void AlignV3To(v3* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV3(v3* vectorOut);
@@ -563,6 +566,8 @@ typedef Vec4R64  v4d;
 #define V4_Nextward      NewV4( 0.0f,  0.0f,  0.0f, 1.0f)
 #define V4_Zero_Const   { .X=0.0f,.Y=0.0f,.Z=0.0f,.W=0.0f }
 #define V4_One_Const    { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
+#define V4r_Zero_Const  { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
+#define V4r_One_Const   { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
 
 #define V4i_Zero          NewV4i( 0,  0,  0, 0)
 #define V4i_One           NewV4i( 1,  1,  1, 0)

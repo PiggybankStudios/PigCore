@@ -91,6 +91,16 @@ enum Result
 	Result_WinHTTPError,
 	Result_MissingItems,
 	Result_MissingPart,
+	Result_ValueTooLow,
+	Result_ValueTooHigh,
+	Result_UnexpectedEof,
+	Result_DecompressError,
+	Result_UnsupportedCompression,
+	Result_WrongInternalFormat,
+	Result_MissingData,
+	Result_MissingHeader,
+	Result_Mismatch,
+	Result_InvalidID,
 	
 	Result_Count,
 };
@@ -165,6 +175,16 @@ PEXP const char* GetResultStr(Result result)
 		case Result_WinHTTPError: return "WinHTTPError";
 		case Result_MissingItems: return "MissingItems";
 		case Result_MissingPart: return "MissingPart";
+		case Result_ValueTooLow: return "ValueTooLow";
+		case Result_ValueTooHigh: return "ValueTooHigh";
+		case Result_UnexpectedEof: return "UnexpectedEof";
+		case Result_DecompressError: return "DecompressError";
+		case Result_UnsupportedCompression: return "UnsupportedCompression";
+		case Result_WrongInternalFormat: return "WrongInternalFormat";
+		case Result_MissingData: return "MissingData";
+		case Result_MissingHeader: return "MissingHeader";
+		case Result_Mismatch: return "Mismatch";
+		case Result_InvalidID: return "InvalidID";
 		default: return UNKNOWN_STR;
 	}
 }

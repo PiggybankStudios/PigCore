@@ -6,9 +6,9 @@ Description:
 	** This file acts as the API for using the PigFont structure that
 	** is defined in gfx_font.h to layout rastered glyphs from the
 	** atlases in the font based on information that was extracted
-	** from the ttf for how place each glyph relative to the one before.
-	** NOTE: This layout code is relatively straightforward but it
-	** needs to disparate use cases so the primary implementation of
+	** from the ttf for how to place each glyph relative to the one before.
+	** NOTE: This layout code is relatively straightforward but it's
+	** needed by disparate use cases so the primary implementation of
 	** the logic has a lot of parameters to change it's behavior and
 	** hook in to the process.
 */

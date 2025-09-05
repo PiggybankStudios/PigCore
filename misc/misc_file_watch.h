@@ -147,6 +147,7 @@ PEXPI bool OsUpdateFileWatch(OsFileWatch* watch, u64 programTime)
 
 PEXPI void OsResetFileWatch(OsFileWatch* watch, u64 programTime)
 {
+	UNUSED(programTime); //TODO: Do we actually need this passed for some reason?
 	NotNull(watch);
 	NotNull(watch->arena);
 	watch->change = OsFileWatchChange_None;
