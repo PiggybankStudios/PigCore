@@ -9,8 +9,11 @@ Date:   03\31\2025
 
 #include "base/base_compiler_check.h"
 #include "base/base_defines_check.h"
-#include "base/base_typedefs.h" //needed by parse_protobuf.h, parse_c_tokenizer.h, and parse_metadesk.h
-#include "base/base_assert.h" //needed by parse_protobuf.h, parse_c_tokenizer.h, and parse_metadesk.h
+#include "base/base_typedefs.h"
+
+#include "parse/parse_binary.h"
+
+#include "base/base_assert.h"
 #include "std/std_memset.h" //needed by parse_protobuf.h, and parse_c_tokenizer.h
 #include "mem/mem_arena.h" //needed by parse_protobuf.h, parse_c_tokenizer.h, and parse_metadesk.h
 

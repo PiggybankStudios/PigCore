@@ -101,6 +101,7 @@ enum Result
 	Result_MissingHeader,
 	Result_Mismatch,
 	Result_InvalidID,
+	Result_UnsupportedFileFormat,
 	
 	Result_Count,
 };
@@ -185,6 +186,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_MissingHeader: return "MissingHeader";
 		case Result_Mismatch: return "Mismatch";
 		case Result_InvalidID: return "InvalidID";
+		case Result_UnsupportedFileFormat: return "UnsupportedFileFormat";
 		default: return UNKNOWN_STR;
 	}
 }
