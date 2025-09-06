@@ -40,6 +40,7 @@ PEXP const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 		// https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
 		case ERROR_SUCCESS:              return "ERROR_SUCCESS";              //0
 		case ERROR_FILE_NOT_FOUND:       return "ERROR_FILE_NOT_FOUND";       //2
+		case ERROR_PATH_NOT_FOUND:       return "ERROR_PATH_NOT_FOUND";       //3
 		case ERROR_ACCESS_DENIED:        return "ERROR_ACCESS_DENIED";        //5
 		case ERROR_SHARING_VIOLATION:    return "ERROR_SHARING_VIOLATION";    //32
 		case ERROR_FILE_EXISTS:          return "ERROR_FILE_EXISTS";          //80

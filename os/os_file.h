@@ -587,7 +587,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		if (fileHandle == INVALID_HANDLE_VALUE)
 		{
 			DWORD errorCode = GetLastError();
-			if (errorCode == ERROR_FILE_NOT_FOUND)
+			if (errorCode == ERROR_FILE_NOT_FOUND || errorCode == ERROR_PATH_NOT_FOUND)
 			{
 				PrintLine_E("ERROR: File not found at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
 			}
