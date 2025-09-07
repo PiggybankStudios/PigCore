@@ -609,3 +609,7 @@ PEXP void VarArrayCopy_(VarArray* destArray, const VarArray* sourceArray, Arena*
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_VAR_ARRAY_H
+
+#if defined(_MISC_SORTING_H) && defined(_STRUCT_VAR_ARRAY_H)
+#include "cross/cross_sorting_and_var_array.h"
+#endif

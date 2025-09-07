@@ -35,13 +35,14 @@ Date:   01\05\2025
 
 #include "std/std_includes.h" //required by misc_printing.h
 #include "std/std_printf.h" //required by misc_printing.h and misc_parsing.h
-#include "mem/mem_arena.h" //required by misc_printing.h and misc_file_watch.h
+#include "mem/mem_arena.h" //required by misc_printing.h, misc_file_watch.h and misc_sorting.h
 #include "os/os_file.h" //required by misc_file_watch.h
 
 #include "misc/misc_simple_parsers.h"
 #include "misc/misc_printing.h"
 #include "misc/misc_two_pass.h"
 #include "misc/misc_file_watch.h"
+#include "misc/misc_sorting.h"
 
 #include "struct/struct_vectors.h" //required by misc_noise.h and misc_triangulation.h
 
