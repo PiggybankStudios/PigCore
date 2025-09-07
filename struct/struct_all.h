@@ -34,9 +34,12 @@ Description:
 #include "struct/struct_rich_string.h"
 #include "struct/struct_string_buffer.h"
 
+
 #include "mem/mem_arena.h" //Needed by many of the files below
 #include "std/std_memset.h" //Needed by many of the files below
+#include "os/os_file.h" //Needed by struct_stream.h
 
+#include "struct/struct_stream.h"
 #include "struct/struct_string_error_list.h"
 #include "struct/struct_var_array.h"
 #include "struct/struct_bkt_array.h"

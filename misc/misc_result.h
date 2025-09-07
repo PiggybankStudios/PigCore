@@ -102,6 +102,8 @@ enum Result
 	Result_Mismatch,
 	Result_InvalidID,
 	Result_UnsupportedFileFormat,
+	Result_EndOfBuffer,
+	Result_EndOfFile,
 	
 	Result_Count,
 };
@@ -187,6 +189,8 @@ PEXP const char* GetResultStr(Result result)
 		case Result_Mismatch: return "Mismatch";
 		case Result_InvalidID: return "InvalidID";
 		case Result_UnsupportedFileFormat: return "UnsupportedFileFormat";
+		case Result_EndOfBuffer: return "EndOfBuffer";
+		case Result_EndOfFile: return "EndOfFile";
 		default: return UNKNOWN_STR;
 	}
 }

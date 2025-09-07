@@ -24,3 +24,7 @@ Description:
 #define BinReadR64(slice, readIndexPntr, errorCode) (((*(readIndexPntr) + sizeof(r64)) <= (slice).length) ? *(r64*)(&(slice).bytes[*(readIndexPntr)]) : 0); if ((*(readIndexPntr) + sizeof(r64)) > (slice).length) { errorCode; } else { *(readIndexPntr) += sizeof(r64); } do {} while(0)
 
 #endif //  _PARSE_BINARY_H
+
+#if defined(_STRUCT_STREAM_H) && defined(_PARSE_BINARY_H)
+#include "cross/cross_stream_and_parse_binary.h"
+#endif
