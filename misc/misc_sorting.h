@@ -25,10 +25,27 @@ Description:
 #define COMPARE_FUNC_DEF(functionName) i32 functionName(const void* left, const void* right, void* contextPntr)
 typedef COMPARE_FUNC_DEF(CompareFunc_f);
 
+#define SORT_API_GET_NUM_ELEMENTS_DEF(functionName) uxx functionName(void* structPntr)
+typedef SORT_API_GET_NUM_ELEMENTS_DEF(SortApiGetNumElements_f);
+
+#define SORT_API_GET_ELEMENT_DEF(functionName) void* functionName(void* structPntr, uxx index)
+typedef SORT_API_GET_ELEMENT_DEF(SortApiGetElement_f);
+
+typedef plex SortApi SortApi;
+plex SortApi
+{
+	void* structPntr;
+	SortApiGetNumElements_f* GetNumElements;
+	SortApiGetElement_f* GetElement;
+};
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	bool IsSorted(const SortApi* sortApi, CompareFunc_f* compareFunc, void* contextPntr);
+	PIG_CORE_INLINE bool IsSortedOnIntMember_(bool isMemberSigned, uxx memberOffset, uxx memberSize, const SortApi* sortApi);
+	PIG_CORE_INLINE bool IsSortedOnFloatMember_(uxx memberOffset, uxx memberSize, const SortApi* sortApi);
 	bool IsSortedFlat(const void* arrayPntr, uxx numElements, uxx elementSize, CompareFunc_f* compareFunc, void* contextPntr);
 	PIG_CORE_INLINE bool IsSortedFlatOnIntMember_(bool isMemberSigned, uxx memberOffset, uxx memberSize, const void* arrayPntr, uxx numElements, uxx elementSize);
 	PIG_CORE_INLINE bool IsSortedFlatOnFloatMember_(uxx memberOffset, uxx memberSize, const void* arrayPntr, uxx numElements, uxx elementSize);
@@ -37,9 +54,12 @@ typedef COMPARE_FUNC_DEF(CompareFunc_f);
 	PIG_CORE_INLINE void QuickSortFlatOnFloatMember_(bool reverseSort, uxx memberOffset, uxx memberSize, void* arrayPntr, uxx numElements, uxx elementSize);
 #endif
 
-#define IsSortedFlatOnUintMember(type, memberName, arrayPntr, numElements, elementSize)          IsSortedFlatOnIntMember_(false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
-#define IsSortedFlatOnIntMember(type, memberName, arrayPntr, numElements, elementSize)           IsSortedFlatOnIntMember_(true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
-#define IsSortedFlatOnFloatMember(type, memberName, arrayPntr, numElements, elementSize)         IsSortedFlatOnFloatMember_(     STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
+#define IsSortedOnIntMember(type, memberName, sortApiPntr)                               IsSortedOnIntMember_(true,      STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (sortApiPntr))
+#define IsSortedOnUintMember(type, memberName, sortApiPntr)                              IsSortedOnIntMember_(false,     STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (sortApiPntr))
+#define IsSortedOnFloatMember(type, memberName, sortApiPntr)                             IsSortedOnFloatMember_(         STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (sortApiPntr))
+#define IsSortedFlatOnUintMember(type, memberName, arrayPntr, numElements, elementSize)  IsSortedFlatOnIntMember_(false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
+#define IsSortedFlatOnIntMember(type, memberName, arrayPntr, numElements, elementSize)   IsSortedFlatOnIntMember_(true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
+#define IsSortedFlatOnFloatMember(type, memberName, arrayPntr, numElements, elementSize) IsSortedFlatOnFloatMember_(     STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
 
 #define QuickSortFlatOnUintMember(type, memberName, arrayPntr, numElements, elementSize)          QuickSortFlatOnIntMember_(false, false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
 #define QuickSortFlatOnIntMember(type, memberName, arrayPntr, numElements, elementSize)           QuickSortFlatOnIntMember_(false, true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
@@ -141,6 +161,45 @@ static COMPARE_FUNC_DEF(SortOnFloatMember_Compare)
 // +==============================+
 // |           IsSorted           |
 // +==============================+
+PEXP bool IsSorted(const SortApi* sortApi, CompareFunc_f* compareFunc, void* contextPntr)
+{
+	NotNull(sortApi);
+	NotNull(sortApi->structPntr);
+	NotNull(sortApi->GetNumElements);
+	NotNull(sortApi->GetElement);
+	NotNull(compareFunc);
+	uxx numElements = sortApi->GetNumElements(sortApi->structPntr);
+	void* prevElement = nullptr;
+	for (uxx eIndex = 0; eIndex < numElements; eIndex++)
+	{
+		void* nextElement = sortApi->GetElement(sortApi->structPntr, eIndex);
+		if (prevElement != nullptr)
+		{
+			i32 sortResult = compareFunc(prevElement, nextElement, contextPntr);
+			if (sortResult > 0) { return false; }
+		}
+		prevElement = nextElement;
+	}
+	return true;
+}
+PEXPI bool IsSortedOnIntMember_(bool isMemberSigned, uxx memberOffset, uxx memberSize, const SortApi* sortApi)
+{
+	SortOnMember_Context context = ZEROED;
+	context.reverseSort = false;
+	context.isMemberSigned = isMemberSigned;
+	context.memberOffset = memberOffset;
+	context.memberSize = memberSize;
+	return IsSorted(sortApi, SortOnIntMember_Compare, &context);
+}
+PEXPI bool IsSortedOnFloatMember_(uxx memberOffset, uxx memberSize, const SortApi* sortApi)
+{
+	SortOnMember_Context context = ZEROED;
+	context.reverseSort = false;
+	context.memberOffset = memberOffset;
+	context.memberSize = memberSize;
+	return IsSorted(sortApi, SortOnFloatMember_Compare, &context);
+}
+
 PEXP bool IsSortedFlat(const void* arrayPntr, uxx numElements, uxx elementSize, CompareFunc_f* compareFunc, void* contextPntr)
 {
 	NotNull(arrayPntr);
