@@ -19,6 +19,7 @@ Description:
 #include "misc/misc_result.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_image_data.h"
+#include "misc/misc_profiling_tracy_include.h"
 
 //TODO: stb_image.h uses strtol which we currently don't have an implementation for in our custom standard library!
 #if USING_CUSTOM_STDLIB
@@ -103,13 +104,16 @@ static void StbImageFree(void* allocPntr)
 
 PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut)
 {
+	TracyCZoneN(funcZone, "TryParseImageFile", true);
 	NotNullStr(fileContents);
 	NotNull(imageDataOut);
 	ScratchBegin1(scratch, arena);
 	StbImageScratchArena = scratch;
 	int imageWidth, imageHeight, fileChannelCount;
 	const int numChannels = 4;
+	TracyCZoneN(_stbLoadFromMemory, "stbi_load_from_memory", true);
 	u8* imageData = stbi_load_from_memory(fileContents.bytes, (int)fileContents.length, &imageWidth, &imageHeight, &fileChannelCount, numChannels);
+	TracyCZoneEnd(_stbLoadFromMemory);
 	
 	if (imageData != nullptr)
 	{
@@ -123,22 +127,29 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 		if (imageDataOut->pixels == nullptr)
 		{
 			ScratchEnd(scratch);
+			TracyCZoneEnd(funcZone);
 			return Result_FailedToAllocateMemory;
 		}
+		TracyCZoneN(_CopyPixels, "CopyPixels", true);
 		MyMemCopy(imageDataOut->pixels, imageData, sizeof(u32) * imageDataOut->numPixels);
+		TracyCZoneEnd(_CopyPixels);
 		
+		TracyCZoneN(_stbImageFree, "stbi_image_free", true);
 		stbi_image_free(imageData);
+		TracyCZoneEnd(_stbImageFree);
 	}
 	else
 	{
 		ScratchEnd(scratch);
 		StbImageScratchArena = nullptr;
+		TracyCZoneEnd(funcZone);
 		return Result_ParsingFailure;
 	}
 	
 	ScratchEnd(scratch);
 	StbImageScratchArena = nullptr;
 	
+	TracyCZoneEnd(funcZone);
 	return Result_Success;
 }
 

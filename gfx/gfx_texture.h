@@ -15,6 +15,7 @@ Date:   01\30\2025
 #include "struct/struct_string.h"
 #include "misc/misc_result.h"
 #include "misc/misc_sokol_gfx_include.h"
+#include "misc/misc_profiling_tracy_include.h"
 
 #if BUILD_WITH_SOKOL_GFX
 
@@ -97,6 +98,7 @@ PEXP void FreeTexture(Texture* texture)
 	NotNull(texture);
 	if (texture->arena != nullptr)
 	{
+		TracyCZoneN(funcZone, "FreeTexture", true);
 		sg_destroy_image(texture->image);
 		sg_destroy_sampler(texture->sampler);
 		FreeStr8(texture->arena, &texture->name);
@@ -104,6 +106,7 @@ PEXP void FreeTexture(Texture* texture)
 		FreeStr8(texture->arena, &texture->filePath);
 		#endif
 		if (texture->pixelsPntr != nullptr) { FreeMem(texture->arena, texture->pixelsPntr, texture->totalSize); }
+		TracyCZoneEnd(funcZone);
 	}
 	ClearPointer(texture);
 }
@@ -114,6 +117,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	NotNullStr(name);
 	Assert(size.Width > 0 && size.Height > 0);
 	NotNull(pixelsPntr);
+	TracyCZoneN(funcZone, "InitTexture", true);
 	ScratchBegin1(scratch, arena);
 	
 	Texture result = ZEROED;
@@ -123,12 +127,20 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	
 	if (IsFlagSet(flags, TextureFlag_NoAlpha) && !IsFlagSet(flags, TextureFlag_SingleChannel))
 	{
+		TracyCZoneN(_SingleChannelConversion, "SingleChannelConversion", true);
 		uxx inputPixelSize = IsFlagSet(flags, TextureFlag_IsHdr) ? sizeof(r32)*3 : sizeof(u8)*3;
 		uxx inputTotalSize = inputPixelSize * size.Width * size.Height;
 		uxx alphaChannelSize = IsFlagSet(flags, TextureFlag_IsHdr) ? sizeof(r32) : sizeof(u8);
 		uxx newInputSize = inputTotalSize + (alphaChannelSize * size.Width * size.Height);
 		u8* newPixels = AllocArray(u8, scratch, newInputSize);
-		if (newPixels == nullptr) { result.error = Result_FailedToAllocateMemory; ScratchEnd(scratch); return result; }
+		if (newPixels == nullptr)
+		{
+			result.error = Result_FailedToAllocateMemory;
+			ScratchEnd(scratch);
+			TracyCZoneEnd(_SingleChannelConversion);
+			TracyCZoneEnd(funcZone);
+			return result;
+		}
 		const u8* readPntr = (const u8*)pixelsPntr;
 		u8* writePntr = newPixels;
 		for (uxx yIndex = 0; yIndex < (uxx)size.Height; yIndex++)
@@ -144,6 +156,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 			}
 		}
 		pixelsPntr = newPixels;
+		TracyCZoneEnd(_SingleChannelConversion);
 	}
 	
 	result.numPixels = (uxx)(size.Width * size.Height);
@@ -159,6 +172,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		{
 			result.error = Result_FailedToAllocateMemory;
 			ScratchEnd(scratch);
+			TracyCZoneEnd(funcZone);
 			return result;
 		}
 	}
@@ -180,13 +194,16 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	Str8 nameNt = AllocStrAndCopy(scratch, name.length, name.chars, true); NotNull(nameNt.chars); //allocate to ensure null-term char
 	imageDesc.label = nameNt.chars;
 	
+	TracyCZoneN(_MakeImage, "sg_make_image", true);
 	result.image = sg_make_image(&imageDesc);
+	TracyCZoneEnd(_MakeImage);
 	if (result.image.id == SG_INVALID_ID)
 	{
 		FreeStr8(arena, &result.name);
 		if (result.pixelsPntr != nullptr) { FreeMem(arena, result.pixelsPntr, result.totalSize); }
 		result.error = Result_SokolError;
 		ScratchEnd(scratch);
+		TracyCZoneEnd(funcZone);
 		return result;
 	}
 	
@@ -200,7 +217,9 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	samplerDesc.wrap_v = IsFlagSet(flags, TextureFlag_IsRepeating) ? SG_WRAP_REPEAT : SG_WRAP_CLAMP_TO_EDGE;
 	// samplerDesc.wrap_w = IsFlagSet(flags, TextureFlag_IsRepeating) ? SG_WRAP_REPEAT : SG_WRAP_CLAMP_TO_EDGE;
 	
+	TracyCZoneN(_MakeSampler, "sg_make_sampler", true);
 	result.sampler = sg_make_sampler(&samplerDesc);
+	TracyCZoneEnd(_MakeSampler);
 	if (result.sampler.id == SG_INVALID_ID)
 	{
 		sg_destroy_image(result.image);
@@ -208,11 +227,13 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		if (result.pixelsPntr != nullptr) { FreeMem(arena, result.pixelsPntr, result.totalSize); }
 		result.error = Result_SokolError;
 		ScratchEnd(scratch);
+		TracyCZoneEnd(funcZone);
 		return result;
 	}
 	
 	ScratchEnd(scratch);
 	result.error = Result_Success;
+	TracyCZoneEnd(funcZone);
 	return result;
 }
 
