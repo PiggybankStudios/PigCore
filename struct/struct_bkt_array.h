@@ -271,7 +271,7 @@ PEXPI void* BktArrayGet_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx i
 {
 	#if DEBUG_BUILD
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BktArrayGet. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayGet. Make sure you're accessing the BktArray with the correct type!");
 	#else
@@ -309,7 +309,7 @@ PEXPI uxx BktArrayGetIndexOf_(uxx itemSize, uxx itemAlignment, const BktArray* a
 {
 	#if DEBUG_BUILD
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BktArrayGetIndexOf. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayGetIndexOf. Make sure you're accessing the BktArray with the correct type!");
 	#else
@@ -340,7 +340,7 @@ PEXPI void* BktArrayAdd_(uxx itemSize, uxx itemAlignment, BktArray* array)
 {
 	#if DEBUG_BUILD
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BktArrayAdd. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayAdd. Make sure you're accessing the BktArray with the correct type!");
 	#else
@@ -381,7 +381,7 @@ PEXPI void* BktArrayAddSomewhere_(uxx itemSize, uxx itemAlignment, BktArray* arr
 {
 	#if DEBUG_BUILD
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BktArrayAddSomewhere. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayAddSomewhere. Make sure you're accessing the BktArray with the correct type!");
 	#else
@@ -417,7 +417,7 @@ PEXP void* BktArrayAddMulti_(uxx itemSize, uxx itemAlignment, BktArray* array, u
 {
 	#if DEBUG_BUILD
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BktArrayAddMulti. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayAddMulti. Make sure you're accessing the BktArray with the correct type!");
 	#else
@@ -487,9 +487,9 @@ PEXPI void* BktArrayAddArray_(uxx itemSize, uxx itemAlignment, BktArray* destArr
 {
 	#if DEBUG_BUILD
 	NotNull(destArray);
-	NotNull(IsBktArrayInit(destArray));
+	Assert(IsBktArrayInit(destArray));
 	NotNull(srcArray);
-	NotNull(IsBktArrayInit(srcArray));
+	Assert(IsBktArrayInit(srcArray));
 	AssertMsg(destArray->itemSize == itemSize, "Invalid itemSize passed to BktArrayAddMulti. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(destArray->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayAddMulti. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(srcArray->itemSize == itemSize, "Invalid itemSize of srcArray passed to BktArrayAddMulti. Make sure the two arrays are the same type!");
@@ -529,7 +529,7 @@ PEXP void BktArrayRemoveAt_(uxx itemSize, uxx itemAlignment, BktArray* array, ux
 {
 	#if DEBUG_BUILD
 	Assert(array != nullptr && true);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BktArrayRemoveAt. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayRemoveAt. Make sure you're accessing the BktArray with the correct type!");
 	#else
@@ -606,7 +606,7 @@ PEXPI void BktArrayCopy(Arena* arena, BktArray* destArray, const BktArray* srcAr
 	NotNull(arena);
 	NotNull(destArray);
 	NotNull(srcArray);
-	NotNull(IsBktArrayInit(srcArray));
+	Assert(IsBktArrayInit(srcArray));
 	InitBktArrayWithInitial_(srcArray->itemSize, srcArray->itemAlignment, destArray, arena, srcArray->defaultBucketSize, srcArray->length);
 	BktArrayAddArray_(srcArray->itemSize, srcArray->itemAlignment, destArray, srcArray);
 }
@@ -616,7 +616,7 @@ PEXP void* BktArrayInsert_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx
 {
 	#if DEBUG_BUILD
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BktArrayInsert. Make sure you're accessing the BktArray with the correct type!");
 	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BktArrayInsert. Make sure you're accessing the BktArray with the correct type!");
 	Assert(index <= array->length);
@@ -731,7 +731,7 @@ PEXP void* BktArrayInsert_(uxx itemSize, uxx itemAlignment, BktArray* array, uxx
 PEXPI void BktArrayCondenseInto(BktArray* array, Arena* intoArena, bool freeMemory)
 {
 	DebugNotNull(array);
-	DebugNotNull(IsBktArrayInit(array));
+	DebugAssert(IsBktArrayInit(array));
 	if (intoArena == nullptr) { intoArena = array->arena; }
 	
 	BktArrayBkt* newBucket = nullptr;
@@ -782,7 +782,7 @@ PEXPI void BktArrayCondense(BktArray* array) { BktArrayCondenseInto(array, nullp
 PEXPI void BktArrayDropEmptyBuckets(BktArray* array)
 {
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	BktArrayBkt* prevBucket = nullptr;
 	BktArrayBkt* bucket = array->firstBucket;
 	while (bucket != nullptr)
@@ -805,7 +805,7 @@ PEXPI void BktArrayDropEmptyBuckets(BktArray* array)
 PEXPI uxx BktArrayGetBucketIndexAt(BktArray* array, uxx itemIndex, uxx* innerIndexOut)
 {
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	Assert(itemIndex < array->length);
 	BktArrayBkt* bucket = array->firstBucket;
 	uxx baseIndex = 0;
@@ -827,7 +827,7 @@ PEXPI uxx BktArrayGetBucketIndexAt(BktArray* array, uxx itemIndex, uxx* innerInd
 PEXPI uxx BktArrayGetBucketIndex(BktArray* array, const void* itemPntr, uxx* innerIndexOut)
 {
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	BktArrayBkt* bucket = array->firstBucket;
 	uxx bucketIndex = 0;
 	while (bucket != nullptr)
@@ -848,7 +848,7 @@ PEXPI uxx BktArrayGetBucketIndex(BktArray* array, const void* itemPntr, uxx* inn
 PEXPI BktArrayBkt* BktArrayGetBucket(BktArray* array, uxx bucketIndex)
 {
 	NotNull(array);
-	NotNull(IsBktArrayInit(array));
+	Assert(IsBktArrayInit(array));
 	if (bucketIndex >= array->numBuckets) { return nullptr; }
 	BktArrayBkt* bucket = array->firstBucket;
 	uxx currBucketIndex = 0;

@@ -16,6 +16,9 @@ Date:   09\07\2025
 	PIG_CORE_INLINE void QuickSortVarArray_(uxx itemSize, uxx itemAlignment, bool reverseSort, VarArray* array, CompareFunc_f* compareFunc, void* contextPntr);
 	PIG_CORE_INLINE void QuickSortVarArrayInt_(uxx itemSize, uxx itemAlignment, bool reverseSort, bool isMemberSigned, uxx memberOffset, uxx memberSize, VarArray* array);
 	PIG_CORE_INLINE void QuickSortVarArrayFloat_(uxx itemSize, uxx itemAlignment, bool reverseSort, uxx memberOffset, uxx memberSize, VarArray* array);
+	PIG_CORE_INLINE uxx BinarySearchVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* targetElement, CompareFunc_f* compareFunc, void* contextPntr);
+	PIG_CORE_INLINE uxx BinarySearchVarArrayInt_(uxx itemSize, uxx itemAlignment, bool isMemberSigned, uxx memberOffset, uxx memberSize, VarArray* array, const void* targetElement);
+	PIG_CORE_INLINE uxx BinarySearchVarArrayFloat_(uxx itemSize, uxx itemAlignment, uxx memberOffset, uxx memberSize, VarArray* array, const void* targetElement);
 #endif
 
 #if LANGUAGE_IS_C
@@ -66,6 +69,24 @@ Date:   09\07\2025
 #define QuickSortVarArrayIntMemberReversed(type, memberName, arrayPntr)       QuickSortVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), true,  true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortVarArrayUintMemberReversed(type, memberName, arrayPntr)      QuickSortVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), true,  false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortVarArrayFloatMemberReversed(type, memberName, arrayPntr)     QuickSortVarArrayFloat_(sizeof(type), (uxx)std::alignment_of<type>(), true,         STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
+#endif
+
+#if LANGUAGE_IS_C
+#define BinarySearchVarArray(type, arrayPntr, targetPntr, compareFunc, contextPntr) BinarySearchVarArray_(sizeof(type),      (uxx)_Alignof(type),                         (arrayPntr), (targetPntr), (compareFunc), (contextPntr))
+#define BinarySearchVarArrayIntElem(type, arrayPntr, targetPntr)                    BinarySearchVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), true,  0, sizeof(type), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayUintElem(type, arrayPntr, targetPntr)                   BinarySearchVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, 0, sizeof(type), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayFloatElem(type, arrayPntr, targetPntr)                  BinarySearchVarArrayFloat_(sizeof(type), (uxx)_Alignof(type),        0, sizeof(type), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayIntMember(type, memberName, arrayPntr, targetPntr)      BinarySearchVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayUintMember(type, memberName, arrayPntr, targetPntr)     BinarySearchVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayFloatMember(type, memberName, arrayPntr, targetPntr)    BinarySearchVarArrayFloat_(sizeof(type), (uxx)_Alignof(type),        STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (targetPntr))
+#else
+#define BinarySearchVarArray(type, arrayPntr, targetPntr, compareFunc, contextPntr) BinarySearchVarArray_(sizeof(type),      (uxx)std::alignment_of<type>(),                         (arrayPntr), (targetPntr), (compareFunc), (contextPntr))
+#define BinarySearchVarArrayIntElem(type, arrayPntr, targetPntr)                    BinarySearchVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), true,  0, sizeof(type), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayUintElem(type, arrayPntr, targetPntr)                   BinarySearchVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), false, 0, sizeof(type), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayFloatElem(type, arrayPntr, targetPntr)                  BinarySearchVarArrayFloat_(sizeof(type), (uxx)std::alignment_of<type>(),        0, sizeof(type), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayIntMember(type, memberName, arrayPntr, targetPntr)      BinarySearchVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayUintMember(type, memberName, arrayPntr, targetPntr)     BinarySearchVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (targetPntr))
+#define BinarySearchVarArrayFloatMember(type, memberName, arrayPntr, targetPntr)    BinarySearchVarArrayFloat_(sizeof(type), (uxx)std::alignment_of<type>(),        STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (targetPntr))
 #endif
 
 #if PIG_CORE_IMPLEMENTATION
@@ -149,6 +170,48 @@ PEXPI void QuickSortVarArrayFloat_(uxx itemSize, uxx itemAlignment, bool reverse
 	UNUSED(itemAlignment);
 	#endif
 	QuickSortFlatOnFloatMember_(reverseSort, memberOffset, memberSize, array->items, array->length, array->itemSize);
+}
+
+PEXPI uxx BinarySearchVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* targetElement, CompareFunc_f* compareFunc, void* contextPntr)
+{
+	NotNull(array);
+	#if DEBUG_BUILD
+	Assert(IsVarArrayInit(array));
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BinarySearchVarArray. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BinarySearchVarArray. Make sure you're accessing the VarArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
+	return BinarySearchFlat(array->items, array->length, array->itemSize, targetElement, compareFunc, contextPntr);
+}
+
+PEXPI uxx BinarySearchVarArrayInt_(uxx itemSize, uxx itemAlignment, bool isMemberSigned, uxx memberOffset, uxx memberSize, VarArray* array, const void* targetElement)
+{
+	NotNull(array);
+	#if DEBUG_BUILD
+	Assert(IsVarArrayInit(array));
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BinarySearchVarArrayInt. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BinarySearchVarArrayInt. Make sure you're accessing the VarArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
+	return BinarySearchFlatOnIntMember_(isMemberSigned, memberOffset, memberSize, array->items, array->length, array->itemSize, targetElement);
+}
+
+PEXPI uxx BinarySearchVarArrayFloat_(uxx itemSize, uxx itemAlignment, uxx memberOffset, uxx memberSize, VarArray* array, const void* targetElement)
+{
+	NotNull(array);
+	#if DEBUG_BUILD
+	Assert(IsVarArrayInit(array));
+	AssertMsg(array->itemSize == itemSize, "Invalid itemSize passed to BinarySearchVarArrayFloat. Make sure you're accessing the VarArray with the correct type!");
+	AssertMsg(array->itemAlignment == itemAlignment, "Invalid itemAlignment passed to BinarySearchVarArrayFloat. Make sure you're accessing the VarArray with the correct type!");
+	#else
+	UNUSED(itemSize);
+	UNUSED(itemAlignment);
+	#endif
+	return BinarySearchFlatOnFloatMember_(memberOffset, memberSize, array->items, array->length, array->itemSize, targetElement);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

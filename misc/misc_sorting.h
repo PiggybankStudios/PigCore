@@ -58,6 +58,9 @@ plex SortApi
 	void QuickSortFlat(void* arrayPntr, uxx numElements, uxx elementSize, CompareFunc_f* compareFunc, void* contextPntr);
 	PIG_CORE_INLINE void QuickSortFlatOnIntMember_(bool reverseSort, bool isMemberSigned, uxx memberOffset, uxx memberSize, void* arrayPntr, uxx numElements, uxx elementSize);
 	PIG_CORE_INLINE void QuickSortFlatOnFloatMember_(bool reverseSort, uxx memberOffset, uxx memberSize, void* arrayPntr, uxx numElements, uxx elementSize);
+	uxx BinarySearchFlat(void* arrayPntr, uxx numElements, uxx elementSize, const void* targetElement, CompareFunc_f* compareFunc, void* contextPntr);
+	PIG_CORE_INLINE uxx BinarySearchFlatOnIntMember_(bool isMemberSigned, uxx memberOffset, uxx memberSize, void* arrayPntr, uxx numElements, uxx elementSize, const void* targetElement);
+	PIG_CORE_INLINE uxx BinarySearchFlatOnFloatMember_(uxx memberOffset, uxx memberSize, void* arrayPntr, uxx numElements, uxx elementSize, const void* targetElement);
 #endif
 
 #define IsSortedFuncsOnIntMember(type, memberName, sortApiPntr)                          IsSortedFuncsOnIntMember_(true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (sortApiPntr))
@@ -79,6 +82,10 @@ plex SortApi
 #define QuickSortFlatOnUintMemberReversed(type, memberName, arrayPntr, numElements, elementSize)   QuickSortFlatOnIntMember_(true,  false,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
 #define QuickSortFlatOnIntMemberReversed(type, memberName, arrayPntr, numElements, elementSize)    QuickSortFlatOnIntMember_(true,  true,   STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
 #define QuickSortFlatOnFloatMemberReversed(type, memberName, arrayPntr, numElements, elementSize)  QuickSortFlatOnFloatMember_(true,        STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize))
+
+#define BinarySearchFlatOnIntMember(type, memberName, arrayPntr, numElements, elementSize, targetPntr)    BinarySearchFlatOnIntMember_(true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize), (targetPntr))
+#define BinarySearchFlatOnUintMember(type, memberName, arrayPntr, numElements, elementSize, targetPntr)   BinarySearchFlatOnIntMember_(false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize), (targetPntr))
+#define BinarySearchFlatOnFloatMember(type, memberName, arrayPntr, numElements, elementSize, targetPntr)  BinarySearchFlatOnFloatMember_(     STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr), (numElements), (elementSize), (targetPntr))
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -392,7 +399,7 @@ static void QuickSortFlat_(void* arrayPntr, uxx numElements, uxx elementSize, u8
 // For more complex data structures we need to go through the SortApi used in the QuickSortFuncs variant
 PEXP void QuickSortFlat(void* arrayPntr, uxx numElements, uxx elementSize, CompareFunc_f* compareFunc, void* contextPntr)
 {
-	NotNull(arrayPntr);
+	Assert(numElements == 0 || arrayPntr != nullptr);
 	Assert(elementSize > 0);
 	NotNull(compareFunc);
 	ScratchBegin(scratch);
@@ -422,6 +429,47 @@ PEXPI void QuickSortFlatOnFloatMember_(bool reverseSort, uxx memberOffset, uxx m
 	context.memberOffset = memberOffset;
 	context.memberSize = memberSize;
 	QuickSortFlat(arrayPntr, numElements, elementSize, SortOnFloatMember_Compare, &context);
+}
+
+// +==============================+
+// |        Binary Search         |
+// +==============================+
+PEXP uxx BinarySearchFlat(void* arrayPntr, uxx numElements, uxx elementSize, const void* targetElement, CompareFunc_f* compareFunc, void* contextPntr)
+{
+	Assert(numElements == 0 || arrayPntr != nullptr);
+	Assert(elementSize > 0);
+	if (targetElement == nullptr) { return UINTXX_MAX; }
+	NotNull(compareFunc);
+	uxx minIndex = 0;
+	uxx maxIndex = numElements;
+	while (minIndex < maxIndex)
+	{
+		uxx middleIndex = minIndex + (maxIndex - minIndex)/2;
+		u8* middleElement = ((u8*)arrayPntr + elementSize*middleIndex);
+		i32 compareResult = compareFunc(middleElement, targetElement, contextPntr);
+		if (compareResult == 0) { return middleIndex; }
+		else if (compareResult > 0) { maxIndex = middleIndex; }
+		else { minIndex = middleIndex+1; }
+	}
+	return UINTXX_MAX;
+}
+
+PEXPI uxx BinarySearchFlatOnIntMember_(bool isMemberSigned, uxx memberOffset, uxx memberSize, void* arrayPntr, uxx numElements, uxx elementSize, const void* targetElement)
+{
+	SortOnMember_Context context = ZEROED;
+	context.isMemberSigned = isMemberSigned;
+	context.reverseSort = false;
+	context.memberOffset = memberOffset;
+	context.memberSize = memberSize;
+	return BinarySearchFlat(arrayPntr, numElements, elementSize, targetElement, SortOnIntMember_Compare, &context);
+}
+PEXPI uxx BinarySearchFlatOnFloatMember_(uxx memberOffset, uxx memberSize, void* arrayPntr, uxx numElements, uxx elementSize, const void* targetElement)
+{
+	SortOnMember_Context context = ZEROED;
+	context.reverseSort = false;
+	context.memberOffset = memberOffset;
+	context.memberSize = memberSize;
+	return BinarySearchFlat(arrayPntr, numElements, elementSize, targetElement, SortOnFloatMember_Compare, &context);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
