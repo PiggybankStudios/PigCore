@@ -37,6 +37,7 @@ enum Result
 	Result_InvalidCharacter,
 	Result_InvalidUtf8,
 	Result_InvalidType,
+	Result_InvalidRole,
 	Result_TooShort,
 	Result_TooLong,
 	Result_EmptyString,
@@ -104,6 +105,9 @@ enum Result
 	Result_UnsupportedFileFormat,
 	Result_EndOfBuffer,
 	Result_EndOfFile,
+	Result_ElementNotFound,
+	Result_AttributeNotFound,
+	Result_InvalidAttributeValue,
 	
 	Result_Count,
 };
@@ -124,6 +128,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_InvalidCharacter: return "InvalidCharacter";
 		case Result_InvalidUtf8: return "InvalidUtf8";
 		case Result_InvalidType: return "InvalidType";
+		case Result_InvalidRole: return "InvalidRole";
 		case Result_TooShort: return "TooShort";
 		case Result_TooLong: return "TooLong";
 		case Result_EmptyString: return "EmptyString";
@@ -191,6 +196,9 @@ PEXP const char* GetResultStr(Result result)
 		case Result_UnsupportedFileFormat: return "UnsupportedFileFormat";
 		case Result_EndOfBuffer: return "EndOfBuffer";
 		case Result_EndOfFile: return "EndOfFile";
+		case Result_ElementNotFound: return "ElementNotFound";
+		case Result_AttributeNotFound: return "AttributeNotFound";
+		case Result_InvalidAttributeValue: return "InvalidAttributeValue";
 		default: return UNKNOWN_STR;
 	}
 }

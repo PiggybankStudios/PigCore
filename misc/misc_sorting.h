@@ -299,11 +299,11 @@ static void QuickSortFuncs_(void* structPntr, SortApi* sortApi, uxx elementSize,
 {
 	if (numElements <= 1) { return; } //nothing to sort
 	//parition the array
-	ixx pi = QuickSortFuncsPartition(structPntr, sortApi, elementSize, 0, numElements, workingSpace, compareFunc, contextPntr);
+	ixx pi = QuickSortFuncsPartition(structPntr, sortApi, elementSize, startIndex, numElements, workingSpace, compareFunc, contextPntr);
 	//sort lower partition
-	QuickSortFuncs_(structPntr, sortApi, elementSize, 0, (uxx)pi, workingSpace, compareFunc, contextPntr);
+	QuickSortFuncs_(structPntr, sortApi, elementSize, startIndex + 0, (uxx)pi, workingSpace, compareFunc, contextPntr);
 	//sort upper partition
-	QuickSortFuncs_(structPntr, sortApi, elementSize, (uxx)(pi+1), (uxx)(numElements - (pi+1)), workingSpace, compareFunc, contextPntr);
+	QuickSortFuncs_(structPntr, sortApi, elementSize, startIndex + (uxx)(pi+1), (uxx)(numElements - (pi+1)), workingSpace, compareFunc, contextPntr);
 }
 
 // Operates on a data structure through functions in SortApi. This allows the sorting algorithm to interact with complex data structures

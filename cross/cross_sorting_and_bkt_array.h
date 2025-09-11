@@ -13,7 +13,7 @@ Date:   09\08\2025
 	PIG_CORE_INLINE bool IsBktArraySorted_(uxx itemSize, uxx itemAlignment, BktArray* array, CompareFunc_f* compareFunc, void* contextPntr);
 	PIG_CORE_INLINE bool IsBktArraySortedInt_(uxx itemSize, uxx itemAlignment, bool isMemberSigned, uxx memberOffset, uxx memberSize, BktArray* array);
 	PIG_CORE_INLINE bool IsBktArraySortedFloat_(uxx itemSize, uxx itemAlignment, uxx memberOffset, uxx memberSize, BktArray* array);
-	PIG_CORE_INLINE void QuickSortBktArray_(uxx itemSize, uxx itemAlignment, bool reverseSort, BktArray* array, CompareFunc_f* compareFunc, void* contextPntr);
+	PIG_CORE_INLINE void QuickSortBktArray_(uxx itemSize, uxx itemAlignment, BktArray* array, CompareFunc_f* compareFunc, void* contextPntr);
 	PIG_CORE_INLINE void QuickSortBktArrayInt_(uxx itemSize, uxx itemAlignment, bool reverseSort, bool isMemberSigned, uxx memberOffset, uxx memberSize, BktArray* array);
 	PIG_CORE_INLINE void QuickSortBktArrayFloat_(uxx itemSize, uxx itemAlignment, bool reverseSort, uxx memberOffset, uxx memberSize, BktArray* array);
 #endif
@@ -37,14 +37,13 @@ Date:   09\08\2025
 #endif
 
 #if LANGUAGE_IS_C
-#define QuickSortBktArray(type, arrayPntr, compareFunc, contextPntr)          QuickSortBktArray_(sizeof(type),      (uxx)_Alignof(type), false,                         (arrayPntr), (compareFunc), (contextPntr))
+#define QuickSortBktArray(type, arrayPntr, compareFunc, contextPntr)          QuickSortBktArray_(sizeof(type),      (uxx)_Alignof(type),                                (arrayPntr), (compareFunc), (contextPntr))
 #define QuickSortBktArrayIntElem(type, arrayPntr)                             QuickSortBktArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, true,  0, sizeof(type), (arrayPntr))
 #define QuickSortBktArrayUintElem(type, arrayPntr)                            QuickSortBktArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, false, 0, sizeof(type), (arrayPntr))
 #define QuickSortBktArrayFloat(type, arrayPntr)                               QuickSortBktArrayFloat_(sizeof(type), (uxx)_Alignof(type), false,        0, sizeof(type), (arrayPntr))
 #define QuickSortBktArrayIntMember(type, memberName, arrayPntr)               QuickSortBktArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortBktArrayUintMember(type, memberName, arrayPntr)              QuickSortBktArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortBktArrayFloatMember(type, memberName, arrayPntr)             QuickSortBktArrayFloat_(sizeof(type), (uxx)_Alignof(type), false,        STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
-#define QuickSortBktArrayReversed(type, arrayPntr, compareFunc, contextPntr)  QuickSortBktArray_(sizeof(type),      (uxx)_Alignof(type), true,                          (arrayPntr), (compareFunc), (contextPntr))
 #define QuickSortBktArrayIntElemReversed(type, arrayPntr)                     QuickSortBktArrayInt_(sizeof(type),   (uxx)_Alignof(type), true,  true,  0, sizeof(type), (arrayPntr))
 #define QuickSortBktArrayUintElemReversed(type, arrayPntr)                    QuickSortBktArrayInt_(sizeof(type),   (uxx)_Alignof(type), true,  false, 0, sizeof(type), (arrayPntr))
 #define QuickSortBktArrayFloatReversed(type, arrayPntr)                       QuickSortBktArrayFloat_(sizeof(type), (uxx)_Alignof(type), true,         0, sizeof(type), (arrayPntr))
@@ -124,7 +123,7 @@ PEXPI bool IsBktArraySortedFloat_(uxx itemSize, uxx itemAlignment, uxx memberOff
 	return IsSortedFuncsOnFloatMember_(memberOffset, memberSize, array, &sortApi);
 }
 
-PEXPI void QuickSortBktArray_(uxx itemSize, uxx itemAlignment, bool reverseSort, BktArray* array, CompareFunc_f* compareFunc, void* contextPntr)
+PEXPI void QuickSortBktArray_(uxx itemSize, uxx itemAlignment, BktArray* array, CompareFunc_f* compareFunc, void* contextPntr)
 {
 	NotNull(array);
 	#if DEBUG_BUILD

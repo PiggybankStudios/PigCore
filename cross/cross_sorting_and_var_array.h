@@ -13,7 +13,7 @@ Date:   09\07\2025
 	PIG_CORE_INLINE bool IsVarArraySorted_(uxx itemSize, uxx itemAlignment, VarArray* array, CompareFunc_f* compareFunc, void* contextPntr);
 	PIG_CORE_INLINE bool IsVarArraySortedInt_(uxx itemSize, uxx itemAlignment, bool isMemberSigned, uxx memberOffset, uxx memberSize, VarArray* array);
 	PIG_CORE_INLINE bool IsVarArraySortedFloat_(uxx itemSize, uxx itemAlignment, uxx memberOffset, uxx memberSize, VarArray* array);
-	PIG_CORE_INLINE void QuickSortVarArray_(uxx itemSize, uxx itemAlignment, bool reverseSort, VarArray* array, CompareFunc_f* compareFunc, void* contextPntr);
+	PIG_CORE_INLINE void QuickSortVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, CompareFunc_f* compareFunc, void* contextPntr);
 	PIG_CORE_INLINE void QuickSortVarArrayInt_(uxx itemSize, uxx itemAlignment, bool reverseSort, bool isMemberSigned, uxx memberOffset, uxx memberSize, VarArray* array);
 	PIG_CORE_INLINE void QuickSortVarArrayFloat_(uxx itemSize, uxx itemAlignment, bool reverseSort, uxx memberOffset, uxx memberSize, VarArray* array);
 	PIG_CORE_INLINE uxx BinarySearchVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, const void* targetElement, CompareFunc_f* compareFunc, void* contextPntr);
@@ -40,14 +40,13 @@ Date:   09\07\2025
 #endif
 
 #if LANGUAGE_IS_C
-#define QuickSortVarArray(type, arrayPntr, compareFunc, contextPntr)          QuickSortVarArray_(sizeof(type),      (uxx)_Alignof(type), false,                         (arrayPntr), (compareFunc), (contextPntr))
+#define QuickSortVarArray(type, arrayPntr, compareFunc, contextPntr)          QuickSortVarArray_(sizeof(type),      (uxx)_Alignof(type),                                (arrayPntr), (compareFunc), (contextPntr))
 #define QuickSortVarArrayIntElem(type, arrayPntr)                             QuickSortVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, true,  0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayUintElem(type, arrayPntr)                            QuickSortVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, false, 0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayFloat(type, arrayPntr)                               QuickSortVarArrayFloat_(sizeof(type), (uxx)_Alignof(type), false,        0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayIntMember(type, memberName, arrayPntr)               QuickSortVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortVarArrayUintMember(type, memberName, arrayPntr)              QuickSortVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), false, false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortVarArrayFloatMember(type, memberName, arrayPntr)             QuickSortVarArrayFloat_(sizeof(type), (uxx)_Alignof(type), false,        STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
-#define QuickSortVarArrayReversed(type, arrayPntr, compareFunc, contextPntr)  QuickSortVarArray_(sizeof(type),      (uxx)_Alignof(type), true,                          (arrayPntr), (compareFunc), (contextPntr))
 #define QuickSortVarArrayIntElemReversed(type, arrayPntr)                     QuickSortVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), true,  true,  0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayUintElemReversed(type, arrayPntr)                    QuickSortVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), true,  false, 0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayFloatReversed(type, arrayPntr)                       QuickSortVarArrayFloat_(sizeof(type), (uxx)_Alignof(type), true,         0, sizeof(type), (arrayPntr))
@@ -55,14 +54,13 @@ Date:   09\07\2025
 #define QuickSortVarArrayUintMemberReversed(type, memberName, arrayPntr)      QuickSortVarArrayInt_(sizeof(type),   (uxx)_Alignof(type), true,  false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortVarArrayFloatMemberReversed(type, memberName, arrayPntr)     QuickSortVarArrayFloat_(sizeof(type), (uxx)_Alignof(type), true,         STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #else
-#define QuickSortVarArray(type, arrayPntr, compareFunc, contextPntr)          QuickSortVarArray_(sizeof(type),      (uxx)std::alignment_of<type>(), false,                         (arrayPntr), (compareFunc), (contextPntr))
+#define QuickSortVarArray(type, arrayPntr, compareFunc, contextPntr)          QuickSortVarArray_(sizeof(type),      (uxx)std::alignment_of<type>(),                                (arrayPntr), (compareFunc), (contextPntr))
 #define QuickSortVarArrayIntElem(type, arrayPntr)                             QuickSortVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), false, true,  0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayUintElem(type, arrayPntr)                            QuickSortVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), false, false, 0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayFloat(type, arrayPntr)                               QuickSortVarArrayFloat_(sizeof(type), (uxx)std::alignment_of<type>(), false,        0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayIntMember(type, memberName, arrayPntr)               QuickSortVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), false, true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortVarArrayUintMember(type, memberName, arrayPntr)              QuickSortVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), false, false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
 #define QuickSortVarArrayFloatMember(type, memberName, arrayPntr)             QuickSortVarArrayFloat_(sizeof(type), (uxx)std::alignment_of<type>(), false,        STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (arrayPntr))
-#define QuickSortVarArrayReversed(type, arrayPntr, compareFunc, contextPntr)  QuickSortVarArray_(sizeof(type),      (uxx)std::alignment_of<type>(), true,                          (arrayPntr), (compareFunc), (contextPntr))
 #define QuickSortVarArrayIntElemReversed(type, arrayPntr)                     QuickSortVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), true,  true,  0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayUintElemReversed(type, arrayPntr)                    QuickSortVarArrayInt_(sizeof(type),   (uxx)std::alignment_of<type>(), true,  false, 0, sizeof(type), (arrayPntr))
 #define QuickSortVarArrayFloatReversed(type, arrayPntr)                       QuickSortVarArrayFloat_(sizeof(type), (uxx)std::alignment_of<type>(), true,         0, sizeof(type), (arrayPntr))
@@ -131,7 +129,7 @@ PEXPI bool IsVarArraySortedFloat_(uxx itemSize, uxx itemAlignment, uxx memberOff
 	return IsSortedFlatOnFloatMember_(memberOffset, memberSize, array->items, array->length, array->itemSize);
 }
 
-PEXPI void QuickSortVarArray_(uxx itemSize, uxx itemAlignment, bool reverseSort, VarArray* array, CompareFunc_f* compareFunc, void* contextPntr)
+PEXPI void QuickSortVarArray_(uxx itemSize, uxx itemAlignment, VarArray* array, CompareFunc_f* compareFunc, void* contextPntr)
 {
 	NotNull(array);
 	#if DEBUG_BUILD
