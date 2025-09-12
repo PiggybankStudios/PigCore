@@ -20,7 +20,7 @@ Date:   01\05\2025
 #include "misc/misc_random.h"
 
 #include "std/std_trig.h" //required by misc_easing.h
-#include "std/std_basic_math.h" //required by misc_easing.h and misc_parsing.h
+#include "std/std_basic_math.h" //required by misc_easing.h, misc_parsing.h and misc_poly_simplify.h
 
 #include "misc/misc_easing.h"
 
@@ -44,9 +44,10 @@ Date:   01\05\2025
 #include "misc/misc_file_watch.h"
 #include "misc/misc_sorting.h"
 
-#include "struct/struct_vectors.h" //required by misc_noise.h and misc_triangulation.h
+#include "struct/struct_vectors.h" //required by misc_noise.h, misc_triangulation.h and misc_poly_simplify.h
 
 #include "misc/misc_noise.h"
+#include "misc/misc_poly_simplify.h"
 #include "misc/misc_triangulation.h"
 #include "misc/misc_zip.h"
 

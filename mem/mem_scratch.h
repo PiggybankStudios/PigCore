@@ -153,3 +153,7 @@ PEXPI void ReleaseScratchArena(ScratchArena* scratchArena)
 #if defined(_STRUCT_RICH_STRING_H) && defined(_MEM_SCRATCH_H) && defined(_STRUCT_RANGES_H)
 #include "cross/cross_rich_string_scratch_and_ranges.h"
 #endif
+
+#if defined(_MEM_SCRATCH_H) && defined(_MISC_POLY_SIMPLIFY_H)
+#include "cross/cross_scratch_and_poly_simplify.h"
+#endif
