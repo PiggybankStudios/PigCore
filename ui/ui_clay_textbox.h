@@ -16,6 +16,7 @@ Description:
 #include "base/base_assert.h"
 #include "struct/struct_var_array.h"
 #include "mem/mem_arena.h"
+#include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
 #include "ui/ui_clay.h"
 #include "ui/ui_clay_widget_context.h"
@@ -438,6 +439,65 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 			if (nextCodepointSize == 0) { nextCodepointSize = 1; }
 			UiTextboxDeleteBytes(tbox, tbox->cursorEnd, nextCodepointSize);
 		}
+	}
+	
+	// +==============================+
+	// |      Handle Ctrl+C Copy      |
+	// +==============================+
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_C, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != nullptr)
+	{
+		Str8 selectedText = StrSlice(tbox->text, MinUXX(tbox->cursorStart, tbox->cursorEnd), MaxUXX(tbox->cursorStart, tbox->cursorEnd));
+		Result copyResult = OsSetClipboardString(context->windowHandle, selectedText);
+		if (copyResult != Result_Success) { PrintLine_E("Failed to copy text: %s", GetResultStr(copyResult)); }
+	}
+	
+	// +==============================+
+	// |      Handle Ctrl+X Cut       |
+	// +==============================+
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_X, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != nullptr)
+	{
+		Str8 selectedText = StrSlice(tbox->text, MinUXX(tbox->cursorStart, tbox->cursorEnd), MaxUXX(tbox->cursorStart, tbox->cursorEnd));
+		Result copyResult = OsSetClipboardString(context->windowHandle, selectedText);
+		if (copyResult == Result_Success) { UiTextboxDeleteSelected(tbox); }
+		else{ PrintLine_E("Failed to copy text: %s", GetResultStr(copyResult)); }
+	}
+	
+	// +==============================+
+	// |     Handle Ctrl+V Paste      |
+	// +==============================+
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_V, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != nullptr)
+	{
+		ScratchBegin1(scratch, tbox->arena);
+		Str8 clipboardStr = Str8_Empty;
+		Result pasteResult = OsGetClipboardString(context->windowHandle, scratch, &clipboardStr);
+		if (pasteResult != Result_Success) { PrintLine_E("Failed to paste: %s", GetResultStr(pasteResult)); }
+		else
+		{
+			if (tbox->cursorStart != tbox->cursorEnd)
+			{
+				UiTextboxDeleteSelected(tbox);
+				DebugAssert(tbox->cursorStart == tbox->cursorEnd);
+			}
+			
+			if (clipboardStr.length > 0)
+			{
+				VarArrayAddMulti(char, &tbox->textBuffer, clipboardStr.length);
+				tbox->text.chars = (char*)tbox->textBuffer.items;
+				
+				if (tbox->cursorEnd < tbox->text.length)
+				{
+					uxx numCharsToMove = tbox->text.length - tbox->cursorEnd;
+					MyMemMove(&tbox->text.chars[tbox->cursorEnd + clipboardStr.length], &tbox->text.chars[tbox->cursorEnd], numCharsToMove);
+				}
+				MyMemCopy(&tbox->text.chars[tbox->cursorEnd], clipboardStr.chars, clipboardStr.length);
+				tbox->text.length += clipboardStr.length;
+				tbox->cursorStart += clipboardStr.length;
+				tbox->cursorEnd += clipboardStr.length;
+				tbox->textChanged = true;
+				tbox->cursorMoved = true;
+			}
+		}
+		ScratchEnd(scratch);
 	}
 	
 	//TODO: Update horizontal scroll
