@@ -299,11 +299,11 @@ static void QuickSortFuncs_(void* structPntr, SortApi* sortApi, uxx elementSize,
 {
 	if (numElements <= 1) { return; } //nothing to sort
 	//parition the array
-	ixx pi = QuickSortFuncsPartition(structPntr, sortApi, elementSize, startIndex, numElements, workingSpace, compareFunc, contextPntr);
+	ixx partitionIndex = QuickSortFuncsPartition(structPntr, sortApi, elementSize, startIndex, numElements, workingSpace, compareFunc, contextPntr);
 	//sort lower partition
-	QuickSortFuncs_(structPntr, sortApi, elementSize, startIndex + 0, (uxx)pi, workingSpace, compareFunc, contextPntr);
+	QuickSortFuncs_(structPntr, sortApi, elementSize, startIndex + 0, (uxx)partitionIndex, workingSpace, compareFunc, contextPntr);
 	//sort upper partition
-	QuickSortFuncs_(structPntr, sortApi, elementSize, startIndex + (uxx)(pi+1), (uxx)(numElements - (pi+1)), workingSpace, compareFunc, contextPntr);
+	QuickSortFuncs_(structPntr, sortApi, elementSize, startIndex + (uxx)(partitionIndex+1), (uxx)(numElements - (partitionIndex+1)), workingSpace, compareFunc, contextPntr);
 }
 
 // Operates on a data structure through functions in SortApi. This allows the sorting algorithm to interact with complex data structures
@@ -383,33 +383,36 @@ static ixx QuickSortFlatPartition(void* arrayPntr, uxx numElements, uxx elementS
 	return smallIndex;
 }
 
-//This is the recursive part of QuickSortFlat
-static void QuickSortFlat_(void* arrayPntr, uxx numElements, uxx elementSize, u8* workingSpace, CompareFunc_f* compareFunc, void* contextPntr)
-{
-	if (numElements <= 1) { return; } //nothing to sort
-	//parition the array
-	ixx pi = QuickSortFlatPartition(arrayPntr, numElements, elementSize, workingSpace, compareFunc, contextPntr);
-	//sort lower partition
-	QuickSortFlat_(arrayPntr, (uxx)pi, elementSize, workingSpace, compareFunc, contextPntr);
-	//sort upper partition
-	QuickSortFlat_((void*)((u8*)arrayPntr + elementSize*(pi+1)), (uxx)(numElements - (pi+1)), elementSize, workingSpace, compareFunc, contextPntr);
-}
-
-// Operates on an array of elements that are "flat" in memory. This means we can assume how we find each element based on a simple offset calculation
-// For more complex data structures we need to go through the SortApi used in the QuickSortFuncs variant
 PEXP void QuickSortFlat(void* arrayPntr, uxx numElements, uxx elementSize, CompareFunc_f* compareFunc, void* contextPntr)
 {
 	Assert(numElements == 0 || arrayPntr != nullptr);
 	Assert(elementSize > 0);
 	NotNull(compareFunc);
 	ScratchBegin(scratch);
+	
 	//NOTE: workingSpace must be a space large enough to hold two elements. This space is used to perform swaps and to hold the pivot element
 	u8* workingSpace = (u8*)AllocMem(scratch, elementSize*2);
 	NotNull(workingSpace);
 	#if DEBUG_BUILD
 	MyMemSet(workingSpace, 0x00, elementSize*2);
 	#endif
-	QuickSortFlat_(arrayPntr, numElements, elementSize, workingSpace, compareFunc, contextPntr);
+	
+	VarArray partitions = ZEROED;
+	InitVarArray(RangeUXX, &partitions, scratch);
+	VarArrayAddValue(RangeUXX, &partitions, NewRangeUXX(0, numElements));
+	while (partitions.length > 0)
+	{
+		DebugAssert(partitions.length <= numElements+1);
+		RangeUXX nextPartition = VarArrayGetLastValue(RangeUXX, &partitions);
+		VarArrayRemoveLast(RangeUXX, &partitions);
+		if (nextPartition.max - nextPartition.min > 1)
+		{
+			ixx partitionIndex = QuickSortFlatPartition((u8*)arrayPntr + elementSize*nextPartition.min, nextPartition.max - nextPartition.min, elementSize, workingSpace, compareFunc, contextPntr);
+			VarArrayAddValue(RangeUXX, &partitions, NewRangeUXX(nextPartition.min, nextPartition.min + (uxx)partitionIndex));
+			VarArrayAddValue(RangeUXX, &partitions, NewRangeUXX(nextPartition.min + (uxx)partitionIndex + 1, nextPartition.max));
+		}
+	}
+	
 	ScratchEnd(scratch);
 }
 
