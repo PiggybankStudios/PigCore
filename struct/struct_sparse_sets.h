@@ -93,6 +93,12 @@ plex SparseSetV3i
 	*addedItemPntr_NOCONFLICT = valueBeforeAdd_NOCONFLICT;                             \
 } while(0)
 
+#define SparseSetV3iLoop(setPntr, indexVarName) uxx indexVarName = 0; for (uxx indexVarName##_Slot = 0; indexVarName##_Slot < (setPntr)->allocLength; indexVarName##_Slot++)
+#define SparseSetV3iLoopGet(type, varName, setPntr, indexVarName)                                                                                   \
+	v3i* varName##_SlotPntr = (v3i*)SparseSetV3i_GetSlotPntr((setPntr)->itemSize, (setPntr)->itemAlignment, (setPntr)->slots, indexVarName##_Slot); \
+	type* varName = (type*)((u8*)varName##_SlotPntr + SparseSetV3i_HeaderSize + SparseSetV3i_ItemOffset((setPntr)->itemAlignment));                 \
+	DeferIfBlockCondEndEx(varName##_DeferIter, !SparseSetV3i_IsEmpty(*varName##_SlotPntr), indexVarName++)
+
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
@@ -199,7 +205,6 @@ PEXPI void* SparseSetV3iGet_(uxx itemSize, uxx itemAlignment, SparseSetV3i* set,
 	DebugAssertMsg(!SparseSetV3i_IsEmpty(key), "SparseSetV3i can't store (INT32_MAX, INT32_MAX, INT32_MAX) since that acts as a special value meaning \"empty\"");
 	if (set->allocLength == 0) { return nullptr; }
 	
-	uxx slotSize = SparseSetV3i_SlotSize(set->itemSize, set->itemAlignment);
 	i32 hash = SparseSetV3i_Hash(key.X, key.Y, key.Z);
 	i32 expectedIndex = (hash % set->allocLength);
 	
@@ -237,7 +242,6 @@ PEXP void* SparseSetV3iAdd_(uxx itemSize, uxx itemAlignment, SparseSetV3i* set, 
 	
 	SparseSetV3iExpand(set, set->length+1);
 	
-	uxx slotSize = SparseSetV3i_SlotSize(set->itemSize, set->itemAlignment);
 	i32 hash = SparseSetV3i_Hash(key.X, key.Y, key.Z);
 	i32 expectedIndex = (hash % set->allocLength);
 	

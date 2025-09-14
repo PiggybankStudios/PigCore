@@ -172,9 +172,17 @@ PEXP uxx SimplifyPolygon(SimpPolygon* poly, r32 epsilon)
 {
 	NotNull(poly);
 	Assert(poly->numVertices == 0 || poly->vertices != nullptr);
-	if (poly->numVertices <= 2) { return poly->numVertices; }
+	if (poly->numVertices <= 2)
+	{
+		for (uxx vIndex = 0; vIndex < poly->numVertices; vIndex++) { poly->vertices[vIndex].state = 1; }
+		return poly->numVertices;
+	}
 	bool isClosedLoop = AreEqualV2(poly->vertices[0].pos, poly->vertices[poly->numVertices-1].pos);
-	if (poly->numVertices == 3 && isClosedLoop) { return poly->numVertices; }
+	if (poly->numVertices == 3 && isClosedLoop)
+	{
+		for (uxx vIndex = 0; vIndex < poly->numVertices; vIndex++) { poly->vertices[vIndex].state = 1; }
+		return poly->numVertices;
+	}
 	
 	//Commit the 2 endpoints and then call the recursive bit with startIndex and count
 	poly->vertices[0].state = 1;
@@ -189,9 +197,17 @@ PEXP uxx SimplifyPolygonR64(SimpPolygonR64* poly, r64 epsilon)
 {
 	NotNull(poly);
 	Assert(poly->numVertices == 0 || poly->vertices != nullptr);
-	if (poly->numVertices <= 2) { return poly->numVertices; }
+	if (poly->numVertices <= 2)
+	{
+		for (uxx vIndex = 0; vIndex < poly->numVertices; vIndex++) { poly->vertices[vIndex].state = 1; }
+		return poly->numVertices;
+	}
 	bool isClosedLoop = AreEqualV2d(poly->vertices[0].pos, poly->vertices[poly->numVertices-1].pos);
-	if (poly->numVertices == 3 && isClosedLoop) { return poly->numVertices; }
+	if (poly->numVertices == 3 && isClosedLoop)
+	{
+		for (uxx vIndex = 0; vIndex < poly->numVertices; vIndex++) { poly->vertices[vIndex].state = 1; }
+		return poly->numVertices;
+	}
 	
 	//Commit the 2 endpoints and then call the recursive bit with startIndex and count
 	poly->vertices[0].state = 1;
