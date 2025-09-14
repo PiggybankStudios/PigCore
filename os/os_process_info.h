@@ -13,6 +13,7 @@ Description:
 #define _OS_PROGRAM_H
 
 #include "base/base_defines_check.h"
+#include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "misc/misc_result.h"
@@ -21,6 +22,16 @@ Description:
 #include "misc/misc_printing.h"
 #include "os/os_path.h"
 #include "os/os_file.h"
+
+#if TARGET_IS_WINDOWS
+typedef HWND OsWindowHandle;
+#elif TARGET_IS_LINUX
+typedef Window OsWindowHandle;
+#elif TARGET_IS_OSX
+typedef NSWindow* OsWindowHandle;
+#else
+typedef void* OsWindowHandle;
+#endif
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

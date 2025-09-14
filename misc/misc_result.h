@@ -34,6 +34,7 @@ enum Result
 	Result_Finished,
 	Result_Canceled,
 	
+	Result_NotImplemented,
 	Result_InvalidCharacter,
 	Result_InvalidUtf8,
 	Result_InvalidType,
@@ -108,6 +109,9 @@ enum Result
 	Result_ElementNotFound,
 	Result_AttributeNotFound,
 	Result_InvalidAttributeValue,
+	Result_FailedToOpenClipboard,
+	Result_FailedToEmptyClipboard,
+	Result_NoScratchAvailable,
 	
 	Result_Count,
 };
@@ -125,6 +129,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_Unknown: return "Unknown";
 		case Result_Finished: return "Finished";
 		case Result_Canceled: return "Canceled";
+		case Result_NotImplemented: return "NotImplemented";
 		case Result_InvalidCharacter: return "InvalidCharacter";
 		case Result_InvalidUtf8: return "InvalidUtf8";
 		case Result_InvalidType: return "InvalidType";
@@ -199,6 +204,9 @@ PEXP const char* GetResultStr(Result result)
 		case Result_ElementNotFound: return "ElementNotFound";
 		case Result_AttributeNotFound: return "AttributeNotFound";
 		case Result_InvalidAttributeValue: return "InvalidAttributeValue";
+		case Result_FailedToOpenClipboard: return "FailedToOpenClipboard";
+		case Result_FailedToEmptyClipboard: return "FailedToEmptyClipboard";
+		case Result_NoScratchAvailable: return "NoScratchAvailable";
 		default: return UNKNOWN_STR;
 	}
 }

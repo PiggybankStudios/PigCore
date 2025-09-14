@@ -37,9 +37,10 @@ Description:
 
 #include "os/os_program_args.h"
 
-#include "mem/mem_scratch.h" //required by os_http.h and os_process_info.h
+#include "mem/mem_scratch.h" //required by os_clipboard.h, os_http.h and os_process_info.h
 #include "misc/misc_web.h" //required by os_http.h
 
+#include "os/os_clipboard.h"
 #include "os/os_http.h"
 
 #include "misc/misc_result.h" //required by os_dll.h, os_file.h, os_file_dialog.h and os_process_info.h
