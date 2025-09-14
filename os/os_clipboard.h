@@ -26,7 +26,7 @@ Description:
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	Str8 OsGetClipboardString(Arena* arena);
+	Result OsGetClipboardString(OsWindowHandle windowHandle, Arena* arena, Str8* clipboardStrOut);
 	Result OsSetClipboardString(OsWindowHandle windowHandle, Str8 clipboardStr);
 #endif
 
@@ -35,16 +35,30 @@ Description:
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP Str8 OsGetClipboardString(Arena* arena)
+PEXP Result OsGetClipboardString(OsWindowHandle windowHandle, Arena* arena, Str8* clipboardStrOut)
 {
 	#if TARGET_IS_WINDOWS
 	{
-		//TODO: Implement me!
-		return Str8_Empty;
+		Result result = Result_None;
+		if (OpenClipboard(windowHandle))
+		{
+			HANDLE dataHandle = GetClipboardData(CF_UNICODETEXT);
+			if (dataHandle != nullptr)
+			{
+				Str16 wideStr = Str16Lit((char16_t*)GlobalLock(dataHandle));
+				SetOptionalOutPntr(clipboardStrOut, ConvertUcs2StrToUtf8(arena, wideStr, false));
+				GlobalUnlock(dataHandle);
+				result = Result_Success;
+			}
+			else { result = Result_EmptyString; }
+			CloseClipboard();
+		}
+		else { result = Result_FailedToOpenClipboard; }
+		return result;
 	}
 	#else
 	AssertMsg(false, "OsGetClipboardString does not support the current platform yet!");
-	return Str8_Empty;
+	return Result_NotImplemented;
 	#endif
 }
 
