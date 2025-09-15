@@ -25,12 +25,16 @@ Description:
 
 #if TARGET_IS_WINDOWS
 typedef HWND OsWindowHandle;
+#define OsWidowHandleEmpty NULL
 #elif TARGET_IS_LINUX
 typedef Window OsWindowHandle;
+#define OsWidowHandleEmpty nullptr //TODO: Check this
 #elif TARGET_IS_OSX
 typedef NSWindow* OsWindowHandle;
+#define OsWidowHandleEmpty nullptr
 #else
 typedef void* OsWindowHandle;
+#define OsWidowHandleEmpty nullptr
 #endif
 
 // +--------------------------------------------------------------+

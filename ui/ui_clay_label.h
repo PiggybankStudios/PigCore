@@ -43,6 +43,13 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 		Str8 buttonIdStr = JoinStringsInArena(context->uiArena, idStr, StrLit("_CopyBtn"), false);
 		ClayId buttonId = ToClayIdEx(buttonIdStr, idIndex);
 		bool isContainerHovered = (context->mouse->isOverWindow && Clay_PointerOver(containerId));
+		bool isBtnHovered = (context->mouse->isOverWindow && Clay_PointerOver(buttonId));
+		
+		if (hasCopyButton && isBtnHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left) && context->windowHandle != OsWidowHandleEmpty)
+		{
+			Result copyResult = OsSetClipboardString(context->windowHandle, label);
+			if (copyResult != Result_Success) { PrintLine_E("Failed to copy label: %s", GetResultStr(copyResult)); }
+		}
 		
 		CLAY({ .id = containerId,
 			.layout = {
@@ -67,7 +74,6 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 			
 			if (hasCopyButton)
 			{
-				bool isHovered = (context->mouse->isOverWindow && Clay_PointerOver(buttonId));
 				FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);
 				NotNull(fontAtlas);
 				CLAY({ .id = buttonId,
@@ -76,10 +82,10 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 						.childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER },
 					},
 					.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(context->uiScale, 2)),
-					.backgroundColor = ColorWithAlpha(White, isHovered ? 0.5f : 0.0f),
+					.backgroundColor = ColorWithAlpha(White, isBtnHovered ? 0.5f : 0.0f),
 					.border = {
 						.color = ColorWithAlpha(White, 0.75f),
-						.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, isHovered ? 1 : 0)),
+						.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, isBtnHovered ? 1 : 0)),
 					},
 				})
 				{
