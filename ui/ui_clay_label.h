@@ -14,9 +14,15 @@ Date:   09\11\2025
 #include "std/std_memset.h"
 #include "mem/mem_arena.h"
 #include "struct/struct_string.h"
+#include "struct/struct_color.h"
+#include "gfx/gfx_texture.h"
+#include "gfx/gfx_font.h"
 #include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_clay_renderer.h"
 #include "ui/ui_clay.h"
+#include "ui/ui_clay_widget_context.h"
+
+#if BUILD_WITH_CLAY
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -129,5 +135,7 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_CLAY
 
 #endif //  _UI_CLAY_LABEL_H

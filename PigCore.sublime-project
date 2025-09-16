@@ -159,6 +159,25 @@
 			"name": "Protobuf-C",
 			"path": "third_party/protobuf_c",
 		},
+		{
+			"name": "Android Native App Glue",
+			"path": "F:/Programs/android_studio_sdk/ndk/29.0.13599879/sources/android/native_app_glue",
+			"file_exclude_patterns": [ "NOTICE"],
+		},
+		{
+			"name": "Android System",
+			"path": "F:/Programs/android_studio_sdk/ndk/29.0.13599879/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include",
+			"folder_include_patterns": [
+				"android",
+			],
+			"file_include_patterns": [
+				"jni.h",
+				"android/log.h",
+				"android/log_macros.h",
+				"android/native_activity.h",
+				"android/looper.h",
+			],
+		},
 	],
 	"settings":
 	{
