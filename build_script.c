@@ -69,6 +69,57 @@ Description:
 #define TOOL_EXE_NAME      "pig_build"
 #endif
 
+typedef enum AndroidArch AndroidArch;
+enum AndroidArch
+{
+	AndroidArch_None = 0,
+	AndroidArch_Arm8,
+	AndroidArch_Arm7,
+	AndroidArch_x86,
+	AndroidArch_Count,
+};
+const char* GetAndroidArchStr(AndroidArch enumValue)
+{
+	switch (enumValue)
+	{
+		case AndroidArch_None:  return "None";
+		case AndroidArch_Arm8:  return "Arm8";
+		case AndroidArch_Arm7:  return "Arm7";
+		case AndroidArch_x86:   return "x86";
+		default: return "Unknown";
+	}
+}
+const char* GetAndroidArchFolderName(AndroidArch enumValue)
+{
+	switch (enumValue)
+	{
+		case AndroidArch_Arm8:  return "arm64-v8a";
+		case AndroidArch_Arm7:  return "armeabi-v7a";
+		case AndroidArch_x86:   return "x86_64";
+		default: return "unknown";
+	}
+}
+const char* GetAndroidArchTargetStr(AndroidArch enumValue)
+{
+	switch (enumValue)
+	{
+		case AndroidArch_Arm8:  return "aarch64-none-linux-android35";
+		case AndroidArch_Arm7:  return "armv7a-none-linux-androideabi35";
+		case AndroidArch_x86:   return "x86_64-none-linux-android35";
+		default: return "unknown";
+	}
+}
+const char* GetAndroidArchToolchainFolderStr(AndroidArch enumValue)
+{
+	switch (enumValue)
+	{
+		case AndroidArch_Arm8:  return "aarch64-linux-android";
+		case AndroidArch_Arm7:  return "arm-linux-androideabi";
+		case AndroidArch_x86:   return "x86_64-linux-android";
+		default: return "unknown";
+	}
+}
+
 static inline void PrintUsage()
 {
 	WriteLine_E("Usage: " TOOL_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
@@ -843,60 +894,80 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Android...]", FILENAME_TESTS_APK);
 			
-			CliArgList cmd = ZEROED;
-			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]\\android\\tests_android.c");
-			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
-			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS_SO);
-			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgNt(&cmd, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
-			AddArgNt(&cmd, CLANG_INCLUDE_DIR, "[ROOT]");
-			// if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); } //TODO: Link with shader objects once we've compiled them for Android
-			AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, "aarch64-none-linux-android35");
-			AddArgStr(&cmd, CLANG_STDLIB_FOLDER, JoinStrings2(androidNdkToolchainDir, StrLit("/sysroot"), false));
-			AddArgStr(&cmd, CLANG_INCLUDE_DIR, JoinStrings2(androidNdkDir, StrLit("/sources/android/native_app_glue"), false));
-			if (DEBUG_BUILD) { AddArg(&cmd, CLANG_DEBUG_INFO_DEFAULT); } //TODO: Should we do dwarf-4 debug info instead?
-			AddArgNt(&cmd, CLANG_DEFINE, "pig_core_EXPORTS");
-			AddArgNt(&cmd, CLANG_DEFINE, "ANDROID");
-			AddArgNt(&cmd, CLANG_DEFINE, "_FORTIFY_SOURCE=2");
-			AddArg(&cmd, CLANG_DATA_SECTIONS);
-			AddArg(&cmd, CLANG_FUNCTION_SECTIONS);
-			AddArg(&cmd, CLANG_UNWIND_TABLES);
-			AddArg(&cmd, CLANG_STACK_PROTECTOR_STRONG);
-			AddArg(&cmd, CLANG_NO_CANONICAL_PREFIXES);
-			AddArg(&cmd, CLANG_fPIC);
-			AddArgNt(&cmd, CLANG_ENABLE_WARNING, "format");
-			AddArgNt(&cmd, CLANG_ENABLE_WARNING, "error=format-security");
-			AddArgStr(&cmd, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
-			AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, StrLit("/sysroot/usr/lib/aarch64-linux-android/35/"), false));
-			AddArg(&cmd, CLANG_NO_STDLIB_CPP);
-			AddArg(&cmd, CLANG_NO_UNDEFINED);
-			AddArg(&cmd, CLANG_FATAL_WARNINGS);
-			AddArg(&cmd, CLANG_NO_UNDEFINED_VERSION);
-			AddArgNt(&cmd, CLANG_BUILD_ID, "sha1");
-			AddArgNt(&cmd, CLANG_Q_FLAG, "unused-arguments");
-			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "m");
-			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "android");
-			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "log");
-			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "atomic");
-			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "EGL");
-			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "GLESv2");
-			// AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "pthread"); //TODO: Do we need this on Android? What is it called if so?
-			// AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "fontconfig"); //TODO: Do we need this on Android? What is it called if so?
-			if (BUILD_WITH_BOX2D) { AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "box2d"); } //TODO: We probably need a separate folder or lib name for a Box2D that was compiled for Android!
-			AddArgNt(&cmd, CLANG_MAX_PAGE_SIZE, "16384");
+			CliArgList clang_AndroidFlags = ZEROED;
+			AddArgNt(&clang_AndroidFlags, CLI_QUOTED_ARG, "[ROOT]\\android\\tests_android.c");
+			AddArg(&clang_AndroidFlags, CLANG_BUILD_SHARED_LIB);
+			AddArgNt(&clang_AndroidFlags, CLANG_OUTPUT_FILE, FILENAME_TESTS_SO);
+			AddArgNt(&clang_AndroidFlags, CLANG_LIB_SO_NAME, FILENAME_TESTS_SO);
+			AddArgList(&clang_AndroidFlags, &clang_CommonFlags);
+			AddArgNt(&clang_AndroidFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
+			AddArgNt(&clang_AndroidFlags, CLANG_INCLUDE_DIR, "[ROOT]");
+			// if (BUILD_WITH_SOKOL_GFX) { AddArgList(&clang_AndroidFlags, &clang_ShaderObjects); } //TODO: Link with shader objects once we've compiled them for Android
+			AddArgStr(&clang_AndroidFlags, CLANG_STDLIB_FOLDER, JoinStrings2(androidNdkToolchainDir, StrLit("/sysroot"), false));
+			AddArgStr(&clang_AndroidFlags, CLANG_INCLUDE_DIR, JoinStrings2(androidNdkDir, StrLit("/sources/android/native_app_glue"), false));
+			if (DEBUG_BUILD) { AddArg(&clang_AndroidFlags, CLANG_DEBUG_INFO_DEFAULT); } //TODO: Should we do dwarf-4 debug info instead?
+			AddArgNt(&clang_AndroidFlags, CLANG_DEFINE, "pig_core_EXPORTS");
+			AddArgNt(&clang_AndroidFlags, CLANG_DEFINE, "ANDROID");
+			AddArgNt(&clang_AndroidFlags, CLANG_DEFINE, "_FORTIFY_SOURCE=2");
+			AddArg(&clang_AndroidFlags, CLANG_DATA_SECTIONS);
+			AddArg(&clang_AndroidFlags, CLANG_FUNCTION_SECTIONS);
+			AddArg(&clang_AndroidFlags, CLANG_UNWIND_TABLES);
+			AddArg(&clang_AndroidFlags, CLANG_STACK_PROTECTOR_STRONG);
+			AddArg(&clang_AndroidFlags, CLANG_NO_CANONICAL_PREFIXES);
+			AddArg(&clang_AndroidFlags, CLANG_fPIC);
+			AddArgNt(&clang_AndroidFlags, CLANG_ENABLE_WARNING, "format");
+			AddArgNt(&clang_AndroidFlags, CLANG_ENABLE_WARNING, "error=format-security");
+			AddArgStr(&clang_AndroidFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
+			AddArg(&clang_AndroidFlags, CLANG_NO_STDLIB_CPP);
+			AddArg(&clang_AndroidFlags, CLANG_NO_UNDEFINED);
+			AddArg(&clang_AndroidFlags, CLANG_FATAL_WARNINGS);
+			AddArg(&clang_AndroidFlags, CLANG_NO_UNDEFINED_VERSION);
+			AddArgNt(&clang_AndroidFlags, CLANG_BUILD_ID, "sha1");
+			AddArgNt(&clang_AndroidFlags, CLANG_Q_FLAG, "unused-arguments");
+			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "m");
+			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "android");
+			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "log");
+			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "atomic");
+			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "EGL");
+			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "GLESv2");
+			// AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "pthread"); //TODO: Do we need this on Android? What is it called if so?
+			// AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "fontconfig"); //TODO: Do we need this on Android? What is it called if so?
+			if (BUILD_WITH_BOX2D) { AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "box2d"); } //TODO: We probably need a separate folder or lib name for a Box2D that was compiled for Android!
+			AddArgNt(&clang_AndroidFlags, CLANG_MAX_PAGE_SIZE, "16384");
 			// TODO: -Wl,--dependency-file=CMakeFiles\pig-core.dir\link.d
 			
-			Str8 clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"), false);
-			FixPathSlashes(clangExe, PATH_SEP_CHAR);
 			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ANDROID);
-			cmd.rootDirPath = StrLit("../..");
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
-			AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
+			for (uxx archIndex = 1; archIndex < AndroidArch_Count; archIndex++)
+			{
+				AndroidArch architecture = (AndroidArch)archIndex;
+				PrintLine("Building for %s...", GetAndroidArchFolderName(architecture));
+				CliArgList cmd = ZEROED;
+				cmd.pathSepChar = '/';
+				AddArgList(&cmd, &clang_AndroidFlags);
+				AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidArchTargetStr(architecture));
+				Str8 sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), NewStr8Nt(GetAndroidArchToolchainFolderStr(architecture)), StrLit("/35/"), false);
+				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath, false));
+				
+				Str8 clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"), false);
+				FixPathSlashes(clangExe, PATH_SEP_CHAR);
+				mkdir(GetAndroidArchFolderName(architecture), FOLDER_PERMISSIONS);
+				chdir(GetAndroidArchFolderName(architecture));
+				cmd.rootDirPath = StrLit("../../..");
+				
+				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
+				AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
+				
+				//TODO: This copy is temporary, remove when we actually do the .apk packaging ourself
+				Str8 androidProjectFolder = JoinStrings2(StrLit("F:/gamedev/projects/_android/Sputnik/app/src/main/jniLibs/"), NewStr8Nt(GetAndroidArchFolderName(architecture)), false);
+				CopyFileToFolder(StrLit(FILENAME_TESTS_SO), androidProjectFolder);
+				
+				chdir("..");
+			}
 			
 			//TODO: Package into .apk
+			
 			
 			PrintLine("[Built %s for Android!]", FILENAME_TESTS_APK);
 			

@@ -45,6 +45,7 @@ Description:
 #define CLANG_FATAL_WARNINGS         "-Wl,--fatal-warnings"
 #define CLANG_BUILD_ID               "-Wl,--build-id=[VAL]" //TODO: Better name? Description?
 #define CLANG_MAX_PAGE_SIZE          "-Wl,-z,max-page-size=[VAL]"
+#define CLANG_LIB_SO_NAME            "-Wl,-soname,[VAL]"
 #define CLANG_NO_STD_LIBRARIES       "--no-standard-libraries"
 #define CLANG_NO_STD_INCLUDES        "--no-standard-includes"
 #define CLANG_NO_CANONICAL_PREFIXES  "-no-canonical-prefixes" //TODO: Better name? Description?
