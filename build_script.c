@@ -34,6 +34,7 @@ Description:
 #define FOLDERNAME_LINUX           "linux"
 #define FOLDERNAME_OSX             "osx"
 #define FOLDERNAME_WEB             "web"
+#define FOLDERNAME_ANDROID         "android"
 #define FOLDERNAME_ORCA            "orca"
 
 #define FILENAME_PIGGEN_EXE        "piggen.exe"
@@ -49,6 +50,8 @@ Description:
 #define FILENAME_PIG_CORE_SO       "libpig_core.so"
 #define FILENAME_TESTS             "tests"
 #define FILENAME_TESTS_EXE         "tests.exe"
+#define FILENAME_TESTS_APK         "tests.apk"
+#define FILENAME_TESTS_SO          "libtests.so"
 #define FILENAME_TESTS_OBJ         "tests.obj"
 #define FILENAME_APP_WASM          "app.wasm"
 #define FILENAME_APP_WAT           "app.wat"
@@ -105,6 +108,7 @@ int main(int argc, char* argv[])
 	bool BUILD_LINUX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
 	bool BUILD_OSX                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_OSX"));
 	bool BUILD_WEB                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
+	bool BUILD_ANDROID            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID"));
 	bool BUILD_ORCA               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
 	bool BUILD_PLAYDATE_DEVICE    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
 	bool BUILD_PLAYDATE_SIMULATOR = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
@@ -145,6 +149,16 @@ int main(int argc, char* argv[])
 		emscriptenSdkPath = GetEmscriptenSdkPath();
 		PrintLine("Emscripten SDK path: \"%.*s\"", emscriptenSdkPath.length, emscriptenSdkPath.chars);
 		InitializeEmsdkIf(StrLit(".."), &isEmsdkInitialized);
+	}
+	
+	Str8 androidNdkDir = ZEROED;
+	Str8 androidNdkToolchainDir = ZEROED;
+	if (BUILD_ANDROID)
+	{
+		androidNdkDir = GetAndroidNdkPath();
+		PrintLine("Android NDK path: \"%.*s\"", androidNdkDir.length, androidNdkDir.chars);
+		//TODO: This is going to be a different folder under prebuilt on other operating systems!
+		androidNdkToolchainDir = JoinStrings2(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/windows-x86_64"), false);
 	}
 	
 	Str8 orcaSdkPath = ZEROED;
@@ -821,6 +835,70 @@ int main(int argc, char* argv[])
 				CopyFileToPath(StrLit("..\\..\\wasm\\wasm_app_style.css"), StrLit("main.css"));
 				CopyFileToPath(StrLit("..\\..\\wasm\\wasm_app_index.html"), StrLit("index.html"));
 			}
+			
+			chdir("..");
+		}
+		
+		if (BUILD_ANDROID)
+		{
+			PrintLine("\n[Building %s for Android...]", FILENAME_TESTS_APK);
+			
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]\\android\\tests_android.c");
+			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS_SO);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgNt(&cmd, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
+			AddArgNt(&cmd, CLANG_INCLUDE_DIR, "[ROOT]");
+			// if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); } //TODO: Link with shader objects once we've compiled them for Android
+			AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, "aarch64-none-linux-android35");
+			AddArgStr(&cmd, CLANG_STDLIB_FOLDER, JoinStrings2(androidNdkToolchainDir, StrLit("/sysroot"), false));
+			AddArgStr(&cmd, CLANG_INCLUDE_DIR, JoinStrings2(androidNdkDir, StrLit("/sources/android/native_app_glue"), false));
+			if (DEBUG_BUILD) { AddArg(&cmd, CLANG_DEBUG_INFO_DEFAULT); } //TODO: Should we do dwarf-4 debug info instead?
+			AddArgNt(&cmd, CLANG_DEFINE, "pig_core_EXPORTS");
+			AddArgNt(&cmd, CLANG_DEFINE, "ANDROID");
+			AddArgNt(&cmd, CLANG_DEFINE, "_FORTIFY_SOURCE=2");
+			AddArg(&cmd, CLANG_DATA_SECTIONS);
+			AddArg(&cmd, CLANG_FUNCTION_SECTIONS);
+			AddArg(&cmd, CLANG_UNWIND_TABLES);
+			AddArg(&cmd, CLANG_STACK_PROTECTOR_STRONG);
+			AddArg(&cmd, CLANG_NO_CANONICAL_PREFIXES);
+			AddArg(&cmd, CLANG_fPIC);
+			AddArgNt(&cmd, CLANG_ENABLE_WARNING, "format");
+			AddArgNt(&cmd, CLANG_ENABLE_WARNING, "error=format-security");
+			AddArgStr(&cmd, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
+			AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, StrLit("/sysroot/usr/lib/aarch64-linux-android/35/"), false));
+			AddArg(&cmd, CLANG_NO_STDLIB_CPP);
+			AddArg(&cmd, CLANG_NO_UNDEFINED);
+			AddArg(&cmd, CLANG_FATAL_WARNINGS);
+			AddArg(&cmd, CLANG_NO_UNDEFINED_VERSION);
+			AddArgNt(&cmd, CLANG_BUILD_ID, "sha1");
+			AddArgNt(&cmd, CLANG_Q_FLAG, "unused-arguments");
+			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "m");
+			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "android");
+			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "log");
+			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "atomic");
+			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "EGL");
+			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "GLESv2");
+			// AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "pthread"); //TODO: Do we need this on Android? What is it called if so?
+			// AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "fontconfig"); //TODO: Do we need this on Android? What is it called if so?
+			if (BUILD_WITH_BOX2D) { AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "box2d"); } //TODO: We probably need a separate folder or lib name for a Box2D that was compiled for Android!
+			AddArgNt(&cmd, CLANG_MAX_PAGE_SIZE, "16384");
+			// TODO: -Wl,--dependency-file=CMakeFiles\pig-core.dir\link.d
+			
+			Str8 clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"), false);
+			FixPathSlashes(clangExe, PATH_SEP_CHAR);
+			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
+			chdir(FOLDERNAME_ANDROID);
+			cmd.rootDirPath = StrLit("../..");
+			
+			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
+			AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
+			
+			//TODO: Package into .apk
+			
+			PrintLine("[Built %s for Android!]", FILENAME_TESTS_APK);
 			
 			chdir("..");
 		}

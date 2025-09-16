@@ -189,6 +189,21 @@ static inline Str8 GetPlaydateSdkPath()
 	return result;
 }
 
+static inline Str8 GetAndroidNdkPath()
+{
+	const char* ndkEnvVariable = getenv("ANDROID_NDK_PATH");
+	if (ndkEnvVariable == nullptr)
+	{
+		WriteLine_E("Please set the ANDROID_NDK_PATH environment variable before trying to build for Android");
+		exit(7);
+	}
+	Str8 result = NewStr8Nt(ndkEnvVariable);
+	if (IS_SLASH(result.chars[result.length-1])) { result.length--; }
+	result = CopyStr8(result, true);
+	FixPathSlashes(result, PATH_SEP_CHAR);
+	return result;
+}
+
 // +--------------------------------------------------------------+
 // |                  Shader Header File Parsing                  |
 // +--------------------------------------------------------------+

@@ -15,7 +15,7 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
 
-#define BUILD_PIG_BUILD 0
+#define BUILD_PIG_BUILD 1
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -25,13 +25,15 @@ Description:
 #define PROFILING_ENABLED 0
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             1
+#define BUILD_WINDOWS             0
 // Build binaries for Linux platform(s)
 #define BUILD_LINUX               0
 // Build binaries for OSX platform
 #define BUILD_OSX                 0
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB                 0
+// Build an .apk for Android
+#define BUILD_ANDROID             1
 // Build a WASM binary and package as Orca application
 #define BUILD_ORCA                0
 // Build a binary that can be uploaded to the Playdate device
@@ -61,10 +63,10 @@ Description:
 // Compiles tests/main.c
 #define BUILD_TESTS   1
 // Runs the result of compiling tests/main.c, aka the tests.exe
-#define RUN_TESTS     1
+#define RUN_TESTS     0
 
 // Runs protoc --c_out (which uses protoc-gen-c plugin) to generate pb-c.h and pb-c.c files from all .proto files
-#define GENERATE_PROTOBUF 1
+#define GENERATE_PROTOBUF 0
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
 #define DUMP_PREPROCESSOR 0
@@ -110,6 +112,6 @@ Description:
 // Enables support for making HTTP (and HTTPS) requests using the OS' API (WinHTTP for Windows, ? for Linux, etc.)
 #define BUILD_WITH_HTTP      0
 // Enables support for encoding/decoding Googles's protocol buffers using protobuf-c library
-#define BUILD_WITH_PROTOBUF  1
+#define BUILD_WITH_PROTOBUF  0
 
 #endif //  _BUILD_CONFIG_H
