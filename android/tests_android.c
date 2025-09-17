@@ -24,61 +24,100 @@ Description:
 
 #define nullptr ((void*)0)
 
-#define PrintLine_I(...) ((void)__android_log_print(ANDROID_LOG_INFO, "threaded_app", __VA_ARGS__))
-#define PrintLine_E(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "threaded_app", __VA_ARGS__))
+#define PrintLine_V(message, ...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, "pigcore", message "\n", ##__VA_ARGS__))
+#define PrintLine_D(message, ...) ((void)__android_log_print(ANDROID_LOG_DEBUG,   "pigcore", message "\n", ##__VA_ARGS__))
+#define PrintLine_I(message, ...) ((void)__android_log_print(ANDROID_LOG_INFO,    "pigcore", message "\n", ##__VA_ARGS__))
+#define PrintLine_W(message, ...) ((void)__android_log_print(ANDROID_LOG_WARN,    "pigcore", message "\n", ##__VA_ARGS__))
+#define PrintLine_E(message, ...) ((void)__android_log_print(ANDROID_LOG_ERROR,   "pigcore", message "\n", ##__VA_ARGS__))
+#define PrintLine_F(message, ...) ((void)__android_log_print(ANDROID_LOG_FATAL,   "pigcore", message "\n", ##__VA_ARGS__))
+#define WriteLine_V(message)      PrintLine_V(message)
+#define WriteLine_D(message)      PrintLine_D(message)
+#define WriteLine_I(message)      PrintLine_I(message)
+#define WriteLine_W(message)      PrintLine_W(message)
+#define WriteLine_E(message)      PrintLine_E(message)
+#define WriteLine_F(message)      PrintLine_F(message)
 
-#if 0
-void HandleAndroidCmd(struct android_app* app, int32_t cmd)
-{
-	switch (cmd)
-	{
-		case APP_CMD_INPUT_CHANGED:        PrintLine_I("Got command: INPUT_CHANGED\n");        break; //TODO: Implement me!
-		case APP_CMD_INIT_WINDOW:          PrintLine_I("Got command: INIT_WINDOW\n");          break; //TODO: Implement me!
-		case APP_CMD_TERM_WINDOW:          PrintLine_I("Got command: TERM_WINDOW\n");          break; //TODO: Implement me!
-		case APP_CMD_WINDOW_RESIZED:       PrintLine_I("Got command: WINDOW_RESIZED\n");       break; //TODO: Implement me!
-		case APP_CMD_WINDOW_REDRAW_NEEDED: PrintLine_I("Got command: WINDOW_REDRAW_NEEDED\n"); break; //TODO: Implement me!
-		case APP_CMD_CONTENT_RECT_CHANGED: PrintLine_I("Got command: CONTENT_RECT_CHANGED\n"); break; //TODO: Implement me!
-		case APP_CMD_GAINED_FOCUS:         PrintLine_I("Got command: GAINED_FOCUS\n");         break; //TODO: Implement me!
-		case APP_CMD_LOST_FOCUS:           PrintLine_I("Got command: LOST_FOCUS\n");           break; //TODO: Implement me!
-		case APP_CMD_CONFIG_CHANGED:       PrintLine_I("Got command: CONFIG_CHANGED\n");       break; //TODO: Implement me!
-		case APP_CMD_LOW_MEMORY:           PrintLine_I("Got command: LOW_MEMORY\n");           break; //TODO: Implement me!
-		case APP_CMD_START:                PrintLine_I("Got command: START\n");                break; //TODO: Implement me!
-		case APP_CMD_RESUME:               PrintLine_I("Got command: RESUME\n");               break; //TODO: Implement me!
-		case APP_CMD_SAVE_STATE:           PrintLine_I("Got command: SAVE_STATE\n");           break; //TODO: Implement me!
-		case APP_CMD_PAUSE:                PrintLine_I("Got command: PAUSE\n");                break; //TODO: Implement me!
-		case APP_CMD_STOP:                 PrintLine_I("Got command: STOP\n");                 break; //TODO: Implement me!
-		case APP_CMD_DESTROY:              PrintLine_I("Got command: DESTROY\n");              break; //TODO: Implement me!
-		default:                           PrintLine_I("Got unknown command: %d", cmd);        break;
-	}
-}
-#endif
+bool initialized = false;
+EGLDisplay display = {0};
+EGLConfig config = {0};
+EGLSurface surface = {0};
+EGLContext context = {0};
+int frameIndex = 0;
 
 // Example rendering function
-void draw_frame()
+bool draw_frame(struct android_app* app)
 {
-	glClear(GL_COLOR_BUFFER_BIT);
+	if (!initialized && app->window != nullptr)
+	{
+		PrintLine_I("Initializing...");
+		display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+		eglInitialize(display, nullptr, nullptr);
+		const EGLint eglConfigAttribs[] = {
+			EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+			EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+			EGL_BLUE_SIZE, 8,
+			EGL_GREEN_SIZE, 8,
+			EGL_RED_SIZE, 8,
+			EGL_ALPHA_SIZE, 8,
+			EGL_DEPTH_SIZE, 0,
+			EGL_NONE
+		};
+		EGLConfig configs[8];
+		GLint numConfigs = 0;
+		eglChooseConfig(display, eglConfigAttribs, &configs[0], 8, &numConfigs);
+		// PrintLine_I("Got %d matching config%s", numConfigs, (numConfigs == 1) ? "" : "s");
+		if (numConfigs == 0) { PrintLine_E("Failed to find any surface configs matching our requested attributes!"); return false; }
+		config = configs[0];
+		EGLint eglFormat = 0;
+	    eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &eglFormat);
+	    ANativeWindow_setBuffersGeometry(app->window, 100, 200, eglFormat);
+		surface = eglCreateWindowSurface(display, config, app->window, nullptr);
+		if (surface == EGL_NO_SURFACE)
+		{
+			PrintLine_E("Failed to create surface!");
+			return false;
+		}
+		const EGLint eglContextAttribs[] = {
+			EGL_CONTEXT_CLIENT_VERSION, 2,
+			EGL_NONE
+		};
+		context = eglCreateContext(display, config, nullptr, eglContextAttribs);
+		eglMakeCurrent(display, surface, surface, context);
+		
+		PrintLine_I("Done initializing!");
+		initialized = true;
+	}
 	
-	// Draw your "buttons", text, etc. using OpenGL
-	// render_button(button_x, button_y, button_width, button_height);
-	// render_text("Hello World", text_x, text_y);
+	if (initialized)
+	{
+		glClearColor(0.5f, (float)(frameIndex%60)/59.0f, 0.2f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		
+		// Draw your "buttons", text, etc. using OpenGL
+		// render_button(button_x, button_y, button_width, button_height);
+		// render_text("Hello World", text_x, text_y);
+		
+		eglSwapBuffers(display, surface);
+		frameIndex++;
+	}
 	
-	// eglSwapBuffers(display, surface);
+	return true;
 }
 
 void android_main(struct android_app* app)
 {
-	PrintLine_I("android_main() is running...\n");
-	// app_dummy(); //Suppresses link-time dead code removal of stuff in android_native_app_glue.c
+	WriteLine_I("android_main() is running...");
+	//Suppresses link-time dead code removal of stuff in android_native_app_glue.c
 	(void)ANativeActivity_onCreate;
 	
-	// app->onAppCmd = HandleAndroidCmd;
-	
-	// if (init_display(app) == 0) { PrintLine_E("Failed to init_display!\n"); return; }
+	//NOTE: app->window is probably nullptr at this point. We need to wait until it becomes filled before initializing GLES
+	initialized = false;
 	
 	// +==============================+
 	// |        Main Game Loop        |
 	// +==============================+
-	while (true)
+	bool shouldContinue = true;
+	while (shouldContinue)
 	{
 		// +==============================+
 		// |        Event Polling         |
@@ -88,24 +127,21 @@ void android_main(struct android_app* app)
 		struct android_poll_source* source = nullptr;
 		while ((pollResult = ALooper_pollOnce(0, nullptr, &events, (void**)&source)) >= 0)
 		{
-			if (source != nullptr)
-			{
-				source->process(app, source);
-			}
-			
+			if (source != nullptr) { source->process(app, source); }
 			if (app->destroyRequested != 0) { break; }
 		}
-		if (pollResult == ALOOPER_POLL_ERROR) { PrintLine_E("ALooper returned a POLL_ERROR error!"); }
-		if (app->destroyRequested != 0) { break; }
+		if (pollResult == ALOOPER_POLL_ERROR) { WriteLine_E("ALooper returned a POLL_ERROR error!"); }
+		if (app->destroyRequested != 0) { WriteLine_E("destroyRequested"); break; }
 		
-		draw_frame();
+		shouldContinue = draw_frame(app);
+		if (!shouldContinue) { WriteLine_E("exiting"); break; }
 	}
 }
 
 
 // JNINativeInterface
-JNIEXPORT jstring JNICALL Java_com_piggybank_sputnik_MainActivity_MyCFunction(JNIEnv* env, jobject this)
+JNIEXPORT jstring JNICALL Java_com_piggybank_pigcore_tests_MainActivity_MyCFunction(JNIEnv* env, jobject this)
 {
-	PrintLine_I("Hello Android from MyCFunction() in C!!\n");
+	WriteLine_I("Hello Android from MyCFunction() in C!!");
 	return (*env)->NewStringUTF(env, "String from MyCFunction()");
 }

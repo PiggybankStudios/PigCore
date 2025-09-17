@@ -73,8 +73,10 @@ Description:
 
 #if BUILDING_ON_WINDOWS
 #define PATH_SEP_CHAR '\\'
+#define PATH_SEP_CHAR_STR "\\"
 #else
 #define PATH_SEP_CHAR '/'
+#define PATH_SEP_CHAR_STR "/"
 #endif
 
 #if !BUILDING_ON_WINDOWS
@@ -757,6 +759,92 @@ static inline void AppendPrintToFile(Str8 filePath, const char* formatString, ..
 	assert(printResult < ArrayCount(printBuffer));
 	Str8 printedStr = NewStr8((uxx)printResult, &printBuffer[0]);
 	AppendToFile(filePath, printedStr, true);
+}
+
+static inline void RemoveFile(Str8 filePath)
+{
+	Str8 filePathNt = CopyStr8(filePath, true);
+	FixPathSlashes(filePathNt, PATH_SEP_CHAR);
+	
+	#if BUILDING_ON_WINDOWS
+	{
+		BOOL deleteResult = DeleteFileA(filePathNt.chars);
+		if (deleteResult == 0)
+		{
+			DWORD errorCode = GetLastError();
+			assert(errorCode == ERROR_FILE_NOT_FOUND);
+		}
+	}
+	#else
+	assert(false && "RemoveFile does not support the current platform yet!");
+	#endif
+}
+
+static inline void MyRemoveDirectory(Str8 folderPath, bool recursive)
+{
+	Str8 folderPathNt = CopyStr8(folderPath, true);
+	FixPathSlashes(folderPathNt, PATH_SEP_CHAR);
+	
+	if (!recursive)
+	{
+		int rmResult = rmdir("apk_temp");
+		if (rmResult != 0)
+		{
+			PrintLine_E("rmdir(\"%s\") failed: errno=%d", folderPathNt.chars, errno);
+			assert(rmResult == 0);
+		}
+	}
+	else
+	{
+		#if BUILDING_ON_WINDOWS
+		{
+			bool needsTrailingSlash = !(folderPathNt.length > 0 && folderPathNt.chars[folderPathNt.length-1] == PATH_SEP_CHAR);
+			Str8 searchStr = JoinStrings3(
+				folderPath,
+				needsTrailingSlash ? StrLit(PATH_SEP_CHAR_STR) : StrLit(""),
+				StrLit("*"),
+				true
+			);
+			
+			WIN32_FIND_DATAA findData = ZEROED;
+			HANDLE iterHandle = FindFirstFileA(searchStr.chars, &findData);
+			if (iterHandle == INVALID_HANDLE_VALUE) { return; }
+			
+			do
+			{
+				if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0) { continue; }
+				Str8 fullPath = JoinStrings3(
+					folderPath,
+					needsTrailingSlash ? StrLit(PATH_SEP_CHAR_STR) : StrLit(""),
+					NewStr8Nt(findData.cFileName),
+					false
+				);
+				
+				if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				{
+					// PrintLine("Recursing into \"%.*s\"", fullPath.length, fullPath.chars);
+					MyRemoveDirectory(fullPath, true);
+				}
+				else
+				{
+					// PrintLine("Removing file \"%.*s\"", fullPath.length, fullPath.chars);
+					RemoveFile(fullPath);
+				}
+				
+			} while(FindNextFileA(iterHandle, &findData) != 0);
+			
+			BOOL removeResult = RemoveDirectoryA(folderPathNt.chars);
+			if (removeResult == 0)
+			{
+				DWORD errorCode = GetLastError();
+				PrintLine_E("Failed to remove \"%s\". Error: %d", folderPathNt.chars, errorCode);
+				assert(removeResult != 0);
+			}
+		}
+		#else
+		assert(false && "RemoveDirectory does not support the current platform yet!");
+		#endif
+	}
 }
 
 static inline void CopyFileToPath(Str8 filePath, Str8 newFilePath)

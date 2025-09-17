@@ -144,6 +144,45 @@ void Fill_clang_PigCoreLibraries(CliArgList* clang_PigCoreLibraries, bool BUILD_
 	if (BUILD_WITH_BOX2D) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "box2d"); }
 }
 
+void Fill_clang_AndroidFlags(CliArgList* clang_AndroidFlags, Str8 androidNdkDir, Str8 androidNdkToolchainDir, bool DEBUG_BUILD, bool BUILD_WITH_BOX2D)
+{
+	AddArgNt(clang_AndroidFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
+	AddArgNt(clang_AndroidFlags, CLANG_INCLUDE_DIR, "[ROOT]");
+	AddArgStr(clang_AndroidFlags, CLANG_STDLIB_FOLDER, JoinStrings2(androidNdkToolchainDir, StrLit("/sysroot"), false));
+	AddArgStr(clang_AndroidFlags, CLANG_INCLUDE_DIR, JoinStrings2(androidNdkDir, StrLit("/sources/android/native_app_glue"), false));
+	if (DEBUG_BUILD) { AddArg(clang_AndroidFlags, CLANG_DEBUG_INFO_DEFAULT); } //TODO: Should we do dwarf-4 debug info instead?
+	AddArgNt(clang_AndroidFlags, CLANG_DEFINE, "pig_core_EXPORTS");
+	AddArgNt(clang_AndroidFlags, CLANG_DEFINE, "ANDROID");
+	AddArgNt(clang_AndroidFlags, CLANG_DEFINE, "_FORTIFY_SOURCE=2");
+	AddArg(clang_AndroidFlags, CLANG_DATA_SECTIONS);
+	AddArg(clang_AndroidFlags, CLANG_FUNCTION_SECTIONS);
+	AddArg(clang_AndroidFlags, CLANG_UNWIND_TABLES);
+	AddArg(clang_AndroidFlags, CLANG_STACK_PROTECTOR_STRONG);
+	AddArg(clang_AndroidFlags, CLANG_NO_CANONICAL_PREFIXES);
+	AddArg(clang_AndroidFlags, CLANG_fPIC);
+	AddArgNt(clang_AndroidFlags, CLANG_ENABLE_WARNING, "format");
+	AddArgNt(clang_AndroidFlags, CLANG_ENABLE_WARNING, "error=format-security");
+	AddArgStr(clang_AndroidFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
+	AddArg(clang_AndroidFlags, CLANG_NO_STDLIB_CPP);
+	AddArg(clang_AndroidFlags, CLANG_NO_UNDEFINED);
+	AddArg(clang_AndroidFlags, CLANG_FATAL_WARNINGS);
+	AddArg(clang_AndroidFlags, CLANG_NO_UNDEFINED_VERSION);
+	AddArgNt(clang_AndroidFlags, CLANG_BUILD_ID, "sha1");
+	AddArgNt(clang_AndroidFlags, CLANG_Q_FLAG, "unused-arguments");
+	AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "m");
+	AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "dl");
+	AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "android");
+	AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "log");
+	AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "atomic");
+	AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "EGL");
+	AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "GLESv2");
+	// AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "pthread"); //TODO: Do we need this on Android? What is it called if so?
+	// AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "fontconfig"); //TODO: Do we need this on Android? What is it called if so?
+	if (BUILD_WITH_BOX2D) { AddArgNt(clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "box2d"); } //TODO: We probably need a separate folder or lib name for a Box2D that was compiled for Android!
+	AddArgNt(clang_AndroidFlags, CLANG_MAX_PAGE_SIZE, "16384");
+	// TODO: -Wl,--dependency-file=CMakeFiles\pig-core.dir\link.d
+}
+
 void Fill_clang_WasmFlags(CliArgList* clang_WasmFlags, bool DEBUG_BUILD)
 {
 	AddArgNt(clang_WasmFlags, CLANG_TARGET_ARCHITECTURE, "wasm32");

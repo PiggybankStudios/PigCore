@@ -27,6 +27,7 @@ Description:
 
 #include "tools/tools_build_helpers.h"
 #include "tools/tools_pig_core_build_flags.h"
+#include "tools/tools_android_build_helpers.h"
 
 #define BUILD_CONFIG_PATH       "../build_config.h"
 
@@ -37,88 +38,41 @@ Description:
 #define FOLDERNAME_ANDROID         "android"
 #define FOLDERNAME_ORCA            "orca"
 
-#define FILENAME_PIGGEN_EXE        "piggen.exe"
-#define FILENAME_PIGGEN            "piggen"
-#define FILENAME_TRACY_DLL         "tracy.dll"
-#define FILENAME_TRACY_LIB         "tracy.lib"
-#define FILENAME_TRACY_SO          "tracy.so"
-#define FILENAME_IMGUI_OBJ         "imgui.obj"
-#define FILENAME_IMGUI_O           "imgui.o"
-#define FILENAME_PHYSX_OBJ         "physx_capi.obj"
-#define FILENAME_PHYSX_O           "physx_capi.o"
-#define FILENAME_PIG_CORE_DLL      "pig_core.dll"
-#define FILENAME_PIG_CORE_SO       "libpig_core.so"
-#define FILENAME_TESTS             "tests"
-#define FILENAME_TESTS_EXE         "tests.exe"
-#define FILENAME_TESTS_APK         "tests.apk"
-#define FILENAME_TESTS_SO          "libtests.so"
-#define FILENAME_TESTS_OBJ         "tests.obj"
-#define FILENAME_APP_WASM          "app.wasm"
-#define FILENAME_APP_WAT           "app.wat"
-#define FILENAME_INDEX_HTML        "index.html"
-#define FILENAME_INDEX_WASM        "index.wasm"
-#define FILENAME_INDEX_WAT         "index.wat"
-#define FILENAME_MODULE_WASM       "module.wasm"
-#define FILENAME_PDEX_ELF          "pdex.elf"
-#define FILENAME_PDEX_DLL          "pdex.dll"
-#define FILENAME_TESTS_PDX         "tests.pdx"
+#define FILENAME_PIGGEN_EXE            "piggen.exe"
+#define FILENAME_PIGGEN                "piggen"
+#define FILENAME_TRACY_DLL             "tracy.dll"
+#define FILENAME_TRACY_LIB             "tracy.lib"
+#define FILENAME_TRACY_SO              "tracy.so"
+#define FILENAME_IMGUI_OBJ             "imgui.obj"
+#define FILENAME_IMGUI_O               "imgui.o"
+#define FILENAME_PHYSX_OBJ             "physx_capi.obj"
+#define FILENAME_PHYSX_O               "physx_capi.o"
+#define FILENAME_PIG_CORE_DLL          "pig_core.dll"
+#define FILENAME_PIG_CORE_SO           "libpig_core.so"
+#define FILENAME_TESTS                 "tests"
+#define FILENAME_TESTS_EXE             "tests.exe"
+#define FILENAME_TESTS_APK             "tests.apk"
+#define FILENAME_TESTS_SO              "libtests.so"
+#define FILENAME_TESTS_OBJ             "tests.obj"
+#define FILENAME_ANDROID_RESOURCES_ZIP "resources.zip"
+#define FILENAME_DUMMY_JAVA            "Dummy.java"
+#define FILENAME_DUMMY_CLASS           "Dummy.class"
+#define FILENAME_CLASSES_DEX           "classes.dex"
+#define FILENAME_APP_WASM              "app.wasm"
+#define FILENAME_APP_WAT               "app.wat"
+#define FILENAME_INDEX_HTML            "index.html"
+#define FILENAME_INDEX_WASM            "index.wasm"
+#define FILENAME_INDEX_WAT             "index.wat"
+#define FILENAME_MODULE_WASM           "module.wasm"
+#define FILENAME_PDEX_ELF              "pdex.elf"
+#define FILENAME_PDEX_DLL              "pdex.dll"
+#define FILENAME_TESTS_PDX             "tests.pdx"
 
 #if BUILDING_ON_WINDOWS
 #define TOOL_EXE_NAME      "pig_build.exe"
 #else
 #define TOOL_EXE_NAME      "pig_build"
 #endif
-
-typedef enum AndroidArch AndroidArch;
-enum AndroidArch
-{
-	AndroidArch_None = 0,
-	AndroidArch_Arm8,
-	AndroidArch_Arm7,
-	AndroidArch_x86,
-	AndroidArch_Count,
-};
-const char* GetAndroidArchStr(AndroidArch enumValue)
-{
-	switch (enumValue)
-	{
-		case AndroidArch_None:  return "None";
-		case AndroidArch_Arm8:  return "Arm8";
-		case AndroidArch_Arm7:  return "Arm7";
-		case AndroidArch_x86:   return "x86";
-		default: return "Unknown";
-	}
-}
-const char* GetAndroidArchFolderName(AndroidArch enumValue)
-{
-	switch (enumValue)
-	{
-		case AndroidArch_Arm8:  return "arm64-v8a";
-		case AndroidArch_Arm7:  return "armeabi-v7a";
-		case AndroidArch_x86:   return "x86_64";
-		default: return "unknown";
-	}
-}
-const char* GetAndroidArchTargetStr(AndroidArch enumValue)
-{
-	switch (enumValue)
-	{
-		case AndroidArch_Arm8:  return "aarch64-none-linux-android35";
-		case AndroidArch_Arm7:  return "armv7a-none-linux-androideabi35";
-		case AndroidArch_x86:   return "x86_64-none-linux-android35";
-		default: return "unknown";
-	}
-}
-const char* GetAndroidArchToolchainFolderStr(AndroidArch enumValue)
-{
-	switch (enumValue)
-	{
-		case AndroidArch_Arm8:  return "aarch64-linux-android";
-		case AndroidArch_Arm7:  return "arm-linux-androideabi";
-		case AndroidArch_x86:   return "x86_64-linux-android";
-		default: return "unknown";
-	}
-}
 
 static inline void PrintUsage()
 {
@@ -148,6 +102,7 @@ int main(int argc, char* argv[])
 	bool BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
 	bool BUILD_TESTS              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
 	bool RUN_TESTS                = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
+	bool INSTALL_TESTS_APK        = ExtractBoolDefine(buildConfigContents, StrLit("INSTALL_TESTS_APK"));
 	bool GENERATE_PROTOBUF        = ExtractBoolDefine(buildConfigContents, StrLit("GENERATE_PROTOBUF"));
 	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
 	bool DUMP_ASSEMBLY            = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
@@ -160,6 +115,7 @@ int main(int argc, char* argv[])
 	bool BUILD_OSX                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_OSX"));
 	bool BUILD_WEB                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
 	bool BUILD_ANDROID            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID"));
+	bool BUILD_ANDROID_APK        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID_APK"));
 	bool BUILD_ORCA               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
 	bool BUILD_PLAYDATE_DEVICE    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
 	bool BUILD_PLAYDATE_SIMULATOR = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
@@ -174,6 +130,16 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
 	bool BUILD_WITH_HTTP          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
 	bool BUILD_WITH_PROTOBUF      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PROTOBUF"));
+	
+	Str8 ANDROID_SIGNING_KEY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")), false);
+	Str8 ANDROID_SIGNING_PASSWORD = ZEROED;
+	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASSWORD"), &ANDROID_SIGNING_PASSWORD)) { ANDROID_SIGNING_PASSWORD = CopyStr8(ANDROID_SIGNING_PASSWORD, false); }
+	Str8 ANDROID_SIGNING_PASS_PATH = ZEROED;
+	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASS_PATH"), &ANDROID_SIGNING_PASS_PATH)) { ANDROID_SIGNING_PASS_PATH = CopyStr8(ANDROID_SIGNING_PASS_PATH, false); }
+	Str8 ANDROID_NDK_VERSION = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_NDK_VERSION")), false);
+	Str8 ANDROID_PLATFORM_FOLDERNAME = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_PLATFORM_FOLDERNAME")), false);
+	Str8 ANDROID_BUILD_TOOLS_VERSION = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_BUILD_TOOLS_VERSION")), false);
+	Str8 ANDROID_ACTIVITY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_ACTIVITY_PATH")), false);
 	
 	free(buildConfigContents.chars);
 	
@@ -202,14 +168,21 @@ int main(int argc, char* argv[])
 		InitializeEmsdkIf(StrLit(".."), &isEmsdkInitialized);
 	}
 	
+	Str8 androidSdkDir = ZEROED;
+	Str8 androidSdkBuildToolsDir = ZEROED;
+	Str8 androidSdkPlatformDir = ZEROED;
 	Str8 androidNdkDir = ZEROED;
 	Str8 androidNdkToolchainDir = ZEROED;
 	if (BUILD_ANDROID)
 	{
-		androidNdkDir = GetAndroidNdkPath();
-		PrintLine("Android NDK path: \"%.*s\"", androidNdkDir.length, androidNdkDir.chars);
-		//TODO: This is going to be a different folder under prebuilt on other operating systems!
-		androidNdkToolchainDir = JoinStrings2(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/windows-x86_64"), false);
+		androidSdkDir = GetAndroidSdkPath();
+		PrintLine("Android SDK path: \"%.*s\"", androidSdkDir.length, androidSdkDir.chars);
+		androidSdkBuildToolsDir = JoinStrings3(androidSdkDir, StrLit("/build-tools/"), ANDROID_BUILD_TOOLS_VERSION, false);
+		androidSdkPlatformDir = JoinStrings3(androidSdkDir, StrLit("/platforms/"), ANDROID_PLATFORM_FOLDERNAME, false);
+		androidNdkDir = JoinStrings3(androidSdkDir, StrLit("/ndk/"), ANDROID_NDK_VERSION, false);
+		//TODO: "windows-x86_64" is going to be different when compiling on Linux or OSX, we should figure out how we want that configured once we get there
+		androidNdkToolchainDir = JoinStrings3(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/"), StrLit("windows-x86_64"), false);
+		//TODO: We should check to see if all these folders actually exist and give a nice error to the user when they need to install something or change the build_config.h
 	}
 	
 	Str8 orcaSdkPath = ZEROED;
@@ -240,6 +213,7 @@ int main(int argc, char* argv[])
 	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
 	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
 	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX, !BUILDING_ON_OSX);
+	CliArgList clang_AndroidFlags                = ZEROED; Fill_clang_AndroidFlags(&clang_AndroidFlags, androidNdkDir, androidNdkToolchainDir, DEBUG_BUILD, BUILD_WITH_BOX2D);
 	CliArgList clang_WasmFlags                   = ZEROED; Fill_clang_WasmFlags(&clang_WasmFlags, DEBUG_BUILD);
 	CliArgList clang_WebFlags                    = ZEROED; Fill_clang_WebFlags(&clang_WebFlags, USE_EMSCRIPTEN);
 	CliArgList clang_OrcaFlags                   = ZEROED; Fill_clang_OrcaFlags(&clang_OrcaFlags, orcaSdkPath);
@@ -570,6 +544,10 @@ int main(int argc, char* argv[])
 				chdir("..");
 				#endif
 			}
+			if (BUILD_ANDROID)
+			{
+				//TODO: Implement me!
+			}
 		}
 		
 		FreeStrArray(&findContext.shaderPaths);
@@ -749,6 +727,7 @@ int main(int argc, char* argv[])
 	// |                       Build tests.exe                        |
 	// +--------------------------------------------------------------+
 	if (RUN_TESTS && !BUILD_TESTS && !DoesFileExist(StrLit(FILENAME_TESTS_EXE))) { PrintLine("Building %s because it's missing", FILENAME_TESTS_EXE); BUILD_TESTS = true; BUILD_WINDOWS = true; }
+	if (INSTALL_TESTS_APK && !BUILD_TESTS && !DoesFileExist(StrLit(FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK))) { PrintLine("Building %s because it's missing", FILENAME_TESTS_APK); BUILD_TESTS = true; BUILD_ANDROID = true; }
 	if (BUILD_TESTS)
 	{
 		if (BUILD_WINDOWS)
@@ -892,85 +871,177 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_ANDROID)
 		{
-			PrintLine("\n[Building %s for Android...]", FILENAME_TESTS_APK);
-			
-			CliArgList clang_AndroidFlags = ZEROED;
-			AddArgNt(&clang_AndroidFlags, CLI_QUOTED_ARG, "[ROOT]\\android\\tests_android.c");
-			AddArg(&clang_AndroidFlags, CLANG_BUILD_SHARED_LIB);
-			AddArgNt(&clang_AndroidFlags, CLANG_OUTPUT_FILE, FILENAME_TESTS_SO);
-			AddArgNt(&clang_AndroidFlags, CLANG_LIB_SO_NAME, FILENAME_TESTS_SO);
-			AddArgList(&clang_AndroidFlags, &clang_CommonFlags);
-			AddArgNt(&clang_AndroidFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
-			AddArgNt(&clang_AndroidFlags, CLANG_INCLUDE_DIR, "[ROOT]");
-			// if (BUILD_WITH_SOKOL_GFX) { AddArgList(&clang_AndroidFlags, &clang_ShaderObjects); } //TODO: Link with shader objects once we've compiled them for Android
-			AddArgStr(&clang_AndroidFlags, CLANG_STDLIB_FOLDER, JoinStrings2(androidNdkToolchainDir, StrLit("/sysroot"), false));
-			AddArgStr(&clang_AndroidFlags, CLANG_INCLUDE_DIR, JoinStrings2(androidNdkDir, StrLit("/sources/android/native_app_glue"), false));
-			if (DEBUG_BUILD) { AddArg(&clang_AndroidFlags, CLANG_DEBUG_INFO_DEFAULT); } //TODO: Should we do dwarf-4 debug info instead?
-			AddArgNt(&clang_AndroidFlags, CLANG_DEFINE, "pig_core_EXPORTS");
-			AddArgNt(&clang_AndroidFlags, CLANG_DEFINE, "ANDROID");
-			AddArgNt(&clang_AndroidFlags, CLANG_DEFINE, "_FORTIFY_SOURCE=2");
-			AddArg(&clang_AndroidFlags, CLANG_DATA_SECTIONS);
-			AddArg(&clang_AndroidFlags, CLANG_FUNCTION_SECTIONS);
-			AddArg(&clang_AndroidFlags, CLANG_UNWIND_TABLES);
-			AddArg(&clang_AndroidFlags, CLANG_STACK_PROTECTOR_STRONG);
-			AddArg(&clang_AndroidFlags, CLANG_NO_CANONICAL_PREFIXES);
-			AddArg(&clang_AndroidFlags, CLANG_fPIC);
-			AddArgNt(&clang_AndroidFlags, CLANG_ENABLE_WARNING, "format");
-			AddArgNt(&clang_AndroidFlags, CLANG_ENABLE_WARNING, "error=format-security");
-			AddArgStr(&clang_AndroidFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
-			AddArg(&clang_AndroidFlags, CLANG_NO_STDLIB_CPP);
-			AddArg(&clang_AndroidFlags, CLANG_NO_UNDEFINED);
-			AddArg(&clang_AndroidFlags, CLANG_FATAL_WARNINGS);
-			AddArg(&clang_AndroidFlags, CLANG_NO_UNDEFINED_VERSION);
-			AddArgNt(&clang_AndroidFlags, CLANG_BUILD_ID, "sha1");
-			AddArgNt(&clang_AndroidFlags, CLANG_Q_FLAG, "unused-arguments");
-			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "m");
-			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "android");
-			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "log");
-			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "atomic");
-			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "EGL");
-			AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "GLESv2");
-			// AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "pthread"); //TODO: Do we need this on Android? What is it called if so?
-			// AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "fontconfig"); //TODO: Do we need this on Android? What is it called if so?
-			if (BUILD_WITH_BOX2D) { AddArgNt(&clang_AndroidFlags, CLANG_SYSTEM_LIBRARY, "box2d"); } //TODO: We probably need a separate folder or lib name for a Box2D that was compiled for Android!
-			AddArgNt(&clang_AndroidFlags, CLANG_MAX_PAGE_SIZE, "16384");
-			// TODO: -Wl,--dependency-file=CMakeFiles\pig-core.dir\link.d
+			PrintLine("\n[Building %s for Android...]", BUILD_ANDROID_APK ? FILENAME_TESTS_APK : FILENAME_TESTS_SO);
 			
 			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ANDROID);
+			Str8 clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"), false);
+			FixPathSlashes(clangExe, PATH_SEP_CHAR);
+			Str8 javacExe = StrLit("javac.exe");
+			Str8 d8Exe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/d8.bat"), false);
+			FixPathSlashes(d8Exe, PATH_SEP_CHAR);
+			Str8 aaptExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/aapt2.exe"), false);
+			FixPathSlashes(aaptExe, PATH_SEP_CHAR);
+			Str8 apksignerExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/apksigner.bat"), false);
+			FixPathSlashes(apksignerExe, PATH_SEP_CHAR);
+			Str8 zipalignExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/zipalign"), false);
+			FixPathSlashes(zipalignExe, PATH_SEP_CHAR);
+			Str8 androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"), false);
 			
-			for (uxx archIndex = 1; archIndex < AndroidArch_Count; archIndex++)
+			CliArgList cmdBase = ZEROED;
+			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]\\android\\tests_android.c");
+			// if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmdBase, &clang_ShaderObjects); } //TODO: Link with shader objects once we've compiled them for Android
+			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
+			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, FILENAME_TESTS_SO);
+			AddArgNt(&cmdBase, CLANG_LIB_SO_NAME, FILENAME_TESTS_SO);
+			
+			MyRemoveDirectory(StrLit("lib"), true);
+			mkdir("lib", FOLDER_PERMISSIONS);
+			chdir("lib");
+			for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
 			{
-				AndroidArch architecture = (AndroidArch)archIndex;
-				PrintLine("Building for %s...", GetAndroidArchFolderName(architecture));
+				AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
+				mkdir(GetAndroidTargetArchitechtureFolderName(architecture), FOLDER_PERMISSIONS);
+				chdir(GetAndroidTargetArchitechtureFolderName(architecture));
+				PrintLine("Building for %s...", GetAndroidTargetArchitechtureFolderName(architecture));
+				
 				CliArgList cmd = ZEROED;
 				cmd.pathSepChar = '/';
+				cmd.rootDirPath = StrLit("../../../..");
+				AddArgList(&cmd, &cmdBase);
+				AddArgList(&cmd, &clang_CommonFlags);
 				AddArgList(&cmd, &clang_AndroidFlags);
-				AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidArchTargetStr(architecture));
-				Str8 sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), NewStr8Nt(GetAndroidArchToolchainFolderStr(architecture)), StrLit("/35/"), false);
+				AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidTargetArchitechtureTargetStr(architecture));
+				Str8 sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), NewStr8Nt(GetAndroidTargetArchitechtureToolchainFolderStr(architecture)), StrLit("/35/"), false);
 				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath, false));
-				
-				Str8 clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"), false);
-				FixPathSlashes(clangExe, PATH_SEP_CHAR);
-				mkdir(GetAndroidArchFolderName(architecture), FOLDER_PERMISSIONS);
-				chdir(GetAndroidArchFolderName(architecture));
-				cmd.rootDirPath = StrLit("../../..");
 				
 				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
 				AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
 				
 				//TODO: This copy is temporary, remove when we actually do the .apk packaging ourself
-				Str8 androidProjectFolder = JoinStrings2(StrLit("F:/gamedev/projects/_android/Sputnik/app/src/main/jniLibs/"), NewStr8Nt(GetAndroidArchFolderName(architecture)), false);
+				Str8 androidProjectFolder = JoinStrings2(StrLit("F:/gamedev/projects/_android/Sputnik/app/src/main/jniLibs/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), false);
 				CopyFileToFolder(StrLit(FILENAME_TESTS_SO), androidProjectFolder);
 				
 				chdir("..");
 			}
+			chdir("..");
 			
-			//TODO: Package into .apk
+			if (BUILD_ANDROID_APK)
+			{
+				if (!DoesFileExist(StrLit(FILENAME_CLASSES_DEX)))
+				{
+					WriteLine("Compiling " FILENAME_DUMMY_JAVA "...");
+					
+					if (!DoesFileExist(StrLit(FILENAME_DUMMY_JAVA)))
+					{
+						const char* dummyClassCode = "public class Dummy { }\n";
+						CreateAndWriteFile(StrLit(FILENAME_DUMMY_JAVA), NewStr8Nt(dummyClassCode), true);
+					}
+					
+					CliArgList javacCmd = ZEROED;
+					javacCmd.pathSepChar = '/';
+					javacCmd.rootDirPath = StrLit("../..");
+					AddArgNt(&javacCmd, "-d \"[VAL]\"", ".");
+					AddArgStr(&javacCmd, "-classpath \"[VAL]\"", androidJarPath);
+					AddArgNt(&javacCmd, CLI_QUOTED_ARG, FILENAME_DUMMY_JAVA);
+					RunCliProgramAndExitOnFailure(javacExe, &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
+					AssertFileExist(StrLit(FILENAME_DUMMY_CLASS), true);
+					
+					CliArgList d8Cmd = ZEROED;
+					d8Cmd.pathSepChar = '/';
+					d8Cmd.rootDirPath = StrLit("../..");
+					AddArgStr(&d8Cmd, "--lib \"[VAL]\"", androidJarPath);
+					AddArgNt(&d8Cmd, "--output \"[VAL]\"", "./");
+					AddArgNt(&d8Cmd, CLI_QUOTED_ARG, FILENAME_DUMMY_CLASS);
+					RunCliProgramAndExitOnFailure(d8Exe, &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
+					AssertFileExist(StrLit(FILENAME_CLASSES_DEX), true);
+				}
+				
+				PrintLine("Compiling %s...", FILENAME_ANDROID_RESOURCES_ZIP);
+				CliArgList compileResCmd = ZEROED;
+				compileResCmd.pathSepChar = '/';
+				compileResCmd.rootDirPath = StrLit("../..");
+				AddArg(&compileResCmd, "compile");
+				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/android/res");
+				AddArgNt(&compileResCmd, "-o \"[VAL]\"", FILENAME_ANDROID_RESOURCES_ZIP);
+				RunCliProgramAndExitOnFailure(aaptExe, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
+				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
+				
+				RemoveFile(StrLit(FILENAME_TESTS_APK));
+				PrintLine("Linking %s...", FILENAME_TESTS_APK);
+				CliArgList linkApkCmd = ZEROED;
+				linkApkCmd.pathSepChar = '/';
+				linkApkCmd.rootDirPath = StrLit("../..");
+				AddArg(&linkApkCmd, "link");
+				AddArgNt(&linkApkCmd, "-o \"[VAL]\"", FILENAME_TESTS_APK);
+				AddArgStr(&linkApkCmd, "-I \"[VAL]\"", androidJarPath);
+				AddArgNt(&linkApkCmd, "-0 [VAL]", "resources.arsc");
+				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/android/AndroidManifest.xml");
+				AddArgNt(&linkApkCmd, CLI_QUOTED_ARG, FILENAME_ANDROID_RESOURCES_ZIP);
+				RunCliProgramAndExitOnFailure(aaptExe, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
+				AssertFileExist(StrLit(FILENAME_TESTS_APK), true);
+				
+				//NOTE: In order to insert our .so files into the apk, we need to unpack it into a folder, add the .so files manually, and then repack it
+				{
+					PrintLine("Inserting %s files (and " FILENAME_CLASSES_DEX ") into apk...", FILENAME_TESTS_SO);
+					MyRemoveDirectory(StrLit("apk_temp"), true);
+					mkdir("apk_temp");
+					chdir("apk_temp");
+					
+					CliArgList unpackApkCmd = ZEROED;
+					AddArg(&unpackApkCmd, "xf");
+					AddArg(&unpackApkCmd, "../" FILENAME_TESTS_APK);
+					RunCliProgramAndExitOnFailure(StrLit("jar"), &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
+					
+					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"));
+					
+					mkdir("lib");
+					for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+					{
+						AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
+						Str8 apkFolder = JoinStrings2(StrLit("lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
+						Str8 buildFolder = JoinStrings2(StrLit("../lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
+						mkdir(apkFolder.chars);
+						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder);
+					}
+					
+					CliArgList repackApkCmd = ZEROED;
+					AddArg(&repackApkCmd, "cf0");
+					AddArg(&repackApkCmd, "../" FILENAME_TESTS_APK);
+					AddArg(&repackApkCmd, "*");
+					RunCliProgramAndExitOnFailure(StrLit("jar"), &repackApkCmd, StrLit("Failed to repack " FILENAME_TESTS_APK "!"));
+					
+					chdir("..");
+					MyRemoveDirectory(StrLit("apk_temp"), true);
+				}
+				
+				WriteLine("Performing ZIP alignment...");
+				Str8 tempAlignedApkName = StrLit("tests_aligned.apk");
+				RemoveFile(tempAlignedApkName);
+				CliArgList alignApkCmd = ZEROED;
+				AddArg(&alignApkCmd, "-v");
+				AddArg(&alignApkCmd, "4");
+				AddArgNt(&alignApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK); //input
+				AddArgStr(&alignApkCmd, CLI_QUOTED_ARG, tempAlignedApkName); //output
+				RunCliProgramAndExitOnFailure(zipalignExe, &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
+				AssertFileExist(tempAlignedApkName, true);
+				CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK));
+				RemoveFile(tempAlignedApkName);
+				
+				PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, ANDROID_SIGNING_KEY_PATH.length, ANDROID_SIGNING_KEY_PATH.chars);
+				CliArgList signApkCmd = ZEROED;
+				signApkCmd.pathSepChar = '/';
+				signApkCmd.rootDirPath = StrLit("../..");
+				AddArg(&signApkCmd, "sign");
+				AddArgStr(&signApkCmd, "--ks \"[VAL]\"", ANDROID_SIGNING_KEY_PATH);
+				if (ANDROID_SIGNING_PASSWORD.length > 0) { AddArgStr(&signApkCmd, "--ks-pass pass:[VAL]", ANDROID_SIGNING_PASSWORD); }
+				else if (ANDROID_SIGNING_PASS_PATH.length > 0) { AddArgStr(&signApkCmd, "--ks-pass file:[VAL]", ANDROID_SIGNING_PASS_PATH); }
+				else { WriteLine_E("You must provide either a ANDROID_SIGNING_PASSWORD or ANDROID_SIGNING_PASS_PATH in order to sign an Android .apk!"); exit(4); }
+				AddArgNt(&signApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK);
+				RunCliProgramAndExitOnFailure(apksignerExe, &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
+			}
 			
-			
-			PrintLine("[Built %s for Android!]", FILENAME_TESTS_APK);
-			
+			PrintLine("[Built %s for Android!]", BUILD_ANDROID_APK ? FILENAME_TESTS_APK : FILENAME_TESTS_SO);
 			chdir("..");
 		}
 		
@@ -1090,6 +1161,26 @@ int main(int argc, char* argv[])
 		PrintLine("\n[%s]", RUNNABLE_FILENAME_TESTS);
 		CliArgList cmd = ZEROED;
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_TESTS), &cmd, StrLit(RUNNABLE_FILENAME_TESTS " Exited With Error!"));
+	}
+	
+	if (INSTALL_TESTS_APK)
+	{
+		PrintLine("\n[Installing %s on AVD...]", FILENAME_TESTS_APK);
+		Str8 adbExe = JoinStrings2(androidSdkDir, StrLit("/platform-tools/adb.exe"), false);
+		
+		CliArgList installCmd = ZEROED;
+		installCmd.pathSepChar = '/';
+		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
+		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd.exe install exited With Error!"));
+		
+		PrintLine_E("Launching \"%.*s\"...", ANDROID_ACTIVITY_PATH.length, ANDROID_ACTIVITY_PATH.chars);
+		CliArgList launchCmd = ZEROED;
+		launchCmd.pathSepChar = '/';
+		AddArg(&launchCmd, "shell");
+		AddArg(&launchCmd, "am");
+		AddArg(&launchCmd, "start");
+		AddArgStr(&launchCmd, "-n \"[VAL]\"", ANDROID_ACTIVITY_PATH);
+		RunCliProgramAndExitOnFailure(adbExe, &launchCmd, StrLit("abd.exe shell exited With Error!"));
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", TOOL_EXE_NAME);
