@@ -37,7 +37,7 @@ plex OsFileIter
 	FilePath folderPathWithWildcard;
 	WIN32_FIND_DATAA findData;
 	HANDLE handle;
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	DIR* dirHandle;
 	#endif
 };
@@ -84,7 +84,7 @@ plex OsFile
 	
 	#if TARGET_IS_WINDOWS
 	HANDLE handle;
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	FILE* handle;
 	#endif
 };
@@ -94,7 +94,7 @@ plex OsFileWriteTime
 {
 	#if TARGET_IS_WINDOWS
 	FILETIME fileTime;
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 	plex timespec timeSpec;
 	#else
 	u8 placeholder;
@@ -1119,7 +1119,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 			Assert(seekResult == 0);
 			long fileSize = ftell(fileHandle);
 			Assert(fileSize >= 0);
-			Assert((unsigned long)fileSize <= UINTXX_MAX);
+			Assert((unsigned long long)fileSize <= UINTXX_MAX);
 			openFileOut->fileSize = (uxx)fileSize;
 			
 			if (mode == OsOpenFileMode_Read)

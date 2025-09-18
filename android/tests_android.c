@@ -6,33 +6,28 @@ Description:
 	** A simple C program to test compilation to Android
 */
 
-#include "base/base_compiler_check.h"
-#if !defined(TARGET_IS_ANDROID) || !TARGET_IS_ANDROID
-#error We have misdiagnosed the TARGET as something other than ANDROID
-#endif
-#if !defined(COMPILER_IS_CLANG) || !COMPILER_IS_CLANG
-#error We have misdiagnosed the COMPILER as something other than CLANG
-#endif
-#include "base/base_defines_check.h"
-#include "std/std_includes.h"
-#include "base/base_typedefs.h"
-#include "base/base_assert.h"
-#include "base/base_macros.h"
-#include "base/base_math.h"
-#include "std/std_memset.h"
-#include "std/std_printf.h"
-#include "std/std_malloc.h"
-#include "struct/struct_string.h"
-#include "os/os_virtual_mem.h"
-#include "mem/mem_arena.h"
-#include "misc/misc_printing.h"
-#include "mem/mem_scratch.h"
-#include "base/base_char.h"
-#include "base/base_debug_output.h"
-#include "base/base_debug_output_impl.h"
-#include "misc/misc_profiling_tracy_include.h"
-// #include "os/os_threading.h"
+#include "base/base_all.h"
+#include "std/std_all.h"
+#include "os/os_all.h"
+#include "mem/mem_all.h"
+#include "struct/struct_all.h"
+#include "misc/misc_all.h"
+#include "input/input_all.h"
+#include "file_fmt/file_fmt_all.h"
+#include "ui/ui_all.h"
+#include "gfx/gfx_all.h"
+#include "phys/phys_all.h"
+#include "parse/parse_all.h"
 
+//TODO: Implement os_process_info.h for TARGET_IS_ANDROID
+//TODO: Implement os_clipboard.h for TARGET_IS_ANDROID
+//TODO: Implement os_file_dialog.h for TARGET_IS_ANDROID
+//TODO: Implement os_font.h for TARGET_IS_ANDROID
+//TODO: Implement os_http.h for TARGET_IS_ANDROID
+//TODO: Implement os_time.h for TARGET_IS_ANDROID
+
+#include "gfx/gfx_system_global.h"
+#include "base/base_debug_output_impl.h"
 #include "android_native_app_glue.c"
 
 bool initialized = false;
@@ -105,6 +100,7 @@ void android_main(struct android_app* app)
 	
 	//Suppresses link-time dead code removal of stuff in android_native_app_glue.c
 	(void)ANativeActivity_onCreate;
+	AndroidNativeActivity = app->activity;
 	
 	Arena stdHeapStruct = ZEROED;
 	WriteLine_I("Initializing stdHeap Arena...");
@@ -122,6 +118,9 @@ void android_main(struct android_app* app)
 		// 	scratch2, scratch2->committed, scratch2->used, scratch2->size
 		// );
 		
+		FilePath settingsSavePath = OsGetSettingsSavePath(scratch, Str8_Empty, Str8_Empty, true);
+		PrintLine_W("settingsSavePath: \"%.*s\"", StrPrint(settingsSavePath));
+		
 		// struct mallinfo info = mallinfo();
 		// size_t heap_size = info.uordblks + info.hblkhd;
 		// PrintLine_I("heap_size: %zu", heap_size); //Got 17,754,416 from Pixel_3a_API_34 AVD
@@ -130,6 +129,96 @@ void android_main(struct android_app* app)
 		// PrintLine_I("testAlloc1: %p", testAlloc1);
 		// void* testAlloc2 = malloc(1024);
 		// PrintLine_I("testAlloc2: %p", testAlloc2);
+		
+		#if 0
+		{
+			PrintLine_I("app->userData:           %p", app->userData); //nullptr
+			PrintLine_I("app->onAppCmd:           %p", app->onAppCmd); //nullptr
+			PrintLine_I("app->onInputEvent:       %p", app->onInputEvent); //nullptr
+			PrintLine_I("app->activity:           %p", app->activity); //0x7deaec762990
+			PrintLine_I("app->config:             %p", app->config); //0x7deb2c773dc0
+			PrintLine_I("app->savedState:         %p", app->savedState); //nullptr
+			PrintLine_I("app->savedStateSize:     %zu", app->savedStateSize); //0
+			PrintLine_I("app->looper:             %p", app->looper); //0x7dec4c757490
+			PrintLine_I("app->inputQueue:         %p", app->inputQueue); //nullptr
+			PrintLine_I("app->window:             %p", app->window); //nullptr
+			PrintLine_I("app->contentRect:        (%d, %d, %d, %d)", app->contentRect.left, app->contentRect.top, app->contentRect.right, app->contentRect.bottom); //(0, 0, 0, 0)
+			PrintLine_I("app->activityState:      %d", app->activityState); //0
+			PrintLine_I("app->destroyRequested:   %d", app->destroyRequested); //0
+			PrintLine_I("app->msgread:            %d", app->msgread); //75
+			PrintLine_I("app->msgwrite:           %d", app->msgwrite); //76
+			PrintLine_I("app->thread:             %d", app->thread); //537992432
+			PrintLine_I("app->running:            %d", app->running); //1
+			PrintLine_I("app->stateSaved:         %d", app->stateSaved); //0
+			PrintLine_I("app->destroyed:          %d", app->destroyed); //0
+			PrintLine_I("app->redrawNeeded:       %d", app->redrawNeeded); //0
+			PrintLine_I("app->pendingInputQueue:  %p", app->pendingInputQueue); //nullptr
+			PrintLine_I("app->pendingWindow:      %p", app->pendingWindow); //nullptr
+			PrintLine_I("app->pendingContentRect: (%d, %d, %d, %d)", app->pendingContentRect.left, app->pendingContentRect.top, app->pendingContentRect.right, app->pendingContentRect.bottom); //(0, 0, 0, 0)
+			// PrintLine_I("app->mutex: %p", app->mutex); //pthread_mutex_t
+			// PrintLine_I("app->cond: %p", app->cond); //pthread_cond_t
+			// PrintLine_I("app->cmdPollSource: %p", app->cmdPollSource); //struct android_poll_source
+			// PrintLine_I("app->inputPollSource: %p", app->inputPollSource); //struct android_poll_source
+		}
+		#endif
+		
+		#if 0
+		{
+			JNIEnv* env = nullptr;
+			(*app->activity->vm)->AttachCurrentThread(app->activity->vm, &env, NULL);
+			PrintLine_I("env: %p", env);
+			
+			jclass activityClass = (*env)->GetObjectClass(env, app->activity->clazz);
+			jmethodID getFilesDirMethod = (*env)->GetMethodID(env, activityClass, "getFilesDir", "()Ljava/io/File;");
+			NotNull(getFilesDirMethod);
+			
+			jobject fileObj = (*env)->CallObjectMethod(env, app->activity->clazz, getFilesDirMethod);
+			jclass fileClass = (*env)->GetObjectClass(env, fileObj);
+			jmethodID getAbsolutePathMethod = (*env)->GetMethodID(env, fileClass, "getAbsolutePath", "()Ljava/lang/String;");
+			NotNull(getAbsolutePathMethod);
+			
+			jstring pathString = (*env)->CallObjectMethod(env, fileObj, getAbsolutePathMethod);
+			const char* pathStringNt = (*env)->GetStringUTFChars(env, pathString, NULL);
+			NotNull(pathStringNt);
+			Str8 pathStr = AllocStr8Nt(scratch, pathStringNt);
+			
+			(*app->activity->vm)->DetachCurrentThread(app->activity->vm);
+			
+			PrintLine_I("Application Internal Storage Path: \"%.*s\"", StrPrint(pathStr));
+		}
+		#endif
+		
+		#if 0
+		{
+			PrintLine_I("sizeof(char) = %zu", sizeof(char)); //1
+			PrintLine_I("sizeof(int) = %zu", sizeof(int)); //4
+			PrintLine_I("sizeof(long) = %zu", sizeof(long)); //8
+			PrintLine_I("sizeof(long long) = %zu", sizeof(long long)); //8
+			PrintLine_I("sizeof(unsigned int) = %zu", sizeof(unsigned int)); //4
+			PrintLine_I("sizeof(unsigned long) = %zu", sizeof(unsigned long)); //8
+			PrintLine_I("sizeof(unsigned long long) = %zu", sizeof(unsigned long long)); //8
+			PrintLine_I("sizeof(float) = %zu", sizeof(float)); //4
+			PrintLine_I("sizeof(double) = %zu", sizeof(double)); //8
+			PrintLine_I("sizeof(u8)  = %zu", sizeof(u8));  //1
+			PrintLine_I("sizeof(u16) = %zu", sizeof(u16)); //2
+			PrintLine_I("sizeof(u32) = %zu", sizeof(u32)); //4
+			PrintLine_I("sizeof(u64) = %zu", sizeof(u64)); //8
+			PrintLine_I("sizeof(i8)  = %zu", sizeof(i8));  //1
+			PrintLine_I("sizeof(i16) = %zu", sizeof(i16)); //2
+			PrintLine_I("sizeof(i32) = %zu", sizeof(i32)); //4
+			PrintLine_I("sizeof(i64) = %zu", sizeof(i64)); //8
+			PrintLine_I("sizeof(uxx) = %zu", sizeof(uxx)); //8
+			PrintLine_I("sizeof(ixx) = %zu", sizeof(ixx)); //8
+			PrintLine_I("sizeof(rxx) = %zu", sizeof(rxx)); //8
+			PrintLine_I("sizeof(r32) = %zu", sizeof(r32)); //4
+			PrintLine_I("sizeof(r64) = %zu", sizeof(r64)); //8
+			PrintLine_I("sizeof(bool) = %zu", sizeof(bool)); //1
+			PrintLine_I("sizeof(void* = %zu", sizeof(void*)); //8
+			PrintLine_I("sizeof(size_t) = %zu", sizeof(size_t)); //8
+			PrintLine_I("sizeof(ptrdiff_t) = %zu", sizeof(ptrdiff_t)); //8
+			PrintLine_I("sizeof(char16_t) = %zu", sizeof(char16_t)); //2
+		}
+		#endif
 		
 		#if 0
 		{
@@ -224,6 +313,29 @@ void android_main(struct android_app* app)
 			// VmallocTotal:   34359738367 kB
 			// VmallocUsed:       51320 kB
 			// VmallocChunk:          0
+		}
+		#endif
+		
+		#if 0
+		{
+			const char* filePathNt = "/data/user/0/" ANDROID_PACKAGE_PATH_STR "/files/test.txt";
+			FilePath filePath = FilePathLit(filePathNt);
+			FilePath fullPath = OsGetFullPath(scratch, filePath);
+			PrintLine_I("fullPath: \"%.*s\"", StrPrint(fullPath));
+			
+			#if 0
+			Str8 fileContents = StrLit("Hello Android file system!\nThis is a nice file!\n\nHello");
+			bool writeResult = OsWriteFile(filePath, fileContents, true);
+			if (!writeResult) { PrintLine_E("Failed to write \"%s\"", filePathNt); }
+			#else
+			Str8 fileContents = Str8_Empty;
+			bool readResult = OsReadTextFile(filePath, scratch, &fileContents);
+			if (readResult)
+			{
+				PrintLine_I("Read %llu bytes from file: \"%.*s\"", fileContents.length, StrPrint(fileContents));
+			}
+			else { PrintLine_E("Failed to read file at \"%.*s\"", StrPrint(filePath)); }
+			#endif
 		}
 		#endif
 		

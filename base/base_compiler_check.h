@@ -64,7 +64,7 @@ Description:
 // +--------------------------------------------------------------+
 // |                  Determine TARGET Platform                   |
 // +--------------------------------------------------------------+
-#if (defined(__ANDROID__) && __ANDROID__)
+#if defined(__ANDROID__)
 #define TARGET_IS_ANDROID 1
 #else
 #define TARGET_IS_ANDROID 0
@@ -149,7 +149,7 @@ Description:
 #define TARGET_HAS_OFFICIAL_STDLIB 1
 #endif
 
-#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX || TARGET_IS_OSX)
+#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 #define TARGET_HAS_THREADING 1
 #else
 #define TARGET_HAS_THREADING 0

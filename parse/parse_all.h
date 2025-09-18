@@ -24,6 +24,7 @@ Date:   03\31\2025
 #include "base/base_unicode.h" //needed by parse_c_tokenizer.h
 #include "struct/struct_string.h" //needed by parse_c_tokenizer.h, and parse_metadesk.h
 #include "struct/struct_var_array.h" //needed by parse_c_tokenizer.h
+#include "misc/misc_escaping.h" //needed by parse_c_tokenizer.h
 
 #include "parse/parse_c_tokenizer.h"
 

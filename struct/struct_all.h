@@ -28,7 +28,7 @@ Description:
 #include "struct/struct_pointer_remap.h"
 
 #include "base/base_char.h" //Needed by struct_string.h
-#include "std/std_memset.h" //Needed by struct_string.h and struct_string_buffer.h
+#include "std/std_memset.h" //Needed by many of the files below
 
 #include "struct/struct_string.h"
 #include "struct/struct_rich_string.h"
@@ -36,7 +36,6 @@ Description:
 
 
 #include "mem/mem_arena.h" //Needed by many of the files below
-#include "std/std_memset.h" //Needed by many of the files below
 #include "os/os_file.h" //Needed by struct_stream.h
 #include "misc/misc_hash.h" //Needed by struct_sparse_sets.h
 

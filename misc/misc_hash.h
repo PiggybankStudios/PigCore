@@ -19,7 +19,7 @@ Description:
 #define FNV_HASH_PRIME_U32  0x01000193U //= DEC(16,777,619)
 
 //NOTE: Apple's Clang does not support certain x86 instruction restrictions that meowhash relies on!
-#if TARGET_IS_WASM || TARGET_IS_PLAYDATE || (TARGET_IS_OSX && COMPILER_IS_CLANG)
+#if (TARGET_IS_WASM || TARGET_IS_PLAYDATE || (TARGET_IS_OSX && COMPILER_IS_CLANG) || TARGET_IS_ANDROID)
 #define MEOW_HASH_AVAILABLE 0
 #else
 #define MEOW_HASH_AVAILABLE 1

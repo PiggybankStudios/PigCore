@@ -133,6 +133,7 @@ typedef uint16_t char16_t;
 	#include <jni.h>
 	#include <android/log.h>
 	#include <android/looper.h>
+	#include <android/native_activity.h>
 	//TODO: Should we gate this behind something like BUILD_WITH_SOKOL_GFX?
 	#include <GLES2/gl2.h>
 	#include <GLES2/gl2ext.h>

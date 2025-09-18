@@ -22,7 +22,7 @@ Description:
 	#if TARGET_IS_WINDOWS
 	const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode);
 	#endif
-	#if (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#if (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	const char* GetErrnoStr(int errnoValue);
 	#endif
 #endif //!PIG_CORE_IMPLEMENTATION
@@ -56,7 +56,7 @@ PEXP const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 }
 #endif //TARGET_IS_WINDOWS
 
-#if (TARGET_IS_LINUX || TARGET_IS_OSX)
+#if (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 PEXP const char* GetErrnoStr(int errnoValue)
 {
 	switch (errnoValue)
@@ -159,7 +159,7 @@ PEXP const char* GetErrnoStr(int errnoValue)
 		case EWOULDBLOCK:     return "EWOULDBLOCK";     //Operation would block (may be same value as EAGAIN) (POSIX.1-2001).
 		#endif
 		case EXDEV:           return "EXDEV";           //Invalid cross-device link (POSIX.1-2001).
-		#if TARGET_IS_LINUX
+		#if (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 		case EBADE:           return "EBADE";           // Invalid exchange.
 		case EBADFD:          return "EBADFD";          //File descriptor in bad state.
 		case EBADR:           return "EBADR";           // Invalid request descriptor.

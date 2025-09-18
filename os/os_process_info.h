@@ -32,9 +32,20 @@ typedef Window OsWindowHandle;
 #elif TARGET_IS_OSX
 typedef NSWindow* OsWindowHandle;
 #define OsWidowHandleEmpty nullptr
+#elif TARGET_IS_ANDROID
+typedef struct ANativeWindow* OsWindowHandle;
+#define OsWidowHandleEmpty nullptr
 #else
 typedef void* OsWindowHandle;
 #define OsWidowHandleEmpty nullptr
+#endif
+
+#if TARGET_IS_ANDROID
+#if !PIG_CORE_IMPLEMENTATION
+extern ANativeActivity* AndroidNativeActivity;
+#else
+ANativeActivity* AndroidNativeActivity = nullptr;
+#endif
 #endif
 
 // +--------------------------------------------------------------+
@@ -259,11 +270,11 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 	NotNull(arena);
 	NotNullStr(companyName);
 	NotNullStr(programName);
-	Assert(!IsEmptyStr(companyName) || !IsEmptyStr(programName));
 	FilePath result = FilePath_Empty;
 	
 	#if TARGET_IS_WINDOWS
 	{
+		Assert(!IsEmptyStr(companyName) || !IsEmptyStr(programName));
 		//TODO: Should we assert that companyName and programName have valid characters to use in folder names on the current OS?
 		ScratchBegin1(scratch, arena);
 		char* pathBuffer = (char*)AllocMem(arena, MAX_PATH);
@@ -336,6 +347,7 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 	}
 	#elif TARGET_IS_LINUX
 	{
+		Assert(!IsEmptyStr(companyName) || !IsEmptyStr(programName));
 		ScratchBegin1(scratch, arena);
 		plex passwd* passwordEntry = getpwuid(getuid());
 		const char* homeDirNt = passwordEntry->pw_dir;
@@ -352,6 +364,33 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		NotNullStr(result);
 		FixPathSlashes(result);
 		ScratchEnd(scratch);
+	}
+	#elif TARGET_IS_ANDROID
+	{
+		AssertMsg(AndroidNativeActivity != nullptr, "You must set AndroidNativeActivity global before calling OsGetSettingsSavePath!");
+		UNUSED(companyName);
+		UNUSED(programName);
+		UNUSED(createFolders);
+		
+		JNIEnv* env = nullptr;
+		(*AndroidNativeActivity->vm)->AttachCurrentThread(AndroidNativeActivity->vm, &env, NULL);
+		{
+			jclass activityClass = (*env)->GetObjectClass(env, AndroidNativeActivity->clazz);
+			jmethodID getFilesDirMethod = (*env)->GetMethodID(env, activityClass, "getFilesDir", "()Ljava/io/File;");
+			NotNull(getFilesDirMethod);
+			
+			jobject fileObj = (*env)->CallObjectMethod(env, AndroidNativeActivity->clazz, getFilesDirMethod);
+			jclass fileClass = (*env)->GetObjectClass(env, fileObj);
+			jmethodID getAbsolutePathMethod = (*env)->GetMethodID(env, fileClass, "getAbsolutePath", "()Ljava/lang/String;");
+			NotNull(getAbsolutePathMethod);
+			
+			jstring pathString = (*env)->CallObjectMethod(env, fileObj, getAbsolutePathMethod);
+			const char* pathStringNt = (*env)->GetStringUTFChars(env, pathString, NULL);
+			NotNull(pathStringNt);
+			result = AllocStr8Nt(arena, pathStringNt);
+			FixPathSlashes(result);
+		}
+		(*AndroidNativeActivity->vm)->DetachCurrentThread(AndroidNativeActivity->vm);
 	}
 	#else
 	AssertMsg(false, "OsGetSettingsSavePath does not support the current platform yet!");

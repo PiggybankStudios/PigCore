@@ -14,7 +14,7 @@ set ADB_EXE=%ANDROID_SDK%\platform-tools\adb.exe
 %ADB_EXE% logcat -c
 
 echo ======== Beginning of Log ========
-%ADB_EXE% logcat --format=color,tag pigcore:V *:F
-rem %ADB_EXE% logcat --format=color,tag
+%ADB_EXE% logcat --format=color,tag pigcore:V threaded_app:V AiAiEcho:S *:F
+rem %ADB_EXE% logcat --format=color,tag pigcore:V *:I
 
 :end

@@ -22,7 +22,7 @@ Description:
 
 #if TARGET_IS_WINDOWS
 typedef DWORD ThreadId;
-#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 typedef pthread_t ThreadId;
 #else
 #error TARGET does not have an implementation for ThreadId
@@ -44,7 +44,7 @@ typedef pthread_t ThreadId;
 
 #if TARGET_IS_WINDOWS
 typedef HANDLE Mutex;
-#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 typedef pthread_mutex_t Mutex;
 #else
 #error TARGET does not have an implementation for Mutex
@@ -87,7 +87,7 @@ PEXPI ThreadId OsGetCurrentThreadId()
 	{
 		result = GetCurrentThreadId();
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		result = syscall(SYS_gettid); //TODO: This is technically pid_t which may not be pthread_t?
 		//TODO: Should we do either of these instead?
@@ -115,7 +115,7 @@ PEXPI void InitMutex(Mutex* mutexPntr)
 		);
 		DebugAssert(*mutexPntr != NULL);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Test this code
 		int initResult = pthread_mutex_init(mutexPntr, NULL);
@@ -136,7 +136,7 @@ PEXPI void DestroyMutex(Mutex* mutexPntr)
 		Assert(closeResult != 0);
 		*mutexPntr = NULL;
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Test this code
 		int destroyResult = pthread_mutex_destroy(mutexPntr);
@@ -160,7 +160,7 @@ PEXPI bool LockMutex(Mutex* mutexPntr, uxx timeoutMs)
 		DebugAssertMsg(timeoutDword != INFINITE || lockResult == WAIT_OBJECT_0, "Failed to lock mutex with INFINITE timeout!");
 		return (lockResult == WAIT_OBJECT_0);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Test this code
 		if (timeoutMs == 0)
@@ -208,7 +208,7 @@ PEXPI void UnlockMutex(Mutex* mutexPntr)
 		BOOL releaseResult = ReleaseMutex(*mutexPntr);
 		DebugAssert(releaseResult != 0);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		int unlockResult = pthread_mutex_unlock(mutexPntr);
 		DebugAssert(unlockResult == 0);
