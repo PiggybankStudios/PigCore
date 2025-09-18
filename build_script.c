@@ -889,7 +889,7 @@ int main(int argc, char* argv[])
 			Str8 androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"), false);
 			
 			CliArgList cmdBase = ZEROED;
-			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]/tests/tests_android.c");
+			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			// if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmdBase, &clang_ShaderObjects); } //TODO: Link with shader objects once we've compiled them for Android
 			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
 			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);

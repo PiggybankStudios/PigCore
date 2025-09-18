@@ -103,7 +103,7 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 			if (result >= WIN32_FILETIME_SEC_OFFSET) { result -= WIN32_FILETIME_SEC_OFFSET; }
 		}
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		if (local)
 		{

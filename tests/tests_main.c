@@ -119,6 +119,7 @@ Arena* stdHeap = nullptr;
 #include "tests/tests_auto_profile.c"
 #include "tests/tests_playdate.c"
 #include "tests/tests_sqlite.c"
+#include "tests/tests_android.c"
 
 // +--------------------------------------------------------------+
 // |                           Helpers                            |
@@ -285,11 +286,7 @@ static void PrintRichStr(RichStr richStr)
 // |                             Main                             |
 // +--------------------------------------------------------------+
 #if !RUN_FUZZER
-#if BUILD_WITH_SOKOL_APP
-int MyMain(int argc, char* argv[]) //pre-declared in tests_sokol.c
-#elif TARGET_IS_ORCA
-int MyMain(int argc, char* argv[])
-#elif TARGET_IS_PLAYDATE
+#if (BUILD_WITH_SOKOL_APP || TARGET_IS_ORCA || TARGET_IS_PLAYDATE || TARGET_IS_ANDROID)
 int MyMain(int argc, char* argv[])
 #elif (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -336,6 +333,9 @@ int main(int argc, char* argv[])
 		#endif
 		#if TARGET_IS_OSX
 		WriteLine_N("Running on OSX");
+		#endif
+		#if TARGET_IS_ANDROID
+		WriteLine_N("Running on Android");
 		#endif
 		#if TARGET_IS_WEB
 		WriteLine_N("Running on WEB");
@@ -387,7 +387,9 @@ int main(int argc, char* argv[])
 	// +==============================+
 	#if 1
 	InitRandomSeriesDefault(&mainRandomStruct);
-	SeedRandomSeriesU64(&mainRandomStruct, OsGetCurrentTimestamp(false));
+	u64 randomSeed = OsGetCurrentTimestamp(false);
+	PrintLine_D("Random seed: %llu", randomSeed);
+	SeedRandomSeriesU64(&mainRandomStruct, randomSeed);
 	mainRandom = &mainRandomStruct;
 	#endif
 	
@@ -401,6 +403,10 @@ int main(int argc, char* argv[])
 	
 	#if BUILD_WITH_OPENVR
 	if (!InitVrTests()) { return 1; }
+	#endif
+	
+	#if TARGET_IS_ANDROID
+	DoAndroidTests();
 	#endif
 	
 	// TestParsingFunctions();
@@ -1506,3 +1512,17 @@ DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter) { pd->system->logToConsole(message);
 DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter) { pd->system->logToConsole(formatString); }
 
 #endif //TARGET_IS_PLAYDATE
+
+#if TARGET_IS_ANDROID
+
+void android_main(struct android_app* app)
+{
+	NotNull(app);
+	androidApp = app;
+	NotNull(app->activity);
+	AndroidNativeActivity = app->activity;
+	int mainResult = MyMain(0, nullptr);
+	UNUSED(mainResult);
+}
+
+#endif //TARGET_IS_ANDROID
