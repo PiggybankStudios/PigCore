@@ -889,7 +889,7 @@ int main(int argc, char* argv[])
 			Str8 androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"), false);
 			
 			CliArgList cmdBase = ZEROED;
-			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]\\android\\tests_android.c");
+			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]/tests/tests_android.c");
 			// if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmdBase, &clang_ShaderObjects); } //TODO: Link with shader objects once we've compiled them for Android
 			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
 			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
@@ -959,7 +959,7 @@ int main(int argc, char* argv[])
 				compileResCmd.pathSepChar = '/';
 				compileResCmd.rootDirPath = StrLit("../..");
 				AddArg(&compileResCmd, "compile");
-				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/android/res");
+				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/tests/android/res");
 				AddArgNt(&compileResCmd, "-o \"[VAL]\"", FILENAME_ANDROID_RESOURCES_ZIP);
 				RunCliProgramAndExitOnFailure(aaptExe, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
 				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
@@ -973,7 +973,7 @@ int main(int argc, char* argv[])
 				AddArgNt(&linkApkCmd, "-o \"[VAL]\"", FILENAME_TESTS_APK);
 				AddArgStr(&linkApkCmd, "-I \"[VAL]\"", androidJarPath);
 				AddArgNt(&linkApkCmd, "-0 [VAL]", "resources.arsc");
-				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/android/AndroidManifest.xml");
+				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/tests/android/AndroidManifest.xml");
 				AddArgNt(&linkApkCmd, CLI_QUOTED_ARG, FILENAME_ANDROID_RESOURCES_ZIP);
 				RunCliProgramAndExitOnFailure(aaptExe, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
 				AssertFileExist(StrLit(FILENAME_TESTS_APK), true);
