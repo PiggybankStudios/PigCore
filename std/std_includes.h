@@ -42,7 +42,7 @@ typedef uint16_t char16_t;
 #if (TARGET_IS_WINDOWS || USING_CUSTOM_STDLIB)
 	#include <intrin.h>
 #endif
-#if (TARGET_IS_LINUX || TARGET_IS_OSX)
+#if (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	#include <sys/types.h>
 	#include <signal.h>
 	// Gives us getpagesize and sleep and access
@@ -127,6 +127,16 @@ typedef uint16_t char16_t;
 	#if BUILD_WITH_HTTP
 	#include <Winhttp.h>
 	#endif
+#endif
+
+#if TARGET_IS_ANDROID
+	#include <jni.h>
+	#include <android/log.h>
+	#include <android/looper.h>
+	//TODO: Should we gate this behind something like BUILD_WITH_SOKOL_GFX?
+	#include <GLES2/gl2.h>
+	#include <GLES2/gl2ext.h>
+	#include <EGL/egl.h>
 #endif
 
 #endif //  _STD_INCLUDES_H

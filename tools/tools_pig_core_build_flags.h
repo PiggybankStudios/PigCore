@@ -82,7 +82,11 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 		AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, "unused-parameter");
 		AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, "unused-variable");
 	}
-	if (DUMP_PREPROCESSOR) { AddArg(clang_CommonFlags, CLANG_PRECOMPILE_ONLY); }
+	if (DUMP_PREPROCESSOR)
+	{
+		AddArg(clang_CommonFlags, CLANG_PRECOMPILE_ONLY);
+		AddArg(clang_CommonFlags, CLANG_INCLUDE_MACROS);
+	}
 }
 
 // Flags for when we are compiling the linux version of a program using Clang

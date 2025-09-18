@@ -100,6 +100,21 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		}
 		#endif //TARGET_IS_WINDOWS
 		
+		#if TARGET_IS_ANDROID
+		android_LogPriority androidPriority = ANDROID_LOG_VERBOSE;
+		switch (level)
+		{
+			case DbgLevel_Debug:   androidPriority = ANDROID_LOG_DEBUG; break;
+			case DbgLevel_Regular: androidPriority = ANDROID_LOG_INFO;  break;
+			case DbgLevel_Info:    androidPriority = ANDROID_LOG_INFO;  break;
+			case DbgLevel_Notify:  androidPriority = ANDROID_LOG_INFO;  break;
+			case DbgLevel_Other:   androidPriority = ANDROID_LOG_INFO;  break;
+			case DbgLevel_Warning: androidPriority = ANDROID_LOG_WARN;  break;
+			case DbgLevel_Error:   androidPriority = ANDROID_LOG_ERROR; break;
+		}
+		__android_log_print(androidPriority, "pigcore", "%s", message);
+		#endif
+		
 		#if TARGET_IS_ORCA
 		{
 			//TODO: How do we handle when newLine == false?

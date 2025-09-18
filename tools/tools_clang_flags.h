@@ -28,6 +28,7 @@ Description:
 #define CLANG_RPATH_DIR              "-rpath \"[VAL]\""
 #define CLANG_SYSTEM_LIBRARY         "-l[VAL]"
 #define CLANG_PRECOMPILE_ONLY        "-E"
+#define CLANG_INCLUDE_MACROS         "-dD" //Only matters when -E is passed
 #define CLANG_Q_FLAG                 "-Q[VAL]" //TODO: Name this better!
 #define CLANG_BUILD_SHARED_LIB       "-shared"
 #define CLANG_fPIC                   "-fPIC" //TODO: Name this better!

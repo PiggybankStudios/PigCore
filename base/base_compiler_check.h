@@ -64,7 +64,13 @@ Description:
 // +--------------------------------------------------------------+
 // |                  Determine TARGET Platform                   |
 // +--------------------------------------------------------------+
-#if ((defined(__linux__) || defined(__unix__)) && !COMPILER_IS_EMSCRIPTEN)
+#if (defined(__ANDROID__) && __ANDROID__)
+#define TARGET_IS_ANDROID 1
+#else
+#define TARGET_IS_ANDROID 0
+#endif
+
+#if ((defined(__linux__) || defined(__unix__)) && !COMPILER_IS_EMSCRIPTEN && !TARGET_IS_ANDROID)
 #define TARGET_IS_LINUX 1
 #else
 #define TARGET_IS_LINUX 0
@@ -106,10 +112,10 @@ Description:
 #endif
 
 //Make sure we have exactly one of the TARGET defines set to true
-#if TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA > 1
+#if TARGET_IS_ANDROID + TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA > 1
 #error Somehow we think we are on more than one TARGET based on the pre-defined compiler flags!
 #endif
-#if TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA < 1
+#if TARGET_IS_ANDROID + TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA < 1
 #error Failed to identify which TARGET we are compiling for based on the pre-defined compiler flags!
 #endif
 

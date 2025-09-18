@@ -892,7 +892,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]\\android\\tests_android.c");
 			// if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmdBase, &clang_ShaderObjects); } //TODO: Link with shader objects once we've compiled them for Android
 			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
-			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, FILENAME_TESTS_SO);
+			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
 			AddArgNt(&cmdBase, CLANG_LIB_SO_NAME, FILENAME_TESTS_SO);
 			
 			MyRemoveDirectory(StrLit("lib"), true);
@@ -916,17 +916,14 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath, false));
 				
 				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
+				if (DUMP_PREPROCESSOR) { chdir(".."); continue; }
 				AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
-				
-				//TODO: This copy is temporary, remove when we actually do the .apk packaging ourself
-				Str8 androidProjectFolder = JoinStrings2(StrLit("F:/gamedev/projects/_android/Sputnik/app/src/main/jniLibs/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), false);
-				CopyFileToFolder(StrLit(FILENAME_TESTS_SO), androidProjectFolder);
 				
 				chdir("..");
 			}
 			chdir("..");
 			
-			if (BUILD_ANDROID_APK)
+			if (BUILD_ANDROID_APK && !DUMP_PREPROCESSOR)
 			{
 				if (!DoesFileExist(StrLit(FILENAME_CLASSES_DEX)))
 				{
