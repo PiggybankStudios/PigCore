@@ -381,6 +381,7 @@ int main(int argc, char* argv[])
 	#else
 	InitScratchArenasVirtual(Gigabytes(4));
 	#endif
+	PrintLine_I("Initialized scratch arenas to %llu bytes", scratchArenasArray[0].size);
 	
 	// +==============================+
 	// |      RandomSeries Tests      |
@@ -1513,8 +1514,7 @@ DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter) { pd->system->logToConsole(formatStrin
 
 #endif //TARGET_IS_PLAYDATE
 
-#if TARGET_IS_ANDROID
-
+#if TARGET_IS_ANDROID && !BUILD_WITH_SOKOL_APP
 void android_main(struct android_app* app)
 {
 	NotNull(app);
@@ -1524,5 +1524,4 @@ void android_main(struct android_app* app)
 	int mainResult = MyMain(0, nullptr);
 	UNUSED(mainResult);
 }
-
-#endif //TARGET_IS_ANDROID
+#endif //TARGET_IS_ANDROID && !BUILD_WITH_SOKOL_APP

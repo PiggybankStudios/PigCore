@@ -41,6 +41,8 @@ Description:
 	#define SOKOL_METAL
 #elif TARGET_IS_WEB
 	#define SOKOL_WGPU
+#elif TARGET_IS_ANDROID
+	#define SOKOL_GLES3
 #endif
 #endif //!defined(SOKOL_D3D11) && !defined(SOKOL_GLCORE) && !defined(SOKOL_GLES3) && !defined(SOKOL_METAL) && !defined(SOKOL_WGPU) && !defined(SOKOL_DUMMY_BACKEND)
 

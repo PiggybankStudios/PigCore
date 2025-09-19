@@ -217,8 +217,14 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		*fileContentsOut = fontFileContents;
 		result = Result_Success;
 	}
+	#elif TARGET_IS_ANDROID
+	{
+		WriteLine_E("OsReadPlatformFont is not supported on Android yet!");
+		result = Result_NotImplemented;
+	}
 	#else
 	AssertMsg(false, "OsReadPlatformFont does not support the current platform yet!");
+	result = Result_NotImplemented;
 	#endif
 	return result;
 }

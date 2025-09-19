@@ -116,6 +116,7 @@ plex Arena
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	void FreeArena(Arena* arena, Arena* sourceArena);
 	void InitArenaStdHeap(Arena* arenaOut);
 	void InitArenaFuncs(Arena* arenaOut, AllocFunc_f* allocFunc, FreeFunc_f* freeFunc, ReallocFunc_f* reallocFunc);
 	void InitArenaAlias(Arena* arenaOut, Arena* sourceArena);
@@ -193,10 +194,24 @@ plex Arena
 #if PIG_CORE_IMPLEMENTATION
 
 NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes);
+void FreeMem(Arena* arena, void* allocPntr, uxx allocSize);
 
 // +--------------------------------------------------------------+
 // |                   Initialization Functions                   |
 // +--------------------------------------------------------------+
+PEXP void FreeArena(Arena* arena, Arena* sourceArena)
+{
+	NotNull(arena);
+	switch (arena->type)
+	{
+		case ArenaType_Alias: FreeArena(arena->sourceArena, sourceArena); break;
+		case ArenaType_Stack: FreeMem(sourceArena, arena->mainPntr, arena->size); break;
+		case ArenaType_StackVirtual: OsFreeReservedMemory(arena->mainPntr, arena->size); break;
+		default: AssertMsg(arena->type != ArenaType_None && false, "Tried to free unsupported ArenaType!");
+	}
+	ClearPointer(arena);
+}
+
 PEXP void InitArenaStdHeap(Arena* arenaOut)
 {
 	NotNull(arenaOut);

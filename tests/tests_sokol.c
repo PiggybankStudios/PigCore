@@ -33,6 +33,8 @@ int MyMain(int argc, char* argv[]);
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
+int argc_copy = 0;
+char** argv_copy = nullptr;
 sg_pass_action sokolPassAction;
 Shader simpleShader;
 Shader main2dShader;
@@ -196,6 +198,8 @@ void DrawSphere(Sphere sphere, Color32 color)
 // +--------------------------------------------------------------+
 void AppInit(void)
 {
+	MyMain(argc_copy, argv_copy); //call MyMain to initialize arenas and whatnot
+	
 	ScratchBegin(scratch);
 	InitSokolGraphics((sg_desc){
 		.environment = CreateSokolAppEnvironment(),
@@ -222,48 +226,68 @@ void AppInit(void)
 	Assert(gradientTexture.error == Result_Success);
 	
 	testFont = InitFont(stdHeap, StrLit("testFont"));
-	// OsWriteBinFile(FilePathLit("Default.ttf"), testFont.ttfFile);
-	FontCharRange charRanges[] = {
-		FontCharRange_ASCII,
-		FontCharRange_LatinExt,
-	};
-	
-	Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_None);
-	Assert(attachResult1 == Result_Success);
-	Result bakeResult1 = BakeFontAtlas(&testFont, 18, FontStyleFlag_None, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
-	Assert(bakeResult1 == Result_Success);
-	FillFontKerningTable(&testFont);
-	RemoveAttachedTtfFile(&testFont);
-	
-	Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold);
-	Assert(attachResult2 == Result_Success);
-	Result bakeResult2 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
-	Assert(bakeResult2 == Result_Success);
-	RemoveAttachedTtfFile(&testFont);
-	
-	Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Italic);
-	Assert(attachResult3 == Result_Success);
-	Result bakeResult3 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
-	Assert(bakeResult3 == Result_Success);
-	RemoveAttachedTtfFile(&testFont);
-	
-	Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold|FontStyleFlag_Italic);
-	Assert(attachResult4 == Result_Success);
-	Result bakeResult4 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold|FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
-	Assert(bakeResult4 == Result_Success);
-	RemoveAttachedTtfFile(&testFont);
-	
-	Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 10, FontStyleFlag_Bold);
-	Assert(attachResult5 == Result_Success);
-	Result bakeResult5 = BakeFontAtlas(&testFont, 10, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
-	Assert(bakeResult5 == Result_Success);
-	RemoveAttachedTtfFile(&testFont);
-	
-	Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 26, FontStyleFlag_Bold);
-	Assert(attachResult6 == Result_Success);
-	Result bakeResult6 = BakeFontAtlas(&testFont, 26, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
-	Assert(bakeResult6 == Result_Success);
-	RemoveAttachedTtfFile(&testFont);
+	{
+		// OsWriteBinFile(FilePathLit("Default.ttf"), testFont.ttfFile);
+		FontCharRange charRanges[] = {
+			FontCharRange_ASCII,
+			FontCharRange_LatinSupplementAccent,
+		};
+		
+		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_None);
+		if (attachResult1 == Result_Success)
+		{
+			Result bakeResult1 = BakeFontAtlas(&testFont, 18, FontStyleFlag_None, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult1 == Result_Success);
+			FillFontKerningTable(&testFont);
+			RemoveAttachedTtfFile(&testFont);
+		}
+		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 18 Regular: %s", GetResultStr(attachResult1)); }
+		
+		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold);
+		if (attachResult2 == Result_Success)
+		{
+			Result bakeResult2 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult2 == Result_Success);
+			RemoveAttachedTtfFile(&testFont);
+		}
+		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 18 Bold: %s", GetResultStr(attachResult2)); }
+		
+		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Italic);
+		if (attachResult3 == Result_Success)
+		{
+			Result bakeResult3 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult3 == Result_Success);
+			RemoveAttachedTtfFile(&testFont);
+		}
+		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 18 Italic: %s", GetResultStr(attachResult3)); }
+		
+		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold|FontStyleFlag_Italic);
+		if (attachResult4 == Result_Success)
+		{
+			Result bakeResult4 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold|FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult4 == Result_Success);
+			RemoveAttachedTtfFile(&testFont);
+		}
+		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 18 Bold+Italic: %s", GetResultStr(attachResult4)); }
+		
+		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 10, FontStyleFlag_Bold);
+		if (attachResult5 == Result_Success)
+		{
+			Result bakeResult5 = BakeFontAtlas(&testFont, 10, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult5 == Result_Success);
+			RemoveAttachedTtfFile(&testFont);
+		}
+		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 10 Bold: %s", GetResultStr(attachResult5)); }
+		
+		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 26, FontStyleFlag_Bold);
+		if (attachResult6 == Result_Success)
+		{
+			Result bakeResult6 = BakeFontAtlas(&testFont, 26, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult6 == Result_Success);
+			RemoveAttachedTtfFile(&testFont);
+		}
+		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 26 Bold: %s", GetResultStr(attachResult6)); }
+	}
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
@@ -288,6 +312,7 @@ void AppInit(void)
 	InitCompiledShader(&main3dShader, stdHeap, main3d); Assert(main3dShader.error == Result_Success);
 	
 	#if BUILD_WITH_CLAY
+	AssertMsg(testFont.atlases.length > 0, "Clay rendering requires that at least one atlas in the testFont was baked correctly!");
 	InitClayUIRenderer(stdHeap, V2_Zero, &clay);
 	clayFont = AddClayUIRendererFont(&clay, &testFont, GetDefaultFontStyleFlags(&testFont));
 	#endif
@@ -347,6 +372,7 @@ bool AppFrame(void)
 {
 	TracyCFrameMark;
 	TracyCZoneN(Zone_Update, "Update", true);
+	
 	ScratchBegin(scratch);
 	bool frameRendered = true;
 	programTime += 16; //TODO: Calculate this!
@@ -355,8 +381,8 @@ bool AppFrame(void)
 	
 	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
 	
-	if (IsKeyboardKeyPressed(&keyboard, Key_F)) { sapp_lock_mouse(!sapp_mouse_locked()); }
-	if (IsKeyboardKeyPressed(&keyboard, Key_Escape) && sapp_mouse_locked()) { sapp_lock_mouse(false); }
+	if (IsKeyboardKeyPressed(&keyboard, Key_F, false)) { sapp_lock_mouse(!sapp_mouse_locked()); }
+	if (IsKeyboardKeyPressed(&keyboard, Key_Escape, false) && sapp_mouse_locked()) { sapp_lock_mouse(false); }
 	if (sapp_mouse_locked())
 	{
 		r32 cameraHoriRot = AtanR32(cameraLookDir.Z, cameraLookDir.X);
@@ -470,23 +496,26 @@ bool AppFrame(void)
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
 			
-			BindFont(&testFont);
-			v2 textPos = NewV2(50, 50);
-			r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
-			if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
-			RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
-			DrawWrappedRichTextWithFont(
-				&testFont, 18, FontStyleFlag_None,
-				loremIpsumRich,
-				textPos,
-				wrapWidth,
-				MonokaiWhite
-			);
-			rec logicalRec = gfx.prevFontFlow.logicalRec;
-			rec visualRec = gfx.prevFontFlow.visualRec;
-			DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
-			DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
-			DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
+			if (testFont.atlases.length > 0)
+			{
+				BindFont(&testFont);
+				v2 textPos = NewV2(50, 50);
+				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
+				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
+				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
+				DrawWrappedRichTextWithFont(
+					&testFont, 18, FontStyleFlag_None,
+					loremIpsumRich,
+					textPos,
+					wrapWidth,
+					MonokaiWhite
+				);
+				rec logicalRec = gfx.prevFontFlow.logicalRec;
+				rec visualRec = gfx.prevFontFlow.visualRec;
+				DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
+				DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
+				DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
+			}
 			
 			#if 0
 			v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
@@ -604,7 +633,7 @@ bool AppFrame(void)
 			// +==============================+
 			if (isCTokenizerWindowOpen)
 			{
-				if (IsKeyboardKeyPressed(&keyboard, Key_R) && tokenizer.arena != nullptr)
+				if (IsKeyboardKeyPressed(&keyboard, Key_R, false) && tokenizer.arena != nullptr)
 				{
 					FreeStr8(stdHeap, &tokenizer.inputStr);
 					FreeCTokenizer(&tokenizer);
@@ -727,7 +756,9 @@ sapp_desc sokol_main(int argc, char* argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 	
-	MyMain(argc, argv); //call MyMain to initialize arenas and whatnot
+	//NOTE: On some platforms (like Android) this call happens on a separate thread to AppInit, AppFrame, etc. So we shouldn't do any initialization here that is thread specific
+	argc_copy = argc;
+	argv_copy = argv;
 	
 	sapp_desc result = {
 		.init_cb = AppInit,

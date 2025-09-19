@@ -15,6 +15,8 @@ Description:
 
 #if TARGET_IS_ANDROID
 
+#if !BUILD_WITH_SOKOL_APP
+
 #include "android_native_app_glue.c"
 
 struct android_app* androidApp = nullptr;
@@ -23,6 +25,7 @@ EGLDisplay display = {0};
 EGLConfig config = {0};
 EGLSurface surface = {0};
 EGLContext context = {0};
+
 int frameIndex = 0;
 Color32 backgroundColor = {.valueU32=White_Value};
 
@@ -87,11 +90,17 @@ bool draw_frame()
 	return true;
 }
 
+#endif //BUILD_WITH_SOKOL_APP
+
 void DoAndroidTests()
 {
+	#if BUILD_WITH_SOKOL_APP
+	AndroidNativeActivity = (ANativeActivity*)sapp_android_get_native_activity();
+	#else
 	NotNull(androidApp);
 	//Suppresses link-time dead code removal of stuff in android_native_app_glue.c
 	(void)ANativeActivity_onCreate;
+	#endif
 	
 	// +==============================+
 	// |          Initialize          |
@@ -106,8 +115,8 @@ void DoAndroidTests()
 		// 	scratch2, scratch2->committed, scratch2->used, scratch2->size
 		// );
 		
-		FilePath settingsSavePath = OsGetSettingsSavePath(scratch, Str8_Empty, Str8_Empty, true);
-		PrintLine_W("settingsSavePath: \"%.*s\"", StrPrint(settingsSavePath));
+		// FilePath settingsSavePath = OsGetSettingsSavePath(scratch, Str8_Empty, Str8_Empty, true);
+		// PrintLine_W("settingsSavePath: \"%.*s\"", StrPrint(settingsSavePath));
 		
 		// struct mallinfo info = mallinfo();
 		// size_t heap_size = info.uordblks + info.hblkhd;
@@ -332,6 +341,7 @@ void DoAndroidTests()
 		ScratchEnd(scratch);
 	}
 	
+	#if !BUILD_WITH_SOKOL_APP
 	//NOTE: androidApp->window is probably nullptr at this point. We need to wait until it becomes filled before initializing GLES
 	initialized = false;
 	
@@ -366,6 +376,7 @@ void DoAndroidTests()
 		ScratchEnd(scratch1);
 		ScratchEnd(scratch);
 	}
+	#endif
 }
 
 // JNINativeInterface

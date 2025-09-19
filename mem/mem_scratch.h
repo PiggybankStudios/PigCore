@@ -60,6 +60,8 @@ plex ScratchArena
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE void FreeScratchArenas(Arena* sourceArena);
+	PIG_CORE_INLINE void FreeScratchArenasVirtual();
 	void InitScratchArenas(uxx stackSizePerArena, Arena* sourceArena);
 	void InitScratchArenasVirtual(uxx virtualSizePerArena);
 	PIG_CORE_INLINE Arena* GetScratch2(const Arena* conflict1, const Arena* conflict2, uxx* markOut);
@@ -85,6 +87,22 @@ plex ScratchArena
 #if PIG_CORE_IMPLEMENTATION
 
 //NOTE: Init needs to be called once for each thread!
+
+PEXPI void FreeScratchArenas(Arena* sourceArena)
+{
+	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
+	{
+		FreeArena(&scratchArenasArray[aIndex], sourceArena);
+	}
+}
+
+PEXPI void FreeScratchArenasVirtual()
+{
+	for (uxx aIndex = 0; aIndex < NUM_SCRATCH_ARENAS_PER_THREAD; aIndex++)
+	{
+		FreeArena(&scratchArenasArray[aIndex], nullptr);
+	}
+}
 
 PEXP void InitScratchArenas(uxx stackSizePerArena, Arena* sourceArena)
 {
