@@ -9,9 +9,7 @@ if "%ANDROID_SDK%"=="" (
 	goto :end
 )
 
-rem if not exist _log mkdir _log
-rem pushd _log
-%ANDROID_SDK%\emulator\emulator.exe -avd Pixel_3a_API_34 -verbose
-rem popd
+%ANDROID_SDK%\emulator\emulator.exe -avd Medium_Phone_API_36.0 -verbose
+rem %ANDROID_SDK%\emulator\emulator.exe -avd Pixel_3a_API_34 -verbose
 
 :end
