@@ -156,6 +156,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 	}
 	#elif TARGET_IS_LINUX
 	{
+		UNUSED(fontSize);
 		ScratchBegin1(scratch, arena);
 		
 		if (fontConfig == nullptr)
@@ -219,8 +220,25 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 	}
 	#elif TARGET_IS_ANDROID
 	{
-		WriteLine_E("OsReadPlatformFont is not supported on Android yet!");
-		result = Result_NotImplemented;
+		UNUSED(fontSize);
+		UNUSED(bold);
+		UNUSED(italic);
+		ScratchBegin1(scratch, arena);
+		FilePath fontPath = JoinStringsInArena3(scratch, FilePathLit("/system/fonts/"), fontName, StrLit(".ttf"), true);
+		if (OsDoesFileExist(fontPath))
+		{
+			if (OsReadBinFile(fontPath, arena, fileContentsOut))
+			{
+				result = Result_Success;
+			}
+			else { result = Result_FailedToReadFile; }
+		}
+		else
+		{
+			PrintLine_W("Couldn't find \"%.*s\"", StrPrint(fontPath));
+			result = Result_NotFound;
+		}
+		ScratchEnd(scratch);
 	}
 	#else
 	AssertMsg(false, "OsReadPlatformFont does not support the current platform yet!");

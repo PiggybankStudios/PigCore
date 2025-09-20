@@ -341,6 +341,22 @@ void DoAndroidTests()
 		}
 		#endif
 		
+		#if 0
+		{
+			FilePath fontsPath = FilePathLit("/system/fonts");
+			OsFileIter fileIter = OsIterateFiles(scratch, fontsPath, true, true);
+			u64 fIndex = 0;
+			bool isFolder = false;
+			FilePath iterFilePath = Str8_Empty;
+			while (OsIterFileStepEx(&fileIter, &isFolder, &iterFilePath, scratch, false))
+			{
+				PrintLine_I("OsIterFileStep[%llu]: \"%.*s\"%s", fIndex, StrPrint(iterFilePath), isFolder ? " (Folder)" : "");
+				fIndex++;
+			}
+			PrintLine_W("There are %llu file%s in \"%.*s\"", fIndex, Plural(fIndex, "s"), StrPrint(fontsPath));
+		}
+		#endif
+		
 		ScratchEnd(scratch2);
 		ScratchEnd(scratch1);
 		ScratchEnd(scratch);
@@ -387,6 +403,7 @@ void DoAndroidTests()
 // JNINativeInterface
 JNIEXPORT jstring JNICALL Java_com_piggybank_pigcore_tests_MainActivity_MyCFunction(JNIEnv* env, jobject this)
 {
+	UNUSED(this);
 	WriteLine_I("Hello Android from MyCFunction() in C!!");
 	return (*env)->NewStringUTF(env, "String from MyCFunction()");
 }

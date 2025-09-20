@@ -8439,7 +8439,7 @@ _SOKOL_PRIVATE void _sapp_android_frame(void) {
     _sapp_timing_measure(&_sapp.timing);
     _sapp_android_update_dimensions(_sapp.android.current.window, false);
     bool frameResult = _sapp_frame();
-    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
+    UNUSED(frameResult); //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
     eglSwapBuffers(_sapp.android.display, _sapp.android.surface);
 }
 

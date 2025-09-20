@@ -151,7 +151,7 @@ PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 	// }
 	#else
 	{
-		AssertMsg(false, "OsGetExecutablePath does not support the current platform yet!")
+		AssertMsg(false, "OsGetExecutablePath does not support the current platform yet!");
 		SetOptionalOutPntr(resultOut, Result_UnsupportedPlatform);
 	}
 	#endif
@@ -249,7 +249,7 @@ PEXP FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
 	// }
 	#else
 	{
-		AssertMsg(false, "OsGetWorkingDirectory does not support the current platform yet!")
+		AssertMsg(false, "OsGetWorkingDirectory does not support the current platform yet!");
 		SetOptionalOutPntr(resultOut, Result_UnsupportedPlatform);
 	}
 	#endif

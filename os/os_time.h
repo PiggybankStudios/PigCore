@@ -121,6 +121,7 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 		{
 			plex timeval currentTimeVal = ZEROED;
 			int getTimeResult = gettimeofday(&currentTimeVal, NULL);
+			UNUSED(getTimeResult); //TODO: Should we check this result?
 			result = (u64)currentTimeVal.tv_sec;
 			//TODO: tv_usec is also available from currentTimeVal
 		}

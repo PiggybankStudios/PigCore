@@ -82,6 +82,8 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 		result = Result_Success;
 	}
 	#else
+	UNUSED(arena);
+	UNUSED(pathOut);
 	AssertMsg(false, "OsDoOpenFileDialog does not support the current platform yet!");
 	result = Result_UnsupportedPlatform;
 	#endif
@@ -187,6 +189,11 @@ PEXP Result OsDoSaveFileDialog(uxx numExtensions, Str8Pair* extensions, uxx defa
 		ScratchEnd(scratch);
 	}
 	#else
+	UNUSED(numExtensions);
+	UNUSED(extensions);
+	UNUSED(defaultExtensionIndex);
+	UNUSED(arena);
+	UNUSED(pathOut);
 	AssertMsg(false, "OsDoSaveFileDialog does not support the current platform yet!");
 	result = Result_UnsupportedPlatform;
 	#endif

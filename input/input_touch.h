@@ -56,6 +56,8 @@ plex TouchscreenState
 	uxx nextTouchId;
 	uxx numTouches;
 	TouchState touches[MAX_TOUCH_INPUTS];
+	uxx mainTouchIndex;
+	TouchState* mainTouch;
 };
 
 // +--------------------------------------------------------------+
@@ -80,6 +82,8 @@ PEXPI void InitTouchscreenState(TouchscreenState* touchscreen)
 	ClearPointer(touchscreen);
 	touchscreen->nextTouchId = 1;
 	for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++) { touchscreen->touches[tIndex].id = TOUCH_ID_INVALID; }
+	touchscreen->mainTouchIndex = 0;
+	touchscreen->mainTouch = &touchscreen->touches[touchscreen->mainTouchIndex];
 }
 
 PEXPI TouchState* FindTouchById(TouchscreenState* touchscreen, uxx id)
@@ -102,6 +106,11 @@ PEXP TouchState* StartNewTouch(TouchscreenState* touchscreen, uxx id, v2 startPo
 		DebugAssertMsg(touch->id != id, "Duplicate touch ID added to TouchscreenState");
 		if (touch->id == TOUCH_ID_INVALID && result == nullptr)
 		{
+			if (touchscreen->numTouches == 0)
+			{
+				touchscreen->mainTouchIndex = tIndex;
+				touchscreen->mainTouch = touch;
+			}
 			touchscreen->numTouches++;
 			result = touch;
 			result->id = (id != TOUCH_ID_INVALID) ? id : touchscreen->nextTouchId;
@@ -147,16 +156,35 @@ PEXPI void RefreshTouchscreenState(TouchscreenState* touchscreen)
 		TouchState* touch = &touchscreen->touches[tIndex];
 		if (touch->id != TOUCH_ID_INVALID)
 		{
+			touch->moved = false;
+			touch->started = false;
+			touch->prevPos = touch->pos;
 			if (touch->stopped)
 			{
 				touch->id = TOUCH_ID_INVALID;
 				touchscreen->numTouches--;
-				continue;
+				if (touchscreen->mainTouchIndex == tIndex && touchscreen->numTouches > 0)
+				{
+					//If there are any touches still active, then redirect mainTouch to that
+					u64 maxStartTime = 0;
+					for (uxx tIndex2 = 0; tIndex2 < MAX_TOUCH_INPUTS; tIndex2++)
+					{
+						TouchState* touch2 = &touchscreen->touches[tIndex2];
+						if (touch2->id != TOUCH_ID_INVALID && (maxStartTime == 0 || touch2->startTime > maxStartTime))
+						{
+							touchscreen->mainTouch = touch2;
+							touchscreen->mainTouchIndex = tIndex2;
+							maxStartTime = touch2->startTime;
+						}
+					}
+				}
+				else
+				{
+					// Leave mainTouch pointing to an "empty" slot until a new touch starts.
+					// We don't actually clear pos, startTime, etc. so the information can still be used until another touch starts
+				}
 			}
-			touch->moved = false;
-			touch->started = false;
 			touch->stopped = false;
-			touch->prevPos = touch->pos;
 		}
 	}
 }

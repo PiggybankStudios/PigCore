@@ -8,6 +8,12 @@ Description:
 
 #if BUILD_WITH_SOKOL_APP
 
+#if TARGET_IS_ANDROID
+#define MAIN_FONT_NAME "DroidSansMono"
+#else
+#define MAIN_FONT_NAME "Consolas"
+#endif
+
 #define SOKOL_APP_IMPL
 #if TARGET_IS_LINUX
 #pragma clang diagnostic push
@@ -234,7 +240,7 @@ void AppInit(void)
 			FontCharRange_LatinSupplementAccent,
 		};
 		
-		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_None);
+		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18, FontStyleFlag_None);
 		if (attachResult1 == Result_Success)
 		{
 			Result bakeResult1 = BakeFontAtlas(&testFont, 18, FontStyleFlag_None, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
@@ -242,52 +248,52 @@ void AppInit(void)
 			FillFontKerningTable(&testFont);
 			RemoveAttachedTtfFile(&testFont);
 		}
-		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 18 Regular: %s", GetResultStr(attachResult1)); }
+		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Regular: %s", GetResultStr(attachResult1)); }
 		
-		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold);
+		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18, FontStyleFlag_Bold);
 		if (attachResult2 == Result_Success)
 		{
 			Result bakeResult2 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult2 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
-		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 18 Bold: %s", GetResultStr(attachResult2)); }
+		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Bold: %s", GetResultStr(attachResult2)); }
 		
-		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Italic);
+		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18, FontStyleFlag_Italic);
 		if (attachResult3 == Result_Success)
 		{
 			Result bakeResult3 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult3 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
-		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 18 Italic: %s", GetResultStr(attachResult3)); }
+		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Italic: %s", GetResultStr(attachResult3)); }
 		
-		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 18, FontStyleFlag_Bold|FontStyleFlag_Italic);
+		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18, FontStyleFlag_Bold|FontStyleFlag_Italic);
 		if (attachResult4 == Result_Success)
 		{
 			Result bakeResult4 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold|FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult4 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
-		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 18 Bold+Italic: %s", GetResultStr(attachResult4)); }
+		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Bold+Italic: %s", GetResultStr(attachResult4)); }
 		
-		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 10, FontStyleFlag_Bold);
+		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 10, FontStyleFlag_Bold);
 		if (attachResult5 == Result_Success)
 		{
 			Result bakeResult5 = BakeFontAtlas(&testFont, 10, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult5 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
-		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 10 Bold: %s", GetResultStr(attachResult5)); }
+		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 10 Bold: %s", GetResultStr(attachResult5)); }
 		
-		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Consolas"), 26, FontStyleFlag_Bold);
+		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 26, FontStyleFlag_Bold);
 		if (attachResult6 == Result_Success)
 		{
 			Result bakeResult6 = BakeFontAtlas(&testFont, 26, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult6 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
-		else { PrintLine_E("Failed to find/attach platform font \"Consolas\" 26 Bold: %s", GetResultStr(attachResult6)); }
+		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 26 Bold: %s", GetResultStr(attachResult6)); }
 	}
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
@@ -380,8 +386,10 @@ bool AppFrame(void)
 	programTime += 16; //TODO: Calculate this!
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
+	// v2 touchPos = touchscreen.mainTouch->pos;
 	
 	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
+	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
 	
 	if (IsKeyboardKeyPressed(&keyboard, Key_F, false)) { sapp_lock_mouse(!sapp_mouse_locked()); }
 	if (IsKeyboardKeyPressed(&keyboard, Key_Escape, false) && sapp_mouse_locked()) { sapp_lock_mouse(false); }
