@@ -11,3 +11,6 @@ This folder contains a `main.c` that can be compiled into an executable that run
 
 ### Sokol Rendering Test:
 ![Sokol Color Grid](/_media/tests_screenshot_sokol_color_grid.png)
+
+### Android Test:
+![3D Rendering and Touch Input Debug on Android](/_media/tests_screenshot_android.png)
