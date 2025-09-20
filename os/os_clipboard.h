@@ -37,10 +37,10 @@ Description:
 
 PEXP Result OsGetClipboardString(OsWindowHandle windowHandle, Arena* arena, Str8* clipboardStrOut)
 {
+	Result result = Result_None;
 	#if TARGET_IS_WINDOWS
 	{
 		Assert(windowHandle != OsWidowHandleEmpty);
-		Result result = Result_None;
 		if (OpenClipboard(windowHandle))
 		{
 			HANDLE dataHandle = GetClipboardData(CF_UNICODETEXT);
@@ -55,17 +55,52 @@ PEXP Result OsGetClipboardString(OsWindowHandle windowHandle, Arena* arena, Str8
 			CloseClipboard();
 		}
 		else { result = Result_FailedToOpenClipboard; }
-		return result;
+	}
+	#elif TARGET_IS_ANDROID
+	{
+		UNUSED(windowHandle);
+		AssertMsg(AndroidNativeActivity != nullptr, "You must set AndroidNativeActivity global before calling OsGetClipboardString!");
+		AssertMsg(AndroidJavaVM != nullptr, "You must set AndroidJavaVM global before calling OsGetClipboardString!");
+		
+		JavaVMAttachBlock(env)
+		{
+			jstring clipboardJStr = (*env)->NewStringUTF(env, "clipboard");
+			jobject clipboardManager = jCall_getSystemService(env, AndroidNativeActivity, clipboardJStr);
+			FreeJStr(env, clipboardJStr);
+			
+			if (jCall_hasPrimaryClip(env, clipboardManager))
+			{
+				jobject clipData = jCall_getPrimaryClip(env, clipboardManager);
+				jobject firstClipDataItem = jCall_getItemAt(env, clipData, 0);
+				jobject charSequence = jCall_getText(env, firstClipDataItem);
+				jstring contentsJStr = jCall_toString(env, charSequence);
+				if (clipboardStrOut != nullptr)
+				{
+					*clipboardStrOut = ToStr8FromJStr(env, arena, contentsJStr, false);
+				}
+				FreeJStr(env, contentsJStr);
+				(*env)->DeleteLocalRef(env, charSequence);
+				(*env)->DeleteLocalRef(env, firstClipDataItem);
+				(*env)->DeleteLocalRef(env, clipData);
+				result = Result_Success;
+			}
+			else { result = Result_EmptyString; }
+			
+			(*env)->DeleteLocalRef(env, clipboardManager);
+		}
 	}
 	#else
 	AssertMsg(false, "OsGetClipboardString does not support the current platform yet!");
-	return Result_NotImplemented;
+	result = Result_NotImplemented;
 	#endif
+	return result;
 }
 
 PEXP Result OsSetClipboardString(OsWindowHandle windowHandle, Str8 clipboardStr)
 {
+	Result result = Result_None;
 	#if TARGET_IS_WINDOWS
+	do
 	{
 		Assert(windowHandle != OsWidowHandleEmpty);
 		NotNullStr(clipboardStr);
@@ -76,7 +111,7 @@ PEXP Result OsSetClipboardString(OsWindowHandle windowHandle, Str8 clipboardStr)
 		bool isDataWide = false;
 		if (DoesStrContainMultibyteUtf8Chars(clipboardStr))
 		{
-			if (scratch == nullptr) { return Result_NoScratchAvailable; }
+			if (scratch == nullptr) { result = Result_NoScratchAvailable; break; }
 			Str16 wideStr = ConvertUtf8StrToUcs2(scratch, clipboardStr, true);
 			dataPntr = wideStr.chars;
 			dataSize = wideStr.length * sizeof(char16_t);
@@ -87,7 +122,8 @@ PEXP Result OsSetClipboardString(OsWindowHandle windowHandle, Str8 clipboardStr)
 		if (globalCopy == nullptr)
 		{
 			if (scratch != nullptr) { ScratchEnd(scratch); }
-			return Result_FailedToAllocateMemory;
+			result = Result_FailedToAllocateMemory;
+			break;
 		}
 		
 		u8* lockPntr = (u8*)GlobalLock(globalCopy);
@@ -100,18 +136,46 @@ PEXP Result OsSetClipboardString(OsWindowHandle windowHandle, Str8 clipboardStr)
 		{
 			HGLOBAL freeResult = GlobalFree(globalCopy);
 			Assert(freeResult != NULL);
-			return Result_FailedToOpenClipboard;
+			result = Result_FailedToOpenClipboard;
+			break;
 		}
 		if (EmptyClipboard() == false)
 		{
 			CloseClipboard();
-			return Result_FailedToEmptyClipboard;
+			result = Result_FailedToEmptyClipboard;
+			break;
 		}
 		
 		SetClipboardData((isDataWide ? CF_UNICODETEXT : CF_TEXT), globalCopy);
 		
 		CloseClipboard();
-		return Result_Success;
+		result = Result_Success;
+	} while(0);
+	#elif TARGET_IS_ANDROID
+	{
+		UNUSED(windowHandle);
+		AssertMsg(AndroidNativeActivity != nullptr, "You must set AndroidNativeActivity global before calling OsSetClipboardString!");
+		AssertMsg(AndroidJavaVM != nullptr, "You must set AndroidJavaVM global before calling OsSetClipboardString!");
+		ScratchBegin(scratch);
+		JavaVMAttachBlock(env)
+		{
+			jstring clipboardJStr = (*env)->NewStringUTF(env, "clipboard");
+			jobject clipboardManager = jCall_getSystemService(env, AndroidNativeActivity, clipboardJStr);
+			FreeJStr(env, clipboardJStr);
+			
+			jstring textJStr = NewJStrNt(env, "text");
+			jstring contentsJStr = NewJStr(env, clipboardStr);
+			jobject clipData = jCall_ClipData_newPlainText(env, textJStr, contentsJStr);
+			FreeJStr(env, contentsJStr);
+			FreeJStr(env, textJStr);
+			
+			jCall_setPrimaryClip(env, clipboardManager, clipData);
+			(*env)->DeleteLocalRef(env, clipData);
+			
+			(*env)->DeleteLocalRef(env, clipboardManager);
+		}
+		ScratchEnd(scratch);
+		result = Result_Success;
 	}
 	// #elif TARGET_IS_LINUX
 	//TODO: Implement me!
@@ -123,8 +187,9 @@ PEXP Result OsSetClipboardString(OsWindowHandle windowHandle, Str8 clipboardStr)
 	//TODO: Implement me!
 	#else
 	AssertMsg(false, "OsSetClipboardString does not support the current platform yet!");
-	return Result_NotImplemented;
+	result = Result_NotImplemented;
 	#endif
+	return result;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

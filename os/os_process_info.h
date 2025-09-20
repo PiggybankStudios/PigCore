@@ -25,27 +25,19 @@ Description:
 
 #if TARGET_IS_WINDOWS
 typedef HWND OsWindowHandle;
-#define OsWidowHandleEmpty NULL
+#define OsWindowHandleEmpty NULL
 #elif TARGET_IS_LINUX
 typedef Window OsWindowHandle;
-#define OsWidowHandleEmpty nullptr //TODO: Check this
+#define OsWindowHandleEmpty nullptr //TODO: Check this
 #elif TARGET_IS_OSX
 typedef NSWindow* OsWindowHandle;
-#define OsWidowHandleEmpty nullptr
+#define OsWindowHandleEmpty nullptr
 #elif TARGET_IS_ANDROID
 typedef struct ANativeWindow* OsWindowHandle;
-#define OsWidowHandleEmpty nullptr
+#define OsWindowHandleEmpty nullptr
 #else
 typedef void* OsWindowHandle;
-#define OsWidowHandleEmpty nullptr
-#endif
-
-#if TARGET_IS_ANDROID
-#if !PIG_CORE_IMPLEMENTATION
-extern ANativeActivity* AndroidNativeActivity;
-#else
-ANativeActivity* AndroidNativeActivity = nullptr;
-#endif
+#define OsWindowHandleEmpty nullptr
 #endif
 
 // +--------------------------------------------------------------+
@@ -368,29 +360,19 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 	#elif TARGET_IS_ANDROID
 	{
 		AssertMsg(AndroidNativeActivity != nullptr, "You must set AndroidNativeActivity global before calling OsGetSettingsSavePath!");
+		AssertMsg(AndroidJavaVM != nullptr, "You must set AndroidJavaVM global before calling OsGetSettingsSavePath!");
 		UNUSED(companyName);
 		UNUSED(programName);
 		UNUSED(createFolders);
 		
-		JNIEnv* env = nullptr;
-		(*AndroidNativeActivity->vm)->AttachCurrentThread(AndroidNativeActivity->vm, &env, NULL);
+		JavaVMAttachBlock(env)
 		{
-			jclass activityClass = (*env)->GetObjectClass(env, AndroidNativeActivity->clazz);
-			jmethodID getFilesDirMethod = (*env)->GetMethodID(env, activityClass, "getFilesDir", "()Ljava/io/File;");
-			NotNull(getFilesDirMethod);
-			
-			jobject fileObj = (*env)->CallObjectMethod(env, AndroidNativeActivity->clazz, getFilesDirMethod);
-			jclass fileClass = (*env)->GetObjectClass(env, fileObj);
-			jmethodID getAbsolutePathMethod = (*env)->GetMethodID(env, fileClass, "getAbsolutePath", "()Ljava/lang/String;");
-			NotNull(getAbsolutePathMethod);
-			
-			jstring pathString = (*env)->CallObjectMethod(env, fileObj, getAbsolutePathMethod);
-			const char* pathStringNt = (*env)->GetStringUTFChars(env, pathString, NULL);
-			NotNull(pathStringNt);
-			result = AllocStr8Nt(arena, pathStringNt);
+			jobject fileObj = jCall_getFilesDir(env, AndroidNativeActivity);
+			jstring pathString = jCall_getAbsolutePath(env, fileObj);
+			result = ToStr8FromJStr(env, arena, pathString, false);
 			FixPathSlashes(result);
+			(*env)->DeleteLocalRef(env, pathString);
 		}
-		(*AndroidNativeActivity->vm)->DetachCurrentThread(AndroidNativeActivity->vm);
 	}
 	#else
 	AssertMsg(false, "OsGetSettingsSavePath does not support the current platform yet!");

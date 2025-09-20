@@ -11,6 +11,10 @@ Description:
 	** scenario can be fiddled with without changing the applications (usually).
 	** Note that some key values are not mutually exclusive, for example Key_9
 	** represents either Key_Digit9 or Key_Numpad9.
+	** NOTE: See cross_keys_and_btn_state.h for KeyboardState structure which
+	** converts input events related to the keyboard into various formats that
+	** make it easy to write keyboard input handling code in an application.
+	** NOTE: See HandleSokolKeyboardMouseAndTouchEvents in input_sokol.h
 */
 
 #ifndef _INPUT_KEYS_H

@@ -2,6 +2,13 @@
 File:   input_mouse_btns.h
 Author: Taylor Robbins
 Date:   02\03\2025
+Description:
+	** Holds the MouseBtn enumeration that allows us to talk about all the typical
+	** buttons you might see on a mouse (Left, Right, Middle, Scroll, etc.)
+	** NOTE: See cross_mouse_btns_btn_state_and_vectors.h for MouseState structure
+	** which converts input events related to the mouse into various formats that
+	** make it easy to write mouse input handling code in an application.
+	** NOTE: See HandleSokolKeyboardMouseAndTouchEvents in input_sokol.h
 */
 
 #ifndef _INPUT_MOUSE_BTNS_H

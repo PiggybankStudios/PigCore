@@ -517,6 +517,7 @@ bool AppFrame(void)
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
 			
+			#if 1
 			if (testFont.atlases.length > 0)
 			{
 				BindFont(&testFont);
@@ -537,16 +538,48 @@ bool AppFrame(void)
 				DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
 				DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
 			}
+			#endif
 			
+			#if TARGET_IS_ANDROID
+			rec buttonRec = NewRec(100, 200, 100, 100);
+			DrawRectangle(buttonRec, ColorWithAlpha(MonokaiRed, 0.40f));
+			for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
+			{
+				TouchState* touch = &touchscreen.touches[tIndex];
+				if (touch->id != TOUCH_ID_INVALID && touch->stopped && touch->visitRadius < 10 && IsInsideRec(buttonRec, touch->pos))
+				{
+					Str8 clipboardStr = Str8_Empty;
+					Result pasteResult = OsGetClipboardString(OsWindowHandleEmpty, scratch, &clipboardStr);
+					if (pasteResult == Result_Success)
+					{
+						PrintLine_I("Clipboard has string: \"%.*s\"", StrPrint(clipboardStr));
+					}
+					else { PrintLine_E("Couldn't get clipboard string: %s", GetResultStr(pasteResult)); }
+					
+					Result copyResult = OsSetClipboardString(OsWindowHandleEmpty, StrLit("Hello Android clipboard!"));
+					PrintLine_I("copyResult: %s", GetResultStr(copyResult));
+				}
+			}
+			#endif
+			
+			#if 1
 			for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
 			{
 				TouchState* touch = &touchscreen.touches[tIndex];
 				if (touch->id != TOUCH_ID_INVALID)
 				{
-					PrintLine_D("Drawing touch %llu at (%g, %g)", touch->id, touch->pos.X, touch->pos.Y);
+					for (uxx pIndex = 1; pIndex < TOUCH_PATH_LENGTH; pIndex++)
+					{
+						if (AreEqualV2(touch->path[pIndex], TOUCH_PATH_INVALID)) { break; }
+						DrawLine(touch->path[pIndex-1], touch->path[pIndex], 1, MonokaiBrown);
+					}
+					DrawCircle(NewCircleV(touch->startPos, touch->visitRadius), ColorWithAlpha(MonokaiYellow, 0.25f));
+					DrawRectangle(touch->visitBounds, ColorWithAlpha(MonokaiGreen, 0.25f));
+					DrawRectangle(NewRecCentered(touch->startPos.X, touch->startPos.Y, 15, 15), MonokaiBlue);
 					DrawRectangle(NewRecCentered(touch->pos.X, touch->pos.Y, 15, 15), MonokaiMagenta);
 				}
 			}
+			#endif
 			
 			#if 0
 			v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);

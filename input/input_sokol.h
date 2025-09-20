@@ -2,6 +2,12 @@
 File:   input_sokol.h
 Author: Taylor Robbins
 Date:   02\03\2025
+Description:
+	** Holds functions that help us convert sokol_app.h input events into our PigCore
+	** specific formats (like KeyboardState, MouseState, and TouchscreenState).
+	** In particular this file holds HandleSokolKeyboardAndMouseEvents which is a single
+	** function that routes events related to mouse\keyboard\touchscreen to the appropriate
+	** functions and returns true when an event was handled.
 */
 
 #ifndef _INPUT_SOKOL_H
@@ -251,6 +257,9 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 	bool handled = false;
 	switch (event->type)
 	{
+		// +==============================+
+		// |  SAPP_EVENTTYPE_KEY_DOWN/UP  |
+		// +==============================+
 		case SAPP_EVENTTYPE_KEY_DOWN: [[fallthrough]];
 		case SAPP_EVENTTYPE_KEY_UP:
 		{
@@ -276,6 +285,9 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			handled = true;
 		} break;
 		
+		// +==============================+
+		// | SAPP_EVENTTYPE_MOUSE_DOWN/UP |
+		// +==============================+
 		case SAPP_EVENTTYPE_MOUSE_DOWN: [[fallthrough]];
 		case SAPP_EVENTTYPE_MOUSE_UP:
 		{
@@ -284,12 +296,18 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			handled = true;
 		} break;
 		
+		// +==============================+
+		// | SAPP_EVENTTYPE_MOUSE_SCROLL  |
+		// +==============================+
 		case SAPP_EVENTTYPE_MOUSE_SCROLL:
 		{
 			UpdateMouseScroll(mouse, currentTime, NewV2(event->scroll_x, event->scroll_y));
 			handled = true;
 		} break;
 		
+		// +==============================+
+		// |  SAPP_EVENTTYPE_MOUSE_MOVE   |
+		// +==============================+
 		case SAPP_EVENTTYPE_MOUSE_MOVE:
 		{
 			if (isMouseLocked)
@@ -315,6 +333,9 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			handled = true;
 		} break;
 		
+		// +==================================+
+		// | SAPP_EVENTTYPE_MOUSE_ENTER/LEAVE |
+		// +==================================+
 		case SAPP_EVENTTYPE_MOUSE_ENTER: [[fallthrough]];
 		case SAPP_EVENTTYPE_MOUSE_LEAVE:
 		{
@@ -322,6 +343,9 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			handled = true;
 		} break;
 		
+		// +==============================+
+		// |     SAPP_EVENTTYPE_CHAR      |
+		// +==============================+
 		case SAPP_EVENTTYPE_CHAR:
 		{
 			u8 modifierKeys = ModifierKey_None;
@@ -332,11 +356,13 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			handled = true;
 		} break;
 		
+		// +==============================+
+		// | SAPP_EVENTTYPE_TOUCHES_BEGAN |
+		// +==============================+
 		case SAPP_EVENTTYPE_TOUCHES_BEGAN:
 		{
 			if (touchscreen != nullptr)
 			{
-				PrintLine_D("Got SAPP_EVENTTYPE_TOUCHES_BEGAN %llu touches", event->num_touches);
 				for (int tIndex = 0; tIndex < event->num_touches; tIndex++)
 				{
 					const sapp_touchpoint* sokolTouch = &event->touches[tIndex];
@@ -359,11 +385,13 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			}
 		} break;
 		
+		// +==============================+
+		// | SAPP_EVENTTYPE_TOUCHES_ENDED |
+		// +==============================+
 		case SAPP_EVENTTYPE_TOUCHES_ENDED:
 		{
 			if (touchscreen != nullptr)
 			{
-				PrintLine_D("Got SAPP_EVENTTYPE_TOUCHES_ENDED %llu touches", event->num_touches);
 				for (int tIndex = 0; tIndex < event->num_touches; tIndex++)
 				{
 					const sapp_touchpoint* sokolTouch = &event->touches[tIndex];
@@ -376,11 +404,13 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			}
 		} break;
 		
+		// +==================================+
+		// | SAPP_EVENTTYPE_TOUCHES_CANCELLED |
+		// +==================================+
 		case SAPP_EVENTTYPE_TOUCHES_CANCELLED:
 		{
 			if (touchscreen != nullptr)
 			{
-				PrintLine_D("Got SAPP_EVENTTYPE_TOUCHES_CANCELLED %llu touches", event->num_touches);
 				for (int tIndex = 0; tIndex < event->num_touches; tIndex++)
 				{
 					const sapp_touchpoint* sokolTouch = &event->touches[tIndex];
@@ -393,11 +423,13 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			}
 		} break;
 		
+		// +==============================+
+		// | SAPP_EVENTTYPE_TOUCHES_MOVED |
+		// +==============================+
 		case SAPP_EVENTTYPE_TOUCHES_MOVED:
 		{
 			if (touchscreen != nullptr)
 			{
-				PrintLine_D("Got SAPP_EVENTTYPE_TOUCHES_MOVED %llu touches", event->num_touches);
 				for (int tIndex = 0; tIndex < event->num_touches; tIndex++)
 				{
 					const sapp_touchpoint* sokolTouch = &event->touches[tIndex];

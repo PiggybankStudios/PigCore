@@ -7,7 +7,6 @@ Description:
 */
 
 //TODO: Implement os_process_info.h for TARGET_IS_ANDROID
-//TODO: Implement os_clipboard.h for TARGET_IS_ANDROID
 //TODO: Implement os_file_dialog.h for TARGET_IS_ANDROID
 //TODO: Implement os_font.h for TARGET_IS_ANDROID
 //TODO: Implement os_http.h for TARGET_IS_ANDROID
@@ -15,6 +14,11 @@ Description:
 
 #if TARGET_IS_ANDROID
 
+//NOTE: If we are not using sokol_app.h then we will use android_native_app_glue.c provided by the NDK.
+// The code below is a very simple test on top of that glue that clears the screen to a slowly changing color
+// This was mostly used as a way to make sure our build system for Android was working but we basically always
+// use sokol_app.h now. If we wanted to move away from Sokol we'd probably not use android_native_app_glue.c either
+// but rather make our own layer that spawns a thread (or more) to handle things in a non-blocking way
 #if !BUILD_WITH_SOKOL_APP
 
 #include "android_native_app_glue.c"
@@ -96,6 +100,7 @@ void DoAndroidTests()
 {
 	#if BUILD_WITH_SOKOL_APP
 	AndroidNativeActivity = (ANativeActivity*)sapp_android_get_native_activity();
+	AndroidJavaVM = AndroidNativeActivity->vm;
 	#else
 	NotNull(androidApp);
 	//Suppresses link-time dead code removal of stuff in android_native_app_glue.c
@@ -115,8 +120,8 @@ void DoAndroidTests()
 		// 	scratch2, scratch2->committed, scratch2->used, scratch2->size
 		// );
 		
-		// FilePath settingsSavePath = OsGetSettingsSavePath(scratch, Str8_Empty, Str8_Empty, true);
-		// PrintLine_W("settingsSavePath: \"%.*s\"", StrPrint(settingsSavePath));
+		FilePath settingsSavePath = OsGetSettingsSavePath(scratch, Str8_Empty, Str8_Empty, true);
+		PrintLine_W("settingsSavePath: \"%.*s\"", StrPrint(settingsSavePath));
 		
 		// struct mallinfo info = mallinfo();
 		// size_t heap_size = info.uordblks + info.hblkhd;

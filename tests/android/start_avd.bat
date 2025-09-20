@@ -9,7 +9,9 @@ if "%ANDROID_SDK%"=="" (
 	goto :end
 )
 
-%ANDROID_SDK%\emulator\emulator.exe -avd Medium_Phone_API_36.0 -verbose
+rem %ANDROID_SDK%\emulator\emulator.exe -list-avds
+rem %ANDROID_SDK%\emulator\emulator.exe -avd Medium_Phone_API_36.0 -verbose
 rem %ANDROID_SDK%\emulator\emulator.exe -avd Pixel_3a_API_34 -verbose
+%ANDROID_SDK%\emulator\emulator.exe -avd Pixel_9_Pro_XL -verbose
 
 :end

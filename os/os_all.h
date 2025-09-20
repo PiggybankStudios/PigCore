@@ -27,8 +27,8 @@ Description:
 
 #include "os/os_threading.h" //required by os_http.h
 
-#include "mem/mem_arena.h" //required by os_path.h, os_program_args.h, os_file.h and os_process_info.h
-#include "struct/struct_string.h" //required by os_path.h, os_program_args.h, os_file.h and os_orca.h
+#include "mem/mem_arena.h" //required by os_path.h, os_program_args.h, os_jni.h, os_file.h and os_process_info.h
+#include "struct/struct_string.h" //required by os_path.h, os_program_args.h, os_jni.h, os_file.h and os_orca.h
 
 #include "os/os_path.h"
 
@@ -37,9 +37,10 @@ Description:
 
 #include "os/os_program_args.h"
 
-#include "mem/mem_scratch.h" //required by os_clipboard.h, os_http.h and os_process_info.h
+#include "mem/mem_scratch.h" //required by os_jni.h, os_clipboard.h, os_http.h and os_process_info.h
 #include "misc/misc_web.h" //required by os_http.h
 
+#include "os/os_jni.h"
 #include "os/os_clipboard.h"
 #include "os/os_http.h"
 
