@@ -46,6 +46,7 @@ VertBuffer sphereBuffer;
 u64 programTime = 0;
 MouseState mouse = ZEROED;
 KeyboardState keyboard = ZEROED;
+TouchscreenState touchscreen = ZEROED;
 v3 cameraPos = {.X=0.0f, .Y=1.0f, .Z=0.0f};
 v3 cameraLookDir = V3_Zero_Const;
 v2 wrapPos = V2_Zero_Const;
@@ -329,6 +330,7 @@ void AppInit(void)
 	
 	InitMouseState(&mouse);
 	InitKeyboardState(&keyboard);
+	InitTouchscreenState(&touchscreen);
 	cameraLookDir = V3_Right;
 	
 	#if BUILD_WITH_BOX2D
@@ -402,6 +404,25 @@ bool AppFrame(void)
 		if (IsKeyboardKeyDown(&keyboard, Key_E)) { cameraPos = Add(cameraPos, Mul(V3_Up, moveSpeed)); }
 		if (IsKeyboardKeyDown(&keyboard, Key_Q)) { cameraPos = Add(cameraPos, Mul(V3_Down, moveSpeed)); }
 	}
+	
+	for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
+	{
+		TouchState* touch = &touchscreen.touches[tIndex];
+		if (touch->id != TOUCH_ID_INVALID)
+		{
+			if (touch->moved)
+			{
+				v2 delta = SubV2(touch->pos, touch->prevPos);
+				r32 cameraHoriRot = AtanR32(cameraLookDir.Z, cameraLookDir.X);
+				r32 cameraVertRot = AtanR32(cameraLookDir.Y, Length(NewV2(cameraLookDir.X, cameraLookDir.Z)));
+				cameraHoriRot = AngleFixR32(cameraHoriRot - delta.X / 500.0f);
+				cameraVertRot = ClampR32(cameraVertRot - delta.Y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
+				r32 horizontalRadius = CosR32(cameraVertRot);
+				cameraLookDir = NewV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
+			}
+		}
+	}
+	
 	
 	#if BUILD_WITH_BOX2D
 	if (IsMouseBtnPressed(&mouse, MouseBtn_Left))
@@ -515,6 +536,16 @@ bool AppFrame(void)
 				DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
 				DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
 				DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
+			}
+			
+			for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
+			{
+				TouchState* touch = &touchscreen.touches[tIndex];
+				if (touch->id != TOUCH_ID_INVALID)
+				{
+					PrintLine_D("Drawing touch %llu at (%g, %g)", touch->id, touch->pos.X, touch->pos.Y);
+					DrawRectangle(NewRecCentered(touch->pos.X, touch->pos.Y, 15, 15), MonokaiMagenta);
+				}
 			}
 			
 			#if 0
@@ -700,6 +731,7 @@ bool AppFrame(void)
 	gfx.numDrawCalls = 0;
 	RefreshMouseState(&mouse, sapp_mouse_locked(), NewV2(sapp_widthf()/2.0f, sapp_heightf()/2.0f));
 	RefreshKeyboardState(&keyboard);
+	RefreshTouchscreenState(&touchscreen);
 	ScratchEnd(scratch);
 	return frameRendered;
 }
@@ -710,25 +742,12 @@ bool AppFrame(void)
 void AppEvent(const sapp_event* event)
 {
 	TracyCZoneN(Zone_Func, "AppEvent", true);
-	bool handledEvent = HandleSokolKeyboardAndMouseEvents(event, programTime, NewV2i(sapp_width(), sapp_height()), &keyboard, &mouse, sapp_mouse_locked());
+	bool handledEvent = HandleSokolKeyboardMouseAndTouchEvents(event, programTime, NewV2i(sapp_width(), sapp_height()), &keyboard, &mouse, &touchscreen, sapp_mouse_locked());
 	
 	if (!handledEvent)
 	{
 		switch (event->type)
 		{
-    		case SAPP_EVENTTYPE_KEY_DOWN:          /* do nothing */                         break;
-    		case SAPP_EVENTTYPE_KEY_UP:            /* do nothing */                         break;
-    		case SAPP_EVENTTYPE_CHAR:              /* do nothing */                         break;
-    		case SAPP_EVENTTYPE_MOUSE_DOWN:        /* do nothing */                         break;
-    		case SAPP_EVENTTYPE_MOUSE_UP:          /* do nothing */                         break;
-    		case SAPP_EVENTTYPE_MOUSE_SCROLL:      /* do nothing */                         break;
-    		case SAPP_EVENTTYPE_MOUSE_MOVE:        /* do nothing */                         break;
-    		case SAPP_EVENTTYPE_MOUSE_ENTER:       /* do nothing */                         break;
-    		case SAPP_EVENTTYPE_MOUSE_LEAVE:       /* do nothing */                         break;
-			case SAPP_EVENTTYPE_TOUCHES_BEGAN:     WriteLine_D("Event: TOUCHES_BEGAN");     break;
-			case SAPP_EVENTTYPE_TOUCHES_MOVED:     WriteLine_D("Event: TOUCHES_MOVED");     break;
-			case SAPP_EVENTTYPE_TOUCHES_ENDED:     WriteLine_D("Event: TOUCHES_ENDED");     break;
-			case SAPP_EVENTTYPE_TOUCHES_CANCELLED: WriteLine_D("Event: TOUCHES_CANCELLED"); break;
 			case SAPP_EVENTTYPE_RESIZED:           PrintLine_D("Event: RESIZED %dx%d / %dx%d", event->window_width, event->window_height, event->framebuffer_width, event->framebuffer_height); break;
 			case SAPP_EVENTTYPE_ICONIFIED:         WriteLine_D("Event: ICONIFIED");         break;
 			case SAPP_EVENTTYPE_RESTORED:          WriteLine_D("Event: RESTORED");          break;

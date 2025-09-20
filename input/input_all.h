@@ -13,6 +13,7 @@ Date:   02\03\2025
 #include "input/input_keys.h"
 #include "input/input_mouse_btns.h"
 #include "input/input_controller_btns.h"
+#include "input/input_touch.h"
 
 #include "base/base_typedefs.h" //required by input_btn_state.h
 #include "base/base_assert.h" //required by input_btn_state.h
