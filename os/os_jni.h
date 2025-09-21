@@ -166,8 +166,14 @@ JavaVM* AndroidJavaVM = nullptr;
 // android.view.Window Functions (https://developer.android.com/reference/android/view/Window)
 #define jCall_getDecorView(env, window) jObjCall((env), (window), false, "getDecorView", "()Landroid/view/View;", JvmType_Object, true).objectValue
 
+// android.view.WindowManager Functions (https://developer.android.com/reference/android/view/WindowManager)
+#define jCall_getDefaultDisplay(env, windowManager) jObjCall((env), (windowManager), false, "getDefaultDisplay", "()Landroid/view/Display;", JvmType_Object, true).objectValue
+
 // android.view.View Functions (https://developer.android.com/reference/android/view/View)
 #define jCall_getRootWindowInsets(env, view) jObjCall((env), (view), false, "getRootWindowInsets", "()Landroid/view/WindowInsets;", JvmType_Object, true).objectValue
+
+// android.view.Display Functions (https://developer.android.com/reference/android/view/Display)
+#define jCall_getRotation(env, display) jObjCall((env), (display), false, "getRotation", "()I", JvmType_Int, true).intValue
 
 // android.view.WindowInsets (https://developer.android.com/reference/android/view/WindowInsets)
 #define jCall_getDisplayCutout(env, windowInsets) jObjCall((env), (windowInsets), false, "getDisplayCutout", "()Landroid/view/DisplayCutout;", JvmType_Object, false).objectValue

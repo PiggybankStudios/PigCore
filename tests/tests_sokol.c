@@ -70,8 +70,14 @@ cTokenizer tokenizer = ZEROED;
 #if BUILD_WITH_PHYSX
 PhysicsWorld* physWorld = nullptr;
 #endif
+v4 screenMargins = V4_Zero_Const;
 v4 screenSafeMargins = V4_Zero_Const;
 v2i oldWindowSize = V2i_Zero_Const;
+Rot2 screenRotation = Rot2_0;
+bool screenRotated = false;
+//TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
+#define TEXT_SCALE 3.0f
+// #define TEXT_SCALE 1.0f
 
 void UpdateScreenSafeMargins()
 {
@@ -80,31 +86,22 @@ void UpdateScreenSafeMargins()
 	{
 		if ((*env)->GetVersion(env) > jGetField_Build_VERSION_CODES(env, "P"))
 		{
-			WriteLine_I("We should be able to get cutouts!");
 			jobject window = jCall_getWindow(env, AndroidNativeActivity);
 			jobject decorView = jCall_getDecorView(env, window);
 			
 			jobject insets = jCall_getRootWindowInsets(env, decorView);
-			i32 windowInsetLeft   = jCall_getSystemWindowInsetLeft(env, insets);
-			i32 windowInsetTop    = jCall_getSystemWindowInsetTop(env, insets);
-			i32 windowInsetRight  = jCall_getSystemWindowInsetRight(env, insets);
-			i32 windowInsetBottom = jCall_getSystemWindowInsetBottom(env, insets);
-			screenSafeMargins.X = (r32)windowInsetLeft;
-			screenSafeMargins.Y = (r32)windowInsetTop;
-			screenSafeMargins.Z = (r32)windowInsetRight;
-			screenSafeMargins.W = (r32)windowInsetBottom;
+			screenMargins.X = (r32)jCall_getSystemWindowInsetLeft(env, insets);
+			screenMargins.Y = (r32)jCall_getSystemWindowInsetTop(env, insets);
+			screenMargins.Z = (r32)jCall_getSystemWindowInsetRight(env, insets);
+			screenMargins.W = (r32)jCall_getSystemWindowInsetBottom(env, insets);
 			
 			jobject displayCutout = jCall_getDisplayCutout(env, insets);
 			if (displayCutout != nullptr)
 			{
-				i32 safeInsetLeft   = jCall_getSafeInsetLeft(env, displayCutout);
-				i32 safeInsetTop    = jCall_getSafeInsetTop(env, displayCutout);
-				i32 safeInsetRight  = jCall_getSafeInsetRight(env, displayCutout);
-				i32 safeInsetBottom = jCall_getSafeInsetBottom(env, displayCutout);
-				screenSafeMargins.X = (r32)MaxI32(windowInsetLeft, safeInsetLeft);
-				screenSafeMargins.Y = (r32)MaxI32(windowInsetTop, safeInsetTop);
-				screenSafeMargins.Z = (r32)MaxI32(windowInsetRight, safeInsetRight);
-				screenSafeMargins.W = (r32)MaxI32(windowInsetBottom, safeInsetBottom);
+				screenSafeMargins.X = (r32)jCall_getSafeInsetLeft(env, displayCutout);
+				screenSafeMargins.Y = (r32)jCall_getSafeInsetTop(env, displayCutout);
+				screenSafeMargins.Z = (r32)jCall_getSafeInsetRight(env, displayCutout);
+				screenSafeMargins.W = (r32)jCall_getSafeInsetBottom(env, displayCutout);
 				
 				(*env)->DeleteLocalRef(env, displayCutout);
 			}
@@ -116,6 +113,46 @@ void UpdateScreenSafeMargins()
 	#endif
 }
 
+void UpdateScreenRotation()
+{
+	Rot2 newRotation = screenRotation;
+	#if 1
+	JavaVMAttachBlock(env)
+	{
+		jstring windowJStr = NewJStrNt(env, "window");
+		jobject windowManager = jCall_getSystemService(env, AndroidNativeActivity, windowJStr);
+		FreeJStr(env, windowJStr);
+		jobject display = jCall_getDefaultDisplay(env, windowManager);
+		i32 rotation = jCall_getRotation(env, display);
+		switch (rotation)
+		{
+			case 0: newRotation = Rot2_0;   break;
+			case 1: newRotation = Rot2_90;  break;
+			case 2: newRotation = Rot2_180; break;
+			case 3: newRotation = Rot2_270; break;
+			default: PrintLine_W("Unhandled rotation value: %d", rotation); break;
+		}
+		(*env)->DeleteLocalRef(env, display);
+		(*env)->DeleteLocalRef(env, windowManager);
+	}
+	#else
+	AConfiguration* configuration = AConfiguration_new();
+	AConfiguration_fromAssetManager(configuration, AndroidNativeActivity->assetManager);
+	switch (AConfiguration_getOrientation(configuration))
+	{
+		case ACONFIGURATION_ORIENTATION_PORT: newRotation = Rot2_0; break;
+		case ACONFIGURATION_ORIENTATION_LAND: newRotation = Rot2_90; break;
+		case ACONFIGURATION_ORIENTATION_SQUARE: newRotation = Rot2_0; break;
+	}
+	AConfiguration_delete(configuration);
+	#endif
+	if (newRotation != screenRotation)
+	{
+		PrintLine_W("Rotation is now %s", GetRot2String(newRotation));
+		screenRotation = newRotation;
+		screenRotated = true;
+	}
+}
 
 #if BUILD_WITH_CLAY
 //Call Clay__CloseElement once if false, three times if true (i.e. twicfe inside the if statement and once after)
@@ -286,56 +323,57 @@ void AppInit(void)
 			FontCharRange_LatinSupplementAccent,
 		};
 		
-		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18, FontStyleFlag_None);
+		r32 textScale = TEXT_SCALE/sapp_dpi_scale();
+		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None);
 		if (attachResult1 == Result_Success)
 		{
-			Result bakeResult1 = BakeFontAtlas(&testFont, 18, FontStyleFlag_None, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Result bakeResult1 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult1 == Result_Success);
 			FillFontKerningTable(&testFont);
 			RemoveAttachedTtfFile(&testFont);
 		}
 		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Regular: %s", GetResultStr(attachResult1)); }
 		
-		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18, FontStyleFlag_Bold);
+		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold);
 		if (attachResult2 == Result_Success)
 		{
-			Result bakeResult2 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Result bakeResult2 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Bold, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult2 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
 		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Bold: %s", GetResultStr(attachResult2)); }
 		
-		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18, FontStyleFlag_Italic);
+		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic);
 		if (attachResult3 == Result_Success)
 		{
-			Result bakeResult3 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Result bakeResult3 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Italic, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult3 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
 		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Italic: %s", GetResultStr(attachResult3)); }
 		
-		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18, FontStyleFlag_Bold|FontStyleFlag_Italic);
+		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic);
 		if (attachResult4 == Result_Success)
 		{
-			Result bakeResult4 = BakeFontAtlas(&testFont, 18, FontStyleFlag_Bold|FontStyleFlag_Italic, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Result bakeResult4 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult4 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
 		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Bold+Italic: %s", GetResultStr(attachResult4)); }
 		
-		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 10, FontStyleFlag_Bold);
+		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 10*textScale, FontStyleFlag_Bold);
 		if (attachResult5 == Result_Success)
 		{
-			Result bakeResult5 = BakeFontAtlas(&testFont, 10, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Result bakeResult5 = BakeFontAtlas(&testFont, 10*textScale, FontStyleFlag_Bold, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult5 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
 		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 10 Bold: %s", GetResultStr(attachResult5)); }
 		
-		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 26, FontStyleFlag_Bold);
+		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 26*textScale, FontStyleFlag_Bold);
 		if (attachResult6 == Result_Success)
 		{
-			Result bakeResult6 = BakeFontAtlas(&testFont, 26, FontStyleFlag_Bold, NewV2i(256, 256), ArrayCount(charRanges), &charRanges[0]);
+			Result bakeResult6 = BakeFontAtlas(&testFont, 26*textScale, FontStyleFlag_Bold, NewV2i(1024, 1024), ArrayCount(charRanges), &charRanges[0]);
 			Assert(bakeResult6 == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
@@ -436,10 +474,8 @@ bool AppFrame(void)
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	// v2 touchPos = touchscreen.mainTouch->pos;
-	if (AreEqualV2i(oldWindowSize, windowSizei))
-	{
-		UpdateScreenSafeMargins();
-	}
+	UpdateScreenRotation();
+	if (AreEqualV2i(oldWindowSize, windowSizei)) { UpdateScreenSafeMargins(); }
 	
 	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
@@ -578,21 +614,34 @@ bool AppFrame(void)
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
 			
-			DrawRectangle(NewRec(0, 0, screenSafeMargins.X, windowSize.Height), ColorWithAlpha(MonokaiMagenta, 0.5f));
-			DrawRectangle(NewRec(0, 0, windowSize.Width, screenSafeMargins.Y), ColorWithAlpha(MonokaiBlue, 0.5f));
-			DrawRectangle(NewRec(windowSize.Width - screenSafeMargins.Z, 0, windowSize.Width, screenSafeMargins.Z), ColorWithAlpha(MonokaiPurple, 0.5f));
-			DrawRectangle(NewRec(0, windowSize.Height - screenSafeMargins.W, screenSafeMargins.W, windowSize.Height), ColorWithAlpha(MonokaiYellow, 0.5f));
+			DrawRectangleOutline(NewRec(0, 0, screenSafeMargins.X, windowSize.Height), 10.0f, MonokaiMagenta);
+			DrawRectangleOutline(NewRec(0, 0, windowSize.Width, screenSafeMargins.Y), 10.0f, MonokaiBlue);
+			DrawRectangleOutline(NewRec(windowSize.Width - screenSafeMargins.Z, 0, screenSafeMargins.Z, windowSize.Height), 10.0f, MonokaiPurple);
+			DrawRectangleOutline(NewRec(0, windowSize.Height - screenSafeMargins.W, windowSize.Width, screenSafeMargins.W), 10.0f, MonokaiYellow);
+			
+			DrawRectangleOutline(NewRec(0, 0, screenMargins.X, windowSize.Height), 5.0f, MonokaiLightRed);
+			DrawRectangleOutline(NewRec(0, 0, windowSize.Width, screenMargins.Y), 5.0f, MonokaiLightBlue);
+			DrawRectangleOutline(NewRec(windowSize.Width - screenMargins.Z, 0, screenMargins.Z, windowSize.Height), 5.0f, MonokaiLightPurple);
+			DrawRectangleOutline(NewRec(0, windowSize.Height - screenMargins.W, windowSize.Width, screenMargins.W), 5.0f, MonokaiOrange);
 			
 			#if 1
 			if (testFont.atlases.length > 0)
 			{
+				r32 textScale = TEXT_SCALE/sapp_dpi_scale();
 				BindFont(&testFont);
-				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 130);
+				FontAtlas* fontAtlas = GetFontAtlas(&testFont, 18*textScale, FontStyleFlag_None);
+				NotNull(fontAtlas);
+				
+				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 110 + fontAtlas->maxAscend);
+				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
+				DrawText(infoStr, textPos, MonokaiWhite);
+				
+				textPos.Y += fontAtlas->lineHeight;
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
 				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
 				DrawWrappedRichTextWithFont(
-					&testFont, 18, FontStyleFlag_None,
+					&testFont, 18*textScale, FontStyleFlag_None,
 					loremIpsumRich,
 					textPos,
 					wrapWidth,
@@ -831,6 +880,7 @@ bool AppFrame(void)
 	RefreshMouseState(&mouse, sapp_mouse_locked(), NewV2(sapp_widthf()/2.0f, sapp_heightf()/2.0f));
 	RefreshKeyboardState(&keyboard);
 	RefreshTouchscreenState(&touchscreen);
+	screenRotated = false;
 	ScratchEnd(scratch);
 	return frameRendered;
 }
@@ -885,6 +935,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.event_cb = AppEvent,
 		.width = 1900,
 		.height = 1000,
+		.high_dpi = true,
 		.window_title = "Simple Sokol App!",
 		.icon.sokol_default = true,
 		.logger.func = SokolLogCallback,
