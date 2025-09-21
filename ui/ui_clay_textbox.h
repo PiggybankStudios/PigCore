@@ -444,7 +444,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	// +==============================+
 	// |      Handle Ctrl+C Copy      |
 	// +==============================+
-	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_C, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWidowHandleEmpty)
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_C, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWindowHandleEmpty)
 	{
 		Str8 selectedText = StrSlice(tbox->text, MinUXX(tbox->cursorStart, tbox->cursorEnd), MaxUXX(tbox->cursorStart, tbox->cursorEnd));
 		Result copyResult = OsSetClipboardString(context->windowHandle, selectedText);
@@ -454,7 +454,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	// +==============================+
 	// |      Handle Ctrl+X Cut       |
 	// +==============================+
-	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_X, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWidowHandleEmpty)
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_X, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWindowHandleEmpty)
 	{
 		Str8 selectedText = StrSlice(tbox->text, MinUXX(tbox->cursorStart, tbox->cursorEnd), MaxUXX(tbox->cursorStart, tbox->cursorEnd));
 		Result copyResult = OsSetClipboardString(context->windowHandle, selectedText);
@@ -465,7 +465,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	// +==============================+
 	// |     Handle Ctrl+V Paste      |
 	// +==============================+
-	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_V, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWidowHandleEmpty)
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_V, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWindowHandleEmpty)
 	{
 		ScratchBegin1(scratch, tbox->arena);
 		Str8 clipboardStr = Str8_Empty;

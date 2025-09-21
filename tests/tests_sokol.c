@@ -159,6 +159,7 @@ void UpdateScreenRotation()
 bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color32 textColor, r32 dropDownWidth)
 {
 	ScratchBegin(scratch);
+	r32 textScale = TEXT_SCALE/sapp_dpi_scale();
 	Color32 highlightColor = ColorLerpSimple(backColor, White, 0.3f);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopBtn", btnText);
 	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopBtnMenu", btnText);
@@ -176,12 +177,15 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 		StrLit(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = clayFont,
-			.fontSize = 18,
+			.fontSize = 18*textScale,
 			.textColor = textColor,
 		})
 	);
 	bool isHovered = (Clay_PointerOver(btnId) || Clay_PointerOver(menuId));
-	if (Clay_PointerOver(btnId) && IsMouseBtnPressed(&mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
+	if (Clay_PointerOver(btnId) && (IsMouseBtnPressed(&mouse, MouseBtn_Left) || touchscreen.mainTouch->started))
+	{
+		*isOpenPntr = !*isOpenPntr;
+	}
 	if (*isOpenPntr == true && !isHovered) { *isOpenPntr = false; }
 	if (*isOpenPntr)
 	{
@@ -220,12 +224,13 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 {
 	ScratchBegin(scratch);
+	r32 textScale = TEXT_SCALE/sapp_dpi_scale();
 	Color32 hoverColor = ColorLerpSimple(backColor, White, 0.3f);
 	Color32 pressColor = ColorLerpSimple(backColor, White, 0.1f);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_Btn", btnText);
 	Clay_ElementId btnId = ToClayId(btnIdStr);
 	bool isHovered = Clay_PointerOver(btnId);
-	bool isPressed = (isHovered && IsMouseBtnDown(&mouse, MouseBtn_Left));
+	bool isPressed = (isHovered && (IsMouseBtnDown(&mouse, MouseBtn_Left) || (touchscreen.mainTouch->id != TOUCH_ID_INVALID && !touchscreen.mainTouch->stopped)));
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
@@ -240,13 +245,13 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 		StrLit(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = clayFont,
-			.fontSize = 18,
+			.fontSize = 18*textScale,
 			.textColor = textColor,
 			.userData = { .richText = true },
 		})
 	);
 	ScratchEnd(scratch);
-	return (isHovered && IsMouseBtnPressed(&mouse, MouseBtn_Left));
+	return (isHovered && (IsMouseBtnPressed(&mouse, MouseBtn_Left) || touchscreen.mainTouch->started));
 }
 #endif //BUILD_WITH_CLAY
 
@@ -556,6 +561,7 @@ bool AppFrame(void)
 	
 	TracyCZoneEnd(Zone_Update);
 	
+	r32 textScale = TEXT_SCALE/sapp_dpi_scale();
 	TracyCZoneN(Zone_Draw, "Draw", true);
 	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
 	{
@@ -614,20 +620,23 @@ bool AppFrame(void)
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
 			
-			DrawRectangleOutline(NewRec(0, 0, screenSafeMargins.X, windowSize.Height), 10.0f, MonokaiMagenta);
-			DrawRectangleOutline(NewRec(0, 0, windowSize.Width, screenSafeMargins.Y), 10.0f, MonokaiBlue);
-			DrawRectangleOutline(NewRec(windowSize.Width - screenSafeMargins.Z, 0, screenSafeMargins.Z, windowSize.Height), 10.0f, MonokaiPurple);
-			DrawRectangleOutline(NewRec(0, windowSize.Height - screenSafeMargins.W, windowSize.Width, screenSafeMargins.W), 10.0f, MonokaiYellow);
-			
-			DrawRectangleOutline(NewRec(0, 0, screenMargins.X, windowSize.Height), 5.0f, MonokaiLightRed);
-			DrawRectangleOutline(NewRec(0, 0, windowSize.Width, screenMargins.Y), 5.0f, MonokaiLightBlue);
-			DrawRectangleOutline(NewRec(windowSize.Width - screenMargins.Z, 0, screenMargins.Z, windowSize.Height), 5.0f, MonokaiLightPurple);
-			DrawRectangleOutline(NewRec(0, windowSize.Height - screenMargins.W, windowSize.Width, screenMargins.W), 5.0f, MonokaiOrange);
+			#if 0
+			{
+				DrawRectangleOutline(NewRec(0, 0, screenSafeMargins.X, windowSize.Height), 10.0f, MonokaiMagenta);
+				DrawRectangleOutline(NewRec(0, 0, windowSize.Width, screenSafeMargins.Y), 10.0f, MonokaiBlue);
+				DrawRectangleOutline(NewRec(windowSize.Width - screenSafeMargins.Z, 0, screenSafeMargins.Z, windowSize.Height), 10.0f, MonokaiPurple);
+				DrawRectangleOutline(NewRec(0, windowSize.Height - screenSafeMargins.W, windowSize.Width, screenSafeMargins.W), 10.0f, MonokaiYellow);
+				
+				DrawRectangleOutline(NewRec(0, 0, screenMargins.X, windowSize.Height), 5.0f, MonokaiLightRed);
+				DrawRectangleOutline(NewRec(0, 0, windowSize.Width, screenMargins.Y), 5.0f, MonokaiLightBlue);
+				DrawRectangleOutline(NewRec(windowSize.Width - screenMargins.Z, 0, screenMargins.Z, windowSize.Height), 5.0f, MonokaiLightPurple);
+				DrawRectangleOutline(NewRec(0, windowSize.Height - screenMargins.W, windowSize.Width, screenMargins.W), 5.0f, MonokaiOrange);
+			}
+			#endif
 			
 			#if 1
 			if (testFont.atlases.length > 0)
 			{
-				r32 textScale = TEXT_SCALE/sapp_dpi_scale();
 				BindFont(&testFont);
 				FontAtlas* fontAtlas = GetFontAtlas(&testFont, 18*textScale, FontStyleFlag_None);
 				NotNull(fontAtlas);
@@ -655,7 +664,7 @@ bool AppFrame(void)
 			}
 			#endif
 			
-			#if TARGET_IS_ANDROID
+			#if 0
 			rec buttonRec = NewRec(screenSafeMargins.X + 10, screenSafeMargins.Y + 10, 100, 100);
 			DrawRectangle(buttonRec, ColorWithAlpha(MonokaiRed, 0.40f));
 			for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
@@ -726,60 +735,109 @@ bool AppFrame(void)
 			#endif
 			
 			#if BUILD_WITH_CLAY
-			UpdateClayScrolling(&clay.clay, 16.6f, false, mouse.scrollDelta, false);
-			BeginClayUIRender(&clay.clay, windowSize, false, mouse.position, IsMouseBtnDown(&mouse, MouseBtn_Left));
+			UpdateClayScrolling(&clay.clay, 16.6f, false, mouse.scrollDelta, TARGET_IS_ANDROID);
+			v2 uiMousePosition = (TARGET_IS_ANDROID ? touchscreen.mainTouch->pos : mouse.position);
+			bool uiMouseDown = (TARGET_IS_ANDROID ? (touchscreen.mainTouch->id != TOUCH_ID_INVALID && !touchscreen.mainTouch->stopped) : IsMouseBtnDown(&mouse, MouseBtn_Left));
+			BeginClayUIRender(&clay.clay, windowSize, false, uiMousePosition, uiMouseDown);
 			{
 				CLAY({ .id = CLAY_ID("FullscreenContainer"),
 					.layout = {
-						.layoutDirection = CLAY_TOP_TO_BOTTOM,
 						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-					},
+						.padding = { .left = screenMargins.X, .top = screenMargins.Y, .right = screenMargins.Z, .bottom = screenMargins.W },
+					}
 				})
 				{
-					CLAY({ .id = CLAY_ID("Topbar"),
+					CLAY({.id = CLAY_ID("SafeInsetLeft"),
 						.layout = {
-							.sizing = {
-								.height = CLAY_SIZING_FIXED(30),
-								.width = CLAY_SIZING_GROW(0),
-							},
-							.padding = { 0, 0, 0, 0 },
-							.childGap = 2,
-							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.X), .height=CLAY_SIZING_FIXED(windowSize.Height) }
+						},
+						.floating = {
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+							.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
 						},
 						.backgroundColor = MonokaiBack,
-					})
+					}) { }
+					CLAY({.id = CLAY_ID("SafeInsetTop"),
+						.layout = {
+							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.Width), .height=CLAY_SIZING_FIXED(screenMargins.Y) }
+						},
+						.floating = {
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+							.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
+						},
+						.backgroundColor = MonokaiBack,
+					}) { }
+					CLAY({.id = CLAY_ID("SafeInsetRight"),
+						.layout = {
+							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.Z), .height=CLAY_SIZING_FIXED(windowSize.Height) }
+						},
+						.floating = {
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+							.attachPoints = { .parent = CLAY_ATTACH_POINT_RIGHT_TOP, .element = CLAY_ATTACH_POINT_RIGHT_TOP },
+						},
+						.backgroundColor = MonokaiBack,
+					}) { }
+					CLAY({.id = CLAY_ID("SafeInsetBottom"),
+						.layout = {
+							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.Width), .height=CLAY_SIZING_FIXED(screenMargins.W) }
+						},
+						.floating = {
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+							.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_BOTTOM, .element = CLAY_ATTACH_POINT_LEFT_BOTTOM },
+						},
+						.backgroundColor = MonokaiBack,
+					}) { }
+					
+					CLAY({ .id = CLAY_ID("SafeContainer"), .layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM, .sizing={ .width=CLAY_SIZING_GROW(0), .height=CLAY_SIZING_GROW(0) } } })
 					{
-						if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340))
+						
+						FontAtlas* fontAtlas = GetFontAtlas(&testFont, 18*textScale, FontStyleFlag_None);
+						NotNull(fontAtlas);
+						CLAY({ .id = CLAY_ID("Topbar"),
+							.layout = {
+								.sizing = {
+									.height = CLAY_SIZING_FIXED(fontAtlas->lineHeight + 30),
+									.width = CLAY_SIZING_GROW(0),
+								},
+								.padding = { 0, 0, 0, 0 },
+								.childGap = 2,
+								.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+							},
+							.backgroundColor = MonokaiBack,
+						})
 						{
-							if (ClayBtn("Op[color=FF00FF]e[highlight]n [size=10]\bCo[color]lor\b[size][highlight]!", Transparent, MonokaiWhite))
+							if (ClayTopBtn("File", &isFileMenuOpen, MonokaiBack, MonokaiWhite, 340 * textScale))
 							{
-								//TODO: Implement me!
-							} Clay__CloseElement();
-							
-							if (ClayBtn("Close Program", Transparent, MonokaiWhite))
-							{
-								sapp_request_quit();
-							} Clay__CloseElement();
-							
+								if (ClayBtn("Op[color=FF00FF]e[highlight]n [size=10]\bCo[color]lor\b[size][highlight]!", Transparent, MonokaiWhite))
+								{
+									//TODO: Implement me!
+								} Clay__CloseElement();
+								
+								if (ClayBtn("Close Program", Transparent, MonokaiWhite))
+								{
+									sapp_request_quit();
+								} Clay__CloseElement();
+								
+								Clay__CloseElement();
+								Clay__CloseElement();
+							}
 							Clay__CloseElement();
-							Clay__CloseElement();
+							
+							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(16) } } }) {}
+							
+							u64 utcTimestamp = OsGetCurrentTimestamp(false);
+							i64 timezoneOffset = 0;
+							u64 localTimestamp = OsGetCurrentTimestampEx(true, &timezoneOffset, nullptr);
+							Str8 displayStr = ScratchPrintStr("UTC: %llu Local: %llu (%s%lld)", utcTimestamp, localTimestamp, timezoneOffset >= 0 ? "+" : "-", AbsI64(timezoneOffset));
+							CLAY_TEXT(
+								displayStr,
+								CLAY_TEXT_CONFIG({
+									.fontId = clayFont,
+									.fontSize = 18*textScale,
+									.textColor = MonokaiWhite,
+								})
+							);
 						}
-						Clay__CloseElement();
-						
-						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(16) } } }) {}
-						
-						u64 utcTimestamp = OsGetCurrentTimestamp(false);
-						i64 timezoneOffset = 0;
-						u64 localTimestamp = OsGetCurrentTimestampEx(true, &timezoneOffset, nullptr);
-						Str8 displayStr = ScratchPrintStr("UTC: %llu Local: %llu (%s%lld)", utcTimestamp, localTimestamp, timezoneOffset >= 0 ? "+" : "-", AbsI64(timezoneOffset));
-						CLAY_TEXT(
-							displayStr,
-							CLAY_TEXT_CONFIG({
-								.fontId = clayFont,
-								.fontSize = 18,
-								.textColor = MonokaiWhite,
-							})
-						);
 					}
 				}
 			}
