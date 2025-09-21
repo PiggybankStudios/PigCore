@@ -70,6 +70,52 @@ cTokenizer tokenizer = ZEROED;
 #if BUILD_WITH_PHYSX
 PhysicsWorld* physWorld = nullptr;
 #endif
+v4 screenSafeMargins = V4_Zero_Const;
+v2i oldWindowSize = V2i_Zero_Const;
+
+void UpdateScreenSafeMargins()
+{
+	#if TARGET_IS_ANDROID
+	JavaVMAttachBlock(env)
+	{
+		if ((*env)->GetVersion(env) > jGetField_Build_VERSION_CODES(env, "P"))
+		{
+			WriteLine_I("We should be able to get cutouts!");
+			jobject window = jCall_getWindow(env, AndroidNativeActivity);
+			jobject decorView = jCall_getDecorView(env, window);
+			
+			jobject insets = jCall_getRootWindowInsets(env, decorView);
+			i32 windowInsetLeft   = jCall_getSystemWindowInsetLeft(env, insets);
+			i32 windowInsetTop    = jCall_getSystemWindowInsetTop(env, insets);
+			i32 windowInsetRight  = jCall_getSystemWindowInsetRight(env, insets);
+			i32 windowInsetBottom = jCall_getSystemWindowInsetBottom(env, insets);
+			screenSafeMargins.X = (r32)windowInsetLeft;
+			screenSafeMargins.Y = (r32)windowInsetTop;
+			screenSafeMargins.Z = (r32)windowInsetRight;
+			screenSafeMargins.W = (r32)windowInsetBottom;
+			
+			jobject displayCutout = jCall_getDisplayCutout(env, insets);
+			if (displayCutout != nullptr)
+			{
+				i32 safeInsetLeft   = jCall_getSafeInsetLeft(env, displayCutout);
+				i32 safeInsetTop    = jCall_getSafeInsetTop(env, displayCutout);
+				i32 safeInsetRight  = jCall_getSafeInsetRight(env, displayCutout);
+				i32 safeInsetBottom = jCall_getSafeInsetBottom(env, displayCutout);
+				screenSafeMargins.X = (r32)MaxI32(windowInsetLeft, safeInsetLeft);
+				screenSafeMargins.Y = (r32)MaxI32(windowInsetTop, safeInsetTop);
+				screenSafeMargins.Z = (r32)MaxI32(windowInsetRight, safeInsetRight);
+				screenSafeMargins.W = (r32)MaxI32(windowInsetBottom, safeInsetBottom);
+				
+				(*env)->DeleteLocalRef(env, displayCutout);
+			}
+			(*env)->DeleteLocalRef(env, insets);
+			(*env)->DeleteLocalRef(env, decorView);
+			(*env)->DeleteLocalRef(env, window);
+		}
+	}
+	#endif
+}
+
 
 #if BUILD_WITH_CLAY
 //Call Clay__CloseElement once if false, three times if true (i.e. twicfe inside the if statement and once after)
@@ -349,6 +395,9 @@ void AppInit(void)
 	CreatePhysicsTest(physWorld);
 	#endif
 	
+	UpdateScreenSafeMargins();
+	oldWindowSize = NewV2i(sapp_width(), sapp_height());
+	
 	ScratchEnd(scratch);
 }
 
@@ -387,6 +436,10 @@ bool AppFrame(void)
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	// v2 touchPos = touchscreen.mainTouch->pos;
+	if (AreEqualV2i(oldWindowSize, windowSizei))
+	{
+		UpdateScreenSafeMargins();
+	}
 	
 	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
@@ -525,11 +578,16 @@ bool AppFrame(void)
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
 			
+			DrawRectangle(NewRec(0, 0, screenSafeMargins.X, windowSize.Height), ColorWithAlpha(MonokaiMagenta, 0.5f));
+			DrawRectangle(NewRec(0, 0, windowSize.Width, screenSafeMargins.Y), ColorWithAlpha(MonokaiBlue, 0.5f));
+			DrawRectangle(NewRec(windowSize.Width - screenSafeMargins.Z, 0, windowSize.Width, screenSafeMargins.Z), ColorWithAlpha(MonokaiPurple, 0.5f));
+			DrawRectangle(NewRec(0, windowSize.Height - screenSafeMargins.W, screenSafeMargins.W, windowSize.Height), ColorWithAlpha(MonokaiYellow, 0.5f));
+			
 			#if 1
 			if (testFont.atlases.length > 0)
 			{
 				BindFont(&testFont);
-				v2 textPos = NewV2(50, 50);
+				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 130);
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
 				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
@@ -549,7 +607,7 @@ bool AppFrame(void)
 			#endif
 			
 			#if TARGET_IS_ANDROID
-			rec buttonRec = NewRec(100, 200, 100, 100);
+			rec buttonRec = NewRec(screenSafeMargins.X + 10, screenSafeMargins.Y + 10, 100, 100);
 			DrawRectangle(buttonRec, ColorWithAlpha(MonokaiRed, 0.40f));
 			for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
 			{
