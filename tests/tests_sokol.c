@@ -73,8 +73,10 @@ PhysicsWorld* physWorld = nullptr;
 v4 screenMargins = V4_Zero_Const;
 v4 screenSafeMargins = V4_Zero_Const;
 v2i oldWindowSize = V2i_Zero_Const;
+#if TARGET_IS_ANDROID
 Rot2 screenRotation = Rot2_0;
 bool screenRotated = false;
+#endif
 //TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
 #define TEXT_SCALE 3.0f
 // #define TEXT_SCALE 1.0f
@@ -113,6 +115,7 @@ void UpdateScreenSafeMargins()
 	#endif
 }
 
+#if TARGET_IS_ANDROID
 void UpdateScreenRotation()
 {
 	Rot2 newRotation = screenRotation;
@@ -153,6 +156,7 @@ void UpdateScreenRotation()
 		screenRotated = true;
 	}
 }
+#endif //TARGET_IS_ANDROID
 
 #if BUILD_WITH_CLAY
 //Call Clay__CloseElement once if false, three times if true (i.e. twicfe inside the if statement and once after)
@@ -479,7 +483,9 @@ bool AppFrame(void)
 	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
 	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
 	// v2 touchPos = touchscreen.mainTouch->pos;
+	#if TARGET_IS_ANDROID
 	UpdateScreenRotation();
+	#endif
 	if (AreEqualV2i(oldWindowSize, windowSizei)) { UpdateScreenSafeMargins(); }
 	
 	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
@@ -697,7 +703,8 @@ bool AppFrame(void)
 						if (AreEqualV2(touch->path[pIndex], TOUCH_PATH_INVALID)) { break; }
 						DrawLine(touch->path[pIndex-1], touch->path[pIndex], 1, MonokaiBrown);
 					}
-					DrawCircle(NewCircleV(touch->startPos, touch->visitRadius), ColorWithAlpha(MonokaiYellow, 0.25f));
+					bool isMainTouch = (touchscreen.mainTouchIndex == tIndex);
+					DrawCircle(NewCircleV(touch->startPos, touch->visitRadius), ColorWithAlpha(isMainTouch ? MonokaiYellow : MonokaiOrange, 0.25f));
 					DrawRectangle(touch->visitBounds, ColorWithAlpha(MonokaiGreen, 0.25f));
 					DrawRectangle(NewRecCentered(touch->startPos.X, touch->startPos.Y, 15, 15), MonokaiBlue);
 					DrawRectangle(NewRecCentered(touch->pos.X, touch->pos.Y, 15, 15), MonokaiMagenta);
@@ -938,7 +945,9 @@ bool AppFrame(void)
 	RefreshMouseState(&mouse, sapp_mouse_locked(), NewV2(sapp_widthf()/2.0f, sapp_heightf()/2.0f));
 	RefreshKeyboardState(&keyboard);
 	RefreshTouchscreenState(&touchscreen);
+	#if TARGET_IS_ANDROID
 	screenRotated = false;
+	#endif
 	ScratchEnd(scratch);
 	return frameRendered;
 }
@@ -997,6 +1006,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.window_title = "Simple Sokol App!",
 		.icon.sokol_default = true,
 		.logger.func = SokolLogCallback,
+		.enable_touch_input = true,
 	};
 	
 	TracyCZoneEnd(Zone_Func);

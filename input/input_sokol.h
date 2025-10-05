@@ -19,6 +19,7 @@ Description:
 #include "input/input_keys.h"
 #include "input/input_mouse_btns.h"
 #include "input/input_controller_btns.h"
+#include "input/input_touch.h"
 #include "misc/misc_sokol_app_include.h"
 
 #if BUILD_WITH_SOKOL_APP
@@ -31,7 +32,7 @@ Description:
 	PIG_CORE_INLINE Key GetKeyFromSokolKeycode(sapp_keycode keycode);
 	Key GetNonAltKeyForKey(Key key, u8 primaryIndex);
 	MouseBtn GetMouseBtnFromSokolMouseButton(sapp_mousebutton mouseButton);
-	bool HandleSokolKeyboardAndMouseEvents(const sapp_event* event, u64 currentTime, v2i screenSize, KeyboardState* keyboard, MouseState* mouse, bool isMouseLocked);
+	bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 currentTime, v2i screenSize, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen, bool isMouseLocked);
 #endif
 
 // +--------------------------------------------------------------+
@@ -371,11 +372,11 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 					v2 touchPos = NewV2(sokolTouch->pos_x, sokolTouch->pos_y);
 					//TODO: Should we use sokolTouch->android_tooltype (i.e. to check if it's a stylus, mouse, or touch)
 					//TODO: Should we use sokolTouch->changed?
-					// PrintLine_D("Finding touch %llu", touchId);
+					PrintLine_D("Finding touch %llu", touchId);
 					TouchState* touch = FindTouchById(touchscreen, touchId);
 					if (touch == nullptr)
 					{
-						// PrintLine_D("Starting new touch %llu", touchId);
+						PrintLine_D("Starting new touch %llu", touchId);
 						touch = StartNewTouch(touchscreen, touchId, touchPos, currentTime);
 						if (touch == nullptr) { WriteLine_E("Ran out of touch slots in TouchscreenState!"); break; }
 					}

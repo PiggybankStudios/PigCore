@@ -40,7 +40,7 @@ PEXP Result OsGetClipboardString(OsWindowHandle windowHandle, Arena* arena, Str8
 	Result result = Result_None;
 	#if TARGET_IS_WINDOWS
 	{
-		Assert(windowHandle != OsWidowHandleEmpty);
+		Assert(windowHandle != OsWindowHandleEmpty);
 		if (OpenClipboard(windowHandle))
 		{
 			HANDLE dataHandle = GetClipboardData(CF_UNICODETEXT);
@@ -102,7 +102,7 @@ PEXP Result OsSetClipboardString(OsWindowHandle windowHandle, Str8 clipboardStr)
 	#if TARGET_IS_WINDOWS
 	do
 	{
-		Assert(windowHandle != OsWidowHandleEmpty);
+		Assert(windowHandle != OsWindowHandleEmpty);
 		NotNullStr(clipboardStr);
 		ScratchBegin(scratch);
 		
