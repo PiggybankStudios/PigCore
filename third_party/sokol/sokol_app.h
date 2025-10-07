@@ -7755,8 +7755,8 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
             	if (_sapp.desc.enable_touch_input)
             	{
             		WORD numTouches = (WORD)((wParam >> 0) & 0xFFFF);
-            		SOKOL_ASSERT(numTouches <= SAPP_MAX_TOUCHPOINTS); //TODO: Should we change this to not be an assertion?
             		if (numTouches == 0) { break; }
+            		if (numTouches > SAPP_MAX_TOUCHPOINTS) { numTouches = SAPP_MAX_TOUCHPOINTS; }
             		
             		TOUCHINPUT touchInfos[SAPP_MAX_TOUCHPOINTS];
         			BOOL getTouchInputInfoResult = GetTouchInputInfo(
