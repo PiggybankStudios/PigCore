@@ -364,6 +364,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 		{
 			if (touchscreen != nullptr)
 			{
+				// PrintLine_W("Got TOUCHES_BEGAN %d", event->num_touches);
 				for (int tIndex = 0; tIndex < event->num_touches; tIndex++)
 				{
 					const sapp_touchpoint* sokolTouch = &event->touches[tIndex];
@@ -371,16 +372,15 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 					uxx touchId = (uxx)sokolTouch->identifier+1;
 					v2 touchPos = NewV2(sokolTouch->pos_x, sokolTouch->pos_y);
 					//TODO: Should we use sokolTouch->android_tooltype (i.e. to check if it's a stylus, mouse, or touch)
-					//TODO: Should we use sokolTouch->changed?
-					PrintLine_D("Finding touch %llu", touchId);
+					// PrintLine_W("Finding touch %llu", touchId);
 					TouchState* touch = FindTouchById(touchscreen, touchId);
-					if (touch == nullptr)
+					if (touch == nullptr && sokolTouch->changed)
 					{
-						PrintLine_D("Starting new touch %llu", touchId);
+						// PrintLine_W("Starting new touch %llu", touchId);
 						touch = StartNewTouch(touchscreen, touchId, touchPos, currentTime);
-						if (touch == nullptr) { WriteLine_E("Ran out of touch slots in TouchscreenState!"); break; }
+						if (touch == nullptr) { WriteLine_E("Ran out of touch slots in TouchscreenState!"); continue; }
 					}
-					UpdateTouchStatePosition(touch, touchPos, currentTime);
+					if (touch != nullptr) { UpdateTouchStatePosition(touch, touchPos, currentTime); }
 				}
 				handled = true;
 			}
@@ -393,13 +393,25 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 		{
 			if (touchscreen != nullptr)
 			{
+				// PrintLine_W("Got TOUCHES_ENDED %d", event->num_touches);
 				for (int tIndex = 0; tIndex < event->num_touches; tIndex++)
 				{
 					const sapp_touchpoint* sokolTouch = &event->touches[tIndex];
 					DebugAssert(sokolTouch->identifier < UINT32_MAX);
 					uxx touchId = (uxx)sokolTouch->identifier+1;
 					TouchState* touch = FindTouchById(touchscreen, touchId);
-					if (touch != nullptr) { touch->stopped = true; touch->stopTime = currentTime; }
+					if (touch != nullptr)
+					{
+						v2 touchPos = NewV2(sokolTouch->pos_x, sokolTouch->pos_y);
+						UpdateTouchStatePosition(touch, touchPos, currentTime);
+						if (sokolTouch->changed)
+						{
+							// PrintLine_W("Ended touch %llu", touch->id);
+							touch->stopped = true;
+							touch->stopTime = currentTime;
+						}
+					}
+					else if (sokolTouch->changed) { PrintLine_W("Got ENDED event for unknown touch %llu!", touchId); }
 				}
 				handled = true;
 			}
@@ -412,13 +424,25 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 		{
 			if (touchscreen != nullptr)
 			{
+				// PrintLine_W("Got TOUCHES_CANCELLED %d", event->num_touches);
 				for (int tIndex = 0; tIndex < event->num_touches; tIndex++)
 				{
 					const sapp_touchpoint* sokolTouch = &event->touches[tIndex];
 					DebugAssert(sokolTouch->identifier < UINT32_MAX);
 					uxx touchId = (uxx)sokolTouch->identifier+1;
 					TouchState* touch = FindTouchById(touchscreen, touchId);
-					if (touch != nullptr) { touch->stopped = true; touch->stopTime = currentTime; }
+					if (touch != nullptr)
+					{
+						v2 touchPos = NewV2(sokolTouch->pos_x, sokolTouch->pos_y);
+						UpdateTouchStatePosition(touch, touchPos, currentTime);
+						if (sokolTouch->changed)
+						{
+							// PrintLine_W("Cancelled touch %llu", touch->id);
+							touch->stopped = true;
+							touch->stopTime = currentTime;
+						}
+					}
+					else if (sokolTouch->changed) { PrintLine_W("Got CANCELLED event for unknown touch %llu!", touchId); }
 				}
 				handled = true;
 			}
