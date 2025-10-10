@@ -23,7 +23,8 @@
 		<activity
 			android:name="android.app.NativeActivity"
 			android:exported="true"
-			android:theme="@android:style/Theme.NoTitleBar" >
+			android:theme="@android:style/Theme.NoTitleBar"
+			android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" >
 			
 			<meta-data android:name="android.app.lib_name" android:value="tests"/>
 			
