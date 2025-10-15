@@ -7751,15 +7751,19 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
                 // refresh rate might have changed
                 _sapp_timing_reset(&_sapp.timing);
                 break;
-            case WM_TOUCH:
-            	if (_sapp.desc.enable_touch_input)
-            	{
-            		WORD numTouches = (WORD)((wParam >> 0) & 0xFFFF);
-            		if (numTouches == 0) { break; }
-            		if (numTouches > SAPP_MAX_TOUCHPOINTS) { numTouches = SAPP_MAX_TOUCHPOINTS; }
-            		
-            		TOUCHINPUT touchInfos[SAPP_MAX_TOUCHPOINTS];
-        			BOOL getTouchInputInfoResult = GetTouchInputInfo(
+			case WM_TOUCH:
+				if (_sapp.desc.enable_touch_input)
+				{
+					WORD numTouches = (WORD)((wParam >> 0) & 0xFFFF);
+					// char printBuffer[256] = {};
+					// int printLength = snprintf(printBuffer, 256, "WM_TOUCH %d touch%s\n", numTouches, numTouches == 1 ? "" : "es");
+					// printBuffer[printLength] = '\0';
+					// OutputDebugStringA(printBuffer);
+					if (numTouches == 0) { break; }
+					if (numTouches > SAPP_MAX_TOUCHPOINTS) { numTouches = SAPP_MAX_TOUCHPOINTS; }
+					
+					TOUCHINPUT touchInfos[SAPP_MAX_TOUCHPOINTS];
+					BOOL getTouchInputInfoResult = GetTouchInputInfo(
 						(HTOUCHINPUT)lParam,
 						SAPP_MAX_TOUCHPOINTS,
 						&touchInfos[0],
@@ -7767,46 +7771,37 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
 					);
 					SOKOL_ASSERT(getTouchInputInfoResult != 0);
 					
-					//NOTE: We need to group events that are of the same sapp_event_type. To do that we find one valid unhandled touch in the outer loop,
-					//      and then loop through all matching touches in the inner loop and store their information into a single event.
-					//      Then we mark all those touch infos as handled
-            		bool handledTouch[SAPP_MAX_TOUCHPOINTS] = {};
-            		
-            		for (WORD outerLoopIndex = 0; outerLoopIndex < numTouches; outerLoopIndex++)
-            		{
-            			if (handledTouch[outerLoopIndex]) { continue; }
-            			
-            			sapp_event_type eventType = _sapp_win32_get_touch_event_type(touchInfos[outerLoopIndex].dwFlags, touchInfos[outerLoopIndex].dwMask);
-            			if (eventType == SAPP_EVENTTYPE_INVALID) { continue; }
-            			
-            			_sapp_init_event(eventType);
-						_sapp.event.num_touches = 0;
-						for (WORD innerLoopIndex = outerLoopIndex; innerLoopIndex < numTouches; innerLoopIndex++)
-						{
-							TOUCHINPUT* touchInfo = &touchInfos[innerLoopIndex];
-							if (!handledTouch[innerLoopIndex] &&
-								eventType == _sapp_win32_get_touch_event_type(touchInfo->dwFlags, touchInfo->dwMask))
-							{
-								sapp_touchpoint* dst = &_sapp.event.touches[_sapp.event.num_touches];
-								dst->identifier = (uintptr_t)touchInfo->dwID;
-								dst->changed = true; //TODO: Should we always set this?
-								POINT touchPoint = { touchInfo->x/100, touchInfo->y/100 };
-								ScreenToClient(_sapp.win32.hwnd, &touchPoint);
-								//TODO: Use the hundredths in the original TOUCHINFO x and y to offset floating point value!
-								dst->pos_x = ((float)touchPoint.x / _sapp.window_width) * _sapp.framebuffer_width;
-								dst->pos_y = ((float)touchPoint.y / _sapp.window_height) * _sapp.framebuffer_height;
-								//TODO: Should we use the dwTime member of TOUCHINPUT?
-								//TODO: Should we look at cxContact and cyContact to determine the size of the touch input? Somehow pass this to the application?
-								handledTouch[innerLoopIndex] = true;
-								_sapp.event.num_touches++;
-							}
-						}
-						_sapp_call_event(&_sapp.event);
-            		}
+					sapp_event_type eventType = SAPP_EVENTTYPE_INVALID;
+					for (WORD tIndex = 0; tIndex < numTouches; tIndex++)
+					{
+						eventType = _sapp_win32_get_touch_event_type(touchInfos[tIndex].dwFlags, touchInfos[tIndex].dwMask);
+						if (eventType == SAPP_EVENTTYPE_TOUCHES_BEGAN || eventType == SAPP_EVENTTYPE_TOUCHES_ENDED || eventType == SAPP_EVENTTYPE_TOUCHES_CANCELLED) { break; }
+					}
+					if (eventType == SAPP_EVENTTYPE_INVALID) { break; }
+					
+					_sapp_init_event(eventType);
+					_sapp.event.num_touches = numTouches;
+					for (WORD tIndex = 0; tIndex < numTouches; tIndex++)
+					{
+						TOUCHINPUT* touchInfo = &touchInfos[tIndex];
+						sapp_event_type thisEventType = _sapp_win32_get_touch_event_type(touchInfo->dwFlags, touchInfo->dwMask);
+						sapp_touchpoint* touch = &_sapp.event.touches[_sapp.event.num_touches];
+						touch->identifier = (uintptr_t)touchInfo->dwID;
+						touch->changed = (thisEventType == eventType);
+						POINT touchPoint = { touchInfo->x/100, touchInfo->y/100 };
+						ScreenToClient(_sapp.win32.hwnd, &touchPoint);
+						//TODO: Use the hundredths in the original TOUCHINFO x and y to offset floating point value!
+						touch->pos_x = ((float)touchPoint.x / _sapp.window_width) * _sapp.framebuffer_width;
+						touch->pos_y = ((float)touchPoint.y / _sapp.window_height) * _sapp.framebuffer_height;
+						//TODO: Should we use the dwTime member of TOUCHINPUT?
+						//TODO: Should we look at cxContact and cyContact to determine the size of the touch input? Somehow pass this to the application?
+						_sapp.event.num_touches++;
+					}
+					_sapp_call_event(&_sapp.event);
 					
 					CloseTouchInputHandle((HTOUCHINPUT)lParam);
-            	}
-            	break;
+				}
+				break;
 
             default:
                 break;

@@ -77,9 +77,13 @@ v2i oldWindowSize = V2i_Zero_Const;
 Rot2 screenRotation = Rot2_0;
 bool screenRotated = false;
 #endif
+
 //TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
+#if TARGET_IS_ANDROID
 #define TEXT_SCALE 3.0f
-// #define TEXT_SCALE 1.0f
+#else
+#define TEXT_SCALE 1.0f
+#endif
 
 void UpdateScreenSafeMargins()
 {
