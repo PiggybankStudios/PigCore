@@ -11,7 +11,7 @@ Description:
 #ifndef _TOOLS_PIG_CORE_BUILD_FLAGS_H
 #define _TOOLS_PIG_CORE_BUILD_FLAGS_H
 
-void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY)
+void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY, bool BUILD_WITH_FREETYPE)
 {
 	AddArg(cl_CommonFlags, DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
 	AddArg(cl_CommonFlags, CL_FULL_FILE_PATHS); //we need full file paths in errors for Sublime Text to be able to parse the errors and display them in the editor
@@ -32,6 +32,7 @@ void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_NAMED_TYPEDEF_IN_PARENTHESES);
 	AddArgInt(cl_CommonFlags, CL_ENABLE_WARNING, CL_WARNING_SWITCH_FALLTHROUGH);
 	AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]");
+	if (BUILD_WITH_FREETYPE) { AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/third_party/freetype/include"); }
 	if (DEBUG_BUILD)
 	{
 		AddArg(cl_CommonFlags, CL_DEBUG_INFO);

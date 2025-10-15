@@ -130,6 +130,7 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
 	bool BUILD_WITH_HTTP          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
 	bool BUILD_WITH_PROTOBUF      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PROTOBUF"));
+	bool BUILD_WITH_FREETYPE      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"));
 	
 	Str8 ANDROID_SIGNING_KEY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")), false);
 	Str8 ANDROID_SIGNING_PASSWORD = ZEROED;
@@ -204,7 +205,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |       Fill CliArgLists       |
 	// +==============================+
-	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY);
+	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY, BUILD_WITH_FREETYPE);
 	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
 	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);

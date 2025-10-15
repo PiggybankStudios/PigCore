@@ -181,6 +181,11 @@
 				"android/asset_manager.h",
 			],
 		},
+		{
+			"name": "FreeType",
+			"path": "third_party/freetype",
+			"file_exclude_patterns": [ "build.bat", "LICENSE.TXT" ],
+		},
 	],
 	"settings":
 	{
@@ -231,6 +236,7 @@
 			"BUILD_WEB",
 			"BUILD_WINDOWS",
 			"BUILD_WITH_BOX2D",
+			"BUILD_WITH_FREETYPE",
 			"BUILD_WITH_HTTP",
 			"BUILD_WITH_OPENVR",
 			"BUILD_WITH_PROTOBUF",

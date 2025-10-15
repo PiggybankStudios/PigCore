@@ -15,7 +15,7 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
 
-#define BUILD_PIG_BUILD 0
+#define BUILD_PIG_BUILD 1
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -25,7 +25,7 @@ Description:
 #define PROFILING_ENABLED 0
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             0
+#define BUILD_WINDOWS             1
 // Build binaries for Linux platform(s)
 #define BUILD_LINUX               0
 // Build binaries for OSX platform
@@ -33,9 +33,9 @@ Description:
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB                 0
 // Build the native .so files for Android
-#define BUILD_ANDROID             1
+#define BUILD_ANDROID             0
 // Package the .so files and other content into an .apk for Android
-#define BUILD_ANDROID_APK         1
+#define BUILD_ANDROID_APK         0
 // Build a WASM binary and package as Orca application
 #define BUILD_ORCA                0
 // Build a binary that can be uploaded to the Playdate device
@@ -67,7 +67,7 @@ Description:
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS         0
 // Installs the Android .apk onto a running Virtual Device (AVD) through abd.exe
-#define INSTALL_TESTS_APK 1
+#define INSTALL_TESTS_APK 0
 
 // Runs protoc --c_out (which uses protoc-gen-c plugin) to generate pb-c.h and pb-c.c files from all .proto files
 #define GENERATE_PROTOBUF 0
@@ -117,6 +117,8 @@ Description:
 #define BUILD_WITH_HTTP      0
 // Enables support for encoding/decoding Googles's protocol buffers using protobuf-c library
 #define BUILD_WITH_PROTOBUF  0
+// Enables building with the FreeType library which provides better font rasterizing support than stb_truetype.h (the default dependency)
+#define BUILD_WITH_FREETYPE  1
 
 // +==============================+
 // |        String Defines        |
