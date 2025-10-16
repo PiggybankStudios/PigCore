@@ -11,16 +11,31 @@ Date:   10\15\2025
 
 #if BUILD_WITH_FREETYPE
 
+#define FT2_BUILD_LIBRARY
+#define FT_CONFIG_MODULES_H "misc/misc_freetype_modules.h"
+#define FT_CONFIG_OPTIONS_H "misc/misc_freetype_options.h"
+#define MINIZ_NO_ZLIB_COMPATIBLE_NAMES
+
 #if !PIG_CORE_IMPLEMENTATION
 
-// #include "freetype.h"
+#include <freetype/freetype.h>
 
 #else
 
-#define FT2_BUILD_LIBRARY
+#ifdef len
+#undef len
+#endif
+
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable:4244) //'function': conversion from '__int64' to 'const unsigned int', possible loss of data
+#pragma warning(disable:4267) //'+=': conversion from 'size_t' to 'TCoord', possible loss of data
+#pragma warning(disable:5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#endif
 
 #include "third_party/freetype/src/base/ftsystem.c"
 #include "third_party/freetype/src/base/ftinit.c"
+#include "third_party/freetype/src/base/ftmm.c"
 #include "third_party/freetype/src/base/ftdebug.c"
 #include "third_party/freetype/src/base/ftbase.c"
 #include "third_party/freetype/src/base/ftbbox.c"
@@ -30,6 +45,11 @@ Date:   10\15\2025
 #include "third_party/freetype/src/truetype/truetype.c"
 #include "third_party/freetype/src/smooth/smooth.c"
 #include "third_party/freetype/src/psnames/psnames.c"
+#include "third_party/freetype/src/gzip/ftgzip.c"
+
+#if COMPILER_IS_MSVC
+#pragma warning(pop)
+#endif
 
 #endif //PIG_CORE_IMPLEMENTATION
 

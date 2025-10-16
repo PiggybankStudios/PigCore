@@ -217,7 +217,7 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 ---
 
-## Clay UI v0.13
+## Clay UI v0.13 (with many modifications)
 **URL(s):** [https://github.com/nicbarker/clay](https://github.com/nicbarker/clay) [v0.13](https://github.com/nicbarker/clay/releases/tag/v0.13)
 
 **Folder Name:** `clay`
@@ -282,3 +282,42 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Required For:**
 
 * `phys_physx.h` depends upon this library (only if `BUILD_WITH_PHYSX` is enabled)
+
+---
+
+## Protobuf-C 
+**URL(s):** [Github](https://github.com/protobuf-c/protobuf-c) [v1.5.2](https://github.com/protobuf-c/protobuf-c/releases/tag/v1.5.2)
+
+**Folder Name:** `protobuf_c`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** v1.5.2 released on Apr 6th 2025
+
+**Fixup Required:** Copy `protobuf-c/protobuf-c.c` and `protobuf-c/protobuf-c.h` into `third_party/protobuf_c/protobuf-c/` folder. Compile `protobuf-gen-c` for *Linux* (use WSL on Windows) and place into `thid_party/_tools/linux/protoc-gen-c` (run this under WSL whenever we need to regenerate protobuf code)
+
+**Required For:**
+
+* `parse_protobuf.h` if `BUILD_WITH_PROTOBUF` is enabled, allows us to serialize/deserialize protobuf files/streams in C
+
+---
+
+## FreeType 2.14.1
+**URL(s):** [FreeType.org](https://freetype.org/) [Download Page](https://download.savannah.gnu.org/releases/freetype/)
+
+**Folder Name:** `freetype`
+
+**Download Required:** Yes, download `freetype-2.14.1.tar.gz` and copy `src/` and `include/` folders into `third_party/freetype`. In the `src/` folder, delete everything but `base/`, `gzip/`, `psnames/`, `sfnt/`, `smooth/` and `truetype/` folders.
+
+**Current Version:** v2.14.1 from Sep. 11th 2025
+
+**Fixup Required:**
+
+* Change `Normalize` function to something like `FT_Normalize` in `src/truetype/ttinterp.c` (We use `Normalize` as a C11 `_Generic` macro).
+* Change `interface` local variable to something like `interface_` in `src/base/ftobjs.c` in `ft_property_do` (`interface` macro is defined by D3D11 headers?)
+* Change `Assert` macro in `src/gzip/zutil.h` to something like `z_Assert` (We use `Assert` macro and our arguments are different)
+
+**Required For:**
+
+* `misc_freetype_include.h` if `BUILD_WITH_FREETYPE` is enabled. This acts as a better option for font rasterization instead of `stb_truetype.h`
+

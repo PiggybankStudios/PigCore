@@ -15,7 +15,7 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
 
-#define BUILD_PIG_BUILD 1
+#define BUILD_PIG_BUILD 0
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
