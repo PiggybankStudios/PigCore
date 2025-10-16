@@ -67,7 +67,7 @@ void Fill_cl_LangCppFlags(CliArgList* cl_LangCppFlags)
 }
 
 // Flags that we use when compiling any C program using Clang
-void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR)
+void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool BUILD_WITH_FREETYPE)
 {
 	AddArg(clang_CommonFlags, CLANG_FULL_FILE_PATHS); //Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 	AddArgNt(clang_CommonFlags, CLANG_LANG_VERSION, "gnu2x"); //Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
@@ -77,6 +77,7 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 	AddArgNt(clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH);
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_SWITCH_MISSING_CASES);
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_FUNCTION);
+	if (BUILD_WITH_FREETYPE) { AddArgNt(clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/freetype/include"); }
 	if (DEBUG_BUILD)
 	{
 		//We don't care about these warnings in debug builds, but we will solve them when we go to build in release mode because they probably indicate mistakes at that point
