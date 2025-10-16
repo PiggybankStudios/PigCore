@@ -53,6 +53,18 @@ Date:   10\15\2025
 
 #endif //PIG_CORE_IMPLEMENTATION
 
+// +--------------------------------------------------------------+
+// |                        Helper Macros                         |
+// +--------------------------------------------------------------+
+
+// Convert to/from Fixed Point 26.6 type
+#define TO_FT26_FROM_I32(integerValue)    (FT_F26Dot6)(((signed long)(integerValue)) << 6)
+#define TO_FT26_FROM_R32(floatValue)      (FT_F26Dot6)((floatValue) * 64.0f)
+#define TO_FT26_FROM_R64(floatValue)      (FT_F26Dot6)((floatValue) * 64.0)
+#define TO_I32_FROM_FT26(fixedPointValue) (i32)((fixedPointValue) >> 6)
+#define TO_R32_FROM_FT26(fixedPointValue) (r32)(((r32)(fixedPointValue)) / 64.0f)
+#define TO_R64_FROM_FT26(fixedPointValue) (r64)(((r64)(fixedPointValue)) / 64.0)
+
 #endif //BUILD_WITH_FREETYPE
 
 #endif //  _MISC_FREETYPE_INCLUDE_H

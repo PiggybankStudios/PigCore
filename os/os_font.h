@@ -6,6 +6,8 @@ Description:
 	** Contains functions that help us ask the operating system for font files like .ttf
 */
 
+//TODO: On Windows we may want to look at registry entries at HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontLink\SystemLink to determine good fallback fonts for a particular font selected by the user
+
 #ifndef _OS_FONT_H
 #define _OS_FONT_H
 

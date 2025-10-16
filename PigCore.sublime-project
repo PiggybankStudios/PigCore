@@ -184,7 +184,7 @@
 		{
 			"name": "FreeType",
 			"path": "third_party/freetype",
-			"file_exclude_patterns": [ "build.bat", "LICENSE.TXT" ],
+			"file_exclude_patterns": [ "build.bat", "LICENSE.TXT"],
 		},
 	],
 	"settings":
@@ -1170,6 +1170,12 @@
 			"#define StrPntrPrint(strPntr)",
 			"#define StrPrint(string)",
 			"#define SwapPointers(varType, pntr1, pntr2)",
+			"#define TO_FT26_FROM_I32(integerValue)",
+			"#define TO_FT26_FROM_R32(floatValue)",
+			"#define TO_FT26_FROM_R64(floatValue)",
+			"#define TO_I32_FROM_FT26(fixedPointValue)",
+			"#define TO_R32_FROM_FT26(fixedPointValue)",
+			"#define TO_R64_FROM_FT26(fixedPointValue)",
 			"#define Terabytes(value)",
 			"#define ToDegrees32(radians)",
 			"#define ToDegrees64(radians)",

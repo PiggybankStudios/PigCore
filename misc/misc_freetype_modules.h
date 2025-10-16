@@ -4,11 +4,10 @@ Author: Taylor Robbins
 Date:   10\15\2025
 Description:
 	** This file registers the FreeType modules compiled into the library.
-	** This file is #included by FreeType source files through FT_CONFIG_MODULES_H which is defined in misc_freetype_include.h
+	** This file is #included in X-Macro style by FreeType source files through FT_CONFIG_MODULES_H which is defined in misc_freetype_include.h
 */
 
-#ifndef _MISC_FREETYPE_MODULES_H
-#define _MISC_FREETYPE_MODULES_H
+//NOTE: No include guard here since this file can be #included multiple times
 
 #if !BUILD_WITH_FREETYPE
 #error misc_freetype_modules.h should not be #included when we aren't building FreeType source!
@@ -33,5 +32,3 @@ FT_USE_MODULE( FT_Renderer_Class, ft_smooth_renderer_class )
 // FT_USE_MODULE( FT_Renderer_Class, ft_sdf_renderer_class )
 // FT_USE_MODULE( FT_Renderer_Class, ft_bitmap_sdf_renderer_class )
 // FT_USE_MODULE( FT_Renderer_Class, ft_svg_renderer_class )
-
-#endif //  _MISC_FREETYPE_MODULES_H
