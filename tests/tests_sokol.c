@@ -336,13 +336,32 @@ void AppInit(void)
 			FontCharRange_ASCII,
 			FontCharRange_LatinSupplementAccent,
 		};
-		
 		r32 textScale = TEXT_SCALE/sapp_dpi_scale();
+		FontBakeSettings bakeSettings[] = {
+			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_None, .fillKerningTable=true },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Bold },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Italic },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_None },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Bold },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Italic },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_None },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_Bold },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_Italic },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
+		};
+		
+		Result bakeResult = AttachAndMultiBakeFontAtlases(&testFont, ArrayCount(bakeSettings), &bakeSettings[0], 256, 1024, ArrayCount(charRanges), &charRanges[0]);
+		Assert(bakeResult == Result_Success);
+		
+		#if 0
 		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None);
 		if (attachResult1 == Result_Success)
 		{
-			Result bakeResult1 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult1 == Result_Success);
+			r32 fontSizes[] = { 18*textScale, 10*textScale, 26*textScale };
+			Result bakeResult = MultiBakeFontAtlases(&testFont, ArrayCount(fontSizes), &fontSizes[0], FontStyleFlag_None, 256, 1024, ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult == Result_Success);
 			FillFontKerningTable(&testFont);
 			RemoveAttachedTtfFile(&testFont);
 		}
@@ -351,8 +370,9 @@ void AppInit(void)
 		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold);
 		if (attachResult2 == Result_Success)
 		{
-			Result bakeResult2 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Bold, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult2 == Result_Success);
+			r32 fontSizes[] = { 18*textScale, 10*textScale, 26*textScale };
+			Result bakeResult = MultiBakeFontAtlases(&testFont, ArrayCount(fontSizes), &fontSizes[0], FontStyleFlag_Bold, 256, 1024, ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
 		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Bold: %s", GetResultStr(attachResult2)); }
@@ -360,8 +380,8 @@ void AppInit(void)
 		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic);
 		if (attachResult3 == Result_Success)
 		{
-			Result bakeResult3 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Italic, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult3 == Result_Success);
+			Result bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Italic, 256, 1024, ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
 		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Italic: %s", GetResultStr(attachResult3)); }
@@ -369,29 +389,12 @@ void AppInit(void)
 		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic);
 		if (attachResult4 == Result_Success)
 		{
-			Result bakeResult4 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult4 == Result_Success);
+			Result bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic, 256, 1024, ArrayCount(charRanges), &charRanges[0]);
+			Assert(bakeResult == Result_Success);
 			RemoveAttachedTtfFile(&testFont);
 		}
 		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Bold+Italic: %s", GetResultStr(attachResult4)); }
-		
-		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 10*textScale, FontStyleFlag_Bold);
-		if (attachResult5 == Result_Success)
-		{
-			Result bakeResult5 = BakeFontAtlas(&testFont, 10*textScale, FontStyleFlag_Bold, NewV2i(512, 512), ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult5 == Result_Success);
-			RemoveAttachedTtfFile(&testFont);
-		}
-		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 10 Bold: %s", GetResultStr(attachResult5)); }
-		
-		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 26*textScale, FontStyleFlag_Bold);
-		if (attachResult6 == Result_Success)
-		{
-			Result bakeResult6 = BakeFontAtlas(&testFont, 26*textScale, FontStyleFlag_Bold, NewV2i(1024, 1024), ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult6 == Result_Success);
-			RemoveAttachedTtfFile(&testFont);
-		}
-		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 26 Bold: %s", GetResultStr(attachResult6)); }
+		#endif
 	}
 	
 	#if BUILD_WITH_FREETYPE
@@ -817,7 +820,7 @@ bool AppFrame(void)
 				textPos.Y += fontAtlas->lineHeight;
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
-				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur adipiscing elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
+				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur \badipiscing\b elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
 				DrawWrappedRichTextWithFont(
 					&testFont, 18*textScale, FontStyleFlag_None,
 					loremIpsumRich,
@@ -827,8 +830,8 @@ bool AppFrame(void)
 				);
 				rec logicalRec = gfx.prevFontFlow.logicalRec;
 				rec visualRec = gfx.prevFontFlow.visualRec;
-				DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
-				DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
+				// DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
+				// DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
 				DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
 			}
 			#endif
@@ -890,9 +893,9 @@ bool AppFrame(void)
 			
 			#if 1
 			r32 atlasRenderPosX = 10.0f;
-			VarArrayLoop(&freeFont.atlases, aIndex)
+			VarArrayLoop(&testFont.atlases, aIndex)
 			{
-				VarArrayLoopGet(FontAtlas, fontAtlas, &freeFont.atlases, aIndex);
+				VarArrayLoopGet(FontAtlas, fontAtlas, &testFont.atlases, aIndex);
 				rec atlasRenderRec = NewRec(atlasRenderPosX, 10, (r32)fontAtlas->texture.Width, (r32)fontAtlas->texture.Height);
 				DrawTexturedRectangle(atlasRenderRec, White, &fontAtlas->texture);
 				DrawRectangleOutline(atlasRenderRec, 1, White);

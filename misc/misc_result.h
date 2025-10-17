@@ -112,6 +112,7 @@ enum Result
 	Result_FailedToOpenClipboard,
 	Result_FailedToEmptyClipboard,
 	Result_NoScratchAvailable,
+	Result_InitFailed,
 	
 	Result_Count,
 };
@@ -207,6 +208,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_FailedToOpenClipboard: return "FailedToOpenClipboard";
 		case Result_FailedToEmptyClipboard: return "FailedToEmptyClipboard";
 		case Result_NoScratchAvailable: return "NoScratchAvailable";
+		case Result_InitFailed: return "InitFailed";
 		default: return UNKNOWN_STR;
 	}
 }

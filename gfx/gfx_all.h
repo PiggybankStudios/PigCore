@@ -36,6 +36,7 @@ Date:   01\19\2025
 #include "struct/struct_var_array.h" //required by gfx_font.h, gfx_system.h and gfx_clay_renderer.h
 #include "std/std_basic_math.h" //required by gfx_font.h
 #include "std/std_memset.h" //required by gfx_font.h
+#include "misc/misc_freetype_include.h" //required by gfx_font.h
 #include "base/base_unicode.h" //required by gfx_font.h and gfx_font_flow.h
 
 #include "gfx/gfx_font.h"

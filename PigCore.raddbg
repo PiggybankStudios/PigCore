@@ -1,6 +1,7 @@
 // raddbg 0.9.22 project file
 
 recent_file: path: "tests/tests_sokol.c"
+recent_file: path: "gfx/gfx_font.h"
 recent_file: path: "third_party/freetype/src/base/ftobjs.c"
 recent_file: path: "third_party/sokol/sokol_app.h"
 recent_file: path: "tests/tests_main.c"
