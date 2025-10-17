@@ -34,7 +34,8 @@ enum TextureFlag
 	TextureFlag_SingleChannel = 0x10,
 	TextureFlag_HasCopy       = 0x20,
 	TextureFlag_NoMipmaps     = 0x40,
-	TextureFlag_All = 0x3F,
+	TextureFlag_Mutable       = 0x80,
+	TextureFlag_All = 0xFF,
 };
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetTextureFlagStr(TextureFlag enumValue);
@@ -51,6 +52,7 @@ const char* GetTextureFlagStr(TextureFlag enumValue)
 		case TextureFlag_SingleChannel: return "SingleChannel";
 		case TextureFlag_HasCopy:       return "HasCopy";
 		case TextureFlag_NoMipmaps:     return "NoMipmaps";
+		case TextureFlag_Mutable:       return "Mutable";
 		default: return UNKNOWN_STR;
 	}
 }
@@ -86,6 +88,8 @@ plex Texture
 	void FreeTexture(Texture* texture);
 	Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPntr, u8 flags);
  	PIG_CORE_INLINE void SetTextureFilePath(Texture* texture, Str8 filePath);
+	void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixelsPntr);
+	PIG_CORE_INLINE void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex);
 #endif
 
 // +--------------------------------------------------------------+
@@ -175,22 +179,27 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 			TracyCZoneEnd(funcZone);
 			return result;
 		}
+		MyMemCopy(result.pixelsU8, pixelsPntr, result.totalSize);
 	}
 	
 	if (!IsEmptyStr(name)) { result.name = AllocStr8(arena, name); NotNull(result.name.chars); }
 	
 	//TODO: How do we handle creating mipmaps when !IsFlagSet(flags, TextureFlag_NoMipmaps)
 	
+	sg_range pixelsRange = (sg_range){ pixelsPntr, result.totalSize };
 	sg_image_desc imageDesc = ZEROED;
 	imageDesc.type = SG_IMAGETYPE_2D;
-	imageDesc.usage = SG_USAGE_IMMUTABLE;
+	imageDesc.usage = IsFlagSet(flags, TextureFlag_Mutable) ? SG_USAGE_DYNAMIC : SG_USAGE_IMMUTABLE;
 	imageDesc.width = size.Width;
 	imageDesc.height = size.Height;
 	imageDesc.num_mipmaps = 1; //TODO: Will change once we generate mipmaps
 	imageDesc.pixel_format = IsFlagSet(flags, TextureFlag_IsHdr)
 		? (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R32F : SG_PIXELFORMAT_RGBA32F)
 		: (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R8 : SG_PIXELFORMAT_RGBA8);
-	imageDesc.data.subimage[0][0] = (sg_range){ pixelsPntr, result.totalSize };
+	if (!IsFlagSet(flags, TextureFlag_Mutable))
+	{
+		imageDesc.data.subimage[0][0] = pixelsRange;
+	}
 	Str8 nameNt = AllocStrAndCopy(scratch, name.length, name.chars, true); NotNull(nameNt.chars); //allocate to ensure null-term char
 	imageDesc.label = nameNt.chars;
 	
@@ -205,6 +214,13 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		ScratchEnd(scratch);
 		TracyCZoneEnd(funcZone);
 		return result;
+	}
+	
+	if (IsFlagSet(flags, TextureFlag_Mutable))
+	{
+		sg_image_data imageData = ZEROED;
+		imageData.subimage[0][0] = pixelsRange;
+		sg_update_image(result.image, &imageData);
 	}
 	
 	sg_sampler_desc samplerDesc = ZEROED;
@@ -253,6 +269,33 @@ PEXPI void SetTextureFilePath(Texture* texture, Str8 filePath)
 	UNUSED(texture);
 	UNUSED(filePath);
 	#endif
+}
+
+PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixelsPntr)
+{
+	NotNull(texture);
+	NotNull(texture->arena);
+	Assert(IsFlagSet(texture->flags, TextureFlag_HasCopy)); //TODO: Maybe we can allow not HasCopy if the sourceRec covers the entire image?
+	Assert(IsFlagSet(texture->flags, TextureFlag_Mutable));
+	NotNull(texture->pixelsPntr);
+	Assert(sourceRec.Width >= 0 && sourceRec.Height >= 0);
+	Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
+	Assert(sourceRec.X + sourceRec.Width <= texture->Width && sourceRec.Y + sourceRec.Height <= texture->Height);
+	if (sourceRec.Width == 0 || sourceRec.Height == 0) { return; }
+	NotNull(pixelsPntr);
+	sg_image_data imageData = ZEROED;
+	for (uxx rowIndex = 0; rowIndex < sourceRec.Height; rowIndex++)
+	{
+		const u8* sourceRow = &((u8*)pixelsPntr)[INDEX_FROM_COORD2D(0, rowIndex, sourceRec.Width, sourceRec.Height) * texture->pixelSize];
+		u8* destRow = &texture->pixelsU8[INDEX_FROM_COORD2D(sourceRec.X + 0, sourceRec.Y + rowIndex, texture->Width, texture->Height) * texture->pixelSize];
+		MyMemCopy(destRow, sourceRow, sourceRec.Width * texture->pixelSize);
+	}
+	imageData.subimage[0][0] = (sg_range){ texture->pixelsPntr, texture->totalSize };
+	if (!IsFlagSet(texture->flags, TextureFlag_NoMipmaps))
+	{
+		//TODO: We need to handle mipmap re-generation!
+	}
+	sg_update_image(texture->image, &imageData);
 }
 
 PEXPI void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex)

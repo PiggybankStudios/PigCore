@@ -78,6 +78,7 @@ v2i oldWindowSize = V2i_Zero_Const;
 Rot2 screenRotation = Rot2_0;
 bool screenRotated = false;
 #endif
+Texture testTexture = ZEROED;
 
 //TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
 #if TARGET_IS_ANDROID
@@ -354,47 +355,6 @@ void AppInit(void)
 		
 		Result bakeResult = AttachAndMultiBakeFontAtlases(&testFont, ArrayCount(bakeSettings), &bakeSettings[0], 256, 1024, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
-		
-		#if 0
-		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None);
-		if (attachResult1 == Result_Success)
-		{
-			r32 fontSizes[] = { 18*textScale, 10*textScale, 26*textScale };
-			Result bakeResult = MultiBakeFontAtlases(&testFont, ArrayCount(fontSizes), &fontSizes[0], FontStyleFlag_None, 256, 1024, ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult == Result_Success);
-			FillFontKerningTable(&testFont);
-			RemoveAttachedTtfFile(&testFont);
-		}
-		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Regular: %s", GetResultStr(attachResult1)); }
-		
-		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold);
-		if (attachResult2 == Result_Success)
-		{
-			r32 fontSizes[] = { 18*textScale, 10*textScale, 26*textScale };
-			Result bakeResult = MultiBakeFontAtlases(&testFont, ArrayCount(fontSizes), &fontSizes[0], FontStyleFlag_Bold, 256, 1024, ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult == Result_Success);
-			RemoveAttachedTtfFile(&testFont);
-		}
-		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Bold: %s", GetResultStr(attachResult2)); }
-		
-		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic);
-		if (attachResult3 == Result_Success)
-		{
-			Result bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Italic, 256, 1024, ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult == Result_Success);
-			RemoveAttachedTtfFile(&testFont);
-		}
-		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Italic: %s", GetResultStr(attachResult3)); }
-		
-		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic);
-		if (attachResult4 == Result_Success)
-		{
-			Result bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic, 256, 1024, ArrayCount(charRanges), &charRanges[0]);
-			Assert(bakeResult == Result_Success);
-			RemoveAttachedTtfFile(&testFont);
-		}
-		else { PrintLine_E("Failed to find/attach platform font \"" MAIN_FONT_NAME "\" 18 Bold+Italic: %s", GetResultStr(attachResult4)); }
-		#endif
 	}
 	
 	#if BUILD_WITH_FREETYPE
@@ -611,6 +571,27 @@ void AppInit(void)
 	UpdateScreenSafeMargins();
 	oldWindowSize = NewV2i(sapp_width(), sapp_height());
 	
+	ImageData testTextureData = ZEROED;
+	testTextureData.size = NewV2i(512, 512);
+	testTextureData.numPixels = (uxx)(testTextureData.size.Width * testTextureData.size.Height);
+	testTextureData.pixels = AllocArray(u32, scratch, testTextureData.numPixels);
+	NotNull(testTextureData.pixels);
+	for (i32 yOffset = 0; yOffset < testTextureData.size.Height; yOffset++)
+	{
+		for (i32 xOffset = 0; xOffset < testTextureData.size.Width; xOffset++)
+		{
+			Color32* pixel = (Color32*)&testTextureData.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, testTextureData.size.Width, testTextureData.size.Height)];
+			//TODO: GetRandU8 causes a very noticable pattern!
+			// pixel->r = GetRandU8(mainRandom);
+			// pixel->g = GetRandU8(mainRandom);
+			// pixel->b = GetRandU8(mainRandom);
+			pixel->valueU32 = GetRandU32(mainRandom);
+			pixel->a = 255;
+		}
+	}
+	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_Mutable|TextureFlag_HasCopy);
+	Assert(testTexture.error == Result_Success);
+	
 	ScratchEnd(scratch);
 }
 
@@ -697,6 +678,27 @@ bool AppFrame(void)
 		}
 	}
 	
+	if (IsKeyboardKeyPressed(&keyboard, Key_P, false))
+	{
+		reci sourceRec = NewReci(
+			GetRandI32Range(mainRandom, 0, testTexture.Width-1),
+			GetRandI32Range(mainRandom, 0, testTexture.Height-1),
+			0, 0
+		);
+		sourceRec.Width = GetRandI32Range(mainRandom, 1, (testTexture.Width - sourceRec.X)+1);
+		sourceRec.Height = GetRandI32Range(mainRandom, 1, (testTexture.Height - sourceRec.Y)+1);
+		ImageData newImageData = ZEROED;
+		newImageData.size = sourceRec.Size;
+		newImageData.numPixels = (uxx)(newImageData.size.Width * newImageData.size.Height);
+		newImageData.pixels = AllocArray(u32, scratch, newImageData.numPixels);
+		NotNull(newImageData.pixels);
+		Color32 color = GetPredefPalColorByIndex(GetRandU32(mainRandom));
+		for (uxx pIndex = 0; pIndex < newImageData.numPixels; pIndex++)
+		{
+			newImageData.pixels[pIndex] = color.valueU32;
+		}
+		UpdateTexturePart(&testTexture, sourceRec, newImageData.pixels);
+	}
 	
 	#if BUILD_WITH_BOX2D
 	if (IsMouseBtnPressed(&mouse, MouseBtn_Left))
@@ -805,6 +807,9 @@ bool AppFrame(void)
 				DrawRectangleOutline(NewRec(0, windowSize.Height - screenMargins.W, windowSize.Width, screenMargins.W), 5.0f, MonokaiOrange);
 			}
 			#endif
+			
+			rec testTextureRec = NewRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
+			DrawTexturedRectangle(testTextureRec, White, &testTexture);
 			
 			#if 1
 			if (testFont.atlases.length > 0)
