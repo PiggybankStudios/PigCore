@@ -138,10 +138,11 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 		r32 floatR = (r32)((upperLayer.pixels[pIndex] >> 16) & 0xFF) / 255.0f;
 		r32 floatG = (r32)((upperLayer.pixels[pIndex] >>  8) & 0xFF) / 255.0f;
 		r32 floatB = (r32)((upperLayer.pixels[pIndex] >>  0) & 0xFF) / 255.0f;
-		upperLayerLinear[pIndex].R = TO_LINEAR_FROM_GAMMA_R32(floatR);
-		upperLayerLinear[pIndex].G = TO_LINEAR_FROM_GAMMA_R32(floatG);
-		upperLayerLinear[pIndex].B = TO_LINEAR_FROM_GAMMA_R32(floatB);
-		upperLayerLinear[pIndex].A = ((r32)((upperLayer.pixels[pIndex] >> 24) & 0xFF) / 255.0f);
+		r32 floatA = (r32)((upperLayer.pixels[pIndex] >> 24) & 0xFF) / 255.0f;
+		upperLayerLinear[pIndex].R = TO_LINEAR_FROM_GAMMA_R32_FAST(floatR);
+		upperLayerLinear[pIndex].G = TO_LINEAR_FROM_GAMMA_R32_FAST(floatG);
+		upperLayerLinear[pIndex].B = TO_LINEAR_FROM_GAMMA_R32_FAST(floatB);
+		upperLayerLinear[pIndex].A = floatA;
 	}
 	TracyCZoneEnd(linearConversion);
 	
@@ -158,12 +159,16 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 			v2i upperPos = NewV2i(xOffset*2, yOffset*2);
 			if (upperPos.X >= upperLayer.size.Width) { upperPos.X = upperLayer.size.Width-1; }
 			if (upperPos.Y >= upperLayer.size.Height) { upperPos.Y = upperLayer.size.Height-1; }
-			Colorf* inRow0 = &upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y, upperLayer.size.Width, upperLayer.size.Height)];
-			Colorf* inRow1 = &upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y+1, upperLayer.size.Width, upperLayer.size.Height)];
-			outPixel->r = (u8)(ToGammaFromLinearR32((inRow0[0].R + inRow0[1].R + inRow1[0].R + inRow1[1].R) / 4.0f) * 255.0f);
-			outPixel->g = (u8)(ToGammaFromLinearR32((inRow0[0].G + inRow0[1].G + inRow1[0].G + inRow1[1].G) / 4.0f) * 255.0f);
-			outPixel->b = (u8)(ToGammaFromLinearR32((inRow0[0].B + inRow0[1].B + inRow1[0].B + inRow1[1].B) / 4.0f) * 255.0f);
-			outPixel->a = (u8)(                    ((inRow0[0].A + inRow0[1].A + inRow1[0].A + inRow1[1].A) / 4.0f) * 255.0f);
+			float* inRow0 = (float*)(&upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y, upperLayer.size.Width, upperLayer.size.Height)]);
+			float* inRow1 = (float*)(&upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y+1, upperLayer.size.Width, upperLayer.size.Height)]);
+			r32 floatR = (inRow0[0] + inRow0[4] + inRow1[0] + inRow1[4]) / 4.0f;
+			r32 floatG = (inRow0[1] + inRow0[5] + inRow1[1] + inRow1[5]) / 4.0f;
+			r32 floatB = (inRow0[2] + inRow0[6] + inRow1[2] + inRow1[6]) / 4.0f;
+			r32 floatA = (inRow0[3] + inRow0[7] + inRow1[3] + inRow1[7]) / 4.0f;
+			outPixel->r = (u8)(TO_GAMMA_FROM_LINEAR_R32_FAST(floatR) * 255.0f);
+			outPixel->g = (u8)(TO_GAMMA_FROM_LINEAR_R32_FAST(floatG) * 255.0f);
+			outPixel->b = (u8)(TO_GAMMA_FROM_LINEAR_R32_FAST(floatB) * 255.0f);
+			outPixel->a = (u8)(                             (floatA) * 255.0f);
 		}
 	}
 	

@@ -53,6 +53,9 @@ typedef v4 Colorf;
 #define TO_LINEAR_FROM_GAMMA_R64(channelValue) (((channelValue) < 0.04045)    ? (channelValue) * 0.0773993808  :           PowR64((channelValue) * 0.9478672986 + 0.0521327014, 2.4))
 #define TO_GAMMA_FROM_LINEAR_R64(channelValue) (((channelValue) < 0.0031308)  ? (channelValue) * 12.92         : (1.055  * PowR64((channelValue), 0.41666)) - 0.055)
 
+#define TO_LINEAR_FROM_GAMMA_R32_FAST(channelValue) (((channelValue) < 0.04045f)   ? (channelValue) * 0.0773993808f :           PowR32((channelValue) * 0.9478672986f + 0.0521327014f, 2.0f))
+#define TO_GAMMA_FROM_LINEAR_R32_FAST(channelValue) (((channelValue) < 0.0031308f) ? (channelValue) * 12.92f        : (1.055f * PowR32((channelValue), 0.5f)) - 0.055f)
+	
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
