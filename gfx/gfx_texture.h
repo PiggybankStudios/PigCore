@@ -118,12 +118,33 @@ PEXP void FreeTexture(Texture* texture)
 }
 
 //TODO: Measure performance of this mipmap generator! Possibly spend time making it faster
-//NOTE: For a 1569x998 texture this took 2ms for 784x499 mip, 0.6ms for 392x249, 0.1ms for 196x124, etc. (3.6ms total)
+//NOTE: For a 1569x998 texture:
+//      Desktop Gamma: 2ms for 784x499, 0.6ms for 392x249, 0.1ms for 196x124, etc. (3.6ms total)
+//      Laptop Linear: 60ms for 784x499, 12ms for 392x249, 3ms for 196x124, etc. (75ms total)
+//      Laptop Gamma: 1.5ms for 784x499, 0.4ms for 392x249, 0.1ms for 196x124, etc. (2ms total)
+//NOTE: 
 PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 {
 	TracyCZoneN(_funcZone, "GenerateMipmapLayer", true);
 	NotNull(arena);
 	Assert(upperLayer.size.Width >= 2 && upperLayer.size.Height >= 2);
+	ScratchBegin1(scratch, arena);
+	
+	TracyCZoneN(linearConversion, "LinearConversion", true);
+	uxx upperLayerNumPixels = (uxx)(upperLayer.size.Width * upperLayer.size.Height);
+	Colorf* upperLayerLinear = AllocArray(Colorf, scratch, upperLayerNumPixels);
+	for (uxx pIndex = 0; pIndex < upperLayerNumPixels; pIndex++)
+	{
+		r32 floatR = (r32)((upperLayer.pixels[pIndex] >> 16) & 0xFF) / 255.0f;
+		r32 floatG = (r32)((upperLayer.pixels[pIndex] >>  8) & 0xFF) / 255.0f;
+		r32 floatB = (r32)((upperLayer.pixels[pIndex] >>  0) & 0xFF) / 255.0f;
+		upperLayerLinear[pIndex].R = TO_LINEAR_FROM_GAMMA_R32(floatR);
+		upperLayerLinear[pIndex].G = TO_LINEAR_FROM_GAMMA_R32(floatG);
+		upperLayerLinear[pIndex].B = TO_LINEAR_FROM_GAMMA_R32(floatB);
+		upperLayerLinear[pIndex].A = ((r32)((upperLayer.pixels[pIndex] >> 24) & 0xFF) / 255.0f);
+	}
+	TracyCZoneEnd(linearConversion);
+	
 	ImageData result = ZEROED;
 	result.size = NewV2i(upperLayer.size.Width/2, upperLayer.size.Height/2);
 	result.numPixels = (uxx)(result.size.Width * result.size.Height);
@@ -137,11 +158,16 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 			v2i upperPos = NewV2i(xOffset*2, yOffset*2);
 			if (upperPos.X >= upperLayer.size.Width) { upperPos.X = upperLayer.size.Width-1; }
 			if (upperPos.Y >= upperLayer.size.Height) { upperPos.Y = upperLayer.size.Height-1; }
-			Color32* inRow0 = (Color32*)&upperLayer.pixels[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y, upperLayer.size.Width, upperLayer.size.Height)];
-			Color32* inRow1 = (Color32*)&upperLayer.pixels[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y+1, upperLayer.size.Width, upperLayer.size.Height)];
-			*outPixel = ColorAverage4(inRow0[0], inRow0[1], inRow1[0], inRow1[1]);
+			Colorf* inRow0 = &upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y, upperLayer.size.Width, upperLayer.size.Height)];
+			Colorf* inRow1 = &upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y+1, upperLayer.size.Width, upperLayer.size.Height)];
+			outPixel->r = (u8)(ToGammaFromLinearR32((inRow0[0].R + inRow0[1].R + inRow1[0].R + inRow1[1].R) / 4.0f) * 255.0f);
+			outPixel->g = (u8)(ToGammaFromLinearR32((inRow0[0].G + inRow0[1].G + inRow1[0].G + inRow1[1].G) / 4.0f) * 255.0f);
+			outPixel->b = (u8)(ToGammaFromLinearR32((inRow0[0].B + inRow0[1].B + inRow1[0].B + inRow1[1].B) / 4.0f) * 255.0f);
+			outPixel->a = (u8)(                    ((inRow0[0].A + inRow0[1].A + inRow1[0].A + inRow1[1].A) / 4.0f) * 255.0f);
 		}
 	}
+	
+	ScratchEnd(scratch);
 	TracyCZoneEnd(_funcZone);
 	return result;
 }

@@ -25,10 +25,14 @@ typedef v4 Colorf;
 	Colorf ToGammaFromLinear(Colorf color);
 	PIG_CORE_INLINE Colorf ToLinearFromGamma32(Color32 gammaColor);
 	PIG_CORE_INLINE Color32 ToGamma32FromLinear(Colorf linearColor);
-	Color32 ColorLerp(Color32 left, Color32 right, r32 amount);
-	Color32 ColorAverage2(Color32 color1, Color32 color2);
-	Color32 ColorAverage3(Color32 color1, Color32 color2, Color32 color3);
-	Color32 ColorAverage4(Color32 color1, Color32 color2, Color32 color3, Color32 color4);
+	PIG_CORE_INLINE Color32 ColorLerp(Color32 left, Color32 right, r32 amount);
+	PIG_CORE_INLINE Color32 ColorAverage2(Color32 color1, Color32 color2);
+	PIG_CORE_INLINE Color32 ColorAverage3(Color32 color1, Color32 color2, Color32 color3);
+	PIG_CORE_INLINE Color32 ColorAverage4(Color32 color1, Color32 color2, Color32 color3, Color32 color4);
+	PIG_CORE_INLINE Colorf LinearColorLerp(Colorf left, Colorf right, r32 amount);
+	PIG_CORE_INLINE Colorf LinearColorAverage2(Colorf color1, Colorf color2);
+	PIG_CORE_INLINE Colorf LinearColorAverage3(Colorf color1, Colorf color2, Colorf color3);
+	PIG_CORE_INLINE Colorf LinearColorAverage4(Colorf color1, Colorf color2, Colorf color3, Colorf color4);
 	#if TARGET_IS_ORCA
 	PIG_CORE_INLINE oc_color ToOcColorFromColor32(Color32 color);
 	PIG_CORE_INLINE Color32 ToColor32FromOcColor(oc_color orcaColor);
@@ -43,6 +47,11 @@ typedef v4 Colorf;
 #define Colorf_TransparentBlack        V4_Zero
 #define Colorf_Transparent             NewColorf(1.0f, 1.0f, 1.0f, 0.0f)
 #define Colorf_TransparentWhite        NewColorf(1.0f, 1.0f, 1.0f, 0.0f)
+
+#define TO_LINEAR_FROM_GAMMA_R32(channelValue) (((channelValue) < 0.04045f)   ? (channelValue) * 0.0773993808f :           PowR32((channelValue) * 0.9478672986f + 0.0521327014f, 2.4f))
+#define TO_GAMMA_FROM_LINEAR_R32(channelValue) (((channelValue) < 0.0031308f) ? (channelValue) * 12.92f        : (1.055f * PowR32((channelValue), 0.41666f)) - 0.055f)
+#define TO_LINEAR_FROM_GAMMA_R64(channelValue) (((channelValue) < 0.04045)    ? (channelValue) * 0.0773993808  :           PowR64((channelValue) * 0.9478672986 + 0.0521327014, 2.4))
+#define TO_GAMMA_FROM_LINEAR_R64(channelValue) (((channelValue) < 0.0031308)  ? (channelValue) * 12.92         : (1.055  * PowR64((channelValue), 0.41666)) - 0.055)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -157,6 +166,11 @@ PEXPI Color32 ColorAverage4(Color32 color1, Color32 color2, Color32 color3, Colo
 	Colorf resultLinear = LerpV4(LerpV4(linearColor1, linearColor2, 0.5f), LerpV4(linearColor3, linearColor4, 0.5f), 0.5f);
 	return ToGamma32FromLinear(resultLinear);
 }
+
+PEXPI Colorf LinearColorLerp(Colorf left, Colorf right, r32 amount) { return LerpV4(left, right, amount); }
+PEXPI Colorf LinearColorAverage2(Colorf color1, Colorf color2) { return LerpV4(color1, color2, 0.5f); }
+PEXPI Colorf LinearColorAverage3(Colorf color1, Colorf color2, Colorf color3) { return LerpV4(color1, LerpV4(color2, color3, 0.5f), 0.5f); }
+PEXPI Colorf LinearColorAverage4(Colorf color1, Colorf color2, Colorf color3, Colorf color4) { return LerpV4(LerpV4(color1, color2, 0.5f), LerpV4(color3, color4, 0.5f), 0.5f); }
 
 #if TARGET_IS_ORCA
 PEXPI oc_color ToOcColorFromColor32(Color32 color) { return ToOcColorFromV4r(ToV4rFromColor32(color)); }
