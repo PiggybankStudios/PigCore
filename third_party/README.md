@@ -321,3 +321,17 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 * `misc_freetype_include.h` if `BUILD_WITH_FREETYPE` is enabled. This acts as a better option for font rasterization instead of `stb_truetype.h`
 
+---
+
+## kb_text_shape.h
+**URL(s):** [Github](https://github.com/JimmyLefevre/kb)
+
+**Folder Name:** `kb_text_shape`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** Commit `880ebea2d4d9ee9b2478eecd1ba060751adc5d45` from July 19th 2025
+
+**Fixup Required:** Delete everything besides `kb_text_shape.h` and `LICENSE`.
+
+**Required For:** Glyph positioning in `gfx_font_flow.h`
