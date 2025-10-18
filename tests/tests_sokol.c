@@ -47,7 +47,6 @@ Shader main2dShader;
 Shader main3dShader;
 Texture gradientTexture;
 PigFont testFont;
-PigFont freeFont;
 VertBuffer cubeBuffer;
 VertBuffer sphereBuffer;
 u64 programTime = 0;
@@ -356,7 +355,7 @@ void AppInit(void)
 		}
 	}
 	
-	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating);
+	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
 	Assert(gradientTexture.error == Result_Success);
 	
 	testFont = InitFont(stdHeap, StrLit("testFont"));
@@ -385,164 +384,6 @@ void AppInit(void)
 		Result bakeResult = AttachAndMultiBakeFontAtlases(&testFont, ArrayCount(bakeSettings), &bakeSettings[0], 256, 1024, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
 	}
-	
-	#if BUILD_WITH_FREETYPE
-	WriteLine_I("Initializing font using FreeType...");
-	freeFont = InitFont(stdHeap, StrLit("freeFont"));
-	{
-		const char* freeFontName = "Meiryo";
-		const FontStyleFlag freeFontStyle = FontStyleFlag_Bold;
-		const r32 freeFontSize = 64;
-		Slice fontFile = Slice_Empty;
-		#if 0
-		Result readResult = OsReadPlatformFont(
-			scratch,
-			StrLit(freeFontName),
-			RoundR32i(freeFontSize),
-			IsFlagSet(freeFontStyle, FontStyleFlag_Bold),
-			IsFlagSet(freeFontStyle, FontStyleFlag_Italic),
-			&fontFile
-		);
-		Assert(readResult == Result_Success);
-		#else
-		// bool readSuccess = OsReadBinFile(StrLit("meiryo.ttc"), scratch, &fontFile);
-		bool readSuccess = OsReadBinFile(StrLit("seguiemj.ttf"), scratch, &fontFile);
-		Assert(readSuccess);
-		#endif
-		
-		FT_Library ftLibrary = nullptr;
-		FT_Error initError = FT_Init_FreeType(&ftLibrary);
-		Assert(initError == 0); //TODO: We can use FT_Error_String(initError) if we need to print out the error
-		#if 0
-		FT_Int versionMajor = 0;
-		FT_Int versionMinor = 0;
-		FT_Int versionPatch = 0;
-		FT_Library_Version(ftLibrary, &versionMajor, &versionMinor, &versionPatch);
-		PrintLine_I("Initialized FreeType v%d.%d.%d", versionMajor, versionMinor, versionPatch);
-		#endif
-		
-		// FT_Error addModuleError = FT_Add_Module(ftLibrary, const FT_Module_Class* clazz);
-		
-		FT_Face ftFace = nullptr;
-		FT_Open_Args ftFaceArgs = ZEROED;
-		ftFaceArgs.flags = FT_OPEN_MEMORY;
-		ftFaceArgs.memory_base = fontFile.pntr;
-		ftFaceArgs.memory_size = (FT_Long)fontFile.length;
-		FT_Error openError = FT_Open_Face(ftLibrary, &ftFaceArgs, 0, &ftFace);
-		// PrintLine_D("openError: %s", FT_Error_String(openError));
-		Assert(openError == 0);
-		
-		#if 0
-		FT_ULong ftCharCode = 0;
-		FT_UInt ftGlyphIndex = 0;
-		while ((ftCharCode = FT_Get_Next_Char(ftFace, ftCharCode, &ftGlyphIndex)) != 0)
-		{
-			PrintLine_D("Char[%lu] = %u", ftCharCode, ftGlyphIndex);
-		}
-		#endif
-		
-		FT_F26Dot6 ftFontSize = TO_FT26_FROM_R32(freeFontSize);
-		u32 fontDpi = 72;
-		FT_Error setCharSizeError = FT_Set_Char_Size(ftFace, ftFontSize, ftFontSize, fontDpi, fontDpi);
-		Assert(setCharSizeError == 0);
-		PrintLine_D("bbox: (%ld, %ld, %ld, %ld)", ftFace->bbox.xMin, ftFace->bbox.yMin, ftFace->bbox.xMax, ftFace->bbox.yMax);
-		
-		FT_SizeRec* size = ftFace->size;
-		// TODO: Use TO_R32_FROM_FT26(ftFace->size->metrics.ascender)
-		// TODO: Use TO_R32_FROM_FT26(ftFace->size->metrics.descender)
-		// TODO: Use TO_R32_FROM_FT26(ftFace->size->metrics.height)
-		
-		u32 codepoint = 0x1F600; //0xE4=ä 0x3041=ぁ 0x611B=愛 0x1F600=😀 0x3099=ぎ (Combining char ten-ten)
-		PrintLine_D("Rendering codepoint %d 0x%08X", codepoint, codepoint);
-		FT_UInt glyphIndex = FT_Get_Char_Index(ftFace, codepoint);
-		Assert(glyphIndex != 0);
-		FT_Error loadGlyphError = FT_Load_Glyph(ftFace, glyphIndex, FT_LOAD_COLOR);
-		Assert(loadGlyphError == 0);
-		FT_Error renderGlyphError = FT_Render_Glyph(ftFace->glyph, FT_RENDER_MODE_NORMAL);
-		Assert(renderGlyphError == 0);
-		// FT_GlyphSlotRec* glyph = ftFace->glyph;
-		FT_Bitmap* glyphBitmap = &ftFace->glyph->bitmap;
-		PrintLine_D("Glyph %dx%d pixel_mode=%d pitch=%d %p", glyphBitmap->width, glyphBitmap->rows, glyphBitmap->pixel_mode, glyphBitmap->pitch, glyphBitmap->buffer);
-		v2i textureSize = NewV2i((i32)glyphBitmap->width, (i32)glyphBitmap->rows);
-		
-		Texture glyphTexture = ZEROED;
-		if (glyphBitmap->pixel_mode == FT_PIXEL_MODE_GRAY)
-		{
-			uxx numPixels = (uxx)glyphBitmap->width * (uxx)glyphBitmap->rows;
-			Color32* glyphPixels = AllocArray(Color32, scratch, numPixels);
-			NotNull(glyphPixels);
-			for (uxx yIndex = 0; yIndex < (uxx)glyphBitmap->rows; yIndex++)
-			{
-				for (uxx xIndex = 0; xIndex < (uxx)glyphBitmap->width; xIndex++)
-				{
-					u8 inValue = glyphBitmap->buffer[INDEX_FROM_COORD2D(xIndex, yIndex, (uxx)glyphBitmap->pitch, (uxx)glyphBitmap->rows)];
-					Color32* outColor = &glyphPixels[INDEX_FROM_COORD2D(xIndex, yIndex, (uxx)glyphBitmap->width, (uxx)glyphBitmap->rows)];
-					outColor->r = 255;
-					outColor->g = 255;
-					outColor->b = 255;
-					outColor->a = inValue;
-				}
-			}
-			glyphTexture = InitTexture(stdHeap, StrLit("freeFont_atlas[0]"), textureSize, glyphPixels, TextureFlag_NoMipmaps);
-		}
-		else if (glyphBitmap->pixel_mode == FT_PIXEL_MODE_BGRA)
-		{
-			uxx numPixels = (uxx)glyphBitmap->width * (uxx)glyphBitmap->rows;
-			Color32* glyphPixels = AllocArray(Color32, scratch, numPixels);
-			NotNull(glyphPixels);
-			for (uxx yIndex = 0; yIndex < (uxx)glyphBitmap->rows; yIndex++)
-			{
-				for (uxx xIndex = 0; xIndex < (uxx)glyphBitmap->width; xIndex++)
-				{
-					Color32* inColor = &((Color32*)glyphBitmap->buffer)[INDEX_FROM_COORD2D(xIndex, yIndex, (uxx)glyphBitmap->pitch / sizeof(Color32), (uxx)glyphBitmap->rows)];
-					Color32* outColor = &glyphPixels[INDEX_FROM_COORD2D(xIndex, yIndex, (uxx)glyphBitmap->width, (uxx)glyphBitmap->rows)];
-					outColor->r = inColor->b;
-					outColor->g = inColor->g;
-					outColor->b = inColor->r;
-					outColor->a = inColor->a;
-				}
-			}
-			glyphTexture = InitTexture(stdHeap, StrLit("freeFont_atlas[0]"), textureSize, glyphPixels, TextureFlag_NoMipmaps);
-		}
-		else { AssertMsg(false, "Unhandled pixel_mode in rendered glyph!"); }
-		
-		// #define VarArrayAdd(type, arrayPntr)
-		FontAtlas* newAtlas = VarArrayAdd(FontAtlas, &freeFont.atlases);
-		NotNull(newAtlas);
-		ClearPointer(newAtlas);
-		newAtlas->fontSize = freeFontSize;
-		newAtlas->fontScale = 1.0f;
-		newAtlas->styleFlags = freeFontStyle;
-		newAtlas->glyphRange.startCodepoint = codepoint;
-		newAtlas->glyphRange.endCodepoint = codepoint;
-		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, stdHeap, 1);
-		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, stdHeap, 1);
-		newAtlas->texture = glyphTexture;
-		newAtlas->lineHeight = TO_R32_FROM_FT26(ftFace->size->metrics.height);
-		newAtlas->maxAscend = TO_R32_FROM_FT26(ftFace->size->metrics.ascender);
-		newAtlas->maxDescend = TO_R32_FROM_FT26(ftFace->size->metrics.descender);
-		newAtlas->centerOffset = newAtlas->maxAscend - (newAtlas->lineHeight / 2.0f);
-		
-		FontCharRange* newCharRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
-		NotNull(newCharRange);
-		ClearPointer(newCharRange);
-		newCharRange->startCodepoint = codepoint;
-		newCharRange->endCodepoint = codepoint;
-		
-		FontGlyph* newFontGlyph = VarArrayAdd(FontGlyph, &newAtlas->glyphs);
-		NotNull(newFontGlyph);
-		ClearPointer(newFontGlyph);
-		newFontGlyph->codepoint = codepoint;
-		newFontGlyph->ttfGlyphIndex = 0; //TODO: Should we fill this out?
-		newFontGlyph->atlasSourceRec = NewReci(0, 0, glyphTexture.Width, glyphTexture.Height);
-		newFontGlyph->advanceX = TO_R32_FROM_FT26(ftFace->glyph->advance.x);
-		newFontGlyph->renderOffset = NewV2((r32)ftFace->glyph->bitmap_left, (r32)ftFace->glyph->bitmap_top);
-		newFontGlyph->logicalRec = NewRec(0, 0, (r32)glyphTexture.Width, (r32)glyphTexture.Height);
-		
-		FT_Error doneError = FT_Done_FreeType(ftLibrary);
-		Assert(doneError == 0);
-	}
-	#endif
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
@@ -621,7 +462,7 @@ void AppInit(void)
 			pixel->a = 255;
 		}
 	}
-	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_Mutable|TextureFlag_HasCopy);
+	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_HasCopy);
 	Assert(testTexture.error == Result_Success);
 	
 	ScratchEnd(scratch);
@@ -871,8 +712,8 @@ bool AppFrame(void)
 					wrapWidth,
 					MonokaiWhite
 				);
-				rec logicalRec = gfx.prevFontFlow.logicalRec;
-				rec visualRec = gfx.prevFontFlow.visualRec;
+				// rec logicalRec = gfx.prevFontFlow.logicalRec;
+				// rec visualRec = gfx.prevFontFlow.visualRec;
 				// DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
 				// DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
 				DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);

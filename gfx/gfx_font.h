@@ -740,17 +740,6 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 	
 	do
 	{
-		stbtt_pack_context packContext = ZEROED;
-		int beginResult = stbtt_PackBegin(
-			&packContext, //context
-			(u8*)pixelsPntr, //pixels
-			(int)atlasSize.Width, (int)atlasSize.Height, //width, height
-			(int)(atlasSize.Width * sizeof(u8)), //stride_in_bytes
-			1, //padding (between chars)
-			scratch //alloc_context
-		);
-		Assert(beginResult != 0);
-		
 		stbtt_pack_range* stbRanges = AllocArray(stbtt_pack_range, scratch, numCharRanges);
 		NotNull(stbRanges);
 		MyMemSet(stbRanges, 0x00, sizeof(stbtt_pack_range) * numCharRanges);
@@ -771,44 +760,70 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		
 		//NOTE: This used to be stbtt_PackFontRanges
 		stbtt_fontinfo fontInfo;
-		fontInfo.userdata = packContext.user_allocator_context;
+		fontInfo.userdata = scratch;
 		stbtt_InitFont(&fontInfo, font->ttfFile.bytes, stbtt_GetFontOffsetForIndex(font->ttfFile.bytes, 0));
 		
 		stbrp_rect* rects = AllocArray(stbrp_rect, scratch, numCodepointsTotal);
 		NotNull(rects);
-		int numRects = stbtt_PackFontRangesGatherRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
-		Assert(numRects >= 0 && (uxx)numRects == numCodepointsInCharRanges);
-		uxx customGlyphIndex = 0;
-		for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
+		int numRects = 0;
+		uxx numPixels = 0;
+		Color32* pixelsPntr = nullptr;
+		
+		bool packedSuccessfully = false;
+		i32 atlasSideLength = minAtlasSize;
+		while (atlasSideLength <= maxAtlasSize)
 		{
-			const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
-			uxx numGlyphsInCustomRange = (customRange->endCodepoint - customRange->startCodepoint)+1;
-			for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
+			uxx scratchMark = ArenaGetMark(scratch);
+			
+			numPixels = (uxx)(atlasSideLength * atlasSideLength);
+			pixelsPntr = AllocArray(Color32, scratch, numPixels);
+			NotNull(pixelsPntr);
+			MyMemSet(pixelsPntr, 0x00, sizeof(Color32) * numPixels);
+			
+			stbtt_pack_context packContext = ZEROED;
+			int beginResult = stbtt_PackBegin(
+				&packContext, //context
+				(u8*)pixelsPntr, //pixels
+				(int)atlasSideLength, (int)atlasSideLength, //width, height
+				(int)(atlasSideLength * sizeof(u8)), //stride_in_bytes
+				1, //padding (between chars)
+				scratch //alloc_context
+			);
+			Assert(beginResult != 0);
+			
+			numRects = stbtt_PackFontRangesGatherRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
+			Assert(numRects >= 0 && (uxx)numRects == numCodepointsInCharRanges);
+			uxx customGlyphIndex = 0;
+			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
 			{
-				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
-				DebugAssert(customGlyphIndex < numCodepointsInCustomRanges);
-				stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphIndex];
-				reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
-					? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
-					: customGlyph->sourceRec;
-				Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
-				Assert(sourceRec.Width > 0 && sourceRec.Height > 0);
-				Assert(sourceRec.X + sourceRec.Width <= customGlyph->imageData.size.Width);
-				Assert(sourceRec.Y + sourceRec.Height <= customGlyph->imageData.size.Height);
-				customGlyphRec->w = (int)sourceRec.Width;
-				customGlyphRec->h = (int)sourceRec.Height;
-				customGlyphIndex++;
+				const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
+				uxx numGlyphsInCustomRange = (customRange->endCodepoint - customRange->startCodepoint)+1;
+				for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
+				{
+					const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
+					DebugAssert(customGlyphIndex < numCodepointsInCustomRanges);
+					stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphIndex];
+					reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
+						? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
+						: customGlyph->sourceRec;
+					Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
+					Assert(sourceRec.Width > 0 && sourceRec.Height > 0);
+					Assert(sourceRec.X + sourceRec.Width <= customGlyph->imageData.size.Width);
+					Assert(sourceRec.Y + sourceRec.Height <= customGlyph->imageData.size.Height);
+					customGlyphRec->w = (int)sourceRec.Width;
+					customGlyphRec->h = (int)sourceRec.Height;
+					customGlyphIndex++;
+				}
 			}
+			
+			stbtt_PackFontRangesPackRects(&packContext, rects, (int)numCodepointsTotal);
+			int packResult = stbtt_PackFontRangesRenderIntoRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
+			if (packResult > 0) { packedSuccessfully = true; break; }
+			ArenaResetToMark(scratch, scratchMark); //only reset scratch if we failed to pack! Thus pixelsPntr can live on for use below
+			atlasSideLength *= 2;
 		}
-		
-		stbtt_PackFontRangesPackRects(&packContext, rects, (int)numCodepointsTotal);
-		
-		int packResult = stbtt_PackFontRangesRenderIntoRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
-		if (packResult <= 0)
-		{
-			result = Result_NotEnoughSpace;
-			break;
-		}
+		if (!packedSuccessfully) { result = Result_NotEnoughSpace; break; }
+		v2i atlasSize = FillV2i(atlasSideLength);
 		
 		// Walk backwards from end, expanding each 1-byte/single channel pixel value into a Color32 (4-byte/4 channel)
 		for (uxx pixelIndex = numPixels; pixelIndex > 0; pixelIndex--)
@@ -822,7 +837,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		}
 		
 		// Copy custom glyph image data into the atlas
-		customGlyphIndex = 0;
+		uxx customGlyphCopyIndex = 0;
 		for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
 		{
 			const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
@@ -830,8 +845,8 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 			for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
 			{
 				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
-				DebugAssert(customGlyphIndex < numCodepointsInCustomRanges);
-				stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphIndex];
+				DebugAssert(customGlyphCopyIndex < numCodepointsInCustomRanges);
+				stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphCopyIndex];
 				reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
 					? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
 					: customGlyph->sourceRec;
@@ -847,7 +862,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 					u32* sourcePntr = &customGlyph->imageData.pixels[INDEX_FROM_COORD2D(sourceRec.X, sourceRec.Y + yOffset, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)];
 					MyMemCopy(targetPntr, sourcePntr, sizeof(u32) * sourceRec.Width);
 				}
-				customGlyphIndex++;
+				customGlyphCopyIndex++;
 			}
 		}
 		
@@ -932,7 +947,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		}
 		
 		// Fill out glyph information for all custom glyphs
-		customGlyphIndex = 0;
+		uxx customGlyphInfoIndex = 0;
 		for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
 		{
 			const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
@@ -948,8 +963,8 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 			for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
 			{
 				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
-				DebugAssert(customGlyphIndex < numCodepointsInCustomRanges);
-				stbrp_rect* packedGlyphRec = &rects[numCodepointsInCharRanges + customGlyphIndex];
+				DebugAssert(customGlyphInfoIndex < numCodepointsInCustomRanges);
+				stbrp_rect* packedGlyphRec = &rects[numCodepointsInCharRanges + customGlyphInfoIndex];
 				FontGlyph* newGlyph = &newGlyphs[gIndex];
 				ClearPointer(newGlyph);
 				newGlyph->codepoint = customGlyph->codepoint;
@@ -958,7 +973,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				newGlyph->advanceX = (r32)newGlyph->atlasSourceRec.Width;
 				newGlyph->renderOffset = NewV2(0, RoundR32(-newAtlas->maxAscend + (newAtlas->maxAscend + newAtlas->maxDescend)/2.0f - newGlyph->atlasSourceRec.Height/2.0f));
 				newGlyph->logicalRec = NewRec(0, -newAtlas->maxAscend, (r32)newGlyph->atlasSourceRec.Width, newAtlas->maxAscend);
-				customGlyphIndex++;
+				customGlyphInfoIndex++;
 			}
 		}
 		

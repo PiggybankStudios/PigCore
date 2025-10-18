@@ -117,8 +117,11 @@ PEXP void FreeTexture(Texture* texture)
 	ClearPointer(texture);
 }
 
+//TODO: Measure performance of this mipmap generator! Possibly spend time making it faster
+//NOTE: For a 1569x998 texture this took 2ms for 784x499 mip, 0.6ms for 392x249, 0.1ms for 196x124, etc. (3.6ms total)
 PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 {
+	TracyCZoneN(_funcZone, "GenerateMipmapLayer", true);
 	NotNull(arena);
 	Assert(upperLayer.size.Width >= 2 && upperLayer.size.Height >= 2);
 	ImageData result = ZEROED;
@@ -143,6 +146,7 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 			outPixel->a = (u8)(((u32)inRow0[0].a + (u32)inRow0[1].a + (u32)inRow1[0].a + (u32)inRow1[1].a)/4);
 		}
 	}
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 
@@ -362,7 +366,7 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 	
 	if (IsFlagSet(texture->flags, TextureFlag_Mutable))
 	{
-		Assert(!IsFlagSet(texture->flags, TextureFlag_NoMipmaps));
+		Assert(IsFlagSet(texture->flags, TextureFlag_NoMipmaps));
 		sg_image_data sokolImageData = ZEROED;
 		sokolImageData.subimage[0][0] = (sg_range){ texture->pixelsPntr, texture->totalSize };
 		sg_update_image(texture->image, &sokolImageData);
