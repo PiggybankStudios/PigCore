@@ -368,16 +368,16 @@ void AppInit(void)
 		r32 textScale = TEXT_SCALE/sapp_dpi_scale();
 		FontBakeSettings bakeSettings[] = {
 			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_None, .fillKerningTable=true },
-			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Bold },
-			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Italic },
-			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
 			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_None },
-			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Bold },
-			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Italic },
-			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
 			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_None },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Bold },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Bold },
 			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_Bold },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Italic },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Italic },
 			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_Italic },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
+			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
 			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
 		};
 		

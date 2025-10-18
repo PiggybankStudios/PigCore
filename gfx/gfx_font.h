@@ -135,6 +135,22 @@ plex FontKerningTable
 	FontKerningTableEntry* entries;
 };
 
+typedef plex FontFile FontFile;
+plex FontFile
+{
+	Str8 nameOrPath;
+	u8 styleFlags;
+	bool inFontArena;
+	Slice fileContents;
+	#if BUILD_WITH_FREETYPE
+	FT_Face freeTypeFace;
+	#else
+	stbtt_fontinfo ttfInfo;
+	#endif
+};
+
+#define FONT_MAX_FONT_FILES 8 //maximum number of fallback fonts that can be attached at the same time to a single font
+
 //NOTE: We have a naming conflict with raylib.h if we name this "PigFont" so we are
 // naming it PigFont, but typedefing PigFont in non-raylib projects so anything outside
 // PigCore that doesn't plan to use Raylib can still use the name "PigFont"
@@ -144,13 +160,8 @@ plex PigFont
 	Arena* arena;
 	Str8 name;
 	
-	Slice ttfFile;
-	u8 ttfStyleFlags;
-	#if BUILD_WITH_FREETYPE
-	FT_Face freeTypeFace;
-	#else
-	stbtt_fontinfo ttfInfo;
-	#endif
+	uxx numFiles;
+	FontFile files[FONT_MAX_FONT_FILES];
 	
 	VarArray atlases; //FontAtlas
 	FontKerningTable kerningTable;
@@ -175,6 +186,8 @@ FT_Library FreeTypeLib = nullptr;
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void FreeFontAtlas(PigFont* font, FontAtlas* atlas);
 	PIG_CORE_INLINE void FreeFontKerningTable(Arena* arena, FontKerningTable* kerningTable);
+	PIG_CORE_INLINE void RemoveAttachedFontFile(PigFont* font, uxx index);
+	PIG_CORE_INLINE void RemoveAttachedFontFiles(PigFont* font);
 	void FreeFont(PigFont* font);
 	void ClearFontAtlases(PigFont* font);
 	PigFont InitFont(Arena* arena, Str8 name);
@@ -183,9 +196,7 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints);
 	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRangeSingle(CustomFontGlyph* glyph);
 	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph* glyph);
-	PIG_CORE_INLINE void RemoveAttachedTtfFile(PigFont* font);
-	Result InitFontTtfInfo(PigFont* font);
-	Result AttachTtfFileToFont(PigFont* font, bool copyIntoFontArena, Slice ttfFileContents, u8 ttfStyleFlags);
+	Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena);
 	void FillFontKerningTable(PigFont* font);
 	Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
 	PIG_CORE_INLINE Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
@@ -239,13 +250,42 @@ PEXPI void FreeFontKerningTable(Arena* arena, FontKerningTable* kerningTable)
 	ClearPointer(kerningTable);
 }
 
+PEXPI void RemoveAttachedFontFile(PigFont* font, uxx index)
+{
+	NotNull(font);
+	NotNull(font->arena);
+	Assert(index < font->numFiles);
+	FontFile* file = &font->files[index];
+	if (file->inFontArena && file->fileContents.chars != nullptr) { FreeStr8(font->arena, &file->fileContents); }
+	#if BUILD_WITH_FREETYPE
+	if (file->freeTypeFace != nullptr)
+	{
+		FT_Error doneError = FT_Done_Face(file->freeTypeFace);
+		Assert(doneError == 0);
+	}
+	#endif
+	ClearPointer(file);
+	if (index+1 < font->numFiles);
+	{
+		MyMemCopy(&font->files[index], &font->files[index+1], (font->numFiles - (index+1)) * sizeof(FontFile));
+	}
+	font->numFiles--;
+}
+PEXPI void RemoveAttachedFontFiles(PigFont* font)
+{
+	for (uxx fIndex = font->numFiles; fIndex > 0; fIndex--)
+	{
+		RemoveAttachedFontFile(font, fIndex-1);
+	}
+}
+
 PEXP void FreeFont(PigFont* font)
 {
 	NotNull(font);
 	if (font->arena != nullptr)
 	{
 		FreeStr8(font->arena, &font->name);
-		FreeStr8(font->arena, &font->ttfFile);
+		RemoveAttachedFontFiles(font);
 		VarArrayLoop(&font->atlases, aIndex)
 		{
 			VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
@@ -327,28 +367,24 @@ PEXPI CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph*
 	return result;
 }
 
-PEXPI void RemoveAttachedTtfFile(PigFont* font)
+PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena)
 {
 	NotNull(font);
 	NotNull(font->arena);
-	if (font->ttfFile.chars != nullptr) { FreeStr8(font->arena, &font->ttfFile); }
+	NotNullStr(nameOrPath);
+	NotNullStr(fileContents);
+	NotEmptyStr(fileContents);
+	if (font->numFiles >= FONT_MAX_FONT_FILES) { return Result_TooMany; }
+	FontFile* newFile = &font->files[font->numFiles];
+	ClearPointer(newFile);
+	newFile->nameOrPath = AllocStr8(font->arena, nameOrPath);
+	newFile->styleFlags = styleFlags;
+	newFile->fileContents = copyIntoFontArena ? AllocStr8(font->arena, fileContents) : fileContents;
+	newFile->inFontArena = copyIntoFontArena;
+	
+	Result result = Result_None;
 	#if BUILD_WITH_FREETYPE
-	if (font->freeTypeFace != nullptr)
-	{
-		FT_Error doneError = FT_Done_Face(font->freeTypeFace);
-		Assert(doneError == 0);
-		font->freeTypeFace = nullptr;
-	}
-	#else
-	ClearStruct(font->ttfInfo);
-	#endif
-}
-
-PEXP Result InitFontTtfInfo(PigFont* font)
-{
-	NotNull(font);
-	NotEmptyStr(font->ttfFile);
-	#if BUILD_WITH_FREETYPE
+	do
 	{
 		if (FreeTypeLib == nullptr)
 		{
@@ -358,74 +394,66 @@ PEXP Result InitFontTtfInfo(PigFont* font)
 			if (initError != 0)
 			{
 				DebugAssertMsg(initError == 0, "Failed to initialize FreeType library!");
-				return Result_InitFailed;
+				result = Result_InitFailed;
+				break;
 			}
 			NotNull(FreeTypeLib);
 		}
 		
 		FT_Open_Args freeTypeFaceArgs = ZEROED;
 		freeTypeFaceArgs.flags = FT_OPEN_MEMORY;
-		freeTypeFaceArgs.memory_base = font->ttfFile.pntr;
-		freeTypeFaceArgs.memory_size = (FT_Long)font->ttfFile.length;
+		freeTypeFaceArgs.memory_base = newFile->fileContents.pntr;
+		freeTypeFaceArgs.memory_size = (FT_Long)newFile->fileContents.length;
 		TracyCZoneN(_FreeTypeOpenFace, "FT_Open_Face", true);
-		FT_Error openError = FT_Open_Face(FreeTypeLib, &freeTypeFaceArgs, 0, &font->freeTypeFace);
+		FT_Error openError = FT_Open_Face(FreeTypeLib, &freeTypeFaceArgs, 0, &newFile->freeTypeFace);
 		TracyCZoneEnd(_FreeTypeOpenFace);
 		if (openError != 0)
 		{
-			PrintLine_E("FreeType file parsing error (%llu byte file): %s", font->ttfFile.length, FT_Error_String(openError));
+			PrintLine_E("FreeType file parsing error (%llu byte file): %s", newFile->fileContents.length, FT_Error_String(openError));
 			DebugAssertMsg(openError == 0, "Failed to parse font file with FreeType!");
-			return Result_ParsingFailure;
+			result = Result_ParsingFailure;
+			break;
 		}
-		NotNull(font->freeTypeFace);
-		
-		return Result_Success;
-	}
+		NotNull(newFile->freeTypeFace);
+	} while(false);
 	#else //!BUILD_WITH_FREETYPE
 	{
-		int firstFontOffset = stbtt_GetFontOffsetForIndex(font->ttfFile.bytes, 0);
+		int firstFontOffset = stbtt_GetFontOffsetForIndex(newFile->fileContents.bytes, 0);
 		Assert(firstFontOffset >= 0); //TODO: Turn this into an error?
-		int initFontResult = stbtt_InitFont(&font->ttfInfo, font->ttfFile.bytes, firstFontOffset);
+		int initFontResult = stbtt_InitFont(&newFile->ttfInfo, newFile->fileContents.bytes, firstFontOffset);
 		Assert(initFontResult != 0); //TODO: Turn this into an error?
-		// int numOfFontsInTtf = stbtt_GetNumberOfFonts(font->ttfFile.bytes);
+		// int numOfFontsInTtf = stbtt_GetNumberOfFonts(newFile->fileContents.bytes);
 		// PrintLine_D("There %s %d font%s in this ttf file", PluralEx(numOfFontsInTtf, "is", "are"), numOfFontsInTtf, Plural(numOfFontsInTtf, "s"));
-		return Result_Success;
 	}
 	#endif //BUILD_WITH_FREETYPE
-}
-
-PEXP Result AttachTtfFileToFont(PigFont* font, Slice ttfFileContents, bool copyIntoFontArena, u8 ttfStyleFlags)
-{
-	NotNull(font);
-	NotNullStr(ttfFileContents);
-	NotEmptyStr(ttfFileContents);
-	FreeStr8(font->arena, &font->ttfFile);
-	if (copyIntoFontArena)
+	
+	if (result == Result_None)
 	{
-		font->ttfFile.length = ttfFileContents.length;
-		font->ttfFile.chars = AllocMem(font->arena, ttfFileContents.length);
-		NotNull(font->ttfFile.chars);
-		MyMemCopy(font->ttfFile.chars, ttfFileContents.chars, ttfFileContents.length);
+		result = Result_Success;
+		font->numFiles++;
 	}
 	else
 	{
-		font->ttfFile = ttfFileContents;
+		FreeStr8(font->arena, &newFile->nameOrPath);
+		if (copyIntoFontArena) { FreeStr8(font->arena, &newFile->fileContents); }
 	}
-	font->ttfStyleFlags = ttfStyleFlags;
-	return InitFontTtfInfo(font);
+	return result;
 }
 
 PEXP void FillFontKerningTable(PigFont* font)
 {
 	NotNull(font);
 	NotNull(font->arena);
-	NotEmptyStr(font->ttfFile);
+	Assert(font->numFiles > 0);
+	FontFile* fontFile = &font->files[0];
 	#if BUILD_WITH_FREETYPE
+	UNUSED(fontFile);
 	//TODO: FreeType support for Kerning? Should we brute-force find all combinations of kerning values?
 	#else
 	{
 		FreeFontKerningTable(font->arena, &font->kerningTable);
 		
-		int tableLength = stbtt_GetKerningTableLength(&font->ttfInfo);
+		int tableLength = stbtt_GetKerningTableLength(&fontFile->ttfInfo);
 		Assert(tableLength >= 0);
 		if (tableLength == 0) { return; }
 		
@@ -433,7 +461,7 @@ PEXP void FillFontKerningTable(PigFont* font)
 		
 		stbtt_kerningentry* stbEntries = AllocArray(stbtt_kerningentry, scratch, (uxx)tableLength);
 		NotNull(stbEntries);
-		int getResult = stbtt_GetKerningTable(&font->ttfInfo, stbEntries, tableLength);
+		int getResult = stbtt_GetKerningTable(&fontFile->ttfInfo, stbEntries, tableLength);
 		Assert(getResult >= 0);
 		Assert(getResult <= tableLength);
 		if (getResult == 0) { ScratchEnd(scratch); return; }
@@ -461,13 +489,16 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 {
 	NotNull(font);
 	NotNull(font->arena);
-	NotEmptyStr(font->ttfFile);
 	Assert(minAtlasSize > 0 && maxAtlasSize > 0);
 	Assert(numCharRanges > 0);
 	NotNull(charRanges);
+	TracyCZoneN(_funcZone, "BakeFontAtlasEx", true);
 	ScratchBegin1(scratch, font->arena);
 	Assert(numCustomGlyphRanges == 0 || customGlyphRanges != nullptr);
 	Result result = Result_None;
+	
+	Assert(font->numFiles > 0);
+	FontFile* fontFile = &font->files[0];
 	
 	u32 minCodepoint = UINT32_MAX;
 	u32 maxCodepoint = 0;
@@ -496,12 +527,12 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 	
 	do
 	{
-		NotNull(font->freeTypeFace);
+		NotNull(fontFile->freeTypeFace);
 		const int packingPadding = 1; //px
 		
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 		const u32 freeTypeFontDpi = 72;
-		FT_Error setCharSizeError = FT_Set_Char_Size(font->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
 		Assert(setCharSizeError == 0);
 		
 		uxx numGlyphsInAtlas = 0;
@@ -515,7 +546,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
 				{
 					//TODO: Fill in a packRect using information from FreeType about a particular codepoint
-					FT_UInt glyphIndex = FT_Get_Char_Index(font->freeTypeFace, codepoint);
+					FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
 					if (glyphIndex == 0)
 					{
 						PrintLine_E("Font doesn't contain glyph for codepoint 0x%08X!", codepoint);
@@ -523,7 +554,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 						result = Result_NotFound;
 						break;
 					}
-					FT_Error loadGlyphError = FT_Load_Glyph(font->freeTypeFace, glyphIndex, FT_LOAD_DEFAULT); //TODO: Use FT_LOAD_COLOR for colored emoji! Also check FT_HAS_COLOR(face)
+					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, FT_LOAD_DEFAULT); //TODO: Use FT_LOAD_COLOR for colored emoji! Also check FT_HAS_COLOR(face)
 					if (loadGlyphError != 0)
 					{
 						PrintLine_E("Failed to load glyph for codepoint 0x%08X: %s", codepoint, loadGlyphError);
@@ -531,13 +562,13 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 						result = Result_InvalidCharacter;
 						break;
 					}
-					NotNull(font->freeTypeFace->glyph);
+					NotNull(fontFile->freeTypeFace->glyph);
 					
-					if (font->freeTypeFace->glyph->metrics.width > 0 && font->freeTypeFace->glyph->metrics.height > 0)
+					if (fontFile->freeTypeFace->glyph->metrics.width > 0 && fontFile->freeTypeFace->glyph->metrics.height > 0)
 					{
 						DebugAssert(packedRecIndex < numCodepointsTotal);
-						packRects[packedRecIndex].w = TO_I32_FROM_FT26(font->freeTypeFace->glyph->metrics.width) + packingPadding*2;
-						packRects[packedRecIndex].h = TO_I32_FROM_FT26(font->freeTypeFace->glyph->metrics.height) + packingPadding*2;
+						packRects[packedRecIndex].w = TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width) + packingPadding*2;
+						packRects[packedRecIndex].h = TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height) + packingPadding*2;
 						// PrintLine_D("Codepoint U+%X is %dx%d glyph at %g (%d)", codepoint, packRects[packedRecIndex].w - packingPadding, packRects[packedRecIndex].h - packingPadding, fontSize, freeTypeFontSize);
 						packedRecIndex++;
 					}
@@ -594,12 +625,12 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		ClearPointer(newAtlas);
 		newAtlas->fontSize = fontSize;
 		newAtlas->fontScale = 1.0f; //TODO: Can we get this from FreeType? Do we need it (without kerning)?
-		newAtlas->styleFlags = (font->ttfStyleFlags | extraStyleFlags);
+		newAtlas->styleFlags = (fontFile->styleFlags | extraStyleFlags);
 		newAtlas->glyphRange.startCodepoint = minCodepoint;
 		newAtlas->glyphRange.endCodepoint = maxCodepoint;
-		newAtlas->maxAscend = TO_R32_FROM_FT26(font->freeTypeFace->size->metrics.ascender);
-		newAtlas->maxDescend = TO_R32_FROM_FT26(font->freeTypeFace->size->metrics.descender);
-		newAtlas->lineHeight = TO_R32_FROM_FT26(font->freeTypeFace->size->metrics.height);
+		newAtlas->maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
+		newAtlas->maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
+		newAtlas->lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
 		newAtlas->centerOffset = newAtlas->maxAscend - (newAtlas->lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did below?
 		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
 		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal);
@@ -620,12 +651,12 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
 				{
 					//TODO: Fill in a packRect using information from FreeType about a particular codepoint
-					FT_UInt glyphIndex = FT_Get_Char_Index(font->freeTypeFace, codepoint);
+					FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
 					Assert(glyphIndex != 0);
-					FT_Error loadGlyphError = FT_Load_Glyph(font->freeTypeFace, glyphIndex, FT_LOAD_DEFAULT); //TODO: Use FT_LOAD_COLOR for colored emoji! Also check FT_HAS_COLOR(face)
+					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, FT_LOAD_DEFAULT); //TODO: Use FT_LOAD_COLOR for colored emoji! Also check FT_HAS_COLOR(face)
 					Assert(loadGlyphError == 0);
-					NotNull(font->freeTypeFace->glyph);
-					FT_Error renderGlyphError = FT_Render_Glyph(font->freeTypeFace->glyph, FT_RENDER_MODE_NORMAL);
+					NotNull(fontFile->freeTypeFace->glyph);
+					FT_Error renderGlyphError = FT_Render_Glyph(fontFile->freeTypeFace->glyph, FT_RENDER_MODE_NORMAL);
 					Assert(renderGlyphError == 0);
 					
 					FontGlyph* newGlyph = VarArrayAdd(FontGlyph, &newAtlas->glyphs);
@@ -633,21 +664,21 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 					ClearPointer(newGlyph);
 					newGlyph->codepoint = codepoint;
 					newGlyph->ttfGlyphIndex = glyphIndex;
-					newGlyph->advanceX = TO_R32_FROM_FT26(font->freeTypeFace->glyph->advance.x);
-					newGlyph->renderOffset.X = (r32)font->freeTypeFace->glyph->bitmap_left;
-					newGlyph->renderOffset.Y = -(r32)font->freeTypeFace->glyph->bitmap_top;
+					newGlyph->advanceX = TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
+					newGlyph->renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
+					newGlyph->renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
 					newGlyph->logicalRec = NewRec(0, -newAtlas->maxAscend, newGlyph->advanceX, newAtlas->maxAscend);
 					
-					if (font->freeTypeFace->glyph->bitmap.width > 0 && font->freeTypeFace->glyph->bitmap.rows > 0)
+					if (fontFile->freeTypeFace->glyph->bitmap.width > 0 && fontFile->freeTypeFace->glyph->bitmap.rows > 0)
 					{
 						Assert(packedRecIndex < numGlyphsInAtlas);
 						stbrp_rect packedRec = packRects[packedRecIndex];
 						packedRecIndex++;
 						Assert(packedRec.was_packed);
 						
-						Assert(font->freeTypeFace->glyph->bitmap.width == (unsigned int)packedRec.w - packingPadding*2);
-						Assert(font->freeTypeFace->glyph->bitmap.rows == (unsigned int)packedRec.h - packingPadding*2);
-						Assert(font->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY);
+						Assert(fontFile->freeTypeFace->glyph->bitmap.width == (unsigned int)packedRec.w - packingPadding*2);
+						Assert(fontFile->freeTypeFace->glyph->bitmap.rows == (unsigned int)packedRec.h - packingPadding*2);
+						Assert(fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY);
 						
 						newGlyph->atlasSourceRec = NewReci(packedRec.x + packingPadding, packedRec.y + packingPadding, packedRec.w - packingPadding*2, packedRec.h - packingPadding*2);
 						newGlyph->logicalRec.Width = MaxR32(newGlyph->renderOffset.X + (r32)newGlyph->atlasSourceRec.Width, newGlyph->advanceX);
@@ -664,7 +695,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 						{
 							for (int xOffset = 0; xOffset < packedRec.w - packingPadding*2; xOffset++)
 							{
-								u8 inValue = font->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset, yOffset, font->freeTypeFace->glyph->bitmap.pitch, font->freeTypeFace->glyph->bitmap.height)];
+								u8 inValue = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
 								Color32* outPixel = &pixelsPntr[INDEX_FROM_COORD2D(packedRec.x + packingPadding + xOffset, packedRec.y + packingPadding + yOffset, atlasSize.Width, atlasSize.Height)];
 								outPixel->r = 255;
 								outPixel->g = 255;
@@ -761,7 +792,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		//NOTE: This used to be stbtt_PackFontRanges
 		stbtt_fontinfo fontInfo;
 		fontInfo.userdata = scratch;
-		stbtt_InitFont(&fontInfo, font->ttfFile.bytes, stbtt_GetFontOffsetForIndex(font->ttfFile.bytes, 0));
+		stbtt_InitFont(&fontInfo, fontFile->fileContents.bytes, stbtt_GetFontOffsetForIndex(fontFile->fileContents.bytes, 0));
 		
 		stbrp_rect* rects = AllocArray(stbrp_rect, scratch, numCodepointsTotal);
 		NotNull(rects);
@@ -879,13 +910,13 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		}
 		
 		newAtlas->fontSize = fontSize;
-		newAtlas->fontScale = stbtt_ScaleForPixelHeight(&font->ttfInfo, fontSize);
-		newAtlas->styleFlags = (font->ttfStyleFlags | extraStyleFlags);
+		newAtlas->fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+		newAtlas->styleFlags = (fontFile->styleFlags | extraStyleFlags);
 		newAtlas->glyphRange.startCodepoint = minCodepoint;
 		newAtlas->glyphRange.endCodepoint = maxCodepoint;
 		
 		int ascent, descent, lineGap;
-		stbtt_GetFontVMetrics(&font->ttfInfo, &ascent, &descent, &lineGap);
+		stbtt_GetFontVMetrics(&fontFile->ttfInfo, &ascent, &descent, &lineGap);
 		newAtlas->maxAscend = (r32)ascent * newAtlas->fontScale;
 		newAtlas->maxDescend = (r32)(-descent) * newAtlas->fontScale;
 		newAtlas->lineHeight = newAtlas->maxAscend + newAtlas->maxDescend + ((r32)lineGap * newAtlas->fontScale);
@@ -896,7 +927,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
 		//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
 		int wBoxX0, wBoxY0, wBoxX1, wBoxY1;
-		int getBoxResult = stbtt_GetCodepointBox(&font->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
+		int getBoxResult = stbtt_GetCodepointBox(&fontFile->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
 		if (getBoxResult > 0)
 		{
 			r32 pretendMaxAscend = MinR32(newAtlas->maxAscend, (r32)wBoxY1 * newAtlas->fontScale);
@@ -922,7 +953,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				const stbtt_packedchar* stbCharInfo = &stbRange->chardata_for_range[gIndex];
 				FontGlyph* glyph = &newGlyphs[gIndex];
 				glyph->codepoint = charRange->startCodepoint + (u32)gIndex;
-				glyph->ttfGlyphIndex = stbtt_FindGlyphIndex(&font->ttfInfo, glyph->codepoint);
+				glyph->ttfGlyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, glyph->codepoint);
 				// if (glyph->ttfGlyphIndex < 0) { PrintLine_D("Codepoint 0x%08X has ttfGlyphIndex %d", glyph->codepoint, glyph->ttfGlyphIndex); }
 				DebugAssert(stbCharInfo->x0 <= stbCharInfo->x1);
 				DebugAssert(stbCharInfo->y0 <= stbCharInfo->y1);
@@ -983,6 +1014,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 	#endif //BUILD_WITH_FREETYPE
 	
 	ScratchEnd(scratch);
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 PEXPI Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)

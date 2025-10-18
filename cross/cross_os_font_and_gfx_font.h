@@ -36,6 +36,7 @@ PEXP Result AttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8
 {
 	NotNull(font);
 	NotNull(font->arena);
+	TracyCZoneN(_funcZone, "AttachOsTtfFileToFont", true);
 	
 	Slice fileContents = Slice_Empty;
 	Result readResult = OsReadPlatformFont(
@@ -48,22 +49,44 @@ PEXP Result AttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8
 	);
 	if (readResult != Result_Success) { return readResult; }
 	
-	return AttachTtfFileToFont(font, fileContents, false, ttfStyleFlags);
+	Result result = TryAttachFontFile(font, fontName, fileContents, ttfStyleFlags, false);
+	TracyCZoneEnd(_funcZone);
+	return result;
 }
 
 PEXP Result AttachAndMultiBakeFontAtlasesEx(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	if (numSettings > 0) { NotNull(settings); }
+	TracyCZoneN(_funcZone, "AttachAndMultiBakeFontAtlasesEx", true);
+	Str8 prevFontName = Str8_Empty;
+	u8 prevStyleFlags = FontStyleFlag_None;
 	for (uxx sIndex = 0; sIndex < numSettings; sIndex++)
 	{
 		const FontBakeSettings* setting = &settings[sIndex];
-		Result attachResult = AttachOsTtfFileToFont(font, setting->name, setting->size, setting->style);
-		if (attachResult != Result_Success) { return attachResult; }
+		if (sIndex == 0 || !StrExactEquals(prevFontName, setting->name) || setting->style != prevStyleFlags)
+		{
+			RemoveAttachedFontFiles(font);
+			Result attachResult = AttachOsTtfFileToFont(font, setting->name, setting->size, setting->style);
+			if (attachResult != Result_Success)
+			{
+				RemoveAttachedFontFiles(font);
+				TracyCZoneEnd(_funcZone);
+				return attachResult;
+			}
+			prevFontName = setting->name;
+			prevStyleFlags = setting->style;
+		}
 		Result bakeResult = BakeFontAtlasEx(font, setting->size, setting->style, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
 		if (bakeResult != Result_Success && setting->fillKerningTable) { FillFontKerningTable(font); }
-		RemoveAttachedTtfFile(font);
-		if (bakeResult != Result_Success) { return bakeResult; }
+		if (bakeResult != Result_Success)
+		{
+			RemoveAttachedFontFiles(font);
+			TracyCZoneEnd(_funcZone);
+			return bakeResult;
+		}
 	}
+	RemoveAttachedFontFiles(font);
+	TracyCZoneEnd(_funcZone);
 	return Result_Success;
 }
 

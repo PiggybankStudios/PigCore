@@ -43,6 +43,7 @@ enum Result
 	Result_TooLong,
 	Result_EmptyString,
 	Result_EmptyPath,
+	Result_TooMany,
 	Result_EmptyFile,
 	Result_ExePathTooLong,
 	Result_FailedToAllocateMemory,
@@ -139,6 +140,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_TooLong: return "TooLong";
 		case Result_EmptyString: return "EmptyString";
 		case Result_EmptyPath: return "EmptyPath";
+		case Result_TooMany: return "TooMany";
 		case Result_EmptyFile: return "EmptyFile";
 		case Result_ExePathTooLong: return "ExePathTooLong";
 		case Result_FailedToAllocateMemory: return "FailedToAllocateMemory";
