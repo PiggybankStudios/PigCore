@@ -6,6 +6,9 @@ This folder contains a `main.c` that can be compiled into an executable that run
 ### Raylib + Box2D Test:
 ![Raylib Box2D Screenshot](/_media/tests_screenshot_raylib_box2d.png)
 
+### FreeType Font Rendering Test:
+![FreeType Font Screenshot](/_media/tests_screenshot_freetype.png)
+
 ### WASM Debug Test:
 ![WASM Debug Screenshot](/_media/tests_screenshot_wasm_debug.png)
 
