@@ -78,6 +78,8 @@ v2i oldWindowSize = V2i_Zero_Const;
 Rot2 screenRotation = Rot2_0;
 bool screenRotated = false;
 #endif
+Texture mipmapTexture = ZEROED;
+Texture noMipmapTexture = ZEROED;
 Texture testTexture = ZEROED;
 
 //TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
@@ -296,6 +298,33 @@ void DrawSphere(Sphere sphere, Color32 color)
 	SetTintColor(color);
 	BindVertBuffer(&sphereBuffer);
 	DrawVertices();
+}
+
+Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
+{
+	ScratchBegin1(scratch, arena);
+	Texture result = ZEROED;
+	Slice fileContents = Slice_Empty;
+	bool readFileResult = OsReadBinFile(path, scratch, &fileContents);
+	if (!readFileResult)
+	{
+		DebugAssert(readFileResult == true);
+		result.error = Result_FailedToReadFile;
+		ScratchEnd(scratch);
+		return result;
+	}
+	ImageData imageData = ZEROED;
+	Result parseResult = TryParseImageFile(fileContents, arena, &imageData);
+	if (parseResult != Result_Success)
+	{
+		DebugAssert(parseResult == Result_Success);
+		result.error = parseResult;
+		ScratchEnd(scratch);
+		return result;
+	}
+	result = InitTexture(arena, path, imageData.size, imageData.pixels, flags);
+	ScratchEnd(scratch);
+	return result;
 }
 
 // +--------------------------------------------------------------+
@@ -571,6 +600,9 @@ void AppInit(void)
 	UpdateScreenSafeMargins();
 	oldWindowSize = NewV2i(sapp_width(), sapp_height());
 	
+	mipmapTexture = LoadTexture(stdHeap, StrLit("test.png"), TextureFlag_None);
+	noMipmapTexture = LoadTexture(stdHeap, StrLit("test.png"), TextureFlag_NoMipmaps);
+	
 	ImageData testTextureData = ZEROED;
 	testTextureData.size = NewV2i(512, 512);
 	testTextureData.numPixels = (uxx)(testTextureData.size.Width * testTextureData.size.Height);
@@ -589,7 +621,7 @@ void AppInit(void)
 			pixel->a = 255;
 		}
 	}
-	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_HasCopy|TextureFlag_Mutable);
+	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_Mutable|TextureFlag_HasCopy);
 	Assert(testTexture.error == Result_Success);
 	
 	ScratchEnd(scratch);
@@ -808,6 +840,12 @@ bool AppFrame(void)
 			}
 			#endif
 			
+			Texture* mipTextureToUse = (IsKeyboardKeyDown(&keyboard, Key_Shift) ? &noMipmapTexture : &mipmapTexture);
+			rec mipmapTextureRec = NewRec(windowSize.Width/2, windowSize.Height/2, 0, 0);
+			mipmapTextureRec.Width = mouse.position.X - mipmapTextureRec.X;
+			mipmapTextureRec.Height = mouse.position.Y - mipmapTextureRec.Y;
+			DrawTexturedRectangle(mipmapTextureRec, White, mipTextureToUse);
+			
 			rec testTextureRec = NewRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
 			DrawTexturedRectangle(testTextureRec, White, &testTexture);
 			
@@ -818,7 +856,7 @@ bool AppFrame(void)
 				FontAtlas* fontAtlas = GetFontAtlas(&testFont, 18*textScale, FontStyleFlag_None);
 				NotNull(fontAtlas);
 				
-				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 110 + fontAtlas->maxAscend);
+				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + fontAtlas->maxAscend);
 				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
 				DrawText(infoStr, textPos, MonokaiWhite);
 				

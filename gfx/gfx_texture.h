@@ -86,6 +86,7 @@ plex Texture
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	void FreeTexture(Texture* texture);
+	ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer);
 	Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPntr, u8 flags);
  	PIG_CORE_INLINE void SetTextureFilePath(Texture* texture, Str8 filePath);
 	void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixelsPntr);
@@ -114,6 +115,35 @@ PEXP void FreeTexture(Texture* texture)
 		TracyCZoneEnd(funcZone);
 	}
 	ClearPointer(texture);
+}
+
+PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
+{
+	NotNull(arena);
+	Assert(upperLayer.size.Width >= 2 && upperLayer.size.Height >= 2);
+	ImageData result = ZEROED;
+	result.size = NewV2i(upperLayer.size.Width/2, upperLayer.size.Height/2);
+	result.numPixels = (uxx)(result.size.Width * result.size.Height);
+	result.pixels = AllocArray(u32, arena, result.numPixels);
+	NotNull(result.pixels);
+	for (i32 yOffset = 0; yOffset < result.size.Height; yOffset++)
+	{
+		for (i32 xOffset = 0; xOffset < result.size.Width; xOffset++)
+		{
+			Color32* outPixel = (Color32*)&result.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, result.size.Width, result.size.Height)];
+			v2i upperPos = NewV2i(xOffset*2, yOffset*2);
+			if (upperPos.X >= upperLayer.size.Width) { upperPos.X = upperLayer.size.Width-1; }
+			if (upperPos.Y >= upperLayer.size.Height) { upperPos.Y = upperLayer.size.Height-1; }
+			Color32* inRow0 = (Color32*)&upperLayer.pixels[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y, upperLayer.size.Width, upperLayer.size.Height)];
+			Color32* inRow1 = (Color32*)&upperLayer.pixels[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y+1, upperLayer.size.Width, upperLayer.size.Height)];
+			//TODO: We should do proper color blending in linear sRGB color space, not gamma sRGB!
+			outPixel->r = (u8)(((u32)inRow0[0].r + (u32)inRow0[1].r + (u32)inRow1[0].r + (u32)inRow1[1].r)/4);
+			outPixel->g = (u8)(((u32)inRow0[0].g + (u32)inRow0[1].g + (u32)inRow1[0].g + (u32)inRow1[1].g)/4);
+			outPixel->b = (u8)(((u32)inRow0[0].b + (u32)inRow0[1].b + (u32)inRow1[0].b + (u32)inRow1[1].b)/4);
+			outPixel->a = (u8)(((u32)inRow0[0].a + (u32)inRow0[1].a + (u32)inRow1[0].a + (u32)inRow1[1].a)/4);
+		}
+	}
+	return result;
 }
 
 PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPntr, u8 flags)
@@ -150,7 +180,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		u8* writePntr = newPixels;
 		for (uxx yIndex = 0; yIndex < (uxx)size.Height; yIndex++)
 		{
-			for (uxx xIndex = 0; xIndex < (uxx)size.Width; xIndex++)
+			for (uxx xIndex = 0; xIndex <= (uxx)size.Width; xIndex++)
 			{
 				MyMemCopy(writePntr, readPntr, inputPixelSize);
 				readPntr += inputPixelSize;
@@ -185,21 +215,47 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	
 	if (!IsEmptyStr(name)) { result.name = AllocStr8(arena, name); NotNull(result.name.chars); }
 	
-	//TODO: How do we handle creating mipmaps when !IsFlagSet(flags, TextureFlag_NoMipmaps)
-	
+	//SEE https://github.com/floooh/sokol/issues/102 AND https://github.com/Deins/sokol/tree/soft_gen_mipmaps
 	sg_range pixelsRange = (sg_range){ pixelsPntr, result.totalSize };
+	sg_range* mipmapRanges = nullptr;
+	uxx numMipLevels = 0;
+	if (!IsFlagSet(flags, TextureFlag_NoMipmaps))
+	{
+		ImageData baseImageData = ZEROED;
+		baseImageData.size = size;
+		baseImageData.numPixels = (uxx)(size.Width * size.Height);
+		baseImageData.pixels = (u32*)pixelsPntr;
+		
+		numMipLevels = MinI32(SG_MAX_MIPMAPS-1, FloorR32i(Log2R32((r32)MinI32(size.Width, size.Height))));
+		mipmapRanges = AllocArray(sg_range, scratch, numMipLevels);
+		NotNull(mipmapRanges);
+		ImageData* mipmapImageDatas = AllocArray(ImageData, scratch, numMipLevels);
+		NotNull(mipmapImageDatas);
+		for (uxx mIndex = 0; mIndex < numMipLevels; mIndex++)
+		{
+			ImageData upperLayer = (mIndex > 0) ? mipmapImageDatas[mIndex-1] : baseImageData;
+			mipmapImageDatas[mIndex] = GenerateMipmapLayer(scratch, upperLayer);
+			// PrintLine_D("Generated mipmap[%llu] %dx%d (from %dx%d)", mIndex, mipmapImageDatas[mIndex].size.Width, mipmapImageDatas[mIndex].size.Height, upperLayer.size.Width, upperLayer.size.Height);
+			mipmapRanges[mIndex] = (sg_range){ mipmapImageDatas[mIndex].pixels, mipmapImageDatas[mIndex].numPixels * result.pixelSize };
+		}
+	}
+	
 	sg_image_desc imageDesc = ZEROED;
 	imageDesc.type = SG_IMAGETYPE_2D;
 	imageDesc.usage = IsFlagSet(flags, TextureFlag_Mutable) ? SG_USAGE_DYNAMIC : SG_USAGE_IMMUTABLE;
 	imageDesc.width = size.Width;
 	imageDesc.height = size.Height;
-	imageDesc.num_mipmaps = 1; //TODO: Will change once we generate mipmaps
+	imageDesc.num_mipmaps = (int)(1 + numMipLevels);
 	imageDesc.pixel_format = IsFlagSet(flags, TextureFlag_IsHdr)
 		? (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R32F : SG_PIXELFORMAT_RGBA32F)
 		: (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R8 : SG_PIXELFORMAT_RGBA8);
 	if (!IsFlagSet(flags, TextureFlag_Mutable))
 	{
 		imageDesc.data.subimage[0][0] = pixelsRange;
+		if (!IsFlagSet(flags, TextureFlag_NoMipmaps) && numMipLevels > 0)
+		{
+			for (uxx mIndex = 0; mIndex < numMipLevels; mIndex++) { imageDesc.data.subimage[0][1+mIndex] = mipmapRanges[mIndex]; }
+		}
 	}
 	Str8 nameNt = AllocStrAndCopy(scratch, name.length, name.chars, true); NotNull(nameNt.chars); //allocate to ensure null-term char
 	imageDesc.label = nameNt.chars;
@@ -221,6 +277,10 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	{
 		sg_image_data imageData = ZEROED;
 		imageData.subimage[0][0] = pixelsRange;
+		if (!IsFlagSet(flags, TextureFlag_NoMipmaps) && numMipLevels > 0)
+		{
+			for (uxx mIndex = 0; mIndex < numMipLevels; mIndex++) { imageData.subimage[0][1+mIndex] = mipmapRanges[mIndex]; }
+		}
 		sg_update_image(result.image, &imageData);
 	}
 	
