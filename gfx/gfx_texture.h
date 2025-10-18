@@ -89,6 +89,7 @@ plex Texture
 	Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPntr, u8 flags);
  	PIG_CORE_INLINE void SetTextureFilePath(Texture* texture, Str8 filePath);
 	void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixelsPntr);
+	PIG_CORE_INLINE void UpdateTexture(Texture* texture, const void* pixelsPntr);
 	PIG_CORE_INLINE void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex);
 #endif
 
@@ -275,27 +276,48 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 {
 	NotNull(texture);
 	NotNull(texture->arena);
-	Assert(IsFlagSet(texture->flags, TextureFlag_HasCopy)); //TODO: Maybe we can allow not HasCopy if the sourceRec covers the entire image?
-	Assert(IsFlagSet(texture->flags, TextureFlag_Mutable));
 	NotNull(texture->pixelsPntr);
 	Assert(sourceRec.Width >= 0 && sourceRec.Height >= 0);
 	Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
 	Assert(sourceRec.X + sourceRec.Width <= texture->Width && sourceRec.Y + sourceRec.Height <= texture->Height);
 	if (sourceRec.Width == 0 || sourceRec.Height == 0) { return; }
 	NotNull(pixelsPntr);
-	sg_image_data imageData = ZEROED;
-	for (uxx rowIndex = 0; rowIndex < sourceRec.Height; rowIndex++)
+	
+	ImageData newImageData = ZEROED;
+	if (IsFlagSet(texture->flags, TextureFlag_HasCopy))
 	{
-		const u8* sourceRow = &((u8*)pixelsPntr)[INDEX_FROM_COORD2D(0, rowIndex, sourceRec.Width, sourceRec.Height) * texture->pixelSize];
-		u8* destRow = &texture->pixelsU8[INDEX_FROM_COORD2D(sourceRec.X + 0, sourceRec.Y + rowIndex, texture->Width, texture->Height) * texture->pixelSize];
-		MyMemCopy(destRow, sourceRow, sourceRec.Width * texture->pixelSize);
+		for (uxx rowIndex = 0; rowIndex < sourceRec.Height; rowIndex++)
+		{
+			const u8* sourceRow = &((u8*)pixelsPntr)[INDEX_FROM_COORD2D(0, rowIndex, sourceRec.Width, sourceRec.Height) * texture->pixelSize];
+			u8* destRow = &texture->pixelsU8[INDEX_FROM_COORD2D(sourceRec.X + 0, sourceRec.Y + rowIndex, texture->Width, texture->Height) * texture->pixelSize];
+			MyMemCopy(destRow, sourceRow, sourceRec.Width * texture->pixelSize);
+		}
+		newImageData = NewImageData(texture->size, texture->pixelsPntr);
 	}
-	imageData.subimage[0][0] = (sg_range){ texture->pixelsPntr, texture->totalSize };
-	if (!IsFlagSet(texture->flags, TextureFlag_NoMipmaps))
+	else
 	{
-		//TODO: We need to handle mipmap re-generation!
+		Assert(sourceRec.X == 0 && sourceRec.Y == 0 && sourceRec.Width == texture->Width && sourceRec.Height == texture->Height);
+		newImageData = NewImageData(texture->size, (u32*)pixelsPntr);
 	}
-	sg_update_image(texture->image, &imageData);
+	
+	if (IsFlagSet(texture->flags, TextureFlag_Mutable))
+	{
+		Assert(!IsFlagSet(texture->flags, TextureFlag_NoMipmaps));
+		sg_image_data sokolImageData = ZEROED;
+		sokolImageData.subimage[0][0] = (sg_range){ texture->pixelsPntr, texture->totalSize };
+		sg_update_image(texture->image, &sokolImageData);
+	}
+	else
+	{
+		Texture newTexture = InitTexture(texture->arena, texture->name, newImageData.size, newImageData.pixels, texture->flags);
+		FreeTexture(texture);
+		MyMemCopy(texture, &newTexture, sizeof(Texture));
+	}
+}
+
+PEXPI void UpdateTexture(Texture* texture, const void* pixelsPntr)
+{
+	UpdateTexturePart(texture, NewReci(0, 0, texture->Width, texture->Height), pixelsPntr);
 }
 
 PEXPI void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex)

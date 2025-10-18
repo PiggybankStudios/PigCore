@@ -2411,7 +2411,7 @@
 			"void UpdateMusicStream(Music music)",
 			"void UpdateScreenSafeMargins()",
 			"void UpdateSound(Sound sound, const void *data, int sampleCount)",
-			"void UpdateTexture(Texture2D texture, const void *pixels)",
+			"void UpdateTexture(Texture* texture, const void* pixelsPntr)",
 			"void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixelsPntr)",
 			"void UpdateTextureRec(Texture2D texture, Rectangle rec, const void *pixels)",
 			"void UpdateTouchStatePosition(TouchState* touch, v2 position, u64 currentTime)",

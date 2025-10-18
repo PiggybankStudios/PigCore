@@ -589,7 +589,7 @@ void AppInit(void)
 			pixel->a = 255;
 		}
 	}
-	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_Mutable|TextureFlag_HasCopy);
+	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_HasCopy|TextureFlag_Mutable);
 	Assert(testTexture.error == Result_Success);
 	
 	ScratchEnd(scratch);
