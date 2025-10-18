@@ -139,11 +139,7 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 			if (upperPos.Y >= upperLayer.size.Height) { upperPos.Y = upperLayer.size.Height-1; }
 			Color32* inRow0 = (Color32*)&upperLayer.pixels[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y, upperLayer.size.Width, upperLayer.size.Height)];
 			Color32* inRow1 = (Color32*)&upperLayer.pixels[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y+1, upperLayer.size.Width, upperLayer.size.Height)];
-			//TODO: We should do proper color blending in linear sRGB color space, not gamma sRGB!
-			outPixel->r = (u8)(((u32)inRow0[0].r + (u32)inRow0[1].r + (u32)inRow1[0].r + (u32)inRow1[1].r)/4);
-			outPixel->g = (u8)(((u32)inRow0[0].g + (u32)inRow0[1].g + (u32)inRow1[0].g + (u32)inRow1[1].g)/4);
-			outPixel->b = (u8)(((u32)inRow0[0].b + (u32)inRow0[1].b + (u32)inRow1[0].b + (u32)inRow1[1].b)/4);
-			outPixel->a = (u8)(((u32)inRow0[0].a + (u32)inRow0[1].a + (u32)inRow1[0].a + (u32)inRow1[1].a)/4);
+			*outPixel = ColorAverage4(inRow0[0], inRow0[1], inRow1[0], inRow1[1]);
 		}
 	}
 	TracyCZoneEnd(_funcZone);
