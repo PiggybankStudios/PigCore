@@ -61,6 +61,7 @@ plex FontFlowState
 {
 	void* contextPntr;
 	PigFont* font;
+	u64 programTime;
 	v2 startPos;
 	v2 position;
 	r32 startFontSize;
@@ -135,15 +136,15 @@ plex FontFlowCallbacks
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut);
-	PIG_CORE_INLINE TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text, FontFlow* flowOut);
-	PIG_CORE_INLINE TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text);
-	PIG_CORE_INLINE TextMeasure MeasureRichText(const PigFont* font, r32 wrapWidth, RichStr text);
-	PIG_CORE_INLINE TextMeasure MeasureTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text, FontFlow* flowOut);
-	PIG_CORE_INLINE TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text);
-	PIG_CORE_INLINE TextMeasure MeasureText(const PigFont* font, r32 wrapWidth, Str8 text);
+	PIG_CORE_INLINE TextMeasure MeasureRichTextFlow(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text, FontFlow* flowOut);
+	PIG_CORE_INLINE TextMeasure MeasureRichTextEx(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text);
+	PIG_CORE_INLINE TextMeasure MeasureRichText(const PigFont* font, u64 programTime, r32 wrapWidth, RichStr text);
+	PIG_CORE_INLINE TextMeasure MeasureTextFlow(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text, FontFlow* flowOut);
+	PIG_CORE_INLINE TextMeasure MeasureTextEx(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text);
+	PIG_CORE_INLINE TextMeasure MeasureText(const PigFont* font, u64 programTime, r32 wrapWidth, Str8 text);
 	//TODO: Made RichStr versions of ShortenTextToFitWidth functions!
-	uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex, Str8* beforeEllipseStrOut, Str8* afterEllipseStrOut);
-	PIG_CORE_INLINE Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex);
+	uxx ShortenTextToFitWidthEx(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex, Str8* beforeEllipseStrOut, Str8* afterEllipseStrOut);
+	PIG_CORE_INLINE Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex);
 	PIG_CORE_INLINE Str8 ShortenTextStartToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
 	PIG_CORE_INLINE Str8 ShortenTextEndToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
 	PIG_CORE_INLINE Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, FilePath filePath, r32 maxWidth, Str8 ellipsesStr);
@@ -182,7 +183,7 @@ static Result DoFontFlow_FindNextWordWrapIndex(const FontFlowState* realState, F
 
 static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
 {
-	FontAtlas* currentAtlas = GetFontAtlas(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
+	FontAtlas* currentAtlas = GetFontAtlas(state->font, state->programTime, state->currentStyle.fontSize, state->currentStyle.fontStyle, true);
 	NotNull(currentAtlas);
 	rec highlightRec = NewRec(
 		state->highlightStartPos.X,
@@ -221,7 +222,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			flowOut->endPos = state->position;
 			flowOut->visualRec = NewRecV(state->position, V2_Zero);
 			flowOut->logicalRec = NewRecV(state->position, V2_Zero);
-			FontAtlas* firstAtlas = GetFontAtlas(state->font, state->startFontSize, state->startFontStyle);
+			FontAtlas* firstAtlas = GetFontAtlas(state->font, state->programTime, state->startFontSize, state->startFontStyle, true);
 			if (firstAtlas != nullptr)
 			{
 				flowOut->logicalRec.Y -= firstAtlas->maxAscend;
@@ -282,7 +283,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				}
 				else
 				{
-					FontAtlas* atlas = GetFontAtlas(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
+					FontAtlas* atlas = GetFontAtlas(state->font, state->programTime, state->currentStyle.fontSize, state->currentStyle.fontStyle, true);
 					NotNull(atlas); //TODO: Should we be tolerant of this? We need a FontAtlas so we know how much to vertically advance
 					state->position.Y += atlas->lineHeight;
 				}
@@ -334,7 +335,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			rec glyphDrawRec = Rec_Zero;
 			rec glyphLogicalRec = Rec_Zero;
 			FontAtlas* fontAtlas = nullptr;
-			FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &fontAtlas);
+			FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
 			if (fontGlyph != nullptr)
 			{
 				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->lineHeight);
@@ -456,11 +457,12 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	return result;
 }
 
-PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text, FontFlow* flowOut)
+PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text, FontFlow* flowOut)
 {
 	NotNull(flowOut);
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
+	state.programTime = programTime;
 	state.position = V2_Zero;
 	state.startFontSize = fontSize;
 	state.startFontStyle = styleFlags;
@@ -480,35 +482,35 @@ PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styl
 	}
 	return result;
 }
-PEXPI TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text)
+PEXPI TextMeasure MeasureRichTextEx(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text)
 {
 	FontFlow flow = ZEROED;
-	return MeasureRichTextFlow(font, fontSize, styleFlags, includeAdvanceX, wrapWidth, text, &flow);
+	return MeasureRichTextFlow(font, programTime, fontSize, styleFlags, includeAdvanceX, wrapWidth, text, &flow);
 }
-PEXPI TextMeasure MeasureRichText(const PigFont* font, r32 wrapWidth, RichStr text)
+PEXPI TextMeasure MeasureRichText(const PigFont* font, u64 programTime, r32 wrapWidth, RichStr text)
 {
 	Assert(font->atlases.length > 0);
 	FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
-	return MeasureRichTextEx(font, firstAtlas->fontSize, firstAtlas->styleFlags, false, wrapWidth, text);
+	return MeasureRichTextEx(font, programTime, firstAtlas->fontSize, firstAtlas->styleFlags, false, wrapWidth, text);
 }
-PEXPI TextMeasure MeasureTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text, FontFlow* flowOut)
+PEXPI TextMeasure MeasureTextFlow(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text, FontFlow* flowOut)
 {
-	return MeasureRichTextFlow(font, fontSize, styleFlags, includeAdvanceX, wrapWidth, ToRichStr(text), flowOut);
+	return MeasureRichTextFlow(font, programTime, fontSize, styleFlags, includeAdvanceX, wrapWidth, ToRichStr(text), flowOut);
 }
-PEXPI TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text)
+PEXPI TextMeasure MeasureTextEx(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text)
 {
-	return MeasureRichTextEx(font, fontSize, styleFlags, includeAdvanceX, wrapWidth, ToRichStr(text));
+	return MeasureRichTextEx(font, programTime, fontSize, styleFlags, includeAdvanceX, wrapWidth, ToRichStr(text));
 }
-PEXPI TextMeasure MeasureText(const PigFont* font, r32 wrapWidth, Str8 text)
+PEXPI TextMeasure MeasureText(const PigFont* font, u64 programTime, r32 wrapWidth, Str8 text)
 {
 	Assert(font->atlases.length > 0);
 	FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
-	return MeasureRichTextEx(font, firstAtlas->fontSize, firstAtlas->styleFlags, false, wrapWidth, ToRichStr(text));
+	return MeasureRichTextEx(font, programTime, firstAtlas->fontSize, firstAtlas->styleFlags, false, wrapWidth, ToRichStr(text));
 }
 
 //NOTE: ellipsesIndex is an index into the pre-shortened string, it will replace characters from both left and right so it may end up at an index earlier in the string if it pulls characters from the left
 // Returns number of characters that were removed from the text in order to make it fit
-PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex, Str8* beforeEllipseStrOut, Str8* afterEllipseStrOut)
+PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex, Str8* beforeEllipseStrOut, Str8* afterEllipseStrOut)
 {
 	NotNull(font);
 	NotNullStr(text);
@@ -524,6 +526,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	ScratchBegin(scratch);
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
+	state.programTime = programTime;
 	state.position = V2_Zero;
 	state.startFontSize = fontSize;
 	state.startFontStyle = styleFlags;
@@ -549,7 +552,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	r32 ellipsesWidth = 0.0f;
 	if (!IsEmptyStr(ellipsesStr))
 	{
-		TextMeasure ellipsesMeasure = MeasureTextEx(font, fontSize, styleFlags, false, 0, ellipsesStr);
+		TextMeasure ellipsesMeasure = MeasureTextEx(font, state.programTime, fontSize, styleFlags, false, 0, ellipsesStr);
 		ellipsesWidth = ellipsesMeasure.Width - ellipsesMeasure.OffsetX;
 	}
 	
@@ -591,12 +594,12 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	ScratchEnd(scratch);
 	return numCharsRemoved;
 }
-PEXPI Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex)
+PEXPI Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex)
 {
 	NotNull(arena);
 	Str8 beforeEllipseStr = Str8_Empty;
 	Str8 afterEllipseStr = Str8_Empty;
-	uxx numCharsRemoved = ShortenTextToFitWidthEx(font, fontSize, styleFlags, text, maxWidth, ellipsesStr, ellipsesIndex, &beforeEllipseStr, &afterEllipseStr);
+	uxx numCharsRemoved = ShortenTextToFitWidthEx(font, programTime, fontSize, styleFlags, text, maxWidth, ellipsesStr, ellipsesIndex, &beforeEllipseStr, &afterEllipseStr);
 	if (numCharsRemoved > 0)
 	{
 		return PrintInArenaStr(arena, "%.*s%.*s%.*s", StrPrint(beforeEllipseStr), StrPrint(ellipsesStr), StrPrint(afterEllipseStr));
@@ -606,21 +609,21 @@ PEXPI Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, r32 fontSize
 		return AllocStr8(arena, text);
 	}
 }
-PEXPI Str8 ShortenTextStartToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr)
+PEXPI Str8 ShortenTextStartToFitWidth(Arena* arena, const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr)
 {
-	return ShortenTextToFitWidth(arena, font, fontSize, styleFlags, text, maxWidth, ellipsesStr, 0);
+	return ShortenTextToFitWidth(arena, font, programTime, fontSize, styleFlags, text, maxWidth, ellipsesStr, 0);
 }
-PEXPI Str8 ShortenTextEndToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr)
+PEXPI Str8 ShortenTextEndToFitWidth(Arena* arena, const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr)
 {
-	return ShortenTextToFitWidth(arena, font, fontSize, styleFlags, text, maxWidth, ellipsesStr, text.length);
+	return ShortenTextToFitWidth(arena, font, programTime, fontSize, styleFlags, text, maxWidth, ellipsesStr, text.length);
 }
-PEXPI Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, FilePath filePath, r32 maxWidth, Str8 ellipsesStr)
+PEXPI Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, u64 programTime, r32 fontSize, u8 styleFlags, FilePath filePath, r32 maxWidth, Str8 ellipsesStr)
 {
 	
 	Str8 fileNamePart = GetFileNamePart(filePath, true);
 	uxx fileNameStartIndex = (uxx)(fileNamePart.chars - filePath.chars);
 	uxx ellipsesIndex = fileNameStartIndex / 2;
-	return ShortenTextToFitWidth(arena, font, fontSize, styleFlags, filePath, maxWidth, ellipsesStr, ellipsesIndex);
+	return ShortenTextToFitWidth(arena, font, programTime, fontSize, styleFlags, filePath, maxWidth, ellipsesStr, ellipsesIndex);
 }
 
 PEXPI void ResetFontFlowInfo(FontFlow* flow)

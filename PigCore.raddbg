@@ -1,10 +1,11 @@
 // raddbg 0.9.22 project file
 
+recent_file: path: "gfx/gfx_font.h"
+recent_file: path: "tests/tests_sokol.c"
+recent_file: path: "gfx/gfx_font_flow.h"
 recent_file: path: "gfx/gfx_texture.h"
 recent_file: path: "misc/misc_sokol_app_helpers.c"
 recent_file: path: "third_party/sokol/sokol_gfx.h"
-recent_file: path: "tests/tests_sokol.c"
-recent_file: path: "gfx/gfx_font.h"
 recent_file: path: "third_party/freetype/src/base/ftobjs.c"
 recent_file: path: "third_party/sokol/sokol_app.h"
 recent_file: path: "tests/tests_main.c"
@@ -13,7 +14,6 @@ recent_file: path: "struct/struct_rich_string.h"
 recent_file: path: "base/base_debug_output_impl.h"
 recent_file: path: "misc/misc_printing.h"
 recent_file: path: "../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/stdio.h"
-recent_file: path: "gfx/gfx_font_flow.h"
 recent_file: path: "gfx/gfx_system.h"
 recent_file: path: "struct/struct_string.h"
 recent_file: path: "std/std_basic_math.h"
@@ -89,3 +89,8 @@ type_view:
   expr: "rows($, color((($.valueU32&0x00FFFFFF) << 8) | (($.valueU32&0xFF000000)>>24)), hex(r), hex(g), hex(b), hex(a))"
 }
 theme: 4coder
+type_view:
+{
+  type: bool
+  expr: "bool($)"
+}

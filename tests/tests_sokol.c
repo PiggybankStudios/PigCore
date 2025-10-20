@@ -358,7 +358,18 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
 	Assert(gradientTexture.error == Result_Success);
 	
+	bool useActiveFont = true;
 	testFont = InitFont(stdHeap, StrLit("testFont"));
+	if (useActiveFont)
+	{
+		MakeFontActive(&testFont, 256, 1024, 12);
+		r32 textScale = TEXT_SCALE/sapp_dpi_scale();
+		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult1 == Result_Success);
+		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult2 == Result_Success);
+		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult3 == Result_Success);
+		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult4 == Result_Success);
+	}
+	else
 	{
 		// OsWriteBinFile(FilePathLit("Default.ttf"), testFont.ttfFile);
 		FontCharRange charRanges[] = {
@@ -507,6 +518,7 @@ bool AppFrame(void)
 	UpdateScreenRotation();
 	#endif
 	if (AreEqualV2i(oldWindowSize, windowSizei)) { UpdateScreenSafeMargins(); }
+	FontNewFrame(&testFont);
 	
 	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
@@ -691,10 +703,9 @@ bool AppFrame(void)
 			DrawTexturedRectangle(testTextureRec, White, &testTexture);
 			
 			#if 1
-			if (testFont.atlases.length > 0)
 			{
 				BindFont(&testFont);
-				FontAtlas* fontAtlas = GetFontAtlas(&testFont, 18*textScale, FontStyleFlag_None);
+				FontAtlas* fontAtlas = GetFontAtlas(&testFont, programTime, 18*textScale, FontStyleFlag_None, true);
 				NotNull(fontAtlas);
 				
 				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + fontAtlas->maxAscend);
