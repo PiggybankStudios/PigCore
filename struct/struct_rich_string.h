@@ -32,15 +32,17 @@ Description:
 typedef enum FontStyleFlag FontStyleFlag;
 enum FontStyleFlag
 {
-	FontStyleFlag_None          = 0x00,
-	FontStyleFlag_Bold          = 0x01,
-	FontStyleFlag_Italic        = 0x02,
-	FontStyleFlag_Inverted      = 0x04,
-	FontStyleFlag_Underline     = 0x08,
-	FontStyleFlag_Strikethrough = 0x10,
-	FontStyleFlag_Outline       = 0x20,
-	FontStyleFlag_Highlighted   = 0x40,
-	FontStyleFlag_All           = 0x7F,
+	FontStyleFlag_None           = 0x00,
+	FontStyleFlag_Bold           = 0x01,
+	FontStyleFlag_Italic         = 0x02,
+	FontStyleFlag_Inverted       = 0x04,
+	FontStyleFlag_Underline      = 0x08,
+	FontStyleFlag_Strikethrough  = 0x10,
+	FontStyleFlag_Outline        = 0x20,
+	FontStyleFlag_Highlighted    = 0x40,
+	FontStyleFlag_All            = 0x7F,
+	FontStyleFlag_FontFileFlags  = FontStyleFlag_Bold|FontStyleFlag_Italic, //These are flags that affect which font file we pull from for rasterization
+	FontStyleFlag_FontAtlasFlags = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_Inverted, //These are flags that affect which font atlas we use
 };
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetFontStyleFlagStr(FontStyleFlag enumValue);

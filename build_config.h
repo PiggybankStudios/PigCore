@@ -20,9 +20,9 @@ Description:
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
-#define DEBUG_BUILD   0
+#define DEBUG_BUILD   1
 // Enables linking with tracy.lib to enable profiling through Tracy
-#define PROFILING_ENABLED 1
+#define PROFILING_ENABLED 0
 
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS             1
@@ -44,7 +44,7 @@ Description:
 #define BUILD_PLAYDATE_SIMULATOR  0
 
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 1
+#define BUILD_SHADERS 0
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0

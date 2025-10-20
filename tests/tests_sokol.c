@@ -585,6 +585,68 @@ bool AppFrame(void)
 		UpdateTexturePart(&testTexture, sourceRec, newImageData.pixels);
 	}
 	
+	if (IsKeyboardKeyPressed(&keyboard, Key_G, false))
+	{
+		PrintLine_D("testFont has %llu atlas%s:", testFont.atlases.length, PluralEx(testFont.atlases.length, "", "es"));
+		VarArrayLoop(&testFont.atlases, aIndex)
+		{
+			VarArrayLoopGet(FontAtlas, fontAtlas, &testFont.atlases, aIndex);
+			bool isBold = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Bold);
+			bool isItalic = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Italic);
+			PrintLine_D("Atlas[%llu]:%s %g %s%s%s %dx%d 0x%08X-0x%08X",
+				aIndex,
+				fontAtlas->isActive ? " Active" : "",
+				fontAtlas->fontSize,
+				isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "",
+				fontAtlas->texture.Width, fontAtlas->texture.Height,
+				fontAtlas->glyphRange.startCodepoint, fontAtlas->glyphRange.endCodepoint
+			);
+			PrintLine_D("\t%llu Char Range%s:", fontAtlas->charRanges.length, Plural(fontAtlas->charRanges.length, "s"));
+			VarArrayLoop(&fontAtlas->charRanges, rIndex)
+			{
+				VarArrayLoopGet(FontCharRange, charRange, &fontAtlas->charRanges, rIndex);
+				PrintLine_D("\t\tRange[%llu]: 0x%08X-0x%08X glyphIndex=%llu", rIndex, charRange->startCodepoint, charRange->endCodepoint, charRange->glyphArrayStartIndex);
+			}
+			PrintLine_D("\t%llu Glyph%s:", fontAtlas->glyphs.length, Plural(fontAtlas->glyphs.length, "s"));
+			VarArrayLoop(&fontAtlas->glyphs, gIndex)
+			{
+				VarArrayLoopGet(FontGlyph, glyph, &fontAtlas->glyphs, gIndex);
+				PrintLine_D("\t\tGlyph[%llu]: \'%c\' 0x%08X sourceRec=(%d, %d, %d, %d) offset=(%g, %g) advanceX=%g", gIndex, (char)glyph->codepoint, glyph->codepoint, glyph->atlasSourceRec.X, glyph->atlasSourceRec.Y, glyph->atlasSourceRec.Width, glyph->atlasSourceRec.Height, glyph->renderOffset.X, glyph->renderOffset.Y, glyph->advanceX);
+				//TODO: ttfGlyphIndex
+				//TODO: logicalRec
+			}
+			if (fontAtlas->texture.error != Result_Success) { PrintLine_E("\tTexture Error: %s", GetResultStr(fontAtlas->texture.error)); }
+			PrintLine_D("\tlineHeight: %f", fontAtlas->lineHeight);
+			PrintLine_D("\tmaxAscend: %f", fontAtlas->maxAscend);
+			PrintLine_D("\tmaxDescend: %f", fontAtlas->maxDescend);
+			PrintLine_D("\tcenterOffset: %f", fontAtlas->centerOffset);
+			if (fontAtlas->isActive)
+			{
+				PrintLine_D("\tLast Used: %llu (%llums ago)", fontAtlas->lastUsedTime, TimeSinceBy(programTime, fontAtlas->lastUsedTime));
+				PrintLine_D("\tCell Size: %dx%d", fontAtlas->activeCellSize.Width, fontAtlas->activeCellSize.Height);
+				PrintLine_D("\tGrid Size: %dx%d", fontAtlas->activeCellGridSize.Width, fontAtlas->activeCellGridSize.Height);
+				for (i32 yOffset = 0; yOffset < fontAtlas->activeCellGridSize.Height; yOffset++)
+				{
+					for (i32 xOffset = 0; xOffset < fontAtlas->activeCellGridSize.Width; xOffset++)
+					{
+						FontActiveCell* cell = &fontAtlas->cells[INDEX_FROM_COORD2D(xOffset, yOffset, fontAtlas->activeCellGridSize.Width, fontAtlas->activeCellGridSize.Height)];
+						if (cell->codepoint != 0)
+						{
+							PrintLine_D("\t\tCell[%d,%d]: \'%c\' 0x%08X glyph[%llu]", xOffset, yOffset, (char)cell->codepoint, cell->codepoint, cell->glyphIndex);
+						}
+					}
+				}
+				PrintLine_D("\tpushedTextureUpdates: %s", fontAtlas->pushedTextureUpdates ? "True" : "False");
+				PrintLine_D("\t%llu pendingTextureUpdate%s:", fontAtlas->pendingTextureUpdates.length, Plural(fontAtlas->pendingTextureUpdates.length, "s"));
+				VarArrayLoop(&fontAtlas->pendingTextureUpdates, uIndex)
+				{
+					VarArrayLoopGet(FontActiveAtlasTextureUpdate, update, &fontAtlas->pendingTextureUpdates, uIndex);
+					PrintLine_D("\t\tUpdate[%llu]: (%d, %d, %d, %d)", uIndex, update->sourcePos.X, update->sourcePos.Y, update->imageData.size.Width, update->imageData.size.Height);
+				}
+			}
+		}
+	}
+	
 	#if BUILD_WITH_BOX2D
 	if (IsMouseBtnPressed(&mouse, MouseBtn_Left))
 	{
@@ -992,6 +1054,7 @@ bool AppFrame(void)
 	}
 	EndFrame();
 	TracyCZoneEnd(Zone_Draw);
+	CommitAllFontTextureUpdates(&testFont);
 	
 	TracyCZoneN(Zone_Commit, "Commit", true);
 	sg_commit();

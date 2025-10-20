@@ -336,6 +336,11 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			rec glyphLogicalRec = Rec_Zero;
 			FontAtlas* fontAtlas = nullptr;
 			FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
+			if (fontGlyph == nullptr)
+			{
+				MyBreak();
+				fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
+			}
 			if (fontGlyph != nullptr)
 			{
 				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->lineHeight);
