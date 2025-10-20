@@ -1419,6 +1419,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, u64 programTime, Fon
 			VarArrayLoopGet(FontGlyph, fontGlyph, &activeAtlas->glyphs, gIndex);
 			if (fontGlyph->codepoint >= codepoint) { glyphSortedInsertIndex = gIndex; break; }
 		}
+		// PrintLine_D("Inserting glyph at index %llu", glyphSortedInsertIndex);
 		FontGlyph* newGlyph = VarArrayInsert(FontGlyph, &activeAtlas->glyphs, glyphSortedInsertIndex);
 		NotNull(newGlyph);
 		ClearPointer(newGlyph);
@@ -1443,7 +1444,11 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, u64 programTime, Fon
 		VarArrayLoop(&activeAtlas->charRanges, rIndex)
 		{
 			VarArrayLoopGet(FontCharRange, charRange, &activeAtlas->charRanges, rIndex);
-			if (charRange->glyphArrayStartIndex >= glyphSortedInsertIndex) { charRange->glyphArrayStartIndex++; }
+			if (charRange->glyphArrayStartIndex >= glyphSortedInsertIndex)
+			{
+				// PrintLine_D("charRange[%llu] 0x%08X-0x%08X now starts at glyph index %llu", rIndex, charRange->startCodepoint, charRange->endCodepoint, charRange->glyphArrayStartIndex+1);
+				charRange->glyphArrayStartIndex++;
+			}
 		}
 		
 		// Extend glyphRange
@@ -1489,7 +1494,11 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, u64 programTime, Fon
 				VarArrayLoopGet(FontCharRange, charRange, &activeAtlas->charRanges, rIndex);
 				if (charRange->startCodepoint > codepoint) { rangeSortedInsertIndex = rIndex; break; }
 			}
-			VarArrayInsertValue(FontCharRange, &activeAtlas->charRanges, rangeSortedInsertIndex, NewFontCharRangeSingle(codepoint));
+			FontCharRange* newCharRange = VarArrayInsert(FontCharRange, &activeAtlas->charRanges, rangeSortedInsertIndex);
+			ClearPointer(newCharRange);
+			newCharRange->startCodepoint = codepoint;
+			newCharRange->endCodepoint = codepoint;
+			newCharRange->glyphArrayStartIndex = glyphSortedInsertIndex;
 		}
 		
 		if (glyphSize.Width > 0 && glyphSize.Height > 0)

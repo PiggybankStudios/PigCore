@@ -338,6 +338,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
 			if (fontGlyph == nullptr)
 			{
+				//TODO: Remove me!
 				MyBreak();
 				fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
 			}

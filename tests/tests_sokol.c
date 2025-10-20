@@ -611,7 +611,15 @@ bool AppFrame(void)
 			VarArrayLoop(&fontAtlas->glyphs, gIndex)
 			{
 				VarArrayLoopGet(FontGlyph, glyph, &fontAtlas->glyphs, gIndex);
-				PrintLine_D("\t\tGlyph[%llu]: \'%c\' 0x%08X sourceRec=(%d, %d, %d, %d) offset=(%g, %g) advanceX=%g", gIndex, (char)glyph->codepoint, glyph->codepoint, glyph->atlasSourceRec.X, glyph->atlasSourceRec.Y, glyph->atlasSourceRec.Width, glyph->atlasSourceRec.Height, glyph->renderOffset.X, glyph->renderOffset.Y, glyph->advanceX);
+				PrintLine_D("\t\tGlyph[%llu]: \'%c\' 0x%08X sourceRec=(%d, %d, %d, %d) offset=(%g, %g) advanceX=%g logical=(%g, %g, %g, %g)",
+					gIndex,
+					(char)glyph->codepoint, glyph->codepoint,
+					glyph->atlasSourceRec.X, glyph->atlasSourceRec.Y,
+					glyph->atlasSourceRec.Width, glyph->atlasSourceRec.Height,
+					glyph->renderOffset.X, glyph->renderOffset.Y,
+					glyph->advanceX,
+					glyph->logicalRec.X, glyph->logicalRec.Y, glyph->logicalRec.Width, glyph->logicalRec.Height
+				);
 				//TODO: ttfGlyphIndex
 				//TODO: logicalRec
 			}
@@ -771,13 +779,14 @@ bool AppFrame(void)
 				NotNull(fontAtlas);
 				
 				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + fontAtlas->maxAscend);
-				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
-				DrawText(infoStr, textPos, MonokaiWhite);
+				// Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
+				// DrawText(infoStr, textPos, MonokaiWhite);
+				// textPos.Y += fontAtlas->lineHeight;
 				
-				textPos.Y += fontAtlas->lineHeight;
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
-				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur \badipiscing\b elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
+				// RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur \badipiscing\b elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
+				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("This is a \bBräcke € (\xE2\x97\x8F'_'\xE2\x97\x8F)\b!")); //\xE2\x97\xA1
 				DrawWrappedRichTextWithFont(
 					&testFont, 18*textScale, FontStyleFlag_None,
 					loremIpsumRich,
