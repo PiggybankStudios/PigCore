@@ -358,27 +358,28 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
 	Assert(gradientTexture.error == Result_Success);
 	
+	FontCharRange charRanges[] = {
+		FontCharRange_ASCII,
+		FontCharRange_LatinSupplementAccent,
+	};
+	r32 textScale = TEXT_SCALE/sapp_dpi_scale();
 	bool useActiveFont = true;
 	testFont = InitFont(stdHeap, StrLit("testFont"));
 	if (useActiveFont)
 	{
-		MakeFontActive(&testFont, 256, 1024, 12);
-		r32 textScale = TEXT_SCALE/sapp_dpi_scale();
+		MakeFontActive(&testFont, 64, 1024, 12);
 		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult1 == Result_Success);
 		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult2 == Result_Success);
 		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult3 == Result_Success);
 		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult4 == Result_Success);
 		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult5 == Result_Success);
 		// Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult6 == Result_Success);
+		
+		Result bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(charRanges), &charRanges[0]); Assert(bakeResult == Result_Success);
 	}
 	else
 	{
 		// OsWriteBinFile(FilePathLit("Default.ttf"), testFont.ttfFile);
-		FontCharRange charRanges[] = {
-			FontCharRange_ASCII,
-			FontCharRange_LatinSupplementAccent,
-		};
-		r32 textScale = TEXT_SCALE/sapp_dpi_scale();
 		FontBakeSettings bakeSettings[] = {
 			{ .name=StrLit(MAIN_FONT_NAME), .size=18*textScale, .style=FontStyleFlag_None, .fillKerningTable=true },
 			{ .name=StrLit(MAIN_FONT_NAME), .size=10*textScale, .style=FontStyleFlag_None },
@@ -787,8 +788,9 @@ bool AppFrame(void)
 				
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
-				// RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur \badipiscing\b elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
-				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("This is a \bBräcke € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!")); //\xE2\x97\xA1
+				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=8]consectetur [size=10]\badipiscing\b [size=12]elit, [size=14]sed [size=16]do [size]eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
+				// RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("This is a \bBräcke € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!")); //\xE2\x97\xA1
+				// RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("ABC[size=10]DEF[size]GHI ABCDEFGHI"));
 				DrawWrappedRichTextWithFont(
 					&testFont, 18*textScale, FontStyleFlag_None,
 					loremIpsumRich,

@@ -1456,6 +1456,7 @@
 			"RegexResult StrExactRegexFind(Str8 haystack, Str8 needleRegexPattern)",
 			"RegexResult StrRegexFind(Str8 haystack, Str8 needleRegexPattern, bool caseSensitive)",
 			"RenderTexture2D LoadRenderTexture(int width, int height)",
+			"Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)",
 			"Result DoFontFlow_FindNextWordWrapIndex(const FontFlowState* realState, const FontFlowCallbacks* callbacks, uxx* wrapIndexOut)",
 			"Result GetResultForSlreErrorCode(int slreErrorCode)",
 			"Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color)",

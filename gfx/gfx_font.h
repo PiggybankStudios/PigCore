@@ -38,6 +38,11 @@ Description:
 */
 
 //TODO: Move programTime passing to FontNewFrame
+//TODO: Choose cell size based on font metrics
+//TODO: Allow layout code to ask for font metrics like lineHeight without baking an atlas
+//TODO: Evict old glyphs when out of space
+//TODO: Evict old atlases when out of use
+//TODO: Adhere to atlas limit
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
@@ -1717,7 +1722,7 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u64 programTime, u32 cod
 			}
 		}
 		
-		if (needToRasterizeGlyph && result == nullptr && matchingAtlas != nullptr && sourceFontFile != nullptr)
+		if (needToRasterizeGlyph && matchingAtlas != nullptr && sourceFontFile != nullptr)
 		{
 			uxx matchingAtlasIndex = 0;
 			VarArrayGetIndexOf(FontAtlas, &font->atlases, matchingAtlas, &matchingAtlasIndex);
