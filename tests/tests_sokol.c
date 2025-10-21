@@ -47,6 +47,7 @@ Shader main2dShader;
 Shader main3dShader;
 Texture gradientTexture;
 PigFont testFont;
+PigFont debugFont;
 VertBuffer cubeBuffer;
 VertBuffer sphereBuffer;
 u64 programTime = 0;
@@ -372,8 +373,12 @@ void AppInit(void)
 		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult2 == Result_Success);
 		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult3 == Result_Success);
 		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult4 == Result_Success);
-		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult5 == Result_Success);
-		// Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult6 == Result_Success);
+		// Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult5 == Result_Success);
+		Str8 fontPath = StrLit("meiryo.ttc");
+		Slice fontContents = OsReadBinFileScratch(fontPath);
+		Result attachResult5 = TryAttachFontFile(&testFont, fontPath, fontContents, FontStyleFlag_None, true); Assert(attachResult5 == Result_Success);
+		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult6 == Result_Success);
+		// Result attachResult7 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult7 == Result_Success);
 		
 		Result bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(charRanges), &charRanges[0]); Assert(bakeResult == Result_Success);
 	}
@@ -396,6 +401,18 @@ void AppInit(void)
 		};
 		
 		Result bakeResult = AttachAndMultiBakeFontAtlases(&testFont, ArrayCount(bakeSettings), &bakeSettings[0], 256, 1024, ArrayCount(charRanges), &charRanges[0]);
+		Assert(bakeResult == Result_Success);
+	}
+	
+	debugFont = InitFont(stdHeap, StrLit("debugFont"));
+	{
+		FontBakeSettings bakeSettings[] = {
+			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_None },
+			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_Bold },
+			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_Italic },
+			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
+		};
+		Result bakeResult = AttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
 	}
 	
@@ -521,7 +538,7 @@ bool AppFrame(void)
 	UpdateScreenRotation();
 	#endif
 	if (AreEqualV2i(oldWindowSize, windowSizei)) { UpdateScreenSafeMargins(); }
-	FontNewFrame(&testFont);
+	FontNewFrame(&testFont, programTime);
 	
 	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
@@ -614,9 +631,9 @@ bool AppFrame(void)
 			VarArrayLoop(&fontAtlas->glyphs, gIndex)
 			{
 				VarArrayLoopGet(FontGlyph, glyph, &fontAtlas->glyphs, gIndex);
-				PrintLine_D("\t\tGlyph[%llu]: \'%c\' 0x%08X sourceRec=(%d, %d, %d, %d) offset=(%g, %g) advanceX=%g logical=(%g, %g, %g, %g)",
+				PrintLine_D("\t\tGlyph[%llu]: \'%s\' 0x%08X sourceRec=(%d, %d, %d, %d) offset=(%g, %g) advanceX=%g logical=(%g, %g, %g, %g)",
 					gIndex,
-					(char)glyph->codepoint, glyph->codepoint,
+					DebugGetCodepointName(glyph->codepoint), glyph->codepoint,
 					glyph->atlasSourceRec.X, glyph->atlasSourceRec.Y,
 					glyph->atlasSourceRec.Width, glyph->atlasSourceRec.Height,
 					glyph->renderOffset.X, glyph->renderOffset.Y,
@@ -643,7 +660,7 @@ bool AppFrame(void)
 						FontActiveCell* cell = &fontAtlas->cells[INDEX_FROM_COORD2D(xOffset, yOffset, fontAtlas->activeCellGridSize.Width, fontAtlas->activeCellGridSize.Height)];
 						if (cell->codepoint != 0)
 						{
-							PrintLine_D("\t\tCell[%d,%d]: \'%c\' 0x%08X glyph[%llu]", xOffset, yOffset, (char)cell->codepoint, cell->codepoint, cell->glyphIndex);
+							PrintLine_D("\t\tCell[%d,%d]: \'%s\' 0x%08X glyph[%llu]", xOffset, yOffset, DebugGetCodepointName(cell->codepoint), cell->codepoint, cell->glyphIndex);
 						}
 					}
 				}
@@ -777,20 +794,26 @@ bool AppFrame(void)
 			
 			#if 1
 			{
-				BindFont(&testFont);
-				FontAtlas* fontAtlas = GetFontAtlas(&testFont, programTime, 18*textScale, FontStyleFlag_None, true);
-				NotNull(fontAtlas);
-				
-				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + fontAtlas->maxAscend);
-				// Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
-				// DrawText(infoStr, textPos, MonokaiWhite);
-				// textPos.Y += fontAtlas->lineHeight;
+				FontAtlas* testFontAtlas = GetFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, true);
+				NotNull(testFontAtlas);
+				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + testFontAtlas->maxAscend);
+				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
+				BindFont(&debugFont);
+				DrawText(infoStr, textPos, MonokaiWhite);
+				textPos.Y += testFontAtlas->lineHeight;
 				
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
-				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=8]consectetur [size=10]\badipiscing\b [size=12]elit, [size=14]sed [size=16]do [size]eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
-				// RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("This is a \bBräcke € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!")); //\xE2\x97\xA1
-				// RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("ABC[size=10]DEF[size]GHI ABCDEFGHI"));
+				static int displayStrIndex = 0;
+				Str8 displayStrs[] = {
+					StrLit("Lorem ipsum dolor sit " UNICODE_CHECK_MARK_STR " amet, [size=8]consectetur [size=10]\badipiscing\b [size=12]elit, [size=14]sed [size=16]do [size]eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
+					StrLit("This is a \bBräcke € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!"), //\xE2\x97\xA1
+					StrLit("ABC[size=10]DEF[size]GHI ABCDEFGHI"),
+					StrLit("\xE3\x81\x82\xE3\x82\x8A\xE3\x81\x8C\xE3\x81\xA8\xE3\x81\x86\xE3\x81\x94\xE3\x81\x96\xE3\x81\x84\xE3\x81\xBE\xE3\x81\x97\xE3\x81\x9F"),
+				};
+				if (IsKeyboardKeyPressed(&keyboard, Key_Plus, true)) { displayStrIndex = ((displayStrIndex+1) % ArrayCount(displayStrs)); }
+				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, displayStrs[displayStrIndex]);
+				BindFont(&testFont);
 				DrawWrappedRichTextWithFont(
 					&testFont, 18*textScale, FontStyleFlag_None,
 					loremIpsumRich,
@@ -867,8 +890,38 @@ bool AppFrame(void)
 			{
 				VarArrayLoopGet(FontAtlas, fontAtlas, &testFont.atlases, aIndex);
 				rec atlasRenderRec = NewRec(atlasRenderPosX, 10, (r32)fontAtlas->texture.Width, (r32)fontAtlas->texture.Height);
+				if (fontAtlas->isActive)
+				{
+					for (i32 cellY = 0; cellY < fontAtlas->activeCellGridSize.Height; cellY++)
+					{
+						for (i32 cellX = 0; cellX < fontAtlas->activeCellGridSize.Width; cellX++)
+						{
+							rec cellRec = NewRec(
+								atlasRenderRec.X + (r32)(cellX * fontAtlas->activeCellSize.Width),
+								atlasRenderRec.Y + (r32)(cellY * fontAtlas->activeCellSize.Height),
+								(r32)fontAtlas->activeCellSize.Width,
+								(r32)fontAtlas->activeCellSize.Height
+							);
+							DrawRectangle(cellRec, ((cellX + cellY)%2 == 0) ? MonokaiDarkGray : MonokaiBack);
+						}
+					}
+				}
 				DrawTexturedRectangle(atlasRenderRec, White, &fontAtlas->texture);
 				DrawRectangleOutline(atlasRenderRec, 1, White);
+				BindFont(&debugFont);
+				FontAtlas* debugFontAtlas = GetFontAtlas(&debugFont, 12, FontStyleFlag_None, false);
+				NotNull(debugFontAtlas);
+				v2 infoTextPos = NewV2(atlasRenderRec.X, atlasRenderRec.Y + atlasRenderRec.Height + 5 + debugFontAtlas->maxAscend);
+				Str8 infoStr = PrintInArenaStr(scratch, "%g %dx%d%s", fontAtlas->fontSize, fontAtlas->texture.Width, fontAtlas->texture.Height, fontAtlas->isActive ? "" : " (Static)");
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->lineHeight;
+				bool isBold = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Bold);
+				bool isItalic = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Italic);
+				infoStr = PrintInArenaStr(scratch, "%s%s%s%s", (!isBold && !isItalic) ? "Default" : "", isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "");
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->lineHeight;
+				infoStr = PrintInArenaStr(scratch, "%llu glyph%s", fontAtlas->glyphs.length, Plural(fontAtlas->glyphs.length, "s"));
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->lineHeight;
+				infoStr = PrintInArenaStr(scratch, "%llu range%s", fontAtlas->charRanges.length, Plural(fontAtlas->charRanges.length, "s"));
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->lineHeight;
 				atlasRenderPosX += atlasRenderRec.Width + 10;
 			}
 			#endif

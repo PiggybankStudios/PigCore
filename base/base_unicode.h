@@ -93,6 +93,9 @@ Description:
 	PIG_CORE_INLINE u32 GetMonospaceCodepointFor(u32 codepoint);
 	PIG_CORE_INLINE u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint);
 	uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bool forward);
+	#if DEBUG_BUILD
+	const char* DebugGetCodepointName(u32 codepoint);
+	#endif
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -472,6 +475,201 @@ PEXP uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bo
 	
 	return (forward ? strLength : 0);
 }
+
+#if DEBUG_BUILD
+PEXP const char* DebugGetCodepointName(u32 codepoint)
+{
+	switch (codepoint)
+	{
+		case '!': return "!";
+		case '@': return "@";
+		case '#': return "#";
+		case '$': return "$";
+		case '%': return "%";
+		case '^': return "^";
+		case '&': return "&";
+		case '*': return "*";
+		case '(': return "(";
+		case ')': return ")";
+		case '-': return "-";
+		case '+': return "+";
+		case '_': return "_";
+		case '=': return "=";
+		case '[': return "[";
+		case ']': return "]";
+		case '{': return "{";
+		case '}': return "}";
+		case '|': return "|";
+		case ';': return ";";
+		case ':': return ":";
+		case '\'': return "\'";
+		case '\"': return "\"";
+		case '<': return "<";
+		case '>': return ">";
+		case ',': return ",";
+		case '.': return ".";
+		case '/': return "/";
+		case '?': return "?";
+		
+		case '0': return "0";
+		case '1': return "1";
+		case '2': return "2";
+		case '3': return "3";
+		case '4': return "4";
+		case '5': return "5";
+		case '6': return "6";
+		case '7': return "7";
+		case '8': return "8";
+		case '9': return "9";
+		
+		case 'A': return "A";
+		case 'B': return "B";
+		case 'C': return "C";
+		case 'D': return "D";
+		case 'E': return "E";
+		case 'F': return "F";
+		case 'G': return "G";
+		case 'H': return "H";
+		case 'I': return "I";
+		case 'J': return "J";
+		case 'K': return "K";
+		case 'L': return "L";
+		case 'M': return "M";
+		case 'N': return "N";
+		case 'O': return "O";
+		case 'P': return "P";
+		case 'Q': return "Q";
+		case 'R': return "R";
+		case 'S': return "S";
+		case 'T': return "T";
+		case 'U': return "U";
+		case 'V': return "V";
+		case 'W': return "W";
+		case 'X': return "X";
+		case 'Y': return "Y";
+		case 'Z': return "Z";
+		
+		case 'a': return "a";
+		case 'b': return "b";
+		case 'c': return "c";
+		case 'd': return "d";
+		case 'e': return "e";
+		case 'f': return "f";
+		case 'g': return "g";
+		case 'h': return "h";
+		case 'i': return "i";
+		case 'j': return "j";
+		case 'k': return "k";
+		case 'l': return "l";
+		case 'm': return "m";
+		case 'n': return "n";
+		case 'o': return "o";
+		case 'p': return "p";
+		case 'q': return "q";
+		case 'r': return "r";
+		case 's': return "s";
+		case 't': return "t";
+		case 'u': return "u";
+		case 'v': return "v";
+		case 'w': return "w";
+		case 'x': return "x";
+		case 'y': return "y";
+		case 'z': return "z";
+		
+		case 0x3042: return "hira-a";
+		case 0x3044: return "hira-i";
+		case 0x3046: return "hira-u";
+		case 0x3048: return "hira-e";
+		case 0x304A: return "hira-o";
+		
+		case 0x304B: return "hira-ka";
+		case 0x304D: return "hira-ki";
+		case 0x304F: return "hira-ku";
+		case 0x3051: return "hira-ke";
+		case 0x3053: return "hira-ko";
+		
+		case 0x304C: return "hira-ga";
+		case 0x304E: return "hira-gi";
+		case 0x3050: return "hira-gu";
+		case 0x3052: return "hira-ge";
+		case 0x3054: return "hira-go";
+		
+		case 0x3055: return "hira-sa";
+		case 0x3057: return "hira-shi";
+		case 0x3059: return "hira-su";
+		case 0x305B: return "hira-se";
+		case 0x305D: return "hira-so";
+		
+		case 0x3056: return "hira-za";
+		case 0x3058: return "hira-ji";
+		case 0x305A: return "hira-zu";
+		case 0x305C: return "hira-ze";
+		case 0x305E: return "hira-zo";
+		
+		case 0x305F: return "hira-ta";
+		case 0x3061: return "hira-chi";
+		case 0x3064: return "hira-tsu";
+		case 0x3066: return "hira-te";
+		case 0x3068: return "hira-to";
+		
+		case 0x3060: return "hira-da";
+		case 0x3062: return "hira-dji";
+		case 0x3065: return "hira-dzu";
+		case 0x3067: return "hira-de";
+		case 0x3069: return "hira-do";
+		
+		case 0x306A: return "hira-na";
+		case 0x306B: return "hira-ni";
+		case 0x306C: return "hira-nu";
+		case 0x306D: return "hira-ne";
+		case 0x306E: return "hira-no";
+		
+		case 0x306F: return "hira-ha";
+		case 0x3072: return "hira-hi";
+		case 0x3075: return "hira-hu";
+		case 0x3078: return "hira-he";
+		case 0x307B: return "hira-ho";
+		
+		case 0x3070: return "hira-ba";
+		case 0x3073: return "hira-bi";
+		case 0x3076: return "hira-bu";
+		case 0x3079: return "hira-be";
+		case 0x307C: return "hira-bo";
+		
+		case 0x3071: return "hira-pa";
+		case 0x3074: return "hira-pi";
+		case 0x3077: return "hira-pu";
+		case 0x307A: return "hira-pe";
+		case 0x307D: return "hira-po";
+		
+		case 0x307E: return "hira-ma";
+		case 0x307F: return "hira-mi";
+		case 0x3080: return "hira-mu";
+		case 0x3081: return "hira-me";
+		case 0x3082: return "hira-mo";
+		
+		case 0x3084: return "hira-ya";
+		case 0x3086: return "hira-yu";
+		case 0x3088: return "hira-yo";
+		
+		case 0x3089: return "hira-ra";
+		case 0x308A: return "hira-ri";
+		case 0x308B: return "hira-ru";
+		case 0x308C: return "hira-re";
+		case 0x308D: return "hira-ro";
+		
+		case 0x308F: return "hira-wa";
+		case 0x3090: return "hira-wi";
+		case 0x3091: return "hira-we";
+		case 0x3092: return "hira-wo";
+		
+		case 0x3093: return "hira-n";
+		
+		default: return "(?)";
+	}
+}
+
+#endif
 
 #endif //PIG_CORE_IMPLEMENTATION
 
