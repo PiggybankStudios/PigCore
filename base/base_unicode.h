@@ -55,6 +55,9 @@ Description:
 #define UNICODE_CJK_COUNT 20902 //aka through U+9FA5
 #define UNICODE_CJK_END   (UNICODE_CJK_START + UNICODE_CJK_COUNT)
 
+#define UNICODE_UNKNOWN_CHAR_CODEPOINT 0xFFFD //Technically this is called "Replacement Character"
+#define UNICODE_UNKNOWN_CHAR_STR       "\xEF\xBF\xDD" //Technically this is called "Replacement Character"
+
 #define UNICODE_ELLIPSIS_CODEPOINT 0x2026 //Technically called "Horizontal Ellipsis"
 #define UNICODE_ELLIPSIS_STR       "\xE2\x80\xA6" //UTF-8 encoding
 

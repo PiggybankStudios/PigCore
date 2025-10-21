@@ -368,6 +368,8 @@ void AppInit(void)
 		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult2 == Result_Success);
 		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult3 == Result_Success);
 		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult4 == Result_Success);
+		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult5 == Result_Success);
+		// Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult6 == Result_Success);
 	}
 	else
 	{
@@ -786,7 +788,7 @@ bool AppFrame(void)
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
 				// RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("Lorem ipsum dolor sit amet, [size=10]consectetur \badipiscing\b elit, [size]sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"));
-				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("This is a \bBräcke € (\xE2\x97\x8F'_'\xE2\x97\x8F)\b!")); //\xE2\x97\xA1
+				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, StrLit("This is a \bBräcke € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!")); //\xE2\x97\xA1
 				DrawWrappedRichTextWithFont(
 					&testFont, 18*textScale, FontStyleFlag_None,
 					loremIpsumRich,

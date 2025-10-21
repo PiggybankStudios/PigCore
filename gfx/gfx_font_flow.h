@@ -334,14 +334,22 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			r32 kerning = 0.0f;
 			rec glyphDrawRec = Rec_Zero;
 			rec glyphLogicalRec = Rec_Zero;
+			
+			u8 nonBoldItalicStyle = (state->currentStyle.fontStyle & ~FontStyleFlag_FontFileFlags);
+			u32 substituteCodepoints[] = { codepoint, UNICODE_UNKNOWN_CHAR_CODEPOINT, CharToU32('?') };
+			uxx substituteIndex = 0;
 			FontAtlas* fontAtlas = nullptr;
-			FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
-			if (fontGlyph == nullptr)
+			FontGlyph* fontGlyph = nullptr;
+			while (fontGlyph == nullptr && substituteIndex < ArrayCount(substituteCodepoints))
 			{
-				//TODO: Remove me!
-				MyBreak();
-				fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
+				fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
+				if (fontGlyph != nullptr) { break; }
+				fontGlyph = GetFontGlyphForCodepoint(state->font, state->programTime, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, nonBoldItalicStyle, true, &fontAtlas);
+				if (fontGlyph != nullptr) { break; }
+				substituteIndex++;
 			}
+			// if (fontGlyph == nullptr) { MyBreak(); } //TODO: Remove me!
+			
 			if (fontGlyph != nullptr)
 			{
 				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->lineHeight);

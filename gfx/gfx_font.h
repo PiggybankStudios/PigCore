@@ -510,6 +510,30 @@ PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents
 			break;
 		}
 		NotNull(newFile->freeTypeFace);
+		
+		#if 0
+		PrintLine_D("Scanning font file \"%.*s\" %s%s for available chars:", StrPrint(nameOrPath), IsFlagSet(styleFlags, FontStyleFlag_Bold) ? "Bold" : "", IsFlagSet(styleFlags, FontStyleFlag_Italic) ? "Italic" : "");
+		FT_ULong rangeStart = 0;
+		FT_ULong previousCharCode = 0;
+		FT_ULong charCode = 0;
+		FT_UInt glyphIndex = 0;
+		charCode = FT_Get_First_Char(newFile->freeTypeFace, &glyphIndex);
+		while (glyphIndex != 0)
+		{
+			if (charCode != previousCharCode+1)
+			{
+				PrintLine_D("\t[0x%08X-0x%08X] (%u chars)", rangeStart, previousCharCode, (previousCharCode+1) - rangeStart);
+				rangeStart = charCode;
+			}
+			previousCharCode = charCode;
+			
+			// if (charCode >= 0x20 && charCode <= 0x7E) { PrintLine_D("\tContains 0x%08X \'%c\'", charCode, (char)charCode); }
+			// else { PrintLine_D("\tContains 0x%08X", charCode); }
+			charCode = FT_Get_Next_Char(newFile->freeTypeFace, charCode, &glyphIndex);
+		}
+		if (rangeStart != previousCharCode) { PrintLine_D("\t[0x%08X-0x%08X] (%u chars)", rangeStart, previousCharCode, (previousCharCode+1) - rangeStart); }
+		#endif
+		
 	} while(false);
 	#else //!BUILD_WITH_FREETYPE
 	{
