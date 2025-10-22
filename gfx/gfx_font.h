@@ -37,15 +37,16 @@ Description:
 	** frame will be deferred until the first commit next frame.
 */
 
+//TODO: Add a codepath that allows for measuring glyphs without baking them!
+//TODO: We should make a new atlas if we can't fit a glyph into an existing matching active atlas
 //TODO: Implement stb_truetype.h code path!
 //TODO: Test custom glyphs, make sure they still work
 //TODO: Why is the first active atlas never getting evicted when we are on the ABCDEFGHI test?
-//TODO: Should we make a new atlas if we can't fit a glyph into an existing matching active atlas?
-//TODO: What do we want to do about dpi options?
 //TODO: Colored glyph support
 //TODO: Measure performance
 //TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
 //TODO: Add support for SVG backed glyphs?
+//TODO: Do we want a function that helps re-bake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
@@ -107,6 +108,8 @@ Description:
 #pragma clang diagnostic pop
 #endif
 #endif //!BUILD_WITH_FREETYPE
+
+#define FONT_FREETYPE_DPI 72 //pixels/inch
 
 typedef plex FontCharRange FontCharRange;
 plex FontCharRange
@@ -672,8 +675,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		const int packingPadding = 1; //px
 		
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		const u32 freeTypeFontDpi = 72;
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 		Assert(setCharSizeError == 0);
 		
 		uxx numGlyphsInAtlas = 0;
@@ -1249,7 +1251,8 @@ PEXP FontFile* FindFontFileForCodepoint(PigFont* font, u32 codepoint, r32 fontSi
 			}
 			#else //!BUILD_WITH_FREETYPE
 			{
-				Unimplemented(); //TODO: Implement me!
+				//TODO: Implement me!
+				return nullptr;
 			}
 			#endif //BUILD_WITH_FREETYPE
 		}
@@ -1262,6 +1265,9 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	NotNull(font);
 	Assert(font->isActive);
 	if (font->activeMaxNumAtlases != 0 && font->atlases.length >= font->activeMaxNumAtlases) { return nullptr; }
+	#if !BUILD_WITH_FREETYPE
+	return nullptr; //TODO: Remove me once we implement code paths below!
+	#endif
 	
 	v2i atlasSize = FillV2i(font->activeAtlasMinSize);
 	FontAtlas* newAtlas = VarArrayAdd(FontAtlas, &font->atlases);
@@ -1288,8 +1294,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	#if BUILD_WITH_FREETYPE
 	{
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		const u32 freeTypeFontDpi = 72;
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 		newAtlas->maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
 		newAtlas->maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
 		newAtlas->lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
@@ -1297,7 +1302,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	}
 	#else //!BUILD_WITH_FREETYPE
 	{
-		Unimplemented(); //TODO: Implement me!
+		//TODO: Implement me!
 		//TODO: r32 lineHeight;
 		//TODO: r32 maxAscend;
 		//TODO: r32 maxDescend;
@@ -1312,17 +1317,16 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	{
 		FontFile* file = &font->files[fIndex];
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		const u32 freeTypeFontDpi = 72;
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 		i32 fileLineHeight = CeilR32i(TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height));
 		if (cellSize < fileLineHeight) { cellSize = fileLineHeight; }
 	}
 	if (cellSize > atlasSize.Width) { cellSize = atlasSize.Width; }
 	if (cellSize > atlasSize.Height) { cellSize = atlasSize.Height; }
 	newAtlas->activeCellSize = FillV2i(cellSize);
-	#else
-	Unimplemented(); //TODO: Implement me!
-	#endif
+	#else //!BUILD_WITH_FREETYPE
+	//TODO: Implement me!
+	#endif //BUILD_WITH_FREETYPE
 	newAtlas->activeCellGridSize.Width = FloorR32i((r32)atlasSize.Width / (r32)newAtlas->activeCellSize.Width);
 	newAtlas->activeCellGridSize.Height = FloorR32i((r32)atlasSize.Height / (r32)newAtlas->activeCellSize.Height);
 	uxx numCells = (uxx)(newAtlas->activeCellGridSize.Width * newAtlas->activeCellGridSize.Height);
@@ -1543,8 +1547,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	
 	#if BUILD_WITH_FREETYPE
 	FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(activeAtlas->fontSize);
-	const u32 freeTypeFontDpi = 72;
-	FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+	FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 	Assert(setCharSizeError == 0);
 	FT_UInt fontFileGlyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
 	Assert(fontFileGlyphIndex != 0);
@@ -1558,9 +1561,11 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		CeilDivI32(glyphSize.Width, activeAtlas->activeCellSize.Width),
 		CeilDivI32(glyphSize.Height, activeAtlas->activeCellSize.Height)
 	);
-	#else
-	Unimplemented(); //TODO: Implement me!
-	#endif
+	#else //!BUILD_WITH_FREETYPE
+	v2i glyphSize = V2i_Zero_Const;
+	v2i glyphCellSize = V2i_Zero_Const;
+	return nullptr; //TODO: Implement me!
+	#endif //BUILD_WITH_FREETYPE
 	
 	bool foundSpace = (glyphSize.Width == 0 || glyphSize.Height == 0);
 	v2i cellPos = V2i_Zero_Const;
@@ -1623,7 +1628,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		FT_Error renderGlyphError = FT_Render_Glyph(fontFile->freeTypeFace->glyph, FT_RENDER_MODE_NORMAL);
 		Assert(renderGlyphError == 0);
 		#else
-		Unimplemented(); //TODO: Implement me!
+		//TODO: Implement me!
 		#endif
 		
 		//Add new FontGlyph
@@ -1652,7 +1657,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		newGlyph->renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
 		newGlyph->logicalRec = NewRec(0, -activeAtlas->maxAscend, newGlyph->advanceX, activeAtlas->maxAscend);
 		#else
-		Unimplemented(); //TODO: Implement me!
+		//TODO: Implement me!
 		#endif
 		
 		// Bump glyphArrayStartIndex on any charRange that points to a glyph after our insertion index
@@ -1778,7 +1783,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 			}
 			#else
 			{
-				Unimplemented(); //TODO: Implement me!
+				//TODO: Implement me!
 			}
 			#endif
 		}
@@ -1906,9 +1911,9 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 			}
 		}
 		
-		bool needToCreateNewAtlas = (matchingActiveAtlas == nullptr);
+		bool needToCreateNewAtlas = (BUILD_WITH_FREETYPE && matchingActiveAtlas == nullptr); //TODO: Remove BUILD_WITH_FREETYPE when we implement the code paths below!
 		bool needToRasterizeGlyph = false;
-		if (codepoint != 0)
+		if (codepoint != 0 && BUILD_WITH_FREETYPE) //TODO: Remove BUILD_WITH_FREETYPE when we implement the code paths below!
 		{
 			if (needToCreateNewAtlas) { needToRasterizeGlyph = true; }
 			else { needToRasterizeGlyph = (matchingActiveAtlas->isActive && !DoesFontAtlasContainCodepointEx(matchingActiveAtlas, codepoint, nullptr)); }
@@ -1925,8 +1930,7 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 				#if BUILD_WITH_FREETYPE
 				{
 					FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-					const u32 freeTypeFontDpi = 72;
-					FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+					FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 					Assert(setCharSizeError == 0);
 					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, FT_LOAD_DEFAULT);
 					if (loadGlyphError == 0)
@@ -1936,7 +1940,7 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 				}
 				#else //!BUILD_WITH_FREETYPE
 				{
-					Unimplemented(); //TODO: Implement me!
+					//TODO: Implement me!
 				}
 				#endif //BUILD_WITH_FREETYPE
 			}
@@ -2135,15 +2139,15 @@ PEXPI bool GetFontMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, r32*
 		const FontFile* fontFile = &font->files[0];
 		#if BUILD_WITH_FREETYPE
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		const u32 freeTypeFontDpi = 72;
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 		SetOptionalOutPntr(lineHeightOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height));
 		SetOptionalOutPntr(maxAscendOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender));
 		SetOptionalOutPntr(maxDescendOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender));
 		SetOptionalOutPntr(lineHeightOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender) - (TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height) / 2.0f));
 		return true;
 		#else
-		Unimplemented(); //TODO: Implement me!
+		//TODO: Implement me!
+		return false;
 		#endif
 	}
 	else if (closestAtlas != nullptr)

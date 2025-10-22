@@ -364,7 +364,7 @@ void AppInit(void)
 		FontCharRange_LatinSupplementAccent,
 	};
 	r32 textScale = TEXT_SCALE/sapp_dpi_scale();
-	bool useActiveFont = true;
+	bool useActiveFont = false;
 	testFont = InitFont(stdHeap, StrLit("testFont"));
 	if (useActiveFont)
 	{
