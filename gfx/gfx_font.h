@@ -37,11 +37,10 @@ Description:
 	** frame will be deferred until the first commit next frame.
 */
 
-//TODO: Choose cell size based on font metrics
-//TODO: Allow layout code to ask for font metrics like lineHeight without baking an atlas
 //TODO: Evict old glyphs when out of space
 //TODO: Evict old atlases when out of use
 //TODO: Adhere to atlas limit
+//TODO: What do we want to do about dpi options?
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
@@ -285,6 +284,11 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE void FontNewFrame(PigFont* font, u64 programTime);
 	r32 GetFontKerningBetweenGlyphs(const PigFont* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph);
 	r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint, bool allowActiveAtlasCreation);
+	bool GetFontMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, r32* lineHeightOut, r32* maxAscendOut, r32* maxDescendOut, r32* centerOffsetOut);
+	PIG_CORE_INLINE r32 GetFontLineHeight(const PigFont* font, r32 fontSize, u8 styleFlags);
+	PIG_CORE_INLINE r32 GetFontMaxAscend(const PigFont* font, r32 fontSize, u8 styleFlags);
+	PIG_CORE_INLINE r32 GetFontMaxDescend(const PigFont* font, r32 fontSize, u8 styleFlags);
+	PIG_CORE_INLINE r32 GetFontCenterOffset(const PigFont* font, r32 fontSize, u8 styleFlags);
 #endif
 
 // +--------------------------------------------------------------+
@@ -1279,7 +1283,23 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	#endif //BUILD_WITH_FREETYPE
 	
 	newAtlas->isActive = true;
-	newAtlas->activeCellSize = NewV2i(10, 16); //TODO: How do we decide this?
+	#if BUILD_WITH_FREETYPE
+	i32 cellSize = 8;
+	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
+	{
+		FontFile* file = &font->files[fIndex];
+		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+		const u32 freeTypeFontDpi = 72;
+		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+		i32 fileLineHeight = CeilR32i(TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height));
+		if (cellSize < fileLineHeight) { cellSize = fileLineHeight; }
+	}
+	if (cellSize > atlasSize.Width) { cellSize = atlasSize.Width; }
+	if (cellSize > atlasSize.Height) { cellSize = atlasSize.Height; }
+	newAtlas->activeCellSize = FillV2i(cellSize);
+	#else
+	Unimplemented(); //TODO: Implement me!
+	#endif
 	newAtlas->activeCellGridSize.Width = FloorR32i((r32)atlasSize.Width / (r32)newAtlas->activeCellSize.Width);
 	newAtlas->activeCellGridSize.Height = FloorR32i((r32)atlasSize.Height / (r32)newAtlas->activeCellSize.Height);
 	uxx numCells = (uxx)(newAtlas->activeCellGridSize.Width * newAtlas->activeCellGridSize.Height);
@@ -1837,6 +1857,65 @@ PEXP r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 s
 	
 	if (leftGlyphAtlas->fontScale != rightGlyphAtlas->fontScale) { return 0.0f; }
 	return GetFontKerningBetweenGlyphs(font, leftGlyphAtlas->fontScale, leftGlyph, rightGlyph);
+}
+
+PEXPI bool GetFontMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, r32* lineHeightOut, r32* maxAscendOut, r32* maxDescendOut, r32* centerOffsetOut)
+{
+	FontAtlas* closestAtlas = GetFontAtlas((PigFont*)font, fontSize, styleFlags, false);
+	if (font->numFiles > 0 && (closestAtlas == nullptr || !AreSimilarR32(closestAtlas->fontSize, fontSize, DEFAULT_R32_TOLERANCE) || (closestAtlas->styleFlags & FontStyleFlag_FontAtlasFlags) != (styleFlags & FontStyleFlag_FontAtlasFlags)))
+	{
+		const FontFile* fontFile = &font->files[0];
+		#if BUILD_WITH_FREETYPE
+		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+		const u32 freeTypeFontDpi = 72;
+		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, freeTypeFontDpi, freeTypeFontDpi);
+		SetOptionalOutPntr(lineHeightOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height));
+		SetOptionalOutPntr(maxAscendOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender));
+		SetOptionalOutPntr(maxDescendOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender));
+		SetOptionalOutPntr(lineHeightOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender) - (TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height) / 2.0f));
+		return true;
+		#else
+		Unimplemented(); //TODO: Implement me!
+		#endif
+	}
+	else if (closestAtlas != nullptr)
+	{
+		SetOptionalOutPntr(lineHeightOut, closestAtlas->lineHeight);
+		SetOptionalOutPntr(maxAscendOut, closestAtlas->maxAscend);
+		SetOptionalOutPntr(maxDescendOut, closestAtlas->maxDescend);
+		SetOptionalOutPntr(centerOffsetOut, closestAtlas->centerOffset);
+		return true;
+	}
+	//Default guess
+	SetOptionalOutPntr(lineHeightOut, fontSize);
+	SetOptionalOutPntr(maxAscendOut, fontSize*0.75f);
+	SetOptionalOutPntr(maxDescendOut, fontSize*0.25f);
+	SetOptionalOutPntr(centerOffsetOut, fontSize*0.25f);
+	return false; //Default guess
+}
+PEXPI r32 GetFontLineHeight(const PigFont* font, r32 fontSize, u8 styleFlags)
+{
+	r32 lineHeight = 0;
+	GetFontMetrics(font, fontSize, styleFlags, &lineHeight, nullptr, nullptr, nullptr);
+	return lineHeight;
+}
+PEXPI r32 GetFontMaxAscend(const PigFont* font, r32 fontSize, u8 styleFlags)
+{
+	r32 maxAscend = 0;
+	GetFontMetrics(font, fontSize, styleFlags, nullptr, &maxAscend, nullptr, nullptr);
+	return maxAscend;
+}
+PEXPI r32 GetFontMaxDescend(const PigFont* font, r32 fontSize, u8 styleFlags)
+{
+	r32 maxDescend = 0;
+	GetFontMetrics(font, fontSize, styleFlags, nullptr, nullptr, &maxDescend, nullptr);
+	return maxDescend;
+}
+PEXPI r32 GetFontCenterOffset(const PigFont* font, r32 fontSize, u8 styleFlags)
+{
+	r32 centerOffset = 0;
+	GetFontMetrics(font, fontSize, styleFlags, nullptr, nullptr, nullptr, &centerOffset);
+	return centerOffset;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

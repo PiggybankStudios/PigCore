@@ -109,16 +109,16 @@ plex TextMeasure
 	};
 };
 
-#define FONT_FLOW_BEFORE_CHAR_DEF(functionName) void functionName(FontFlowState* state, FontFlow* flow, u32 codepoint)
+#define FONT_FLOW_BEFORE_CHAR_DEF(functionName)     void functionName(FontFlowState* state, FontFlow* flow, u32 codepoint)
 typedef FONT_FLOW_BEFORE_CHAR_DEF(FontFlowBeforeChar_f);
 
-#define FONT_FLOW_DRAW_CHAR_DEF(functionName)   void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
+#define FONT_FLOW_DRAW_CHAR_DEF(functionName)       void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
 typedef FONT_FLOW_DRAW_CHAR_DEF(FontFlowDrawChar_f);
 
-#define FONT_FLOW_DRAW_HIGHLIGHT_DEF(functionName)   void functionName(FontFlowState* state, FontFlow* flow, rec highlightRec, FontAtlas* currentAtlas)
+#define FONT_FLOW_DRAW_HIGHLIGHT_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec highlightRec)
 typedef FONT_FLOW_DRAW_HIGHLIGHT_DEF(FontFlowDrawHighlight_f);
 
-#define FONT_FLOW_AFTER_CHAR_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, rec glyphLogicalRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
+#define FONT_FLOW_AFTER_CHAR_DEF(functionName)      void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, rec glyphLogicalRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
 typedef FONT_FLOW_AFTER_CHAR_DEF(FontFlowAfterChar_f);
 
 typedef plex FontFlowCallbacks FontFlowCallbacks;
@@ -182,18 +182,19 @@ static Result DoFontFlow_FindNextWordWrapIndex(const FontFlowState* realState, F
 
 static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
 {
-	FontAtlas* currentAtlas = GetFontAtlas(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, true);
-	NotNull(currentAtlas);
+	r32 lineHeight = 0;
+	r32 centerOffset = 0;
+	GetFontMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &lineHeight, nullptr, nullptr, &centerOffset);
 	rec highlightRec = NewRec(
 		state->highlightStartPos.X,
-		state->highlightStartPos.Y - currentAtlas->centerOffset - currentAtlas->lineHeight/2.0f - 1,
+		state->highlightStartPos.Y - centerOffset - lineHeight/2.0f - 1,
 		state->position.X - state->highlightStartPos.X,
-		currentAtlas->lineHeight+2
+		lineHeight+2
 	);
 	AlignRecToV2(&highlightRec, state->alignPixelSize);
 	if (callbacks != nullptr && callbacks->drawHighlight != nullptr)
 	{
-		callbacks->drawHighlight(state, flowOut, highlightRec, currentAtlas);
+		callbacks->drawHighlight(state, flowOut, highlightRec);
 	}
 	state->highlightStartPos = state->position;
 }
@@ -221,7 +222,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			flowOut->endPos = state->position;
 			flowOut->visualRec = NewRecV(state->position, V2_Zero);
 			flowOut->logicalRec = NewRecV(state->position, V2_Zero);
-			FontAtlas* firstAtlas = GetFontAtlas(state->font, state->startFontSize, state->startFontStyle, true);
+			FontAtlas* firstAtlas = GetFontAtlas(state->font, state->startFontSize, state->startFontStyle, false);
 			if (firstAtlas != nullptr)
 			{
 				flowOut->logicalRec.Y -= firstAtlas->maxAscend;
@@ -282,9 +283,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				}
 				else
 				{
-					FontAtlas* atlas = GetFontAtlas(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, true);
-					NotNull(atlas); //TODO: Should we be tolerant of this? We need a FontAtlas so we know how much to vertically advance
-					state->position.Y += atlas->lineHeight;
+					state->position.Y += GetFontLineHeight(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
 				}
 				state->maxLineHeightThisLine = 0.0f;
 			}

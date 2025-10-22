@@ -1225,14 +1225,12 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 // +==========================================+
 // | GfxSystem_FontFlowDrawHighlightCallback  |
 // +==========================================+
-// void GfxSystem_FontFlowDrawHighlightCallback(FontFlowState* state, FontFlow* flow, rec highlightRec, FontAtlas* currentAtlas)
+// void GfxSystem_FontFlowDrawHighlightCallback(FontFlowState* state, FontFlow* flow, rec highlightRec)
 FONT_FLOW_DRAW_HIGHLIGHT_DEF(GfxSystem_FontFlowDrawHighlightCallback)
 {
 	UNUSED(flow);
-	UNUSED(currentAtlas);
 	NotNull(state);
 	NotNull(state->contextPntr);
-	NotNull(currentAtlas);
 	GfxSystem* system = (GfxSystem*)state->contextPntr;
 	GfxSystem_DrawRectangle(system, highlightRec, state->currentStyle.color);
 }

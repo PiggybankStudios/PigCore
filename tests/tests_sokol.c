@@ -804,19 +804,47 @@ bool AppFrame(void)
 				
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
+				char kanjiUtf8Buffer[16];
+				uxx kanjiBufferIndex = 0;
+				u32 kanjiCodepoints[] = { 0x4E09, 0x5CF6, 0x5E83, 0x5C0F, 0x8DEF };
+				for (uxx codepointIndex = 0; codepointIndex < ArrayCount(kanjiCodepoints); codepointIndex++) { kanjiBufferIndex += GetUtf8BytesForCode(kanjiCodepoints[codepointIndex], (u8*)&kanjiUtf8Buffer[kanjiBufferIndex], false); }
+				kanjiUtf8Buffer[kanjiBufferIndex] = '\0';
+				
 				static int displayStrIndex = 0;
+				static uxx typeAnimCodepointIndex = 0;
 				Str8 displayStrs[] = {
 					StrLit("Lorem ipsum dolor sit " UNICODE_CHECK_MARK_STR " amet, [size=8]consectetur [size=10]\badipiscing\b [size=12]elit, [size=14]sed [size=16]do [size]eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
 					StrLit("This is a \bBräcke € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!"), //\xE2\x97\xA1
 					StrLit("ABC[size=10]DEF[size]GHI ABCDEFGHI"),
 					StrLit("\xE3\x81\x82\xE3\x82\x8A\xE3\x81\x8C\xE3\x81\xA8\xE3\x81\x86\xE3\x81\x94\xE3\x81\x96\xE3\x81\x84\xE3\x81\xBE\xE3\x81\x97\xE3\x81\x9F"),
+					StrLit(kanjiUtf8Buffer),
+					StrLit("\xE4\xB8\x89\xE5\xB3\xB6\xE5\xBA\x83\xE5\xB0\x8F\xE8\xB7\xAF\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE4\xBB\x81\xE7\x94\xB0\x20\x2D\x20\xE7\x94\xB0\xE4\xBA\xAC\x20\x2D\x20\xE5\xA4\xA7\xE5\xA0\xB4\x20\x2D\x20\xE5\x8E\x9F\xE6\x9C\xA8\x20\x2D\x20\xE4\xB8\x89\xE5\xB3\xB6\xE4\xBA\x8C\xE6\x97\xA5\xE7\x94\xBA\x20\x2D\x20\xE9\x9F\xAE\xE5\xB1\xB1\x20\x2D\x20\xE4\xB8\x89\xE5\xB3\xB6\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE5\xA4\x9A\xE8\xB3\x80\x20\x2D\x20\xE5\xAE\x87\xE4\xBD\x90\xE7\xBE\x8E\x20\x2D\x20\xE7\xB6\xB2\xE4\xBB\xA3\x20\x2D\x20\xE5\xBD\xAB\xE5\x88\xBB\xE3\x81\xAE\xE6\xA3\xAE\x20\x2D\x20\xE5\xA1\x94\xE3\x83\x8E\xE6\xB2\xA2\x20\x2D\x20\xE5\x85\xA5\xE7\x94\x9F\xE7\x94\xB0\x20\x2D\x20\xE9\xA2\xA8\xE7\xA5\xAD\x20\x2D\x20\xE5\xB0\x8F\xE6\xB6\x8C\xE8\xB0\xB7\x20\x2D\x20\xE4\xBB\x99\xE4\xBA\xBA\xE5\x8F\xB0\xE4\xBF\xA1\xE5\x8F\xB7\xE5\xA0\xB4\x20\x2D\x20\xE5\xA4\xA7\xE5\xB2\xA1\x20\x2D\x20\xE8\xA3\xBE\xE9\x87\x8E\x20\x2D\x20\xE9\x95\xB7\xE6\xB3\x89\xE3\x81\xAA\xE3\x82\x81\xE3\x82\x8A\x20\x2D\x20\xE4\xB8\x8B\xE5\x9C\x9F\xE7\x8B\xA9\x20\x2D\x20\xE7\x89\x87\xE6\xB5\x9C\x20\x2D\x20\xE5\x8E\x9F\x20\x2D\x20\xE6\x9D\xB1\xE7\x94\xB0\xE5\xAD\x90\xE3\x81\xAE\xE6\xB5\xA6\x20\x2D\x20\xE6\xA0\xB9\xE5\xBA\x9C\xE5\xB7\x9D\x20\x2D\x20\xE6\xB9\xAF\xE6\xB2\xB3\xE5\x8E\x9F\x20\x2D\x20\xE5\x87\xBA\xE5\xB1\xB1\xE4\xBF\xA1\xE5\x8F\xB7\xE5\xA0\xB4\x20\x2D\x20\xE7\x86\xB1\xE6\xB5\xB7\x20\x2D\x20\xE7\x9C\x9F\xE9\xB6\xB4\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE9\x95\xB7\xE5\xB2\xA1\x20\x2D\x20\xE5\xA4\xA7\xE5\xB9\xB3\xE5\x8F\xB0"),
+					StrLit("\xF0\x9F\x98\x80\xF0\x9F\x98\x81\xF0\x9F\x98\x82\xF0\x9F\xA4\xA3\xF0\x9F\x98\x83\xF0\x9F\x98\xAB\xF0\x9F\x90\xB1\xE2\x8C\xA8"),
 				};
-				if (IsKeyboardKeyPressed(&keyboard, Key_Plus, true)) { displayStrIndex = ((displayStrIndex+1) % ArrayCount(displayStrs)); }
-				RichStr loremIpsumRich = DecodeStrToRichStr(scratch, displayStrs[displayStrIndex]);
+				if (IsKeyboardKeyPressed(&keyboard, Key_Plus, true)) { displayStrIndex = ((displayStrIndex+1) % ArrayCount(displayStrs)); typeAnimCodepointIndex = 0; }
+				IncrementUXX(typeAnimCodepointIndex);
+				Str8 displayStr = displayStrs[displayStrIndex];
+				RichStr displayStrRich = DecodeStrToRichStr(scratch, displayStrs[displayStrIndex]);
+				uxx typedByteIndex = displayStrRich.fullPiece.str.length;
+				{
+					uxx codepointIndex = 0;
+					for (uxx byteIndex = 0; byteIndex < displayStrRich.fullPiece.str.length; byteIndex++)
+					{
+						u8 codepointSize = GetCodepointForUtf8Str(displayStrRich.fullPiece.str, byteIndex, nullptr);
+						if (codepointSize == 0) { codepointSize = 1; }
+						if (codepointIndex >= typeAnimCodepointIndex) { typedByteIndex = byteIndex; break; }
+						byteIndex += (codepointSize-1);
+						codepointIndex++;
+					}
+					if (typedByteIndex < displayStrRich.fullPiece.str.length)
+					{
+						displayStrRich = RichStrSlice(scratch, displayStrRich, 0, typedByteIndex);
+					}
+				}
 				BindFont(&testFont);
 				DrawWrappedRichTextWithFont(
 					&testFont, 18*textScale, FontStyleFlag_None,
-					loremIpsumRich,
+					displayStrRich,
 					textPos,
 					wrapWidth,
 					MonokaiWhite
