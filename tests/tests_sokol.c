@@ -368,13 +368,14 @@ void AppInit(void)
 	testFont = InitFont(stdHeap, StrLit("testFont"));
 	if (useActiveFont)
 	{
-		MakeFontActive(&testFont, 64, 1024, 12);
+		MakeFontActive(&testFont, 64, 128, 12, 1000, 1000);
 		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult1 == Result_Success);
 		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult2 == Result_Success);
 		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult3 == Result_Success);
 		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult4 == Result_Success);
 		// Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult5 == Result_Success);
-		Str8 fontPath = StrLit("meiryo.ttc");
+		// Str8 fontPath = StrLit("meiryo.ttc");
+		Str8 fontPath = StrLit("msgothic.ttc");
 		Slice fontContents = OsReadBinFileScratch(fontPath);
 		Result attachResult5 = TryAttachFontFile(&testFont, fontPath, fontContents, FontStyleFlag_None, true); Assert(attachResult5 == Result_Success);
 		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult6 == Result_Success);
