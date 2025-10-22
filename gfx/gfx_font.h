@@ -37,12 +37,15 @@ Description:
 	** frame will be deferred until the first commit next frame.
 */
 
-//TODO: Evict old glyphs when out of space
+//TODO: Implement stb_truetype.h code path!
+//TODO: Test custom glyphs, make sure they still work
 //TODO: Why is the first active atlas never getting evicted when we are on the ABCDEFGHI test?
 //TODO: Should we make a new atlas if we can't fit a glyph into an existing matching active atlas?
 //TODO: What do we want to do about dpi options?
 //TODO: Colored glyph support
 //TODO: Measure performance
+//TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
+//TODO: Add support for SVG backed glyphs?
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
@@ -281,7 +284,9 @@ FT_Library FreeTypeLib = nullptr;
 	FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSize, u8 styleFlags);
 	void ResizeActiveFontAtlas(PigFont* font, FontAtlas* activeAtlas, v2i newSize);
 	void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx glyphIndex);
+	bool TryEvictOldGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, u32* evictedGlyphCodepointOut, uxx* evictedGlyphIndexOut);
 	FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, FontAtlas* activeAtlas, u32 codepoint);
+	bool TryEvictOldFontAtlas(PigFont* font, uxx* oldAtlasIndexOut);
 	FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation, FontAtlas** atlasOut);
 	PIG_CORE_INLINE FontAtlas* GetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation);
 	void CommitFontAtlasTextureUpdates(PigFont* font, FontAtlas* activeAtlas);
@@ -1499,6 +1504,37 @@ PEXP void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx gl
 	VarArrayRemoveAt(FontGlyph, &activeAtlas->glyphs, glyphIndex);
 }
 
+PEXP bool TryEvictOldGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, u32* evictedGlyphCodepointOut, uxx* evictedGlyphIndexOut)
+{
+	NotNull(font);
+	NotNull(font->arena);
+	Assert(font->isActive);
+	NotNull(activeAtlas);
+	Assert(activeAtlas->isActive);
+	FontGlyph* oldestEvictableGlyph = nullptr;
+	uxx oldestEvictableGlyphIndex = 0;
+	VarArrayLoop(&activeAtlas->glyphs, gIndex)
+	{
+		VarArrayLoopGet(FontGlyph, glyph, &activeAtlas->glyphs, gIndex);
+		if (glyph->lastUsedTime < font->programTime && glyph->lastUsedTime < font->prevProgramTime)
+		{
+			if (oldestEvictableGlyph == nullptr || glyph->lastUsedTime < oldestEvictableGlyph->lastUsedTime)
+			{
+				oldestEvictableGlyph = glyph;
+				oldestEvictableGlyphIndex = gIndex;
+			}
+		}
+	}
+	if (oldestEvictableGlyph != nullptr)
+	{
+		SetOptionalOutPntr(evictedGlyphCodepointOut, oldestEvictableGlyph->codepoint);
+		SetOptionalOutPntr(evictedGlyphIndexOut, oldestEvictableGlyphIndex);
+		RemoveGlyphFromFontAtlas(font, activeAtlas, oldestEvictableGlyphIndex);
+		return true;
+	}
+	else { return false; }
+}
+
 PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, FontAtlas* activeAtlas, u32 codepoint)
 {
 	NotNull(font);
@@ -1568,8 +1604,14 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		}
 		else
 		{
-			//TODO: Find old glyphs and evict them!
-			break;
+			//Try to evict an old glyph, if we can't (all glyphs are used this frame or prev frame) then we give up, otherwise we keep evicting until we find space for the new glyph
+			//TODO: Ideally if we can't find space because the glyph we are trying to add is larger than a single cell, then we should be smarter about which glyphs we evict.
+			//      We should really prioritize glyphs that are clumped together and could all be evicted at once to make a space large enough for the new glyph
+			//      We are leaving this as a TODO for now because we don't expect to have many glyphs that are larger than the cell size chosen and although this eviction strategy is inefficient, it should work fine, and it should early out if all glyphs are in-use too
+			if (!TryEvictOldGlyphFromFontAtlas(font, activeAtlas, nullptr, nullptr))
+			{
+				break;
+			}
 		}
 	}
 	
@@ -1746,6 +1788,40 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	else { return nullptr; }
 }
 
+PEXP bool TryEvictOldFontAtlas(PigFont* font, uxx* oldAtlasIndexOut)
+{
+	Assert(font->isActive);
+	FontAtlas* oldestEvictableAtlas = nullptr;
+	uxx oldestEvictableAtlasIndex = 0;
+	VarArrayLoop(&font->atlases, aIndex)
+	{
+		VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
+		if (atlas->isActive && atlas->lastUsedTime < font->programTime && atlas->lastUsedTime < font->prevProgramTime)
+		{
+			if (oldestEvictableAtlas == nullptr || atlas->lastUsedTime < oldestEvictableAtlas->lastUsedTime)
+			{
+				oldestEvictableAtlas = atlas;
+				oldestEvictableAtlasIndex = aIndex;
+			}
+		}
+	}
+	if (oldestEvictableAtlas != nullptr)
+	{
+		PrintLine_D("Evicting atlas[%llu] fontSize=%g %dx%d %llu glyph%s since it was last used %llums ago and we need a new atlas",
+			oldestEvictableAtlasIndex,
+			oldestEvictableAtlas->fontSize,
+			oldestEvictableAtlas->texture.Width, oldestEvictableAtlas->texture.Height,
+			oldestEvictableAtlas->glyphs.length, Plural(oldestEvictableAtlas->glyphs.length, "s"),
+			TimeSinceBy(font->programTime, oldestEvictableAtlas->lastUsedTime)
+		);
+		FreeFontAtlas(font, oldestEvictableAtlas);
+		VarArrayRemoveAt(FontAtlas, &font->atlases, oldestEvictableAtlasIndex);
+		SetOptionalOutPntr(oldAtlasIndexOut, oldestEvictableAtlasIndex);
+		return true;
+	}
+	else { return false; }
+}
+
 //Pass 0 for codepoint to lookup and atlas without a particular glyph in mind
 PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation, FontAtlas** atlasOut)
 {
@@ -1776,7 +1852,7 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 	{
 		if (multipleMatches)
 		{
-			//TODO: If we find more than one bake with the same fontSize, we should differentiate based on which one has closer style flags
+			// If we find more than one bake with the same fontSize, we should differentiate based on which one has closer style flags
 			multipleMatches = false;
 			matchingAtlas = nullptr;
 			result = nullptr;
@@ -1792,7 +1868,6 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 					if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Inverted) != IsFlagSet(styleFlags, FontStyleFlag_Inverted)) { styleDiffs += 4; }
 					if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiffs += 1; }
 					if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiffs += 1; }
-					//TODO: Should we care about Underline, Strikethrough or Outline?
 					
 					if (matchingAtlas == nullptr || styleDiffs <= matchingStyleDiffs)
 					{
@@ -1875,9 +1950,8 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 		
 		if (needToCreateNewAtlas && sourceFontFile != nullptr)
 		{
-			if (font->atlases.length >= font->activeMaxNumAtlases)
+			if (font->activeMaxNumAtlases != 0 && font->atlases.length >= font->activeMaxNumAtlases && !TryEvictOldFontAtlas(font, nullptr))
 			{
-				//TODO: Find an atlas that hasn't been used in a while to evict?
 				matchingActiveAtlas = nullptr;
 				needToCreateNewAtlas = false;
 				needToRasterizeGlyph = false;
@@ -1886,12 +1960,10 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 			{
 				// PrintLine_D("Adding new active atlas for codepoint 0x%08X at size=%g style=%s%s", codepoint, fontSize, IsFlagSet(styleFlags, FontStyleFlag_Bold) ? "Bold" : "", IsFlagSet(styleFlags, FontStyleFlag_Italic) ? "Italic" : "");
 				FontAtlas* newAtlas = AddNewActiveAtlas(font, sourceFontFile, fontSize, styleFlags);
-				if (newAtlas != nullptr)
-				{
-					matchingAtlas = newAtlas;
-					matchingActiveAtlas = newAtlas;
-					result = nullptr;
-				}
+				NotNull(newAtlas);
+				matchingAtlas = newAtlas;
+				matchingActiveAtlas = newAtlas;
+				result = nullptr;
 			}
 		}
 		

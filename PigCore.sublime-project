@@ -1742,6 +1742,8 @@
 			"bool StrTryFind(Str8 haystack, Str8 needle, bool caseSensitive, uxx* indexOut)",
 			"bool TextIsEqual(const char *text1, const char *text2)",
 			"bool TextParserGetToken(TextParser* parser, ParsingToken* tokenOut)",
+			"bool TryEvictOldFontAtlas(PigFont* font, uxx* oldAtlasIndexOut)",
+			"bool TryEvictOldGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, u32* evictedGlyphCodepointOut, uxx* evictedGlyphIndexOut)",
 			"bool TryParseBool(Str8 str, bool* valueOut, Result* errorOut)",
 			"bool TryParseBoolEx(Str8 str, bool* valueOut, Result* errorOut, bool strict)",
 			"bool TryParseDir2(Str8 str, Dir2* valueOut, Result* errorOut)",

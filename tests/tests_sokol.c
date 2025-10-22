@@ -368,7 +368,7 @@ void AppInit(void)
 	testFont = InitFont(stdHeap, StrLit("testFont"));
 	if (useActiveFont)
 	{
-		MakeFontActive(&testFont, 64, 128, 4, 1000, 1000);
+		MakeFontActive(&testFont, 64, 128, 4, 0, 0);
 		Result attachResult1 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult1 == Result_Success);
 		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult2 == Result_Success);
 		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult3 == Result_Success);
