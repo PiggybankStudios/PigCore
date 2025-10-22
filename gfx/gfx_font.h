@@ -40,7 +40,6 @@ Description:
 //TODO: Evict old glyphs when out of space
 //TODO: Why is the first active atlas never getting evicted when we are on the ABCDEFGHI test?
 //TODO: Should we make a new atlas if we can't fit a glyph into an existing matching active atlas?
-//TODO: Adhere to atlas limit
 //TODO: What do we want to do about dpi options?
 //TODO: Colored glyph support
 //TODO: Measure performance
@@ -1857,7 +1856,6 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, FT_LOAD_DEFAULT);
 					if (loadGlyphError == 0)
 					{
-						matchingAtlas = matchingActiveAtlas;
 						sourceFontFile = fontFile;
 					}
 				}
@@ -1877,21 +1875,33 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 		
 		if (needToCreateNewAtlas && sourceFontFile != nullptr)
 		{
-			// PrintLine_D("Adding new active atlas for codepoint 0x%08X at size=%g style=%s%s", codepoint, fontSize, IsFlagSet(styleFlags, FontStyleFlag_Bold) ? "Bold" : "", IsFlagSet(styleFlags, FontStyleFlag_Italic) ? "Italic" : "");
-			FontAtlas* newAtlas = AddNewActiveAtlas(font, sourceFontFile, fontSize, styleFlags);
-			if (newAtlas != nullptr)
+			if (font->atlases.length >= font->activeMaxNumAtlases)
 			{
-				matchingAtlas = newAtlas;
-				result = nullptr;
+				//TODO: Find an atlas that hasn't been used in a while to evict?
+				matchingActiveAtlas = nullptr;
+				needToCreateNewAtlas = false;
+				needToRasterizeGlyph = false;
+			}
+			else
+			{
+				// PrintLine_D("Adding new active atlas for codepoint 0x%08X at size=%g style=%s%s", codepoint, fontSize, IsFlagSet(styleFlags, FontStyleFlag_Bold) ? "Bold" : "", IsFlagSet(styleFlags, FontStyleFlag_Italic) ? "Italic" : "");
+				FontAtlas* newAtlas = AddNewActiveAtlas(font, sourceFontFile, fontSize, styleFlags);
+				if (newAtlas != nullptr)
+				{
+					matchingAtlas = newAtlas;
+					matchingActiveAtlas = newAtlas;
+					result = nullptr;
+				}
 			}
 		}
 		
-		if (needToRasterizeGlyph && matchingAtlas != nullptr && sourceFontFile != nullptr)
+		if (needToRasterizeGlyph && matchingActiveAtlas != nullptr && sourceFontFile != nullptr)
 		{
 			uxx matchingAtlasIndex = 0;
 			VarArrayGetIndexOf(FontAtlas, &font->atlases, matchingAtlas, &matchingAtlasIndex);
 			// PrintLine_D("Adding new glyph to atlas[%llu] for codepoint 0x%08X at size=%g style=%s%s", matchingAtlasIndex, codepoint, fontSize, IsFlagSet(styleFlags, FontStyleFlag_Bold) ? "Bold" : "", IsFlagSet(styleFlags, FontStyleFlag_Italic) ? "Italic" : "");
-			result = TryAddGlyphToActiveFontAtlas(font, sourceFontFile, matchingAtlas, codepoint);
+			result = TryAddGlyphToActiveFontAtlas(font, sourceFontFile, matchingActiveAtlas, codepoint);
+			if (result != nullptr) { matchingAtlas = matchingActiveAtlas; }
 		}
 	}
 	
