@@ -37,6 +37,8 @@ Description:
 	** frame will be deferred until the first commit next frame.
 */
 
+//NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
+
 //TODO: Add a codepath that allows for measuring glyphs without baking them!
 //TODO: We should make a new atlas if we can't fit a glyph into an existing matching active atlas
 //TODO: Implement stb_truetype.h code path!
@@ -47,6 +49,8 @@ Description:
 //TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
 //TODO: Add support for SVG backed glyphs?
 //TODO: Do we want a function that helps re-bake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
+//TODO: Figure out what's happening with loaing Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
+//TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H

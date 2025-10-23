@@ -327,6 +327,17 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 	return result;
 }
 
+Result TryAttachLocalFontFile(PigFont* font, Str8 fileName, u8 styleFlags)
+{
+	ScratchBegin1(scratch, font->arena);
+	Str8 filePath = JoinStringsInArena(scratch, StrLit("../_fonts/"), fileName, false);
+	Slice fileContents = Slice_Empty;
+	if (!OsReadBinFile(filePath, scratch, &fileContents)) { ScratchEnd(scratch); return Result_FailedToReadFile; }
+	Result result = TryAttachFontFile(font, fileName, fileContents, styleFlags, true);
+	ScratchEnd(scratch);
+	return result;
+}
+
 // +--------------------------------------------------------------+
 // |                          Initialize                          |
 // +--------------------------------------------------------------+
@@ -363,8 +374,35 @@ void AppInit(void)
 		FontCharRange_ASCII,
 		FontCharRange_LatinSupplementAccent,
 	};
+	const u32 Filled = 0xFFFFFFFF;
+	const u32 _Empty = 0x00FFFFFF;
+	u32 checkerGlyph18Pixels[12*18] = {
+		_Empty, _Empty, _Empty, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, _Empty, _Empty,
+		_Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, _Empty,
+		_Empty, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty,
+		_Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled,
+		Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty,
+		_Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled,
+		Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty,
+		_Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled,
+		Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty,
+		_Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled,
+		Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty,
+		_Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled,
+		Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty,
+		_Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled,
+		Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty,
+		_Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, _Empty,
+		_Empty, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, _Empty, _Empty,
+		_Empty, _Empty, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, _Empty, _Empty, _Empty,
+	};
+	ImageData checkerGlyph18ImageData = NewImageData(NewV2i(12, 18), &checkerGlyph18Pixels[0]);
+	CustomFontGlyph checkerGlyph18 = { .codepoint=UNICODE_UNKNOWN_CHAR_CODEPOINT, .imageData=checkerGlyph18ImageData, .sourceRec = NewReci(0, 0, 12, 18) };
+	CustomFontCharRange customCharRanges[] = {
+		{ .startCodepoint=UNICODE_UNKNOWN_CHAR_CODEPOINT, .endCodepoint=UNICODE_UNKNOWN_CHAR_CODEPOINT, .glyphs=&checkerGlyph18 },
+	};
 	r32 textScale = TEXT_SCALE/sapp_dpi_scale();
-	bool useActiveFont = false;
+	bool useActiveFont = true;
 	testFont = InitFont(stdHeap, StrLit("testFont"));
 	if (useActiveFont)
 	{
@@ -374,14 +412,12 @@ void AppInit(void)
 		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult3 == Result_Success);
 		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult4 == Result_Success);
 		// Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult5 == Result_Success);
-		// Str8 fontPath = StrLit("meiryo.ttc");
-		Str8 fontPath = StrLit("msgothic.ttc");
-		Slice fontContents = OsReadBinFileScratch(fontPath);
-		Result attachResult5 = TryAttachFontFile(&testFont, fontPath, fontContents, FontStyleFlag_None, true); Assert(attachResult5 == Result_Success);
-		Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult6 == Result_Success);
+		Result attachResult5 = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult5 == Result_Success); // "meiryo.ttc" "msgothic.ttc"
+		// Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult6 == Result_Success);
+		Result attachResult6 = TryAttachLocalFontFile(&testFont, StrLit("NotoSansSymbols-Regular.ttf"), FontStyleFlag_None); Assert(attachResult6 == Result_Success);
 		// Result attachResult7 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult7 == Result_Success);
 		
-		Result bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(charRanges), &charRanges[0]); Assert(bakeResult == Result_Success);
+		Result bakeResult = BakeFontAtlasEx(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(charRanges), &charRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
 	}
 	else
 	{
