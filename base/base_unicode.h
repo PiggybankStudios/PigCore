@@ -21,39 +21,65 @@ Description:
 #include "base/base_assert.h"
 #include "base/base_char.h"
 
+// There are 2,470 combining codepoints: https://codepoints.net/search?lb=CM
+
 #define UTF8_MAX_CODEPOINT 0x10FFFFUL
 #define UCS2_MAX_CHAR_SIZE 2 //words
 #define UTF8_MAX_CHAR_SIZE 4 //bytes
 
 #define NUM_LETTERS_IN_ENGLISH_ALPHABET 26
 
-#define UNICODE_PRINTABLE_ASCII_START  0x20
-#define UNICODE_PRINTABLE_ASCII_COUNT  126
+//https://codepoints.net/basic_latin
+#define UNICODE_PRINTABLE_ASCII_START  0x0020
+#define UNICODE_PRINTABLE_ASCII_COUNT  126 //through U+007E
 #define UNICODE_PRINTABLE_ASCII_END    (UNICODE_PRINTABLE_ASCII_START + UNICODE_PRINTABLE_ASCII_COUNT)
 
-#define UNICODE_LATIN1_SUPPLEMENT_ACCENT_START 0xA0
-#define UNICODE_LATIN1_SUPPLEMENT_ACCENT_COUNT 96
+//https://codepoints.net/latin-1_supplement
+#define UNICODE_LATIN1_SUPPLEMENT_ACCENT_START 0x00C0
+#define UNICODE_LATIN1_SUPPLEMENT_ACCENT_COUNT 64 //through U+00FF
 #define UNICODE_LATIN1_SUPPLEMENT_ACCENT_END   (UNICODE_LATIN1_SUPPLEMENT_ACCENT_START + UNICODE_LATIN1_SUPPLEMENT_ACCENT_COUNT)
 
+//https://codepoints.net/latin_extended-a
 #define UNICODE_LATIN_EXT_A_START 0x0100
-#define UNICODE_LATIN_EXT_A_COUNT 128
+#define UNICODE_LATIN_EXT_A_COUNT 128 //through U+017F
 #define UNICODE_LATIN_EXT_A_END   (UNICODE_LATIN_EXT_A_START + UNICODE_LATIN_EXT_A_COUNT)
 
+//https://codepoints.net/cyrillic
 #define UNICODE_CYRILLIC_START 0x0400
-#define UNICODE_CYRILLIC_COUNT 256
+#define UNICODE_CYRILLIC_COUNT 256 //through U+04FF
 #define UNICODE_CYRILLIC_END   (UNICODE_CYRILLIC_START + UNICODE_CYRILLIC_COUNT)
 
+//https://codepoints.net/hiragana
 #define UNICODE_HIRAGANA_START 0x3041
-#define UNICODE_HIRAGANA_COUNT 95
+#define UNICODE_HIRAGANA_COUNT 86 //through U+3096
 #define UNICODE_HIRAGANA_END   (UNICODE_HIRAGANA_START + UNICODE_HIRAGANA_COUNT)
 
+//https://codepoints.net/katakana
 #define UNICODE_KATAKANA_START 0x30A0
-#define UNICODE_KATAKANA_COUNT 96
+#define UNICODE_KATAKANA_COUNT 92 //through U+30FB
 #define UNICODE_KATAKANA_END   (UNICODE_KATAKANA_START + UNICODE_KATAKANA_COUNT)
 
 #define UNICODE_CJK_START 0x4E00
 #define UNICODE_CJK_COUNT 20902 //aka through U+9FA5
 #define UNICODE_CJK_END   (UNICODE_CJK_START + UNICODE_CJK_COUNT)
+
+#define UNICODE_BASIC_MULTILINGUAL_PLANE_START 0x0000
+#define UNICODE_BASIC_MULTILINGUAL_PLANE_COUNT 65535 //aka through U+FFFF
+#define UNICODE_BASIC_MULTILINGUAL_PLANE_END   (UNICODE_BASIC_MULTILINGUAL_PLANE_START + UNICODE_BASIC_MULTILINGUAL_PLANE_COUNT)
+
+// +==============================+
+// |  Specific Codepoint Defines  |
+// +==============================+
+#define UNICODE_TAB_CODEPOINT             0x0009 //aka '\t' or "Horizontal Tab" or "Character Tabulation"
+#define UNICODE_LINE_FEED_CODEPOINT       0x000A //aka '\n' or LF
+#define UNICODE_CARRIAGE_RETURN_CODEPOINT 0x000D //aka '\r' or CR
+#define UNICODE_SPACE_CODEPOINT           0x0020
+
+// Uses Fitzpatrick scale with Type 1+2 being a single option - https://en.wikipedia.org/wiki/Fitzpatrick_scale
+// NOTE: Some emoji support multiple skintone modifiers (like hands shaking emoji)
+#define UNICODE_SKINTONE_START 0x1F3FB
+#define UNICODE_SKINTONE_COUNT 5 //aka through U+1F3FF
+#define UNICODE_SKINTONE_END   (UNICODE_SKINTONE_START + UNICODE_SKINTONE_COUNT)
 
 #define UNICODE_UNKNOWN_CHAR_CODEPOINT 0xFFFD //Technically this is called "Replacement Character"
 #define UNICODE_UNKNOWN_CHAR_STR       "\xEF\xBF\xDD" //Technically this is called "Replacement Character"
@@ -68,6 +94,33 @@ Description:
 #define UNICODE_CHECK_MARK_CODEPOINT 0x2713
 #define UNICODE_CHECK_MARK_STR       "\xE2\x9C\x93" //UTF-8 encoding
 
+//These are all non-breaking characters which we check in IsCodepointNonBreaking
+#define UNICODE_NON_BREAKING_SPACE_CODEPOINT            0x00A0
+#define UNICODE_NON_BREAKING_SPACE_STR                  "\xC2\xA0" //UTF-8 encoding
+#define UNICODE_NO_BREAK_HERE_CODEPOINT                 0x0083
+#define UNICODE_NO_BREAK_HERE_STR                       "\xC2\x83" //UTF-8 encoding
+#define UNICODE_NON_BREAKING_HYPHEN_CODEPOINT           0x2011
+#define UNICODE_NON_BREAKING_HYPHEN_STR                "\xE2\x80\x91" //UTF-8 encoding
+#define UNICODE_NARROW_NON_BREAKING_SPACE_CODEPOINT     0x202F
+#define UNICODE_NARROW_NON_BREAKING_SPACE_STR           "\xE2\x80\xAF" //UTF-8 encoding
+#define UNICODE_WORD_JOINER_CODEPOINT                   0x2060
+#define UNICODE_WORD_JOINER_STR                         "\xE2\x81\xA0" //UTF-8 encoding
+#define UNICODE_INVISIBLE_SEPARATOR_CODEPOINT           0x2063
+#define UNICODE_INVISIBLE_SEPARATOR_STR                 "\xE2\x81\xA3" //UTF-8 encoding
+#define UNICODE_ZERO_WIDTH_NON_BREAKING_SPACE_CODEPOINT 0xFEFF
+#define UNICODE_ZERO_WIDTH_NON_BREAKING_SPACE_STR       "\xEF\xBB\xBF" //UTF-8 encoding
+
+#define UNICODE_ZERO_WIDTH_SPACE_CODEPOINT 0x200B
+#define UNICODE_ZERO_WIDTH_SPACE_STR       "\xE2\x80\x8B" //UTF-8 encoding
+
+// Can be used to prevent ligature formation between adjacent characters that would normally join
+#define UNICODE_ZERO_WIDTH_NONJOINER_CODEPOINT 0x200C
+#define UNICODE_ZERO_WIDTH_NONJOINER_STR       "\xE2\x80\x8C" //UTF-8 encoding
+
+// Many emoji are combined using this character: https://emojipedia.org/emoji-zwj-sequence and https://www.unicode.org/emoji/charts/emoji-zwj-sequences.html
+#define UNICODE_ZERO_WIDTH_JOINER_CODEPOINT 0x200D
+#define UNICODE_ZERO_WIDTH_JOINER_STR       "\xE2\x80\x8D" //UTF-8 encoding
+
 // Basic Multilingual Plane Private Use Area: 0xE000-0xF8FF
 #define CUSTOM_CODEPOINT_START        0xE000
 #define CUSTOM_CODEPOINT_END          0xF900
@@ -81,6 +134,9 @@ Description:
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE u32 GetLowercaseCodepoint(u32 codepoint);
 	PIG_CORE_INLINE u32 GetUppercaseCodepoint(u32 codepoint);
+	PIG_CORE_INLINE bool IsCodepointNonBreaking(u32 codepoint);
+	PIG_CORE_INLINE bool IsCodepointWhitespace(u32 codepoint, bool includeNewLines);
+	PIG_CORE_INLINE bool IsCodepointZeroWidth(u32 codepoint);
 	u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions);
 	u8 GetCodepointUtf8Size(u32 codepoint);
 	u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut);
@@ -92,6 +148,7 @@ Description:
 	u8 GetCodepointForUcs2(u64 maxNumWords, const u16* strPntr, u32* codepointOut);
 	PIG_CORE_INLINE u32 GetMonospaceCodepointFor(u32 codepoint);
 	PIG_CORE_INLINE u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint);
+	PIG_CORE_INLINE bool IsWordBoundary(u32 prevCodepoint, u32 nextCodepoint);
 	uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bool forward);
 	#if DEBUG_BUILD
 	const char* DebugGetCodepointName(u32 codepoint);
@@ -112,6 +169,50 @@ PEXPI u32 GetUppercaseCodepoint(u32 codepoint)
 {
 	if (codepoint >= 'a' && codepoint <= 'z') { return 'A' + (codepoint - 'z'); }
 	return codepoint;
+}
+
+PEXPI bool IsCodepointNonBreaking(u32 codepoint)
+{
+	switch (codepoint)
+	{
+		//TODO: This may not be a complete list, it's just some of the more common codepoints I know about
+		case UNICODE_NON_BREAKING_SPACE_CODEPOINT: return true;
+		case UNICODE_NO_BREAK_HERE_CODEPOINT: return true;
+		case UNICODE_NON_BREAKING_HYPHEN_CODEPOINT: return true;
+		case UNICODE_NARROW_NON_BREAKING_SPACE_CODEPOINT: return true;
+		case UNICODE_WORD_JOINER_CODEPOINT: return true;
+		case UNICODE_INVISIBLE_SEPARATOR_CODEPOINT: return true;
+		case UNICODE_ZERO_WIDTH_NON_BREAKING_SPACE_CODEPOINT: return true;
+		default: return false;
+	}
+}
+PEXPI bool IsCodepointWhitespace(u32 codepoint, bool includeNewLines)
+{
+	switch (codepoint)
+	{
+		//TODO: This may not be a complete list, it's just some of the more common codepoints I know about
+		case UNICODE_TAB_CODEPOINT: return true;
+		case UNICODE_LINE_FEED_CODEPOINT: return includeNewLines;
+		case UNICODE_CARRIAGE_RETURN_CODEPOINT: return includeNewLines;
+		case UNICODE_SPACE_CODEPOINT: return true;
+		case UNICODE_NON_BREAKING_SPACE_CODEPOINT: return true;
+		case UNICODE_NARROW_NON_BREAKING_SPACE_CODEPOINT: return true;
+		case UNICODE_ZERO_WIDTH_SPACE_CODEPOINT: return true;
+		case UNICODE_ZERO_WIDTH_NON_BREAKING_SPACE_CODEPOINT: return true;
+		default: return false;
+	}
+}
+PEXPI bool IsCodepointZeroWidth(u32 codepoint)
+{
+	switch (codepoint)
+	{
+		//TODO: This may not be a complete list, it's just some of the more common codepoints I know about
+		case UNICODE_ZERO_WIDTH_SPACE_CODEPOINT: return true;
+		case UNICODE_ZERO_WIDTH_NON_BREAKING_SPACE_CODEPOINT: return true;
+		case UNICODE_ZERO_WIDTH_JOINER_CODEPOINT: return true;
+		case UNICODE_ZERO_WIDTH_NONJOINER_CODEPOINT: return true;
+		default: return false;
+	}
 }
 
 // +--------------------------------------------------------------+
@@ -448,6 +549,17 @@ PEXPI u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint)
 // +--------------------------------------------------------------+
 // |                    Word and Subword Logic                    |
 // +--------------------------------------------------------------+
+PEXPI bool IsWordBoundary(u32 prevCodepoint, u32 nextCodepoint)
+{
+	bool isNextCharWord = IsCharAlphaNumeric(nextCodepoint);
+	bool isPrevCharWord = IsCharAlphaNumeric(prevCodepoint);
+	bool isNextCodepointWhitespace = IsCodepointWhitespace(nextCodepoint, true);
+	bool isPrevCodepointWhitespace = IsCodepointWhitespace(prevCodepoint, true);
+	bool isNextCodepointNonBreaking = IsCodepointNonBreaking(nextCodepoint);
+	bool isPrevCodepointNonBreaking = IsCodepointNonBreaking(prevCodepoint);
+	return ((isNextCharWord != isPrevCharWord || isPrevCodepointWhitespace != isNextCodepointWhitespace) && !isPrevCodepointNonBreaking && !isNextCodepointNonBreaking);
+}
+
 PEXP uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bool forward)
 {
 	Assert(strPntr != nullptr || strLength == 0);
@@ -466,9 +578,10 @@ PEXP uxx FindWordBoundary(uxx strLength, const char* strPntr, uxx startIndex, bo
 		//TODO: What do we do with invalid UTF-8?
 		if (!forward) { SwapVariables(u32, nextCodepoint, prevCodepoint); SwapVariables(u8, nextCodepointSize, prevCodepointSize); }
 		
-		bool isNextCharWord = IsCharAlphaNumeric(nextCodepoint);
-		bool isPrevCharWord = IsCharAlphaNumeric(prevCodepoint);
-		if (isNextCharWord != isPrevCharWord && bIndex != startIndex) { return bIndex; }
+		if (bIndex != startIndex && IsWordBoundary(prevCodepoint, nextCodepoint))
+		{
+			return bIndex;
+		}
 		
 		if (nextCodepointSize > 1) { bIndex += (nextCodepointSize-1) * (forward ? 1 : -1); }
 	}
@@ -481,6 +594,11 @@ PEXP const char* DebugGetCodepointName(u32 codepoint)
 {
 	switch (codepoint)
 	{
+		case '\t': return "tab";
+		case '\n': return "LF";
+		case '\r': return "CR";
+		case ' ': return "space";
+		
 		case '!': return "!";
 		case '@': return "@";
 		case '#': return "#";
@@ -575,6 +693,14 @@ PEXP const char* DebugGetCodepointName(u32 codepoint)
 		case 'x': return "x";
 		case 'y': return "y";
 		case 'z': return "z";
+		
+		case UNICODE_ZERO_WIDTH_SPACE_CODEPOINT: return "zero-width space";
+		case UNICODE_NON_BREAKING_SPACE_CODEPOINT: return "non-breaking space";
+		case UNICODE_NON_BREAKING_HYPHEN_CODEPOINT: return "non-breaking hyphen";
+		case UNICODE_UNKNOWN_CHAR_CODEPOINT: return "unknown";
+		case UNICODE_ELLIPSIS_CODEPOINT: return "ellipsis";
+		case UNICODE_RIGHT_ARROW_CODEPOINT: return "right arrow";
+		case UNICODE_CHECK_MARK_CODEPOINT: return "check mark";
 		
 		case 0x3042: return "hira-a";
 		case 0x3044: return "hira-i";

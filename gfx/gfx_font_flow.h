@@ -314,13 +314,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				state->byteIndex += utf8ByteSize;
 				break;
 			}
-			if (prevCodepoint != UINT32_MAX && state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f)
+			if (prevCodepoint != UINT32_MAX && state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f && IsWordBoundary(prevCodepoint, codepoint))
 			{
-				bool isNextCharWord = IsCharAlphaNumeric(codepoint);
-				bool isPrevCharWord = IsCharAlphaNumeric(prevCodepoint);
-				bool isNextCharWhitespace = IsCharWhitespace(codepoint, true);
-				bool isPrevCharWhitespace = IsCharWhitespace(prevCodepoint, true);
-				if (isNextCharWord != isPrevCharWord || isNextCharWhitespace != isPrevCharWhitespace) { lastWordEndIndex = state->byteIndex; }
+				lastWordEndIndex = state->byteIndex;
 			}
 			
 			if (callbacks != nullptr && callbacks->beforeChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)

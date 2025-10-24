@@ -114,6 +114,7 @@ Description:
 #endif //!BUILD_WITH_FREETYPE
 
 #define FONT_FREETYPE_DPI 72 //pixels/inch
+#define FONT_CODEPOINT_EMPTY 0xFFFFFFU
 
 typedef plex FontCharRange FontCharRange;
 plex FontCharRange
@@ -143,7 +144,7 @@ plex CustomFontCharRange
 typedef plex FontGlyph FontGlyph;
 plex FontGlyph
 {
-	u32 codepoint; //for active atlases, a codepoint of 0 means an empty glyph slot
+	u32 codepoint; //for active atlases, a codepoint of FONT_CODEPOINT_EMPTY means an empty glyph slot
 	i32 ttfGlyphIndex;
 	reci atlasSourceRec;
 	r32 advanceX;
@@ -155,7 +156,7 @@ plex FontGlyph
 typedef plex FontActiveCell FontActiveCell;
 plex FontActiveCell
 {
-	u32 codepoint; //also acts as filled indicator with 0 meaning unfilled
+	u32 codepoint; //also acts as filled indicator with FONT_CODEPOINT_EMPTY meaning unfilled
 	uxx glyphIndex;
 };
 
@@ -633,6 +634,7 @@ PEXP void FillFontKerningTable(PigFont* font)
 	#endif
 }
 
+//NOTE: This function does not support "fallback" fonts. It only uses the first font file that is attached
 PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	NotNull(font);
@@ -692,7 +694,6 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				const FontCharRange* charRange = &charRanges[rIndex];
 				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
 				{
-					//TODO: Fill in a packRect using information from FreeType about a particular codepoint
 					FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
 					if (glyphIndex == 0)
 					{
@@ -811,7 +812,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 					ClearPointer(newGlyph);
 					newGlyph->codepoint = codepoint;
 					newGlyph->ttfGlyphIndex = glyphIndex;
-					newGlyph->advanceX = TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
+					newGlyph->advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
 					newGlyph->renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
 					newGlyph->renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
 					newGlyph->logicalRec = NewRec(0, -newAtlas->maxAscend, newGlyph->advanceX, newAtlas->maxAscend);
@@ -1124,7 +1125,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				DebugAssert(stbCharInfo->y1 >= 0);
 				DebugAssert(stbCharInfo->y1 <= atlasSize.Height);
 				glyph->atlasSourceRec = NewReci((i32)stbCharInfo->x0, (i32)stbCharInfo->y0, (i32)(stbCharInfo->x1 - stbCharInfo->x0), (i32)(stbCharInfo->y1 - stbCharInfo->y0));
-				glyph->advanceX = stbCharInfo->xadvance;
+				glyph->advanceX = IsCodepointZeroWidth(codepoint) ? 0 : stbCharInfo->xadvance;
 				glyph->renderOffset = NewV2(stbCharInfo->xoff, stbCharInfo->yoff);
 				glyph->logicalRec = NewRec(stbCharInfo->xoff, -newAtlas->maxAscend, (r32)glyph->atlasSourceRec.Width, newAtlas->maxAscend);
 				if (glyph->logicalRec.Width == 0)
@@ -1336,7 +1337,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	uxx numCells = (uxx)(newAtlas->activeCellGridSize.Width * newAtlas->activeCellGridSize.Height);
 	newAtlas->cells = AllocArray(FontActiveCell, font->arena, numCells);
 	NotNull(newAtlas->cells);
-	MyMemSet(newAtlas->cells, 0x00, sizeof(FontActiveCell) * numCells);
+	for (uxx cIndex = 0; cIndex < numCells; cIndex++) { newAtlas->cells[cIndex].codepoint = FONT_CODEPOINT_EMPTY; newAtlas->cells[cIndex].glyphIndex = UINT32_MAX; }
 	
 	newAtlas->lastUsedTime = font->programTime;
 	return newAtlas;
@@ -1396,7 +1397,7 @@ PEXP void ResizeActiveFontAtlas(PigFont* font, FontAtlas* activeAtlas, v2i newSi
 	uxx newNumCells = (uxx)(newGridSize.Width * newGridSize.Height);
 	FontActiveCell* newCells = AllocArray(FontActiveCell, font->arena, newNumCells);
 	NotNull(newCells);
-	MyMemSet(newCells, 0x00, sizeof(FontActiveCell) * newNumCells);
+	for (uxx cIndex = 0; cIndex < newNumCells; cIndex++) { newCells[cIndex].codepoint = FONT_CODEPOINT_EMPTY; newCells[cIndex].glyphIndex = UINT32_MAX; }
 	for (uxx rowIndex = 0; rowIndex < activeAtlas->activeCellGridSize.Height; rowIndex++)
 	{
 		FontActiveCell* oldRow = &activeAtlas->cells[INDEX_FROM_COORD2D(0, rowIndex, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height)];
@@ -1437,7 +1438,8 @@ PEXP void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx gl
 				FontActiveCell* activeCell = &activeAtlas->cells[INDEX_FROM_COORD2D(glyphCellPos.X + xOffset, glyphCellPos.Y + yOffset, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height)];
 				Assert(activeCell->codepoint == removeGlyph->codepoint);
 				Assert(activeCell->glyphIndex == glyphIndex);
-				ClearPointer(activeCell);
+				activeCell->codepoint = FONT_CODEPOINT_EMPTY;
+				activeCell->glyphIndex = UINT32_MAX;
 			}
 		}
 		
@@ -1504,7 +1506,7 @@ PEXP void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx gl
 		for (i32 cellX = 0; cellX < activeAtlas->activeCellGridSize.Width; cellX++)
 		{
 			FontActiveCell* cell = &activeAtlas->cells[INDEX_FROM_COORD2D(cellX, cellY, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height)];
-			if (cell->codepoint != 0 && cell->glyphIndex >= glyphIndex) { cell->glyphIndex--; }
+			if (cell->codepoint != FONT_CODEPOINT_EMPTY && cell->glyphIndex >= glyphIndex) { cell->glyphIndex--; }
 		}
 	}
 	
@@ -1588,7 +1590,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 						{
 							v2i gridPos = NewV2i(cellX + offsetX, cellY + offsetY);
 							FontActiveCell* cell = &activeAtlas->cells[INDEX_FROM_COORD2D(gridPos.X, gridPos.Y, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height)];
-							if (cell->codepoint != 0) { foundFilledCell = true; break; }
+							if (cell->codepoint != FONT_CODEPOINT_EMPTY) { foundFilledCell = true; break; }
 						}
 					}
 					
@@ -1656,7 +1658,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 			glyphSize.Height
 		);
 		#if BUILD_WITH_FREETYPE
-		newGlyph->advanceX = TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
+		newGlyph->advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
 		newGlyph->renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
 		newGlyph->renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
 		newGlyph->logicalRec = NewRec(0, -activeAtlas->maxAscend, newGlyph->advanceX, activeAtlas->maxAscend);
@@ -1680,7 +1682,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 			for (i32 cellX = 0; cellX < activeAtlas->activeCellGridSize.Width; cellX++)
 			{
 				FontActiveCell* cell = &activeAtlas->cells[INDEX_FROM_COORD2D(cellX, cellY, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height)];
-				if (cell->codepoint != 0 && cell->glyphIndex >= glyphSortedInsertIndex) { cell->glyphIndex++; }
+				if (cell->codepoint != FONT_CODEPOINT_EMPTY && cell->glyphIndex >= glyphSortedInsertIndex) { cell->glyphIndex++; }
 			}
 		}
 		
@@ -1831,7 +1833,7 @@ PEXP bool TryEvictOldFontAtlas(PigFont* font, uxx* oldAtlasIndexOut)
 	else { return false; }
 }
 
-//Pass 0 for codepoint to lookup and atlas without a particular glyph in mind
+//Pass FONT_CODEPOINT_EMPTY for codepoint to lookup and atlas without a particular glyph in mind
 PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation, FontAtlas** atlasOut)
 {
 	NotNull(font);
@@ -1847,12 +1849,12 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 		if (matchingAtlas == nullptr || sizeDiff <= matchingSizeDiff)
 		{
 			uxx glyphIndex = 0;
-			if (codepoint == 0 || DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
+			if (codepoint == FONT_CODEPOINT_EMPTY || DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
 			{
 				multipleMatches = (matchingAtlas != nullptr && AreSimilarR32(sizeDiff, matchingSizeDiff, DEFAULT_R32_TOLERANCE));
 				matchingSizeDiff = sizeDiff;
 				matchingAtlas = atlas;
-				if (codepoint != 0) { result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex); }
+				if (codepoint != FONT_CODEPOINT_EMPTY) { result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex); }
 			}
 		}
 	}
@@ -1881,12 +1883,12 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 					if (matchingAtlas == nullptr || styleDiffs <= matchingStyleDiffs)
 					{
 						uxx glyphIndex = 0;
-						if (codepoint == 0 || DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
+						if (codepoint == FONT_CODEPOINT_EMPTY || DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
 						{
 							multipleMatches = (matchingAtlas != nullptr && styleDiffs == matchingStyleDiffs);
 							matchingStyleDiffs = styleDiffs;
 							matchingAtlas = atlas;
-							if (codepoint != 0) { result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex); }
+							if (codepoint != FONT_CODEPOINT_EMPTY) { result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex); }
 						}
 					}
 				}
@@ -1917,7 +1919,7 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 		
 		bool needToCreateNewAtlas = (BUILD_WITH_FREETYPE && matchingActiveAtlas == nullptr); //TODO: Remove BUILD_WITH_FREETYPE when we implement the code paths below!
 		bool needToRasterizeGlyph = false;
-		if (codepoint != 0 && BUILD_WITH_FREETYPE) //TODO: Remove BUILD_WITH_FREETYPE when we implement the code paths below!
+		if (codepoint != FONT_CODEPOINT_EMPTY && BUILD_WITH_FREETYPE) //TODO: Remove BUILD_WITH_FREETYPE when we implement the code paths below!
 		{
 			if (needToCreateNewAtlas) { needToRasterizeGlyph = true; }
 			else { needToRasterizeGlyph = (matchingActiveAtlas->isActive && !DoesFontAtlasContainCodepointEx(matchingActiveAtlas, codepoint, nullptr)); }
@@ -1997,7 +1999,7 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 PEXPI FontAtlas* GetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation)
 {
 	FontAtlas* result = nullptr;
-	GetFontGlyphForCodepoint(font, 0, fontSize, styleFlags, allowActiveAtlasCreation, &result);
+	GetFontGlyphForCodepoint(font, FONT_CODEPOINT_EMPTY, fontSize, styleFlags, allowActiveAtlasCreation, &result);
 	return result;
 }
 
