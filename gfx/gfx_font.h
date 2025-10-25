@@ -39,10 +39,9 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Add a codepath that allows for measuring glyphs without baking them!
 //TODO: We should make a new atlas if we can't fit a glyph into an existing matching active atlas
+//TODO: Add a codepath that allows for measuring glyphs without baking them!
 //TODO: Implement stb_truetype.h code path!
-//TODO: Test custom glyphs, make sure they still work
 //TODO: Why is the first active atlas never getting evicted when we are on the ABCDEFGHI test?
 //TODO: Colored glyph support
 //TODO: Measure performance
@@ -1125,7 +1124,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				DebugAssert(stbCharInfo->y1 >= 0);
 				DebugAssert(stbCharInfo->y1 <= atlasSize.Height);
 				glyph->atlasSourceRec = NewReci((i32)stbCharInfo->x0, (i32)stbCharInfo->y0, (i32)(stbCharInfo->x1 - stbCharInfo->x0), (i32)(stbCharInfo->y1 - stbCharInfo->y0));
-				glyph->advanceX = IsCodepointZeroWidth(codepoint) ? 0 : stbCharInfo->xadvance;
+				glyph->advanceX = IsCodepointZeroWidth(glyph->codepoint) ? 0 : stbCharInfo->xadvance;
 				glyph->renderOffset = NewV2(stbCharInfo->xoff, stbCharInfo->yoff);
 				glyph->logicalRec = NewRec(stbCharInfo->xoff, -newAtlas->maxAscend, (r32)glyph->atlasSourceRec.Width, newAtlas->maxAscend);
 				if (glyph->logicalRec.Width == 0)
