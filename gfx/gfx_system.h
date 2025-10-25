@@ -1219,7 +1219,8 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 		drawColor = state->backgroundColor;
 	}
 	CommitFontAtlasTextureUpdates(state->font, atlas);
-	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, drawColor, &atlas->texture, ToRecFromi(glyph->atlasSourceRec));
+	rec atlasSourceRec = ToRecFromi(NewReciV(glyph->atlasSourcePos, glyph->metrics.glyphSize));
+	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, drawColor, &atlas->texture, atlasSourceRec);
 }
 
 // +==========================================+

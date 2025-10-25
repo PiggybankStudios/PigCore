@@ -112,7 +112,7 @@ plex TextMeasure
 #define FONT_FLOW_BEFORE_CHAR_DEF(functionName)     void functionName(FontFlowState* state, FontFlow* flow, u32 codepoint)
 typedef FONT_FLOW_BEFORE_CHAR_DEF(FontFlowBeforeChar_f);
 
-#define FONT_FLOW_DRAW_CHAR_DEF(functionName)       void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
+#define FONT_FLOW_DRAW_CHAR_DEF(functionName)       void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, FontGlyphMetrics glyphMetrics)
 typedef FONT_FLOW_DRAW_CHAR_DEF(FontFlowDrawChar_f);
 
 #define FONT_FLOW_DRAW_HIGHLIGHT_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec highlightRec)
@@ -346,6 +346,13 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			
 			if (fontGlyph != nullptr)
 			{
+				bool scaledGlyph = false;
+				FontGlyphMetrics glyphMetrics = fontGlyph->metrics;
+				if (!AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE))
+				{
+					scaledGlyph = TryGetFontGlyphMetrics(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics);
+				}
+				
 				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->lineHeight);
 				
 				if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->fontScale == fontAtlas->fontScale) //TODO: Should we check the style flags match?
@@ -355,8 +362,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
 				}
 				
-				glyphDrawRec = NewRecV(Add(state->position, fontGlyph->renderOffset), ToV2Fromi(fontGlyph->atlasSourceRec.Size));
-				glyphLogicalRec = NewRecV(Add(state->position, fontGlyph->logicalRec.TopLeft), fontGlyph->logicalRec.Size);
+				glyphDrawRec = NewRecV(Add(state->position, glyphMetrics.renderOffset), ToV2Fromi(glyphMetrics.glyphSize));
+				glyphLogicalRec = NewRecV(Add(state->position, glyphMetrics.logicalRec.TopLeft), glyphMetrics.logicalRec.Size);
 				if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
 				if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
 				
@@ -394,7 +401,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				
 				if (callbacks != nullptr && callbacks->drawChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
 				{
-					callbacks->drawChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph);
+					callbacks->drawChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph, glyphMetrics);
 				}
 				
 				//TODO: Draw Strikethrough
@@ -423,7 +430,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					flowOut->numGlyphs++;
 				}
 				
-				state->position.X += fontGlyph->advanceX;
+				state->position.X += glyphMetrics.advanceX;
 				state->glyphIndex++;
 			}
 			else

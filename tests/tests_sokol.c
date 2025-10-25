@@ -422,7 +422,7 @@ void AppInit(void)
 		Result bakeResult1 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult1 == Result_Success);
 		RemoveAttachedFontFiles(&testFont);
 		
-		MakeFontActive(&testFont, 64, 128, 4, 0, 0);
+		MakeFontActive(&testFont, 64, 128, 8, 0, 0);
 		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult2 == Result_Success);
 		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult3 == Result_Success);
 		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult4 == Result_Success);
@@ -694,14 +694,13 @@ bool AppFrame(void)
 				PrintLine_D("\t\tGlyph[%llu]: \'%s\' 0x%08X sourceRec=(%d, %d, %d, %d) offset=(%g, %g) advanceX=%g logical=(%g, %g, %g, %g)",
 					gIndex,
 					DebugGetCodepointName(glyph->codepoint), glyph->codepoint,
-					glyph->atlasSourceRec.X, glyph->atlasSourceRec.Y,
-					glyph->atlasSourceRec.Width, glyph->atlasSourceRec.Height,
-					glyph->renderOffset.X, glyph->renderOffset.Y,
-					glyph->advanceX,
-					glyph->logicalRec.X, glyph->logicalRec.Y, glyph->logicalRec.Width, glyph->logicalRec.Height
+					glyph->atlasSourcePos.X, glyph->atlasSourcePos.Y,
+					glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height,
+					glyph->metrics.renderOffset.X, glyph->metrics.renderOffset.Y,
+					glyph->metrics.advanceX,
+					glyph->metrics.logicalRec.X, glyph->metrics.logicalRec.Y, glyph->metrics.logicalRec.Width, glyph->metrics.logicalRec.Height
 				);
 				//TODO: ttfGlyphIndex
-				//TODO: logicalRec
 			}
 			if (fontAtlas->texture.error != Result_Success) { PrintLine_E("\tTexture Error: %s", GetResultStr(fontAtlas->texture.error)); }
 			PrintLine_D("\tlineHeight: %f", fontAtlas->lineHeight);
@@ -1018,16 +1017,16 @@ bool AppFrame(void)
 				{
 					VarArrayLoopGet(FontGlyph, glyph, &fontAtlas->glyphs, gIndex);
 					rec glyphRec = NewRec(
-						atlasRenderRec.X + atlasRenderRec.Width * ((r32)glyph->atlasSourceRec.X / fontAtlas->texture.Width),
-						atlasRenderRec.Y + atlasRenderRec.Height * ((r32)glyph->atlasSourceRec.Y / fontAtlas->texture.Height),
-						atlasRenderRec.Width * ((r32)glyph->atlasSourceRec.Width / fontAtlas->texture.Width),
-						atlasRenderRec.Height * ((r32)glyph->atlasSourceRec.Height / fontAtlas->texture.Height)
+						atlasRenderRec.X + atlasRenderRec.Width * ((r32)glyph->atlasSourcePos.X / fontAtlas->texture.Width),
+						atlasRenderRec.Y + atlasRenderRec.Height * ((r32)glyph->atlasSourcePos.Y / fontAtlas->texture.Height),
+						atlasRenderRec.Width * ((r32)glyph->metrics.glyphSize.Width / fontAtlas->texture.Width),
+						atlasRenderRec.Height * ((r32)glyph->metrics.glyphSize.Height / fontAtlas->texture.Height)
 					);
 					bool isMouseHovered = IsInsideRec(glyphRec, mouse.position);
 					DrawRectangleOutline(glyphRec, 1, isMouseHovered ? MonokaiLightPurple : MonokaiPurple);
 					if (isMouseHovered)
 					{
-						infoStr = PrintInArenaStr(scratch, "Glyph[%llu] \'%s\' 0x%08X %dx%d", gIndex, DebugGetCodepointName(glyph->codepoint), glyph->codepoint, glyph->atlasSourceRec.Width, glyph->atlasSourceRec.Height);
+						infoStr = PrintInArenaStr(scratch, "Glyph[%llu] \'%s\' 0x%08X %dx%d", gIndex, DebugGetCodepointName(glyph->codepoint), glyph->codepoint, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height);
 						DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->lineHeight;
 					}
 				}
