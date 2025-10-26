@@ -182,14 +182,13 @@ static Result DoFontFlow_FindNextWordWrapIndex(const FontFlowState* realState, F
 
 static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
 {
-	r32 lineHeight = 0;
-	r32 centerOffset = 0;
-	GetFontMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &lineHeight, nullptr, nullptr, &centerOffset);
+	FontLineMetrics metrics = ZEROED;
+	GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &metrics);
 	rec highlightRec = NewRec(
 		state->highlightStartPos.X,
-		state->highlightStartPos.Y - centerOffset - lineHeight/2.0f - 1,
+		state->highlightStartPos.Y - metrics.centerOffset - metrics.lineHeight/2.0f - 1,
 		state->position.X - state->highlightStartPos.X,
-		lineHeight+2
+		metrics.lineHeight+2
 	);
 	AlignRecToV2(&highlightRec, state->alignPixelSize);
 	if (callbacks != nullptr && callbacks->drawHighlight != nullptr)
@@ -225,8 +224,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			FontAtlas* firstAtlas = GetFontAtlas(state->font, state->startFontSize, state->startFontStyle, false);
 			if (firstAtlas != nullptr)
 			{
-				flowOut->logicalRec.Y -= firstAtlas->maxAscend;
-				flowOut->logicalRec.Height = firstAtlas->maxAscend;
+				flowOut->logicalRec.Y -= firstAtlas->metrics.maxAscend;
+				flowOut->logicalRec.Height = firstAtlas->metrics.maxAscend;
 			}
 			flowOut->numGlyphs = 0;
 		}
@@ -353,11 +352,11 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					scaledGlyph = TryGetFontGlyphMetrics(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics);
 				}
 				
-				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->lineHeight);
+				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->metrics.lineHeight);
 				
-				if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->fontScale == fontAtlas->fontScale) //TODO: Should we check the style flags match?
+				if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->metrics.fontScale == fontAtlas->metrics.fontScale) //TODO: Should we check the style flags match?
 				{
-					kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->fontScale, state->prevGlyph, fontGlyph);
+					kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->metrics.fontScale, state->prevGlyph, fontGlyph);
 					state->position.X += kerning;
 					// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
 				}

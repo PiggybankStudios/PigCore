@@ -173,20 +173,26 @@ plex FontActiveAtlasTextureUpdate
 	ImageData imageData;
 };
 
+typedef plex FontLineMetrics FontLineMetrics;
+plex FontLineMetrics
+{
+	r32 lineHeight;
+	r32 maxAscend;
+	r32 maxDescend;
+	r32 centerOffset;
+	r32 fontScale; //only used when asking stbtt for size-independent metrics
+};
+
 typedef plex FontAtlas FontAtlas;
 plex FontAtlas
 {
 	r32 fontSize;
-	r32 fontScale; //only used when asking stbtt for size-independent metrics
 	u8 styleFlags;
 	VarArray charRanges; //FontCharRange
 	FontCharRange glyphRange;
 	VarArray glyphs; //FontGlyph
 	Texture texture;
-	r32 lineHeight;
-	r32 maxAscend;
-	r32 maxDescend;
-	r32 centerOffset;
+	FontLineMetrics metrics;
 	
 	bool isActive;
 	u64 lastUsedTime;
@@ -309,7 +315,7 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE void FontNewFrame(PigFont* font, u64 programTime);
 	r32 GetFontKerningBetweenGlyphs(const PigFont* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph);
 	r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint, bool allowActiveAtlasCreation);
-	bool GetFontMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, r32* lineHeightOut, r32* maxAscendOut, r32* maxDescendOut, r32* centerOffsetOut);
+	bool GetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, FontLineMetrics* metricsOut);
 	PIG_CORE_INLINE r32 GetFontLineHeight(const PigFont* font, r32 fontSize, u8 styleFlags);
 	PIG_CORE_INLINE r32 GetFontMaxAscend(const PigFont* font, r32 fontSize, u8 styleFlags);
 	PIG_CORE_INLINE r32 GetFontMaxDescend(const PigFont* font, r32 fontSize, u8 styleFlags);
@@ -779,14 +785,14 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		NotNull(newAtlas);
 		ClearPointer(newAtlas);
 		newAtlas->fontSize = fontSize;
-		newAtlas->fontScale = 1.0f; //TODO: Can we get this from FreeType? Do we need it (without kerning)?
+		newAtlas->metrics.fontScale = 1.0f; //TODO: Can we get this from FreeType? Do we need it (without kerning)?
 		newAtlas->styleFlags = (fontFile->styleFlags | extraStyleFlags);
 		newAtlas->glyphRange.startCodepoint = minCodepoint;
 		newAtlas->glyphRange.endCodepoint = maxCodepoint;
-		newAtlas->maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
-		newAtlas->maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
-		newAtlas->lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
-		newAtlas->centerOffset = newAtlas->maxAscend - (newAtlas->lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did below?
+		newAtlas->metrics.maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
+		newAtlas->metrics.maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
+		newAtlas->metrics.lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
+		newAtlas->metrics.centerOffset = newAtlas->metrics.maxAscend - (newAtlas->metrics.lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did below?
 		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
 		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal);
 		
@@ -822,7 +828,7 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 					newGlyph->metrics.advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
 					newGlyph->metrics.renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
 					newGlyph->metrics.renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
-					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->maxAscend, newGlyph->metrics.advanceX, newAtlas->maxAscend);
+					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, newAtlas->metrics.maxAscend);
 					
 					if (fontFile->freeTypeFace->glyph->bitmap.width > 0 && fontFile->freeTypeFace->glyph->bitmap.rows > 0)
 					{
@@ -897,8 +903,8 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 					newGlyph->codepoint = customGlyph->codepoint;
 					newGlyph->ttfGlyphIndex = 0;
 					newGlyph->metrics.advanceX = (r32)glyphSize.Width;
-					newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->maxAscend + (newAtlas->maxAscend + newAtlas->maxDescend)/2.0f - glyphSize.Height/2.0f));
-					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->maxAscend, (r32)glyphSize.Width, newAtlas->maxAscend);
+					newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - glyphSize.Height/2.0f));
+					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)glyphSize.Width, newAtlas->metrics.maxAscend);
 					
 					if (glyphSize.Width > 0 && glyphSize.Height > 0)
 					{
@@ -1078,16 +1084,16 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		}
 		
 		newAtlas->fontSize = fontSize;
-		newAtlas->fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+		newAtlas->metrics.fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
 		newAtlas->styleFlags = (fontFile->styleFlags | extraStyleFlags);
 		newAtlas->glyphRange.startCodepoint = minCodepoint;
 		newAtlas->glyphRange.endCodepoint = maxCodepoint;
 		
 		int ascent, descent, lineGap;
 		stbtt_GetFontVMetrics(&fontFile->ttfInfo, &ascent, &descent, &lineGap);
-		newAtlas->maxAscend = (r32)ascent * newAtlas->fontScale;
-		newAtlas->maxDescend = (r32)(-descent) * newAtlas->fontScale;
-		newAtlas->lineHeight = newAtlas->maxAscend + newAtlas->maxDescend + ((r32)lineGap * newAtlas->fontScale);
+		newAtlas->metrics.maxAscend = (r32)ascent * newAtlas->metrics.fontScale;
+		newAtlas->metrics.maxDescend = (r32)(-descent) * newAtlas->metrics.fontScale;
+		newAtlas->metrics.lineHeight = newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend + ((r32)lineGap * newAtlas->metrics.fontScale);
 		
 		//TODO: This is sort of a hack and causes problems with things like highlight/clip rectangles that need to really encompass the true maxAscend
 		//      So for now we are going to only use this value to inform the centerOffset
@@ -1098,8 +1104,8 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 		int getBoxResult = stbtt_GetCodepointBox(&fontFile->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
 		if (getBoxResult > 0)
 		{
-			r32 pretendMaxAscend = MinR32(newAtlas->maxAscend, (r32)wBoxY1 * newAtlas->fontScale);
-			newAtlas->centerOffset = pretendMaxAscend / 2.0f;
+			r32 pretendMaxAscend = MinR32(newAtlas->metrics.maxAscend, (r32)wBoxY1 * newAtlas->metrics.fontScale);
+			newAtlas->metrics.centerOffset = pretendMaxAscend / 2.0f;
 		}
 		
 		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
@@ -1290,7 +1296,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	NotNull(newAtlas);
 	ClearPointer(newAtlas);
 	newAtlas->fontSize = fontSize;
-	newAtlas->fontScale = 1.0f; //TODO: Fill me?
+	newAtlas->metrics.fontScale = 1.0f; //TODO: Fill me?
 	newAtlas->styleFlags = (styleFlags & FontStyleFlag_FontAtlasFlags);
 	newAtlas->glyphRange = NewFontCharRangeSingle(0);
 	InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, 1);
@@ -1311,10 +1317,10 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	{
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		newAtlas->maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
-		newAtlas->maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
-		newAtlas->lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
-		newAtlas->centerOffset = newAtlas->maxAscend - (newAtlas->lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did with stb_truetype.h?
+		newAtlas->metrics.maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
+		newAtlas->metrics.maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
+		newAtlas->metrics.lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
+		newAtlas->metrics.centerOffset = newAtlas->metrics.maxAscend - (newAtlas->metrics.lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did with stb_truetype.h?
 	}
 	#else //!BUILD_WITH_FREETYPE
 	{
@@ -1671,7 +1677,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		newGlyph->metrics.advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
 		newGlyph->metrics.renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
 		newGlyph->metrics.renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
-		newGlyph->metrics.logicalRec = NewRec(0, -activeAtlas->maxAscend, newGlyph->metrics.advanceX, activeAtlas->maxAscend);
+		newGlyph->metrics.logicalRec = NewRec(0, -activeAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, activeAtlas->metrics.maxAscend);
 		#else
 		//TODO: Implement me!
 		#endif
@@ -2185,12 +2191,15 @@ PEXP r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 s
 	if (rightGlyph == nullptr || rightGlyphAtlas == nullptr) { return 0.0f; }
 	if (rightGlyph->ttfGlyphIndex < 0) { return 0.0f; }
 	
-	if (leftGlyphAtlas->fontScale != rightGlyphAtlas->fontScale) { return 0.0f; }
-	return GetFontKerningBetweenGlyphs(font, leftGlyphAtlas->fontScale, leftGlyph, rightGlyph);
+	if (leftGlyphAtlas->metrics.fontScale != rightGlyphAtlas->metrics.fontScale) { return 0.0f; }
+	return GetFontKerningBetweenGlyphs(font, leftGlyphAtlas->metrics.fontScale, leftGlyph, rightGlyph);
 }
 
-PEXPI bool GetFontMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, r32* lineHeightOut, r32* maxAscendOut, r32* maxDescendOut, r32* centerOffsetOut)
+PEXPI bool GetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, FontLineMetrics* metricsOut)
 {
+	NotNull(font);
+	NotNull(font->arena);
+	NotNull(metricsOut);
 	FontAtlas* closestAtlas = GetFontAtlas((PigFont*)font, fontSize, styleFlags, false);
 	if (font->numFiles > 0 && (closestAtlas == nullptr || !AreSimilarR32(closestAtlas->fontSize, fontSize, DEFAULT_R32_TOLERANCE) || (closestAtlas->styleFlags & FontStyleFlag_FontAtlasFlags) != (styleFlags & FontStyleFlag_FontAtlasFlags)))
 	{
@@ -2198,10 +2207,10 @@ PEXPI bool GetFontMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, r32*
 		#if BUILD_WITH_FREETYPE
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		SetOptionalOutPntr(lineHeightOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height));
-		SetOptionalOutPntr(maxAscendOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender));
-		SetOptionalOutPntr(maxDescendOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender));
-		SetOptionalOutPntr(lineHeightOut, TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender) - (TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height) / 2.0f));
+		metricsOut->lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
+		metricsOut->maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
+		metricsOut->maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
+		metricsOut->centerOffset = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender) - (TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height) / 2.0f);
 		return true;
 		#else
 		//TODO: Implement me!
@@ -2210,42 +2219,39 @@ PEXPI bool GetFontMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, r32*
 	}
 	else if (closestAtlas != nullptr)
 	{
-		SetOptionalOutPntr(lineHeightOut, closestAtlas->lineHeight);
-		SetOptionalOutPntr(maxAscendOut, closestAtlas->maxAscend);
-		SetOptionalOutPntr(maxDescendOut, closestAtlas->maxDescend);
-		SetOptionalOutPntr(centerOffsetOut, closestAtlas->centerOffset);
+		MyMemCopy(metricsOut, &closestAtlas->metrics, sizeof(FontLineMetrics));
 		return true;
 	}
 	//Default guess
-	SetOptionalOutPntr(lineHeightOut, fontSize);
-	SetOptionalOutPntr(maxAscendOut, fontSize*0.75f);
-	SetOptionalOutPntr(maxDescendOut, fontSize*0.25f);
-	SetOptionalOutPntr(centerOffsetOut, fontSize*0.25f);
+	metricsOut->lineHeight = fontSize;
+	metricsOut->maxAscend = fontSize*0.75f;
+	metricsOut->maxDescend = fontSize*0.25f;
+	metricsOut->centerOffset = fontSize*0.25f;
 	return false; //Default guess
 }
 PEXPI r32 GetFontLineHeight(const PigFont* font, r32 fontSize, u8 styleFlags)
 {
-	r32 lineHeight = 0;
-	GetFontMetrics(font, fontSize, styleFlags, &lineHeight, nullptr, nullptr, nullptr);
-	return lineHeight;
+	FontLineMetrics metrics = ZEROED;
+	GetFontLineMetrics(font, fontSize, styleFlags, &metrics);
+	return metrics.lineHeight;
 }
 PEXPI r32 GetFontMaxAscend(const PigFont* font, r32 fontSize, u8 styleFlags)
 {
-	r32 maxAscend = 0;
-	GetFontMetrics(font, fontSize, styleFlags, nullptr, &maxAscend, nullptr, nullptr);
-	return maxAscend;
+	FontLineMetrics metrics = ZEROED;
+	GetFontLineMetrics(font, fontSize, styleFlags, &metrics);
+	return metrics.maxAscend;
 }
 PEXPI r32 GetFontMaxDescend(const PigFont* font, r32 fontSize, u8 styleFlags)
 {
-	r32 maxDescend = 0;
-	GetFontMetrics(font, fontSize, styleFlags, nullptr, nullptr, &maxDescend, nullptr);
-	return maxDescend;
+	FontLineMetrics metrics = ZEROED;
+	GetFontLineMetrics(font, fontSize, styleFlags, &metrics);
+	return metrics.maxDescend;
 }
 PEXPI r32 GetFontCenterOffset(const PigFont* font, r32 fontSize, u8 styleFlags)
 {
-	r32 centerOffset = 0;
-	GetFontMetrics(font, fontSize, styleFlags, nullptr, nullptr, nullptr, &centerOffset);
-	return centerOffset;
+	FontLineMetrics metrics = ZEROED;
+	GetFontLineMetrics(font, fontSize, styleFlags, &metrics);
+	return metrics.centerOffset;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
