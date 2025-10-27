@@ -36,7 +36,7 @@ Date:   01\05\2025
 
 #include "std/std_includes.h" //required by misc_printing.h
 #include "std/std_printf.h" //required by misc_printing.h and misc_parsing.h
-#include "mem/mem_arena.h" //required by misc_printing.h, misc_file_watch.h, misc_sorting.h and misc_stb_image_include.h
+#include "mem/mem_arena.h" //required by misc_printing.h, misc_file_watch.h, misc_sorting.h, misc_stb_image_include.h and misc_stb_image_write_include.h
 #include "os/os_file.h" //required by misc_file_watch.h
 
 #include "misc/misc_simple_parsers.h"
@@ -44,6 +44,8 @@ Date:   01\05\2025
 #include "misc/misc_two_pass.h"
 #include "misc/misc_file_watch.h"
 #include "misc/misc_sorting.h"
+#include "misc/misc_stb_image_include.h"
+#include "misc/misc_stb_image_write_include.h"
 
 #include "struct/struct_vectors.h" //required by misc_noise.h, misc_triangulation.h and misc_poly_simplify.h
 
@@ -57,9 +59,8 @@ Date:   01\05\2025
 
 #include "misc/misc_parsing.h"
 
-#include "mem/mem_scratch.h" //required for misc_stb_image_include.h, misc_regex.h and misc_escaping.h
+#include "mem/mem_scratch.h" //required for misc_regex.h and misc_escaping.h
 
-#include "misc/misc_stb_image_include.h"
 #include "misc/misc_regex.h"
 #include "misc/misc_escaping.h"
 

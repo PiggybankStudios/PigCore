@@ -36,13 +36,15 @@ Description:
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
+#if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
+
 PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut)
 {
 	TracyCZoneN(funcZone, "TryParseImageFile", true);
 	NotNullStr(fileContents);
 	NotNull(imageDataOut);
 	ScratchBegin1(scratch, arena);
-	StbImageScratchArena = scratch;
+	StbImageArena = scratch;
 	int imageWidth, imageHeight, fileChannelCount;
 	const int numChannels = 4;
 	TracyCZoneN(_stbLoadFromMemory, "stbi_load_from_memory", true);
@@ -75,13 +77,13 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 	else
 	{
 		ScratchEnd(scratch);
-		StbImageScratchArena = nullptr;
+		StbImageArena = nullptr;
 		TracyCZoneEnd(funcZone);
 		return Result_ParsingFailure;
 	}
 	
 	ScratchEnd(scratch);
-	StbImageScratchArena = nullptr;
+	StbImageArena = nullptr;
 	
 	TracyCZoneEnd(funcZone);
 	return Result_Success;

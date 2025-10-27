@@ -11,8 +11,8 @@ Date:   10\27\2025
 #include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
+#include "std/std_malloc.h"
 #include "mem/mem_arena.h"
-#include "mem/mem_scratch.h"
 
 //TODO: stb_image.h uses strtol which we currently don't have an implementation for in our custom standard library!
 #if USING_CUSTOM_STDLIB
@@ -24,34 +24,48 @@ Date:   10\27\2025
 #if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
 
 #if PIG_CORE_IMPLEMENTATION
-THREAD_LOCAL Arena* StbImageScratchArena = nullptr;
+THREAD_LOCAL Arena* StbImageArena = nullptr;
 #else
-extern THREAD_LOCAL Arena* StbImageScratchArena;
+extern THREAD_LOCAL Arena* StbImageArena;
 #endif
 
 #if PIG_CORE_IMPLEMENTATION
 static void* StbImageMalloc(size_t numBytes)
 {
-	NotNull(StbImageScratchArena);
-	return AllocMem(StbImageScratchArena, (uxx)numBytes);
+	if (StbImageArena != nullptr)
+	{
+		return AllocMem(StbImageArena, (uxx)numBytes);
+	}
+	else { return MyMalloc(numBytes); }
 }
 static void* StbImageRealloc(void* allocPntr, size_t oldNumBytes, size_t newNumBytes)
 {
-	NotNull(StbImageScratchArena);
-	if (allocPntr == nullptr)
+	if (StbImageArena != nullptr)
 	{
-		return AllocMem(StbImageScratchArena, (uxx)newNumBytes);
+		if (allocPntr == nullptr)
+		{
+			return AllocMem(StbImageArena, (uxx)newNumBytes);
+		}
+		else
+		{
+			return ReallocMem(StbImageArena, allocPntr, (uxx)oldNumBytes, (uxx)newNumBytes);
+		}
 	}
-	else
-	{
-		return ReallocMem(StbImageScratchArena, allocPntr, (uxx)oldNumBytes, (uxx)newNumBytes);
-	}
+	else { return MyRealloc(allocPntr, newNumBytes); }
 }
 static void StbImageFree(void* allocPntr)
 {
-	NotNull(StbImageScratchArena);
-	UNUSED(allocPntr);
-	//NOTE: We don't need to call FreeMem since we are allocating from a Stack type arena (the scratch arenas)
+	if (StbImageArena != nullptr)
+	{
+		if (CanArenaFree(StbImageArena))
+		{
+			bool arenaAllowedFreeWithoutSize = IsFlagSet(StbImageArena->flags, ArenaFlag_AllowFreeWithoutSize);
+			FlagUnset(StbImageArena->flags, ArenaFlag_AllowFreeWithoutSize);
+			FreeMem(StbImageArena, allocPntr, 0);
+			FlagSetTo(StbImageArena->flags, ArenaFlag_AllowFreeWithoutSize, arenaAllowedFreeWithoutSize);
+		}
+	}
+	else { MyFree(allocPntr); }
 }
 #endif //PIG_CORE_IMPLEMENTATION
 

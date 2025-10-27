@@ -9,6 +9,7 @@ Date:   10\15\2025
 
 #include "base/base_defines_check.h"
 #include "misc/misc_stb_image_include.h"
+#include "misc/misc_stb_image_write_include.h"
 
 #if BUILD_WITH_FREETYPE
 
@@ -71,6 +72,8 @@ Date:   10\15\2025
 // +--------------------------------------------------------------+
 // |                      Pluto SVG Include                       |
 // +--------------------------------------------------------------+
+#if 0
+
 #define PLUTOVG_BUILD_STATIC
 #define PLUTOSVG_BUILD_STATIC
 
@@ -119,6 +122,8 @@ Date:   10\15\2025
 #endif
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //TODO: Remove me!
 
 #endif //BUILD_WITH_FREETYPE
 
