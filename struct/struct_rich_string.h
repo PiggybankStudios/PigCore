@@ -40,9 +40,10 @@ enum FontStyleFlag
 	FontStyleFlag_Strikethrough  = 0x10,
 	FontStyleFlag_Outline        = 0x20,
 	FontStyleFlag_Highlighted    = 0x40,
-	FontStyleFlag_All            = 0x7F,
+	FontStyleFlag_ColoredGlyphs  = 0x80,
+	FontStyleFlag_All            = 0xFF,
 	FontStyleFlag_FontFileFlags  = FontStyleFlag_Bold|FontStyleFlag_Italic, //These are flags that affect which font file we pull from for rasterization
-	FontStyleFlag_FontAtlasFlags = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_Inverted, //These are flags that affect which font atlas we use
+	FontStyleFlag_FontAtlasFlags = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_Inverted|FontStyleFlag_ColoredGlyphs, //These are flags that affect which font atlas we use
 };
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetFontStyleFlagStr(FontStyleFlag enumValue);
@@ -58,6 +59,7 @@ const char* GetFontStyleFlagStr(FontStyleFlag enumValue)
 		case FontStyleFlag_Strikethrough: return "Strikethrough";
 		case FontStyleFlag_Outline:       return "Outline";
 		case FontStyleFlag_Highlighted:   return "Highlighted";
+		case FontStyleFlag_ColoredGlyphs: return "ColoredGlyphs";
 		default: return UNKNOWN_STR;
 	}
 }

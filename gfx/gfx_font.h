@@ -40,7 +40,6 @@ Description:
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
 //TODO: We should make a new atlas if we can't fit a glyph into an existing matching active atlas
-//TODO: Add a codepath that allows for measuring glyphs without baking them!
 //TODO: Implement stb_truetype.h code path!
 //TODO: Why is the first active atlas never getting evicted when we are on the ABCDEFGHI test?
 //TODO: Colored glyph support
@@ -715,7 +714,10 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 						result = Result_NotFound;
 						break;
 					}
-					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, FT_LOAD_DEFAULT); //TODO: Use FT_LOAD_COLOR for colored emoji! Also check FT_HAS_COLOR(face)
+					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
+					//TODO: Should we check FT_HAS_COLOR?
+					if (IsFlagSet(fontFile->styleFlags | extraStyleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
 					if (loadGlyphError != 0)
 					{
 						PrintLine_E("Failed to load glyph for codepoint 0x%08X: %s", codepoint, loadGlyphError);
@@ -814,7 +816,10 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 					//TODO: Fill in a packRect using information from FreeType about a particular codepoint
 					FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
 					Assert(glyphIndex != 0);
-					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, FT_LOAD_DEFAULT); //TODO: Use FT_LOAD_COLOR for colored emoji! Also check FT_HAS_COLOR(face)
+					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
+					//TODO: Should we check FT_HAS_COLOR?
+					if (IsFlagSet(newAtlas->styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
 					Assert(loadGlyphError == 0);
 					NotNull(fontFile->freeTypeFace->glyph);
 					FT_Error renderGlyphError = FT_Render_Glyph(fontFile->freeTypeFace->glyph, FT_RENDER_MODE_NORMAL);
@@ -1574,7 +1579,10 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	Assert(setCharSizeError == 0);
 	FT_UInt fontFileGlyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
 	Assert(fontFileGlyphIndex != 0);
-	FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, FT_LOAD_DEFAULT); //TODO: Use FT_LOAD_COLOR for colored emoji! Also check FT_HAS_COLOR(face)
+	FT_Int32 loadFlags = FT_LOAD_DEFAULT;
+	//TODO: Should we check FT_HAS_COLOR?
+	if (IsFlagSet(activeAtlas->styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+	FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, loadFlags);
 	Assert(loadGlyphError == 0);
 	v2i glyphSize = NewV2i(
 		TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width),
@@ -1863,7 +1871,10 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 		Assert(setCharSizeError == 0);
-		FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, FT_LOAD_DEFAULT);
+		FT_Int32 loadFlags = FT_LOAD_DEFAULT;
+		//TODO: Should we check FT_HAS_COLOR?
+		if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+		FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, loadFlags);
 		Assert(loadGlyphError == 0);
 		ClearPointer(metricsOut);
 		metricsOut->glyphSize = NewV2i(
@@ -1996,7 +2007,10 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 					FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 					FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 					Assert(setCharSizeError == 0);
-					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, FT_LOAD_DEFAULT);
+					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
+					//TODO: Should we check FT_HAS_COLOR?
+					if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, loadFlags);
 					if (loadGlyphError == 0)
 					{
 						sourceFontFile = fontFile;

@@ -432,7 +432,8 @@ void AppInit(void)
 		// Result attachResult8 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult8 == Result_Success);
 		Result attachResult9 = TryAttachLocalFontFile(&testFont, StrLit("NotoSansSymbols-Regular.ttf"), FontStyleFlag_None); Assert(attachResult9 == Result_Success);
 		// Result attachResult10 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult10 == Result_Success);
-		Result attachResult11 = TryAttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None); Assert(attachResult11 == Result_Success);
+		// Result attachResult11 = TryAttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None); Assert(attachResult11 == Result_Success);
+		Result attachResult11 = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult11 == Result_Success);
 	}
 	else
 	{
@@ -905,7 +906,7 @@ bool AppFrame(void)
 				}
 				BindFont(&testFont);
 				DrawWrappedRichTextWithFont(
-					&testFont, 18*textScale, FontStyleFlag_None,
+					&testFont, 18*textScale, FontStyleFlag_ColoredGlyphs,
 					displayStrRich,
 					textPos,
 					wrapWidth,
