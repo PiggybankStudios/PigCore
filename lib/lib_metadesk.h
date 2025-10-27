@@ -1,14 +1,14 @@
 /*
-File:   parse_metadesk_include.h
+File:   lib_metadesk.h
 Author: Taylor Robbins
 Date:   03\31\2025
 */
 
-#ifndef _PARSE_METADESK_INCLUDE_H
-#define _PARSE_METADESK_INCLUDE_H
+#ifndef _LIB_METADESK_H
+#define _LIB_METADESK_H
 
-#include "base/base_compiler_check.h"
 #include "base/base_defines_check.h"
+#include "base/base_compiler_check.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
 #include "std/std_memset.h"
@@ -64,6 +64,7 @@ typedef r64 MD_f64;
 #if COMPILER_IS_MSVC
 #pragma warning(push)
 #pragma warning(disable: 5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#pragma warning(disable: 5287) //operands are different enum types '<unnamed-enum-MD_StringMatchFlag_CaseInsensitive>' and '<unnamed-enum-MD_MatchFlag_FindLast>'; use an explicit cast to silence this warning
 #endif
 #if COMPILER_IS_CLANG
 #pragma clang diagnostic push
@@ -141,4 +142,4 @@ void MdMemRelease(void* memoryPntr, MD_u64 numBytes)
 
 #endif //BUILD_WITH_METADESK
 
-#endif //  _PARSE_METADESK_INCLUDE_H
+#endif //  _LIB_METADESK_H

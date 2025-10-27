@@ -1,0 +1,2 @@
+# \lib Folder
+This folder contains header files that act as the interface for including a library from the third_party folder. Many of these libraries are shipped as single-header `#include` libraries, so the act of including one of these lib files includes either the declarations or the implementations of the library functions (depending on `PIG_CORE_IMPLEMENTATION`)

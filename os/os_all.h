@@ -23,7 +23,7 @@ Description:
 #include "os/os_error.h" //required by os_virtual_mem.h and os_file.h
 #include "os/os_virtual_mem.h"
 
-#include "misc/misc_profiling_tracy_include.h" //required by os_threading.h and os_http.h
+#include "lib/lib_tracy.h" //required by os_threading.h and os_http.h
 
 #include "os/os_threading.h" //required by os_http.h
 

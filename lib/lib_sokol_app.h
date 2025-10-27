@@ -1,5 +1,5 @@
 /*
-File:   misc_sokol_app_include.h
+File:   lib_sokol_app.h
 Author: Taylor Robbins
 Date:   02\03\2025
 Description:
@@ -8,8 +8,8 @@ Description:
 	** for the HEADER ONLY version of sokol_app.h (i.e. we can only use types, not function calls)
 */
 
-#ifndef _MISC_SOKOL_APP_INCLUDE_H
-#define _MISC_SOKOL_APP_INCLUDE_H
+#ifndef _LIB_SOKOL_APP_H
+#define _LIB_SOKOL_APP_H
 
 #include "build_config.h"
 #include "base/base_defines_check.h"
@@ -49,4 +49,4 @@ Description:
 
 #endif //BUILD_WITH_SOKOL_APP
 
-#endif //  _MISC_SOKOL_APP_INCLUDE_H
+#endif //  _LIB_SOKOL_APP_H

@@ -19,8 +19,8 @@ Description:
 #include "misc/misc_result.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_image_data.h"
-#include "misc/misc_profiling_tracy_include.h"
-#include "misc/misc_stb_image_include.h"
+#include "lib/lib_tracy.h"
+#include "lib/lib_stb_image.h"
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

@@ -1,11 +1,11 @@
 /*
-File:   misc_profiling_tracy_include.h
+File:   lib_tracy.h
 Author: Taylor Robbins
 Date:   07\18\2025
 */
 
-#ifndef _MISC_PROFILING_TRACY_INCLUDE_H
-#define _MISC_PROFILING_TRACY_INCLUDE_H
+#ifndef _LIB_TRACY_H
+#define _LIB_TRACY_H
 
 #include "base/base_defines_check.h"
 
@@ -19,4 +19,4 @@ Date:   07\18\2025
 
 #include "third_party/tracy/tracy/TracyC.h"
 
-#endif //  _MISC_PROFILING_TRACY_INCLUDE_H
+#endif //  _LIB_TRACY_H

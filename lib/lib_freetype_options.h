@@ -1,5 +1,5 @@
 /*
-File:   misc_freetype_options.h
+File:   lib_freetype_options.h
 Author: Taylor Robbins
 Date:   10\15\2025
 Description:
@@ -7,8 +7,8 @@ Description:
 	** This file is #included by FreeType source files through FT_CONFIG_OPTIONS_H which is defined in misc_freetype_include.h
 */
 
-#ifndef _MISC_FREETYPE_OPTIONS_H
-#define _MISC_FREETYPE_OPTIONS_H
+#ifndef _LIB_FREETYPE_OPTIONS_H
+#define _LIB_FREETYPE_OPTIONS_H
 
 #if !BUILD_WITH_FREETYPE
 #error misc_freetype_modules.h should not be #included when we aren't building FreeType source!
@@ -198,4 +198,4 @@ Description:
 #error "Invalid CFF darkening parameters!"
 #endif
 
-#endif //  _MISC_FREETYPE_OPTIONS_H
+#endif //  _LIB_FREETYPE_OPTIONS_H

@@ -1,5 +1,5 @@
 /*
-File:   misc_freetype_modules.h
+File:   lib_freetype_modules.h
 Author: Taylor Robbins
 Date:   10\15\2025
 Description:
@@ -10,7 +10,7 @@ Description:
 //NOTE: No include guard here since this file can be #included multiple times
 
 #if !BUILD_WITH_FREETYPE
-#error misc_freetype_modules.h should not be #included when we aren't building FreeType source!
+#error lib_freetype_modules.h should not be #included when we aren't building FreeType source!
 #endif
 
 // FT_USE_MODULE( FT_Module_Class, autofit_module_class )

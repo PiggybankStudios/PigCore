@@ -21,7 +21,7 @@ Date:   02\03\2025
 
 #include "input/input_btn_state.h"
 
-#include "misc/misc_sokol_app_include.h" //required by input_sokol.h
+#include "lib/lib_sokol_app.h" //required by input_sokol.h
 
 #include "input/input_sokol.h"
 

@@ -46,8 +46,7 @@ Description:
 #include "struct/struct_sparse_sets.h"
 
 #include "std/std_trig.h" //Needed by many of the files below
-
-#include "struct/struct_handmade_math_include.h" //Needed by struct_vectors.h, struct_quaternion.h, and struct_matrices.h
+#include "lib/lib_handmade_math.h" //Needed by struct_vectors.h, struct_quaternion.h, and struct_matrices.h
 
 #include "struct/struct_vectors.h"
 #include "struct/struct_quaternion.h"

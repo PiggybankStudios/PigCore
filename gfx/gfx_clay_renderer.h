@@ -20,7 +20,7 @@ Description:
 #include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_system.h"
 #include "ui/ui_clay.h"
-#include "misc/misc_profiling_tracy_include.h"
+#include "lib/lib_tracy.h"
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
 

@@ -18,7 +18,7 @@ Description:
 #include "std/std_malloc.h"
 #include "std/std_memset.h"
 #include "os/os_virtual_mem.h"
-#include "misc/misc_profiling_tracy_include.h"
+#include "lib/lib_tracy.h"
 
 #ifndef MEM_ARENA_DEBUG_NAMES
 #define MEM_ARENA_DEBUG_NAMES DEBUG_BUILD

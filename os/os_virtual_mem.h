@@ -16,7 +16,7 @@ Description:
 #include "base/base_assert.h"
 #include "std/std_includes.h"
 #include "os/os_error.h"
-#include "misc/misc_profiling_tracy_include.h"
+#include "lib/lib_tracy.h"
 
 #if (TARGET_IS_WASM && !USING_CUSTOM_STDLIB)
 #define WASM_MEMORY_PAGE_SIZE      (64*1024ULL) //64kB or 65,536b

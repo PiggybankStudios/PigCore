@@ -16,8 +16,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "struct/struct_vectors.h"
-
-#include "struct/struct_handmade_math_include.h"
+#include "lib/lib_handmade_math.h"
 
 // +--------------------------------------------------------------+
 // |                           Typedefs                           |
@@ -295,7 +294,7 @@ PEXPI mat3 MakeScaleMat3(v3 vec3)
 
 #endif //  _STRUCT_MATRICES_H
 
-#if defined(_MISC_SOKOL_GFX_INCLUDE_H) && defined(_STRUCT_MATRICES_H)
+#if defined(_LIB_SOKOL_GFX_H) && defined(_STRUCT_MATRICES_H)
 #include "cross/cross_sokol_gfx_and_matrices.h"
 #endif
 

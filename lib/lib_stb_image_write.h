@@ -1,11 +1,11 @@
 /*
-File:   misc_stb_image_write_include.h
+File:   lib_stb_image_write.h
 Author: Taylor Robbins
 Date:   10\27\2025
 */
 
-#ifndef _MISC_STB_IMAGE_WRITE_INCLUDE_H
-#define _MISC_STB_IMAGE_WRITE_INCLUDE_H
+#ifndef _LIB_STB_IMAGE_WRITE_H
+#define _LIB_STB_IMAGE_WRITE_H
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
@@ -65,4 +65,4 @@ static void StbImageWriteFree(void* allocPntr)
 #endif
 #include "third_party/stb/stb_image_write.h"
 
-#endif //  _MISC_STB_IMAGE_WRITE_INCLUDE_H
+#endif //  _LIB_STB_IMAGE_WRITE_H

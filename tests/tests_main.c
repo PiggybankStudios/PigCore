@@ -35,6 +35,7 @@ Description:
 #include "base/base_all.h"
 #include "std/std_all.h"
 #include "os/os_all.h"
+#include "lib/lib_all.h"
 #include "mem/mem_all.h"
 #include "struct/struct_all.h"
 #include "misc/misc_all.h"

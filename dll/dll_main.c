@@ -21,6 +21,9 @@ Description:
 #ifndef PIG_CORE_DLL_INCLUDE_OS
 #define PIG_CORE_DLL_INCLUDE_OS 1
 #endif
+#ifndef PIG_CORE_DLL_INCLUDE_LIB
+#define PIG_CORE_DLL_INCLUDE_LIB 1
+#endif
 #ifndef PIG_CORE_DLL_INCLUDE_MISC
 #define PIG_CORE_DLL_INCLUDE_MISC 1
 #endif
@@ -79,6 +82,10 @@ Description:
 
 #if PIG_CORE_DLL_INCLUDE_OS
 #include "os/os_all.h"
+#endif
+
+#if PIG_CORE_DLL_INCLUDE_LIB
+#include "lib/lib_all.h"
 #endif
 
 #if PIG_CORE_DLL_INCLUDE_MISC

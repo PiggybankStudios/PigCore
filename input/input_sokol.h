@@ -20,7 +20,7 @@ Description:
 #include "input/input_mouse_btns.h"
 #include "input/input_controller_btns.h"
 #include "input/input_touch.h"
-#include "misc/misc_sokol_app_include.h"
+#include "lib/lib_sokol_app.h"
 
 #if BUILD_WITH_SOKOL_APP
 

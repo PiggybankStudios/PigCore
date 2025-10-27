@@ -10,7 +10,7 @@ Date:   08\15\2025
 #if BUILD_WITH_SOKOL_GFX
 
 #include "base/base_defines_check.h"
-#include "misc/misc_sokol_gfx_include.h"
+#include "lib/lib_sokol_gfx.h"
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

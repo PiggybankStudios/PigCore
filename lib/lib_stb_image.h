@@ -1,16 +1,17 @@
 /*
-File:   misc_stb_image_include.h
+File:   lib_stb_image.h
 Author: Taylor Robbins
 Date:   10\27\2025
 */
 
-#ifndef _MISC_STB_IMAGE_INCLUDE_H
-#define _MISC_STB_IMAGE_INCLUDE_H
+#ifndef _LIB_STB_IMAGE_H
+#define _LIB_STB_IMAGE_H
 
 #include "base/base_defines_check.h"
 #include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
+#include "base/base_assert.h"
 #include "std/std_malloc.h"
 #include "mem/mem_arena.h"
 
@@ -98,4 +99,4 @@ static void StbImageFree(void* allocPntr)
 
 #endif //PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
 
-#endif //  _MISC_STB_IMAGE_INCLUDE_H
+#endif //  _LIB_STB_IMAGE_H

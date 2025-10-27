@@ -15,11 +15,10 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
-#include "std/std_basic_math.h" //Needed for SqrtR32
-#include "std/std_math_ex.h" //Needed for AreSimilarR32
-#include "std/std_trig.h" //Needed for SinR32, CosR32, and AcosR32
-
-#include "struct/struct_handmade_math_include.h"
+#include "std/std_basic_math.h"
+#include "std/std_math_ex.h"
+#include "std/std_trig.h"
+#include "lib/lib_handmade_math.h"
 
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |

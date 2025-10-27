@@ -21,7 +21,7 @@ Date:   01\19\2025
 
 #include "struct/struct_string.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_pipeline.h, gfx_font.h and gfx_font_flow.h
 #include "misc/misc_result.h" //required by gfx_shader.h, gfx_vert_buffer.h, gfx_image_loading.h and gfx_pipeline.h
-#include "misc/misc_sokol_gfx_include.h" //required by gfx_error.h, gfx_shader.h, gfx_vert_buffer.h, gfx_pipeline.h and gfx_system.h
+#include "lib/lib_sokol_gfx.h" //required by gfx_error.h, gfx_shader.h, gfx_vert_buffer.h, gfx_pipeline.h and gfx_system.h
 
 #include "gfx/gfx_error.h"
 #include "gfx/gfx_vert_buffer.h"
@@ -36,7 +36,7 @@ Date:   01\19\2025
 #include "struct/struct_var_array.h" //required by gfx_font.h, gfx_system.h and gfx_clay_renderer.h
 #include "std/std_basic_math.h" //required by gfx_font.h
 #include "std/std_memset.h" //required by gfx_font.h
-#include "misc/misc_freetype_include.h" //required by gfx_font.h
+#include "lib/lib_freetype.h" //required by gfx_font.h
 #include "base/base_unicode.h" //required by gfx_font.h and gfx_font_flow.h
 
 #include "gfx/gfx_font.h"

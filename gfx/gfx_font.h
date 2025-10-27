@@ -66,7 +66,8 @@ Description:
 #include "gfx/gfx_texture.h"
 #include "base/base_unicode.h"
 #include "base/base_debug_output.h"
-#include "misc/misc_freetype_include.h"
+#include "lib/lib_freetype.h"
+#include "lib/lib_tracy.h"
 
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
 #if BUILD_WITH_SOKOL_GFX

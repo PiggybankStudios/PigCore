@@ -14,7 +14,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
 #include "base/base_macros.h"
-#include "misc/misc_profiling_tracy_include.h"
+#include "lib/lib_tracy.h"
 
 #if TARGET_HAS_THREADING
 

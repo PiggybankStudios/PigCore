@@ -1,5 +1,5 @@
 /*
-File:   misc_sokol_gfx_include.h
+File:   lib_sokol_gfx.h
 Author: Taylor Robbins
 Date:   01\28\2025
 Description:
@@ -7,8 +7,8 @@ Description:
 	** something like gfx_shader.h then this file serves as the include site
 */
 
-#ifndef _MISC_SOKOL_GFX_INCLUDE_H
-#define _MISC_SOKOL_GFX_INCLUDE_H
+#ifndef _LIB_SOKOL_GFX_H
+#define _LIB_SOKOL_GFX_H
 
 #include "build_config.h"
 #include "base/base_defines_check.h"
@@ -60,8 +60,8 @@ Description:
 
 #endif //BUILD_WITH_SOKOL_GFX
 
-#endif //  _MISC_SOKOL_GFX_INCLUDE_H
+#endif //  _LIB_SOKOL_GFX_H
 
-#if defined(_MISC_SOKOL_GFX_INCLUDE_H) && defined(_STRUCT_MATRICES_H)
+#if defined(_LIB_SOKOL_GFX_H) && defined(_STRUCT_MATRICES_H)
 #include "cross/cross_sokol_gfx_and_matrices.h"
 #endif

@@ -23,7 +23,7 @@ Description:
 #include "struct/struct_var_array.h"
 #include "misc/misc_result.h"
 #include "gfx/gfx_vertices.h"
-#include "misc/misc_sokol_gfx_include.h"
+#include "lib/lib_sokol_gfx.h"
 #include "gfx/gfx_vert_buffer.h"
 #include "gfx/gfx_texture.h"
 #include "gfx/gfx_shader.h"

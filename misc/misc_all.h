@@ -10,8 +10,6 @@ Date:   01\05\2025
 #include "base/base_defines_check.h" //required by all the other files
 #include "base/base_macros.h" //required by most other files
 
-#include "misc/misc_profiling_tracy_include.h"
-#include "misc/misc_freetype_include.h"
 #include "misc/misc_result.h"
 
 #include "base/base_typedefs.h" //required by everyone below
@@ -44,8 +42,6 @@ Date:   01\05\2025
 #include "misc/misc_two_pass.h"
 #include "misc/misc_file_watch.h"
 #include "misc/misc_sorting.h"
-#include "misc/misc_stb_image_include.h"
-#include "misc/misc_stb_image_write_include.h"
 
 #include "struct/struct_vectors.h" //required by misc_noise.h, misc_triangulation.h and misc_poly_simplify.h
 

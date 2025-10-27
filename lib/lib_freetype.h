@@ -1,21 +1,21 @@
 /*
-File:   misc_freetype_include.h
+File:   lib_freetype.h
 Author: Taylor Robbins
 Date:   10\15\2025
 */
 
-#ifndef _MISC_FREETYPE_INCLUDE_H
-#define _MISC_FREETYPE_INCLUDE_H
+#ifndef _LIB_FREETYPE_H
+#define _LIB_FREETYPE_H
 
 #include "base/base_defines_check.h"
-#include "misc/misc_stb_image_include.h"
-#include "misc/misc_stb_image_write_include.h"
+#include "lib/lib_stb_image.h"
+#include "lib/lib_stb_image_write.h"
 
 #if BUILD_WITH_FREETYPE
 
 #define FT2_BUILD_LIBRARY
-#define FT_CONFIG_MODULES_H "misc/misc_freetype_modules.h"
-#define FT_CONFIG_OPTIONS_H "misc/misc_freetype_options.h"
+#define FT_CONFIG_MODULES_H "lib/lib_freetype_modules.h"
+#define FT_CONFIG_OPTIONS_H "lib/lib_freetype_options.h"
 #define MINIZ_NO_ZLIB_COMPATIBLE_NAMES
 
 #if !PIG_CORE_IMPLEMENTATION
@@ -127,4 +127,4 @@ Date:   10\15\2025
 
 #endif //BUILD_WITH_FREETYPE
 
-#endif //  _MISC_FREETYPE_INCLUDE_H
+#endif //  _LIB_FREETYPE_H
