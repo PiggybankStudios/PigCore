@@ -8,7 +8,7 @@ Date:   01\05\2025
 #define _MISC_ALL_H
 
 #include "base/base_defines_check.h" //required by all the other files
-#include "base/base_macros.h" //required by misc_result.h and misc_random.h
+#include "base/base_macros.h" //required by most other files
 
 #include "misc/misc_profiling_tracy_include.h"
 #include "misc/misc_freetype_include.h"
@@ -36,7 +36,7 @@ Date:   01\05\2025
 
 #include "std/std_includes.h" //required by misc_printing.h
 #include "std/std_printf.h" //required by misc_printing.h and misc_parsing.h
-#include "mem/mem_arena.h" //required by misc_printing.h, misc_file_watch.h and misc_sorting.h
+#include "mem/mem_arena.h" //required by misc_printing.h, misc_file_watch.h, misc_sorting.h and misc_stb_image_include.h
 #include "os/os_file.h" //required by misc_file_watch.h
 
 #include "misc/misc_simple_parsers.h"
@@ -57,8 +57,9 @@ Date:   01\05\2025
 
 #include "misc/misc_parsing.h"
 
-#include "mem/mem_scratch.h" //required for misc_regex.h and misc_escaping.h
+#include "mem/mem_scratch.h" //required for misc_stb_image_include.h, misc_regex.h and misc_escaping.h
 
+#include "misc/misc_stb_image_include.h"
 #include "misc/misc_regex.h"
 #include "misc/misc_escaping.h"
 

@@ -8,6 +8,7 @@ Date:   10\15\2025
 #define _MISC_FREETYPE_INCLUDE_H
 
 #include "base/base_defines_check.h"
+#include "misc/misc_stb_image_include.h"
 
 #if BUILD_WITH_FREETYPE
 
@@ -20,7 +21,7 @@ Date:   10\15\2025
 
 #include <freetype/freetype.h>
 
-#else
+#else //PIG_CORE_IMPLEMENTATION
 
 #ifdef len
 #undef len
@@ -65,6 +66,59 @@ Date:   10\15\2025
 #define TO_I32_FROM_FT26(fixedPointValue) (i32)((fixedPointValue) >> 6)
 #define TO_R32_FROM_FT26(fixedPointValue) (r32)(((r32)(fixedPointValue)) / 64.0f)
 #define TO_R64_FROM_FT26(fixedPointValue) (r64)(((r64)(fixedPointValue)) / 64.0)
+
+
+// +--------------------------------------------------------------+
+// |                      Pluto SVG Include                       |
+// +--------------------------------------------------------------+
+#define PLUTOVG_BUILD_STATIC
+#define PLUTOSVG_BUILD_STATIC
+
+#include "plutovg.h"
+#include "plutosvg.h"
+#include "plutosvg-ft.h"
+
+#if PIG_CORE_IMPLEMENTATION
+
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable:4244) //'function': conversion from '__int64' to 'int', possible loss of data
+#pragma warning(disable:4267) //'function': conversion from 'size_t' to 'int', possible loss of data
+#pragma warning(disable:5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#pragma warning(disable:4018) //'>': signed/unsigned mismatch
+#pragma warning(disable:4459) //declaration of 'crc_table' hides global declaration
+#endif
+
+#undef ALIGN_SIZE //this is also defined by freetype\src\truetype\ttgxvar.c
+// #undef RAS_ARG //this is also defined by freetype\src\smooth\ftgrays.c
+// #undef RAS_ARG_ //this is also defined by freetype\src\smooth\ftgrays.c
+// #undef ONE_PIXEL //this is also defined by freetype\src\smooth\ftgrays.c
+
+// #undef STBI_ASSERT //TODO: Merge stb files from PlutoSVG
+// #undef STBI_MALLOC //TODO: Merge stb files from PlutoSVG
+// #undef STBI_REALLOC_SIZED //TODO: Merge stb files from PlutoSVG
+// #undef STBI_FREE //TODO: Merge stb files from PlutoSVG
+
+#include "plutovg-surface.c"
+#include "plutovg-rasterize.c"
+#include "plutovg-path.c"
+#include "plutovg-paint.c"
+#include "plutovg-matrix.c"
+// #include "plutovg-ft-stroker.c" //this is just a copy of FreeType's src\base\ftstroke.c
+// #include "plutovg-ft-raster.c" //this is just a copy of FreeType's src\smooth\ftgrays.c
+// #include "plutovg-ft-math.c" //this is just a copy of FreeType's src\base\fttrigon.c
+#include "plutovg-font.c"
+#include "plutovg-canvas.c"
+#include "plutovg-blend.c"
+
+#undef MAX_NAME //this is also defined by plutovg-paint.c
+#include "plutosvg.c"
+
+#if COMPILER_IS_MSVC
+#pragma warning(pop)
+#endif
+
+#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //BUILD_WITH_FREETYPE
 
