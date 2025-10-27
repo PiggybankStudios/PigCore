@@ -46,6 +46,7 @@ Date:   10\15\2025
 #include "third_party/freetype/src/smooth/smooth.c"
 #include "third_party/freetype/src/psnames/psnames.c"
 #include "third_party/freetype/src/gzip/ftgzip.c"
+#include "third_party/freetype/src/svg/svg.c"
 
 #if COMPILER_IS_MSVC
 #pragma warning(pop)

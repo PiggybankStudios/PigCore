@@ -32,7 +32,11 @@ void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_NAMED_TYPEDEF_IN_PARENTHESES);
 	AddArgInt(cl_CommonFlags, CL_ENABLE_WARNING, CL_WARNING_SWITCH_FALLTHROUGH);
 	AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]");
-	if (BUILD_WITH_FREETYPE) { AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/third_party/freetype/include"); }
+	if (BUILD_WITH_FREETYPE)
+	{
+		AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/third_party/freetype/include");
+		AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/third_party/plutosvg");
+	}
 	if (DEBUG_BUILD)
 	{
 		AddArg(cl_CommonFlags, CL_DEBUG_INFO);
@@ -77,7 +81,11 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 	AddArgNt(clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH);
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_SWITCH_MISSING_CASES);
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_FUNCTION);
-	if (BUILD_WITH_FREETYPE) { AddArgNt(clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/freetype/include"); }
+	if (BUILD_WITH_FREETYPE)
+	{
+		AddArgNt(clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/freetype/include");
+		AddArgNt(clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/plutosvg");
+	}
 	if (DEBUG_BUILD)
 	{
 		//We don't care about these warnings in debug builds, but we will solve them when we go to build in release mode because they probably indicate mistakes at that point

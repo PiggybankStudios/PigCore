@@ -335,3 +335,18 @@ This folder contains (or needs to be made to contain) copies of all third party 
 **Fixup Required:** Delete everything besides `kb_text_shape.h` and `LICENSE`.
 
 **Required For:** Glyph positioning in `gfx_font_flow.h`
+
+---
+
+## Pluto SVG v0.0.7
+**URL(s):** [Github](https://github.com/sammycage/plutosvg) [v0.0.7](https://github.com/sammycage/plutosvg/releases/tag/v0.0.7)
+
+**Folder Name:** `plutosvg`
+
+**Download Required:** No, all necassary files are included in the repository
+
+**Current Version:** v0.0.7 released on May 15th 2025
+
+**Fixup Required:** Populate submodules or download `plutovg` v1.3.1 manually from [here](https://github.com/sammycage/plutovg/releases/tag/v1.3.1). 
+
+**Required For:** When `BUILD_WITH_FREETYPE` and trying to render an SVG-based glyph from an OTF font file we use plutosvg

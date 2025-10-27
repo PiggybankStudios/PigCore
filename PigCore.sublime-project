@@ -195,6 +195,10 @@
 			"name": "kb",
 			"path": "third_party/kb_text_shape",
 		},
+		{
+			"name": "Pluto SVG",
+			"path": "third_party/plutosvg",
+		},
 	],
 	"settings":
 	{
