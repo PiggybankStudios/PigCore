@@ -20,6 +20,7 @@
 #define PLUTOVG_FT_RASTER_H
 
 // #include "plutovg-ft-types.h" //(Taylor)NOTE: All these types can be found in FreeType headers like fttypes.h, integer-types.h, etc.
+#include "freetype/ftimage.h" //(Taylor)NOTE: Added for FT_Outline
 
 /*************************************************************************/
 /*                                                                       */
@@ -54,12 +55,13 @@
 /*    the left edge of the glyph's bounding box.  If `xMin' is negative, */
 /*    the glyph extends to the left of the origin.                       */
 /*                                                                       */
-typedef struct  PVG_FT_BBox_
-{
-    PVG_FT_Pos  xMin, yMin;
-    PVG_FT_Pos  xMax, yMax;
+//(Taylor)NOTE: Disabled in favor of using FT_BBox
+// typedef struct  PVG_FT_BBox_
+// {
+//     PVG_FT_Pos  xMin, yMin;
+//     PVG_FT_Pos  xMax, yMax;
 
-} PVG_FT_BBox;
+// } PVG_FT_BBox;
 
 /*************************************************************************/
 /*                                                                       */
@@ -75,7 +77,7 @@ typedef struct  PVG_FT_BBox_
 /*                                                                       */
 /*    n_points   :: The number of points in the outline.                 */
 /*                                                                       */
-/*    points     :: A pointer to an array of `n_points' @PVG_FT_Vector    */
+/*    points     :: A pointer to an array of `n_points' @FT_Vector    */
 /*                  elements, giving the outline's point coordinates.    */
 /*                                                                       */
 /*    tags       :: A pointer to an array of `n_points' chars, giving    */
@@ -106,19 +108,20 @@ typedef struct  PVG_FT_BBox_
 /*                  and give hints to the scan-converter and hinter on   */
 /*                  how to convert/grid-fit it.  See @PVG_FT_OUTLINE_FLAGS.*/
 /*                                                                       */
-typedef struct  PVG_FT_Outline_
-{
-    int       n_contours;      /* number of contours in glyph        */
-    int       n_points;        /* number of points in the glyph      */
+//(Taylor)NOTE: Disabled in favor of using FT_Outline (FT_Outline does NOT have contours_flag, but that field also seems to be only ever set by the algorithm)
+// typedef struct  PVG_FT_Outline_
+// {
+//     int       n_contours;      /* number of contours in glyph        */
+//     int       n_points;        /* number of points in the glyph      */
 
-    PVG_FT_Vector*  points;          /* the outline's points               */
-    char*       tags;            /* the points flags                   */
-    int*      contours;        /* the contour end points             */
-    char*       contours_flag;   /* the contour open flags             */
+//     FT_Vector*  points;          /* the outline's points               */
+//     char*       tags;            /* the points flags                   */
+//     int*      contours;        /* the contour end points             */
+//     char*       contours_flag;   /* the contour open flags             */
 
-    int         flags;           /* outline masks                      */
+//     int         flags;           /* outline masks                      */
 
-} PVG_FT_Outline;
+// } PVG_FT_Outline;
 
 
 /*************************************************************************/
@@ -154,7 +157,7 @@ typedef struct  PVG_FT_Outline_
 /*                                                                       */
 /*                                                                       */
 /*    There exists a second mechanism to pass the drop-out mode to the   */
-/*    B/W rasterizer; see the `tags' field in @PVG_FT_Outline.               */
+/*    B/W rasterizer; see the `tags' field in @FT_Outline.               */
 /*                                                                       */
 /*    Please refer to the description of the `SCANTYPE' instruction in   */
 /*    the OpenType specification (in file `ttinst1.doc') how simple      */
@@ -192,8 +195,8 @@ typedef struct  PVG_FT_Outline_
 /* <Return>                                                              */
 /*    FreeType error code.  0~means success.                             */
 /*                                                                       */
-PVG_FT_Error
-PVG_FT_Outline_Check( PVG_FT_Outline*  outline );
+FT_Error
+PVG_FT_Outline_Check( FT_Outline*  outline );
 
 
 /*************************************************************************/
@@ -223,8 +226,8 @@ PVG_FT_Outline_Check( PVG_FT_Outline*  outline );
 /*    See @PVG_FT_Glyph_Get_CBox for a discussion of tricky fonts.           */
 /*                                                                       */
 void
-PVG_FT_Outline_Get_CBox( const PVG_FT_Outline*  outline,
-    PVG_FT_BBox           *acbox );
+PVG_FT_Outline_Get_CBox( const FT_Outline*  outline,
+    FT_BBox           *acbox );
 
 /*************************************************************************/
 /*                                                                       */
@@ -259,7 +262,7 @@ typedef struct  PVG_FT_Span_
     int y;
     unsigned char coverage;
 
-} PVG_FT_Span;
+} PVG_FT_Span; //(Taylor)NOTE: This is similar to FT_Span in FreeType, but it has an "int y;" field
 
 
 /*************************************************************************/
@@ -409,7 +412,7 @@ typedef struct  PVG_FT_Raster_Params_
     int                     flags;
     PVG_FT_SpanFunc          gray_spans;
     void*                   user;
-    PVG_FT_BBox              clip_box;
+    FT_BBox              clip_box;
 
 } PVG_FT_Raster_Params;
 

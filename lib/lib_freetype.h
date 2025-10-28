@@ -43,6 +43,7 @@ Date:   10\15\2025
 #include "third_party/freetype/src/base/ftbbox.c"
 #include "third_party/freetype/src/base/ftglyph.c"
 #include "third_party/freetype/src/base/ftbitmap.c"
+#include "third_party/freetype/src/base/ftstroke.c" //used by plutosvg
 #include "third_party/freetype/src/sfnt/sfnt.c"
 #include "third_party/freetype/src/truetype/truetype.c"
 #include "third_party/freetype/src/smooth/smooth.c"
@@ -106,8 +107,8 @@ Date:   10\15\2025
 #include "plutovg-path.c"
 #include "plutovg-paint.c"
 #include "plutovg-matrix.c"
+#include "plutovg-ft-raster.c"
 // #include "plutovg-ft-stroker.c" //this is just a copy of FreeType's src\base\ftstroke.c
-// #include "plutovg-ft-raster.c" //this is just a copy of FreeType's src\smooth\ftgrays.c
 // #include "plutovg-ft-math.c" //this is just a copy of FreeType's src\base\fttrigon.c
 #include "plutovg-font.c"
 #include "plutovg-canvas.c"

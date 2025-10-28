@@ -1,13 +1,12 @@
 #include "plutovg-private.h"
 #include "plutovg-utils.h"
 
-// #include "plutovg-ft-raster.h" //(Taylor)NOTE: Disabled because we are building with FreeType source as a unity build
-// #include "plutovg-ft-stroker.h" //(Taylor)NOTE: Disabled because we are building with FreeType source as a unity build
-#include "freetype/ftstroke.h" //(Taylor)NOTE: This is the replacement for plutovg-ft-stroker.h
+#include "plutovg-ft-raster.h"
+
+// #include "plutovg-ft-stroker.h" //(Taylor)NOTE: Swapped for freetype/ftstroke.h since this is getting compiled in a unity build with FreeType and this mostly is a subset of functionality in FreeType's ftstroke.h
+#include "freetype/ftstroke.h"
 
 #include <limits.h>
-
-#define PVG_FT_MINIMUM_POOL_SIZE 8192 //(Taylor)NOTE: Copied from plutovg-ft-raster.c, needed by PVG_FT_Raster_Render implementation below
 
 void plutovg_span_buffer_init(plutovg_span_buffer_t* span_buffer)
 {
@@ -167,13 +166,15 @@ void plutovg_span_buffer_intersect(plutovg_span_buffer_t* span_buffer, const plu
     }
 }
 
-// #define ALIGN_SIZE(size) (((size) + 7ul) & ~7ul) //(Taylor)NOTE: Disabled because ALIGN_SIZE macro is already defined by freetype\src\truetype\ttgxvar.c
+#ifndef PVG_ALIGN_SIZE
+#define PVG_ALIGN_SIZE(size) (((size) + 7ul) & ~7ul) //(Taylor)NOTE: Added PVG_ prefix to avoid conflict with ALIGN_SIZE macro in freetype\src\truetype\ttgxvar.c
+#endif
 static FT_Outline* ft_outline_create(int points, int contours)
 {
-    size_t points_size = ALIGN_SIZE((points + contours) * sizeof(FT_Vector));
-    size_t tags_size = ALIGN_SIZE((points + contours) * sizeof(char));
-    size_t contours_size = ALIGN_SIZE(contours * sizeof(int));
-    // size_t contours_flag_size = ALIGN_SIZE(contours * sizeof(char));
+    size_t points_size = PVG_ALIGN_SIZE((points + contours) * sizeof(FT_Vector));
+    size_t tags_size = PVG_ALIGN_SIZE((points + contours) * sizeof(char));
+    size_t contours_size = PVG_ALIGN_SIZE(contours * sizeof(int));
+    // size_t contours_flag_size = PVG_ALIGN_SIZE(contours * sizeof(char));
     FT_Outline* outline = malloc(points_size + tags_size + contours_size + /*contours_flag_size +*/ sizeof(FT_Outline));
 
     FT_Byte* outline_data = (FT_Byte*)(outline + 1);
@@ -192,11 +193,11 @@ static void ft_outline_destroy(FT_Outline* outline)
     free(outline);
 }
 
-#define FT_COORD(x) (FT_Pos)(roundf(x * 64))
+#define PVG_FT_COORD(x) (FT_Pos)(roundf(x * 64)) //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
 static void ft_outline_move_to(FT_Outline* ft, float x, float y)
 {
-    ft->points[ft->n_points].x = FT_COORD(x);
-    ft->points[ft->n_points].y = FT_COORD(y);
+    ft->points[ft->n_points].x = PVG_FT_COORD(x);
+    ft->points[ft->n_points].y = PVG_FT_COORD(y);
     ft->tags[ft->n_points] = FT_CURVE_TAG_ON;
     if(ft->n_points) {
         ft->contours[ft->n_contours] = ft->n_points - 1;
@@ -209,26 +210,26 @@ static void ft_outline_move_to(FT_Outline* ft, float x, float y)
 
 static void ft_outline_line_to(FT_Outline* ft, float x, float y)
 {
-    ft->points[ft->n_points].x = FT_COORD(x);
-    ft->points[ft->n_points].y = FT_COORD(y);
+    ft->points[ft->n_points].x = PVG_FT_COORD(x);
+    ft->points[ft->n_points].y = PVG_FT_COORD(y);
     ft->tags[ft->n_points] = FT_CURVE_TAG_ON;
     ft->n_points++;
 }
 
 static void ft_outline_cubic_to(FT_Outline* ft, float x1, float y1, float x2, float y2, float x3, float y3)
 {
-    ft->points[ft->n_points].x = FT_COORD(x1);
-    ft->points[ft->n_points].y = FT_COORD(y1);
+    ft->points[ft->n_points].x = PVG_FT_COORD(x1);
+    ft->points[ft->n_points].y = PVG_FT_COORD(y1);
     ft->tags[ft->n_points] = FT_CURVE_TAG_CUBIC;
     ft->n_points++;
 
-    ft->points[ft->n_points].x = FT_COORD(x2);
-    ft->points[ft->n_points].y = FT_COORD(y2);
+    ft->points[ft->n_points].x = PVG_FT_COORD(x2);
+    ft->points[ft->n_points].y = PVG_FT_COORD(y2);
     ft->tags[ft->n_points] = FT_CURVE_TAG_CUBIC;
     ft->n_points++;
 
-    ft->points[ft->n_points].x = FT_COORD(x3);
-    ft->points[ft->n_points].y = FT_COORD(y3);
+    ft->points[ft->n_points].x = PVG_FT_COORD(x3);
+    ft->points[ft->n_points].y = PVG_FT_COORD(y3);
     ft->tags[ft->n_points] = FT_CURVE_TAG_ON;
     ft->n_points++;
 }
@@ -357,30 +358,10 @@ static FT_Outline* ft_outline_convert_stroke(const plutovg_path_t* path, const p
     return stroke_outline;
 }
 
-static void spans_generation_callback(int y, int count, const FT_Span* spans, void* user) //(Taylor)NOTE: Added first argument "int y"
+static void spans_generation_callback(int count, const PVG_FT_Span* spans, void* user)
 {
     plutovg_span_buffer_t* span_buffer = (plutovg_span_buffer_t*)(user);
     plutovg_array_append_data(span_buffer->spans, spans, count);
-}
-
-void PVG_FT_Raster_Render(const FT_Raster_Params *params) //(Taylor)NOTE: Copied from plutovg-ft-raster.c, this function doesn't exist in freetype\src\smooth\ftgrays.c
-{
-    char stack[PVG_FT_MINIMUM_POOL_SIZE];
-    size_t length = PVG_FT_MINIMUM_POOL_SIZE;
-
-    gray_TWorker worker; //(Taylor)NOTE: Changed to gray_TWorker from TWorker
-    worker.skip_spans = 0;
-    int rendered_spans = 0;
-    int error = gray_raster_render(&worker, stack, length, params);
-    while(error == ErrRaster_OutOfMemory) {
-        if(worker.skip_spans < 0)
-            rendered_spans += -worker.skip_spans;
-        worker.skip_spans = rendered_spans;
-        length *= 2;
-        void* heap = malloc(length);
-        error = gray_raster_render(&worker, heap, length, params);
-        free(heap);
-    }
 }
 
 void plutovg_rasterize(plutovg_span_buffer_t* span_buffer, const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_rect_t* clip_rect, const plutovg_stroke_data_t* stroke_data, plutovg_fill_rule_t winding)
@@ -399,7 +380,7 @@ void plutovg_rasterize(plutovg_span_buffer_t* span_buffer, const plutovg_path_t*
         }
     }
 
-    FT_Raster_Params params;
+    PVG_FT_Raster_Params params;
     params.flags = FT_RASTER_FLAG_DIRECT | FT_RASTER_FLAG_AA;
     params.gray_spans = spans_generation_callback;
     params.user = span_buffer;

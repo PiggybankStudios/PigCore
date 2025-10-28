@@ -262,13 +262,15 @@ static heap_t* heap_create(void)
     return heap;
 }
 
-#define CHUNK_SIZE 4096
-#define ALIGN_SIZE(size) (((size) + 7ul) & ~7ul)
+#define PVG_CHUNK_SIZE 4096 //(Taylor)NOTE: Added PVG_ prefix to avoid conflicts in unity build
+#ifndef PVG_ALIGN_SIZE
+#define PVG_ALIGN_SIZE(size) (((size) + 7ul) & ~7ul) //(Taylor)NOTE: Added PVG_ prefix to avoid conflict with ALIGN_SIZE macro in freetype\src\truetype\ttgxvar.c
+#endif
 static void* heap_alloc(heap_t* heap, size_t size)
 {
-    size = ALIGN_SIZE(size);
-    if(heap->chunk == NULL || heap->size + size > CHUNK_SIZE) {
-        heap_chunk_t* chunk = malloc(CHUNK_SIZE + sizeof(heap_chunk_t));
+    size = PVG_ALIGN_SIZE(size);
+    if(heap->chunk == NULL || heap->size + size > PVG_CHUNK_SIZE) {
+        heap_chunk_t* chunk = malloc(PVG_CHUNK_SIZE + sizeof(heap_chunk_t));
         chunk->next = heap->chunk;
         heap->chunk = chunk;
         heap->size = 0;
