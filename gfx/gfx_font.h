@@ -1145,11 +1145,11 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				DebugAssert(stbCharInfo->y0 <= atlasSize.Height);
 				DebugAssert(stbCharInfo->y1 >= 0);
 				DebugAssert(stbCharInfo->y1 <= atlasSize.Height);
-				glyph->atlasSourcePos = NewV2i((i32)stbCharInfo->x0, (i32)stbCharInfo->y0)
+				glyph->atlasSourcePos = NewV2i((i32)stbCharInfo->x0, (i32)stbCharInfo->y0);
 				glyph->metrics.glyphSize = NewV2i((i32)(stbCharInfo->x1 - stbCharInfo->x0), (i32)(stbCharInfo->y1 - stbCharInfo->y0));
 				glyph->metrics.advanceX = IsCodepointZeroWidth(glyph->codepoint) ? 0 : stbCharInfo->xadvance;
 				glyph->metrics.renderOffset = NewV2(stbCharInfo->xoff, stbCharInfo->yoff);
-				glyph->metrics.logicalRec = NewRec(stbCharInfo->xoff, -newAtlas->maxAscend, (r32)glyph->metrics.glyphSize.Width, newAtlas->maxAscend);
+				glyph->metrics.logicalRec = NewRec(stbCharInfo->xoff, -newAtlas->metrics.maxAscend, (r32)glyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
 				if (glyph->metrics.logicalRec.Width == 0)
 				{
 					glyph->metrics.logicalRec.Width = glyph->metrics.advanceX;
@@ -1184,8 +1184,8 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 				newGlyph->atlasSourcePos = NewV2i((i32)packedGlyphRec->x, (i32)packedGlyphRec->y);
 				newGlyph->metrics.glyphSize = NewV2i((i32)packedGlyphRec->w, (i32)packedGlyphRec->h);
 				newGlyph->metrics.advanceX = (r32)newGlyph->metrics.glyphSize.Width;
-				newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->maxAscend + (newAtlas->maxAscend + newAtlas->maxDescend)/2.0f - newGlyph->metrics.glyphSize.Height/2.0f));
-				newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->maxAscend, (r32)newGlyph->metrics.glyphSize.Width, newAtlas->maxAscend);
+				newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - newGlyph->metrics.glyphSize.Height/2.0f));
+				newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)newGlyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
 				customGlyphInfoIndex++;
 			}
 		}

@@ -194,7 +194,7 @@ plex Arena
 #if PIG_CORE_IMPLEMENTATION
 
 NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes);
-void FreeMem(Arena* arena, void* allocPntr, uxx allocSize);
+PEXPI void FreeMem(Arena* arena, void* allocPntr, uxx allocSize);
 
 // +--------------------------------------------------------------+
 // |                   Initialization Functions                   |
