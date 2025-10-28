@@ -72,7 +72,7 @@ Date:   10\15\2025
 // +--------------------------------------------------------------+
 // |                      Pluto SVG Include                       |
 // +--------------------------------------------------------------+
-#if 0
+#if 1
 
 #define PLUTOVG_BUILD_STATIC
 #define PLUTOSVG_BUILD_STATIC
@@ -92,7 +92,6 @@ Date:   10\15\2025
 #pragma warning(disable:4459) //declaration of 'crc_table' hides global declaration
 #endif
 
-#undef ALIGN_SIZE //this is also defined by freetype\src\truetype\ttgxvar.c
 // #undef RAS_ARG //this is also defined by freetype\src\smooth\ftgrays.c
 // #undef RAS_ARG_ //this is also defined by freetype\src\smooth\ftgrays.c
 // #undef ONE_PIXEL //this is also defined by freetype\src\smooth\ftgrays.c

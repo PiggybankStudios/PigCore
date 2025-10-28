@@ -1,10 +1,13 @@
 #include "plutovg-private.h"
 #include "plutovg-utils.h"
 
-#include "plutovg-ft-raster.h"
-#include "plutovg-ft-stroker.h"
+// #include "plutovg-ft-raster.h" //(Taylor)NOTE: Disabled because we are building with FreeType source as a unity build
+// #include "plutovg-ft-stroker.h" //(Taylor)NOTE: Disabled because we are building with FreeType source as a unity build
+#include "freetype/ftstroke.h" //(Taylor)NOTE: This is the replacement for plutovg-ft-stroker.h
 
 #include <limits.h>
+
+#define PVG_FT_MINIMUM_POOL_SIZE 8192 //(Taylor)NOTE: Copied from plutovg-ft-raster.c, needed by PVG_FT_Raster_Render implementation below
 
 void plutovg_span_buffer_init(plutovg_span_buffer_t* span_buffer)
 {
@@ -164,85 +167,85 @@ void plutovg_span_buffer_intersect(plutovg_span_buffer_t* span_buffer, const plu
     }
 }
 
-#define ALIGN_SIZE(size) (((size) + 7ul) & ~7ul)
-static PVG_FT_Outline* ft_outline_create(int points, int contours)
+// #define ALIGN_SIZE(size) (((size) + 7ul) & ~7ul) //(Taylor)NOTE: Disabled because ALIGN_SIZE macro is already defined by freetype\src\truetype\ttgxvar.c
+static FT_Outline* ft_outline_create(int points, int contours)
 {
-    size_t points_size = ALIGN_SIZE((points + contours) * sizeof(PVG_FT_Vector));
+    size_t points_size = ALIGN_SIZE((points + contours) * sizeof(FT_Vector));
     size_t tags_size = ALIGN_SIZE((points + contours) * sizeof(char));
     size_t contours_size = ALIGN_SIZE(contours * sizeof(int));
-    size_t contours_flag_size = ALIGN_SIZE(contours * sizeof(char));
-    PVG_FT_Outline* outline = malloc(points_size + tags_size + contours_size + contours_flag_size + sizeof(PVG_FT_Outline));
+    // size_t contours_flag_size = ALIGN_SIZE(contours * sizeof(char));
+    FT_Outline* outline = malloc(points_size + tags_size + contours_size + /*contours_flag_size +*/ sizeof(FT_Outline));
 
-    PVG_FT_Byte* outline_data = (PVG_FT_Byte*)(outline + 1);
-    outline->points = (PVG_FT_Vector*)(outline_data);
-    outline->tags = (char*)(outline_data + points_size);
-    outline->contours = (int*)(outline_data + points_size + tags_size);
-    outline->contours_flag = (char*)(outline_data + points_size + tags_size + contours_size);
+    FT_Byte* outline_data = (FT_Byte*)(outline + 1);
+    outline->points = (FT_Vector*)(outline_data);
+    outline->tags = (unsigned char*)(outline_data + points_size); //(Taylor)NOTE: Fixed char* -> unsigned char*
+    outline->contours = (unsigned short*)(outline_data + points_size + tags_size); //(Taylor)NOTE: Fixed int* -> unsigned short*
+    // outline->contours_flag = (char*)(outline_data + points_size + tags_size + contours_size); //(Taylor)NOTE: Disabled because this field doesn't exist in our version of FreeType
     outline->n_points = 0;
     outline->n_contours = 0;
     outline->flags = 0x0;
     return outline;
 }
 
-static void ft_outline_destroy(PVG_FT_Outline* outline)
+static void ft_outline_destroy(FT_Outline* outline)
 {
     free(outline);
 }
 
-#define FT_COORD(x) (PVG_FT_Pos)(roundf(x * 64))
-static void ft_outline_move_to(PVG_FT_Outline* ft, float x, float y)
+#define FT_COORD(x) (FT_Pos)(roundf(x * 64))
+static void ft_outline_move_to(FT_Outline* ft, float x, float y)
 {
     ft->points[ft->n_points].x = FT_COORD(x);
     ft->points[ft->n_points].y = FT_COORD(y);
-    ft->tags[ft->n_points] = PVG_FT_CURVE_TAG_ON;
+    ft->tags[ft->n_points] = FT_CURVE_TAG_ON;
     if(ft->n_points) {
         ft->contours[ft->n_contours] = ft->n_points - 1;
         ft->n_contours++;
     }
 
-    ft->contours_flag[ft->n_contours] = 1;
+    // ft->contours_flag[ft->n_contours] = 1; //(Taylor)NOTE: Disabled because this field doesn't exist in our version of FreeType
     ft->n_points++;
 }
 
-static void ft_outline_line_to(PVG_FT_Outline* ft, float x, float y)
+static void ft_outline_line_to(FT_Outline* ft, float x, float y)
 {
     ft->points[ft->n_points].x = FT_COORD(x);
     ft->points[ft->n_points].y = FT_COORD(y);
-    ft->tags[ft->n_points] = PVG_FT_CURVE_TAG_ON;
+    ft->tags[ft->n_points] = FT_CURVE_TAG_ON;
     ft->n_points++;
 }
 
-static void ft_outline_cubic_to(PVG_FT_Outline* ft, float x1, float y1, float x2, float y2, float x3, float y3)
+static void ft_outline_cubic_to(FT_Outline* ft, float x1, float y1, float x2, float y2, float x3, float y3)
 {
     ft->points[ft->n_points].x = FT_COORD(x1);
     ft->points[ft->n_points].y = FT_COORD(y1);
-    ft->tags[ft->n_points] = PVG_FT_CURVE_TAG_CUBIC;
+    ft->tags[ft->n_points] = FT_CURVE_TAG_CUBIC;
     ft->n_points++;
 
     ft->points[ft->n_points].x = FT_COORD(x2);
     ft->points[ft->n_points].y = FT_COORD(y2);
-    ft->tags[ft->n_points] = PVG_FT_CURVE_TAG_CUBIC;
+    ft->tags[ft->n_points] = FT_CURVE_TAG_CUBIC;
     ft->n_points++;
 
     ft->points[ft->n_points].x = FT_COORD(x3);
     ft->points[ft->n_points].y = FT_COORD(y3);
-    ft->tags[ft->n_points] = PVG_FT_CURVE_TAG_ON;
+    ft->tags[ft->n_points] = FT_CURVE_TAG_ON;
     ft->n_points++;
 }
 
-static void ft_outline_close(PVG_FT_Outline* ft)
+static void ft_outline_close(FT_Outline* ft)
 {
-    ft->contours_flag[ft->n_contours] = 0;
+    // ft->contours_flag[ft->n_contours] = 0; //(Taylor)NOTE: Disabled because this field doesn't exist in our version of FreeType
     int index = ft->n_contours ? ft->contours[ft->n_contours - 1] + 1 : 0;
     if(index == ft->n_points)
         return;
     ft->points[ft->n_points].x = ft->points[index].x;
     ft->points[ft->n_points].y = ft->points[index].y;
-    ft->tags[ft->n_points] = PVG_FT_CURVE_TAG_ON;
+    ft->tags[ft->n_points] = FT_CURVE_TAG_ON;
     ft->n_points++;
 }
 
-static void ft_outline_end(PVG_FT_Outline* ft)
+static void ft_outline_end(FT_Outline* ft)
 {
     if(ft->n_points) {
         ft->contours[ft->n_contours] = ft->n_points - 1;
@@ -250,9 +253,9 @@ static void ft_outline_end(PVG_FT_Outline* ft)
     }
 }
 
-static PVG_FT_Outline* ft_outline_convert_stroke(const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_stroke_data_t* stroke_data);
+static FT_Outline* ft_outline_convert_stroke(const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_stroke_data_t* stroke_data);
 
-static PVG_FT_Outline* ft_outline_convert(const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_stroke_data_t* stroke_data)
+static FT_Outline* ft_outline_convert(const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_stroke_data_t* stroke_data)
 {
     if(stroke_data) {
         return ft_outline_convert_stroke(path, matrix, stroke_data);
@@ -262,7 +265,7 @@ static PVG_FT_Outline* ft_outline_convert(const plutovg_path_t* path, const plut
     plutovg_path_iterator_init(&it, path);
 
     plutovg_point_t points[3];
-    PVG_FT_Outline* outline = ft_outline_create(path->num_points, path->num_contours);
+    FT_Outline* outline = ft_outline_create(path->num_points, path->num_contours);
     while(plutovg_path_iterator_has_next(&it)) {
         switch(plutovg_path_iterator_next(&it, points)) {
         case PLUTOVG_PATH_COMMAND_MOVE_TO:
@@ -287,17 +290,17 @@ static PVG_FT_Outline* ft_outline_convert(const plutovg_path_t* path, const plut
     return outline;
 }
 
-static PVG_FT_Outline* ft_outline_convert_dash(const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_stroke_dash_t* stroke_dash)
+static FT_Outline* ft_outline_convert_dash(const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_stroke_dash_t* stroke_dash)
 {
     if(stroke_dash->array.size == 0)
         return ft_outline_convert(path, matrix, NULL);
     plutovg_path_t* dashed = plutovg_path_clone_dashed(path, stroke_dash->offset, stroke_dash->array.data, stroke_dash->array.size);
-    PVG_FT_Outline* outline = ft_outline_convert(dashed, matrix, NULL);
+    FT_Outline* outline = ft_outline_convert(dashed, matrix, NULL);
     plutovg_path_destroy(dashed);
     return outline;
 }
 
-static PVG_FT_Outline* ft_outline_convert_stroke(const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_stroke_data_t* stroke_data)
+static FT_Outline* ft_outline_convert_stroke(const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_stroke_data_t* stroke_data)
 {
     double scale_x = sqrt(matrix->a * matrix->a + matrix->b * matrix->b);
     double scale_y = sqrt(matrix->c * matrix->c + matrix->d * matrix->d);
@@ -305,87 +308,108 @@ static PVG_FT_Outline* ft_outline_convert_stroke(const plutovg_path_t* path, con
     double scale = hypot(scale_x, scale_y) / PLUTOVG_SQRT2;
     double width = stroke_data->style.width * scale;
 
-    PVG_FT_Fixed ftWidth = (PVG_FT_Fixed)(width * 0.5 * (1 << 6));
-    PVG_FT_Fixed ftMiterLimit = (PVG_FT_Fixed)(stroke_data->style.miter_limit * (1 << 16));
+    FT_Fixed ftWidth = (FT_Fixed)(width * 0.5 * (1 << 6));
+    FT_Fixed ftMiterLimit = (FT_Fixed)(stroke_data->style.miter_limit * (1 << 16));
 
-    PVG_FT_Stroker_LineCap ftCap;
+    FT_Stroker_LineCap ftCap;
     switch(stroke_data->style.cap) {
     case PLUTOVG_LINE_CAP_SQUARE:
-        ftCap = PVG_FT_STROKER_LINECAP_SQUARE;
+        ftCap = FT_STROKER_LINECAP_SQUARE;
         break;
     case PLUTOVG_LINE_CAP_ROUND:
-        ftCap = PVG_FT_STROKER_LINECAP_ROUND;
+        ftCap = FT_STROKER_LINECAP_ROUND;
         break;
     default:
-        ftCap = PVG_FT_STROKER_LINECAP_BUTT;
+        ftCap = FT_STROKER_LINECAP_BUTT;
         break;
     }
 
-    PVG_FT_Stroker_LineJoin ftJoin;
+    FT_Stroker_LineJoin ftJoin;
     switch(stroke_data->style.join) {
     case PLUTOVG_LINE_JOIN_BEVEL:
-        ftJoin = PVG_FT_STROKER_LINEJOIN_BEVEL;
+        ftJoin = FT_STROKER_LINEJOIN_BEVEL;
         break;
     case PLUTOVG_LINE_JOIN_ROUND:
-        ftJoin = PVG_FT_STROKER_LINEJOIN_ROUND;
+        ftJoin = FT_STROKER_LINEJOIN_ROUND;
         break;
     default:
-        ftJoin = PVG_FT_STROKER_LINEJOIN_MITER_FIXED;
+        ftJoin = FT_STROKER_LINEJOIN_MITER_FIXED;
         break;
     }
 
-    PVG_FT_Stroker stroker;
-    PVG_FT_Stroker_New(&stroker);
-    PVG_FT_Stroker_Set(stroker, ftWidth, ftCap, ftJoin, ftMiterLimit);
+    FT_Library library = nullptr; //TODO: Where do we get this from?
+    FT_Stroker stroker;
+    FT_Stroker_New(library, &stroker); //(Taylor)NOTE: Added library argument
+    FT_Stroker_Set(stroker, ftWidth, ftCap, ftJoin, ftMiterLimit);
 
-    PVG_FT_Outline* outline = ft_outline_convert_dash(path, matrix, &stroke_data->dash);
-    PVG_FT_Stroker_ParseOutline(stroker, outline);
+    FT_Outline* outline = ft_outline_convert_dash(path, matrix, &stroke_data->dash);
+    FT_Stroker_ParseOutline(stroker, outline, false); //(Taylor)NOTE: Added third argument "opened"
 
-    PVG_FT_UInt points;
-    PVG_FT_UInt contours;
-    PVG_FT_Stroker_GetCounts(stroker, &points, &contours);
+    FT_UInt points;
+    FT_UInt contours;
+    FT_Stroker_GetCounts(stroker, &points, &contours);
 
-    PVG_FT_Outline* stroke_outline = ft_outline_create(points, contours);
-    PVG_FT_Stroker_Export(stroker, stroke_outline);
+    FT_Outline* stroke_outline = ft_outline_create(points, contours);
+    FT_Stroker_Export(stroker, stroke_outline);
 
-    PVG_FT_Stroker_Done(stroker);
+    FT_Stroker_Done(stroker);
     ft_outline_destroy(outline);
     return stroke_outline;
 }
 
-static void spans_generation_callback(int count, const PVG_FT_Span* spans, void* user)
+static void spans_generation_callback(int y, int count, const FT_Span* spans, void* user) //(Taylor)NOTE: Added first argument "int y"
 {
     plutovg_span_buffer_t* span_buffer = (plutovg_span_buffer_t*)(user);
     plutovg_array_append_data(span_buffer->spans, spans, count);
 }
 
+void PVG_FT_Raster_Render(const FT_Raster_Params *params) //(Taylor)NOTE: Copied from plutovg-ft-raster.c, this function doesn't exist in freetype\src\smooth\ftgrays.c
+{
+    char stack[PVG_FT_MINIMUM_POOL_SIZE];
+    size_t length = PVG_FT_MINIMUM_POOL_SIZE;
+
+    gray_TWorker worker; //(Taylor)NOTE: Changed to gray_TWorker from TWorker
+    worker.skip_spans = 0;
+    int rendered_spans = 0;
+    int error = gray_raster_render(&worker, stack, length, params);
+    while(error == ErrRaster_OutOfMemory) {
+        if(worker.skip_spans < 0)
+            rendered_spans += -worker.skip_spans;
+        worker.skip_spans = rendered_spans;
+        length *= 2;
+        void* heap = malloc(length);
+        error = gray_raster_render(&worker, heap, length, params);
+        free(heap);
+    }
+}
+
 void plutovg_rasterize(plutovg_span_buffer_t* span_buffer, const plutovg_path_t* path, const plutovg_matrix_t* matrix, const plutovg_rect_t* clip_rect, const plutovg_stroke_data_t* stroke_data, plutovg_fill_rule_t winding)
 {
-    PVG_FT_Outline* outline = ft_outline_convert(path, matrix, stroke_data);
+    FT_Outline* outline = ft_outline_convert(path, matrix, stroke_data);
     if(stroke_data) {
-        outline->flags = PVG_FT_OUTLINE_NONE;
+        outline->flags = FT_OUTLINE_NONE;
     } else {
         switch(winding) {
         case PLUTOVG_FILL_RULE_EVEN_ODD:
-            outline->flags = PVG_FT_OUTLINE_EVEN_ODD_FILL;
+            outline->flags = FT_OUTLINE_EVEN_ODD_FILL;
             break;
         default:
-            outline->flags = PVG_FT_OUTLINE_NONE;
+            outline->flags = FT_OUTLINE_NONE;
             break;
         }
     }
 
-    PVG_FT_Raster_Params params;
-    params.flags = PVG_FT_RASTER_FLAG_DIRECT | PVG_FT_RASTER_FLAG_AA;
+    FT_Raster_Params params;
+    params.flags = FT_RASTER_FLAG_DIRECT | FT_RASTER_FLAG_AA;
     params.gray_spans = spans_generation_callback;
     params.user = span_buffer;
     params.source = outline;
     if(clip_rect) {
-        params.flags |= PVG_FT_RASTER_FLAG_CLIP;
-        params.clip_box.xMin = (PVG_FT_Pos)clip_rect->x;
-        params.clip_box.yMin = (PVG_FT_Pos)clip_rect->y;
-        params.clip_box.xMax = (PVG_FT_Pos)(clip_rect->x + clip_rect->w);
-        params.clip_box.yMax = (PVG_FT_Pos)(clip_rect->y + clip_rect->h);
+        params.flags |= FT_RASTER_FLAG_CLIP;
+        params.clip_box.xMin = (FT_Pos)clip_rect->x;
+        params.clip_box.yMin = (FT_Pos)clip_rect->y;
+        params.clip_box.xMax = (FT_Pos)(clip_rect->x + clip_rect->w);
+        params.clip_box.yMax = (FT_Pos)(clip_rect->y + clip_rect->h);
     }
 
     plutovg_span_buffer_reset(span_buffer);

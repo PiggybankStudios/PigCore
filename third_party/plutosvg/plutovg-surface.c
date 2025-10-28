@@ -1,13 +1,13 @@
 #include "plutovg-private.h"
 #include "plutovg-utils.h"
 
-// #if 0 //NOTE: This was disabled by Taylor because PigCore already has stb_image_write.h
+#if 0 //(Taylor)NOTE: This was disabled because PigCore already has stb_image_write.h
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "plutovg-stb-image-write.h"
-// #endif
+#endif
 
-#if 0 //NOTE: This was disabled by Taylor because PigCore already has stb_image.h
+#if 0 //(Taylor)NOTE: This was disabled because PigCore already has stb_image.h
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
 #include "plutovg-stb-image.h"
@@ -58,6 +58,7 @@ static plutovg_surface_t* plutovg_surface_load_from_image(stbi_uc* image, int wi
     return surface;
 }
 
+#if !defined(STBI_NO_STDIO) //(Taylor)NOTE: Disabled because we use stb_image.h with STBI_NO_STDIO
 plutovg_surface_t* plutovg_surface_load_from_image_file(const char* filename)
 {
     int width, height, channels;
@@ -66,6 +67,7 @@ plutovg_surface_t* plutovg_surface_load_from_image_file(const char* filename)
         return NULL;
     return plutovg_surface_load_from_image(image, width, height);
 }
+#endif //!defined(STBI_NO_STDIO)
 
 plutovg_surface_t* plutovg_surface_load_from_image_data(const void* data, int length)
 {
@@ -209,6 +211,7 @@ static void plutovg_surface_write_end(const plutovg_surface_t* surface)
     plutovg_convert_rgba_to_argb(surface->data, surface->data, surface->width, surface->height, surface->stride);
 }
 
+#if !defined(STBI_NO_STDIO) //(Taylor)NOTE: Disabled because we use stb_image.h with STBI_NO_STDIO
 bool plutovg_surface_write_to_png(const plutovg_surface_t* surface, const char* filename)
 {
     plutovg_surface_write_begin(surface);
@@ -224,6 +227,7 @@ bool plutovg_surface_write_to_jpg(const plutovg_surface_t* surface, const char* 
     plutovg_surface_write_end(surface);
     return success;
 }
+#endif //!defined(STBI_NO_STDIO)
 
 bool plutovg_surface_write_to_png_stream(const plutovg_surface_t* surface, plutovg_write_func_t write_func, void* closure)
 {
