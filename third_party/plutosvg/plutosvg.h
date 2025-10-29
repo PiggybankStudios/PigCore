@@ -53,6 +53,9 @@
 extern "C" {
 #endif
 
+//NOTE(Taylor): Added this global so ft_outline_convert_stroke in plutovg-rasterize.c can use it when calling FT_Stroker_New
+extern FT_Library ft_library_global;
+
 /**
  * @brief Returns the version number of PlutoSVG.
  *
@@ -66,6 +69,9 @@ PLUTOSVG_API int plutosvg_version(void);
  * @return Pointer to a string containing the version information.
  */
 PLUTOSVG_API const char* plutosvg_version_string(void);
+
+//NOTE(Taylor): Added this function to set the global so ft_outline_convert_stroke in plutovg-rasterize.c can use it when calling FT_Stroker_New
+void plutosvg_set_library_pntr(FT_Library ft_library);
 
 /**
  * @brief plutosvg_document_t

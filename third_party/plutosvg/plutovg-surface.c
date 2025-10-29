@@ -1,17 +1,15 @@
 #include "plutovg-private.h"
 #include "plutovg-utils.h"
 
-#if 0 //(Taylor)NOTE: This was disabled because PigCore already has stb_image_write.h
-#define STB_IMAGE_WRITE_STATIC
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "plutovg-stb-image-write.h"
-#endif
+//NOTE(Taylor): Disabled because stb_image_write.h is already provided by PigCore
+// #define STB_IMAGE_WRITE_STATIC
+// #define STB_IMAGE_WRITE_IMPLEMENTATION
+// #include "plutovg-stb-image-write.h"
 
-#if 0 //(Taylor)NOTE: This was disabled because PigCore already has stb_image.h
-#define STB_IMAGE_STATIC
-#define STB_IMAGE_IMPLEMENTATION
-#include "plutovg-stb-image.h"
-#endif
+//NOTE(Taylor): Disabled because stb_image.h is already provided by PigCore
+// #define STB_IMAGE_STATIC
+// #define STB_IMAGE_IMPLEMENTATION
+// #include "plutovg-stb-image.h"
 
 static plutovg_surface_t* plutovg_surface_create_uninitialized(int width, int height)
 {
@@ -58,7 +56,7 @@ static plutovg_surface_t* plutovg_surface_load_from_image(stbi_uc* image, int wi
     return surface;
 }
 
-#if !defined(STBI_NO_STDIO) //(Taylor)NOTE: Disabled because we use stb_image.h with STBI_NO_STDIO
+#if !defined(STBI_NO_STDIO) //NOTE(Taylor): Disabled because we use stb_image.h with STBI_NO_STDIO
 plutovg_surface_t* plutovg_surface_load_from_image_file(const char* filename)
 {
     int width, height, channels;
@@ -211,7 +209,7 @@ static void plutovg_surface_write_end(const plutovg_surface_t* surface)
     plutovg_convert_rgba_to_argb(surface->data, surface->data, surface->width, surface->height, surface->stride);
 }
 
-#if !defined(STBI_NO_STDIO) //(Taylor)NOTE: Disabled because we use stb_image.h with STBI_NO_STDIO
+#if !defined(STBI_NO_STDIO) //NOTE(Taylor): Disabled because we use stb_image.h with STBI_NO_STDIO
 bool plutovg_surface_write_to_png(const plutovg_surface_t* surface, const char* filename)
 {
     plutovg_surface_write_begin(surface);

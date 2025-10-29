@@ -1912,6 +1912,7 @@
 			"function jsPrintStringLength(labelStrPntr, labelStrLength, strPntr, strLength)",
 			"i16 AbsI16(i16 value)",
 			"i32 AbsI32(i32 value)",
+			"i32 CeilCastR32ToI32(r32 value)",
 			"i32 CeilR32i(r32 value)",
 			"i32 CompareCodepoints(u32 codepoint1, u32 codepoint2)",
 			"i32 FloorR32i(r32 value)",

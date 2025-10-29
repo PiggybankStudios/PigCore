@@ -101,7 +101,8 @@ static inline uint8_t hex_byte(uint8_t c1, uint8_t c2)
     return (h1 << 4) | h2;
 }
 
-#define MAX_NAME 20
+//NOTE(Taylor): Added PVG_ prefix to avoid conflict with plutovg-paint.c in unity build
+#define PVG_MAX_NAME 20
 typedef struct {
     const char* name;
     uint32_t value;
@@ -170,8 +171,8 @@ int plutovg_color_parse(plutovg_color_t* color, const char* data, int length)
         plutovg_color_init_rgba8(color, r, g, b, a);
     } else {
         int name_length = 0;
-        char name[MAX_NAME + 1];
-        while(it < end && name_length < MAX_NAME && isalpha(*it))
+        char name[PVG_MAX_NAME + 1];
+        while(it < end && name_length < PVG_MAX_NAME && isalpha(*it))
             name[name_length++] = tolower(*it++);
         name[name_length] = '\0';
 

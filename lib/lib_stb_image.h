@@ -24,6 +24,7 @@ Date:   10\27\2025
 
 #if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
 
+//TODO: We really should modify stb_image.h so it passes us a user pntr when doing malloc/realloc/free calls like how stb_truetype.h works
 #if PIG_CORE_IMPLEMENTATION
 THREAD_LOCAL Arena* StbImageArena = nullptr;
 #else
@@ -70,8 +71,12 @@ static void StbImageFree(void* allocPntr)
 }
 #endif //PIG_CORE_IMPLEMENTATION
 
+#if PIG_CORE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#endif
+
 #define STBI_NO_STDIO
-// #define STB_IMAGE_STATIC
+// #define STB_IMAGE_STATIC //TODO: Do we want to expose stb_image functions to the application when working as a DLL?
 #define STBI_ASSERT(condition) Assert(condition)
 #define STBI_MALLOC(numBytes)                                   StbImageMalloc(numBytes)
 #define STBI_REALLOC_SIZED(allocPntr, oldNumBytes, newNumBytes) StbImageRealloc((allocPntr), (oldNumBytes), (newNumBytes))
@@ -85,9 +90,6 @@ static void StbImageFree(void* allocPntr)
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
 #endif
 
-#if PIG_CORE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#endif
 #include "third_party/stb/stb_image.h"
 
 #if COMPILER_IS_MSVC

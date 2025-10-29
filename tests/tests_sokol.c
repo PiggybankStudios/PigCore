@@ -402,6 +402,9 @@ void AppInit(void)
 	testFont = InitFont(stdHeap, StrLit("testFont"));
 	if (useActiveFont)
 	{
+		Result attachResult = Result_None;
+		Result bakeResult = Result_None;
+		
 		FontCharRange basicCharRanges[] = {
 			FontCharRange_ASCII,
 			FontCharRange_LatinSupplementAccent,
@@ -409,8 +412,8 @@ void AppInit(void)
 			NewFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
 			// NewFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
 		};
-		Result attachResult0 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult0 == Result_Success);
-		Result bakeResult0 = BakeFontAtlasEx(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult0 == Result_Success);
+		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		bakeResult = BakeFontAtlasEx(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
 		FillFontKerningTable(&testFont);
 		RemoveAttachedFontFiles(&testFont);
 		
@@ -418,22 +421,42 @@ void AppInit(void)
 			FontCharRange_Hiragana,
 			FontCharRange_Katakana,
 		};
-		Result attachResult1 = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult1 == Result_Success);
-		Result bakeResult1 = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult1 == Result_Success);
+		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
+		bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success);
 		RemoveAttachedFontFiles(&testFont);
 		
+		#if 0
+		FontCharRange emojiCharRanges[] = {
+			NewFontCharRange(0x1F90C, 0x1F91F),
+			NewFontCharRangeSingle(0x1F60A), //😊
+			NewFontCharRangeSingle(0x1F602), //😂
+			NewFontCharRangeSingle(0x1F923), //🤣
+			NewFontCharRangeSingle(0x1F612), //😒
+			NewFontCharRangeSingle(0x1F601), //😁
+			NewFontCharRangeSingle(0x1F60D), //😍
+			NewFontCharRangeSingle(0x1F64C), //🙌
+		};
+		attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
+		bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
+		RemoveAttachedFontFiles(&testFont);
+		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
+		bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
+		RemoveAttachedFontFiles(&testFont);
+		#endif
+		
 		MakeFontActive(&testFont, 64, 128, 8, 0, 0);
-		Result attachResult2 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult2 == Result_Success);
-		Result attachResult3 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult3 == Result_Success);
-		Result attachResult4 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult4 == Result_Success);
-		Result attachResult5 = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult5 == Result_Success);
-		// Result attachResult6 = AttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult6 == Result_Success);
-		Result attachResult7 = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult7 == Result_Success); // "meiryo.ttc" "msgothic.ttc"
-		// Result attachResult8 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult8 == Result_Success);
-		Result attachResult9 = TryAttachLocalFontFile(&testFont, StrLit("NotoSansSymbols-Regular.ttf"), FontStyleFlag_None); Assert(attachResult9 == Result_Success);
-		// Result attachResult10 = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult10 == Result_Success);
-		// Result attachResult11 = TryAttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None); Assert(attachResult11 == Result_Success);
-		Result attachResult11 = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult11 == Result_Success);
+		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
+		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult == Result_Success);
+		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult == Result_Success);
+		// attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
+		// attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansSymbols-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
+		// attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
+		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
+		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
+		attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
 	}
 	else
 	{
@@ -881,7 +904,8 @@ bool AppFrame(void)
 					StrLit("\xE3\x81\x82\xE3\x82\x8A\xE3\x81\x8C\xE3\x81\xA8\xE3\x81\x86\xE3\x81\x94\xE3\x81\x96\xE3\x81\x84\xE3\x81\xBE\xE3\x81\x97\xE3\x81\x9F"),
 					StrLit(kanjiUtf8Buffer),
 					StrLit("\xE4\xB8\x89\xE5\xB3\xB6\xE5\xBA\x83\xE5\xB0\x8F\xE8\xB7\xAF\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE4\xBB\x81\xE7\x94\xB0\x20\x2D\x20\xE7\x94\xB0\xE4\xBA\xAC\x20\x2D\x20\xE5\xA4\xA7\xE5\xA0\xB4\x20\x2D\x20\xE5\x8E\x9F\xE6\x9C\xA8\x20\x2D\x20\xE4\xB8\x89\xE5\xB3\xB6\xE4\xBA\x8C\xE6\x97\xA5\xE7\x94\xBA\x20\x2D\x20\xE9\x9F\xAE\xE5\xB1\xB1\x20\x2D\x20\xE4\xB8\x89\xE5\xB3\xB6\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE5\xA4\x9A\xE8\xB3\x80\x20\x2D\x20\xE5\xAE\x87\xE4\xBD\x90\xE7\xBE\x8E\x20\x2D\x20\xE7\xB6\xB2\xE4\xBB\xA3\x20\x2D\x20\xE5\xBD\xAB\xE5\x88\xBB\xE3\x81\xAE\xE6\xA3\xAE\x20\x2D\x20\xE5\xA1\x94\xE3\x83\x8E\xE6\xB2\xA2\x20\x2D\x20\xE5\x85\xA5\xE7\x94\x9F\xE7\x94\xB0\x20\x2D\x20\xE9\xA2\xA8\xE7\xA5\xAD\x20\x2D\x20\xE5\xB0\x8F\xE6\xB6\x8C\xE8\xB0\xB7\x20\x2D\x20\xE4\xBB\x99\xE4\xBA\xBA\xE5\x8F\xB0\xE4\xBF\xA1\xE5\x8F\xB7\xE5\xA0\xB4\x20\x2D\x20\xE5\xA4\xA7\xE5\xB2\xA1\x20\x2D\x20\xE8\xA3\xBE\xE9\x87\x8E\x20\x2D\x20\xE9\x95\xB7\xE6\xB3\x89\xE3\x81\xAA\xE3\x82\x81\xE3\x82\x8A\x20\x2D\x20\xE4\xB8\x8B\xE5\x9C\x9F\xE7\x8B\xA9\x20\x2D\x20\xE7\x89\x87\xE6\xB5\x9C\x20\x2D\x20\xE5\x8E\x9F\x20\x2D\x20\xE6\x9D\xB1\xE7\x94\xB0\xE5\xAD\x90\xE3\x81\xAE\xE6\xB5\xA6\x20\x2D\x20\xE6\xA0\xB9\xE5\xBA\x9C\xE5\xB7\x9D\x20\x2D\x20\xE6\xB9\xAF\xE6\xB2\xB3\xE5\x8E\x9F\x20\x2D\x20\xE5\x87\xBA\xE5\xB1\xB1\xE4\xBF\xA1\xE5\x8F\xB7\xE5\xA0\xB4\x20\x2D\x20\xE7\x86\xB1\xE6\xB5\xB7\x20\x2D\x20\xE7\x9C\x9F\xE9\xB6\xB4\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE9\x95\xB7\xE5\xB2\xA1\x20\x2D\x20\xE5\xA4\xA7\xE5\xB9\xB3\xE5\x8F\xB0"),
-					StrLit("\xF0\x9F\x98\x80\xF0\x9F\x98\x81\xF0\x9F\x98\x82\xF0\x9F\xA4\xA3\xF0\x9F\x98\x83\xF0\x9F\x98\xAB\xF0\x9F\x90\xB1\xE2\x8C\xA8"),
+					// StrLit("\xF0\x9F\x98\x80\xF0\x9F\x98\x81\xF0\x9F\x98\x82\xF0\x9F\xA4\xA3\xF0\x9F\x98\x83\xF0\x9F\x98\xAB\xF0\x9F\x90\xB1\xE2\x8C\xA8"),
+					StrLit("\xF0\x9F\x98\x8A\xF0\x9F\x98\x82\xF0\x9F\xA4\xA3\xF0\x9F\x98\x92\xF0\x9F\x98\x81\xF0\x9F\x98\x8D\xF0\x9F\x99\x8C"), //😊😂🤣😒😁😍🙌
 					StrLit("Non" UNICODE_NON_BREAKING_HYPHEN_STR "breaking" UNICODE_NON_BREAKING_SPACE_STR "string Another" UNICODE_NON_BREAKING_SPACE_STR "non" UNICODE_NON_BREAKING_HYPHEN_STR "breaking" UNICODE_NON_BREAKING_SPACE_STR "string String" UNICODE_ZERO_WIDTH_SPACE_STR "With" UNICODE_ZERO_WIDTH_SPACE_STR "Zero" UNICODE_ZERO_WIDTH_SPACE_STR "Width" UNICODE_ZERO_WIDTH_SPACE_STR "Spaces"),
 				};
 				if (IsKeyboardKeyPressed(&keyboard, Key_Plus, true)) { displayStrIndex = ((displayStrIndex+1) % ArrayCount(displayStrs)); typeAnimCodepointIndex = 0; }

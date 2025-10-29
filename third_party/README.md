@@ -338,15 +338,15 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 ---
 
-## Pluto SVG v0.0.7
-**URL(s):** [Github](https://github.com/sammycage/plutosvg) [v0.0.7](https://github.com/sammycage/plutosvg/releases/tag/v0.0.7)
+## Pluto SVG v0.0.7 and Pluto VG v1.3.1
+**URL(s):** [plutosvg Github](https://github.com/sammycage/plutosvg) [plutosvg v0.0.7](https://github.com/sammycage/plutosvg/releases/tag/v0.0.7) [plutovg Github](https://github.com/sammycage/plutovg) [plutovg v1.3.1](https://github.com/sammycage/plutovg/releases/tag/v1.3.1)
 
 **Folder Name:** `plutosvg`
 
 **Download Required:** No, all necassary files are included in the repository
 
-**Current Version:** v0.0.7 released on May 15th 2025
+**Current Version:** plutosvg v0.0.7 released on May 15th 2025, and plutovg v1.3.1 released on September 13th 2025
 
-**Fixup Required:** Populate submodules or download `plutovg` v1.3.1 manually from [here](https://github.com/sammycage/plutovg/releases/tag/v1.3.1). 
+**Fixup Required:** Populate submodules or download `plutovg` v1.3.1 manually from [here](https://github.com/sammycage/plutovg/releases/tag/v1.3.1). Extract `source` folder from PlutoSVG and `source` and `include` folders from PlutoVG into base folder. Delete `plutovg-stb-image.h`, `plutovg-stb-image-write.h`, `plutovg-stb-truetype.h`, `plutovg-ft-types.h`, `plutovg-ft-stroker.h`, `plutovg-ft-stroker.c`, `plutovg-ft-math.h`, and `plutovg-ft-math.c`. Many fixups are required to get PlutoVG compiling as part of our unity build with FreeType. See all locations marked with `NOTE(Taylor):`
 
 **Required For:** When `BUILD_WITH_FREETYPE` and trying to render an SVG-based glyph from an OTF font file we use plutosvg

@@ -72,46 +72,6 @@ Description:
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
 #if BUILD_WITH_SOKOL_GFX
 
-#if PIG_CORE_IMPLEMENTATION
-#define STB_RECT_PACK_IMPLEMENTATION
-#endif
-#define STBRP_SORT                          qsort //TODO: Do we want to route this to one of our own sorting functions?
-#define STBRP_ASSERT(condition)             Assert(condition)
-#include "third_party/stb/stb_rect_pack.h"
-
-#if !BUILD_WITH_FREETYPE
-#if PIG_CORE_IMPLEMENTATION
-#define STB_TRUETYPE_IMPLEMENTATION
-#endif
-#define STBTT_STATIC
-#define STBTT_ifloor(x)                     FloorR32i(x)
-#define STBTT_iceil(x)                      CeilR32i(x)
-#define STBTT_sqrt(x)                       SqrtR32(x)
-#define STBTT_pow(x, exp)                   PowR32((x), (exp))
-#define STBTT_fabs(x)                       AbsR32(x)
-#define STBTT_malloc(numBytes, user)        AllocMem((Arena*)(user), (numBytes))
-#define STBTT_free(pointer, user)           do { if ((pointer) != nullptr && CanArenaFree((Arena*)(user))) { FreeMem((Arena*)(user), (pointer), 0); } } while(0)
-#define STBTT_assert(expession)             do { Assert(expession); } while(0)
-#define STBTT_strlen(str)                   (uxx)MyStrLength64(str)
-#define STBTT_memcpy(dest, source, length)  MyMemCopy((dest), (source), (length))
-#define STBTT_memset(dest, value, length)   MyMemSet((dest), (value), (length))
-#if COMPILER_IS_MSVC
-#pragma warning(push)
-#pragma warning(disable: 5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
-#endif
-#if COMPILER_IS_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
-#endif
-#include "third_party/stb/stb_truetype.h"
-#if COMPILER_IS_MSVC
-#pragma warning(pop)
-#endif
-#if COMPILER_IS_CLANG
-#pragma clang diagnostic pop
-#endif
-#endif //!BUILD_WITH_FREETYPE
-
 #define FONT_FREETYPE_DPI 72 //pixels/inch
 #define FONT_CODEPOINT_EMPTY 0xFFFFFFU
 
@@ -505,6 +465,32 @@ PEXPI CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph*
 	return result;
 }
 
+static bool InitializeFreeTypeIfNeeded()
+{
+	if (FreeTypeLib == nullptr)
+	{
+		TracyCZoneN(_InitFreeType, "FT_Init_FreeType", true);
+		FT_Error initError = FT_Init_FreeType(&FreeTypeLib);
+		TracyCZoneEnd(_InitFreeType);
+		if (initError != 0)
+		{
+			DebugAssertMsg(initError == 0, "Failed to initialize FreeType library!");
+			return false;
+		}
+		NotNull(FreeTypeLib);
+		
+		FT_Error setHooksError = FT_Property_Set(FreeTypeLib, "ot-svg", "svg-hooks", &plutosvg_ft_hooks);
+		if (setHooksError != 0)
+		{
+			DebugAssertMsg(setHooksError == 0, "Failed to set FreeType SVG hooks to Pluto SVG!");
+			return false;
+		}
+		
+		plutosvg_set_library_pntr(FreeTypeLib);
+	}
+	return true;
+}
+
 PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena)
 {
 	NotNull(font);
@@ -524,19 +510,7 @@ PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents
 	#if BUILD_WITH_FREETYPE
 	do
 	{
-		if (FreeTypeLib == nullptr)
-		{
-			TracyCZoneN(_InitFreeType, "FT_Init_FreeType", true);
-			FT_Error initError = FT_Init_FreeType(&FreeTypeLib);
-			TracyCZoneEnd(_InitFreeType);
-			if (initError != 0)
-			{
-				DebugAssertMsg(initError == 0, "Failed to initialize FreeType library!");
-				result = Result_InitFailed;
-				break;
-			}
-			NotNull(FreeTypeLib);
-		}
+		if (!InitializeFreeTypeIfNeeded()) { result = Result_InitFailed; break; }
 		
 		FT_Open_Args freeTypeFaceArgs = ZEROED;
 		freeTypeFaceArgs.flags = FT_OPEN_MEMORY;
@@ -648,6 +622,7 @@ PEXP void FillFontKerningTable(PigFont* font)
 }
 
 //NOTE: This function does not support "fallback" fonts. It only uses the first font file that is attached
+//TODO: We should allow for some way for the calling code to tell us which fontFile to use to pack this atlas, that way we can have all our font files attached for future use as an active font, and still pre-bake some static atlases using specific fonts
 PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	NotNull(font);
@@ -686,12 +661,27 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 	}
 	uxx numCodepointsTotal = numCodepointsInCharRanges + numCodepointsInCustomRanges;
 	
+	// {
+	// 	u8 styleFlags = (fontFile->styleFlags | extraStyleFlags);
+	// 	bool isBold = IsFlagSet(styleFlags, FontStyleFlag_Bold);
+	// 	bool isItalic = IsFlagSet(styleFlags, FontStyleFlag_Italic);
+	// 	bool isColored = IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs);
+	// 	PrintLine_D("Baking atlas[%llu] at %g %s%s%s%s%s with %llu char%s and %llu custom glyph%s atlas size is [%d,%d]",
+	// 		font->atlases.length,
+	// 		fontSize,
+	// 		isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", ((isItalic || isBold) && isColored) ? "|" : "", isColored ? "Colored" : "",
+	// 		numCodepointsInCharRanges, Plural(numCodepointsInCharRanges, "s"),
+	// 		numCodepointsInCustomRanges, Plural(numCodepointsInCustomRanges, "s"),
+	// 		minAtlasSize, maxAtlasSize
+	// 	);
+	// }
+	
 	#if BUILD_WITH_FREETYPE
 	
 	do
 	{
 		NotNull(fontFile->freeTypeFace);
-		const int packingPadding = 1; //px
+		const int packingPadding = 1; //px NOTE: This has to be >= 1 because some glyphs end up being 1 pixel wider/taller than their reported size before rasterization!
 		
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
@@ -728,12 +718,20 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 					}
 					NotNull(fontFile->freeTypeFace->glyph);
 					
-					if (fontFile->freeTypeFace->glyph->metrics.width > 0 && fontFile->freeTypeFace->glyph->metrics.height > 0)
+					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
+					if (glyphSize.Width > 0 && glyphSize.Height > 0)
 					{
 						DebugAssert(packedRecIndex < numCodepointsTotal);
-						packRects[packedRecIndex].w = TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width) + packingPadding*2;
-						packRects[packedRecIndex].h = TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height) + packingPadding*2;
+						packRects[packedRecIndex].w = glyphSize.Width + packingPadding*2;
+						packRects[packedRecIndex].h = glyphSize.Height + packingPadding*2;
 						// PrintLine_D("Codepoint U+%X is %dx%d glyph at %g (%d)", codepoint, packRects[packedRecIndex].w - packingPadding, packRects[packedRecIndex].h - packingPadding, fontSize, freeTypeFontSize);
+						// PrintLine_D("[%llu] Codepoint \'%s\' U+%X (%u) is %fx%f glyph metrics size, which we think is %dx%d pixel size, meaing packedRec is %dx%d",
+						// 	packedRecIndex,
+						// 	DebugGetCodepointName(codepoint), codepoint, codepoint,
+						// 	TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height),
+						// 	TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height),
+						// 	packRects[packedRecIndex].w, packRects[packedRecIndex].h
+						// );
 						packedRecIndex++;
 					}
 				}
@@ -836,18 +834,22 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 					newGlyph->metrics.renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
 					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, newAtlas->metrics.maxAscend);
 					
-					if (fontFile->freeTypeFace->glyph->bitmap.width > 0 && fontFile->freeTypeFace->glyph->bitmap.rows > 0)
+					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
+					if (glyphSize.Width > 0 && glyphSize.Height > 0)
 					{
 						Assert(packedRecIndex < numGlyphsInAtlas);
 						stbrp_rect packedRec = packRects[packedRecIndex];
 						packedRecIndex++;
 						Assert(packedRec.was_packed);
 						
-						Assert(fontFile->freeTypeFace->glyph->bitmap.width == (unsigned int)packedRec.w - packingPadding*2);
-						Assert(fontFile->freeTypeFace->glyph->bitmap.rows == (unsigned int)packedRec.h - packingPadding*2);
+						v2i bitmapSize = NewV2i((i32)fontFile->freeTypeFace->glyph->bitmap.width, (i32)fontFile->freeTypeFace->glyph->bitmap.rows);
+						Assert(bitmapSize.Width > 0 && bitmapSize.Height > 0);
+						//NOTE: the bitmapSize can be smaller than glyph metrics reported AND it can be 1 pixel larger too! We added 2 pixels of padding so we can allow it to take the right and bottom padding area if needed
+						Assert(bitmapSize.Width >= glyphSize.Width-2 && bitmapSize.Width <= glyphSize.Width+1);
+						Assert(bitmapSize.Height >= glyphSize.Height-2 && bitmapSize.Height <= glyphSize.Height+1);
 						
 						newGlyph->atlasSourcePos = NewV2i(packedRec.x + packingPadding, packedRec.y + packingPadding);
-						newGlyph->metrics.glyphSize = NewV2i(packedRec.w - packingPadding*2, packedRec.h - packingPadding*2);
+						newGlyph->metrics.glyphSize = bitmapSize;
 						newGlyph->metrics.logicalRec.Width = MaxR32(newGlyph->metrics.renderOffset.X + (r32)newGlyph->metrics.glyphSize.Width, newGlyph->metrics.advanceX);
 						
 						// PrintLine_D("Codepoint U+%X is %dx%d offset=(%g, %g) advance=%g", codepoint, newGlyph->atlasSourceRec.Width, newGlyph->atlasSourceRec.Height, newGlyph->renderOffset.X, newGlyph->renderOffset.Y, newGlyph->advanceX);
@@ -858,28 +860,40 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 						// 	font->atlases.length-1
 						// );
 						
-						for (int yOffset = 0; yOffset < packedRec.h - packingPadding*2; yOffset++)
+						for (i32 yOffset = 0; yOffset < bitmapSize.Height; yOffset++)
 						{
-							for (int xOffset = 0; xOffset < packedRec.w - packingPadding*2; xOffset++)
+							for (i32 xOffset = 0; xOffset < bitmapSize.Width; xOffset++)
 							{
-								u8 alphaValue = 0;
-								if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
+								Color32* pixelPntr = &pixelsPntr[INDEX_FROM_COORD2D(packedRec.x + packingPadding + xOffset, packedRec.y + packingPadding + yOffset, atlasSize.Width, atlasSize.Height)];
+								if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO ||
+									fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
 								{
-									Assert(fontFile->freeTypeFace->glyph->bitmap.pitch == CeilDivI32((i32)fontFile->freeTypeFace->glyph->bitmap.width, 8));
-									u8 bitmapByte = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset/8, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
-									bool bitmapBit = (bitmapByte & (0x80 >> (xOffset%8)));
-									alphaValue = (bitmapBit ? 0xFF : 0x00);
+									u8 alphaValue = 0;
+									if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
+									{
+										Assert(fontFile->freeTypeFace->glyph->bitmap.pitch == CeilDivI32((i32)fontFile->freeTypeFace->glyph->bitmap.width, 8));
+										u8 bitmapByte = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset/8, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+										bool bitmapBit = (bitmapByte & (0x80 >> (xOffset%8)));
+										alphaValue = (bitmapBit ? 0xFF : 0x00);
+									}
+									else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
+									{
+										alphaValue = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+									}
+									pixelPntr->r = 255;
+									pixelPntr->g = 255;
+									pixelPntr->b = 255;
+									pixelPntr->a = alphaValue;
 								}
-								else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
+								else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA)
 								{
-									alphaValue = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+									u8* pixelBgraPntr = &fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset * sizeof(u32), yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+									pixelPntr->r = pixelBgraPntr[0];
+									pixelPntr->g = pixelBgraPntr[1];
+									pixelPntr->b = pixelBgraPntr[2];
+									pixelPntr->a = pixelBgraPntr[3];
 								}
 								else { AssertMsg(false, "Unsupported pixel format rendered from FT_Render_Glyph"); }
-								Color32* outPixel = &pixelsPntr[INDEX_FROM_COORD2D(packedRec.x + packingPadding + xOffset, packedRec.y + packingPadding + yOffset, atlasSize.Width, atlasSize.Height)];
-								outPixel->r = 255;
-								outPixel->g = 255;
-								outPixel->b = 255;
-								outPixel->a = alphaValue;
 							}
 						}
 					}
@@ -1777,38 +1791,54 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 			// Store a FontActiveAtlasTextureUpdate
 			#if BUILD_WITH_FREETYPE
 			{
-				Assert(fontFile->freeTypeFace->glyph->bitmap.width == (unsigned int)glyphSize.Width);
-				Assert(fontFile->freeTypeFace->glyph->bitmap.rows == (unsigned int)glyphSize.Height);
+				v2i bitmapSize = NewV2i((i32)fontFile->freeTypeFace->glyph->bitmap.width, (i32)fontFile->freeTypeFace->glyph->bitmap.rows);
+				Assert(bitmapSize.Width > 0 && bitmapSize.Height > 0);
+				//NOTE: the bitmapSize can be smaller than glyph metrics reported AND it can be 1 pixel larger too! We added 2 pixels of padding so we can allow it to take the right and bottom padding area if needed
+				Assert(bitmapSize.Width >= glyphSize.Width-2 && bitmapSize.Width <= glyphSize.Width+1);
+				Assert(bitmapSize.Height >= glyphSize.Height-2 && bitmapSize.Height <= glyphSize.Height+1);
+				
 				FontActiveAtlasTextureUpdate* newUpdate = VarArrayAdd(FontActiveAtlasTextureUpdate, &activeAtlas->pendingTextureUpdates);
 				NotNull(newUpdate);
 				ClearPointer(newUpdate);
 				newUpdate->sourcePos = newGlyph->atlasSourcePos;
-				newUpdate->imageData.size = glyphSize;
-				newUpdate->imageData.numPixels = (uxx)(glyphSize.Width * glyphSize.Height);
+				newUpdate->imageData.size = bitmapSize;
+				newUpdate->imageData.numPixels = (uxx)(bitmapSize.Width * bitmapSize.Height);
 				newUpdate->imageData.pixels = AllocArray(u32, font->arena, newUpdate->imageData.numPixels);
 				NotNull(newUpdate->imageData.pixels);
-				for (uxx yOffset = 0; yOffset < glyphSize.Height; yOffset++)
+				for (uxx yOffset = 0; yOffset < bitmapSize.Height; yOffset++)
 				{
-					for (uxx xOffset = 0; xOffset < glyphSize.Width; xOffset++)
+					for (uxx xOffset = 0; xOffset < bitmapSize.Width; xOffset++)
 					{
-						u8 alphaValue = 0;
-						if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
+						Color32* pixelPntr = (Color32*)&newUpdate->imageData.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, bitmapSize.Width, bitmapSize.Height)];
+						if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO ||
+							fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
 						{
-							Assert(fontFile->freeTypeFace->glyph->bitmap.pitch == CeilDivI32((i32)fontFile->freeTypeFace->glyph->bitmap.width, 8));
-							u8 bitmapByte = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset/8, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
-							bool bitmapBit = (bitmapByte & (0x80 >> (xOffset%8)));
-							alphaValue = (bitmapBit ? 0xFF : 0x00);
+							u8 alphaValue = 0;
+							if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
+							{
+								Assert(fontFile->freeTypeFace->glyph->bitmap.pitch == CeilDivI32((i32)fontFile->freeTypeFace->glyph->bitmap.width, 8));
+								u8 bitmapByte = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset/8, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+								bool bitmapBit = (bitmapByte & (0x80 >> (xOffset%8)));
+								alphaValue = (bitmapBit ? 0xFF : 0x00);
+							}
+							else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
+							{
+								alphaValue = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+							}
+							pixelPntr->r = 255;
+							pixelPntr->g = 255;
+							pixelPntr->b = 255;
+							pixelPntr->a = alphaValue;
 						}
-						else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
+						else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA)
 						{
-							alphaValue = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+							u8* pixelBgraPntr = &fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset * sizeof(u32), yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+							pixelPntr->r = pixelBgraPntr[0];
+							pixelPntr->g = pixelBgraPntr[1];
+							pixelPntr->b = pixelBgraPntr[2];
+							pixelPntr->a = pixelBgraPntr[3];
 						}
 						else { AssertMsg(false, "Unsupported pixel format rendered from FT_Render_Glyph"); }
-						Color32* pixelPntr = (Color32*)&newUpdate->imageData.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, glyphSize.Width, glyphSize.Height)];
-						pixelPntr->r = 255;
-						pixelPntr->g = 255;
-						pixelPntr->b = 255;
-						pixelPntr->a = alphaValue;
 					}
 				}
 			}

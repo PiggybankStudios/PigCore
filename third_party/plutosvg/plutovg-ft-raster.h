@@ -19,8 +19,8 @@
 #ifndef PLUTOVG_FT_RASTER_H
 #define PLUTOVG_FT_RASTER_H
 
-// #include "plutovg-ft-types.h" //(Taylor)NOTE: All these types can be found in FreeType headers like fttypes.h, integer-types.h, etc.
-#include "freetype/ftimage.h" //(Taylor)NOTE: Added for FT_Outline
+// #include "plutovg-ft-types.h" //NOTE(Taylor): All these types can be found in FreeType headers like fttypes.h, integer-types.h, etc.
+#include "freetype/ftimage.h" //NOTE(Taylor): Added for FT_Outline
 
 /*************************************************************************/
 /*                                                                       */
@@ -55,7 +55,7 @@
 /*    the left edge of the glyph's bounding box.  If `xMin' is negative, */
 /*    the glyph extends to the left of the origin.                       */
 /*                                                                       */
-//(Taylor)NOTE: Disabled in favor of using FT_BBox
+//NOTE(Taylor): Disabled in favor of using FT_BBox
 // typedef struct  PVG_FT_BBox_
 // {
 //     PVG_FT_Pos  xMin, yMin;
@@ -108,7 +108,7 @@
 /*                  and give hints to the scan-converter and hinter on   */
 /*                  how to convert/grid-fit it.  See @PVG_FT_OUTLINE_FLAGS.*/
 /*                                                                       */
-//(Taylor)NOTE: Disabled in favor of using FT_Outline (FT_Outline does NOT have contours_flag, but that field also seems to be only ever set by the algorithm)
+//NOTE(Taylor): Disabled in favor of using FT_Outline (FT_Outline does NOT have contours_flag, but that field also seems to be only ever set by the algorithm)
 // typedef struct  PVG_FT_Outline_
 // {
 //     int       n_contours;      /* number of contours in glyph        */
@@ -262,7 +262,7 @@ typedef struct  PVG_FT_Span_
     int y;
     unsigned char coverage;
 
-} PVG_FT_Span; //(Taylor)NOTE: This is similar to FT_Span in FreeType, but it has an "int y;" field
+} PVG_FT_Span; //NOTE(Taylor): This is similar to FT_Span in FreeType, but it has an "int y;" field
 
 
 /*************************************************************************/

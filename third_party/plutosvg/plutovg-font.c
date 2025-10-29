@@ -4,12 +4,10 @@
 #include <stdio.h>
 #include <assert.h>
 
-//TODO: We need to defer to PigCore for including stb_rect_pack.h and stb_truetype.h properly (with all the correct configuration #defines set)
-#define STBTT_STATIC
-#define STB_TRUETYPE_IMPLEMENTATION
+//NOTE(Taylor): Disabled because stb_truetype.h is provided by PigCore already
+// #define STBTT_STATIC
+// #define STB_TRUETYPE_IMPLEMENTATION
 // #include "plutovg-stb-truetype.h"
-#include "third_party/stb/stb_rect_pack.h"
-#include "third_party/stb/stb_truetype.h"
 
 static int plutovg_text_iterator_length(const void* data, plutovg_text_encoding_t encoding)
 {

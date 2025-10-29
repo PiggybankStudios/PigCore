@@ -3,7 +3,7 @@
 
 #include "plutovg-ft-raster.h"
 
-// #include "plutovg-ft-stroker.h" //(Taylor)NOTE: Swapped for freetype/ftstroke.h since this is getting compiled in a unity build with FreeType and this mostly is a subset of functionality in FreeType's ftstroke.h
+// #include "plutovg-ft-stroker.h" //NOTE(Taylor): Swapped for freetype/ftstroke.h since this is getting compiled in a unity build with FreeType and this mostly is a subset of functionality in FreeType's ftstroke.h
 #include "freetype/ftstroke.h"
 
 #include <limits.h>
@@ -167,7 +167,7 @@ void plutovg_span_buffer_intersect(plutovg_span_buffer_t* span_buffer, const plu
 }
 
 #ifndef PVG_ALIGN_SIZE
-#define PVG_ALIGN_SIZE(size) (((size) + 7ul) & ~7ul) //(Taylor)NOTE: Added PVG_ prefix to avoid conflict with ALIGN_SIZE macro in freetype\src\truetype\ttgxvar.c
+#define PVG_ALIGN_SIZE(size) (((size) + 7ul) & ~7ul) //NOTE(Taylor): Added PVG_ prefix to avoid conflict with ALIGN_SIZE macro in freetype\src\truetype\ttgxvar.c
 #endif
 static FT_Outline* ft_outline_create(int points, int contours)
 {
@@ -179,9 +179,9 @@ static FT_Outline* ft_outline_create(int points, int contours)
 
     FT_Byte* outline_data = (FT_Byte*)(outline + 1);
     outline->points = (FT_Vector*)(outline_data);
-    outline->tags = (unsigned char*)(outline_data + points_size); //(Taylor)NOTE: Fixed char* -> unsigned char*
-    outline->contours = (unsigned short*)(outline_data + points_size + tags_size); //(Taylor)NOTE: Fixed int* -> unsigned short*
-    // outline->contours_flag = (char*)(outline_data + points_size + tags_size + contours_size); //(Taylor)NOTE: Disabled because this field doesn't exist in our version of FreeType
+    outline->tags = (unsigned char*)(outline_data + points_size); //NOTE(Taylor): Fixed char* -> unsigned char*
+    outline->contours = (unsigned short*)(outline_data + points_size + tags_size); //NOTE(Taylor): Fixed int* -> unsigned short*
+    // outline->contours_flag = (char*)(outline_data + points_size + tags_size + contours_size); //NOTE(Taylor): Disabled because this field doesn't exist in our version of FreeType
     outline->n_points = 0;
     outline->n_contours = 0;
     outline->flags = 0x0;
@@ -193,7 +193,7 @@ static void ft_outline_destroy(FT_Outline* outline)
     free(outline);
 }
 
-#define PVG_FT_COORD(x) (FT_Pos)(roundf(x * 64)) //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_FT_COORD(x) (FT_Pos)(roundf(x * 64)) //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 static void ft_outline_move_to(FT_Outline* ft, float x, float y)
 {
     ft->points[ft->n_points].x = PVG_FT_COORD(x);
@@ -204,7 +204,7 @@ static void ft_outline_move_to(FT_Outline* ft, float x, float y)
         ft->n_contours++;
     }
 
-    // ft->contours_flag[ft->n_contours] = 1; //(Taylor)NOTE: Disabled because this field doesn't exist in our version of FreeType
+    // ft->contours_flag[ft->n_contours] = 1; //NOTE(Taylor): Disabled because this field doesn't exist in our version of FreeType
     ft->n_points++;
 }
 
@@ -236,7 +236,7 @@ static void ft_outline_cubic_to(FT_Outline* ft, float x1, float y1, float x2, fl
 
 static void ft_outline_close(FT_Outline* ft)
 {
-    // ft->contours_flag[ft->n_contours] = 0; //(Taylor)NOTE: Disabled because this field doesn't exist in our version of FreeType
+    // ft->contours_flag[ft->n_contours] = 0; //NOTE(Taylor): Disabled because this field doesn't exist in our version of FreeType
     int index = ft->n_contours ? ft->contours[ft->n_contours - 1] + 1 : 0;
     if(index == ft->n_points)
         return;
@@ -338,13 +338,12 @@ static FT_Outline* ft_outline_convert_stroke(const plutovg_path_t* path, const p
         break;
     }
 
-    FT_Library library = nullptr; //TODO: Where do we get this from?
     FT_Stroker stroker;
-    FT_Stroker_New(library, &stroker); //(Taylor)NOTE: Added library argument
+    FT_Stroker_New(ft_library_global, &stroker); //NOTE(Taylor): Added library argument
     FT_Stroker_Set(stroker, ftWidth, ftCap, ftJoin, ftMiterLimit);
 
     FT_Outline* outline = ft_outline_convert_dash(path, matrix, &stroke_data->dash);
-    FT_Stroker_ParseOutline(stroker, outline, false); //(Taylor)NOTE: Added third argument "opened"
+    FT_Stroker_ParseOutline(stroker, outline, false); //NOTE(Taylor): Added third argument "opened"
 
     FT_UInt points;
     FT_UInt contours;

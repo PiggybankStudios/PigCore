@@ -56,7 +56,7 @@
 /*************************************************************************/
 
 #include "plutovg-ft-raster.h"
-// #include "plutovg-ft-math.h" //(Taylor)NOTE: Everything that was in here can be found in FreeType headers like fttrigon.h, ftobjs.h, etc.
+// #include "plutovg-ft-math.h" //NOTE(Taylor): Everything that was in here can be found in FreeType headers like fttrigon.h, ftobjs.h, etc.
 
 #include <setjmp.h>
 
@@ -79,24 +79,24 @@ typedef ptrdiff_t  PVG_FT_PtrDist;
 
 #define PVG_FT_MINIMUM_POOL_SIZE 8192
 
-#define PVG_RAS_ARG   PVG_PWorker  worker //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
-#define PVG_RAS_ARG_  PVG_PWorker  worker, //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_RAS_ARG   PVG_PWorker  worker //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_RAS_ARG_  PVG_PWorker  worker, //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 
-#define PVG_RAS_VAR   worker //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
-#define PVG_RAS_VAR_  worker, //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_RAS_VAR   worker //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_RAS_VAR_  worker, //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 
-#define PVG_ras       (*worker) //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_ras       (*worker) //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 
   /* must be at least 6 bits! */
-#define PVG_PIXEL_BITS  8 //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_PIXEL_BITS  8 //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 
-#define PVG_ONE_PIXEL       ( 1L << PVG_PIXEL_BITS ) //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
-#define PVG_TRUNC( x )      (PVG_TCoord)( (x) >> PVG_PIXEL_BITS ) //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
-#define PVG_FRACT( x )      (PVG_TCoord)( (x) & ( PVG_ONE_PIXEL - 1 ) ) //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_ONE_PIXEL       ( 1L << PVG_PIXEL_BITS ) //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_TRUNC( x )      (PVG_TCoord)( (x) >> PVG_PIXEL_BITS ) //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_FRACT( x )      (PVG_TCoord)( (x) & ( PVG_ONE_PIXEL - 1 ) ) //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 
 #if PVG_PIXEL_BITS >= 6
-#define PVG_UPSCALE( x )    ( (x) * ( PVG_ONE_PIXEL >> 6 ) ) //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
-#define PVG_DOWNSCALE( x )  ( (x) >> ( PVG_PIXEL_BITS - 6 ) ) //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_UPSCALE( x )    ( (x) * ( PVG_ONE_PIXEL >> 6 ) ) //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
+#define PVG_DOWNSCALE( x )  ( (x) >> ( PVG_PIXEL_BITS - 6 ) ) //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 #else
 #define PVG_UPSCALE( x )    ( (x) >> ( 6 - PVG_PIXEL_BITS ) )
 #define PVG_DOWNSCALE( x )  ( (x) * ( 64 >> PVG_PIXEL_BITS ) )
@@ -134,17 +134,17 @@ FT_END_STMNT
   /* need to define them to "float" or "double" when experimenting with   */
   /* new algorithms                                                       */
 
-  typedef long   PVG_TCoord;   /* integer scanline/pixel coordinate */ //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
-  typedef long   PVG_TPos;     /* sub-pixel coordinate              */ //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
-  typedef long   PVG_TArea ;   /* cell areas, coordinate products   */ //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+  typedef long   PVG_TCoord;   /* integer scanline/pixel coordinate */ //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
+  typedef long   PVG_TPos;     /* sub-pixel coordinate              */ //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
+  typedef long   PVG_TArea ;   /* cell areas, coordinate products   */ //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 
   /* maximal number of gray spans in a call to the span callback */
-#define PVG_FT_MAX_GRAY_SPANS  256 //(Taylor)NOTE: This is 256 while FT_MAX_GRAY_SPANS is 16
+#define PVG_FT_MAX_GRAY_SPANS  256 //NOTE(Taylor): This is 256 while FT_MAX_GRAY_SPANS is 16
 
 
   typedef struct PVG_TCell_*  PVG_PCell;
 
-  //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
   typedef struct  PVG_TCell_
   {
     int    x;
@@ -155,7 +155,7 @@ FT_END_STMNT
   } PVG_TCell;
 
 
-  //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
   typedef struct  PVG_TWorker_
   {
     PVG_TCoord  ex, ey;
@@ -196,14 +196,14 @@ FT_END_STMNT
 
     PVG_PCell*     ycells;
     PVG_TPos       ycount;
-  } PVG_TWorker, *PVG_PWorker; //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+  } PVG_TWorker, *PVG_PWorker; //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
 
 
   /*************************************************************************/
   /*                                                                       */
   /* Initialize the cells table.                                           */
   /*                                                                       */
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_init_cells( PVG_RAS_ARG_ void*  buffer,
                             long   byte_size )
@@ -225,7 +225,7 @@ FT_END_STMNT
   /*                                                                       */
   /* Compute the outline bounding box.                                     */
   /*                                                                       */
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_compute_cbox( PVG_RAS_ARG )
   {
@@ -270,7 +270,7 @@ FT_END_STMNT
   /*                                                                       */
   /* Record the current cell in the table.                                 */
   /*                                                                       */
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static PVG_PCell
   pvg_gray_find_cell( PVG_RAS_ARG )
   {
@@ -309,7 +309,7 @@ FT_END_STMNT
     return cell;
   }
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_record_cell( PVG_RAS_ARG )
   {
@@ -328,7 +328,7 @@ FT_END_STMNT
   /*                                                                       */
   /* Set the current cell to a new position.                               */
   /*                                                                       */
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_set_cell( PVG_RAS_ARG_ PVG_TCoord  ex,
                           PVG_TCoord  ey )
@@ -376,7 +376,7 @@ FT_END_STMNT
   /*                                                                       */
   /* Start a new contour at a given cell.                                  */
   /*                                                                       */
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_start_cell( PVG_RAS_ARG_ PVG_TCoord  ex,
                             PVG_TCoord  ey )
@@ -403,7 +403,7 @@ FT_END_STMNT
   /*                                                                       */
   /* Render a scanline as one or more cells.                               */
   /*                                                                       */
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_render_scanline( PVG_RAS_ARG_ PVG_TCoord  ey,
                                  PVG_TPos    x1,
@@ -499,7 +499,7 @@ FT_END_STMNT
   /*                                                                       */
   /* Render a given line as a series of scanlines.                         */
   /*                                                                       */
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_render_line( PVG_RAS_ARG_ PVG_TPos from_x, PVG_TPos from_y, PVG_TPos  to_x, PVG_TPos  to_y )
   {
@@ -667,7 +667,7 @@ FT_END_STMNT
   /*                                                                       */
   /* Render a straight line across multiple cells in any direction.        */
   /*                                                                       */
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_render_line( PVG_RAS_ARG_ PVG_TPos from_x, PVG_TPos from_y, PVG_TPos  to_x, PVG_TPos  to_y )
   {
@@ -795,7 +795,7 @@ FT_END_STMNT
 
 #endif
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static int
   pvg_gray_clip_flags( PVG_RAS_ARG_ PVG_TPos x, PVG_TPos y )
   {
@@ -803,14 +803,14 @@ FT_END_STMNT
              ((x < PVG_ras.clip_box.xMin) << 2) | ((y < PVG_ras.clip_box.yMin) << 3);
   }
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static int
   pvg_gray_clip_vflags( PVG_RAS_ARG_ PVG_TPos y )
   {
       return ((y > PVG_ras.clip_box.yMax) << 1) | ((y < PVG_ras.clip_box.yMin) << 3);
   }
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_vline( PVG_RAS_ARG_ PVG_TPos x1, PVG_TPos y1, PVG_TPos x2, PVG_TPos y2, int f1, int f2 )
   {
@@ -865,7 +865,7 @@ FT_END_STMNT
       }
   }
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_line_to( PVG_RAS_ARG_ PVG_TPos x2, PVG_TPos y2 )
   {
@@ -965,7 +965,7 @@ FT_END_STMNT
       PVG_ras.y = y2;
   }
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_split_conic( FT_Vector*  base )
   {
@@ -986,7 +986,7 @@ FT_END_STMNT
   }
 
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_render_conic( PVG_RAS_ARG_ const FT_Vector*  control,
                               const FT_Vector*  to )
@@ -1054,7 +1054,7 @@ FT_END_STMNT
   }
 
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_split_cubic( FT_Vector*  base )
   {
@@ -1083,7 +1083,7 @@ FT_END_STMNT
   }
 
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_render_cubic( PVG_RAS_ARG_ const FT_Vector*  control1,
                               const FT_Vector*  control2,
@@ -1185,7 +1185,7 @@ FT_END_STMNT
 
 
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static int
   pvg_gray_move_to( const FT_Vector*  to,
                 PVG_PWorker           worker )
@@ -1211,7 +1211,7 @@ FT_END_STMNT
   }
 
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_hline( PVG_RAS_ARG_ PVG_TCoord  x,
                        PVG_TCoord  y,
@@ -1307,7 +1307,7 @@ FT_END_STMNT
 
 
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static void
   pvg_gray_sweep( PVG_RAS_ARG)
   {
@@ -1460,7 +1460,7 @@ void PVG_FT_Outline_Get_CBox(const FT_Outline* outline, FT_BBox* acbox)
 
     FT_Vector*  point;
     FT_Vector*  limit;
-    unsigned char*       tags; //(Taylor)NOTE: Changed to unsigned char* from char*
+    unsigned char*       tags; //NOTE(Taylor): Changed to unsigned char* from char*
 
     int   n;         /* index of contour in outline     */
     int   first;     /* index of first point in contour */
@@ -1641,14 +1641,14 @@ void PVG_FT_Outline_Get_CBox(const FT_Outline* outline, FT_BBox* acbox)
     return ErrRaster_Invalid_Outline;
   }
 
-  //(Taylor)NOTE: Added PVG_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added PVG_ prefix to avoid naming conflicts in unity build
   typedef struct  PVG_TBand_
   {
     PVG_TPos  min, max;
 
   } PVG_TBand;
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static int
   pvg_gray_convert_glyph_inner( PVG_RAS_ARG )
   {
@@ -1669,7 +1669,7 @@ void PVG_FT_Outline_Get_CBox(const FT_Outline* outline, FT_BBox* acbox)
   }
 
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static int
   pvg_gray_convert_glyph( PVG_RAS_ARG )
   {
@@ -1837,7 +1837,7 @@ void PVG_FT_Outline_Get_CBox(const FT_Outline* outline, FT_BBox* acbox)
   }
 
 
-  //(Taylor)NOTE: Added pvg_ prefix to avoid naming conflicts in unity build
+  //NOTE(Taylor): Added pvg_ prefix to avoid naming conflicts in unity build
   static int
   pvg_gray_raster_render( PVG_RAS_ARG_ void* buffer, long buffer_size,
                       const PVG_FT_Raster_Params*  params )

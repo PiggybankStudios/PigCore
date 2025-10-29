@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+//NOTE(Taylor): Added this global so ft_outline_convert_stroke in plutovg-rasterize.c can use it when calling FT_Stroker_New
+FT_Library ft_library_global = nullptr;
+
 int plutosvg_version(void)
 {
     return PLUTOSVG_VERSION;
@@ -15,6 +18,12 @@ int plutosvg_version(void)
 const char* plutosvg_version_string(void)
 {
     return PLUTOSVG_VERSION_STRING;
+}
+
+//NOTE(Taylor): Added this function to set the global so ft_outline_convert_stroke in plutovg-rasterize.c can use it when calling FT_Stroker_New
+void plutosvg_set_library_pntr(FT_Library ft_library)
+{
+	ft_library_global = ft_library;
 }
 
 enum {
@@ -89,7 +98,8 @@ enum {
     ATTR_Y2
 };
 
-#define MAX_NAME 19
+//NOTE(Taylor): Added PSVG_ prefix to avoid conflict with plutovg-paint.c in unity build
+#define PSVG_MAX_NAME 19
 typedef struct {
     const char* name;
     int id;
@@ -104,9 +114,9 @@ static int name_entry_compare(const void* a, const void* b)
 
 static int lookupid(const char* data, size_t length, const name_entry_t* table, size_t count)
 {
-    if(length > MAX_NAME)
+    if(length > PSVG_MAX_NAME)
         return 0;
-    char name[MAX_NAME + 1];
+    char name[PSVG_MAX_NAME + 1];
     for(int i = 0; i < length; i++)
         name[i] = data[i];
     name[length] = '\0';
@@ -262,9 +272,9 @@ static heap_t* heap_create(void)
     return heap;
 }
 
-#define PVG_CHUNK_SIZE 4096 //(Taylor)NOTE: Added PVG_ prefix to avoid conflicts in unity build
+#define PVG_CHUNK_SIZE 4096 //NOTE(Taylor): Added PVG_ prefix to avoid conflicts in unity build
 #ifndef PVG_ALIGN_SIZE
-#define PVG_ALIGN_SIZE(size) (((size) + 7ul) & ~7ul) //(Taylor)NOTE: Added PVG_ prefix to avoid conflict with ALIGN_SIZE macro in freetype\src\truetype\ttgxvar.c
+#define PVG_ALIGN_SIZE(size) (((size) + 7ul) & ~7ul) //NOTE(Taylor): Added PVG_ prefix to avoid conflict with ALIGN_SIZE macro in freetype\src\truetype\ttgxvar.c
 #endif
 static void* heap_alloc(heap_t* heap, size_t size)
 {

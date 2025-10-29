@@ -52,17 +52,19 @@ static void StbImageWriteFree(void* allocPntr)
 }
 #endif //PIG_CORE_IMPLEMENTATION
 
+#if PIG_CORE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#endif
+
 #define STBI_WRITE_NO_STDIO
+#define STB_IMAGE_WRITE_STATIC //TODO: Do we want to expose stb_image_write functions to the application when working as a DLL?
 #define STBIW_ASSERT(condition) Assert(condition)
 #define STBIW_MALLOC(numBytes)                           StbImageWriteMalloc(numBytes)
 #define STBIW_REALLOC_SIZED(allocPntr, oldSize, newSize) StbImageWriteRealloc((allocPntr), (oldSize), (newSize))
 #define STBIW_FREE(allocPntr)                            StbImageWriteFree(allocPntr)
 #define STBIW_MEMMOVE(dest, source, length) MyMemMove((dest), (source), (length))
-// #define STBIW_ZLIB_COMPRESS
+// #define STBIW_ZLIB_COMPRESS TODO: Do we want to route this to our own version of zlib?
 
-#if PIG_CORE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#endif
 #include "third_party/stb/stb_image_write.h"
 
 #endif //  _LIB_STB_IMAGE_WRITE_H
