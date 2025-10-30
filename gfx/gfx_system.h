@@ -1242,6 +1242,7 @@ PEXP Result GfxSystem_DrawWrappedRichTextWithFont(GfxSystem* system, PigFont* fo
 	NotNull(system);
 	NotNull(font);
 	NotNullStr(text.fullPiece.str);
+	TracyCZoneN(_funcZone, "GfxSystem_DrawText", true);
 	
 	FontFlowState state = ZEROED;
 	state.contextPntr = (void*)system;
@@ -1260,6 +1261,7 @@ PEXP Result GfxSystem_DrawWrappedRichTextWithFont(GfxSystem* system, PigFont* fo
 	
 	Result result = DoFontFlow(&state, &callbacks, &system->prevFontFlow);
 	
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 PEXP Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color)

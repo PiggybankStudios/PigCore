@@ -39,16 +39,14 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: We should make a new atlas if we can't fit a glyph into an existing matching active atlas
+//TODO: Rename and reorder functions (esp. Consistent "Try" prefix on functions)
 //TODO: Implement stb_truetype.h code path!
 //TODO: Why is the first active atlas never getting evicted when we are on the ABCDEFGHI test?
-//TODO: Colored glyph support
-//TODO: Measure performance
 //TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
-//TODO: Add support for SVG backed glyphs?
 //TODO: Do we want a function that helps re-bake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
 //TODO: Figure out what's happening with loaing Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
+//TODO: For whitespace glyphs we shouldn't make a new atlas if we don't find a matching atlas. We also shouldn't need space in an atlas to add a whitespace glyph
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
@@ -1351,10 +1349,12 @@ PEXP FontFile* FindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 
 
 PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSize, u8 styleFlags)
 {
+	TracyCZoneN(_funcZone, "AddNewActiveAtlas", true);
 	NotNull(font);
 	Assert(font->isActive);
 	if (font->activeMaxNumAtlases != 0 && font->atlases.length >= font->activeMaxNumAtlases) { return nullptr; }
 	#if !BUILD_WITH_FREETYPE
+	TracyCZoneEnd(_funcZone);
 	return nullptr; //TODO: Remove me once we implement code paths below!
 	#endif
 	
@@ -1431,6 +1431,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	for (uxx cIndex = 0; cIndex < numCells; cIndex++) { newAtlas->cells[cIndex].codepoint = FONT_CODEPOINT_EMPTY; newAtlas->cells[cIndex].glyphIndex = UINT32_MAX; }
 	
 	newAtlas->lastUsedTime = font->programTime;
+	TracyCZoneEnd(_funcZone);
 	return newAtlas;
 }
 
@@ -1641,6 +1642,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	NotNull(font);
 	NotNull(fontFile);
 	NotNull(activeAtlas);
+	TracyCZoneN(_funcZone, "TryAddGlyphToActiveFontAtlas", true);
 	u8 styleFlags = activeAtlas->styleFlags | extraStyleFlags;
 	
 	#if BUILD_WITH_FREETYPE
@@ -1665,6 +1667,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	#else //!BUILD_WITH_FREETYPE
 	v2i glyphSize = V2i_Zero_Const;
 	v2i glyphCellSize = V2i_Zero_Const;
+	TracyCZoneEnd(_funcZone);
 	return nullptr; //TODO: Implement me!
 	#endif //BUILD_WITH_FREETYPE
 	
@@ -1904,9 +1907,14 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 			#endif
 		}
 		
+		TracyCZoneEnd(_funcZone);
 		return newGlyph;
 	}
-	else { return nullptr; }
+	else
+	{
+		TracyCZoneEnd(_funcZone);
+		return nullptr;
+	}
 }
 
 PEXP bool TryEvictOldFontAtlas(PigFont* font, uxx* oldAtlasIndexOut)
@@ -2066,6 +2074,7 @@ PEXP FontAtlas* FindClosestMatchingFontAtlas(PigFont* font, uxx skipIndex, u32 c
 PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation, FontAtlas** atlasOut)
 {
 	NotNull(font);
+	TracyCZoneN(_funcZone, "GetFontGlyphForCodepoint", true);
 	FontGlyph* result = nullptr;
 	
 	uxx matchingGlyphIndex = 0;
@@ -2197,6 +2206,7 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 		if (result != nullptr) { result->lastUsedTime = font->programTime; }
 	}
 	SetOptionalOutPntr(atlasOut, matchingAtlas);
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 
@@ -2213,6 +2223,7 @@ PEXP void CommitFontAtlasTextureUpdates(PigFont* font, FontAtlas* activeAtlas)
 	NotNull(activeAtlas);
 	if (activeAtlas->isActive && activeAtlas->pendingTextureUpdates.length > 0 && !activeAtlas->pushedTextureUpdates)
 	{
+		TracyCZoneN(_funcZone, "CommitFontAtlasTextureUpdates", true);
 		ScratchBegin1(scratch, font->arena);
 		uxx numPixels = (uxx)(activeAtlas->texture.Width * activeAtlas->texture.Height);
 		Color32* newPixels = AllocArray(Color32, scratch, numPixels);
@@ -2233,6 +2244,7 @@ PEXP void CommitFontAtlasTextureUpdates(PigFont* font, FontAtlas* activeAtlas)
 		UpdateTexture(&activeAtlas->texture, newPixels);
 		activeAtlas->pushedTextureUpdates = true;
 		ScratchEnd(scratch);
+		TracyCZoneEnd(_funcZone);
 	}
 }
 PEXPI void CommitAllFontTextureUpdates(PigFont* font)

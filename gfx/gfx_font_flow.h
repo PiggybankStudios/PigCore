@@ -27,6 +27,7 @@ Description:
 #include "struct/struct_string.h"
 #include "struct/struct_rich_string.h"
 #include "gfx/gfx_font.h"
+#include "lib/lib_tracy.h"
 
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
 #if BUILD_WITH_SOKOL_GFX
@@ -203,6 +204,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	NotNull(state);
 	NotNullStr(state->text.fullPiece.str);
 	NotNull(state->font);
+	TracyCZoneN(_funcZone, "DoFontFlow", true);
 	Result result = Result_Success;
 	
 	//Initial copying of state between start/current and flowOut, doesn't need to happen if we're drawing highlight recs or finding word wrap index because the parent DoFontFlow already did this
@@ -479,12 +481,14 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 	}
 	
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 
 PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text, FontFlow* flowOut)
 {
 	NotNull(flowOut);
+	TracyCZoneN(_funcZone, "MeasureRichTextFlow", true);
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
 	state.position = V2_Zero;
@@ -504,6 +508,7 @@ PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styl
 	{
 		result.logicalRec.Width = flowOut->endPos.X - result.logicalRec.X;
 	}
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 PEXPI TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text)
@@ -541,10 +546,12 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	NotNullStr(ellipsesStr);
 	Assert(ellipsesIndex <= text.length);
 	Assert(!IsInfiniteOrNanR32(maxWidth));
+	TracyCZoneN(_funcZone, "ShortenTextToFitWidthEx", true);
 	if (maxWidth <= 0)
 	{
 		SetOptionalOutPntr(beforeEllipseStrOut, NewStr8(0, &text.chars[0]));
 		SetOptionalOutPntr(afterEllipseStrOut, NewStr8(0, &text.chars[text.length-1]));
+		TracyCZoneEnd(_funcZone);
 		return text.length;
 	}
 	ScratchBegin(scratch);
@@ -569,6 +576,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 		SetOptionalOutPntr(beforeEllipseStrOut, text);
 		SetOptionalOutPntr(afterEllipseStrOut, NewStr8(0, &text.chars[text.length-1]));
 		ScratchEnd(scratch);
+		TracyCZoneEnd(_funcZone);
 		return 0;
 	}
 	
@@ -615,6 +623,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	SetOptionalOutPntr(afterEllipseStrOut, rightPortion);
 	
 	ScratchEnd(scratch);
+	TracyCZoneEnd(_funcZone);
 	return numCharsRemoved;
 }
 PEXPI Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex)
