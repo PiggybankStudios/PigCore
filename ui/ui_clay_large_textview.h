@@ -270,8 +270,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 	if (text != nullptr)
 	{
 		NotNull(font);
-		FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);
-		NotNull(fontAtlas);
+		r32 fontLineHeight = GetFontLineHeight(font, fontSize, fontStyle);
 		
 		if (text->lines.length == 0)
 		{
@@ -299,7 +298,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 				line->font = font;
 				line->fontSize = fontSize;
 				line->fontStyle = fontStyle;
-				line->height = CeilR32(line->measure.logicalRec.Height / fontAtlas->lineHeight) * fontAtlas->lineHeight;
+				line->height = CeilR32(line->measure.logicalRec.Height / fontLineHeight) * fontLineHeight;
 			}
 			if (lIndex == text->scrollLineIndex)
 			{

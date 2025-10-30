@@ -79,8 +79,8 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	Assert(config->fontId < renderer->fonts.length);
 	ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)config->fontId);
 	r32 fontSize = (r32)config->fontSize;
-	FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
-	NotNull(fontAtlas);
+	FontLineMetrics lineMetrics = ZEROED;
+	GetFontLineMetrics(font->pntr, fontSize, font->styleFlags, &lineMetrics);
 	//NOTE: Clay has no way of knowing the lineHeight, so if we don't tell it otherwise it will place text a little too close to each other vertically
 	//NOTE: Clay asks us for sizes of words, not entire strings. And it expects the composition of each word + spaces together should match the size of the whole string measured together
 	//      Our text measuring code does not treat advanceX as part of the logical space, so if the final character in a word is a glyph that has advanceX > glyphWidth then it will return
@@ -89,7 +89,7 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	const bool includeAdvanceX = true;
 	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, includeAdvanceX, config->userData.wrapWidth, richText);
 	
-	if (measure.Height < fontAtlas->lineHeight) { measure.Height = fontAtlas->lineHeight; }
+	if (measure.Height < lineMetrics.lineHeight) { measure.Height = lineMetrics.lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
 	v2 result = NewV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.Height, measure.visualRec.Height)));
 	ScratchEnd(scratch);
@@ -170,8 +170,8 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				Assert(fontId < renderer->fonts.length);
 				Color32 drawColor = command->renderData.text.textColor;
 				ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)fontId);
-				FontAtlas* fontAtlas = GetFontAtlas(font->pntr, fontSize, font->styleFlags);
-				NotNull(fontAtlas);
+				FontLineMetrics fontLineMetrics = ZEROED;
+				GetFontLineMetrics(font->pntr, fontSize, font->styleFlags, &fontLineMetrics);
 				reci oldClipRec = ZEROED;
 				r32 textOffsetX = 0.0f;
 				if (command->renderData.text.userData.wrapWidth == 0.0f)
@@ -182,9 +182,9 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					{
 						rec textClipRec = NewRec(
 							drawRec.X,
-							drawRec.Y + fontAtlas->lineHeight/2 + fontAtlas->centerOffset - fontAtlas->maxAscend,
+							drawRec.Y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset - fontLineMetrics.maxAscend,
 							drawRec.Width,
-							fontAtlas->lineHeight
+							fontLineMetrics.lineHeight
 						);
 						AlignRec(&textClipRec);
 						if (command->renderData.text.userData.contraction == TextContraction_ClipLeft)
@@ -219,7 +219,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						richText = ToRichStr(text);
 					}
 				}
-				v2 textPos = NewV2(drawRec.X + textOffsetX, drawRec.Y + fontAtlas->lineHeight/2 + fontAtlas->centerOffset);
+				v2 textPos = NewV2(drawRec.X + textOffsetX, drawRec.Y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset);
 				AlignV2(&textPos);
 				
 				FontFlowState state = ZEROED;

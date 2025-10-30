@@ -223,12 +223,10 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			flowOut->endPos = state->position;
 			flowOut->visualRec = NewRecV(state->position, V2_Zero);
 			flowOut->logicalRec = NewRecV(state->position, V2_Zero);
-			FontAtlas* firstAtlas = GetFontAtlas(state->font, state->startFontSize, state->startFontStyle, false);
-			if (firstAtlas != nullptr)
-			{
-				flowOut->logicalRec.Y -= firstAtlas->metrics.maxAscend;
-				flowOut->logicalRec.Height = firstAtlas->metrics.maxAscend;
-			}
+			FontLineMetrics lineMetrics = ZEROED;
+			GetFontLineMetrics(state->font, state->startFontSize, state->startFontStyle, &lineMetrics);
+			flowOut->logicalRec.Y -= lineMetrics.maxAscend;
+			flowOut->logicalRec.Height = lineMetrics.maxAscend;
 			flowOut->numGlyphs = 0;
 		}
 	}
@@ -336,7 +334,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			FontGlyph* fontGlyph = nullptr;
 			while (fontGlyph == nullptr && substituteIndex < ArrayCount(substituteCodepoints))
 			{
-				fontGlyph = GetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
+				fontGlyph = TryGetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
 				if (fontGlyph != nullptr) { break; }
 				// PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
 				substituteIndex++;

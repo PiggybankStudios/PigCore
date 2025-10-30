@@ -506,8 +506,8 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	//TODO: Double/Triple Click to Select Word/Line
 	
 	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
-	FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);
-	NotNull(fontAtlas);
+	FontLineMetrics fontLineMetrics = ZEROED;
+	GetFontLineMetrics(font, fontSize, fontStyle, &fontLineMetrics);
 	
 	if (tbox->flow.numGlyphsAlloc < tbox->text.length)
 	{
@@ -527,7 +527,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		//When there is no text being rendered, we need to figure out the start position of the text
 		cursorRelativePos = NewV2(
 			(r32)UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X),
-			textboxRec.Height/2 + fontAtlas->centerOffset
+			textboxRec.Height/2 + fontLineMetrics.centerOffset
 		);
 		AlignV2(&cursorRelativePos);
 	}
@@ -548,7 +548,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		.layout = {
 			.sizing = {
 				.width = CLAY_SIZING_GROW(0),
-				.height = CLAY_SIZING_FIXED(fontAtlas->lineHeight + UISCALE_R32(uiScale, TEXTBOX_INNER_PADDING_Y)),
+				.height = CLAY_SIZING_FIXED(fontLineMetrics.lineHeight + UISCALE_R32(uiScale, TEXTBOX_INNER_PADDING_Y)),
 			},
 			.padding = {
 				UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X), UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X),
@@ -608,11 +608,11 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		
 		if (tbox->isFocused && tbox->cursorActive)
 		{
-			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(uiScale, -1), fontAtlas->maxDescend - fontAtlas->lineHeight));
+			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(uiScale, -1), fontLineMetrics.maxDescend - fontLineMetrics.lineHeight));
 			CLAY({.id = ToClayIdPrint(context->uiArena, "%.*sCursor", StrPrint(tbox->idStr)),
 				.backgroundColor = MonokaiYellow, //TODO: Change this color
 				.layout = {
-					.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 2)), .height = CLAY_SIZING_FIXED(fontAtlas->lineHeight) },
+					.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 2)), .height = CLAY_SIZING_FIXED(fontLineMetrics.lineHeight) },
 				},
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,

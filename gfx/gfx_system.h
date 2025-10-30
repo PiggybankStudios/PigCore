@@ -536,15 +536,14 @@ PEXPI void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSi
 	u8 fontStyleFlags = FontStyleFlag_None;
 	if (font != nullptr && font->atlases.length > 0)
 	{
-		//TODO: This logic is wrong for choosing the styleFlags, we really should find the closest match similar to how GetFontGlyphForCodepoint works
-		FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
-		fontStyleFlags = firstAtlas->styleFlags;
+		FontAtlas* closestAtlas = TryFindClosestMatchingFontAtlas(font, 0, FONT_CODEPOINT_EMPTY, fontSize, FontStyleFlag_None, FontStyleFlag_FontAtlasFlags, false, nullptr, nullptr, nullptr);
+		if (closestAtlas != nullptr) { fontStyleFlags = closestAtlas->styleFlags; }
 	}
 	GfxSystem_BindFontEx(system, font, fontSize, fontStyleFlags);
 }
 PEXPI void GfxSystem_BindFont(GfxSystem* system, PigFont* font)
 {
-	r32 fontSize = 16.0f;
+	r32 fontSize = 16.0f; //this is just a pointless default in case the font doesn't actually have any atlases created yet
 	u8 fontStyleFlags = FontStyleFlag_None;
 	if (font != nullptr && font->atlases.length > 0)
 	{

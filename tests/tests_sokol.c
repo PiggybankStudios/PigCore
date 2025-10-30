@@ -189,7 +189,7 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 		StrLit(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = clayFont,
-			.fontSize = 18*textScale,
+			.fontSize = (u16)(18*textScale),
 			.textColor = textColor,
 		})
 	);
@@ -257,7 +257,7 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 		StrLit(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = clayFont,
-			.fontSize = 18*textScale,
+			.fontSize = (u16)(18*textScale),
 			.textColor = textColor,
 			.userData = { .richText = true },
 		})
@@ -889,13 +889,13 @@ bool AppFrame(void)
 			
 			#if 1
 			{
-				FontAtlas* testFontAtlas = GetFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, true);
-				NotNull(testFontAtlas);
-				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + testFontAtlas->metrics.maxAscend);
+				r32 fontLineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
+				r32 fontMaxAscend = GetFontMaxAscend(&testFont, 18*textScale, FontStyleFlag_None);
+				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + fontMaxAscend);
 				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
 				BindFont(&debugFont);
 				DrawText(infoStr, textPos, MonokaiWhite);
-				textPos.Y += testFontAtlas->metrics.lineHeight;
+				textPos.Y += fontLineHeight;
 				
 				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
 				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
@@ -1011,10 +1011,16 @@ bool AppFrame(void)
 			
 			#if 1
 			r32 atlasRenderPosX = 10.0f;
+			#if BUILD_WITH_CLAY
+			rec topbarRec = GetClayElementDrawRec(CLAY_ID("Topbar"));
+			r32 atlasRenderPosY = topbarRec.Y + topbarRec.Height + 10;
+			#else
+			r32 atlasRenderPosY = 10.0f;
+			#endif
 			VarArrayLoop(&testFont.atlases, aIndex)
 			{
 				VarArrayLoopGet(FontAtlas, fontAtlas, &testFont.atlases, aIndex);
-				rec atlasRenderRec = NewRec(atlasRenderPosX, 10, (r32)fontAtlas->texture.Width, (r32)fontAtlas->texture.Height);
+				rec atlasRenderRec = NewRec(atlasRenderPosX, atlasRenderPosY, (r32)fontAtlas->texture.Width, (r32)fontAtlas->texture.Height);
 				if (fontAtlas->isActive)
 				{
 					for (i32 cellY = 0; cellY < fontAtlas->activeCellGridSize.Height; cellY++)
@@ -1034,19 +1040,19 @@ bool AppFrame(void)
 				DrawTexturedRectangle(atlasRenderRec, White, &fontAtlas->texture);
 				DrawRectangleOutline(atlasRenderRec, 1, White);
 				BindFont(&debugFont);
-				FontAtlas* debugFontAtlas = GetFontAtlas(&debugFont, 12, FontStyleFlag_None, false);
-				NotNull(debugFontAtlas);
-				v2 infoTextPos = NewV2(atlasRenderRec.X, atlasRenderRec.Y + atlasRenderRec.Height + 5 + debugFontAtlas->metrics.maxAscend);
+				FontLineMetrics debugFontMetrics = ZEROED;
+				GetFontLineMetrics(&debugFont, 12, FontStyleFlag_None, &debugFontMetrics);
+				v2 infoTextPos = NewV2(atlasRenderRec.X, atlasRenderRec.Y + atlasRenderRec.Height + 5 + debugFontMetrics.maxAscend);
 				Str8 infoStr = PrintInArenaStr(scratch, "%g %dx%d%s", fontAtlas->fontSize, fontAtlas->texture.Width, fontAtlas->texture.Height, fontAtlas->isActive ? "" : " (Static)");
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->metrics.lineHeight;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
 				bool isBold = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Bold);
 				bool isItalic = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Italic);
 				infoStr = PrintInArenaStr(scratch, "%s%s%s%s", (!isBold && !isItalic) ? "Default" : "", isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "");
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->metrics.lineHeight;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
 				infoStr = PrintInArenaStr(scratch, "%llu glyph%s", fontAtlas->glyphs.length, Plural(fontAtlas->glyphs.length, "s"));
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->metrics.lineHeight;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
 				infoStr = PrintInArenaStr(scratch, "%llu range%s", fontAtlas->charRanges.length, Plural(fontAtlas->charRanges.length, "s"));
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->metrics.lineHeight;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
 				atlasRenderPosX += atlasRenderRec.Width + 10;
 				VarArrayLoop(&fontAtlas->glyphs, gIndex)
 				{
@@ -1067,7 +1073,7 @@ bool AppFrame(void)
 						const char* codepointName = "-";
 						#endif
 						infoStr = PrintInArenaStr(scratch, "Glyph[%llu] \'%s\' 0x%08X %dx%d", gIndex, codepointName, glyph->codepoint, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height);
-						DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->metrics.lineHeight;
+						DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
 					}
 				}
 			}
@@ -1086,7 +1092,7 @@ bool AppFrame(void)
 				CLAY({ .id = CLAY_ID("FullscreenContainer"),
 					.layout = {
 						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-						.padding = { .left = screenMargins.X, .top = screenMargins.Y, .right = screenMargins.Z, .bottom = screenMargins.W },
+						.padding = { .left = (u16)screenMargins.X, .top = (u16)screenMargins.Y, .right = (u16)screenMargins.Z, .bottom = (u16)screenMargins.W },
 					}
 				})
 				{
@@ -1133,13 +1139,12 @@ bool AppFrame(void)
 					
 					CLAY({ .id = CLAY_ID("SafeContainer"), .layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM, .sizing={ .width=CLAY_SIZING_GROW(0), .height=CLAY_SIZING_GROW(0) } } })
 					{
-						
-						FontAtlas* fontAtlas = GetFontAtlas(&testFont, 18*textScale, FontStyleFlag_None);
-						NotNull(fontAtlas);
+						FontLineMetrics fontLineMetrics = ZEROED;
+						GetFontLineMetrics(&testFont, 18*textScale, FontStyleFlag_None, &fontLineMetrics);
 						CLAY({ .id = CLAY_ID("Topbar"),
 							.layout = {
 								.sizing = {
-									.height = CLAY_SIZING_FIXED(fontAtlas->metrics.lineHeight + 30),
+									.height = CLAY_SIZING_FIXED(fontLineMetrics.lineHeight + 30),
 									.width = CLAY_SIZING_GROW(0),
 								},
 								.padding = { 0, 0, 0, 0 },
@@ -1176,7 +1181,7 @@ bool AppFrame(void)
 								displayStr,
 								CLAY_TEXT_CONFIG({
 									.fontId = clayFont,
-									.fontSize = 18*textScale,
+									.fontSize = (u16)(18*textScale),
 									.textColor = MonokaiWhite,
 								})
 							);
