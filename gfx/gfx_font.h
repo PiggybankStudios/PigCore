@@ -260,14 +260,16 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE u8 GetDefaultFontStyleFlags(const PigFont* font);
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepointEx(const FontAtlas* atlas, u32 codepoint, uxx* glyphIndexOut);
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint);
-	FontFile* FindFontFileForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, unsigned int* glyphIndexOut, uxx* fileIndexOut);
+	FontFile* FindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut);
+	FontFile* FindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut);
 	FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSize, u8 styleFlags);
 	void ResizeActiveFontAtlas(PigFont* font, FontAtlas* activeAtlas, v2i newSize);
 	void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx glyphIndex);
 	bool TryEvictOldGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, u32* evictedGlyphCodepointOut, uxx* evictedGlyphIndexOut);
-	FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, FontAtlas* activeAtlas, u32 codepoint);
+	FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, FontAtlas* activeAtlas, u32 codepoint, u8 extraStyleFlags);
 	bool TryEvictOldFontAtlas(PigFont* font, uxx* oldAtlasIndexOut);
 	bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, FontGlyphMetrics* metricsOut);
+	FontAtlas* FindClosestMatchingFontAtlas(PigFont* font, uxx skipIndex, u32 codepoint, r32 fontSize, u8 styleFlags, u8 styleMask, bool mustBeActive, uxx* numMatchesOut, uxx* atlasIndexOut, uxx* glyphIndexOut);
 	FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation, FontAtlas** atlasOut);
 	PIG_CORE_INLINE FontAtlas* GetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation);
 	void CommitFontAtlasTextureUpdates(PigFont* font, FontAtlas* activeAtlas);
@@ -1272,7 +1274,7 @@ PEXPI bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint)
 	return DoesFontAtlasContainCodepointEx(atlas, codepoint, nullptr);
 }
 
-PEXP FontFile* FindFontFileForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, unsigned int* glyphIndexOut, uxx* fileIndexOut)
+PEXP FontFile* FindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -1289,6 +1291,46 @@ PEXP FontFile* FindFontFileForCodepoint(PigFont* font, u32 codepoint, r32 fontSi
 					SetOptionalOutPntr(glyphIndexOut, glyphIndex);
 					SetOptionalOutPntr(fileIndexOut, fIndex);
 					return fontFile;
+				}
+			}
+			#else //!BUILD_WITH_FREETYPE
+			{
+				//TODO: Implement me!
+				return nullptr;
+			}
+			#endif //BUILD_WITH_FREETYPE
+		}
+	}
+	return nullptr;
+}
+
+PEXP FontFile* FindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut)
+{
+	NotNull(font);
+	NotNull(font->arena);
+	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
+	{
+		FontFile* fontFile = &font->files[fIndex];
+		if ((fontFile->styleFlags & FontStyleFlag_FontFileFlags) == (styleFlags & FontStyleFlag_FontFileFlags))
+		{
+			#if BUILD_WITH_FREETYPE
+			{
+				FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
+				if (glyphIndex != 0)
+				{
+					FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+					FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+					Assert(setCharSizeError == 0);
+					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
+					//TODO: Should we check FT_HAS_COLOR if IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)?
+					if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
+					if (loadGlyphError == 0)
+					{
+						SetOptionalOutPntr(glyphIndexOut, glyphIndex);
+						SetOptionalOutPntr(fileIndexOut, fIndex);
+						return fontFile;
+					}
 				}
 			}
 			#else //!BUILD_WITH_FREETYPE
@@ -1582,11 +1624,12 @@ PEXP bool TryEvictOldGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, u
 	else { return false; }
 }
 
-PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, FontAtlas* activeAtlas, u32 codepoint)
+PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, FontAtlas* activeAtlas, u32 codepoint, u8 extraStyleFlags)
 {
 	NotNull(font);
 	NotNull(fontFile);
 	NotNull(activeAtlas);
+	u8 styleFlags = activeAtlas->styleFlags | extraStyleFlags;
 	
 	#if BUILD_WITH_FREETYPE
 	FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(activeAtlas->fontSize);
@@ -1596,7 +1639,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	Assert(fontFileGlyphIndex != 0);
 	FT_Int32 loadFlags = FT_LOAD_DEFAULT;
 	//TODO: Should we check FT_HAS_COLOR?
-	if (IsFlagSet(activeAtlas->styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+	if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
 	FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, loadFlags);
 	Assert(loadGlyphError == 0);
 	v2i glyphSize = NewV2i(
@@ -1893,20 +1936,13 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 	NotNull(font);
 	NotNull(font->arena);
 	NotNull(metricsOut);
-	unsigned int fontFileGlyphIndex = 0;
-	FontFile* fontFile = FindFontFileForCodepoint(font, codepoint, fontSize, styleFlags, &fontFileGlyphIndex, nullptr);
+	
+	FontFile* fontFile = FindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, nullptr);
 	if (fontFile == nullptr) { return false; }
 	
 	#if BUILD_WITH_FREETYPE
 	{
-		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		Assert(setCharSizeError == 0);
-		FT_Int32 loadFlags = FT_LOAD_DEFAULT;
-		//TODO: Should we check FT_HAS_COLOR?
-		if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
-		FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, loadFlags);
-		Assert(loadGlyphError == 0);
+		//NOTE: FindFontFileForCodepointAtSize already called FT_Set_Char_Size and FT_Load_Glyph for us
 		ClearPointer(metricsOut);
 		metricsOut->glyphSize = NewV2i(
 			TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width),
@@ -1933,160 +1969,216 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 	#endif 
 }
 
-//Pass FONT_CODEPOINT_EMPTY for codepoint to lookup and atlas without a particular glyph in mind
-PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation, FontAtlas** atlasOut)
+//NOTE: This function is a little more complex than it may seem at first glance.
+//      First we only return atlases which have the desired codepoint unless the calling code passes FONT_CODEPOINT_EMPTY, which means we don't care if a particular codepoint exists in the atlas
+//      Then we prioritize correct fontSize over any styleFlag differences (prioritizing atlases that are larger rather than atlases that are smaller than the desired size, because we can render the larger glyph scaled down to the proper size)
+//      If there are multiple matches at the same size difference from desired then we prioritize based on styleFlags matches (with heavier emphasis on FontStyleFlag_Inverted)
+//      If there are still multiple matches then we choose the nth match based on skipIndex (usually used when codepoint == FONT_CODEPOINT_EMPTY)
+PEXP FontAtlas* FindClosestMatchingFontAtlas(PigFont* font, uxx skipIndex, u32 codepoint, r32 fontSize, u8 styleFlags, u8 styleMask, bool mustBeActive, uxx* numMatchesOut, uxx* atlasIndexOut, uxx* glyphIndexOut)
 {
-	NotNull(font);
-	
-	bool multipleMatches = false;
+	uxx numSameMatches = 0;
 	FontAtlas* matchingAtlas = nullptr;
+	uxx matchingAtlasIndex = 0;
+	uxx matchingGlyphIndex = 0;
+	
+	// if (codepoint == 'c' && fontSize == 8 && font->atlases.length >= 4) { MyBreak(); }
+	
 	r32 matchingSizeDiff = 0.0f;
-	FontGlyph* result = nullptr;
+	u8 matchingStyleDiff = 0;
 	VarArrayLoop(&font->atlases, aIndex)
 	{
 		VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
-		r32 sizeDiff = AbsR32(atlas->fontSize - fontSize);
-		if (matchingAtlas == nullptr || sizeDiff <= matchingSizeDiff)
+		if (!mustBeActive || atlas->isActive)
 		{
 			uxx glyphIndex = 0;
 			if (codepoint == FONT_CODEPOINT_EMPTY || DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
 			{
-				multipleMatches = (matchingAtlas != nullptr && AreSimilarR32(sizeDiff, matchingSizeDiff, DEFAULT_R32_TOLERANCE));
-				matchingSizeDiff = sizeDiff;
-				matchingAtlas = atlas;
-				if (codepoint != FONT_CODEPOINT_EMPTY) { result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex); }
+				r32 sizeDiff = (atlas->fontSize - fontSize);
+				u8 styleDiff = 0;
+				if (IsFlagSet(styleMask, FontStyleFlag_Inverted) && IsFlagSet(atlas->styleFlags, FontStyleFlag_Inverted) != IsFlagSet(styleFlags, FontStyleFlag_Inverted)) { styleDiff += 4; }
+				if (IsFlagSet(styleMask, FontStyleFlag_Bold) && IsFlagSet(atlas->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiff += 1; }
+				if (IsFlagSet(styleMask, FontStyleFlag_Italic) && IsFlagSet(atlas->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiff += 1; }
+				
+				bool isBetterSizeMatch = false;
+				bool isEqualSizeMatch = false;
+				if (matchingAtlas == nullptr) { isBetterSizeMatch = true; }
+				else if (sizeDiff > 0 && matchingSizeDiff < 0 && !AreSimilarR32(matchingSizeDiff, 0.0f, DEFAULT_R32_TOLERANCE)) { isBetterSizeMatch = true; }
+				else if ((sizeDiff == 0.0f || SignOfR32(sizeDiff) == SignOfR32(matchingSizeDiff)) && AbsR32(sizeDiff) < AbsR32(matchingSizeDiff)) { isBetterSizeMatch = true; }
+				else if ((sizeDiff == 0.0f || SignOfR32(sizeDiff) == SignOfR32(matchingSizeDiff)) && AreSimilarR32(AbsR32(sizeDiff), AbsR32(matchingSizeDiff), DEFAULT_R32_TOLERANCE)) { isEqualSizeMatch = true; }
+				
+				if (isBetterSizeMatch)
+				{
+					numSameMatches = 1;
+					matchingAtlas = atlas;
+					matchingAtlasIndex = aIndex;
+					matchingGlyphIndex = glyphIndex;
+					matchingSizeDiff = sizeDiff;
+					matchingStyleDiff = styleDiff;
+				}
+				else if (isEqualSizeMatch)
+				{
+					if (styleDiff < matchingStyleDiff)
+					{
+						numSameMatches = 1;
+						matchingAtlas = atlas;
+						matchingAtlasIndex = aIndex;
+						matchingGlyphIndex = glyphIndex;
+						matchingSizeDiff = sizeDiff;
+						matchingStyleDiff = styleDiff;
+					}
+					else if (styleDiff == matchingStyleDiff)
+					{
+						if (numSameMatches <= skipIndex)
+						{
+							matchingAtlas = atlas;
+							matchingAtlasIndex = aIndex;
+							matchingGlyphIndex = glyphIndex;
+							matchingSizeDiff = sizeDiff;
+							matchingStyleDiff = styleDiff;
+						}
+						numSameMatches++;
+					}
+				}
 			}
 		}
 	}
 	
-	if (matchingAtlas != nullptr)
-	{
-		if (multipleMatches)
-		{
-			// If we find more than one bake with the same fontSize, we should differentiate based on which one has closer style flags
-			multipleMatches = false;
-			matchingAtlas = nullptr;
-			result = nullptr;
-			uxx matchingStyleDiffs = 0;
-			
-			VarArrayLoop(&font->atlases, aIndex)
-			{
-				VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
-				r32 sizeDiff = AbsR32(atlas->fontSize - fontSize);
-				if (AreSimilarR32(sizeDiff, matchingSizeDiff, DEFAULT_R32_TOLERANCE))
-				{
-					uxx styleDiffs = 0;
-					if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Inverted) != IsFlagSet(styleFlags, FontStyleFlag_Inverted)) { styleDiffs += 4; }
-					if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiffs += 1; }
-					if (IsFlagSet(atlas->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiffs += 1; }
-					
-					if (matchingAtlas == nullptr || styleDiffs <= matchingStyleDiffs)
-					{
-						uxx glyphIndex = 0;
-						if (codepoint == FONT_CODEPOINT_EMPTY || DoesFontAtlasContainCodepointEx(atlas, codepoint, &glyphIndex))
-						{
-							multipleMatches = (matchingAtlas != nullptr && styleDiffs == matchingStyleDiffs);
-							matchingStyleDiffs = styleDiffs;
-							matchingAtlas = atlas;
-							if (codepoint != FONT_CODEPOINT_EMPTY) { result = VarArrayGetHard(FontGlyph, &atlas->glyphs, glyphIndex); }
-						}
-					}
-				}
-			}
-			
-			NotNull(matchingAtlas);
-		}
-		if (multipleMatches)
-		{
-			//TODO: If we still find more than one match, is there any other criteria we should check?
-		}
-	}
+	if (skipIndex >= numSameMatches) { matchingAtlas = nullptr; }
+	SetOptionalOutPntr(numMatchesOut, numSameMatches);
+	SetOptionalOutPntr(atlasIndexOut, matchingAtlasIndex);
+	SetOptionalOutPntr(glyphIndexOut, matchingGlyphIndex);
+	return matchingAtlas;
+}
+
+//Pass FONT_CODEPOINT_EMPTY for codepoint to lookup and atlas without a particular glyph in mind
+PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation, FontAtlas** atlasOut)
+{
+	NotNull(font);
+	FontGlyph* result = nullptr;
+	
+	uxx matchingAtlasIndex = 0; //TODO: Remove me when done debugging
+	uxx matchingGlyphIndex = 0;
+	// FontAtlas* FindClosestMatchingFontAtlas(PigFont* font, uxx skipIndex, u32 codepoint, r32 fontSize, u8 styleFlags, u8 styleMask, bool mustBeActive, uxx* numMatchesOut, uxx* atlasIndexOut, uxx* glyphIndexOut)
+	FontAtlas* matchingAtlas = FindClosestMatchingFontAtlas(
+		font, 0, codepoint, fontSize, styleFlags, FontStyleFlag_FontAtlasFlags, false,
+		nullptr, &matchingAtlasIndex, &matchingGlyphIndex
+	);
+	if (matchingAtlas != nullptr) { result = VarArrayGet(FontGlyph, &matchingAtlas->glyphs, matchingGlyphIndex); }
 	
 	//If we didn't find an exact match atlas that contains the codepoint, then let's try creating the glyph in an active atlas
-	if (allowActiveAtlasCreation && font->isActive && (matchingAtlas == nullptr || !AreSimilarR32(matchingAtlas->fontSize, fontSize, DEFAULT_R32_TOLERANCE) || (matchingAtlas->styleFlags & FontStyleFlag_FontAtlasFlags) != (styleFlags & FontStyleFlag_FontAtlasFlags)))
+	if (allowActiveAtlasCreation && font->isActive &&
+		(
+			matchingAtlas == nullptr ||
+			!AreSimilarR32(matchingAtlas->fontSize, fontSize, DEFAULT_R32_TOLERANCE) ||
+			(matchingAtlas->styleFlags & FontStyleFlag_FontAtlasFlags) != (styleFlags & FontStyleFlag_FontAtlasFlags)
+		))
 	{
-		//Find an active font atlas if possible
-		FontAtlas* matchingActiveAtlas = nullptr;
-		VarArrayLoop(&font->atlases, aIndex)
+		bool isBold = IsFlagSet(styleFlags, FontStyleFlag_Bold);
+		bool isItalic = IsFlagSet(styleFlags, FontStyleFlag_Italic);
+		PrintLine_D("Couldn't find an exact match for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s, looking to render it into an active atlas!",
+			codepoint, DebugGetCodepointName(codepoint),
+			fontSize,
+			isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
+		);
+		if (matchingAtlas != nullptr)
 		{
-			VarArrayLoopGet(FontAtlas, atlas, &font->atlases, aIndex);
-			if (atlas->isActive && AreSimilarR32(atlas->fontSize, fontSize, DEFAULT_R32_TOLERANCE) && (atlas->styleFlags & FontStyleFlag_FontAtlasFlags) == (styleFlags & FontStyleFlag_FontAtlasFlags))
-			{
-				matchingActiveAtlas = atlas;
-				break;
-			}
+			bool matchingAtlasIsBold = IsFlagSet(matchingAtlas->styleFlags, FontStyleFlag_Bold);
+			bool matchingAtlasIsItalic = IsFlagSet(matchingAtlas->styleFlags, FontStyleFlag_Italic);
+			PrintLine_D("Imperfect match was atlas[%llu] at size=%g style=%s%s%s%s",
+				matchingAtlasIndex,
+				matchingAtlas->fontSize,
+				matchingAtlasIsBold ? "Bold" : "", (matchingAtlasIsBold && matchingAtlasIsItalic) ? "|" : "", matchingAtlasIsItalic ? "Italic" : "", (!matchingAtlasIsBold && !matchingAtlasIsItalic) ? "Regular" : ""
+			);
 		}
 		
-		bool needToCreateNewAtlas = (BUILD_WITH_FREETYPE && matchingActiveAtlas == nullptr); //TODO: Remove BUILD_WITH_FREETYPE when we implement the code paths below!
-		bool needToRasterizeGlyph = false;
-		if (codepoint != FONT_CODEPOINT_EMPTY && BUILD_WITH_FREETYPE) //TODO: Remove BUILD_WITH_FREETYPE when we implement the code paths below!
-		{
-			if (needToCreateNewAtlas) { needToRasterizeGlyph = true; }
-			else { needToRasterizeGlyph = (matchingActiveAtlas->isActive && !DoesFontAtlasContainCodepointEx(matchingActiveAtlas, codepoint, nullptr)); }
-		}
+		uxx fontFileIndex = 0;
+		FontFile* fontFile = (codepoint == FONT_CODEPOINT_EMPTY) ? nullptr : FindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, &fontFileIndex, nullptr);
+		UNUSED(fontFileIndex);
+		if (codepoint != FONT_CODEPOINT_EMPTY && fontFile == nullptr) { PrintLine_D("No font file supports codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint)); }
 		
-		//Find a sourceFontFile
-		FontFile* sourceFontFile = nullptr;
-		if (needToCreateNewAtlas || needToRasterizeGlyph)
+		bool addedGlyphToActiveAtlas = false;
+		if (fontFile != nullptr && codepoint != FONT_CODEPOINT_EMPTY)
 		{
-			unsigned int fontFileGlyphIndex = 0;
-			FontFile* fontFile = FindFontFileForCodepoint(font, codepoint, fontSize, styleFlags, &fontFileGlyphIndex, nullptr);
-			if (fontFile != nullptr)
+			//Find a matching active font atlas if possible, try to add the glyph to the atlas (evicting glyphs if possible)
+			uxx activeAtlasSkipIndex = 0;
+			while (!addedGlyphToActiveAtlas)
 			{
-				#if BUILD_WITH_FREETYPE
+				uxx matchingActiveAtlasIndex = 0;
+				uxx matchingActiveGlyphIndex = 0;
+				FontAtlas* matchingActiveAtlas = FindClosestMatchingFontAtlas(
+					font, activeAtlasSkipIndex, FONT_CODEPOINT_EMPTY, fontSize, styleFlags, FontStyleFlag_FontAtlasFlags, true,
+					nullptr, &matchingActiveAtlasIndex, &matchingActiveGlyphIndex
+				);
+				if (matchingActiveAtlas != nullptr &&
+					AreSimilarR32(matchingActiveAtlas->fontSize, fontSize, DEFAULT_R32_TOLERANCE) &&
+					(matchingActiveAtlas->styleFlags & FontStyleFlag_FontAtlasFlags) == (styleFlags & FontStyleFlag_FontAtlasFlags))
 				{
-					FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-					FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-					Assert(setCharSizeError == 0);
-					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
-					//TODO: Should we check FT_HAS_COLOR?
-					if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
-					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, loadFlags);
-					if (loadGlyphError == 0)
+					FontGlyph* addedGlyph = TryAddGlyphToActiveFontAtlas(font, fontFile, matchingActiveAtlas, codepoint, styleFlags);
+					if (addedGlyph != nullptr)
 					{
-						sourceFontFile = fontFile;
+						PrintLine_D("Added codepoint U+%X \'%s\' to active atlas[%llu]!", codepoint, DebugGetCodepointName(codepoint), matchingActiveAtlasIndex);
+						addedGlyphToActiveAtlas = true;
+						result = addedGlyph;
+						matchingAtlas = matchingActiveAtlas;
 					}
+					else if (TryEvictOldGlyphFromFontAtlas(font, matchingActiveAtlas, nullptr, nullptr))
+					{
+						PrintLine_D("Evicted a glyph from atlas[%llu] to make space for codepoint U+%X \'%s\'!", matchingActiveAtlasIndex, codepoint, DebugGetCodepointName(codepoint));
+						continue; //don't increment activeAtlasSkipIndex, since we evicted a glyph from the atlas, attempting to add the new glyph again may work, if not we will attempt to evict another glyph if possible
+					}
+					else { activeAtlasSkipIndex++; }
 				}
-				#else //!BUILD_WITH_FREETYPE
+				else
 				{
-					//TODO: Implement me!
+					PrintLine_D("No more matching active atlases exist (after %llu) for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s",
+						activeAtlasSkipIndex,
+						codepoint, DebugGetCodepointName(codepoint),
+						fontSize,
+						isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
+					);
+					break;
 				}
-				#endif //BUILD_WITH_FREETYPE
-			}
-			else
-			{
-				//We don't have any attached fonts that have a glyph for the desired codepoint so we can't rasterize it even if we wanted to
-				needToCreateNewAtlas = false;
-				needToRasterizeGlyph = false;
 			}
 		}
 		
-		if (needToCreateNewAtlas && sourceFontFile != nullptr)
+		//Attempt to make a new atlas
+		if (fontFile != nullptr && !addedGlyphToActiveAtlas)
 		{
-			if (font->activeMaxNumAtlases != 0 && font->atlases.length >= font->activeMaxNumAtlases && !TryEvictOldFontAtlas(font, nullptr))
+			//Try to evict until we are under the limit
+			while (font->atlases.length >= font->activeMaxNumAtlases)
 			{
-				matchingActiveAtlas = nullptr;
-				needToCreateNewAtlas = false;
-				needToRasterizeGlyph = false;
+				uxx evictedAtlasIndex = 0; //TODO: Remove me once we are done debugging
+				if (TryEvictOldFontAtlas(font, &evictedAtlasIndex))
+				{
+					PrintLine_D("Evicted an old atlas[%llu] to make space for codepoint U+%X \'%s\'", evictedAtlasIndex, codepoint, DebugGetCodepointName(codepoint));
+					matchingAtlas = nullptr; //after eviction, the previously found atlas pointer is invalid;
+					result = nullptr;
+				}
+				else
+				{
+					PrintLine_D("Couldn't evict any atlases to make space for codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint));
+					break;
+				}
 			}
-			else
+			
+			if (font->atlases.length < font->activeMaxNumAtlases)
 			{
-				// PrintLine_D("Adding new active atlas for codepoint 0x%08X at size=%g style=%s%s", codepoint, fontSize, IsFlagSet(styleFlags, FontStyleFlag_Bold) ? "Bold" : "", IsFlagSet(styleFlags, FontStyleFlag_Italic) ? "Italic" : "");
-				FontAtlas* newAtlas = AddNewActiveAtlas(font, sourceFontFile, fontSize, styleFlags);
+				FontAtlas* newAtlas = AddNewActiveAtlas(font, fontFile, fontSize, styleFlags);
 				NotNull(newAtlas);
+				PrintLine_D("Adding new active atlas[%llu] to make space for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s",
+					font->atlases.length-1,
+					codepoint, DebugGetCodepointName(codepoint),
+					fontSize,
+					isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
+				);
 				matchingAtlas = newAtlas;
-				matchingActiveAtlas = newAtlas;
-				result = nullptr;
+				if (codepoint != FONT_CODEPOINT_EMPTY)
+				{
+					FontGlyph* addedGlyph = TryAddGlyphToActiveFontAtlas(font, fontFile, newAtlas, codepoint, styleFlags);
+					NotNull(addedGlyph);
+					result = addedGlyph;
+				}
 			}
-		}
-		
-		if (needToRasterizeGlyph && matchingActiveAtlas != nullptr && sourceFontFile != nullptr)
-		{
-			uxx matchingAtlasIndex = 0;
-			VarArrayGetIndexOf(FontAtlas, &font->atlases, matchingAtlas, &matchingAtlasIndex);
-			// PrintLine_D("Adding new glyph to atlas[%llu] for codepoint 0x%08X at size=%g style=%s%s", matchingAtlasIndex, codepoint, fontSize, IsFlagSet(styleFlags, FontStyleFlag_Bold) ? "Bold" : "", IsFlagSet(styleFlags, FontStyleFlag_Italic) ? "Italic" : "");
-			result = TryAddGlyphToActiveFontAtlas(font, sourceFontFile, matchingActiveAtlas, codepoint);
-			if (result != nullptr) { matchingAtlas = matchingActiveAtlas; }
 		}
 	}
 	

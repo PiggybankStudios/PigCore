@@ -43,7 +43,7 @@ enum FontStyleFlag
 	FontStyleFlag_ColoredGlyphs  = 0x80,
 	FontStyleFlag_All            = 0xFF,
 	FontStyleFlag_FontFileFlags  = FontStyleFlag_Bold|FontStyleFlag_Italic, //These are flags that affect which font file we pull from for rasterization
-	FontStyleFlag_FontAtlasFlags = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_Inverted|FontStyleFlag_ColoredGlyphs, //These are flags that affect which font atlas we use
+	FontStyleFlag_FontAtlasFlags = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_Inverted, //These are flags that affect which font atlas we use
 };
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetFontStyleFlagStr(FontStyleFlag enumValue);

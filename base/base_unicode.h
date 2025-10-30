@@ -697,7 +697,7 @@ PEXP const char* DebugGetCodepointName(u32 codepoint)
 		case UNICODE_ZERO_WIDTH_SPACE_CODEPOINT: return "zero-width space";
 		case UNICODE_NON_BREAKING_SPACE_CODEPOINT: return "non-breaking space";
 		case UNICODE_NON_BREAKING_HYPHEN_CODEPOINT: return "non-breaking hyphen";
-		case UNICODE_UNKNOWN_CHAR_CODEPOINT: return "unknown";
+		case UNICODE_UNKNOWN_CHAR_CODEPOINT: return "replacement";
 		case UNICODE_ELLIPSIS_CODEPOINT: return "ellipsis";
 		case UNICODE_RIGHT_ARROW_CODEPOINT: return "right arrow";
 		case UNICODE_CHECK_MARK_CODEPOINT: return "check mark";

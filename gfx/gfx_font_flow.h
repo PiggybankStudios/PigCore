@@ -328,7 +328,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			rec glyphDrawRec = Rec_Zero;
 			rec glyphLogicalRec = Rec_Zero;
 			
-			u8 nonBoldItalicStyle = (state->currentStyle.fontStyle & ~FontStyleFlag_FontFileFlags);
+			// u8 nonBoldItalicStyle = (state->currentStyle.fontStyle & ~FontStyleFlag_FontFileFlags);
 			u32 substituteCodepoints[] = { codepoint, UNICODE_UNKNOWN_CHAR_CODEPOINT, CharToU32('?') };
 			uxx substituteIndex = 0;
 			FontAtlas* fontAtlas = nullptr;
@@ -337,8 +337,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			{
 				fontGlyph = GetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
 				if (fontGlyph != nullptr) { break; }
-				fontGlyph = GetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, nonBoldItalicStyle, true, &fontAtlas);
-				if (fontGlyph != nullptr) { break; }
+				// fontGlyph = GetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, nonBoldItalicStyle, true, &fontAtlas);
+				// if (fontGlyph != nullptr) { break; }
+				PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
 				substituteIndex++;
 			}
 			// if (fontGlyph == nullptr) { MyBreak(); } //TODO: Remove me!

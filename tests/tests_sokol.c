@@ -455,8 +455,8 @@ void AppInit(void)
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansSymbols-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
 		// attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
 		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
-		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
-		attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
+		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
+		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
 	}
 	else
 	{
