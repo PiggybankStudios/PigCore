@@ -34,6 +34,7 @@ Date:   10\29\2025
 #pragma warning(disable:5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
 #pragma warning(disable:4018) //'>': signed/unsigned mismatch
 #pragma warning(disable:4459) //declaration of 'crc_table' hides global declaration
+#pragma warning(disable:4100) //'npoints': unreferenced formal parameter
 #endif
 
 #include "plutovg-surface.c"

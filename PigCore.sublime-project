@@ -2259,7 +2259,7 @@
 			"void EndVrStereoMode(void)",
 			"void FONT_FLOW_AFTER_CHAR_DEF(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, rec glyphLogicalRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)",
 			"void FONT_FLOW_BEFORE_CHAR_DEF(FontFlowState* state, FontFlow* flow, u32 codepoint)",
-			"void FONT_FLOW_DRAW_CHAR_DEF(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)",
+			"void FONT_FLOW_DRAW_CHAR_DEF(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, FontGlyphMetrics glyphMetrics)",
 			"void FONT_FLOW_DRAW_HIGHLIGHT_DEF(FontFlowState* state, FontFlow* flow, rec highlightRec)",
 			"void FillGfxPipelineOptionsFromVertBuffer(GfxPipelineOptions* options, const VertBuffer* buffer)",
 			"void FlushSystemBindings(GfxSystem* system)",

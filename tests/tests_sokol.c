@@ -715,9 +715,14 @@ bool AppFrame(void)
 			VarArrayLoop(&fontAtlas->glyphs, gIndex)
 			{
 				VarArrayLoopGet(FontGlyph, glyph, &fontAtlas->glyphs, gIndex);
+				#if DEBUG_BUILD
+				const char* codepointName = DebugGetCodepointName(glyph->codepoint);
+				#else
+				const char* codepointName = "-";
+				#endif
 				PrintLine_D("\t\tGlyph[%llu]: \'%s\' 0x%08X sourceRec=(%d, %d, %d, %d) offset=(%g, %g) advanceX=%g logical=(%g, %g, %g, %g)",
 					gIndex,
-					DebugGetCodepointName(glyph->codepoint), glyph->codepoint,
+					codepointName, glyph->codepoint,
 					glyph->atlasSourcePos.X, glyph->atlasSourcePos.Y,
 					glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height,
 					glyph->metrics.renderOffset.X, glyph->metrics.renderOffset.Y,
@@ -743,7 +748,12 @@ bool AppFrame(void)
 						FontActiveCell* cell = &fontAtlas->cells[INDEX_FROM_COORD2D(xOffset, yOffset, fontAtlas->activeCellGridSize.Width, fontAtlas->activeCellGridSize.Height)];
 						if (cell->codepoint != FONT_CODEPOINT_EMPTY)
 						{
-							PrintLine_D("\t\tCell[%d,%d]: \'%s\' 0x%08X glyph[%llu]", xOffset, yOffset, DebugGetCodepointName(cell->codepoint), cell->codepoint, cell->glyphIndex);
+							#if DEBUG_BUILD
+							const char* codepointName = DebugGetCodepointName(cell->codepoint);
+							#else
+							const char* codepointName = "-";
+							#endif
+							PrintLine_D("\t\tCell[%d,%d]: \'%s\' 0x%08X glyph[%llu]", xOffset, yOffset, codepointName, cell->codepoint, cell->glyphIndex);
 						}
 					}
 				}
@@ -911,7 +921,7 @@ bool AppFrame(void)
 				if (IsKeyboardKeyPressed(&keyboard, Key_Plus, true)) { displayStrIndex = ((displayStrIndex+1) % ArrayCount(displayStrs)); typeAnimCodepointIndex = 0; }
 				IncrementUXX(typeAnimCodepointIndex);
 				Str8 displayStr = displayStrs[displayStrIndex];
-				RichStr displayStrRich = DecodeStrToRichStr(scratch, displayStrs[displayStrIndex]);
+				RichStr displayStrRich = DecodeStrToRichStr(scratch, displayStr);
 				uxx typedByteIndex = displayStrRich.fullPiece.str.length;
 				{
 					uxx codepointIndex = 0;
@@ -1051,7 +1061,12 @@ bool AppFrame(void)
 					DrawRectangleOutline(glyphRec, 1, isMouseHovered ? MonokaiLightPurple : MonokaiPurple);
 					if (isMouseHovered)
 					{
-						infoStr = PrintInArenaStr(scratch, "Glyph[%llu] \'%s\' 0x%08X %dx%d", gIndex, DebugGetCodepointName(glyph->codepoint), glyph->codepoint, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height);
+						#if DEBUG_BUILD
+						const char* codepointName = DebugGetCodepointName(glyph->codepoint);
+						#else
+						const char* codepointName = "-";
+						#endif
+						infoStr = PrintInArenaStr(scratch, "Glyph[%llu] \'%s\' 0x%08X %dx%d", gIndex, codepointName, glyph->codepoint, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height);
 						DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontAtlas->metrics.lineHeight;
 					}
 				}

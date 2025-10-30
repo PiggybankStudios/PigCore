@@ -1203,7 +1203,7 @@ PEXPI void GfxSystem_SetTextBackgroundColor(GfxSystem* system, Color32 color)
 // +====================================+
 // | GfxSystem_FontFlowDrawCharCallback |
 // +====================================+
-// void GfxSystem_FontFlowDrawCharCallback(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
+// void GfxSystem_FontFlowDrawCharCallback(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, FontGlyphMetrics glyphMetrics)
 FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 {
 	NotNull(state);
@@ -1212,6 +1212,7 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 	NotNull(glyph);
 	UNUSED(flow);
 	UNUSED(codepoint);
+	UNUSED(glyphMetrics);
 	GfxSystem* system = (GfxSystem*)state->contextPntr;
 	Color32 drawColor = state->currentStyle.color;
 	if (IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && state->backgroundColor.a != 0)

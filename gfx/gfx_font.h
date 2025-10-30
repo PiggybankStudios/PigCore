@@ -1379,6 +1379,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	{
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+		DebugAssert(setCharSizeError == 0);
 		newAtlas->metrics.maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
 		newAtlas->metrics.maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
 		newAtlas->metrics.lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
@@ -1401,8 +1402,9 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	{
 		FontFile* file = &font->files[fIndex];
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		i32 fileLineHeight = CeilR32i(TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height));
+		FT_Error setCharSizeError = FT_Set_Char_Size(file->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+		DebugAssert(setCharSizeError == 0);
+		i32 fileLineHeight = CeilR32i(TO_R32_FROM_FT26(file->freeTypeFace->size->metrics.height));
 		if (cellSize < fileLineHeight) { cellSize = fileLineHeight; }
 	}
 	if (cellSize > atlasSize.Width) { cellSize = atlasSize.Width; }
@@ -2341,6 +2343,7 @@ PEXPI bool GetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, 
 		#if BUILD_WITH_FREETYPE
 		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+		DebugAssert(setCharSizeError == 0);
 		metricsOut->lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
 		metricsOut->maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
 		metricsOut->maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
