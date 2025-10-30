@@ -328,7 +328,6 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			rec glyphDrawRec = Rec_Zero;
 			rec glyphLogicalRec = Rec_Zero;
 			
-			// u8 nonBoldItalicStyle = (state->currentStyle.fontStyle & ~FontStyleFlag_FontFileFlags);
 			u32 substituteCodepoints[] = { codepoint, UNICODE_UNKNOWN_CHAR_CODEPOINT, CharToU32('?') };
 			uxx substituteIndex = 0;
 			FontAtlas* fontAtlas = nullptr;
@@ -337,20 +336,31 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			{
 				fontGlyph = GetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
 				if (fontGlyph != nullptr) { break; }
-				// fontGlyph = GetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, nonBoldItalicStyle, true, &fontAtlas);
-				// if (fontGlyph != nullptr) { break; }
-				PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
+				// PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
 				substituteIndex++;
 			}
 			// if (fontGlyph == nullptr) { MyBreak(); } //TODO: Remove me!
 			
 			if (fontGlyph != nullptr)
 			{
-				bool scaledGlyph = false;
 				FontGlyphMetrics glyphMetrics = fontGlyph->metrics;
 				if (!AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE))
 				{
-					scaledGlyph = TryGetFontGlyphMetrics(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics);
+					if (!TryGetFontGlyphMetrics(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics))
+					{
+						FontLineMetrics lineMetrics = ZEROED;
+						if (GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &lineMetrics))
+						{
+							r32 predictedScale = lineMetrics.lineHeight / fontAtlas->metrics.lineHeight;
+							glyphMetrics.glyphSize = NewV2i(
+								RoundR32i(glyphMetrics.glyphSize.Width * predictedScale),
+								RoundR32i(glyphMetrics.glyphSize.Height * predictedScale)
+							);
+							glyphMetrics.renderOffset = ScaleV2(glyphMetrics.renderOffset, predictedScale);
+							glyphMetrics.advanceX *= predictedScale;
+							glyphMetrics.logicalRec = ScaleRec(glyphMetrics.logicalRec, predictedScale);
+						}
+					}
 				}
 				
 				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->metrics.lineHeight);

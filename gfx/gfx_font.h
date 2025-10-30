@@ -2056,12 +2056,10 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 	NotNull(font);
 	FontGlyph* result = nullptr;
 	
-	uxx matchingAtlasIndex = 0; //TODO: Remove me when done debugging
 	uxx matchingGlyphIndex = 0;
-	// FontAtlas* FindClosestMatchingFontAtlas(PigFont* font, uxx skipIndex, u32 codepoint, r32 fontSize, u8 styleFlags, u8 styleMask, bool mustBeActive, uxx* numMatchesOut, uxx* atlasIndexOut, uxx* glyphIndexOut)
 	FontAtlas* matchingAtlas = FindClosestMatchingFontAtlas(
 		font, 0, codepoint, fontSize, styleFlags, FontStyleFlag_FontAtlasFlags, false,
-		nullptr, &matchingAtlasIndex, &matchingGlyphIndex
+		nullptr, nullptr, &matchingGlyphIndex
 	);
 	if (matchingAtlas != nullptr) { result = VarArrayGet(FontGlyph, &matchingAtlas->glyphs, matchingGlyphIndex); }
 	
@@ -2073,28 +2071,28 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 			(matchingAtlas->styleFlags & FontStyleFlag_FontAtlasFlags) != (styleFlags & FontStyleFlag_FontAtlasFlags)
 		))
 	{
-		bool isBold = IsFlagSet(styleFlags, FontStyleFlag_Bold);
-		bool isItalic = IsFlagSet(styleFlags, FontStyleFlag_Italic);
-		PrintLine_D("Couldn't find an exact match for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s, looking to render it into an active atlas!",
-			codepoint, DebugGetCodepointName(codepoint),
-			fontSize,
-			isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
-		);
-		if (matchingAtlas != nullptr)
-		{
-			bool matchingAtlasIsBold = IsFlagSet(matchingAtlas->styleFlags, FontStyleFlag_Bold);
-			bool matchingAtlasIsItalic = IsFlagSet(matchingAtlas->styleFlags, FontStyleFlag_Italic);
-			PrintLine_D("Imperfect match was atlas[%llu] at size=%g style=%s%s%s%s",
-				matchingAtlasIndex,
-				matchingAtlas->fontSize,
-				matchingAtlasIsBold ? "Bold" : "", (matchingAtlasIsBold && matchingAtlasIsItalic) ? "|" : "", matchingAtlasIsItalic ? "Italic" : "", (!matchingAtlasIsBold && !matchingAtlasIsItalic) ? "Regular" : ""
-			);
-		}
+		// bool isBold = IsFlagSet(styleFlags, FontStyleFlag_Bold);
+		// bool isItalic = IsFlagSet(styleFlags, FontStyleFlag_Italic);
+		// PrintLine_D("Couldn't find an exact match for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s, looking to render it into an active atlas!",
+		// 	codepoint, DebugGetCodepointName(codepoint),
+		// 	fontSize,
+		// 	isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
+		// );
+		// if (matchingAtlas != nullptr)
+		// {
+		// 	bool matchingAtlasIsBold = IsFlagSet(matchingAtlas->styleFlags, FontStyleFlag_Bold);
+		// 	bool matchingAtlasIsItalic = IsFlagSet(matchingAtlas->styleFlags, FontStyleFlag_Italic);
+		// 	PrintLine_D("Imperfect match was atlas[%llu] at size=%g style=%s%s%s%s",
+		// 		matchingAtlasIndex,
+		// 		matchingAtlas->fontSize,
+		// 		matchingAtlasIsBold ? "Bold" : "", (matchingAtlasIsBold && matchingAtlasIsItalic) ? "|" : "", matchingAtlasIsItalic ? "Italic" : "", (!matchingAtlasIsBold && !matchingAtlasIsItalic) ? "Regular" : ""
+		// 	);
+		// }
 		
 		uxx fontFileIndex = 0;
 		FontFile* fontFile = (codepoint == FONT_CODEPOINT_EMPTY) ? nullptr : FindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, &fontFileIndex, nullptr);
 		UNUSED(fontFileIndex);
-		if (codepoint != FONT_CODEPOINT_EMPTY && fontFile == nullptr) { PrintLine_D("No font file supports codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint)); }
+		// if (codepoint != FONT_CODEPOINT_EMPTY && fontFile == nullptr) { PrintLine_D("No font file supports codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint)); }
 		
 		bool addedGlyphToActiveAtlas = false;
 		if (fontFile != nullptr && codepoint != FONT_CODEPOINT_EMPTY)
@@ -2116,26 +2114,26 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 					FontGlyph* addedGlyph = TryAddGlyphToActiveFontAtlas(font, fontFile, matchingActiveAtlas, codepoint, styleFlags);
 					if (addedGlyph != nullptr)
 					{
-						PrintLine_D("Added codepoint U+%X \'%s\' to active atlas[%llu]!", codepoint, DebugGetCodepointName(codepoint), matchingActiveAtlasIndex);
+						// PrintLine_D("Added codepoint U+%X \'%s\' to active atlas[%llu]!", codepoint, DebugGetCodepointName(codepoint), matchingActiveAtlasIndex);
 						addedGlyphToActiveAtlas = true;
 						result = addedGlyph;
 						matchingAtlas = matchingActiveAtlas;
 					}
 					else if (TryEvictOldGlyphFromFontAtlas(font, matchingActiveAtlas, nullptr, nullptr))
 					{
-						PrintLine_D("Evicted a glyph from atlas[%llu] to make space for codepoint U+%X \'%s\'!", matchingActiveAtlasIndex, codepoint, DebugGetCodepointName(codepoint));
+						// PrintLine_D("Evicted a glyph from atlas[%llu] to make space for codepoint U+%X \'%s\'!", matchingActiveAtlasIndex, codepoint, DebugGetCodepointName(codepoint));
 						continue; //don't increment activeAtlasSkipIndex, since we evicted a glyph from the atlas, attempting to add the new glyph again may work, if not we will attempt to evict another glyph if possible
 					}
 					else { activeAtlasSkipIndex++; }
 				}
 				else
 				{
-					PrintLine_D("No more matching active atlases exist (after %llu) for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s",
-						activeAtlasSkipIndex,
-						codepoint, DebugGetCodepointName(codepoint),
-						fontSize,
-						isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
-					);
+					// PrintLine_D("No more matching active atlases exist (after %llu) for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s",
+					// 	activeAtlasSkipIndex,
+					// 	codepoint, DebugGetCodepointName(codepoint),
+					// 	fontSize,
+					// 	isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
+					// );
 					break;
 				}
 			}
@@ -2147,16 +2145,15 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 			//Try to evict until we are under the limit
 			while (font->atlases.length >= font->activeMaxNumAtlases)
 			{
-				uxx evictedAtlasIndex = 0; //TODO: Remove me once we are done debugging
-				if (TryEvictOldFontAtlas(font, &evictedAtlasIndex))
+				if (TryEvictOldFontAtlas(font, nullptr))
 				{
-					PrintLine_D("Evicted an old atlas[%llu] to make space for codepoint U+%X \'%s\'", evictedAtlasIndex, codepoint, DebugGetCodepointName(codepoint));
+					// PrintLine_D("Evicted an old atlas[%llu] to make space for codepoint U+%X \'%s\'", evictedAtlasIndex, codepoint, DebugGetCodepointName(codepoint));
 					matchingAtlas = nullptr; //after eviction, the previously found atlas pointer is invalid;
 					result = nullptr;
 				}
 				else
 				{
-					PrintLine_D("Couldn't evict any atlases to make space for codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint));
+					// PrintLine_D("Couldn't evict any atlases to make space for codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint));
 					break;
 				}
 			}
@@ -2165,12 +2162,12 @@ PEXP FontGlyph* GetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontS
 			{
 				FontAtlas* newAtlas = AddNewActiveAtlas(font, fontFile, fontSize, styleFlags);
 				NotNull(newAtlas);
-				PrintLine_D("Adding new active atlas[%llu] to make space for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s",
-					font->atlases.length-1,
-					codepoint, DebugGetCodepointName(codepoint),
-					fontSize,
-					isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
-				);
+				// PrintLine_D("Adding new active atlas[%llu] to make space for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s",
+				// 	font->atlases.length-1,
+				// 	codepoint, DebugGetCodepointName(codepoint),
+				// 	fontSize,
+				// 	isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
+				// );
 				matchingAtlas = newAtlas;
 				if (codepoint != FONT_CODEPOINT_EMPTY)
 				{
