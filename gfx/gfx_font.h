@@ -75,6 +75,11 @@ Description:
 #define FONT_FREETYPE_DPI 72 //pixels/inch
 #define FONT_CODEPOINT_EMPTY 0xFFFFFFU
 
+// This scalar is what we multiply lineHeight by to set our active cell size when making an active font atlas.
+// If this prediction is too low for many glyphs our algorithm will run slow and inefficiently (many evictions) because we don't handle multi-cell glyphs terribly well
+// If this prediciton is too high we will waste a bunch of atlas space
+#define FONT_CELL_SIZE_PREDICTION_LINE_HEIGHT_SCALAR 1.1f
+
 typedef plex FontCharRange FontCharRange;
 plex FontCharRange
 {
@@ -1354,6 +1359,32 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	#endif
 	
 	v2i atlasSize = FillV2i(font->activeAtlasMinSize);
+	FontLineMetrics lineMetrics = ZEROED;
+	#if BUILD_WITH_FREETYPE
+	{
+		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+		DebugAssert(setCharSizeError == 0);
+		lineMetrics.maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
+		lineMetrics.maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
+		lineMetrics.lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
+		lineMetrics.centerOffset = lineMetrics.maxAscend - (lineMetrics.lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did with stb_truetype.h?
+	}
+	#else //!BUILD_WITH_FREETYPE
+	{
+		//TODO: Implement me!
+		//TODO: r32 lineHeight;
+		//TODO: r32 maxAscend;
+		//TODO: r32 maxDescend;
+		//TODO: r32 centerOffset;
+	}
+	#endif //BUILD_WITH_FREETYPE
+	while (atlasSize.Width < CeilR32i(lineMetrics.lineHeight) && atlasSize.Width < font->activeAtlasMaxSize)
+	{
+		atlasSize.Width *= 2;
+		atlasSize.Height *= 2;
+	}
+	
 	FontAtlas* newAtlas = VarArrayAdd(FontAtlas, &font->atlases);
 	NotNull(newAtlas);
 	ClearPointer(newAtlas);
@@ -1361,6 +1392,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	newAtlas->metrics.fontScale = 1.0f; //TODO: Fill me?
 	newAtlas->styleFlags = (styleFlags & FontStyleFlag_FontAtlasFlags);
 	newAtlas->glyphRange = NewFontCharRangeSingle(0);
+	newAtlas->metrics = lineMetrics;
 	InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, 1);
 	InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, 1);
 	InitVarArray(FontActiveAtlasTextureUpdate, &newAtlas->pendingTextureUpdates, font->arena);
@@ -1375,38 +1407,16 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	newAtlas->pushedTextureUpdates = true;
 	ScratchEnd(scratch);
 	
-	#if BUILD_WITH_FREETYPE
-	{
-		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		DebugAssert(setCharSizeError == 0);
-		newAtlas->metrics.maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
-		newAtlas->metrics.maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
-		newAtlas->metrics.lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
-		newAtlas->metrics.centerOffset = newAtlas->metrics.maxAscend - (newAtlas->metrics.lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did with stb_truetype.h?
-	}
-	#else //!BUILD_WITH_FREETYPE
-	{
-		//TODO: Implement me!
-		//TODO: r32 lineHeight;
-		//TODO: r32 maxAscend;
-		//TODO: r32 maxDescend;
-		//TODO: r32 centerOffset;
-	}
-	#endif //BUILD_WITH_FREETYPE
-	
 	newAtlas->isActive = true;
 	#if BUILD_WITH_FREETYPE
-	i32 cellSize = 8;
-	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
-	{
-		FontFile* file = &font->files[fIndex];
-		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		FT_Error setCharSizeError = FT_Set_Char_Size(file->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		DebugAssert(setCharSizeError == 0);
-		i32 fileLineHeight = CeilR32i(TO_R32_FROM_FT26(file->freeTypeFace->size->metrics.height));
-		if (cellSize < fileLineHeight) { cellSize = fileLineHeight; }
-	}
+	//NOTE: Currently we take (lineHeight * scalar) of the first fontFile as the size of a square cell.
+	// Other font files might be larger and we may want to make our prediction of an appropriate cell size with more information.
+	// We used to take the largest lineHeight of all attached fonts, but with an emoji font attached it over-estimated and wasted a lot of space
+	FontFile* firstFontFile = &font->files[0];
+	FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+	FT_Error setCharSizeError = FT_Set_Char_Size(firstFontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+	DebugAssert(setCharSizeError == 0);
+	i32 cellSize = CeilR32i(TO_R32_FROM_FT26(firstFontFile->freeTypeFace->size->metrics.height) * FONT_CELL_SIZE_PREDICTION_LINE_HEIGHT_SCALAR);
 	if (cellSize > atlasSize.Width) { cellSize = atlasSize.Width; }
 	if (cellSize > atlasSize.Height) { cellSize = atlasSize.Height; }
 	newAtlas->activeCellSize = FillV2i(cellSize);
