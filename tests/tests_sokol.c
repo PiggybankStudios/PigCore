@@ -404,8 +404,8 @@ void AppInit(void)
 			NewFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
 			// NewFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
 		};
-		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
-		bakeResult = BakeFontAtlasEx(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
+		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		bakeResult = TryBakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
 		FillFontKerningTable(&testFont);
 		RemoveAttachedFontFiles(&testFont);
 		
@@ -414,7 +414,7 @@ void AppInit(void)
 			FontCharRange_Katakana,
 		};
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
-		bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success);
+		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success);
 		RemoveAttachedFontFiles(&testFont);
 		
 		#if 0
@@ -429,23 +429,23 @@ void AppInit(void)
 			NewFontCharRangeSingle(0x1F64C), //🙌
 		};
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
-		bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
+		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
 		RemoveAttachedFontFiles(&testFont);
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
-		bakeResult = BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
+		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
 		RemoveAttachedFontFiles(&testFont);
 		#endif
 		
-		MakeFontActive(&testFont, 64, 256, 8, 2000, 2000);
-		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
-		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
-		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult == Result_Success);
-		attachResult = AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult == Result_Success);
-		// attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		MakeFontActive(&testFont, 64, 256, 4, 0, 0);
+		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
+		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult == Result_Success);
+		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult == Result_Success);
+		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
-		// attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansSymbols-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
-		// attachResult = AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
+		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
 		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
 		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
@@ -472,7 +472,7 @@ void AppInit(void)
 			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
 		};
 		
-		Result bakeResult = AttachAndMultiBakeFontAtlases(&testFont, ArrayCount(bakeSettings), &bakeSettings[0], 256, 1024, ArrayCount(charRanges), &charRanges[0]);
+		Result bakeResult = TryAttachAndMultiBakeFontAtlases(&testFont, ArrayCount(bakeSettings), &bakeSettings[0], 256, 1024, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
 	}
 	
@@ -488,7 +488,7 @@ void AppInit(void)
 			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_Italic },
 			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
 		};
-		Result bakeResult = AttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
+		Result bakeResult = TryAttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
 	}
 	#endif //!TARGET_IS_OSX

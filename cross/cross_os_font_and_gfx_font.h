@@ -22,9 +22,9 @@ plex FontBakeSettings
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	Result AttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags);
-	Result AttachAndMultiBakeFontAtlasesEx(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
-	Result AttachAndMultiBakeFontAtlases(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
+	Result TryAttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags);
+	Result TryAttachAndMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
+	Result TryAttachAndMultiBakeFontAtlases(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
 #endif
 
 // +--------------------------------------------------------------+
@@ -32,11 +32,11 @@ plex FontBakeSettings
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP Result AttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags)
+PEXP Result TryAttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags)
 {
 	NotNull(font);
 	NotNull(font->arena);
-	TracyCZoneN(_funcZone, "AttachOsTtfFileToFont", true);
+	TracyCZoneN(_funcZone, "TryAttachOsTtfFileToFont", true);
 	
 	Slice fileContents = Slice_Empty;
 	Result readResult = OsReadPlatformFont(
@@ -54,10 +54,10 @@ PEXP Result AttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8
 	return result;
 }
 
-PEXP Result AttachAndMultiBakeFontAtlasesEx(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
+PEXP Result TryAttachAndMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	if (numSettings > 0) { NotNull(settings); }
-	TracyCZoneN(_funcZone, "AttachAndMultiBakeFontAtlasesEx", true);
+	TracyCZoneN(_funcZone, "TryAttachAndMultiBakeFontAtlasesWithCustomGlyphs", true);
 	Str8 prevFontName = Str8_Empty;
 	u8 prevStyleFlags = FontStyleFlag_None;
 	for (uxx sIndex = 0; sIndex < numSettings; sIndex++)
@@ -66,7 +66,7 @@ PEXP Result AttachAndMultiBakeFontAtlasesEx(PigFont* font, uxx numSettings, cons
 		if (sIndex == 0 || !StrExactEquals(prevFontName, setting->name) || setting->style != prevStyleFlags)
 		{
 			RemoveAttachedFontFiles(font);
-			Result attachResult = AttachOsTtfFileToFont(font, setting->name, setting->size, setting->style);
+			Result attachResult = TryAttachOsTtfFileToFont(font, setting->name, setting->size, setting->style);
 			if (attachResult != Result_Success)
 			{
 				RemoveAttachedFontFiles(font);
@@ -76,7 +76,7 @@ PEXP Result AttachAndMultiBakeFontAtlasesEx(PigFont* font, uxx numSettings, cons
 			prevFontName = setting->name;
 			prevStyleFlags = setting->style;
 		}
-		Result bakeResult = BakeFontAtlasEx(font, setting->size, setting->style, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
+		Result bakeResult = TryBakeFontAtlasWithCustomGlyphs(font, setting->size, setting->style, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
 		if (bakeResult != Result_Success && setting->fillKerningTable) { FillFontKerningTable(font); }
 		if (bakeResult != Result_Success)
 		{
@@ -90,9 +90,9 @@ PEXP Result AttachAndMultiBakeFontAtlasesEx(PigFont* font, uxx numSettings, cons
 	return Result_Success;
 }
 
-PEXPI Result AttachAndMultiBakeFontAtlases(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+PEXPI Result TryAttachAndMultiBakeFontAtlases(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
 {
-	return AttachAndMultiBakeFontAtlasesEx(font, numSettings, settings, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
+	return TryAttachAndMultiBakeFontAtlasesWithCustomGlyphs(font, numSettings, settings, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

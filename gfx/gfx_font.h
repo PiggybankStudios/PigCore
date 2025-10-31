@@ -45,8 +45,8 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Make TryBakeFontAtlas use all the attached font files
-//TODO: Choose if entire TryBakeFontAtlas should fail if any codepoints are not found in the font(s)
+//TODO: Make BakeFontAtlas use all the attached font files
+//TODO: Choose if entire BakeFontAtlas should fail if any codepoints are not found in the font(s)
 //TODO: Implement stb_truetype.h code path!
 //TODO: Can't render emoji in Bold rich text
 //TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
@@ -262,10 +262,10 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph* glyph);
 	Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena);
 	void FillFontKerningTable(PigFont* font);
-	Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
-	PIG_CORE_INLINE Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
-	Result MultiBakeFontAtlasesEx(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
-	PIG_CORE_INLINE Result MultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
+	Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
+	PIG_CORE_INLINE Result TryBakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
+	Result TryMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
+	PIG_CORE_INLINE Result TryMultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
 	PIG_CORE_INLINE FontAtlas* GetDefaultFontAtlas(PigFont* font);
 	PIG_CORE_INLINE r32 GetDefaultFontSize(const PigFont* font);
 	PIG_CORE_INLINE u8 GetDefaultFontStyleFlags(const PigFont* font);
@@ -505,7 +505,7 @@ static bool InitializeFreeTypeIfNeeded()
 }
 
 //NOTE: By "attach" we mean 2 things: Parse the file using FreeType or stb_truetype.h (this is the source for almost all failures to attach) and then add the font to the list of font files (there is a static maximum that may trigger an error)
-//NOTE: See AttachOsTtfFileToFont in cross_os_font_and_gfx_font.h
+//NOTE: See TryAttachOsTtfFileToFont in cross_os_font_and_gfx_font.h
 PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena)
 {
 	NotNull(font);
@@ -638,7 +638,7 @@ PEXP void FillFontKerningTable(PigFont* font)
 
 //NOTE: This function does not support "fallback" fonts. It only uses the first font file that is attached
 //TODO: We should allow for some way for the calling code to tell us which fontFile to use to pack this atlas, that way we can have all our font files attached for future use as an active font, and still pre-bake some static atlases using specific fonts
-PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
+PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -1228,24 +1228,24 @@ PEXP Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32
 	TracyCZoneEnd(_funcZone);
 	return result;
 }
-PEXPI Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+PEXPI Result TryBakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
 {
-	return BakeFontAtlasEx(font, fontSize, extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
+	return TryBakeFontAtlasWithCustomGlyphs(font, fontSize, extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
 }
 
-PEXP Result MultiBakeFontAtlasesEx(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
+PEXP Result TryMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	if (numSizes > 0) { NotNull(fontSizes); }
 	for (uxx sIndex = 0; sIndex < numSizes; sIndex++)
 	{
-		Result bakeResult = BakeFontAtlasEx(font, fontSizes[sIndex], extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
+		Result bakeResult = TryBakeFontAtlasWithCustomGlyphs(font, fontSizes[sIndex], extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
 		if (bakeResult != Result_Success) { return bakeResult; }
 	}
 	return Result_Success;
 }
-PEXPI Result MultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+PEXPI Result TryMultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
 {
-	return MultiBakeFontAtlasesEx(font, numSizes, fontSizes, extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
+	return TryMultiBakeFontAtlasesWithCustomGlyphs(font, numSizes, fontSizes, extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
 }
 
 PEXPI FontAtlas* GetDefaultFontAtlas(PigFont* font)
@@ -1618,6 +1618,10 @@ PEXP bool TryEvictOldGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, u
 	Assert(font->isActive);
 	NotNull(activeAtlas);
 	Assert(activeAtlas->isActive);
+	TracyCZoneN(_funcZone, "TryEvictOldGlyphFromFontAtlas", true);
+	// uxx activeAtlasIndex = 0;
+	// VarArrayGetIndexOf(FontAtlas, &font->atlases, activeAtlas, &activeAtlasIndex);
+	// PrintLine_D("Trying to evict from atlas[%llu]", activeAtlasIndex);
 	FontGlyph* oldestEvictableGlyph = nullptr;
 	uxx oldestEvictableGlyphIndex = 0;
 	VarArrayLoop(&activeAtlas->glyphs, gIndex)
@@ -1637,9 +1641,10 @@ PEXP bool TryEvictOldGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, u
 		SetOptionalOutPntr(evictedGlyphCodepointOut, oldestEvictableGlyph->codepoint);
 		SetOptionalOutPntr(evictedGlyphIndexOut, oldestEvictableGlyphIndex);
 		RemoveGlyphFromFontAtlas(font, activeAtlas, oldestEvictableGlyphIndex);
+		TracyCZoneEnd(_funcZone);
 		return true;
 	}
-	else { return false; }
+	else { TracyCZoneEnd(_funcZone); return false; }
 }
 
 PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, FontAtlas* activeAtlas, u32 codepoint, u8 extraStyleFlags)
@@ -2001,6 +2006,7 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 //      If there are still multiple matches then we choose the nth match based on skipIndex (usually used when codepoint == FONT_CODEPOINT_EMPTY)
 PEXP FontAtlas* TryFindClosestMatchingFontAtlas(PigFont* font, uxx skipIndex, u32 codepoint, r32 fontSize, u8 styleFlags, u8 styleMask, bool mustBeActive, uxx* numMatchesOut, uxx* atlasIndexOut, uxx* glyphIndexOut)
 {
+	TracyCZoneN(_funcZone, "TryFindClosestMatchingFontAtlas", true);
 	uxx numSameMatches = 0;
 	FontAtlas* matchingAtlas = nullptr;
 	uxx matchingAtlasIndex = 0;
@@ -2072,6 +2078,7 @@ PEXP FontAtlas* TryFindClosestMatchingFontAtlas(PigFont* font, uxx skipIndex, u3
 	SetOptionalOutPntr(numMatchesOut, numSameMatches);
 	SetOptionalOutPntr(atlasIndexOut, matchingAtlasIndex);
 	SetOptionalOutPntr(glyphIndexOut, matchingGlyphIndex);
+	TracyCZoneEnd(_funcZone);
 	return matchingAtlas;
 }
 
@@ -2273,7 +2280,7 @@ PEXPI void FontNewFrame(PigFont* font, u64 programTime)
 			if (atlas->isActive)
 			{
 				atlas->pushedTextureUpdates = false;
-				if (font->autoEvictAtlasTime > 0 && TimeSinceBy(programTime, atlas->lastUsedTime) >= font->autoEvictAtlasTime)
+				if (font->autoEvictAtlasTime > 0 && TimeSinceBy(programTime, atlas->lastUsedTime) >= font->autoEvictAtlasTime && atlas->lastUsedTime < font->prevProgramTime)
 				{
 					PrintLine_D("Auto-evicting atlas[%llu] fontSize=%g %dx%d %llu glyph%s since it was last used %llums ago",
 						aIndex,
@@ -2293,7 +2300,7 @@ PEXPI void FontNewFrame(PigFont* font, u64 programTime)
 					VarArrayLoop(&atlas->glyphs, gIndex)
 					{
 						VarArrayLoopGet(FontGlyph, glyph, &atlas->glyphs, gIndex);
-						if (TimeSinceBy(programTime, glyph->lastUsedTime) >= font->autoEvictGlyphTime)
+						if (TimeSinceBy(programTime, glyph->lastUsedTime) >= font->autoEvictGlyphTime && glyph->lastUsedTime < font->prevProgramTime)
 						{
 							PrintLine_D("Auto-evicting glyph[%llu] for codepoint 0x%08X in atlas[%llu] fontSize=%g %dx%d since it was last used %llums ago",
 								gIndex,
