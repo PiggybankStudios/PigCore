@@ -14,6 +14,8 @@ Description:
 	** since it's lifespan is short and it's memory requirements are tiny
 */
 
+//TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
+
 #include "tools/tools_shared.h"
 #include "tools/tools_str_array.h"
 #include "tools/tools_cli.h"

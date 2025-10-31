@@ -241,8 +241,11 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		DebugAssert(currentPiece != nullptr);
 		
 		// If any of these things are changing in the next str piece then we need to draw a piece of the active highlight before we continue
-		bool isLineEnding = (state->wordWrapByteIndexIsLineEnd && state->byteIndex >= state->wordWrapByteIndex && state->wrapWidth > 0.0f);
-		bool isHighlightedChanging = IsFontStyleFlagChangingInRichStrStyleChange(&state->currentStyle, state->startFontStyle, currentPiece->styleChange, FontStyleFlag_Highlighted);
+		bool isLineEnding = (state->byteIndex >= state->wordWrapByteIndex && !state->findingNextWordBeforeWrap);
+		bool isHighlightedChanging = (
+			state->textPieceByteIndex == 0 &&
+			IsFontStyleFlagChangingInRichStrStyleChange(&state->currentStyle, state->startFontStyle, currentPiece->styleChange, FontStyleFlag_Highlighted)
+		);
 		if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted))
 		{
 			if (currentPiece->styleChange.type == RichStrStyleChangeType_Color ||
@@ -252,12 +255,16 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			{
 				DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 				//Highlight is getting disabled, return to regular drawing of characters
-				if (isHighlightedChanging) { drawHighlightsAfterLoop = false; break; }
+				// if (isHighlightedChanging) { drawHighlightsAfterLoop = false; }
 			}
 		}
 		
-		ApplyRichStyleChange(&state->currentStyle, currentPiece->styleChange, state->startFontSize, state->startFontStyle, state->startColor);
+		if (state->textPieceByteIndex == 0)
+		{
+			ApplyRichStyleChange(&state->currentStyle, currentPiece->styleChange, state->startFontSize, state->startFontStyle, state->startColor);
+		}
 		
+		//If highlighting is starting then we should do some look-ahead and render the highlight rectangles FIRST then render the text on top using backgroundColor
 		if (!state->drawingHighlightRecs && isHighlightedChanging && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && callbacks != nullptr && callbacks->drawHighlight != nullptr)
 		{
 			if (state->byteIndex >= state->highlightRecsDrawnToByteIndex)
@@ -271,7 +278,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			}
 		}
 		
-		if (state->byteIndex >= state->wordWrapByteIndex && !state->findingNextWordBeforeWrap)
+		if (isLineEnding)
 		{
 			if (state->wordWrapByteIndexIsLineEnd)
 			{
@@ -285,6 +292,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					state->position.Y += GetFontLineHeight(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
 				}
 				state->maxLineHeightThisLine = 0.0f;
+				state->highlightStartPos = state->position;
 			}
 			
 			Result findWrapResult = DoFontFlow_FindNextWordWrapIndex(state, callbacks, &state->wordWrapByteIndex);
@@ -328,25 +336,28 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			rec glyphDrawRec = Rec_Zero;
 			rec glyphLogicalRec = Rec_Zero;
 			
-			u32 substituteCodepoints[] = { codepoint, UNICODE_UNKNOWN_CHAR_CODEPOINT, CharToU32('?') };
-			uxx substituteIndex = 0;
+			u32 fontCodepoint = codepoint;
 			FontAtlas* fontAtlas = nullptr;
 			FontGlyph* fontGlyph = nullptr;
+			
+			u32 substituteCodepoints[] = { codepoint, UNICODE_UNKNOWN_CHAR_CODEPOINT, CharToU32('?') };
+			uxx substituteIndex = 0;
 			while (fontGlyph == nullptr && substituteIndex < ArrayCount(substituteCodepoints))
 			{
 				fontGlyph = TryGetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
-				if (fontGlyph != nullptr) { break; }
+				if (fontGlyph != nullptr) { fontCodepoint = substituteCodepoints[substituteIndex]; break; }
+				else if (IsCodepointWhitespace(codepoint, true)) { break; } //don't do substitution characters for whitespace (esp. not new-line character)
 				// PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
 				substituteIndex++;
 			}
 			
-			if (fontGlyph != nullptr || IsCodepointWhitespace(codepoint, true))
+			if (fontGlyph != nullptr || IsCodepointWhitespace(codepoint, false))
 			{
 				FontGlyphMetrics glyphMetrics = ZEROED;
 				if (fontGlyph != nullptr) { glyphMetrics = fontGlyph->metrics; }
 				if (!AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE) || fontGlyph == nullptr)
 				{
-					if (!TryGetFontGlyphMetrics(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics))
+					if (!TryGetFontGlyphMetrics(state->font, fontCodepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics))
 					{
 						FontLineMetrics lineMetrics = ZEROED;
 						if (GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &lineMetrics))
@@ -390,7 +401,6 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					}
 					
 					// Consume any whitespace and up to one new-line character as part of the line break
-					bool foundNewLine = false;
 					while (state->byteIndex < state->text.fullPiece.str.length)
 					{
 						uxx pieceByteIndex = 0;
@@ -398,10 +408,14 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 						NotNull(richStrPiece);
 						u32 maybeSpaceCodepoint = 0;
 						u8 maybeSpaceUtf8ByteSize = GetCodepointForUtf8Str(richStrPiece->str, pieceByteIndex, &maybeSpaceCodepoint);
-						if (IsCharWhitespace(maybeSpaceCodepoint, !foundNewLine))
+						if (IsCharWhitespace(maybeSpaceCodepoint, false))
 						{
 							state->byteIndex += maybeSpaceUtf8ByteSize;
-							if (maybeSpaceCodepoint == '\n') { foundNewLine = true; }
+						}
+						else if (maybeSpaceCodepoint == '\n')
+						{
+							state->byteIndex += maybeSpaceUtf8ByteSize;
+							break;
 						}
 						else { break; }
 					}
