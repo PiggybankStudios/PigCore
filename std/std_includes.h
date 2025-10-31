@@ -51,8 +51,6 @@ typedef uint16_t char16_t;
 	#include <dirent.h>
 	// Gives us mmap
 	#include <sys/mman.h>
-	// Needed for time_t, time(), timespec, and clock_gettime()
-	#include <time.h>
 	#include <sys/time.h>
 	#include <errno.h>
 	#include <dlfcn.h> //needed for dlopen
@@ -61,7 +59,12 @@ typedef uint16_t char16_t;
 	// Needed for getpwuid and getuid
 	#include <pwd.h>
 	#include <pthread.h>
+	// Needed for time_t, time(), timespec, and clock_gettime()
+	#include <time.h>
 	#include <sys/syscall.h> //needed for syscall(SYS_gettid) in os_threading.h
+#endif
+#if TARGET_IS_OSX
+	#include <Cocoa/Cocoa.h>
 #endif
 #if TARGET_IS_LINUX && !BUILD_FOR_PIGGEN
 	#include <fontconfig/fontconfig.h>

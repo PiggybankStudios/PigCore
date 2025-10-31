@@ -88,6 +88,7 @@ static void StbImageFree(void* allocPntr)
 #if (COMPILER_IS_CLANG || COMPILER_IS_EMSCRIPTEN)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
+#pragma clang diagnostic ignored "-Wshadow" //warning: declaration shadows a variable in the global scope
 #endif
 
 #include "third_party/stb/stb_image.h"

@@ -592,9 +592,9 @@ static inline const char* rtrim(const char* begin, const char* end)
     return end;
 }
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define CLAMP(v, lo, hi) ((v) < (lo) ? (lo) : (hi) < (v) ? (hi) : (v))
+#define PSVG_MIN(a, b) ((a) < (b) ? (a) : (b)) //NOTE(Taylor): Added PSVG_ prefix to avoid naming conflicts on OSX
+#define PSVG_MAX(a, b) ((a) > (b) ? (a) : (b)) //NOTE(Taylor): Added PSVG_ prefix to avoid naming conflicts on OSX
+#define PSVG_CLAMP(v, lo, hi) ((v) < (lo) ? (lo) : (hi) < (v) ? (hi) : (v)) //NOTE(Taylor): Added PSVG_ prefix to avoid naming conflicts on OSX
 static bool parse_number(const element_t* element, int id, float* number, bool percent, bool inherit)
 {
     const string_t* value = find_attribute(element, id, inherit);
@@ -607,7 +607,7 @@ static bool parse_number(const element_t* element, int id, float* number, bool p
     if(percent) {
         if(skip_delim(&it, end, '%'))
             *number /= 100.f;
-        *number = CLAMP(*number, 0.f, 1.f);
+        *number = PSVG_CLAMP(*number, 0.f, 1.f);
     }
 
     return true;
@@ -1568,10 +1568,10 @@ static void render_state_end(render_state_t* state)
         return;
     }
 
-    float l = MIN(state->parent->extents.x, extents.x);
-    float t = MIN(state->parent->extents.y, extents.y);
-    float r = MAX(state->parent->extents.x + state->parent->extents.w, extents.x + extents.w);
-    float b = MAX(state->parent->extents.y + state->parent->extents.h, extents.y + extents.h);
+    float l = PSVG_MIN(state->parent->extents.x, extents.x);
+    float t = PSVG_MIN(state->parent->extents.y, extents.y);
+    float r = PSVG_MAX(state->parent->extents.x + state->parent->extents.w, extents.x + extents.w);
+    float b = PSVG_MAX(state->parent->extents.y + state->parent->extents.h, extents.y + extents.h);
 
     state->parent->extents.x = l;
     state->parent->extents.y = t;
@@ -1640,7 +1640,7 @@ static plutovg_color_t convert_color(const color_t* color)
 
 static plutovg_color_t resolve_current_color(const render_context_t* context, const element_t* element)
 {
-    color_t color = {color_type_current};
+    color_t color = {color_type_current, 0}; //NOTE(Taylor): Added second field to curly bracket initializer to satiate clang warning
     parse_color(element, ATTR_COLOR, &color, true);
     if(color.type == color_type_fixed)
         return convert_color(&color);
@@ -1925,7 +1925,7 @@ static bool apply_paint(render_state_t* state, const render_context_t* context, 
 
 static void draw_shape(const element_t* element, const render_context_t* context, render_state_t* state)
 {
-    paint_t stroke = {paint_type_none};
+    paint_t stroke = {paint_type_none, {0,0}, {0,0}}; //NOTE(Taylor): Added second and third fields to curly bracket initializer to satiate clang warning
     parse_paint(element, ATTR_STROKE, &stroke);
 
     length_t stroke_width = {1.f, length_type_fixed};
@@ -1952,7 +1952,7 @@ static void draw_shape(const element_t* element, const render_context_t* context
             join_limit *= miter_limit;
         }
 
-        float delta = MAX(cap_limit, join_limit);
+        float delta = PSVG_MAX(cap_limit, join_limit);
         state->extents.x -= delta;
         state->extents.y -= delta;
         state->extents.w += delta * 2.f;
@@ -1960,7 +1960,7 @@ static void draw_shape(const element_t* element, const render_context_t* context
         return;
     }
 
-    paint_t fill = {paint_type_color, {color_type_fixed, 0xFF000000}};
+    paint_t fill = {paint_type_color, {color_type_fixed, 0xFF000000}, {0,0}}; //NOTE(Taylor): Added third field to curly bracket initializer to satiate clang warning
     parse_paint(element, ATTR_FILL, &fill);
 
     if(apply_paint(state, context, &fill)) {
@@ -2034,7 +2034,7 @@ static void apply_view_transform(render_state_t* state, float width, float heigh
         plutovg_matrix_scale(&state->matrix, scale_x, scale_y);
         plutovg_matrix_translate(&state->matrix, -view_box.x, -view_box.y);
     } else {
-        float scale = (position.scale == view_scale_meet) ? MIN(scale_x, scale_y) : MAX(scale_x, scale_y);
+        float scale = (position.scale == view_scale_meet) ? PSVG_MIN(scale_x, scale_y) : PSVG_MAX(scale_x, scale_y);
         float offset_x = -view_box.x * scale;
         float offset_y = -view_box.y * scale;
         float view_width = view_box.w * scale;
@@ -2182,8 +2182,8 @@ static void render_line(const element_t* element, const render_context_t* contex
     render_state_t new_state;
     render_state_begin(element, &new_state, state);
 
-    new_state.extents.x = MIN(_x1, _x2);
-    new_state.extents.y = MIN(_y1, _y2);
+    new_state.extents.x = PSVG_MIN(_x1, _x2);
+    new_state.extents.y = PSVG_MIN(_y1, _y2);
     new_state.extents.w = fabsf(_x2 - _x1);
     new_state.extents.h = fabsf(_y2 - _y1);
 

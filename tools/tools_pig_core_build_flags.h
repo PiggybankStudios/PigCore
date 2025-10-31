@@ -74,7 +74,6 @@ void Fill_cl_LangCppFlags(CliArgList* cl_LangCppFlags)
 void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool BUILD_WITH_FREETYPE)
 {
 	AddArg(clang_CommonFlags, CLANG_FULL_FILE_PATHS); //Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
-	AddArgNt(clang_CommonFlags, CLANG_LANG_VERSION, "gnu2x"); //Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
 	AddArgNt(clang_CommonFlags, CLANG_WARNING_LEVEL, "all"); //This enables all the warnings about constructions that some users consider questionable, and that are easy to avoid (or modify to prevent the warning), even in conjunction with macros
 	AddArgNt(clang_CommonFlags, CLANG_WARNING_LEVEL, "extra"); //This enables some extra warning flags that are not enabled by -Wall
 	AddArgNt(clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_SHADOWING);
@@ -97,6 +96,19 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 		AddArg(clang_CommonFlags, CLANG_PRECOMPILE_ONLY);
 		AddArg(clang_CommonFlags, CLANG_INCLUDE_MACROS);
 	}
+}
+
+void Fill_clang_LangCFlags(CliArgList* clang_LangCFlags)
+{
+	AddArgNt(clang_LangCFlags, CLANG_LANG_VERSION, "gnu2x"); //Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
+}
+void Fill_clang_LangCppFlags(CliArgList* clang_LangCppFlags)
+{
+	AddArgNt(clang_LangCppFlags, CLANG_LANG_VERSION, "gnu2x");
+}
+void Fill_clang_LangObjectiveCFlags(CliArgList* clang_LangObjectiveCFlags)
+{
+	AddArgNt(clang_LangObjectiveCFlags, CLANG_LANG_VERSION, "gnu2x");
 }
 
 // Flags for when we are compiling the linux version of a program using Clang

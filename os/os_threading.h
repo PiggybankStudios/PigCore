@@ -14,6 +14,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
 #include "base/base_macros.h"
+#include "std/std_includes.h"
 #include "lib/lib_tracy.h"
 
 #if TARGET_HAS_THREADING
@@ -86,6 +87,10 @@ PEXPI ThreadId OsGetCurrentThreadId()
 	#if TARGET_IS_WINDOWS
 	{
 		result = GetCurrentThreadId();
+	}
+	#elif TARGET_IS_OSX
+	{
+		result = pthread_self();
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
@@ -163,18 +168,20 @@ PEXPI bool LockMutex(Mutex* mutexPntr, uxx timeoutMs)
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Test this code
-		if (timeoutMs == 0)
-		{
-			int lockResult = pthread_mutex_trylock(mutexPntr);
-			DebugAssert(lockResult == 0 || lockResult == EBUSY);
-			return (lockResult == 0);
-		}
-		else if (timeoutMs == TIMEOUT_FOREVER)
+		if (timeoutMs == TIMEOUT_FOREVER)
 		{
 			int lockResult = pthread_mutex_lock(mutexPntr);
 			DebugAssert(lockResult == 0);
 			return (lockResult == 0);
 		}
+		else if (timeoutMs == 0 || TARGET_IS_OSX)
+		{
+			int lockResult = pthread_mutex_trylock(mutexPntr);
+			DebugAssert(lockResult == 0 || lockResult == EBUSY);
+			return (lockResult == 0);
+		}
+		//NOTE: Aparently pthread_mutex_timedlock is not part of the POSIX standard, so it's not available on OSX's clang
+		#if !TARGET_IS_OSX
 		else
 		{
 			plex timespec absTimeout;
@@ -186,6 +193,9 @@ PEXPI bool LockMutex(Mutex* mutexPntr, uxx timeoutMs)
 			DebugAssert(lockResult == 0 || lockResult == ETIMEDOUT);
 			return (lockResult == 0);
 		}
+		#else
+		{ Assert(false); return true; }
+		#endif
 	}
 	#else
 	AssertMsg(false, "LockMutex does not support the current platform yet!");

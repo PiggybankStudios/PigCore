@@ -36,6 +36,10 @@ Date:   10\29\2025
 #pragma warning(disable:4459) //declaration of 'crc_table' hides global declaration
 #pragma warning(disable:4100) //'npoints': unreferenced formal parameter
 #endif
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsign-compare" //warning: comparison of integers of different signs: 'size_t' (aka 'unsigned long') and 'long'
+#endif
 
 #include "plutovg-surface.c"
 #include "plutovg-rasterize.c"
@@ -53,6 +57,9 @@ Date:   10\29\2025
 
 #if COMPILER_IS_MSVC
 #pragma warning(pop)
+#endif
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic pop
 #endif
 
 #endif //PIG_CORE_IMPLEMENTATION

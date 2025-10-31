@@ -209,6 +209,9 @@ int main(int argc, char* argv[])
 	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
 	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
+	CliArgList clang_LangCFlags                  = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags);
+	CliArgList clang_LangCppFlags                = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
+	CliArgList clang_LangObjectiveCFlags         = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
 	CliArgList clang_LinuxFlags                  = ZEROED; Fill_clang_LinuxFlags(&clang_LinuxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
 	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
@@ -323,6 +326,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
@@ -351,6 +355,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags); //TODO: Should this be ObjectiveC?
 			AddArgList(&cmd, &clang_LinuxFlags); //TODO: If this works, we should rename this list
 			AddArgList(&cmd, &clang_LinuxCommonLibraries); //TODO: If this works, we should rename this list
 			
@@ -546,6 +551,7 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
 				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
 				AddArgList(&cmd, &clang_CommonFlags);
+				AddArgList(&cmd, &clang_LangCFlags);
 				AddArgList(&cmd, &clang_LinuxFlags);
 				
 				#if BUILDING_ON_LINUX
@@ -592,6 +598,7 @@ int main(int argc, char* argv[])
 					AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
 					AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
 					AddArgList(&cmd, &clang_CommonFlags);
+					AddArgList(&cmd, &clang_LangCFlags);
 					AddArgList(&cmd, &clang_AndroidFlags);
 					AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidTargetArchitechtureTargetStr(architecture));
 					
@@ -756,6 +763,7 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
@@ -816,6 +824,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
@@ -844,9 +853,10 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for OSX...]", FILENAME_TESTS);
 			
 			CliArgList cmd = ZEROED;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.m");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangObjectiveCFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
@@ -875,6 +885,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_HTML : FILENAME_APP_WASM);
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_WasmFlags);
 			AddArgList(&cmd, &clang_WebFlags);
 			
@@ -965,6 +976,7 @@ int main(int argc, char* argv[])
 				cmd.rootDirPath = StrLit("../../../..");
 				AddArgList(&cmd, &cmdBase);
 				AddArgList(&cmd, &clang_CommonFlags);
+				AddArgList(&cmd, &clang_LangCFlags);
 				AddArgList(&cmd, &clang_AndroidFlags);
 				AddArgList(&cmd, &clang_AndroidLinkFlags);
 				AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidTargetArchitechtureTargetStr(architecture));
@@ -1039,7 +1051,7 @@ int main(int argc, char* argv[])
 				{
 					PrintLine("Inserting %s files (and " FILENAME_CLASSES_DEX ") into apk...", FILENAME_TESTS_SO);
 					MyRemoveDirectory(StrLit("apk_temp"), true);
-					mkdir("apk_temp");
+					mkdir("apk_temp", FOLDER_PERMISSIONS);
 					chdir("apk_temp");
 					
 					CliArgList unpackApkCmd = ZEROED;
@@ -1049,13 +1061,13 @@ int main(int argc, char* argv[])
 					
 					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"));
 					
-					mkdir("lib");
+					mkdir("lib", FOLDER_PERMISSIONS);
 					for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
 					{
 						AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
 						Str8 apkFolder = JoinStrings2(StrLit("lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
 						Str8 buildFolder = JoinStrings2(StrLit("../lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
-						mkdir(apkFolder.chars);
+						mkdir(apkFolder.chars, S_IRWXG|S_IRWXO|S_IRWXU);
 						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder);
 					}
 					
@@ -1111,6 +1123,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_MODULE_WASM);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_WasmFlags);
 			AddArgList(&cmd, &clang_OrcaFlags);
 			

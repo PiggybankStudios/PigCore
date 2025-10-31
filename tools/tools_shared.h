@@ -27,6 +27,7 @@ Description:
 #include <string.h>
 #include <stdarg.h>
 // #include <math.h>
+#include <errno.h>
 
 // +--------------------------------------------------------------+
 // |                           Defines                            |
@@ -117,7 +118,7 @@ plex FileIter
 	Str8 folderPathWithWildcard;
 	WIN32_FIND_DATAA findData;
 	HANDLE handle;
-	#elif BUILDING_ON_LINUX
+	#elif BUILDING_ON_LINUX || BUILDING_ON_OSX
 	DIR* dirHandle;
 	#endif
 };
