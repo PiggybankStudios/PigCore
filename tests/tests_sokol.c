@@ -339,6 +339,7 @@ void AppInit(void)
 	InitSokolGraphics((sg_desc){
 		.environment = CreateSokolAppEnvironment(),
 		.logger.func = SokolLogCallback,
+		.mtl_use_command_buffer_with_retained_references = true,
 	});
 	
 	InitGfxSystem(stdHeap, &gfx);
@@ -1268,15 +1269,13 @@ bool AppFrame(void)
 			#endif
 		}
 	}
+	TracyCZoneN(Zone_EndFrame, "EndFrame", true);
 	EndFrame();
+	TracyCZoneEnd(Zone_EndFrame);
 	TracyCZoneEnd(Zone_Draw);
 	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	CommitAllFontTextureUpdates(&testFont);
 	#endif
-	
-	TracyCZoneN(Zone_Commit, "Commit", true);
-	sg_commit();
-	TracyCZoneEnd(Zone_Commit);
 	
 	// PrintLine_D("numPipelineChanges: %llu", gfx.numPipelineChanges);
 	// PrintLine_D("numBindingChanges: %llu", gfx.numBindingChanges);
