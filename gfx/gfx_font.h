@@ -45,15 +45,16 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: We need to handle new-line characters properly in DoFontFlow (also tab?)
+//TODO: Make TryBakeFontAtlas use all the attached font files
+//TODO: Choose if entire TryBakeFontAtlas should fail if any codepoints are not found in the font(s)
 //TODO: Implement stb_truetype.h code path!
-//TODO: Why is the first active atlas never getting evicted when we are on the ABCDEFGHI test?
-//TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
-//TODO: Do we want a function that helps rebake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
+//TODO: Can't render emoji in Bold rich text
 //TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 //TODO: Add convenience functions to GfxSystem API so we can get the lineHeight, centerOffset, etc. easily
 //TODO: Selection rectangles should be drawn all the way to wrapWidth on the right if highlight is continuing to the next line (and wrapWidth != 0) (Maybe we should draw a rectangle from 0 to left-hand side of text on next line if selection includes new-line char?)
+//TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
+//TODO: Do we want a function that helps rebake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
