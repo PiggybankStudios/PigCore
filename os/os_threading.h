@@ -180,7 +180,7 @@ PEXPI bool LockMutex(Mutex* mutexPntr, uxx timeoutMs)
 			DebugAssert(lockResult == 0 || lockResult == EBUSY);
 			return (lockResult == 0);
 		}
-		//NOTE: Aparently pthread_mutex_timedlock is not part of the POSIX standard, so it's not available on OSX's clang
+		//NOTE: Apparently pthread_mutex_timedlock is not part of the POSIX standard, so it's not available on OSX's clang
 		#if !TARGET_IS_OSX
 		else
 		{

@@ -886,7 +886,7 @@ bool AppFrame(void)
 			rec testTextureRec = NewRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
 			DrawTexturedRectangle(testTextureRec, White, &testTexture);
 			
-			#if 0
+			#if 1
 			{
 				r32 fontLineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
 				r32 fontMaxAscend = GetFontMaxAscend(&testFont, 18*textScale, FontStyleFlag_None);
@@ -907,7 +907,7 @@ bool AppFrame(void)
 				static int displayStrIndex = 0;
 				static uxx typeAnimCodepointIndex = 0;
 				Str8 displayStrs[] = {
-					StrLit("Lorem ipsum dolor sit " UNICODE_CHECK_MARK_STR " amet, [size=8]consectetur [size=10]\badipi\xE2\x97\xA1scing\b [size=12]elit, [size=14]sed [size=16]do [size]eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
+					StrLit("Lorem\b \bipsum dolor sit " UNICODE_CHECK_MARK_STR " amet, [size=8]consectetur [size=10]\badipi\xE2\x97\xA1scing\b [size=12]elit, [size=14]sed [size=16]do [size]eiusmod tempor incididunt ut labore et dolore magna aliqua. [highlight]Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[highlight] Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
 					StrLit("This is a \bBräcke € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!"), //\xE2\x97\xA1
 					StrLit("ABC[size=10]DEF[size]GHI ABCDEFGHI"),
 					StrLit("\xE3\x81\x82\xE3\x82\x8A\xE3\x81\x8C\xE3\x81\xA8\xE3\x81\x86\xE3\x81\x94\xE3\x81\x96\xE3\x81\x84\xE3\x81\xBE\xE3\x81\x97\xE3\x81\x9F"),
@@ -1008,7 +1008,7 @@ bool AppFrame(void)
 			}
 			#endif
 			
-			#if 0
+			#if 1
 			r32 atlasRenderPosX = 10.0f;
 			#if BUILD_WITH_CLAY
 			rec topbarRec = GetClayElementDrawRec(CLAY_ID("Topbar"));

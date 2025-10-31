@@ -1097,7 +1097,7 @@ int main(int argc, char* argv[])
 						AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
 						Str8 apkFolder = JoinStrings2(StrLit("lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
 						Str8 buildFolder = JoinStrings2(StrLit("../lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
-						mkdir(apkFolder.chars, S_IRWXG|S_IRWXO|S_IRWXU);
+						mkdir(apkFolder.chars, FOLDER_PERMISSIONS);
 						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder);
 					}
 					

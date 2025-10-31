@@ -339,12 +339,12 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				// PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
 				substituteIndex++;
 			}
-			// if (fontGlyph == nullptr) { MyBreak(); } //TODO: Remove me!
 			
-			if (fontGlyph != nullptr)
+			if (fontGlyph != nullptr || IsCodepointWhitespace(codepoint, true))
 			{
-				FontGlyphMetrics glyphMetrics = fontGlyph->metrics;
-				if (!AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE))
+				FontGlyphMetrics glyphMetrics = ZEROED;
+				if (fontGlyph != nullptr) { glyphMetrics = fontGlyph->metrics; }
+				if (!AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE) || fontGlyph == nullptr)
 				{
 					if (!TryGetFontGlyphMetrics(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics))
 					{
@@ -365,7 +365,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				
 				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->metrics.lineHeight);
 				
-				if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->metrics.fontScale == fontAtlas->metrics.fontScale) //TODO: Should we check the style flags match?
+				if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->metrics.fontScale == fontAtlas->metrics.fontScale && fontGlyph != nullptr) //TODO: Should we check the style flags match?
 				{
 					kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->metrics.fontScale, state->prevGlyph, fontGlyph);
 					state->position.X += kerning;
@@ -409,7 +409,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					break;
 				}
 				
-				if (callbacks != nullptr && callbacks->drawChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
+				if (callbacks != nullptr && callbacks->drawChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap && fontGlyph != nullptr)
 				{
 					callbacks->drawChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph, glyphMetrics);
 				}
@@ -429,6 +429,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 						flowGlyph->byteIndex = state->byteIndex;
 						flowGlyph->atlas = fontAtlas;
 						flowGlyph->glyph = fontGlyph;
+						//TODO: Should we store glyphMetrics here? Since fontGlyph can be nullptr now? 
 						flowGlyph->position = state->position;
 						flowGlyph->drawRec = glyphDrawRec;
 						flowGlyph->color = state->currentStyle.color;
