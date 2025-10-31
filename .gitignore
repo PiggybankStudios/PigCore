@@ -1,6 +1,4 @@
 _build/
-*.sublime-workspace
-.DS_Store
 third_party/bullet/
 third_party/ode/
 third_party/_lib_debug/old
@@ -8,3 +6,25 @@ third_party/_lib_release/old
 
 _fuzzing/c_tokenizer_corpus/*
 !_fuzzing/c_tokenizer_corpus/*.c
+
+# +==============================+
+# |             OSX              |
+# +==============================+
+.DS_Store
+.Trashes
+
+# +==============================+
+# |           Sublime            |
+# +==============================+
+*.sublime-workspace
+
+# +==============================+
+# |            XCode             |
+# +==============================+
+# *~.nib
+# *.xccheckout
+# *.moved-aside
+PigCore.xcodeproj/xcuserdata/
+PigCore.xcodeproj/build/
+PigCore.xcodeproj/DerivedData/
+PigCore.xcodeproj/project.xcworkspace/
