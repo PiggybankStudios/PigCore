@@ -17,3 +17,6 @@ This folder contains a `main.c` that can be compiled into an executable that run
 
 ### Android Test:
 ![3D Rendering and Touch Input Debug on Android](/_media/tests_screenshot_android.png)
+
+### MacOS Test:
+![3D Rendering and Noise Texture on Mac OS](/_media/tests_screenshot_macos.png)
