@@ -113,14 +113,14 @@ void Fill_clang_LangObjectiveCFlags(CliArgList* clang_LangObjectiveCFlags)
 }
 
 // Flags for when we are compiling the linux version of a program using Clang
-void Fill_clang_LinuxFlags(CliArgList* clang_LinuxFlags, bool DEBUG_BUILD)
+void Fill_clang_LinuxOrOsxFlags(CliArgList* clang_LinuxOrOsxFlags, bool DEBUG_BUILD)
 {
-	AddArgNt(clang_LinuxFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
-	AddArgNt(clang_LinuxFlags, CLANG_INCLUDE_DIR, "[ROOT]");
-	AddArgStr(clang_LinuxFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
-	AddArg(clang_LinuxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
-	AddArg(clang_LinuxFlags, "-maes"); //For MeowHash to work we need aes support
-	if (DEBUG_BUILD) { AddArgNt(clang_LinuxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "[ROOT]");
+	AddArgStr(clang_LinuxOrOsxFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
+	AddArg(clang_LinuxOrOsxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
+	AddArg(clang_LinuxOrOsxFlags, "-maes"); //For MeowHash to work we need aes support
+	if (DEBUG_BUILD) { AddArgNt(clang_LinuxOrOsxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
 }
 
 void Fill_cl_CommonLinkerFlags(CliArgList* cl_CommonLinkerFlags, bool DEBUG_BUILD)

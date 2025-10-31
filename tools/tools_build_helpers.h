@@ -641,7 +641,11 @@ RECURSIVE_DIR_WALK_CALLBACK_DEF(FindShaderFilesCallback)
 		FixPathSlashes(rootPath, '/');
 		AddStr(&context->shaderPaths, rootPath);
 		AddStr(&context->headerPaths, JoinStrings2(rootPath, StrLit(".h"), true));
+		#if BUILDING_ON_OSX
+		AddStr(&context->sourcePaths, JoinStrings2(rootPath, StrLit(".m"), true));
+		#else
 		AddStr(&context->sourcePaths, JoinStrings2(rootPath, StrLit(".c"), true));
+		#endif
 		AddStr(&context->objPaths, JoinStrings2(shaderName, StrLit(".obj"), true));
 		AddStr(&context->oPaths, JoinStrings2(shaderName, StrLit(".o"), true));
 	}

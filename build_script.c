@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 	CliArgList clang_LangCFlags                  = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags);
 	CliArgList clang_LangCppFlags                = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
 	CliArgList clang_LangObjectiveCFlags         = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
-	CliArgList clang_LinuxFlags                  = ZEROED; Fill_clang_LinuxFlags(&clang_LinuxFlags, DEBUG_BUILD);
+	CliArgList clang_LinuxOrOsxFlags             = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
 	CliArgList clang_CommonLibraries             = ZEROED; Fill_clang_CommonLibraries(&clang_CommonLibraries);
 	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags);
-			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags); //TODO: Should this be ObjectiveC?
-			AddArgList(&cmd, &clang_LinuxFlags); //TODO: If this works, we should rename this list
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_OsxCommonLibraries);
 			
@@ -434,6 +434,16 @@ int main(int argc, char* argv[])
 				Str8 oPath = findContext.oPaths.strings[sIndex];
 				AddArgStr(&clang_LinuxShaderObjects, CLI_QUOTED_ARG, oPath);
 				Str8 oPathWithFolder = BUILDING_ON_LINUX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
+				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
+			}
+		}
+		if (BUILD_OSX)
+		{
+			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			{
+				Str8 oPath = findContext.oPaths.strings[sIndex];
+				AddArgStr(&clang_OsxShaderObjects, CLI_QUOTED_ARG, oPath);
+				Str8 oPathWithFolder = BUILDING_ON_OSX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_OSX "/"), oPath, false);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
 			}
 		}
@@ -537,17 +547,13 @@ int main(int argc, char* argv[])
 				AddArgList(&cmd, &cl_CommonFlags);
 				AddArgList(&cmd, &cl_LangCFlags);
 				
-				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build TODO: for Windows!"));
+				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), objPath, StrLit(" for Windows!"), false);
+				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorMessage);
 				AssertFileExist(objPath, true);
 			}
 			if (BUILD_LINUX)
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
-				//TODO: The path we store in the findContext needs to have [ROOT] at the beginning somehow so we can get rid of this logic
-				// Str8 fixedSourcePath = BUILDING_ON_LINUX ? CopyStr8(sourcePath, false) : JoinStrings2(StrLit("../"), sourcePath, false);
-				// FixPathSlashes(fixedSourcePath, '/');
-				// Str8 fixedHeaderDirectory = BUILDING_ON_LINUX ? CopyStr8(headerDirectory, false) : JoinStrings2(StrLit("../"), headerDirectory, false);
-				// FixPathSlashes(fixedHeaderDirectory, '/');
 				
 				CliArgList cmd = ZEROED;
 				cmd.pathSepChar = '/';
@@ -557,7 +563,7 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
 				AddArgList(&cmd, &clang_CommonFlags);
 				AddArgList(&cmd, &clang_LangCFlags);
-				AddArgList(&cmd, &clang_LinuxFlags);
+				AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 				
 				#if BUILDING_ON_LINUX
 				Str8 clangExe = StrLit(EXE_CLANG);
@@ -568,12 +574,32 @@ int main(int argc, char* argv[])
 				cmd.rootDirPath = StrLit("../..");
 				#endif
 				
-				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build TODO: for Linux!"));
+				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Linux!"), false);
+				RunCliProgramAndExitOnFailure(clangExe, &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 				
 				#if !BUILDING_ON_LINUX
 				chdir("..");
 				#endif
+			}
+			if (BUILD_OSX)
+			{
+				Str8 oPath = findContext.oPaths.strings[sIndex];
+				
+				CliArgList cmd = ZEROED;
+				cmd.pathSepChar = '/';
+				AddArg(&cmd, CLANG_COMPILE);
+				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
+				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
+				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
+				AddArgList(&cmd, &clang_CommonFlags);
+				AddArgList(&cmd, &clang_LangCFlags);
+				AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+				AddArgNt(&cmd, CLANG_DISABLE_WARNING, "unused-command-line-argument");
+				
+				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for OSX!"), false);
+				RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, errorMessage);
+				AssertFileExist(oPath, true);
 			}
 			if (BUILD_ANDROID)
 			{
@@ -589,11 +615,6 @@ int main(int argc, char* argv[])
 					chdir(GetAndroidTargetArchitechtureFolderName(architecture));
 					
 					Str8 oPath = findContext.oPaths.strings[sIndex];
-					//TODO: The path we store in the findContext needs to have [ROOT] at the beginning somehow so we can get rid of this logic
-					// Str8 fixedSourcePath = BUILDING_ON_LINUX ? CopyStr8(sourcePath, false) : JoinStrings2(StrLit("../"), sourcePath, false);
-					// FixPathSlashes(fixedSourcePath, '/');
-					// Str8 fixedHeaderDirectory = BUILDING_ON_LINUX ? CopyStr8(headerDirectory, false) : JoinStrings2(StrLit("../"), headerDirectory, false);
-					// FixPathSlashes(fixedHeaderDirectory, '/');
 					
 					CliArgList cmd = ZEROED;
 					cmd.pathSepChar = '/';
@@ -607,7 +628,8 @@ int main(int argc, char* argv[])
 					AddArgList(&cmd, &clang_AndroidFlags);
 					AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidTargetArchitechtureTargetStr(architecture));
 					
-					RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build TODO: for Android!"));
+					Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Android!"), false);
+					RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, errorMessage);
 					AssertFileExist(oPath, true);
 					
 					chdir("..");
@@ -769,7 +791,7 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CLANG_fPIC);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags);
-			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
@@ -831,7 +853,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags);
-			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
@@ -864,7 +886,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangObjectiveCFlags);
-			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_OsxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreOsxLibraries);

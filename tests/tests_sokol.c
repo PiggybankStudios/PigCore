@@ -360,6 +360,7 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
 	Assert(gradientTexture.error == Result_Success);
 	
+	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	const u32 Filled = 0xFFFFFFFF;
 	const u32 _Empty = 0x00FFFFFF;
 	u32 checkerGlyph18Pixels[12*18] = {
@@ -489,6 +490,7 @@ void AppInit(void)
 		Result bakeResult = AttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
 	}
+	#endif //!TARGET_IS_OSX
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
@@ -546,8 +548,10 @@ void AppInit(void)
 	UpdateScreenSafeMargins();
 	oldWindowSize = NewV2i(sapp_width(), sapp_height());
 	
+	#if !TARGET_IS_OSX //TODO: Remove me once we get files working on OSX
 	mipmapTexture = LoadTexture(stdHeap, StrLit("test.png"), TextureFlag_None);
 	noMipmapTexture = LoadTexture(stdHeap, StrLit("test.png"), TextureFlag_NoMipmaps);
+	#endif //!TARGET_IS_OSX
 	
 	ImageData testTextureData = ZEROED;
 	testTextureData.size = NewV2i(512, 512);
@@ -612,7 +616,9 @@ bool AppFrame(void)
 	UpdateScreenRotation();
 	#endif
 	if (AreEqualV2i(oldWindowSize, windowSizei)) { UpdateScreenSafeMargins(); }
+	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	FontNewFrame(&testFont, programTime);
+	#endif
 	
 	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
@@ -679,6 +685,7 @@ bool AppFrame(void)
 		UpdateTexturePart(&testTexture, sourceRec, newImageData.pixels);
 	}
 	
+	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	if (IsKeyboardKeyPressed(&keyboard, Key_G, false))
 	{
 		PrintLine_D("testFont has %llu atlas%s:", testFont.atlases.length, PluralEx(testFont.atlases.length, "", "es"));
@@ -757,6 +764,7 @@ bool AppFrame(void)
 			}
 		}
 	}
+	#endif //!TARGET_IS_OSX
 	
 	#if BUILD_WITH_BOX2D
 	if (IsMouseBtnPressed(&mouse, MouseBtn_Left))
@@ -877,7 +885,7 @@ bool AppFrame(void)
 			rec testTextureRec = NewRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
 			DrawTexturedRectangle(testTextureRec, White, &testTexture);
 			
-			#if 1
+			#if 0
 			{
 				r32 fontLineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
 				r32 fontMaxAscend = GetFontMaxAscend(&testFont, 18*textScale, FontStyleFlag_None);
@@ -999,7 +1007,7 @@ bool AppFrame(void)
 			}
 			#endif
 			
-			#if 1
+			#if 0
 			r32 atlasRenderPosX = 10.0f;
 			#if BUILD_WITH_CLAY
 			rec topbarRec = GetClayElementDrawRec(CLAY_ID("Topbar"));
@@ -1262,7 +1270,9 @@ bool AppFrame(void)
 	}
 	EndFrame();
 	TracyCZoneEnd(Zone_Draw);
+	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	CommitAllFontTextureUpdates(&testFont);
+	#endif
 	
 	TracyCZoneN(Zone_Commit, "Commit", true);
 	sg_commit();
