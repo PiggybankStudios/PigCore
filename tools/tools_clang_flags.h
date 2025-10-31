@@ -27,11 +27,13 @@ Description:
 #define CLANG_LIBRARY_DIR            "-L \"[VAL]\""
 #define CLANG_RPATH_DIR              "-rpath \"[VAL]\""
 #define CLANG_SYSTEM_LIBRARY         "-l[VAL]"
+#define CLANG_FRAMEWORK              "-framework [VAL]"
 #define CLANG_PRECOMPILE_ONLY        "-E"
 #define CLANG_INCLUDE_MACROS         "-dD" //Only matters when -E is passed
 #define CLANG_Q_FLAG                 "-Q[VAL]" //TODO: Name this better!
 #define CLANG_BUILD_SHARED_LIB       "-shared"
 #define CLANG_fPIC                   "-fPIC" //TODO: Name this better!
+#define CLANG_ENABLE_OBJC_ARC        "-fobjc-arc" // Enables Automatic Reference Counting (ARC) feature in Objective-C
 #define CLANG_STDLIB_FOLDER          "--sysroot \"[VAL]\""
 #define CLANG_M_FLAG                 "-m[VAL]" //TODO: Name this better!
 #define CLANG_TARGET_ARCHITECTURE    "--target=[VAL]"

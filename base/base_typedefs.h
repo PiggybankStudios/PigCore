@@ -24,7 +24,7 @@ typedef int8_t      i8;
 typedef int16_t     i16;
 typedef int32_t     i32;
 typedef long long   i64;
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(i64) == 8, "i64 is not 8 bytes!"); //TODO: Change to StaticAssert once we diangose that
 #endif
 
@@ -33,7 +33,7 @@ typedef uint8_t     u8;
 typedef uint16_t    u16;
 typedef uint32_t    u32;
 typedef unsigned long long u64;
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(u64) == 8, "u64 is not 8 bytes!"); //TODO: Change to StaticAssert once we diangose that
 #endif
 

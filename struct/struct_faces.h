@@ -22,7 +22,7 @@ car Triangle2D
 	v2 Verts[3];
 	plex { v2 Vert0, Vert1, Vert2; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Triangle2D) == sizeof(r32)*6, "Triangle2D contains padding!");
 #endif
 
@@ -33,7 +33,7 @@ car Triangle3D
 	v3 Verts[3];
 	plex { v3 Vert0, Vert1, Vert2; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Triangle3D) == sizeof(r32)*9, "Triangle3D contains padding!");
 #endif
 
@@ -44,7 +44,7 @@ car Quad2D
 	v2 Verts[4];
 	plex { v2 Vert0, Vert1, Vert2, Vert3; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Quad2D) == sizeof(r32)*8, "Quad2D contains padding!");
 #endif
 
@@ -55,7 +55,7 @@ car Quad3D
 	v3 Verts[4];
 	plex { v3 Vert0, Vert1, Vert2, Vert3; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Quad3D) == sizeof(r32)*12, "Quad3D contains padding!");
 #endif
 

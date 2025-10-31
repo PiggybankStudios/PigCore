@@ -214,9 +214,12 @@ int main(int argc, char* argv[])
 	CliArgList clang_LangObjectiveCFlags         = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
 	CliArgList clang_LinuxFlags                  = ZEROED; Fill_clang_LinuxFlags(&clang_LinuxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
+	CliArgList clang_CommonLibraries             = ZEROED; Fill_clang_CommonLibraries(&clang_CommonLibraries);
 	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
+	CliArgList clang_OsxCommonLibraries          = ZEROED; Fill_clang_OsxCommonLibraries(&clang_OsxCommonLibraries, BUILD_WITH_SOKOL_APP);
 	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
-	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX, !BUILDING_ON_OSX);
+	CliArgList clang_PigCoreLinuxLibraries       = ZEROED; Fill_clang_PigCoreLinuxLibraries(&clang_PigCoreLinuxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
+	CliArgList clang_PigCoreOsxLibraries         = ZEROED; Fill_clang_PigCoreOsxLibraries(&clang_PigCoreOsxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
 	CliArgList clang_AndroidFlags                = ZEROED; Fill_clang_AndroidFlags(&clang_AndroidFlags, androidNdkDir, androidNdkToolchainDir, DEBUG_BUILD);
 	CliArgList clang_AndroidLinkFlags            = ZEROED; Fill_clang_AndroidLinkFlags(&clang_AndroidLinkFlags, DEBUG_BUILD, BUILD_WITH_BOX2D);
 	CliArgList clang_WasmFlags                   = ZEROED; Fill_clang_WasmFlags(&clang_WasmFlags, DEBUG_BUILD);
@@ -328,6 +331,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
 			#if BUILDING_ON_LINUX
@@ -357,7 +361,8 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags); //TODO: Should this be ObjectiveC?
 			AddArgList(&cmd, &clang_LinuxFlags); //TODO: If this works, we should rename this list
-			AddArgList(&cmd, &clang_LinuxCommonLibraries); //TODO: If this works, we should rename this list
+			AddArgList(&cmd, &clang_CommonLibraries);
+			AddArgList(&cmd, &clang_OsxCommonLibraries);
 			
 			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
@@ -765,8 +770,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLibraries);
+			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
 			
 			#if BUILDING_ON_LINUX
 			Str8 clangExe = StrLit(EXE_CLANG);
@@ -826,8 +832,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLibraries);
+			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
 			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_LinuxShaderObjects); }
 			
 			#if BUILDING_ON_LINUX
@@ -858,8 +865,9 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangObjectiveCFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
-			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLibraries);
+			AddArgList(&cmd, &clang_CommonLibraries);
+			AddArgList(&cmd, &clang_OsxCommonLibraries);
+			AddArgList(&cmd, &clang_PigCoreOsxLibraries);
 			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_OsxShaderObjects); }
 			
 			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));

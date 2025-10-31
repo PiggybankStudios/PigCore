@@ -39,6 +39,7 @@ Description:
 	#define SOKOL_GLCORE
 #elif TARGET_IS_OSX
 	#define SOKOL_METAL
+	// #define SOKOL_GLCORE
 #elif TARGET_IS_WEB
 	#define SOKOL_WGPU
 #elif TARGET_IS_ANDROID
@@ -49,12 +50,16 @@ Description:
 #if PIG_CORE_IMPLEMENTATION
 #define SOKOL_GFX_IMPL
 #endif
-#if TARGET_IS_WASM
+
+#if COMPILER_IS_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels [-Wimplicit-fallthrough]
+#pragma clang diagnostic ignored "-Wdeprecated-declarations" //warning: 'glGetError' is deprecated: first deprecated in macOS 10.14 - OpenGL API deprecated.
 #endif
+
 #include "third_party/sokol/sokol_gfx.h"
-#if TARGET_IS_WASM
+
+#if COMPILER_IS_CLANG
 #pragma clang diagnostic pop
 #endif
 

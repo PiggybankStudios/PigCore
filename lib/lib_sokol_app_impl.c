@@ -1,20 +1,28 @@
 /*
-File:   misc_sokol_app_helpers.c
+File:   lib_sokol_app_impl.c
 Author: Taylor Robbins
-Date:   02\05\2025
+Date:   10\31\2025
 Description: 
-	** This file contains some helper functions to sokol_app based applications
-	** interact with sokol app functions.
-	** NOTE: This file is only meant to be included by the compilation unit that contains the
-	** implementation of sokol_app.h (aka not pig_core.dll, and therefore not included in misc_all.h)
+	** Include this file in the base executable layer where sokol_app.h implementations should be defined. These can't exist in pig_core.dll, they have to exist in the .exe itself
 */
 
-#if BUILD_WITH_SOKOL_APP
+#define SOKOL_APP_IMPL
 
-#if !defined(SOKOL_APP_INCLUDED) || !defined(SOKOL_APP_IMPL)
-#error You must include sokol_app.h with SOKOL_APP_IMPL before misc_sokol_app_helpers.c
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
+#pragma clang diagnostic ignored "-Wdeprecated-declarations" //warning: 'NSOpenGLView' is deprecated: first deprecated in macOS 10.14 - Please use MTKView instead.
 #endif
 
+#include "third_party/sokol/sokol_app.h"
+
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic pop
+#endif
+
+// +--------------------------------------------------------------+
+// |                       Helper Functions                       |
+// +--------------------------------------------------------------+
 void SokolLogCallback(const char* tag, u32 logLevel, u32 logId, const char* message, u32 lineNum, const char* filePath, void* userData)
 {
 	UNUSED(tag); //TODO: Should we output the tag?
@@ -66,5 +74,3 @@ sg_swapchain GetSokolAppSwapchain()
 	result.gl.framebuffer = sapp_gl_get_framebuffer();
 	return result;
 }
-
-#endif //BUILD_WITH_SOKOL_APP

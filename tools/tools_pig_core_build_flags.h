@@ -104,11 +104,12 @@ void Fill_clang_LangCFlags(CliArgList* clang_LangCFlags)
 }
 void Fill_clang_LangCppFlags(CliArgList* clang_LangCppFlags)
 {
-	AddArgNt(clang_LangCppFlags, CLANG_LANG_VERSION, "gnu2x");
+	AddArgNt(clang_LangCppFlags, CLANG_LANG_VERSION, "c++20");//TODO: What option should we actually choose here?
 }
 void Fill_clang_LangObjectiveCFlags(CliArgList* clang_LangObjectiveCFlags)
 {
-	AddArgNt(clang_LangObjectiveCFlags, CLANG_LANG_VERSION, "gnu2x");
+	AddArgNt(clang_LangObjectiveCFlags, CLANG_LANG_VERSION, "gnu2x"); //NOTE: We still ask for gnu23 features in Objective-C mode, the distinguishing factor is that we compile a .m file not a .c file
+	AddArg(clang_LangObjectiveCFlags, CLANG_ENABLE_OBJC_ARC);
 }
 
 // Flags for when we are compiling the linux version of a program using Clang
@@ -128,15 +129,28 @@ void Fill_cl_CommonLinkerFlags(CliArgList* cl_CommonLinkerFlags, bool DEBUG_BUIL
 	AddArg(cl_CommonLinkerFlags, LINK_DISABLE_INCREMENTAL);
 }
 
+void Fill_clang_CommonLibraries(CliArgList* clang_CommonLibraries)
+{
+	AddArgNt(clang_CommonLibraries, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
+	AddArgNt(clang_CommonLibraries, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
+}
+
 void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, bool BUILD_WITH_SOKOL_APP)
 {
-	AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
-	AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
 	if (BUILD_WITH_SOKOL_APP)
 	{
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "X11");
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "Xi");
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "Xcursor");
+	}
+}
+void Fill_clang_OsxCommonLibraries(CliArgList* clang_OsxCommonLibraries, bool BUILD_WITH_SOKOL_APP)
+{
+	if (BUILD_WITH_SOKOL_APP)
+	{
+		AddArgNt(clang_OsxCommonLibraries, CLANG_FRAMEWORK, "Cocoa");
+		AddArgNt(clang_OsxCommonLibraries, CLANG_FRAMEWORK, "QuartzCore");
+		// AddArgNt(clang_OsxCommonLibraries, CLANG_FRAMEWORK, "AudioToolbox");
 	}
 }
 
@@ -162,12 +176,30 @@ void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_R
 }
 
 // These are all the libraries we need when compiling a Linux binary that contains code from PigCore
-void Fill_clang_PigCoreLibraries(CliArgList* clang_PigCoreLibraries, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SOKOL_GFX, bool TARGET_IS_LINUX)
+void Fill_clang_PigCoreLinuxLibraries(CliArgList* clang_PigCoreLinuxLibraries, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SOKOL_GFX)
 {
-	AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "pthread");
-	if (TARGET_IS_LINUX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig"); }
-	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
-	if (BUILD_WITH_BOX2D) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "box2d"); }
+	AddArgNt(clang_PigCoreLinuxLibraries, CLANG_SYSTEM_LIBRARY, "pthread");
+	AddArgNt(clang_PigCoreLinuxLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig");
+	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(clang_PigCoreLinuxLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
+	if (BUILD_WITH_BOX2D) { AddArgNt(clang_PigCoreLinuxLibraries, CLANG_SYSTEM_LIBRARY, "box2d"); }
+}
+// These are all the libraries we need when compiling an OSX binary that contains code from PigCore
+void Fill_clang_PigCoreOsxLibraries(CliArgList* clang_PigCoreOsxLibraries, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SOKOL_GFX)
+{
+	AddArgNt(clang_PigCoreOsxLibraries, CLANG_SYSTEM_LIBRARY, "pthread");
+	if (BUILD_WITH_SOKOL_GFX)
+	{
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "Foundation");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "UIKit");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "AudioToolbox");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "AVFoundation");
+		AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "Metal");
+		AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "MetalKit");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "OpenGL");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "OpenGLES");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "GLKit");
+	}
+	if (BUILD_WITH_BOX2D) { AddArgNt(clang_PigCoreOsxLibraries, CLANG_SYSTEM_LIBRARY, "box2d"); }
 }
 
 void Fill_clang_AndroidFlags(CliArgList* clang_AndroidFlags, Str8 androidNdkDir, Str8 androidNdkToolchainDir, bool DEBUG_BUILD)

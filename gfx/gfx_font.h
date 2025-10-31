@@ -360,7 +360,7 @@ PEXPI void RemoveAttachedFontFile(PigFont* font, uxx index)
 	}
 	#endif
 	ClearPointer(file);
-	if (index+1 < font->numFiles);
+	if (index+1 < font->numFiles)
 	{
 		MyMemCopy(&font->files[index], &font->files[index+1], (font->numFiles - (index+1)) * sizeof(FontFile));
 	}
@@ -1457,7 +1457,7 @@ PEXP void ResizeActiveFontAtlas(PigFont* font, FontAtlas* activeAtlas, v2i newSi
 	Color32* newPixels = AllocArray(Color32, scratch, newNumPixels);
 	NotNull(newPixels);
 	MyMemSet(newPixels, 0x00, sizeof(Color32) * newNumPixels);
-	for (uxx rowIndex = 0; rowIndex < activeAtlas->texture.Height; rowIndex++)
+	for (uxx rowIndex = 0; rowIndex < (uxx)activeAtlas->texture.Height; rowIndex++)
 	{
 		const Color32* sourceRow = (Color32*)&activeAtlas->texture.pixelsU32[INDEX_FROM_COORD2D(0, rowIndex, activeAtlas->texture.Width, activeAtlas->texture.Height)];
 		Color32* destRow = &newPixels[INDEX_FROM_COORD2D(0, rowIndex, newSize.Width, newSize.Height)];
@@ -1470,7 +1470,7 @@ PEXP void ResizeActiveFontAtlas(PigFont* font, FontAtlas* activeAtlas, v2i newSi
 		{
 			VarArrayLoopGet(FontActiveAtlasTextureUpdate, update, &activeAtlas->pendingTextureUpdates, uIndex);
 			// PrintLine_D("%dx%d pixels copied to (%d,%d)", update->imageData.size.Width, update->imageData.size.Height, update->sourcePos.X, update->sourcePos.Y);
-			for (uxx rowIndex = 0; rowIndex < update->imageData.size.Height; rowIndex++)
+			for (uxx rowIndex = 0; rowIndex < (uxx)update->imageData.size.Height; rowIndex++)
 			{
 				const Color32* srcRowPntr = (Color32*)&update->imageData.pixels[INDEX_FROM_COORD2D(0, rowIndex, update->imageData.size.Width, update->imageData.size.Height)];
 				Color32* destRowPntr = &newPixels[INDEX_FROM_COORD2D(update->sourcePos.X + 0, update->sourcePos.Y + rowIndex, newSize.Width, newSize.Height)];
@@ -1495,7 +1495,7 @@ PEXP void ResizeActiveFontAtlas(PigFont* font, FontAtlas* activeAtlas, v2i newSi
 	FontActiveCell* newCells = AllocArray(FontActiveCell, font->arena, newNumCells);
 	NotNull(newCells);
 	for (uxx cIndex = 0; cIndex < newNumCells; cIndex++) { newCells[cIndex].codepoint = FONT_CODEPOINT_EMPTY; newCells[cIndex].glyphIndex = UINT32_MAX; }
-	for (uxx rowIndex = 0; rowIndex < activeAtlas->activeCellGridSize.Height; rowIndex++)
+	for (uxx rowIndex = 0; rowIndex < (uxx)activeAtlas->activeCellGridSize.Height; rowIndex++)
 	{
 		FontActiveCell* oldRow = &activeAtlas->cells[INDEX_FROM_COORD2D(0, rowIndex, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height)];
 		FontActiveCell* newRow = &newCells[INDEX_FROM_COORD2D(0, rowIndex, newGridSize.Width, newGridSize.Height)];
@@ -1841,9 +1841,9 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		if (glyphSize.Width > 0 && glyphSize.Height > 0)
 		{
 			// Update FontActiveCell(s)
-			for (uxx yOffset = 0; yOffset < glyphCellSize.Height; yOffset++)
+			for (uxx yOffset = 0; yOffset < (uxx)glyphCellSize.Height; yOffset++)
 			{
-				for (uxx xOffset = 0; xOffset < glyphCellSize.Width; xOffset++)
+				for (uxx xOffset = 0; xOffset < (uxx)glyphCellSize.Width; xOffset++)
 				{
 					FontActiveCell* cell = &activeAtlas->cells[INDEX_FROM_COORD2D(cellPos.X + xOffset, cellPos.Y + yOffset, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height)];
 					cell->codepoint = codepoint;
@@ -1868,9 +1868,9 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 				newUpdate->imageData.numPixels = (uxx)(bitmapSize.Width * bitmapSize.Height);
 				newUpdate->imageData.pixels = AllocArray(u32, font->arena, newUpdate->imageData.numPixels);
 				NotNull(newUpdate->imageData.pixels);
-				for (uxx yOffset = 0; yOffset < bitmapSize.Height; yOffset++)
+				for (uxx yOffset = 0; yOffset < (uxx)bitmapSize.Height; yOffset++)
 				{
-					for (uxx xOffset = 0; xOffset < bitmapSize.Width; xOffset++)
+					for (uxx xOffset = 0; xOffset < (uxx)bitmapSize.Width; xOffset++)
 					{
 						Color32* pixelPntr = (Color32*)&newUpdate->imageData.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, bitmapSize.Width, bitmapSize.Height)];
 						if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO ||
@@ -2236,7 +2236,7 @@ PEXP void CommitFontAtlasTextureUpdates(PigFont* font, FontAtlas* activeAtlas)
 		VarArrayLoop(&activeAtlas->pendingTextureUpdates, uIndex)
 		{
 			VarArrayLoopGet(FontActiveAtlasTextureUpdate, update, &activeAtlas->pendingTextureUpdates, uIndex);
-			for (uxx rowIndex = 0; rowIndex < update->imageData.size.Height; rowIndex++)
+			for (uxx rowIndex = 0; rowIndex < (uxx)update->imageData.size.Height; rowIndex++)
 			{
 				const Color32* srcRowPntr = (Color32*)&update->imageData.pixels[INDEX_FROM_COORD2D(0, rowIndex, update->imageData.size.Width, update->imageData.size.Height)];
 				Color32* destRowPntr = &newPixels[INDEX_FROM_COORD2D(update->sourcePos.X + 0, update->sourcePos.Y + rowIndex, activeAtlas->texture.Width, activeAtlas->texture.Height)];

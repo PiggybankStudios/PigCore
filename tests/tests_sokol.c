@@ -3,7 +3,7 @@ File:   tests_sokol.c
 Author: Taylor Robbins
 Date:   01\28\2025
 Description: 
-	** None
+	** Holds various tests that run inside a Sokol window (sokol_app.h + sokol_gfx.h)
 */
 
 #if BUILD_WITH_SOKOL_APP
@@ -14,17 +14,7 @@ Description:
 #define MAIN_FONT_NAME "Consolas"
 #endif
 
-#define SOKOL_APP_IMPL
-#if TARGET_IS_LINUX
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
-#endif
-#include "third_party/sokol/sokol_app.h"
-#if TARGET_IS_LINUX
-#pragma clang diagnostic pop
-#endif
-
-#include "misc/misc_sokol_app_helpers.c"
+#include "lib/lib_sokol_app_impl.c"
 
 #endif //BUILD_WITH_SOKOL_APP
 

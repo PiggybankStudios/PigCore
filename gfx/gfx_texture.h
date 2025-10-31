@@ -377,7 +377,7 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 	ImageData newImageData = ZEROED;
 	if (IsFlagSet(texture->flags, TextureFlag_HasCopy))
 	{
-		for (uxx rowIndex = 0; rowIndex < sourceRec.Height; rowIndex++)
+		for (uxx rowIndex = 0; rowIndex < (uxx)sourceRec.Height; rowIndex++)
 		{
 			const u8* sourceRow = &((u8*)pixelsPntr)[INDEX_FROM_COORD2D(0, rowIndex, sourceRec.Width, sourceRec.Height) * texture->pixelSize];
 			u8* destRow = &texture->pixelsU8[INDEX_FROM_COORD2D(sourceRec.X + 0, sourceRec.Y + rowIndex, texture->Width, texture->Height) * texture->pixelSize];

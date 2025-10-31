@@ -25,7 +25,7 @@ Description:
 #error Somehow sokol_gfx.h was not included properly before gfx_shader.h!
 #endif
 
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(MAX_NUM_VERT_ATTRIBUTES <= SG_MAX_VERTEX_ATTRIBUTES);
 #endif
 
@@ -184,7 +184,7 @@ PEXP VertBuffer InitVertBufferEx(Arena* arena, Str8 name, VertBufferUsage usage,
 
 PEXPI VertBuffer InitVertBuffer2D(Arena* arena, Str8 name, VertBufferUsage usage, uxx numVertices, const Vertex2D* verticesPntr, bool makeCopy)
 {
-	#if LANGUAGE_IS_C
+	#if STATIC_ASSERT_AVAILABLE
 	_Static_assert(sizeof(Vertex2D) == sizeof(r32)*8);
 	#endif
 	VertAttribute attributes[3] = {
@@ -196,7 +196,7 @@ PEXPI VertBuffer InitVertBuffer2D(Arena* arena, Str8 name, VertBufferUsage usage
 }
 PEXPI VertBuffer InitVertBuffer3D(Arena* arena, Str8 name, VertBufferUsage usage, uxx numVertices, const Vertex3D* verticesPntr, bool makeCopy)
 {
-	#if LANGUAGE_IS_C
+	#if STATIC_ASSERT_AVAILABLE
 	_Static_assert(sizeof(Vertex3D) == sizeof(r32)*12);
 	#endif
 	VertAttribute attributes[4] = {

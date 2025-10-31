@@ -83,7 +83,7 @@ car Vertex2D
 		r32 R, G, B, A;
 	};
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Vertex2D) == sizeof(r32)*8, "Vertex2D contains padding!");
 #endif
 
@@ -106,7 +106,7 @@ car Vertex3D
 		r32 R, G, B, A;
 	};
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Vertex3D) == sizeof(r32)*12, "Vertex3D contains padding!");
 #endif
 

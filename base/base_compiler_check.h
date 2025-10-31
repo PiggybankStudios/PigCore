@@ -24,6 +24,16 @@ Description:
 #define LANGUAGE_IS_CPP 0
 #endif
 
+#ifdef __OBJC__
+#define LANGUAGE_IS_OBJECTIVE     1
+#define LANGUAGE_IS_OBJECTIVE_C   LANGUAGE_IS_C
+#define LANGUAGE_IS_OBJECTIVE_CPP LANGUAGE_IS_CPP
+#else
+#define LANGUAGE_IS_OBJECTIVE     0
+#define LANGUAGE_IS_OBJECTIVE_C   0
+#define LANGUAGE_IS_OBJECTIVE_CPP 0
+#endif
+
 // +--------------------------------------------------------------+
 // |                      Determine COMPILER                      |
 // +--------------------------------------------------------------+
@@ -159,6 +169,12 @@ Description:
 #define USING_CUSTOM_STDLIB 1
 #else
 #define USING_CUSTOM_STDLIB 0
+#endif
+
+#if LANGUAGE_IS_C && !LANGUAGE_IS_OBJECTIVE
+#define STATIC_ASSERT_AVAILABLE 1
+#else
+#define STATIC_ASSERT_AVAILABLE 0
 #endif
 
 // +--------------------------------------------------------------+

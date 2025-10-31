@@ -34,7 +34,7 @@ PEXP const char* GetOpenGLErrorStr(unsigned int error)
 		case GL_INVALID_ENUM: return "GL_INVALID_ENUM";
 		case GL_INVALID_VALUE: return "GL_INVALID_VALUE";
 		case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
-		#ifdef SOKOL_GLCORE
+		#if defined(SOKOL_GLCORE) && !TARGET_IS_OSX
 		case GL_STACK_OVERFLOW: return "GL_STACK_OVERFLOW";
 		case GL_STACK_UNDERFLOW: return "GL_STACK_UNDERFLOW";
 		#endif
