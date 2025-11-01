@@ -45,11 +45,11 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Choose closest matching font file in style rather than forcing a perfect style match (Can't render emoji in Bold rich text, or when ColoredGlyphs is off?)
 //TODO: Implement stb_truetype.h code path!
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 //TODO: Add convenience functions to GfxSystem API so we can get the lineHeight, centerOffset, etc. easily
 
+//TODO: When we don't have a perfect style match file attached, we can end up with multiple baked glyphs of the same codepoint in different atlases that are marked with different styles. Maybe we should prevent this? Maybe the font file we find should have an effect on which atlas we look at adding a glyph to?
 //TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
 //TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
 //TODO: Do we want a function that helps rebake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
@@ -556,7 +556,7 @@ PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents
 	FontFile* newFile = &font->files[font->numFiles];
 	ClearPointer(newFile);
 	newFile->nameOrPath = AllocStr8(font->arena, nameOrPath);
-	newFile->styleFlags = styleFlags;
+	newFile->styleFlags = (styleFlags & FontStyleFlag_FontFileFlags);
 	newFile->fileContents = copyIntoFontArena ? AllocStr8(font->arena, fileContents) : fileContents;
 	newFile->inFontArena = copyIntoFontArena;
 	
@@ -715,26 +715,44 @@ PEXPI bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint)
 PEXP FontFile* TryFindFontFileWithStyle(PigFont* font, u8 styleFlags, uxx* fileIndexOut)
 {
 	NotNull(font);
+	FontFile* matchingFile = nullptr;
+	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
 	{
 		FontFile* fontFile = &font->files[fIndex];
-		if ((fontFile->styleFlags & FontStyleFlag_FontFileFlags) == (styleFlags & FontStyleFlag_FontFileFlags))
+		u8 styleDiff = 0;
+		// These flags should match FontStyleFlag_FontFileFlags
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiff += 2; }
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiff += 2; }
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_ColoredGlyphs) != IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { styleDiff += 1; }
+		
+		if (matchingFile == nullptr || styleDiff < matchingFileStyleDiff)
 		{
 			SetOptionalOutPntr(fileIndexOut, fIndex);
-			return fontFile;
+			matchingFile = fontFile;
+			matchingFileStyleDiff = styleDiff;
+			if (styleDiff == 0) { break; }
 		}
 	}
-	return nullptr;
+	return matchingFile;
 }
 
 PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut)
 {
 	NotNull(font);
 	NotNull(font->arena);
+	FontFile* matchingFile = nullptr;
+	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
 	{
 		FontFile* fontFile = &font->files[fIndex];
-		if ((fontFile->styleFlags & FontStyleFlag_FontFileFlags) == (styleFlags & FontStyleFlag_FontFileFlags))
+		u8 styleDiff = 0;
+		// These flags should match FontStyleFlag_FontFileFlags
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiff += 2; }
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiff += 2; }
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_ColoredGlyphs) != IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { styleDiff += 1; }
+		
+		if (matchingFile == nullptr || styleDiff < matchingFileStyleDiff)
 		{
 			#if BUILD_WITH_FREETYPE
 			{
@@ -743,7 +761,9 @@ PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styl
 				{
 					SetOptionalOutPntr(glyphIndexOut, glyphIndex);
 					SetOptionalOutPntr(fileIndexOut, fIndex);
-					return fontFile;
+					matchingFile = fontFile;
+					matchingFileStyleDiff = styleDiff;
+					if (styleDiff == 0) { break; }
 				}
 			}
 			#else //!BUILD_WITH_FREETYPE
@@ -754,17 +774,25 @@ PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styl
 			#endif //BUILD_WITH_FREETYPE
 		}
 	}
-	return nullptr;
+	return matchingFile;
 }
 
 PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut)
 {
 	NotNull(font);
 	NotNull(font->arena);
+	FontFile* matchingFile = nullptr;
+	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
 	{
 		FontFile* fontFile = &font->files[fIndex];
-		if ((fontFile->styleFlags & FontStyleFlag_FontFileFlags) == (styleFlags & FontStyleFlag_FontFileFlags))
+		u8 styleDiff = 0;
+		// These flags should match FontStyleFlag_FontFileFlags
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiff += 2; }
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiff += 2; }
+		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_ColoredGlyphs) != IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { styleDiff += 1; }
+		
+		if (matchingFile == nullptr || styleDiff < matchingFileStyleDiff)
 		{
 			#if BUILD_WITH_FREETYPE
 			{
@@ -782,7 +810,9 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 					{
 						SetOptionalOutPntr(glyphIndexOut, glyphIndex);
 						SetOptionalOutPntr(fileIndexOut, fIndex);
-						return fontFile;
+						matchingFile = fontFile;
+						matchingFileStyleDiff = styleDiff;
+						if (styleDiff == 0) { break; }
 					}
 				}
 			}
@@ -794,7 +824,7 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 			#endif //BUILD_WITH_FREETYPE
 		}
 	}
-	return nullptr;
+	return matchingFile;
 }
 
 PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSize, u8 styleFlags)
