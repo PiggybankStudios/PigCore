@@ -71,7 +71,7 @@ static void StbImageFree(void* allocPntr)
 }
 #endif //PIG_CORE_IMPLEMENTATION
 
-#if PIG_CORE_IMPLEMENTATION
+#if PIG_CORE_IMPLEMENTATION && !BUILD_WITH_RAYLIB
 #define STB_IMAGE_IMPLEMENTATION
 #endif
 

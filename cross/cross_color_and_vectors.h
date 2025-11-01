@@ -25,7 +25,7 @@ typedef v4 Colorf;
 	Colorf ToGammaFromLinear(Colorf color);
 	PIG_CORE_INLINE Colorf ToLinearFromGamma32(Color32 gammaColor);
 	PIG_CORE_INLINE Color32 ToGamma32FromLinear(Colorf linearColor);
-	PIG_CORE_INLINE Color32 ColorLerp(Color32 left, Color32 right, r32 amount);
+	PIG_CORE_INLINE Color32 Color32Lerp(Color32 left, Color32 right, r32 amount);
 	PIG_CORE_INLINE Color32 ColorAverage2(Color32 color1, Color32 color2);
 	PIG_CORE_INLINE Color32 ColorAverage3(Color32 color1, Color32 color2, Color32 color3);
 	PIG_CORE_INLINE Color32 ColorAverage4(Color32 color1, Color32 color2, Color32 color3, Color32 color4);
@@ -138,7 +138,7 @@ PEXPI Color32 ToGamma32FromLinear(Colorf linearColor)
 	return ToColor32Fromf(ToGammaFromLinear(linearColor));
 }
 
-PEXPI Color32 ColorLerp(Color32 left, Color32 right, r32 amount)
+PEXPI Color32 Color32Lerp(Color32 left, Color32 right, r32 amount)
 {
 	Colorf linearLeft = ToLinearFromGamma32(left);
 	Colorf linearRight = ToLinearFromGamma32(right);
