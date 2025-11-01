@@ -45,7 +45,6 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Make BakeFontAtlas use all the attached font files
 //TODO: Choose if entire BakeFontAtlas should fail if any codepoints are not found in the font(s)
 //TODO: Implement stb_truetype.h code path!
 //TODO: Can't render emoji in Bold rich text
@@ -262,15 +261,12 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph* glyph);
 	Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena);
 	void FillFontKerningTable(PigFont* font);
-	Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
-	PIG_CORE_INLINE Result TryBakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
-	Result TryMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
-	PIG_CORE_INLINE Result TryMultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
 	PIG_CORE_INLINE FontAtlas* GetDefaultFontAtlas(PigFont* font);
 	PIG_CORE_INLINE r32 GetDefaultFontSize(const PigFont* font);
 	PIG_CORE_INLINE u8 GetDefaultFontStyleFlags(const PigFont* font);
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepointEx(const FontAtlas* atlas, u32 codepoint, uxx* glyphIndexOut);
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint);
+	FontFile* TryFindFontFileWithStyle(PigFont* font, u8 styleFlags, uxx* fileIndexOut);
 	FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut);
 	FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut);
 	FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSize, u8 styleFlags);
@@ -283,6 +279,10 @@ FT_Library FreeTypeLib = nullptr;
 	FontAtlas* TryFindClosestMatchingFontAtlas(PigFont* font, uxx skipIndex, u32 codepoint, r32 fontSize, u8 styleFlags, u8 styleMask, bool mustBeActive, uxx* numMatchesOut, uxx* atlasIndexOut, uxx* glyphIndexOut);
 	FontGlyph* TryGetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation, FontAtlas** atlasOut);
 	PIG_CORE_INLINE FontAtlas* TryGetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, bool allowActiveAtlasCreation);
+	Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 styleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
+	PIG_CORE_INLINE Result TryBakeFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
+	Result TryMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges);
+	PIG_CORE_INLINE Result TryMultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges);
 	void CommitFontAtlasTextureUpdates(PigFont* font, FontAtlas* activeAtlas);
 	PIG_CORE_INLINE void CommitAllFontTextureUpdates(PigFont* font);
 	PIG_CORE_INLINE void FontNewFrame(PigFont* font, u64 programTime);
@@ -636,618 +636,6 @@ PEXP void FillFontKerningTable(PigFont* font)
 	#endif
 }
 
-//NOTE: This function does not support "fallback" fonts. It only uses the first font file that is attached
-//TODO: We should allow for some way for the calling code to tell us which fontFile to use to pack this atlas, that way we can have all our font files attached for future use as an active font, and still pre-bake some static atlases using specific fonts
-PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
-{
-	NotNull(font);
-	NotNull(font->arena);
-	Assert(minAtlasSize > 0 && maxAtlasSize > 0);
-	Assert(numCharRanges > 0);
-	NotNull(charRanges);
-	TracyCZoneN(_funcZone, "BakeFontAtlasEx", true);
-	ScratchBegin1(scratch, font->arena);
-	Assert(numCustomGlyphRanges == 0 || customGlyphRanges != nullptr);
-	Result result = Result_None;
-	
-	Assert(font->numFiles > 0);
-	FontFile* fontFile = &font->files[0];
-	
-	u32 minCodepoint = UINT32_MAX;
-	u32 maxCodepoint = 0;
-	uxx numCodepointsInCharRanges = 0;
-	uxx numCodepointsInCustomRanges = 0;
-	for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
-	{
-		const FontCharRange* charRange = &charRanges[rIndex];
-		Assert(charRange->endCodepoint >= charRange->startCodepoint);
-		numCodepointsInCharRanges += (charRange->endCodepoint - charRange->startCodepoint)+1;
-		minCodepoint = MinU32(minCodepoint, charRange->startCodepoint);
-		maxCodepoint = MaxU32(maxCodepoint, charRange->endCodepoint);
-	}
-	for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
-	{
-		const CustomFontCharRange* charRange = &customGlyphRanges[rIndex];
-		Assert(charRange->endCodepoint >= charRange->startCodepoint);
-		NotNull(charRange->glyphs);
-		numCodepointsInCustomRanges += (charRange->endCodepoint - charRange->startCodepoint)+1;
-		minCodepoint = MinU32(minCodepoint, charRange->startCodepoint);
-		maxCodepoint = MaxU32(maxCodepoint, charRange->endCodepoint);
-	}
-	uxx numCodepointsTotal = numCodepointsInCharRanges + numCodepointsInCustomRanges;
-	
-	// {
-	// 	u8 styleFlags = (fontFile->styleFlags | extraStyleFlags);
-	// 	bool isBold = IsFlagSet(styleFlags, FontStyleFlag_Bold);
-	// 	bool isItalic = IsFlagSet(styleFlags, FontStyleFlag_Italic);
-	// 	bool isColored = IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs);
-	// 	PrintLine_D("Baking atlas[%llu] at %g %s%s%s%s%s with %llu char%s and %llu custom glyph%s atlas size is [%d,%d]",
-	// 		font->atlases.length,
-	// 		fontSize,
-	// 		isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", ((isItalic || isBold) && isColored) ? "|" : "", isColored ? "Colored" : "",
-	// 		numCodepointsInCharRanges, Plural(numCodepointsInCharRanges, "s"),
-	// 		numCodepointsInCustomRanges, Plural(numCodepointsInCustomRanges, "s"),
-	// 		minAtlasSize, maxAtlasSize
-	// 	);
-	// }
-	
-	#if BUILD_WITH_FREETYPE
-	
-	do
-	{
-		NotNull(fontFile->freeTypeFace);
-		const int packingPadding = 1; //px NOTE: This has to be >= 1 because some glyphs end up being 1 pixel wider/taller than their reported size before rasterization!
-		
-		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		Assert(setCharSizeError == 0);
-		
-		uxx numGlyphsInAtlas = 0;
-		stbrp_rect* packRects = AllocArray(stbrp_rect, scratch, numCodepointsTotal);
-		NotNull(packRects);
-		{
-			uxx packedRecIndex = 0;
-			for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
-			{
-				const FontCharRange* charRange = &charRanges[rIndex];
-				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
-				{
-					FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
-					if (glyphIndex == 0)
-					{
-						PrintLine_E("Font doesn't contain glyph for codepoint 0x%08X!", codepoint);
-						DebugAssert(glyphIndex != 0);
-						result = Result_NotFound;
-						break;
-					}
-					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
-					//TODO: Should we check FT_HAS_COLOR?
-					if (IsFlagSet(fontFile->styleFlags | extraStyleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
-					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
-					if (loadGlyphError != 0)
-					{
-						PrintLine_E("Failed to load glyph for codepoint 0x%08X: %s", codepoint, loadGlyphError);
-						DebugAssert(loadGlyphError == 0);
-						result = Result_InvalidCharacter;
-						break;
-					}
-					NotNull(fontFile->freeTypeFace->glyph);
-					
-					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
-					if (glyphSize.Width > 0 && glyphSize.Height > 0)
-					{
-						DebugAssert(packedRecIndex < numCodepointsTotal);
-						packRects[packedRecIndex].w = glyphSize.Width + packingPadding*2;
-						packRects[packedRecIndex].h = glyphSize.Height + packingPadding*2;
-						// PrintLine_D("Codepoint U+%X is %dx%d glyph at %g (%d)", codepoint, packRects[packedRecIndex].w - packingPadding, packRects[packedRecIndex].h - packingPadding, fontSize, freeTypeFontSize);
-						// PrintLine_D("[%llu] Codepoint \'%s\' U+%X (%u) is %fx%f glyph metrics size, which we think is %dx%d pixel size, meaing packedRec is %dx%d",
-						// 	packedRecIndex,
-						// 	DebugGetCodepointName(codepoint), codepoint, codepoint,
-						// 	TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height),
-						// 	TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height),
-						// 	packRects[packedRecIndex].w, packRects[packedRecIndex].h
-						// );
-						packedRecIndex++;
-					}
-				}
-			}
-			if (result != Result_None) { break; }
-			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
-			{
-				const CustomFontCharRange* charRange = &customGlyphRanges[rIndex];
-				NotNull(charRange->glyphs);
-				uxx numGlyphsInCustomRange = (charRange->endCodepoint - charRange->startCodepoint)+1;
-				for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
-				{
-					const CustomFontGlyph* customGlyph = &charRange->glyphs[gIndex];
-					DebugAssert(customGlyph->imageData.size.Width > 0 && customGlyph->imageData.size.Height > 0);
-					
-					if (customGlyph->imageData.size.Width > 0 && customGlyph->imageData.size.Height > 0)
-					{
-						DebugAssert(packedRecIndex < numCodepointsTotal);
-						packRects[packedRecIndex].w = (int)customGlyph->imageData.size.Width + packingPadding*2;
-						packRects[packedRecIndex].h = (int)customGlyph->imageData.size.Height + packingPadding*2;
-						packedRecIndex++;
-					}
-				}
-			}
-			DebugAssert(packedRecIndex <= numCodepointsTotal);
-			numGlyphsInAtlas = packedRecIndex;
-		}
-		
-		bool packedSuccessfully = false;
-		i32 atlasSideLength = minAtlasSize;
-		while (atlasSideLength <= maxAtlasSize)
-		{
-			uxx scratchMark = ArenaGetMark(scratch);
-			uxx numPackNodes = (uxx)atlasSideLength;
-			stbrp_node* packNodes = AllocArray(stbrp_node, scratch, numPackNodes);
-			stbrp_context packContext = ZEROED;
-			stbrp_init_target(&packContext, (int)atlasSideLength, (int)atlasSideLength, packNodes, (int)numPackNodes);
-			int packResult = stbrp_pack_rects(&packContext, packRects, (int)numGlyphsInAtlas);
-			ArenaResetToMark(scratch, scratchMark);
-			if (packResult == 1) { packedSuccessfully = true; break; }
-			atlasSideLength *= 2;
-		}
-		if (!packedSuccessfully) { result = Result_NotEnoughSpace; break; }
-		
-		v2i atlasSize = FillV2i(atlasSideLength);
-		uxx numPixels = (uxx)(atlasSize.Width * atlasSize.Height);
-		Color32* pixelsPntr = AllocArray(Color32, scratch, numPixels);
-		NotNull(pixelsPntr);
-		MyMemSet(pixelsPntr, 0x00, sizeof(Color32) * numPixels);
-		
-		FontAtlas* newAtlas = VarArrayAdd(FontAtlas, &font->atlases);
-		NotNull(newAtlas);
-		ClearPointer(newAtlas);
-		newAtlas->fontSize = fontSize;
-		newAtlas->metrics.fontScale = 1.0f; //TODO: Can we get this from FreeType? Do we need it (without kerning)?
-		newAtlas->styleFlags = (fontFile->styleFlags | extraStyleFlags);
-		newAtlas->glyphRange.startCodepoint = minCodepoint;
-		newAtlas->glyphRange.endCodepoint = maxCodepoint;
-		newAtlas->metrics.maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
-		newAtlas->metrics.maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
-		newAtlas->metrics.lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
-		newAtlas->metrics.centerOffset = newAtlas->metrics.maxAscend - (newAtlas->metrics.lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did below?
-		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
-		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal);
-		
-		{
-			uxx packedRecIndex = 0;
-			for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
-			{
-				const FontCharRange* charRange = &charRanges[rIndex];
-				
-				FontCharRange* newCharRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
-				NotNull(newCharRange);
-				ClearPointer(newCharRange);
-				newCharRange->startCodepoint = charRange->startCodepoint;
-				newCharRange->endCodepoint = charRange->endCodepoint;
-				newCharRange->glyphArrayStartIndex = newAtlas->glyphs.length;
-				
-				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
-				{
-					//TODO: Fill in a packRect using information from FreeType about a particular codepoint
-					FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
-					Assert(glyphIndex != 0);
-					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
-					//TODO: Should we check FT_HAS_COLOR?
-					if (IsFlagSet(newAtlas->styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
-					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
-					Assert(loadGlyphError == 0);
-					NotNull(fontFile->freeTypeFace->glyph);
-					FT_Error renderGlyphError = FT_Render_Glyph(fontFile->freeTypeFace->glyph, FT_RENDER_MODE_NORMAL);
-					Assert(renderGlyphError == 0);
-					
-					FontGlyph* newGlyph = VarArrayAdd(FontGlyph, &newAtlas->glyphs);
-					NotNull(newGlyph);
-					ClearPointer(newGlyph);
-					newGlyph->codepoint = codepoint;
-					newGlyph->ttfGlyphIndex = glyphIndex;
-					newGlyph->metrics.advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
-					newGlyph->metrics.renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
-					newGlyph->metrics.renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
-					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, newAtlas->metrics.maxAscend);
-					
-					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
-					if (glyphSize.Width > 0 && glyphSize.Height > 0)
-					{
-						Assert(packedRecIndex < numGlyphsInAtlas);
-						stbrp_rect packedRec = packRects[packedRecIndex];
-						packedRecIndex++;
-						Assert(packedRec.was_packed);
-						
-						v2i bitmapSize = NewV2i((i32)fontFile->freeTypeFace->glyph->bitmap.width, (i32)fontFile->freeTypeFace->glyph->bitmap.rows);
-						Assert(bitmapSize.Width > 0 && bitmapSize.Height > 0);
-						//NOTE: the bitmapSize can be smaller than glyph metrics reported AND it can be 1 pixel larger too! We added 2 pixels of padding so we can allow it to take the right and bottom padding area if needed
-						Assert(bitmapSize.Width >= glyphSize.Width-2 && bitmapSize.Width <= glyphSize.Width+1);
-						Assert(bitmapSize.Height >= glyphSize.Height-2 && bitmapSize.Height <= glyphSize.Height+1);
-						
-						newGlyph->atlasSourcePos = NewV2i(packedRec.x + packingPadding, packedRec.y + packingPadding);
-						newGlyph->metrics.glyphSize = bitmapSize;
-						newGlyph->metrics.logicalRec.Width = MaxR32(newGlyph->metrics.renderOffset.X + (r32)newGlyph->metrics.glyphSize.Width, newGlyph->metrics.advanceX);
-						
-						// PrintLine_D("Codepoint U+%X is %dx%d offset=(%g, %g) advance=%g", codepoint, newGlyph->atlasSourceRec.Width, newGlyph->atlasSourceRec.Height, newGlyph->renderOffset.X, newGlyph->renderOffset.Y, newGlyph->advanceX);
-						// PrintLine_D("Codepoint U+%X packed (%d, %d, %d, %d) in %dx%d atlas[%llu]",
-						// 	codepoint,
-						// 	newGlyph->atlasSourceRec.X, newGlyph->atlasSourceRec.Y, newGlyph->atlasSourceRec.Width, newGlyph->atlasSourceRec.Height,
-						// 	atlasSize.Width, atlasSize.Height,
-						// 	font->atlases.length-1
-						// );
-						
-						for (i32 yOffset = 0; yOffset < bitmapSize.Height; yOffset++)
-						{
-							for (i32 xOffset = 0; xOffset < bitmapSize.Width; xOffset++)
-							{
-								Color32* pixelPntr = &pixelsPntr[INDEX_FROM_COORD2D(packedRec.x + packingPadding + xOffset, packedRec.y + packingPadding + yOffset, atlasSize.Width, atlasSize.Height)];
-								if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO ||
-									fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
-								{
-									u8 alphaValue = 0;
-									if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
-									{
-										Assert(fontFile->freeTypeFace->glyph->bitmap.pitch == CeilDivI32((i32)fontFile->freeTypeFace->glyph->bitmap.width, 8));
-										u8 bitmapByte = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset/8, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
-										bool bitmapBit = (bitmapByte & (0x80 >> (xOffset%8)));
-										alphaValue = (bitmapBit ? 0xFF : 0x00);
-									}
-									else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
-									{
-										alphaValue = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
-									}
-									pixelPntr->r = 255;
-									pixelPntr->g = 255;
-									pixelPntr->b = 255;
-									pixelPntr->a = alphaValue;
-								}
-								else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA)
-								{
-									u8* pixelBgraPntr = &fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset * sizeof(u32), yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
-									pixelPntr->r = pixelBgraPntr[0];
-									pixelPntr->g = pixelBgraPntr[1];
-									pixelPntr->b = pixelBgraPntr[2];
-									pixelPntr->a = pixelBgraPntr[3];
-								}
-								else { AssertMsg(false, "Unsupported pixel format rendered from FT_Render_Glyph"); }
-							}
-						}
-					}
-				}
-			}
-			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
-			{
-				const CustomFontCharRange* charRange = &customGlyphRanges[rIndex];
-				NotNull(charRange->glyphs);
-				
-				FontCharRange* newCharRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
-				NotNull(newCharRange);
-				ClearPointer(newCharRange);
-				newCharRange->startCodepoint = charRange->startCodepoint;
-				newCharRange->endCodepoint = charRange->endCodepoint;
-				newCharRange->glyphArrayStartIndex = newAtlas->glyphs.length;
-				
-				uxx numGlyphsInCustomRange = (charRange->endCodepoint - charRange->startCodepoint)+1;
-				for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
-				{
-					const CustomFontGlyph* customGlyph = &charRange->glyphs[gIndex];
-					v2i glyphSize = customGlyph->imageData.size;
-					
-					FontGlyph* newGlyph = VarArrayAdd(FontGlyph, &newAtlas->glyphs);
-					NotNull(newGlyph);
-					ClearPointer(newGlyph);
-					newGlyph->codepoint = customGlyph->codepoint;
-					newGlyph->ttfGlyphIndex = 0;
-					newGlyph->metrics.advanceX = (r32)glyphSize.Width;
-					newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - glyphSize.Height/2.0f));
-					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)glyphSize.Width, newAtlas->metrics.maxAscend);
-					
-					if (glyphSize.Width > 0 && glyphSize.Height > 0)
-					{
-						Assert(packedRecIndex < numGlyphsInAtlas);
-						stbrp_rect packedRec = packRects[packedRecIndex];
-						packedRecIndex++;
-						Assert(packedRec.was_packed);
-						
-						newGlyph->atlasSourcePos = NewV2i(packedRec.x, packedRec.y);
-						newGlyph->metrics.glyphSize = NewV2i(packedRec.w - packingPadding*2, packedRec.h - packingPadding*2);
-						
-						for (i32 rowIndex = 0; rowIndex < customGlyph->imageData.size.Height; rowIndex++)
-						{
-							const Color32* inRowPntr = (const Color32*)&customGlyph->imageData.pixels[INDEX_FROM_COORD2D(0, rowIndex, glyphSize.Width, glyphSize.Height)];
-							Color32* outRowPntr = &pixelsPntr[INDEX_FROM_COORD2D(packedRec.x + packingPadding + 0, packedRec.y + packingPadding + rowIndex, atlasSize.Width, atlasSize.Height)];
-							MyMemCopy(outRowPntr, inRowPntr, sizeof(Color32) * glyphSize.Width);
-						}
-					}
-				}
-			}
-			Assert(packedRecIndex == numGlyphsInAtlas);
-		}
-		
-		Str8 textureName = PrintInArenaStr(scratch, "%.*s_atlas[%llu]", StrPrint(font->name), (u64)(font->atlases.length-1));
-		newAtlas->texture = InitTexture(font->arena, textureName, atlasSize, pixelsPntr, TextureFlag_NoMipmaps);
-		if (newAtlas->texture.error != Result_Success)
-		{
-			result = newAtlas->texture.error;
-			FreeFontAtlas(font, newAtlas);
-			VarArrayRemoveLast(FontAtlas, &font->atlases);
-			break;
-		}
-		
-		result = Result_Success;
-	} while(false);
-	
-	#else //!BUILD_WITH_FREETYPE
-	
-	do
-	{
-		stbtt_pack_range* stbRanges = AllocArray(stbtt_pack_range, scratch, numCharRanges);
-		NotNull(stbRanges);
-		MyMemSet(stbRanges, 0x00, sizeof(stbtt_pack_range) * numCharRanges);
-		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
-		{
-			const FontCharRange* charRange = &charRanges[rIndex];
-			Assert(charRange->endCodepoint >= charRange->startCodepoint);
-			stbtt_pack_range* stbRange = &stbRanges[rIndex];
-			stbRange->font_size = fontSize;
-			stbRange->first_unicode_codepoint_in_range = (int)charRange->startCodepoint;
-			// int *array_of_unicode_codepoints;       // if non-zero, then this is an array of unicode codepoints
-			stbRange->num_chars = (int)(charRange->endCodepoint+1 - charRange->startCodepoint);
-			uxx numGlyphsInCharRange = (charRange->endCodepoint - charRange->startCodepoint)+1;
-			stbRange->chardata_for_range = AllocArray(stbtt_packedchar, scratch, numGlyphsInCharRange);
-			NotNull(stbRange->chardata_for_range);
-			MyMemSet(stbRange->chardata_for_range, 0x00, sizeof(stbtt_packedchar) * numGlyphsInCharRange);
-		}
-		
-		//NOTE: This used to be stbtt_PackFontRanges
-		stbtt_fontinfo fontInfo;
-		fontInfo.userdata = scratch;
-		stbtt_InitFont(&fontInfo, fontFile->fileContents.bytes, stbtt_GetFontOffsetForIndex(fontFile->fileContents.bytes, 0));
-		
-		stbrp_rect* rects = AllocArray(stbrp_rect, scratch, numCodepointsTotal);
-		NotNull(rects);
-		int numRects = 0;
-		uxx numPixels = 0;
-		Color32* pixelsPntr = nullptr;
-		
-		bool packedSuccessfully = false;
-		i32 atlasSideLength = minAtlasSize;
-		while (atlasSideLength <= maxAtlasSize)
-		{
-			uxx scratchMark = ArenaGetMark(scratch);
-			
-			numPixels = (uxx)(atlasSideLength * atlasSideLength);
-			pixelsPntr = AllocArray(Color32, scratch, numPixels);
-			NotNull(pixelsPntr);
-			MyMemSet(pixelsPntr, 0x00, sizeof(Color32) * numPixels);
-			
-			stbtt_pack_context packContext = ZEROED;
-			int beginResult = stbtt_PackBegin(
-				&packContext, //context
-				(u8*)pixelsPntr, //pixels
-				(int)atlasSideLength, (int)atlasSideLength, //width, height
-				(int)(atlasSideLength * sizeof(u8)), //stride_in_bytes
-				1, //padding (between chars)
-				scratch //alloc_context
-			);
-			Assert(beginResult != 0);
-			
-			numRects = stbtt_PackFontRangesGatherRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
-			Assert(numRects >= 0 && (uxx)numRects == numCodepointsInCharRanges);
-			uxx customGlyphIndex = 0;
-			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
-			{
-				const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
-				uxx numGlyphsInCustomRange = (customRange->endCodepoint - customRange->startCodepoint)+1;
-				for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
-				{
-					const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
-					DebugAssert(customGlyphIndex < numCodepointsInCustomRanges);
-					stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphIndex];
-					reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
-						? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
-						: customGlyph->sourceRec;
-					Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
-					Assert(sourceRec.Width > 0 && sourceRec.Height > 0);
-					Assert(sourceRec.X + sourceRec.Width <= customGlyph->imageData.size.Width);
-					Assert(sourceRec.Y + sourceRec.Height <= customGlyph->imageData.size.Height);
-					customGlyphRec->w = (int)sourceRec.Width;
-					customGlyphRec->h = (int)sourceRec.Height;
-					customGlyphIndex++;
-				}
-			}
-			
-			stbtt_PackFontRangesPackRects(&packContext, rects, (int)numCodepointsTotal);
-			int packResult = stbtt_PackFontRangesRenderIntoRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
-			if (packResult > 0) { packedSuccessfully = true; break; }
-			ArenaResetToMark(scratch, scratchMark); //only reset scratch if we failed to pack! Thus pixelsPntr can live on for use below
-			atlasSideLength *= 2;
-		}
-		if (!packedSuccessfully) { result = Result_NotEnoughSpace; break; }
-		v2i atlasSize = FillV2i(atlasSideLength);
-		
-		// Walk backwards from end, expanding each 1-byte/single channel pixel value into a Color32 (4-byte/4 channel)
-		for (uxx pixelIndex = numPixels; pixelIndex > 0; pixelIndex--)
-		{
-			Color32* writePntr = &pixelsPntr[pixelIndex-1];
-			u8* readPntr = &((u8*)pixelsPntr)[pixelIndex-1];
-			writePntr->a = *readPntr;
-			writePntr->r = 255;
-			writePntr->g = 255;
-			writePntr->b = 255;
-		}
-		
-		// Copy custom glyph image data into the atlas
-		uxx customGlyphCopyIndex = 0;
-		for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
-		{
-			const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
-			uxx numGlyphsInCustomRange = (customRange->endCodepoint - customRange->startCodepoint)+1;
-			for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
-			{
-				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
-				DebugAssert(customGlyphCopyIndex < numCodepointsInCustomRanges);
-				stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphCopyIndex];
-				reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
-					? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
-					: customGlyph->sourceRec;
-				Assert(customGlyphRec->w == (int)sourceRec.Width);
-				Assert(customGlyphRec->h == (int)sourceRec.Height);
-				Assert(customGlyphRec->x >= 0 && customGlyphRec->y >= 0);
-				Assert(customGlyphRec->x + customGlyphRec->w <= (int)atlasSize.Width);
-				Assert(customGlyphRec->y + customGlyphRec->h <= (int)atlasSize.Height);
-				for (i32 yOffset = 0; yOffset < sourceRec.Height; yOffset++)
-				{
-					v2i targetPos = NewV2i((i32)customGlyphRec->x, (i32)customGlyphRec->y + yOffset);
-					u32* targetPntr = (u32*)&pixelsPntr[INDEX_FROM_COORD2D(targetPos.X, targetPos.Y, atlasSize.Width, atlasSize.Height)];
-					u32* sourcePntr = &customGlyph->imageData.pixels[INDEX_FROM_COORD2D(sourceRec.X, sourceRec.Y + yOffset, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)];
-					MyMemCopy(targetPntr, sourcePntr, sizeof(u32) * sourceRec.Width);
-				}
-				customGlyphCopyIndex++;
-			}
-		}
-		
-		FontAtlas* newAtlas = VarArrayAdd(FontAtlas, &font->atlases);
-		NotNull(newAtlas);
-		ClearPointer(newAtlas);
-		Str8 textureName = PrintInArenaStr(scratch, "%.*s_atlas[%llu]", StrPrint(font->name), (u64)(font->atlases.length-1));
-		newAtlas->texture = InitTexture(font->arena, textureName, atlasSize, pixelsPntr, TextureFlag_NoMipmaps);
-		if (newAtlas->texture.error != Result_Success)
-		{
-			VarArrayPop(FontCharRange, &font->atlases);
-			result = newAtlas->texture.error;
-			break;
-		}
-		
-		newAtlas->fontSize = fontSize;
-		newAtlas->metrics.fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
-		newAtlas->styleFlags = (fontFile->styleFlags | extraStyleFlags);
-		newAtlas->glyphRange.startCodepoint = minCodepoint;
-		newAtlas->glyphRange.endCodepoint = maxCodepoint;
-		
-		int ascent, descent, lineGap;
-		stbtt_GetFontVMetrics(&fontFile->ttfInfo, &ascent, &descent, &lineGap);
-		newAtlas->metrics.maxAscend = (r32)ascent * newAtlas->metrics.fontScale;
-		newAtlas->metrics.maxDescend = (r32)(-descent) * newAtlas->metrics.fontScale;
-		newAtlas->metrics.lineHeight = newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend + ((r32)lineGap * newAtlas->metrics.fontScale);
-		
-		//TODO: This is sort of a hack and causes problems with things like highlight/clip rectangles that need to really encompass the true maxAscend
-		//      So for now we are going to only use this value to inform the centerOffset
-		//The ascent value returned by GetFontVMetrics is often way higher than all the characters we normally print
-		//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
-		//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
-		int wBoxX0, wBoxY0, wBoxX1, wBoxY1;
-		int getBoxResult = stbtt_GetCodepointBox(&fontFile->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
-		if (getBoxResult > 0)
-		{
-			r32 pretendMaxAscend = MinR32(newAtlas->metrics.maxAscend, (r32)wBoxY1 * newAtlas->metrics.fontScale);
-			newAtlas->metrics.centerOffset = pretendMaxAscend / 2.0f;
-		}
-		
-		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
-		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal);
-		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
-		{
-			const FontCharRange* charRange = &charRanges[rIndex];
-			stbtt_pack_range* stbRange = &stbRanges[rIndex];
-			FontCharRange* altasRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
-			MyMemCopy(altasRange, charRange, sizeof(FontCharRange));
-			uxx numGlyphsInCharRange = (charRange->endCodepoint - charRange->startCodepoint)+1;
-			altasRange->glyphArrayStartIndex = newAtlas->glyphs.length;
-			FontGlyph* newGlyphs = VarArrayAddMulti(FontGlyph, &newAtlas->glyphs, numGlyphsInCharRange);
-			NotNull(newGlyphs);
-			MyMemSet(newGlyphs, 0x00, sizeof(FontGlyph) * numGlyphsInCharRange);
-			NotNull(stbRange->chardata_for_range);
-			for (uxx gIndex = 0; gIndex < numGlyphsInCharRange; gIndex++)
-			{
-				const stbtt_packedchar* stbCharInfo = &stbRange->chardata_for_range[gIndex];
-				FontGlyph* glyph = &newGlyphs[gIndex];
-				glyph->codepoint = charRange->startCodepoint + (u32)gIndex;
-				glyph->ttfGlyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, glyph->codepoint);
-				// if (glyph->ttfGlyphIndex < 0) { PrintLine_D("Codepoint 0x%08X has ttfGlyphIndex %d", glyph->codepoint, glyph->ttfGlyphIndex); }
-				DebugAssert(stbCharInfo->x0 <= stbCharInfo->x1);
-				DebugAssert(stbCharInfo->y0 <= stbCharInfo->y1);
-				DebugAssert(stbCharInfo->x0 >= 0);
-				DebugAssert(stbCharInfo->x0 <= atlasSize.Width);
-				DebugAssert(stbCharInfo->x1 >= 0);
-				DebugAssert(stbCharInfo->x1 <= atlasSize.Width);
-				DebugAssert(stbCharInfo->y0 >= 0);
-				DebugAssert(stbCharInfo->y0 <= atlasSize.Height);
-				DebugAssert(stbCharInfo->y1 >= 0);
-				DebugAssert(stbCharInfo->y1 <= atlasSize.Height);
-				glyph->atlasSourcePos = NewV2i((i32)stbCharInfo->x0, (i32)stbCharInfo->y0);
-				glyph->metrics.glyphSize = NewV2i((i32)(stbCharInfo->x1 - stbCharInfo->x0), (i32)(stbCharInfo->y1 - stbCharInfo->y0));
-				glyph->metrics.advanceX = IsCodepointZeroWidth(glyph->codepoint) ? 0 : stbCharInfo->xadvance;
-				glyph->metrics.renderOffset = NewV2(stbCharInfo->xoff, stbCharInfo->yoff);
-				glyph->metrics.logicalRec = NewRec(stbCharInfo->xoff, -newAtlas->metrics.maxAscend, (r32)glyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
-				if (glyph->metrics.logicalRec.Width == 0)
-				{
-					glyph->metrics.logicalRec.Width = glyph->metrics.advanceX;
-				}
-				// TODO: What are these floats for? stbCharInfo->xoff2 stbCharInfo->yoff2
-			}
-		}
-		
-		// Fill out glyph information for all custom glyphs
-		uxx customGlyphInfoIndex = 0;
-		for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
-		{
-			const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
-			uxx numGlyphsInCustomRange = (customRange->endCodepoint - customRange->startCodepoint)+1;
-			FontCharRange* newRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
-			ClearPointer(newRange);
-			newRange->startCodepoint = customRange->startCodepoint;
-			newRange->endCodepoint = customRange->endCodepoint;
-			newRange->glyphArrayStartIndex = newAtlas->glyphs.length;
-			
-			FontGlyph* newGlyphs = VarArrayAddMulti(FontGlyph, &newAtlas->glyphs, numGlyphsInCustomRange);
-			NotNull(newGlyphs);
-			for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
-			{
-				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
-				DebugAssert(customGlyphInfoIndex < numCodepointsInCustomRanges);
-				stbrp_rect* packedGlyphRec = &rects[numCodepointsInCharRanges + customGlyphInfoIndex];
-				FontGlyph* newGlyph = &newGlyphs[gIndex];
-				ClearPointer(newGlyph);
-				newGlyph->codepoint = customGlyph->codepoint;
-				newGlyph->ttfGlyphIndex = INVALID_TTF_GLYPH_INDEX;
-				newGlyph->atlasSourcePos = NewV2i((i32)packedGlyphRec->x, (i32)packedGlyphRec->y);
-				newGlyph->metrics.glyphSize = NewV2i((i32)packedGlyphRec->w, (i32)packedGlyphRec->h);
-				newGlyph->metrics.advanceX = (r32)newGlyph->metrics.glyphSize.Width;
-				newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - newGlyph->metrics.glyphSize.Height/2.0f));
-				newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)newGlyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
-				customGlyphInfoIndex++;
-			}
-		}
-		
-		result = Result_Success;
-	} while(false);
-	
-	#endif //BUILD_WITH_FREETYPE
-	
-	ScratchEnd(scratch);
-	TracyCZoneEnd(_funcZone);
-	return result;
-}
-PEXPI Result TryBakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
-{
-	return TryBakeFontAtlasWithCustomGlyphs(font, fontSize, extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
-}
-
-PEXP Result TryMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
-{
-	if (numSizes > 0) { NotNull(fontSizes); }
-	for (uxx sIndex = 0; sIndex < numSizes; sIndex++)
-	{
-		Result bakeResult = TryBakeFontAtlasWithCustomGlyphs(font, fontSizes[sIndex], extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
-		if (bakeResult != Result_Success) { return bakeResult; }
-	}
-	return Result_Success;
-}
-PEXPI Result TryMultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
-{
-	return TryMultiBakeFontAtlasesWithCustomGlyphs(font, numSizes, fontSizes, extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
-}
-
 PEXPI FontAtlas* GetDefaultFontAtlas(PigFont* font)
 {
 	NotNull(font);
@@ -1283,6 +671,21 @@ PEXPI bool DoesFontAtlasContainCodepointEx(const FontAtlas* atlas, u32 codepoint
 PEXPI bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint)
 {
 	return DoesFontAtlasContainCodepointEx(atlas, codepoint, nullptr);
+}
+
+PEXP FontFile* TryFindFontFileWithStyle(PigFont* font, u8 styleFlags, uxx* fileIndexOut)
+{
+	NotNull(font);
+	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
+	{
+		FontFile* fontFile = &font->files[fIndex];
+		if ((fontFile->styleFlags & FontStyleFlag_FontFileFlags) == (styleFlags & FontStyleFlag_FontFileFlags))
+		{
+			SetOptionalOutPntr(fileIndexOut, fIndex);
+			return fontFile;
+		}
+	}
+	return nullptr;
 }
 
 PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut)
@@ -2227,6 +1630,641 @@ PEXPI FontAtlas* TryGetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, boo
 	FontAtlas* result = nullptr;
 	TryGetFontGlyphForCodepoint(font, FONT_CODEPOINT_EMPTY, fontSize, styleFlags, allowActiveAtlasCreation, &result);
 	return result;
+}
+
+//NOTE: This function does not support "fallback" fonts. It only uses the first font file that is attached
+//TODO: We should allow for some way for the calling code to tell us which fontFile to use to pack this atlas, that way we can have all our font files attached for future use as an active font, and still pre-bake some static atlases using specific fonts
+PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 styleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
+{
+	NotNull(font);
+	NotNull(font->arena);
+	Assert(minAtlasSize > 0 && maxAtlasSize > 0);
+	Assert(numCharRanges > 0);
+	NotNull(charRanges);
+	TracyCZoneN(_funcZone, "BakeFontAtlasEx", true);
+	ScratchBegin1(scratch, font->arena);
+	Assert(numCustomGlyphRanges == 0 || customGlyphRanges != nullptr);
+	Result result = Result_None;
+	
+	u32 minCodepoint = UINT32_MAX;
+	u32 maxCodepoint = 0;
+	uxx numCodepointsInCharRanges = 0;
+	uxx numCodepointsInCustomRanges = 0;
+	for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+	{
+		const FontCharRange* charRange = &charRanges[rIndex];
+		Assert(charRange->endCodepoint >= charRange->startCodepoint);
+		numCodepointsInCharRanges += (charRange->endCodepoint - charRange->startCodepoint)+1;
+		minCodepoint = MinU32(minCodepoint, charRange->startCodepoint);
+		maxCodepoint = MaxU32(maxCodepoint, charRange->endCodepoint);
+	}
+	for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
+	{
+		const CustomFontCharRange* charRange = &customGlyphRanges[rIndex];
+		Assert(charRange->endCodepoint >= charRange->startCodepoint);
+		NotNull(charRange->glyphs);
+		numCodepointsInCustomRanges += (charRange->endCodepoint - charRange->startCodepoint)+1;
+		minCodepoint = MinU32(minCodepoint, charRange->startCodepoint);
+		maxCodepoint = MaxU32(maxCodepoint, charRange->endCodepoint);
+	}
+	uxx numCodepointsTotal = numCodepointsInCharRanges + numCodepointsInCustomRanges;
+	
+	// {
+	// 	bool isBold = IsFlagSet(styleFlags, FontStyleFlag_Bold);
+	// 	bool isItalic = IsFlagSet(styleFlags, FontStyleFlag_Italic);
+	// 	bool isColored = IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs);
+	// 	PrintLine_D("Baking atlas[%llu] at %g %s%s%s%s%s with %llu char%s and %llu custom glyph%s atlas size is [%d,%d]",
+	// 		font->atlases.length,
+	// 		fontSize,
+	// 		isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", ((isItalic || isBold) && isColored) ? "|" : "", isColored ? "Colored" : "",
+	// 		numCodepointsInCharRanges, Plural(numCodepointsInCharRanges, "s"),
+	// 		numCodepointsInCustomRanges, Plural(numCodepointsInCustomRanges, "s"),
+	// 		minAtlasSize, maxAtlasSize
+	// 	);
+	// }
+	
+	#if BUILD_WITH_FREETYPE
+	
+	do
+	{
+		const int packingPadding = 1; //px NOTE: This has to be >= 1 because some glyphs end up being 1 pixel wider/taller than their reported size before rasterization!
+		
+		// FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+		// FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+		// Assert(setCharSizeError == 0);
+		
+		uxx numGlyphsInAtlas = 0;
+		stbrp_rect* packRects = AllocArray(stbrp_rect, scratch, numCodepointsTotal);
+		NotNull(packRects);
+		{
+			uxx packedRecIndex = 0;
+			for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+			{
+				const FontCharRange* charRange = &charRanges[rIndex];
+				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
+				{
+					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, nullptr);
+					if (fontFile == nullptr)
+					{
+						PrintLine_E("Font files don't contain glyph for codepoint 0x%08X!", codepoint);
+						DebugAssertMsg(fontFile != nullptr, "Font files don't contain glyph for codepoint in TryBakeFontAtlas!");
+						result = Result_NotFound; //TODO: Maybe we shouldn't fail the whole bake for a single glyph missing?
+						break;
+					}
+					NotNull(fontFile->freeTypeFace->glyph); //TryFindFontFileForCodepointAtSize should have called FT_Load_Glyph for us
+					
+					// FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
+					// if (glyphIndex == 0)
+					// {
+					// 	PrintLine_E("Font doesn't contain glyph for codepoint 0x%08X!", codepoint);
+					// 	DebugAssert(glyphIndex != 0);
+					// 	result = Result_NotFound;
+					// 	break;
+					// }
+					
+					// FT_Int32 loadFlags = FT_LOAD_DEFAULT;
+					// //TODO: Should we check FT_HAS_COLOR?
+					// if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					// FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
+					// if (loadGlyphError != 0)
+					// {
+					// 	PrintLine_E("Failed to load glyph for codepoint 0x%08X: %s", codepoint, loadGlyphError);
+					// 	DebugAssert(loadGlyphError == 0);
+					// 	result = Result_InvalidCharacter;
+					// 	break;
+					// }
+					// NotNull(fontFile->freeTypeFace->glyph);
+					
+					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
+					if (glyphSize.Width > 0 && glyphSize.Height > 0)
+					{
+						DebugAssert(packedRecIndex < numCodepointsTotal);
+						packRects[packedRecIndex].w = glyphSize.Width + packingPadding*2;
+						packRects[packedRecIndex].h = glyphSize.Height + packingPadding*2;
+						// PrintLine_D("Codepoint U+%X is %dx%d glyph at %g (%d)", codepoint, packRects[packedRecIndex].w - packingPadding, packRects[packedRecIndex].h - packingPadding, fontSize, freeTypeFontSize);
+						// PrintLine_D("[%llu] Codepoint \'%s\' U+%X (%u) is %fx%f glyph metrics size, which we think is %dx%d pixel size, meaing packedRec is %dx%d",
+						// 	packedRecIndex,
+						// 	DebugGetCodepointName(codepoint), codepoint, codepoint,
+						// 	TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height),
+						// 	TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height),
+						// 	packRects[packedRecIndex].w, packRects[packedRecIndex].h
+						// );
+						packedRecIndex++;
+					}
+				}
+			}
+			if (result != Result_None) { break; }
+			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
+			{
+				const CustomFontCharRange* charRange = &customGlyphRanges[rIndex];
+				NotNull(charRange->glyphs);
+				uxx numGlyphsInCustomRange = (charRange->endCodepoint - charRange->startCodepoint)+1;
+				for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
+				{
+					const CustomFontGlyph* customGlyph = &charRange->glyphs[gIndex];
+					DebugAssert(customGlyph->imageData.size.Width > 0 && customGlyph->imageData.size.Height > 0);
+					
+					if (customGlyph->imageData.size.Width > 0 && customGlyph->imageData.size.Height > 0)
+					{
+						DebugAssert(packedRecIndex < numCodepointsTotal);
+						packRects[packedRecIndex].w = (int)customGlyph->imageData.size.Width + packingPadding*2;
+						packRects[packedRecIndex].h = (int)customGlyph->imageData.size.Height + packingPadding*2;
+						packedRecIndex++;
+					}
+				}
+			}
+			DebugAssert(packedRecIndex <= numCodepointsTotal);
+			numGlyphsInAtlas = packedRecIndex;
+		}
+		
+		bool packedSuccessfully = false;
+		i32 atlasSideLength = minAtlasSize;
+		while (atlasSideLength <= maxAtlasSize)
+		{
+			uxx scratchMark = ArenaGetMark(scratch);
+			uxx numPackNodes = (uxx)atlasSideLength;
+			stbrp_node* packNodes = AllocArray(stbrp_node, scratch, numPackNodes);
+			stbrp_context packContext = ZEROED;
+			stbrp_init_target(&packContext, (int)atlasSideLength, (int)atlasSideLength, packNodes, (int)numPackNodes);
+			int packResult = stbrp_pack_rects(&packContext, packRects, (int)numGlyphsInAtlas);
+			ArenaResetToMark(scratch, scratchMark);
+			if (packResult == 1) { packedSuccessfully = true; break; }
+			atlasSideLength *= 2;
+		}
+		if (!packedSuccessfully) { result = Result_NotEnoughSpace; break; }
+		
+		v2i atlasSize = FillV2i(atlasSideLength);
+		uxx numPixels = (uxx)(atlasSize.Width * atlasSize.Height);
+		Color32* pixelsPntr = AllocArray(Color32, scratch, numPixels);
+		NotNull(pixelsPntr);
+		MyMemSet(pixelsPntr, 0x00, sizeof(Color32) * numPixels);
+		
+		FontAtlas* newAtlas = VarArrayAdd(FontAtlas, &font->atlases);
+		NotNull(newAtlas);
+		ClearPointer(newAtlas);
+		newAtlas->fontSize = fontSize;
+		newAtlas->metrics.fontScale = 1.0f; //TODO: Can we get this from FreeType? Do we need it (without kerning)?
+		newAtlas->styleFlags = styleFlags;
+		newAtlas->glyphRange.startCodepoint = minCodepoint;
+		newAtlas->glyphRange.endCodepoint = maxCodepoint;
+		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
+		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal);
+		
+		{
+			FontFile* fontFile = TryFindFontFileWithStyle(font, styleFlags, nullptr);
+			NotNull(fontFile);
+			NotNull(fontFile->freeTypeFace);
+			FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+			FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+			Assert(setCharSizeError == 0);
+			newAtlas->metrics.maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
+			newAtlas->metrics.maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
+			newAtlas->metrics.lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
+			newAtlas->metrics.centerOffset = newAtlas->metrics.maxAscend - (newAtlas->metrics.lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did below?
+		}
+		
+		{
+			uxx packedRecIndex = 0;
+			for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+			{
+				const FontCharRange* charRange = &charRanges[rIndex];
+				
+				FontCharRange* newCharRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
+				NotNull(newCharRange);
+				ClearPointer(newCharRange);
+				newCharRange->startCodepoint = charRange->startCodepoint;
+				newCharRange->endCodepoint = charRange->endCodepoint;
+				newCharRange->glyphArrayStartIndex = newAtlas->glyphs.length;
+				
+				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
+				{
+					unsigned int glyphIndex = 0;
+					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, &glyphIndex);
+					NotNull(fontFile);
+					NotNull(fontFile->freeTypeFace->glyph); //TryFindFontFileForCodepointAtSize should have called FT_Load_Glyph for us
+					
+					// FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
+					// Assert(glyphIndex != 0);
+					// FT_Int32 loadFlags = FT_LOAD_DEFAULT;
+					// //TODO: Should we check FT_HAS_COLOR?
+					// if (IsFlagSet(newAtlas->styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					// FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
+					// Assert(loadGlyphError == 0);
+					// NotNull(fontFile->freeTypeFace->glyph);
+					
+					FT_Error renderGlyphError = FT_Render_Glyph(fontFile->freeTypeFace->glyph, FT_RENDER_MODE_NORMAL);
+					Assert(renderGlyphError == 0);
+					
+					FontGlyph* newGlyph = VarArrayAdd(FontGlyph, &newAtlas->glyphs);
+					NotNull(newGlyph);
+					ClearPointer(newGlyph);
+					newGlyph->codepoint = codepoint;
+					newGlyph->ttfGlyphIndex = glyphIndex;
+					newGlyph->metrics.advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
+					newGlyph->metrics.renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
+					newGlyph->metrics.renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
+					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, newAtlas->metrics.maxAscend);
+					
+					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
+					if (glyphSize.Width > 0 && glyphSize.Height > 0)
+					{
+						Assert(packedRecIndex < numGlyphsInAtlas);
+						stbrp_rect packedRec = packRects[packedRecIndex];
+						packedRecIndex++;
+						Assert(packedRec.was_packed);
+						
+						v2i bitmapSize = NewV2i((i32)fontFile->freeTypeFace->glyph->bitmap.width, (i32)fontFile->freeTypeFace->glyph->bitmap.rows);
+						Assert(bitmapSize.Width > 0 && bitmapSize.Height > 0);
+						//NOTE: the bitmapSize can be smaller than glyph metrics reported AND it can be 1 pixel larger too! We added 2 pixels of padding so we can allow it to take the right and bottom padding area if needed
+						Assert(bitmapSize.Width >= glyphSize.Width-2 && bitmapSize.Width <= glyphSize.Width+1);
+						Assert(bitmapSize.Height >= glyphSize.Height-2 && bitmapSize.Height <= glyphSize.Height+1);
+						
+						newGlyph->atlasSourcePos = NewV2i(packedRec.x + packingPadding, packedRec.y + packingPadding);
+						newGlyph->metrics.glyphSize = bitmapSize;
+						newGlyph->metrics.logicalRec.Width = MaxR32(newGlyph->metrics.renderOffset.X + (r32)newGlyph->metrics.glyphSize.Width, newGlyph->metrics.advanceX);
+						
+						// PrintLine_D("Codepoint U+%X is %dx%d offset=(%g, %g) advance=%g", codepoint, newGlyph->atlasSourceRec.Width, newGlyph->atlasSourceRec.Height, newGlyph->renderOffset.X, newGlyph->renderOffset.Y, newGlyph->advanceX);
+						// PrintLine_D("Codepoint U+%X packed (%d, %d, %d, %d) in %dx%d atlas[%llu]",
+						// 	codepoint,
+						// 	newGlyph->atlasSourceRec.X, newGlyph->atlasSourceRec.Y, newGlyph->atlasSourceRec.Width, newGlyph->atlasSourceRec.Height,
+						// 	atlasSize.Width, atlasSize.Height,
+						// 	font->atlases.length-1
+						// );
+						
+						for (i32 yOffset = 0; yOffset < bitmapSize.Height; yOffset++)
+						{
+							for (i32 xOffset = 0; xOffset < bitmapSize.Width; xOffset++)
+							{
+								Color32* pixelPntr = &pixelsPntr[INDEX_FROM_COORD2D(packedRec.x + packingPadding + xOffset, packedRec.y + packingPadding + yOffset, atlasSize.Width, atlasSize.Height)];
+								if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO ||
+									fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
+								{
+									u8 alphaValue = 0;
+									if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
+									{
+										Assert(fontFile->freeTypeFace->glyph->bitmap.pitch == CeilDivI32((i32)fontFile->freeTypeFace->glyph->bitmap.width, 8));
+										u8 bitmapByte = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset/8, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+										bool bitmapBit = (bitmapByte & (0x80 >> (xOffset%8)));
+										alphaValue = (bitmapBit ? 0xFF : 0x00);
+									}
+									else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY)
+									{
+										alphaValue = fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset, yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+									}
+									pixelPntr->r = 255;
+									pixelPntr->g = 255;
+									pixelPntr->b = 255;
+									pixelPntr->a = alphaValue;
+								}
+								else if (fontFile->freeTypeFace->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA)
+								{
+									u8* pixelBgraPntr = &fontFile->freeTypeFace->glyph->bitmap.buffer[INDEX_FROM_COORD2D(xOffset * sizeof(u32), yOffset, fontFile->freeTypeFace->glyph->bitmap.pitch, fontFile->freeTypeFace->glyph->bitmap.height)];
+									pixelPntr->r = pixelBgraPntr[0];
+									pixelPntr->g = pixelBgraPntr[1];
+									pixelPntr->b = pixelBgraPntr[2];
+									pixelPntr->a = pixelBgraPntr[3];
+								}
+								else { AssertMsg(false, "Unsupported pixel format rendered from FT_Render_Glyph"); }
+							}
+						}
+					}
+				}
+			}
+			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
+			{
+				const CustomFontCharRange* charRange = &customGlyphRanges[rIndex];
+				NotNull(charRange->glyphs);
+				
+				FontCharRange* newCharRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
+				NotNull(newCharRange);
+				ClearPointer(newCharRange);
+				newCharRange->startCodepoint = charRange->startCodepoint;
+				newCharRange->endCodepoint = charRange->endCodepoint;
+				newCharRange->glyphArrayStartIndex = newAtlas->glyphs.length;
+				
+				uxx numGlyphsInCustomRange = (charRange->endCodepoint - charRange->startCodepoint)+1;
+				for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
+				{
+					const CustomFontGlyph* customGlyph = &charRange->glyphs[gIndex];
+					v2i glyphSize = customGlyph->imageData.size;
+					
+					FontGlyph* newGlyph = VarArrayAdd(FontGlyph, &newAtlas->glyphs);
+					NotNull(newGlyph);
+					ClearPointer(newGlyph);
+					newGlyph->codepoint = customGlyph->codepoint;
+					newGlyph->ttfGlyphIndex = 0;
+					newGlyph->metrics.advanceX = (r32)glyphSize.Width;
+					newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - glyphSize.Height/2.0f));
+					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)glyphSize.Width, newAtlas->metrics.maxAscend);
+					
+					if (glyphSize.Width > 0 && glyphSize.Height > 0)
+					{
+						Assert(packedRecIndex < numGlyphsInAtlas);
+						stbrp_rect packedRec = packRects[packedRecIndex];
+						packedRecIndex++;
+						Assert(packedRec.was_packed);
+						
+						newGlyph->atlasSourcePos = NewV2i(packedRec.x, packedRec.y);
+						newGlyph->metrics.glyphSize = NewV2i(packedRec.w - packingPadding*2, packedRec.h - packingPadding*2);
+						
+						for (i32 rowIndex = 0; rowIndex < customGlyph->imageData.size.Height; rowIndex++)
+						{
+							const Color32* inRowPntr = (const Color32*)&customGlyph->imageData.pixels[INDEX_FROM_COORD2D(0, rowIndex, glyphSize.Width, glyphSize.Height)];
+							Color32* outRowPntr = &pixelsPntr[INDEX_FROM_COORD2D(packedRec.x + packingPadding + 0, packedRec.y + packingPadding + rowIndex, atlasSize.Width, atlasSize.Height)];
+							MyMemCopy(outRowPntr, inRowPntr, sizeof(Color32) * glyphSize.Width);
+						}
+					}
+				}
+			}
+			Assert(packedRecIndex == numGlyphsInAtlas);
+		}
+		
+		Str8 textureName = PrintInArenaStr(scratch, "%.*s_atlas[%llu]", StrPrint(font->name), (u64)(font->atlases.length-1));
+		newAtlas->texture = InitTexture(font->arena, textureName, atlasSize, pixelsPntr, TextureFlag_NoMipmaps);
+		if (newAtlas->texture.error != Result_Success)
+		{
+			result = newAtlas->texture.error;
+			FreeFontAtlas(font, newAtlas);
+			VarArrayRemoveLast(FontAtlas, &font->atlases);
+			break;
+		}
+		
+		result = Result_Success;
+	} while(false);
+	
+	#else //!BUILD_WITH_FREETYPE
+	
+	do
+	{
+		Assert(font->numFiles > 0);
+		FontFile* fontFile = &font->files[0];
+		
+		stbtt_pack_range* stbRanges = AllocArray(stbtt_pack_range, scratch, numCharRanges);
+		NotNull(stbRanges);
+		MyMemSet(stbRanges, 0x00, sizeof(stbtt_pack_range) * numCharRanges);
+		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+		{
+			const FontCharRange* charRange = &charRanges[rIndex];
+			Assert(charRange->endCodepoint >= charRange->startCodepoint);
+			stbtt_pack_range* stbRange = &stbRanges[rIndex];
+			stbRange->font_size = fontSize;
+			stbRange->first_unicode_codepoint_in_range = (int)charRange->startCodepoint;
+			// int *array_of_unicode_codepoints;       // if non-zero, then this is an array of unicode codepoints
+			stbRange->num_chars = (int)(charRange->endCodepoint+1 - charRange->startCodepoint);
+			uxx numGlyphsInCharRange = (charRange->endCodepoint - charRange->startCodepoint)+1;
+			stbRange->chardata_for_range = AllocArray(stbtt_packedchar, scratch, numGlyphsInCharRange);
+			NotNull(stbRange->chardata_for_range);
+			MyMemSet(stbRange->chardata_for_range, 0x00, sizeof(stbtt_packedchar) * numGlyphsInCharRange);
+		}
+		
+		//NOTE: This used to be stbtt_PackFontRanges
+		stbtt_fontinfo fontInfo;
+		fontInfo.userdata = scratch;
+		stbtt_InitFont(&fontInfo, fontFile->fileContents.bytes, stbtt_GetFontOffsetForIndex(fontFile->fileContents.bytes, 0));
+		
+		stbrp_rect* rects = AllocArray(stbrp_rect, scratch, numCodepointsTotal);
+		NotNull(rects);
+		int numRects = 0;
+		uxx numPixels = 0;
+		Color32* pixelsPntr = nullptr;
+		
+		bool packedSuccessfully = false;
+		i32 atlasSideLength = minAtlasSize;
+		while (atlasSideLength <= maxAtlasSize)
+		{
+			uxx scratchMark = ArenaGetMark(scratch);
+			
+			numPixels = (uxx)(atlasSideLength * atlasSideLength);
+			pixelsPntr = AllocArray(Color32, scratch, numPixels);
+			NotNull(pixelsPntr);
+			MyMemSet(pixelsPntr, 0x00, sizeof(Color32) * numPixels);
+			
+			stbtt_pack_context packContext = ZEROED;
+			int beginResult = stbtt_PackBegin(
+				&packContext, //context
+				(u8*)pixelsPntr, //pixels
+				(int)atlasSideLength, (int)atlasSideLength, //width, height
+				(int)(atlasSideLength * sizeof(u8)), //stride_in_bytes
+				1, //padding (between chars)
+				scratch //alloc_context
+			);
+			Assert(beginResult != 0);
+			
+			numRects = stbtt_PackFontRangesGatherRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
+			Assert(numRects >= 0 && (uxx)numRects == numCodepointsInCharRanges);
+			uxx customGlyphIndex = 0;
+			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
+			{
+				const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
+				uxx numGlyphsInCustomRange = (customRange->endCodepoint - customRange->startCodepoint)+1;
+				for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
+				{
+					const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
+					DebugAssert(customGlyphIndex < numCodepointsInCustomRanges);
+					stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphIndex];
+					reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
+						? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
+						: customGlyph->sourceRec;
+					Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
+					Assert(sourceRec.Width > 0 && sourceRec.Height > 0);
+					Assert(sourceRec.X + sourceRec.Width <= customGlyph->imageData.size.Width);
+					Assert(sourceRec.Y + sourceRec.Height <= customGlyph->imageData.size.Height);
+					customGlyphRec->w = (int)sourceRec.Width;
+					customGlyphRec->h = (int)sourceRec.Height;
+					customGlyphIndex++;
+				}
+			}
+			
+			stbtt_PackFontRangesPackRects(&packContext, rects, (int)numCodepointsTotal);
+			int packResult = stbtt_PackFontRangesRenderIntoRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
+			if (packResult > 0) { packedSuccessfully = true; break; }
+			ArenaResetToMark(scratch, scratchMark); //only reset scratch if we failed to pack! Thus pixelsPntr can live on for use below
+			atlasSideLength *= 2;
+		}
+		if (!packedSuccessfully) { result = Result_NotEnoughSpace; break; }
+		v2i atlasSize = FillV2i(atlasSideLength);
+		
+		// Walk backwards from end, expanding each 1-byte/single channel pixel value into a Color32 (4-byte/4 channel)
+		for (uxx pixelIndex = numPixels; pixelIndex > 0; pixelIndex--)
+		{
+			Color32* writePntr = &pixelsPntr[pixelIndex-1];
+			u8* readPntr = &((u8*)pixelsPntr)[pixelIndex-1];
+			writePntr->a = *readPntr;
+			writePntr->r = 255;
+			writePntr->g = 255;
+			writePntr->b = 255;
+		}
+		
+		// Copy custom glyph image data into the atlas
+		uxx customGlyphCopyIndex = 0;
+		for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
+		{
+			const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
+			uxx numGlyphsInCustomRange = (customRange->endCodepoint - customRange->startCodepoint)+1;
+			for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
+			{
+				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
+				DebugAssert(customGlyphCopyIndex < numCodepointsInCustomRanges);
+				stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphCopyIndex];
+				reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
+					? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
+					: customGlyph->sourceRec;
+				Assert(customGlyphRec->w == (int)sourceRec.Width);
+				Assert(customGlyphRec->h == (int)sourceRec.Height);
+				Assert(customGlyphRec->x >= 0 && customGlyphRec->y >= 0);
+				Assert(customGlyphRec->x + customGlyphRec->w <= (int)atlasSize.Width);
+				Assert(customGlyphRec->y + customGlyphRec->h <= (int)atlasSize.Height);
+				for (i32 yOffset = 0; yOffset < sourceRec.Height; yOffset++)
+				{
+					v2i targetPos = NewV2i((i32)customGlyphRec->x, (i32)customGlyphRec->y + yOffset);
+					u32* targetPntr = (u32*)&pixelsPntr[INDEX_FROM_COORD2D(targetPos.X, targetPos.Y, atlasSize.Width, atlasSize.Height)];
+					u32* sourcePntr = &customGlyph->imageData.pixels[INDEX_FROM_COORD2D(sourceRec.X, sourceRec.Y + yOffset, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)];
+					MyMemCopy(targetPntr, sourcePntr, sizeof(u32) * sourceRec.Width);
+				}
+				customGlyphCopyIndex++;
+			}
+		}
+		
+		FontAtlas* newAtlas = VarArrayAdd(FontAtlas, &font->atlases);
+		NotNull(newAtlas);
+		ClearPointer(newAtlas);
+		Str8 textureName = PrintInArenaStr(scratch, "%.*s_atlas[%llu]", StrPrint(font->name), (u64)(font->atlases.length-1));
+		newAtlas->texture = InitTexture(font->arena, textureName, atlasSize, pixelsPntr, TextureFlag_NoMipmaps);
+		if (newAtlas->texture.error != Result_Success)
+		{
+			VarArrayPop(FontCharRange, &font->atlases);
+			result = newAtlas->texture.error;
+			break;
+		}
+		
+		newAtlas->fontSize = fontSize;
+		newAtlas->metrics.fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+		newAtlas->styleFlags = styleFlags;
+		newAtlas->glyphRange.startCodepoint = minCodepoint;
+		newAtlas->glyphRange.endCodepoint = maxCodepoint;
+		
+		int ascent, descent, lineGap;
+		stbtt_GetFontVMetrics(&fontFile->ttfInfo, &ascent, &descent, &lineGap);
+		newAtlas->metrics.maxAscend = (r32)ascent * newAtlas->metrics.fontScale;
+		newAtlas->metrics.maxDescend = (r32)(-descent) * newAtlas->metrics.fontScale;
+		newAtlas->metrics.lineHeight = newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend + ((r32)lineGap * newAtlas->metrics.fontScale);
+		
+		//TODO: This is sort of a hack and causes problems with things like highlight/clip rectangles that need to really encompass the true maxAscend
+		//      So for now we are going to only use this value to inform the centerOffset
+		//The ascent value returned by GetFontVMetrics is often way higher than all the characters we normally print
+		//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
+		//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
+		int wBoxX0, wBoxY0, wBoxX1, wBoxY1;
+		int getBoxResult = stbtt_GetCodepointBox(&fontFile->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
+		if (getBoxResult > 0)
+		{
+			r32 pretendMaxAscend = MinR32(newAtlas->metrics.maxAscend, (r32)wBoxY1 * newAtlas->metrics.fontScale);
+			newAtlas->metrics.centerOffset = pretendMaxAscend / 2.0f;
+		}
+		
+		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
+		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal);
+		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+		{
+			const FontCharRange* charRange = &charRanges[rIndex];
+			stbtt_pack_range* stbRange = &stbRanges[rIndex];
+			FontCharRange* altasRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
+			MyMemCopy(altasRange, charRange, sizeof(FontCharRange));
+			uxx numGlyphsInCharRange = (charRange->endCodepoint - charRange->startCodepoint)+1;
+			altasRange->glyphArrayStartIndex = newAtlas->glyphs.length;
+			FontGlyph* newGlyphs = VarArrayAddMulti(FontGlyph, &newAtlas->glyphs, numGlyphsInCharRange);
+			NotNull(newGlyphs);
+			MyMemSet(newGlyphs, 0x00, sizeof(FontGlyph) * numGlyphsInCharRange);
+			NotNull(stbRange->chardata_for_range);
+			for (uxx gIndex = 0; gIndex < numGlyphsInCharRange; gIndex++)
+			{
+				const stbtt_packedchar* stbCharInfo = &stbRange->chardata_for_range[gIndex];
+				FontGlyph* glyph = &newGlyphs[gIndex];
+				glyph->codepoint = charRange->startCodepoint + (u32)gIndex;
+				glyph->ttfGlyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, glyph->codepoint);
+				// if (glyph->ttfGlyphIndex < 0) { PrintLine_D("Codepoint 0x%08X has ttfGlyphIndex %d", glyph->codepoint, glyph->ttfGlyphIndex); }
+				DebugAssert(stbCharInfo->x0 <= stbCharInfo->x1);
+				DebugAssert(stbCharInfo->y0 <= stbCharInfo->y1);
+				DebugAssert(stbCharInfo->x0 >= 0);
+				DebugAssert(stbCharInfo->x0 <= atlasSize.Width);
+				DebugAssert(stbCharInfo->x1 >= 0);
+				DebugAssert(stbCharInfo->x1 <= atlasSize.Width);
+				DebugAssert(stbCharInfo->y0 >= 0);
+				DebugAssert(stbCharInfo->y0 <= atlasSize.Height);
+				DebugAssert(stbCharInfo->y1 >= 0);
+				DebugAssert(stbCharInfo->y1 <= atlasSize.Height);
+				glyph->atlasSourcePos = NewV2i((i32)stbCharInfo->x0, (i32)stbCharInfo->y0);
+				glyph->metrics.glyphSize = NewV2i((i32)(stbCharInfo->x1 - stbCharInfo->x0), (i32)(stbCharInfo->y1 - stbCharInfo->y0));
+				glyph->metrics.advanceX = IsCodepointZeroWidth(glyph->codepoint) ? 0 : stbCharInfo->xadvance;
+				glyph->metrics.renderOffset = NewV2(stbCharInfo->xoff, stbCharInfo->yoff);
+				glyph->metrics.logicalRec = NewRec(stbCharInfo->xoff, -newAtlas->metrics.maxAscend, (r32)glyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
+				if (glyph->metrics.logicalRec.Width == 0)
+				{
+					glyph->metrics.logicalRec.Width = glyph->metrics.advanceX;
+				}
+				// TODO: What are these floats for? stbCharInfo->xoff2 stbCharInfo->yoff2
+			}
+		}
+		
+		// Fill out glyph information for all custom glyphs
+		uxx customGlyphInfoIndex = 0;
+		for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
+		{
+			const CustomFontCharRange* customRange = &customGlyphRanges[rIndex];
+			uxx numGlyphsInCustomRange = (customRange->endCodepoint - customRange->startCodepoint)+1;
+			FontCharRange* newRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
+			ClearPointer(newRange);
+			newRange->startCodepoint = customRange->startCodepoint;
+			newRange->endCodepoint = customRange->endCodepoint;
+			newRange->glyphArrayStartIndex = newAtlas->glyphs.length;
+			
+			FontGlyph* newGlyphs = VarArrayAddMulti(FontGlyph, &newAtlas->glyphs, numGlyphsInCustomRange);
+			NotNull(newGlyphs);
+			for (uxx gIndex = 0; gIndex < numGlyphsInCustomRange; gIndex++)
+			{
+				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
+				DebugAssert(customGlyphInfoIndex < numCodepointsInCustomRanges);
+				stbrp_rect* packedGlyphRec = &rects[numCodepointsInCharRanges + customGlyphInfoIndex];
+				FontGlyph* newGlyph = &newGlyphs[gIndex];
+				ClearPointer(newGlyph);
+				newGlyph->codepoint = customGlyph->codepoint;
+				newGlyph->ttfGlyphIndex = INVALID_TTF_GLYPH_INDEX;
+				newGlyph->atlasSourcePos = NewV2i((i32)packedGlyphRec->x, (i32)packedGlyphRec->y);
+				newGlyph->metrics.glyphSize = NewV2i((i32)packedGlyphRec->w, (i32)packedGlyphRec->h);
+				newGlyph->metrics.advanceX = (r32)newGlyph->metrics.glyphSize.Width;
+				newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - newGlyph->metrics.glyphSize.Height/2.0f));
+				newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)newGlyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
+				customGlyphInfoIndex++;
+			}
+		}
+		
+		result = Result_Success;
+	} while(false);
+	
+	#endif //BUILD_WITH_FREETYPE
+	
+	ScratchEnd(scratch);
+	TracyCZoneEnd(_funcZone);
+	return result;
+}
+PEXPI Result TryBakeFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+{
+	return TryBakeFontAtlasWithCustomGlyphs(font, fontSize, styleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
+}
+
+PEXP Result TryMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
+{
+	if (numSizes > 0) { NotNull(fontSizes); }
+	for (uxx sIndex = 0; sIndex < numSizes; sIndex++)
+	{
+		Result bakeResult = TryBakeFontAtlasWithCustomGlyphs(font, fontSizes[sIndex], extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
+		if (bakeResult != Result_Success) { return bakeResult; }
+	}
+	return Result_Success;
+}
+PEXPI Result TryMultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+{
+	return TryMultiBakeFontAtlasesWithCustomGlyphs(font, numSizes, fontSizes, extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, 0, nullptr);
 }
 
 PEXP void CommitFontAtlasTextureUpdates(PigFont* font, FontAtlas* activeAtlas)

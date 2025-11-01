@@ -396,26 +396,26 @@ void AppInit(void)
 	{
 		Result attachResult = Result_None;
 		Result bakeResult = Result_None;
-		
 		FontCharRange basicCharRanges[] = {
 			FontCharRange_ASCII,
 			FontCharRange_LatinSupplementAccent,
-			NewFontCharRangeSingle(UNICODE_ZERO_WIDTH_SPACE_CODEPOINT),
-			NewFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
-			// NewFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
+			// NewFontCharRangeSingle(UNICODE_ZERO_WIDTH_SPACE_CODEPOINT),
+			// NewFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
+			NewFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
 		};
-		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
-		bakeResult = TryBakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
-		FillFontKerningTable(&testFont);
-		RemoveAttachedFontFiles(&testFont);
-		
 		FontCharRange japaneseCharRanges[] = {
 			FontCharRange_Hiragana,
 			FontCharRange_Katakana,
 		};
-		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
-		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success);
-		RemoveAttachedFontFiles(&testFont);
+		
+		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		// bakeResult = TryBakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
+		// FillFontKerningTable(&testFont);
+		// RemoveAttachedFontFiles(&testFont);
+		
+		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
+		// bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success);
+		// RemoveAttachedFontFiles(&testFont);
 		
 		#if 0
 		FontCharRange emojiCharRanges[] = {
@@ -449,6 +449,9 @@ void AppInit(void)
 		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
 		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
+		
+		bakeResult = TryBakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
+		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success);
 	}
 	else
 	{
