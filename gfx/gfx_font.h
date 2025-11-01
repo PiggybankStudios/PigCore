@@ -45,9 +45,8 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Choose if entire BakeFontAtlas should fail if any codepoints are not found in the font(s)
 //TODO: Implement stb_truetype.h code path!
-//TODO: Can't render emoji in Bold rich text
+//TODO: Choose closest matching font file in style rather than forcing a perfect style match (Can't render emoji in Bold rich text, or when ColoredGlyphs is off?)
 //TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 //TODO: Add convenience functions to GfxSystem API so we can get the lineHeight, centerOffset, etc. easily
@@ -259,6 +258,7 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints);
 	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRangeSingle(CustomFontGlyph* glyph);
 	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph* glyph);
+	void RemoveCodepointsFromCharRanges(VarArray* charRanges, uxx numCodepoints, u32* codepoints);
 	Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena);
 	void FillFontKerningTable(PigFont* font);
 	PIG_CORE_INLINE FontAtlas* GetDefaultFontAtlas(PigFont* font);
@@ -476,6 +476,44 @@ PEXPI CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph*
 	}
 	result.glyphs = glyphs;
 	return result;
+}
+
+PEXP void RemoveCodepointsFromCharRanges(VarArray* charRanges, uxx numCodepoints, u32* codepoints)
+{
+	for (uxx cIndex = 0; cIndex < numCodepoints; cIndex++)
+	{
+		u32 codepointToRemove = codepoints[cIndex];
+		bool foundCharRange = false;
+		VarArrayLoop(charRanges, rIndex)
+		{
+			VarArrayLoopGet(FontCharRange, charRange, charRanges, rIndex);
+			if (charRange->startCodepoint <= codepointToRemove && charRange->endCodepoint >= codepointToRemove)
+			{
+				foundCharRange = true;
+				if (charRange->startCodepoint == charRange->endCodepoint) //single codepoint range needs to be removed entirely
+				{
+					VarArrayRemoveAt(FontCharRange, charRanges, rIndex);
+				}
+				else if (charRange->startCodepoint == codepointToRemove) //bump up startCodepoint by one
+				{
+					charRange->startCodepoint++;
+				}
+				else if (charRange->endCodepoint == codepointToRemove) //bump down endCodepoint by one
+				{
+					charRange->endCodepoint--;
+				}
+				else //otherwise we need to split the charRange into two
+				{
+					FontCharRange lowerRange = NewFontCharRange(charRange->startCodepoint, codepointToRemove-1);
+					FontCharRange upperRange = NewFontCharRange(codepointToRemove+1, charRange->endCodepoint);
+					MyMemCopy(charRange, &lowerRange, sizeof(FontCharRange));
+					VarArrayInsertValue(FontCharRange, charRanges, rIndex+1, upperRange);
+				}
+				break;
+			}
+		}
+		Assert(foundCharRange);
+	}
 }
 
 static bool InitializeFreeTypeIfNeeded()
@@ -1632,8 +1670,7 @@ PEXPI FontAtlas* TryGetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, boo
 	return result;
 }
 
-//NOTE: This function does not support "fallback" fonts. It only uses the first font file that is attached
-//TODO: We should allow for some way for the calling code to tell us which fontFile to use to pack this atlas, that way we can have all our font files attached for future use as an active font, and still pre-bake some static atlases using specific fonts
+//NOTE: This function can return Result_Partial which indicates that one or more codepoints did not have any font files that provided glyphs for them. This result can be ignored or it can be surfaced to the user (or hit a breakpoint in debug mode)
 PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 styleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	NotNull(font);
@@ -1689,9 +1726,8 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 	{
 		const int packingPadding = 1; //px NOTE: This has to be >= 1 because some glyphs end up being 1 pixel wider/taller than their reported size before rasterization!
 		
-		// FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		// FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		// Assert(setCharSizeError == 0);
+		VarArray missingCodepoints;
+		InitVarArray(u32, &missingCodepoints, scratch);
 		
 		uxx numGlyphsInAtlas = 0;
 		stbrp_rect* packRects = AllocArray(stbrp_rect, scratch, numCodepointsTotal);
@@ -1706,34 +1742,13 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, nullptr);
 					if (fontFile == nullptr)
 					{
-						PrintLine_E("Font files don't contain glyph for codepoint 0x%08X!", codepoint);
-						DebugAssertMsg(fontFile != nullptr, "Font files don't contain glyph for codepoint in TryBakeFontAtlas!");
-						result = Result_NotFound; //TODO: Maybe we shouldn't fail the whole bake for a single glyph missing?
-						break;
+						PrintLine_E("Attached font files don't contain glyph for codepoint 0x%08X!", codepoint);
+						// DebugAssertMsg(fontFile != nullptr, "Font files don't contain glyph for codepoint in TryBakeFontAtlas!");
+						VarArrayAddValue(u32, &missingCodepoints, codepoint);
+						result = Result_Partial;
+						continue;
 					}
 					NotNull(fontFile->freeTypeFace->glyph); //TryFindFontFileForCodepointAtSize should have called FT_Load_Glyph for us
-					
-					// FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
-					// if (glyphIndex == 0)
-					// {
-					// 	PrintLine_E("Font doesn't contain glyph for codepoint 0x%08X!", codepoint);
-					// 	DebugAssert(glyphIndex != 0);
-					// 	result = Result_NotFound;
-					// 	break;
-					// }
-					
-					// FT_Int32 loadFlags = FT_LOAD_DEFAULT;
-					// //TODO: Should we check FT_HAS_COLOR?
-					// if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
-					// FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
-					// if (loadGlyphError != 0)
-					// {
-					// 	PrintLine_E("Failed to load glyph for codepoint 0x%08X: %s", codepoint, loadGlyphError);
-					// 	DebugAssert(loadGlyphError == 0);
-					// 	result = Result_InvalidCharacter;
-					// 	break;
-					// }
-					// NotNull(fontFile->freeTypeFace->glyph);
 					
 					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
 					if (glyphSize.Width > 0 && glyphSize.Height > 0)
@@ -1753,7 +1768,8 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					}
 				}
 			}
-			if (result != Result_None) { break; }
+			if (result != Result_None && result != Result_Partial) { break; }
+			
 			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
 			{
 				const CustomFontCharRange* charRange = &customGlyphRanges[rIndex];
@@ -1808,7 +1824,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 		newAtlas->glyphRange.startCodepoint = minCodepoint;
 		newAtlas->glyphRange.endCodepoint = maxCodepoint;
 		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
-		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal);
+		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal - missingCodepoints.length);
 		
 		{
 			FontFile* fontFile = TryFindFontFileWithStyle(font, styleFlags, nullptr);
@@ -1823,34 +1839,41 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 			newAtlas->metrics.centerOffset = newAtlas->metrics.maxAscend - (newAtlas->metrics.lineHeight / 2.0f); //TODO: Fill the centerOffset using the W measure method that we did below?
 		}
 		
+		//Add all charRanges to atlas info
+		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+		{
+			const FontCharRange* charRange = &charRanges[rIndex];
+			FontCharRange* newCharRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
+			NotNull(newCharRange);
+			ClearPointer(newCharRange);
+			newCharRange->startCodepoint = charRange->startCodepoint;
+			newCharRange->endCodepoint = charRange->endCodepoint;
+			newCharRange->glyphArrayStartIndex = newAtlas->glyphs.length;
+		}
+		if (missingCodepoints.length > 0)
+		{
+			RemoveCodepointsFromCharRanges(&newAtlas->charRanges, missingCodepoints.length, VarArrayGetFirstSoft(u32, &missingCodepoints));
+			if (newAtlas->charRanges.length > 0)
+			{
+				newAtlas->glyphRange.startCodepoint = VarArrayGetFirst(FontCharRange, &newAtlas->charRanges)->startCodepoint;
+				newAtlas->glyphRange.endCodepoint = VarArrayGetLast(FontCharRange, &newAtlas->charRanges)->endCodepoint;
+			}
+			else { newAtlas->glyphRange = NewFontCharRangeSingle(0); }
+		}
+		
 		{
 			uxx packedRecIndex = 0;
-			for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+			VarArrayLoop(&newAtlas->charRanges, rIndex)
 			{
-				const FontCharRange* charRange = &charRanges[rIndex];
-				
-				FontCharRange* newCharRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
-				NotNull(newCharRange);
-				ClearPointer(newCharRange);
-				newCharRange->startCodepoint = charRange->startCodepoint;
-				newCharRange->endCodepoint = charRange->endCodepoint;
+				VarArrayLoopGet(FontCharRange, newCharRange, &newAtlas->charRanges, rIndex);
 				newCharRange->glyphArrayStartIndex = newAtlas->glyphs.length;
 				
-				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
+				for (u32 codepoint = newCharRange->startCodepoint; codepoint <= newCharRange->endCodepoint; codepoint++)
 				{
 					unsigned int glyphIndex = 0;
 					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, &glyphIndex);
 					NotNull(fontFile);
 					NotNull(fontFile->freeTypeFace->glyph); //TryFindFontFileForCodepointAtSize should have called FT_Load_Glyph for us
-					
-					// FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
-					// Assert(glyphIndex != 0);
-					// FT_Int32 loadFlags = FT_LOAD_DEFAULT;
-					// //TODO: Should we check FT_HAS_COLOR?
-					// if (IsFlagSet(newAtlas->styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
-					// FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
-					// Assert(loadGlyphError == 0);
-					// NotNull(fontFile->freeTypeFace->glyph);
 					
 					FT_Error renderGlyphError = FT_Render_Glyph(fontFile->freeTypeFace->glyph, FT_RENDER_MODE_NORMAL);
 					Assert(renderGlyphError == 0);
@@ -1930,6 +1953,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					}
 				}
 			}
+			
 			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
 			{
 				const CustomFontCharRange* charRange = &customGlyphRanges[rIndex];
@@ -1989,7 +2013,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 			break;
 		}
 		
-		result = Result_Success;
+		if (result == Result_None) { result = Result_Success; }
 	} while(false);
 	
 	#else //!BUILD_WITH_FREETYPE
