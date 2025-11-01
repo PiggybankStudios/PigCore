@@ -123,6 +123,12 @@ plex GfxSystem
 	PIG_CORE_INLINE void GfxSystem_BindFontEx(GfxSystem* system, PigFont* font, r32 fontSize, u8 fontStyleFlags);
 	PIG_CORE_INLINE void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSize);
 	PIG_CORE_INLINE void GfxSystem_BindFont(GfxSystem* system, PigFont* font);
+	PIG_CORE_INLINE r32 GfxSystem_GetLineHeight(GfxSystem* system);
+	PIG_CORE_INLINE r32 GfxSystem_GetMaxAscend(GfxSystem* system);
+	PIG_CORE_INLINE r32 GfxSystem_GetMaxDescend(GfxSystem* system);
+	PIG_CORE_INLINE r32 GfxSystem_GetCenterOffset(GfxSystem* system);
+	PIG_CORE_INLINE FontLineMetrics GfxSystem_GetLineMetrics(GfxSystem* system);
+	PIG_CORE_INLINE FontGlyphMetrics GfxSystem_GetGlyphMetricsFor(GfxSystem* system, u32 codepoint);
 	PIG_CORE_INLINE void GfxSystem_SetClipRec(GfxSystem* system, reci clipRec);
 	PIG_CORE_INLINE reci GfxSystem_AddClipRec(GfxSystem* system, reci clipRec);
 	PIG_CORE_INLINE void GfxSystem_DisableClipRec(GfxSystem* system);
@@ -552,6 +558,40 @@ PEXPI void GfxSystem_BindFont(GfxSystem* system, PigFont* font)
 		fontStyleFlags = firstAtlas->styleFlags;
 	}
 	GfxSystem_BindFontEx(system, font, fontSize, fontStyleFlags);
+}
+
+PEXPI r32 GfxSystem_GetLineHeight(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontLineHeight(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI r32 GfxSystem_GetMaxAscend(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontMaxAscend(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI r32 GfxSystem_GetMaxDescend(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontMaxDescend(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI r32 GfxSystem_GetCenterOffset(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontCenterOffset(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI FontLineMetrics GfxSystem_GetLineMetrics(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontLineMetrics(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI FontGlyphMetrics GfxSystem_GetGlyphMetricsFor(GfxSystem* system, u32 codepoint)
+{
+	NotNull(system->state.font);
+	FontGlyphMetrics result = ZEROED;
+	bool gotMetrics = TryGetFontGlyphMetrics(system->state.font, codepoint, system->state.fontSize, system->state.fontStyleFlags, &result);
+	Assert(gotMetrics);
+	return result;
 }
 
 // +--------------------------------------------------------------+

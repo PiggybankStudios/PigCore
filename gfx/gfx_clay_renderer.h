@@ -79,8 +79,6 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	Assert(config->fontId < renderer->fonts.length);
 	ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)config->fontId);
 	r32 fontSize = (r32)config->fontSize;
-	FontLineMetrics lineMetrics = ZEROED;
-	GetFontLineMetrics(font->pntr, fontSize, font->styleFlags, &lineMetrics);
 	//NOTE: Clay has no way of knowing the lineHeight, so if we don't tell it otherwise it will place text a little too close to each other vertically
 	//NOTE: Clay asks us for sizes of words, not entire strings. And it expects the composition of each word + spaces together should match the size of the whole string measured together
 	//      Our text measuring code does not treat advanceX as part of the logical space, so if the final character in a word is a glyph that has advanceX > glyphWidth then it will return
@@ -89,7 +87,8 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	const bool includeAdvanceX = true;
 	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, includeAdvanceX, config->userData.wrapWidth, richText);
 	
-	if (measure.Height < lineMetrics.lineHeight) { measure.Height = lineMetrics.lineHeight; }
+	r32 lineHeight = GetFontLineHeight(font->pntr, fontSize, font->styleFlags);
+	if (measure.Height < lineHeight) { measure.Height = lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
 	v2 result = NewV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.Height, measure.visualRec.Height)));
 	ScratchEnd(scratch);

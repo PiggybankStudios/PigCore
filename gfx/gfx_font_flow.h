@@ -183,8 +183,7 @@ static Result DoFontFlow_FindNextWordWrapIndex(const FontFlowState* realState, F
 
 static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
 {
-	FontLineMetrics metrics = ZEROED;
-	GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &metrics);
+	FontLineMetrics metrics = GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
 	rec highlightRec = NewRec(
 		state->highlightStartPos.X,
 		state->highlightStartPos.Y - metrics.centerOffset - metrics.lineHeight/2.0f - 1,
@@ -223,8 +222,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			flowOut->endPos = state->position;
 			flowOut->visualRec = NewRecV(state->position, V2_Zero);
 			flowOut->logicalRec = NewRecV(state->position, V2_Zero);
-			FontLineMetrics lineMetrics = ZEROED;
-			GetFontLineMetrics(state->font, state->startFontSize, state->startFontStyle, &lineMetrics);
+			FontLineMetrics lineMetrics = GetFontLineMetrics(state->font, state->startFontSize, state->startFontStyle);
 			flowOut->logicalRec.Y -= lineMetrics.maxAscend;
 			flowOut->logicalRec.Height = lineMetrics.maxAscend;
 			flowOut->numGlyphs = 0;
@@ -360,7 +358,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					if (!TryGetFontGlyphMetrics(state->font, fontCodepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics))
 					{
 						FontLineMetrics lineMetrics = ZEROED;
-						if (GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &lineMetrics))
+						if (TryGetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &lineMetrics))
 						{
 							r32 predictedScale = lineMetrics.lineHeight / fontAtlas->metrics.lineHeight;
 							glyphMetrics.glyphSize = NewV2i(

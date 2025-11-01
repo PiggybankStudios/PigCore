@@ -45,9 +45,9 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
+//TODO: Figure out why performance is so bad when we are at our atlas limit and not all characters on screen were able to find space!
 //TODO: Implement stb_truetype.h code path!
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
-//TODO: Add convenience functions to GfxSystem API so we can get the lineHeight, centerOffset, etc. easily
 
 //TODO: When we don't have a perfect style match file attached, we can end up with multiple baked glyphs of the same codepoint in different atlases that are marked with different styles. Maybe we should prevent this? Maybe the font file we find should have an effect on which atlas we look at adding a glyph to?
 //TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
@@ -289,7 +289,8 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE void FontNewFrame(PigFont* font, u64 programTime);
 	r32 GetFontKerningBetweenGlyphs(const PigFont* font, r32 fontScale, const FontGlyph* leftGlyph, const FontGlyph* rightGlyph);
 	r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 styleFlags, u32 leftCodepoint, u32 rightCodepoint, bool allowActiveAtlasCreation);
-	bool GetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, FontLineMetrics* metricsOut);
+	bool TryGetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, FontLineMetrics* metricsOut);
+	PIG_CORE_INLINE FontLineMetrics GetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags);
 	PIG_CORE_INLINE r32 GetFontLineHeight(const PigFont* font, r32 fontSize, u8 styleFlags);
 	PIG_CORE_INLINE r32 GetFontMaxAscend(const PigFont* font, r32 fontSize, u8 styleFlags);
 	PIG_CORE_INLINE r32 GetFontMaxDescend(const PigFont* font, r32 fontSize, u8 styleFlags);
@@ -2461,7 +2462,7 @@ PEXP r32 GetFontKerningBetweenCodepoints(const PigFont* font, r32 fontSize, u8 s
 }
 
 //NOTE: Even when this function returns false, the metricsOut is still filled with some default values scaled with fontSize. So the bool return can be safely ignored in most cases
-PEXPI bool GetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, FontLineMetrics* metricsOut)
+PEXP bool TryGetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, FontLineMetrics* metricsOut)
 {
 	NotNull(font);
 	NotNull(font->arena);
@@ -2496,29 +2497,27 @@ PEXPI bool GetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags, 
 	metricsOut->centerOffset = fontSize*0.25f;
 	return false; //Default guess
 }
+PEXPI FontLineMetrics GetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags)
+{
+	FontLineMetrics result = ZEROED;
+	TryGetFontLineMetrics(font, fontSize, styleFlags, &result);
+	return result;
+}
 PEXPI r32 GetFontLineHeight(const PigFont* font, r32 fontSize, u8 styleFlags)
 {
-	FontLineMetrics metrics = ZEROED;
-	GetFontLineMetrics(font, fontSize, styleFlags, &metrics);
-	return metrics.lineHeight;
+	return GetFontLineMetrics(font, fontSize, styleFlags).lineHeight;
 }
 PEXPI r32 GetFontMaxAscend(const PigFont* font, r32 fontSize, u8 styleFlags)
 {
-	FontLineMetrics metrics = ZEROED;
-	GetFontLineMetrics(font, fontSize, styleFlags, &metrics);
-	return metrics.maxAscend;
+	return GetFontLineMetrics(font, fontSize, styleFlags).maxAscend;
 }
 PEXPI r32 GetFontMaxDescend(const PigFont* font, r32 fontSize, u8 styleFlags)
 {
-	FontLineMetrics metrics = ZEROED;
-	GetFontLineMetrics(font, fontSize, styleFlags, &metrics);
-	return metrics.maxDescend;
+	return GetFontLineMetrics(font, fontSize, styleFlags).maxDescend;
 }
 PEXPI r32 GetFontCenterOffset(const PigFont* font, r32 fontSize, u8 styleFlags)
 {
-	FontLineMetrics metrics = ZEROED;
-	GetFontLineMetrics(font, fontSize, styleFlags, &metrics);
-	return metrics.centerOffset;
+	return GetFontLineMetrics(font, fontSize, styleFlags).centerOffset;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

@@ -1044,19 +1044,17 @@ bool AppFrame(void)
 				DrawTexturedRectangle(atlasRenderRec, White, &fontAtlas->texture);
 				DrawRectangleOutline(atlasRenderRec, 1, White);
 				BindFont(&debugFont);
-				FontLineMetrics debugFontMetrics = ZEROED;
-				GetFontLineMetrics(&debugFont, 12, FontStyleFlag_None, &debugFontMetrics);
-				v2 infoTextPos = NewV2(atlasRenderRec.X, atlasRenderRec.Y + atlasRenderRec.Height + 5 + debugFontMetrics.maxAscend);
+				v2 infoTextPos = NewV2(atlasRenderRec.X, atlasRenderRec.Y + atlasRenderRec.Height + 5 + GetMaxAscend());
 				Str8 infoStr = PrintInArenaStr(scratch, "%g %dx%d%s", fontAtlas->fontSize, fontAtlas->texture.Width, fontAtlas->texture.Height, fontAtlas->isActive ? "" : " (Static)");
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
 				bool isBold = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Bold);
 				bool isItalic = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Italic);
 				infoStr = PrintInArenaStr(scratch, "%s%s%s%s", (!isBold && !isItalic) ? "Default" : "", isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "");
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
 				infoStr = PrintInArenaStr(scratch, "%llu glyph%s", fontAtlas->glyphs.length, Plural(fontAtlas->glyphs.length, "s"));
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
 				infoStr = PrintInArenaStr(scratch, "%llu range%s", fontAtlas->charRanges.length, Plural(fontAtlas->charRanges.length, "s"));
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
 				atlasRenderPosX += atlasRenderRec.Width + 10;
 				VarArrayLoop(&fontAtlas->glyphs, gIndex)
 				{
@@ -1077,7 +1075,7 @@ bool AppFrame(void)
 						const char* codepointName = "-";
 						#endif
 						infoStr = PrintInArenaStr(scratch, "Glyph[%llu] \'%s\' 0x%08X %dx%d", gIndex, codepointName, glyph->codepoint, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height);
-						DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += debugFontMetrics.lineHeight;
+						DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
 					}
 				}
 			}
@@ -1143,12 +1141,11 @@ bool AppFrame(void)
 					
 					CLAY({ .id = CLAY_ID("SafeContainer"), .layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM, .sizing={ .width=CLAY_SIZING_GROW(0), .height=CLAY_SIZING_GROW(0) } } })
 					{
-						FontLineMetrics fontLineMetrics = ZEROED;
-						GetFontLineMetrics(&testFont, 18*textScale, FontStyleFlag_None, &fontLineMetrics);
+						r32 lineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
 						CLAY({ .id = CLAY_ID("Topbar"),
 							.layout = {
 								.sizing = {
-									.height = CLAY_SIZING_FIXED(fontLineMetrics.lineHeight + 30),
+									.height = CLAY_SIZING_FIXED(lineHeight + 30),
 									.width = CLAY_SIZING_GROW(0),
 								},
 								.padding = { 0, 0, 0, 0 },

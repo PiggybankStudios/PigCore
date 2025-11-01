@@ -506,8 +506,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	//TODO: Double/Triple Click to Select Word/Line
 	
 	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
-	FontLineMetrics fontLineMetrics = ZEROED;
-	GetFontLineMetrics(font, fontSize, fontStyle, &fontLineMetrics);
+	FontLineMetrics fontLineMetrics = GetFontLineMetrics(font, fontSize, fontStyle);
 	
 	if (tbox->flow.numGlyphsAlloc < tbox->text.length)
 	{
