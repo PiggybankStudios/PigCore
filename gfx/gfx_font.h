@@ -45,14 +45,15 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Implement stb_truetype.h code path!
 //TODO: Choose closest matching font file in style rather than forcing a perfect style match (Can't render emoji in Bold rich text, or when ColoredGlyphs is off?)
-//TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
+//TODO: Implement stb_truetype.h code path!
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 //TODO: Add convenience functions to GfxSystem API so we can get the lineHeight, centerOffset, etc. easily
-//TODO: Selection rectangles should be drawn all the way to wrapWidth on the right if highlight is continuing to the next line (and wrapWidth != 0) (Maybe we should draw a rectangle from 0 to left-hand side of text on next line if selection includes new-line char?)
+
+//TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
 //TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
 //TODO: Do we want a function that helps rebake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
+//TODO: Selection rectangles should be drawn all the way to wrapWidth on the right if highlight is continuing to the next line (and wrapWidth != 0) (Maybe we should draw a rectangle from 0 to left-hand side of text on next line if selection includes new-line char?)
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
@@ -2279,12 +2280,14 @@ PEXPI Result TryBakeFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, i32 mi
 PEXP Result TryMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	if (numSizes > 0) { NotNull(fontSizes); }
+	bool anyPartialBakes = false;
 	for (uxx sIndex = 0; sIndex < numSizes; sIndex++)
 	{
 		Result bakeResult = TryBakeFontAtlasWithCustomGlyphs(font, fontSizes[sIndex], extraStyleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
-		if (bakeResult != Result_Success) { return bakeResult; }
+		if (bakeResult == Result_Partial) { anyPartialBakes = true; }
+		else if (bakeResult != Result_Success) { return bakeResult; }
 	}
-	return Result_Success;
+	return anyPartialBakes ? Result_Partial : Result_Success;
 }
 PEXPI Result TryMultiBakeFontAtlases(PigFont* font, uxx numSizes, const r32* fontSizes, u8 extraStyleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
 {

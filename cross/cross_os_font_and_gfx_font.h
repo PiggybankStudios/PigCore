@@ -58,6 +58,7 @@ PEXP Result TryAttachAndMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx 
 {
 	if (numSettings > 0) { NotNull(settings); }
 	TracyCZoneN(_funcZone, "TryAttachAndMultiBakeFontAtlasesWithCustomGlyphs", true);
+	bool anyPartialBakes = false;
 	Str8 prevFontName = Str8_Empty;
 	u8 prevStyleFlags = FontStyleFlag_None;
 	for (uxx sIndex = 0; sIndex < numSettings; sIndex++)
@@ -77,8 +78,12 @@ PEXP Result TryAttachAndMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx 
 			prevStyleFlags = setting->style;
 		}
 		Result bakeResult = TryBakeFontAtlasWithCustomGlyphs(font, setting->size, setting->style, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
-		if (bakeResult != Result_Success && setting->fillKerningTable) { FillFontKerningTable(font); }
-		if (bakeResult != Result_Success)
+		if (bakeResult == Result_Success)
+		{
+			if (setting->fillKerningTable) { FillFontKerningTable(font); }
+		}
+		else if (bakeResult == Result_Partial) { anyPartialBakes = true; }
+		else
 		{
 			RemoveAttachedFontFiles(font);
 			TracyCZoneEnd(_funcZone);
@@ -87,7 +92,7 @@ PEXP Result TryAttachAndMultiBakeFontAtlasesWithCustomGlyphs(PigFont* font, uxx 
 	}
 	RemoveAttachedFontFiles(font);
 	TracyCZoneEnd(_funcZone);
-	return Result_Success;
+	return anyPartialBakes ? Result_Partial : Result_Success;
 }
 
 PEXPI Result TryAttachAndMultiBakeFontAtlases(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
