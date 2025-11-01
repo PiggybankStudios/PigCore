@@ -16,6 +16,9 @@ Description:
 #ifndef _GFX_FONT_FLOW_H
 #define _GFX_FONT_FLOW_H
 
+//TODO: Test what happens when there is no wordWrapWidth set!
+//TODO: We shouldn't need to drawHighlightRecs while searching for next line break!
+
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
@@ -203,7 +206,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	NotNull(state);
 	NotNullStr(state->text.fullPiece.str);
 	NotNull(state->font);
-	TracyCZoneN(_funcZone, "DoFontFlow", true);
+	TracyCZoneN(_funcZone, "DoFontFlow", !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap);
+	TracyCZoneN(_funcZone_DrawHighlightRecs, "DrawHighlightRecs(DoFontFlow)", state->drawingHighlightRecs);
+	TracyCZoneN(_funcZone_FindingNextWordBeforeWrap, "FindingNextWordBeforeWrap(DoFontFlow)", state->findingNextWordBeforeWrap);
 	Result result = Result_Success;
 	
 	//Initial copying of state between start/current and flowOut, doesn't need to happen if we're drawing highlight recs or finding word wrap index because the parent DoFontFlow already did this
@@ -235,6 +240,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	
 	while (state->byteIndex < state->text.fullPiece.str.length)
 	{
+		TracyCZoneN(_earlyFlowLogic, "EarlyFlowLogic", true);
 		RichStrPiece* currentPiece = GetRichStrPiece(&state->text, state->textPieceIndex);
 		DebugAssert(currentPiece != nullptr);
 		
@@ -263,7 +269,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		}
 		
 		//If highlighting is starting then we should do some look-ahead and render the highlight rectangles FIRST then render the text on top using backgroundColor
-		if (!state->drawingHighlightRecs && isHighlightedChanging && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && callbacks != nullptr && callbacks->drawHighlight != nullptr)
+		if (!state->drawingHighlightRecs && !state->findingNextWordBeforeWrap &&
+			isHighlightedChanging && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) &&
+			callbacks != nullptr && callbacks->drawHighlight != nullptr)
 		{
 			if (state->byteIndex >= state->highlightRecsDrawnToByteIndex)
 			{
@@ -271,6 +279,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				if (drawHighlightResult != Result_Success && drawHighlightResult != Result_InvalidUtf8)
 				{
 					result = drawHighlightResult;
+					TracyCZoneEnd(_earlyFlowLogic);
 					break;
 				}
 			}
@@ -297,13 +306,16 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			if (findWrapResult != Result_Success && findWrapResult != Result_InvalidUtf8)
 			{
 				result = findWrapResult;
+				TracyCZoneEnd(_earlyFlowLogic);
 				break;
 			}
 			state->wordWrapByteIndexIsLineEnd = true;
 		}
+		TracyCZoneEnd(_earlyFlowLogic);
 		
 		if (state->textPieceByteIndex < currentPiece->str.length)
 		{
+			TracyCZoneN(_codepointLogic, "CodepointLogic", true);
 			u32 codepoint = 0;
 			u8 utf8ByteSize = GetCodepointForUtf8Str(currentPiece->str, state->textPieceByteIndex, &codepoint);
 			if (utf8ByteSize == 0)
@@ -317,6 +329,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			if (codepoint == '\n' && state->findingNextWordBeforeWrap) //TODO: Should we handle \r\n new-line sequence?
 			{
 				state->byteIndex += utf8ByteSize;
+				TracyCZoneEnd(_codepointLogic);
 				break;
 			}
 			if (prevCodepoint != UINT32_MAX && state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f && IsWordBoundary(prevCodepoint, codepoint))
@@ -328,7 +341,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			{
 				callbacks->beforeChar(state, flowOut, codepoint);
 			}
-			if (state->byteIndex >= state->text.fullPiece.str.length) { break; }
+			if (state->byteIndex >= state->text.fullPiece.str.length) { TracyCZoneEnd(_codepointLogic); break; }
 			
 			r32 kerning = 0.0f;
 			rec glyphDrawRec = Rec_Zero;
@@ -343,14 +356,17 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			while (fontGlyph == nullptr && substituteIndex < ArrayCount(substituteCodepoints))
 			{
 				fontGlyph = TryGetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
+				if (fontGlyph == nullptr) { MyBreak(); }
 				if (fontGlyph != nullptr) { fontCodepoint = substituteCodepoints[substituteIndex]; break; }
 				else if (IsCodepointWhitespace(codepoint, true)) { break; } //don't do substitution characters for whitespace (esp. not new-line character)
 				// PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
 				substituteIndex++;
 			}
+			TracyCZoneEnd(_codepointLogic);
 			
 			if (fontGlyph != nullptr || IsCodepointWhitespace(codepoint, false))
 			{
+				TracyCZoneN(_glyphLogic, "GlyphLogic", true);
 				FontGlyphMetrics glyphMetrics = ZEROED;
 				if (fontGlyph != nullptr) { glyphMetrics = fontGlyph->metrics; }
 				if (!AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE) || fontGlyph == nullptr)
@@ -418,6 +434,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 						else { break; }
 					}
 					
+					TracyCZoneEnd(_glyphLogic);
 					break;
 				}
 				
@@ -455,12 +472,14 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				
 				state->position.X += glyphMetrics.advanceX;
 				state->glyphIndex++;
+				TracyCZoneEnd(_glyphLogic);
 			}
 			else
 			{
 				//TODO: What should we do if we don't find the glyph? Render a default character maybe?
 			}
 			
+			TracyCZoneN(_postLogic, "PostLogic", true);
 			state->charIndex++;
 			state->byteIndex += utf8ByteSize;
 			state->textPieceByteIndex += utf8ByteSize;
@@ -477,6 +496,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			}
 			
 			prevCodepoint = codepoint;
+			TracyCZoneEnd(_postLogic);
 		}
 		else
 		{
@@ -492,6 +512,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 	}
 	
+	TracyCZoneEnd(_funcZone_FindingNextWordBeforeWrap);
+	TracyCZoneEnd(_funcZone_DrawHighlightRecs);
 	TracyCZoneEnd(_funcZone);
 	return result;
 }

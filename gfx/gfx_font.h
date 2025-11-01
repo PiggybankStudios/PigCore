@@ -46,6 +46,7 @@ Description:
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
 //TODO: Figure out why performance is so bad when we are at our atlas limit and not all characters on screen were able to find space!
+//      FT_Load_Glyph is taking a non-zero amount of time. We should be careful how often we call it. For scaling glyphs to the correct size when they aren't available in the atlases maybe should just "guess" the correct size instead? Or maybe we should do a single glyph load at the proper size/style and use that to inform scale of all other glyphs at that size/scale?
 //TODO: Implement stb_truetype.h code path!
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 
@@ -716,6 +717,7 @@ PEXPI bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint)
 PEXP FontFile* TryFindFontFileWithStyle(PigFont* font, u8 styleFlags, uxx* fileIndexOut)
 {
 	NotNull(font);
+	TracyCZoneN(_funcZone, "TryFindFontFileWithStyle", true);
 	FontFile* matchingFile = nullptr;
 	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
@@ -735,6 +737,7 @@ PEXP FontFile* TryFindFontFileWithStyle(PigFont* font, u8 styleFlags, uxx* fileI
 			if (styleDiff == 0) { break; }
 		}
 	}
+	TracyCZoneEnd(_funcZone);
 	return matchingFile;
 }
 
@@ -742,6 +745,7 @@ PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styl
 {
 	NotNull(font);
 	NotNull(font->arena);
+	TracyCZoneN(_funcZone, "TryFindFontFileForCodepoint", true);
 	FontFile* matchingFile = nullptr;
 	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
@@ -770,11 +774,13 @@ PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styl
 			#else //!BUILD_WITH_FREETYPE
 			{
 				//TODO: Implement me!
+				TracyCZoneEnd(_funcZone);
 				return nullptr;
 			}
 			#endif //BUILD_WITH_FREETYPE
 		}
 	}
+	TracyCZoneEnd(_funcZone);
 	return matchingFile;
 }
 
@@ -782,6 +788,7 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 {
 	NotNull(font);
 	NotNull(font->arena);
+	TracyCZoneN(_funcZone, "TryFindFontFileForCodepointAtSize", true);
 	FontFile* matchingFile = nullptr;
 	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
@@ -797,16 +804,22 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 		{
 			#if BUILD_WITH_FREETYPE
 			{
+				TracyCZoneN(_GetCharIndexZone, "FT_Get_Char_Index", true);
 				FT_UInt glyphIndex = FT_Get_Char_Index(fontFile->freeTypeFace, codepoint);
+				TracyCZoneEnd(_GetCharIndexZone);
 				if (glyphIndex != 0)
 				{
 					FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+					TracyCZoneN(_SetCharSizeZone, "FT_Set_Char_Size", true);
 					FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+					TracyCZoneEnd(_SetCharSizeZone);
 					Assert(setCharSizeError == 0);
 					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
 					//TODO: Should we check FT_HAS_COLOR if IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)?
 					if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					TracyCZoneN(_LoadGlyphZone, "FT_Load_Glyph", true);
 					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
+					TracyCZoneEnd(_LoadGlyphZone);
 					if (loadGlyphError == 0)
 					{
 						SetOptionalOutPntr(glyphIndexOut, glyphIndex);
@@ -820,11 +833,13 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 			#else //!BUILD_WITH_FREETYPE
 			{
 				//TODO: Implement me!
+				TracyCZoneEnd(_funcZone);
 				return nullptr;
 			}
 			#endif //BUILD_WITH_FREETYPE
 		}
 	}
+	TracyCZoneEnd(_funcZone);
 	return matchingFile;
 }
 
@@ -1439,9 +1454,10 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 	NotNull(font);
 	NotNull(font->arena);
 	NotNull(metricsOut);
+	TracyCZoneN(_funcZone, "TryGetFontGlyphMetrics", true);
 	
 	FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, nullptr);
-	if (fontFile == nullptr) { return false; }
+	if (fontFile == nullptr) { TracyCZoneEnd(_funcZone); return false; }
 	
 	#if BUILD_WITH_FREETYPE
 	{
@@ -1462,11 +1478,13 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 			IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x),
 			TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender)
 		);
+		TracyCZoneEnd(_funcZone);
 		return true;
 	}
 	#else
 	{
 		//TODO: Implement me!
+		TracyCZoneEnd(_funcZone);
 		return false;
 	}
 	#endif 
