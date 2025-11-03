@@ -45,11 +45,14 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Figure out why performance is so bad when we are at our atlas limit and not all characters on screen were able to find space!
-//      FT_Load_Glyph is taking a non-zero amount of time. We should be careful how often we call it. For scaling glyphs to the correct size when they aren't available in the atlases maybe should just "guess" the correct size instead? Or maybe we should do a single glyph load at the proper size/style and use that to inform scale of all other glyphs at that size/scale?
+//TODO: Fix double-rendering of some highlight rectangles (when a wrapWidth causes a new line?)
+//TODO: Test rendering a full screen of text? How many characters can we get rendering at once in an optimized build?
+//TODO: Test rendering with no wrapWidth
 //TODO: Implement stb_truetype.h code path!
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 
+//TODO: Add support for .svg files being used as glyph providers
+//TODO: Find a way to get glyph metrics from FreeType that isn't expensive? Then we can do GetFontGlyphMetrics in DoFontFlow when we want to scale a glyph
 //TODO: When we don't have a perfect style match file attached, we can end up with multiple baked glyphs of the same codepoint in different atlases that are marked with different styles. Maybe we should prevent this? Maybe the font file we find should have an effect on which atlas we look at adding a glyph to?
 //TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
 //TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
@@ -270,7 +273,7 @@ FT_Library FreeTypeLib = nullptr;
 	PIG_CORE_INLINE bool DoesFontAtlasContainCodepoint(const FontAtlas* atlas, u32 codepoint);
 	FontFile* TryFindFontFileWithStyle(PigFont* font, u8 styleFlags, uxx* fileIndexOut);
 	FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut);
-	FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut);
+	FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool forMetricsOnly, uxx* fileIndexOut, unsigned int* glyphIndexOut);
 	FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSize, u8 styleFlags);
 	void ResizeActiveFontAtlas(PigFont* font, FontAtlas* activeAtlas, v2i newSize);
 	void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx glyphIndex);
@@ -784,11 +787,12 @@ PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styl
 	return matchingFile;
 }
 
-PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut)
+PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool forMetricsOnly, uxx* fileIndexOut, unsigned int* glyphIndexOut)
 {
 	NotNull(font);
 	NotNull(font->arena);
-	TracyCZoneN(_funcZone, "TryFindFontFileForCodepointAtSize", true);
+	TracyCZoneN(_funcZone, "TryFindFontFileForCodepointAtSize", !forMetricsOnly);
+	TracyCZoneN(_funcZone_MetricsOnly, "MetricsOnly(TryFindFontFileForCodepointAtSize)", forMetricsOnly);
 	FontFile* matchingFile = nullptr;
 	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
@@ -817,6 +821,11 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
 					//TODO: Should we check FT_HAS_COLOR if IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)?
 					if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					
+					//TODO: FT_Load_Glyph is taking a bit of time, so we can't call it too often. If there is some set of flags we could pass to make it very cheap we should do that. After a little testing we never found the right flags, so DoFontFlow calls GetFontLineMetrics instead of GetFontGlyphMetrics when it's scaling glyphs
+					// if (forMetricsOnly) { loadFlags |= FT_LOAD_NO_BITMAP|FT_LOAD_COMPUTE_METRICS; }
+					UNUSED(forMetricsOnly);
+					
 					TracyCZoneN(_LoadGlyphZone, "FT_Load_Glyph", true);
 					FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, glyphIndex, loadFlags);
 					TracyCZoneEnd(_LoadGlyphZone);
@@ -833,12 +842,14 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 			#else //!BUILD_WITH_FREETYPE
 			{
 				//TODO: Implement me!
+				TracyCZoneEnd(_funcZone_MetricsOnly);
 				TracyCZoneEnd(_funcZone);
 				return nullptr;
 			}
 			#endif //BUILD_WITH_FREETYPE
 		}
 	}
+	TracyCZoneEnd(_funcZone_MetricsOnly);
 	TracyCZoneEnd(_funcZone);
 	return matchingFile;
 }
@@ -1456,7 +1467,7 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 	NotNull(metricsOut);
 	TracyCZoneN(_funcZone, "TryGetFontGlyphMetrics", true);
 	
-	FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, nullptr);
+	FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, true, nullptr, nullptr);
 	if (fontFile == nullptr) { TracyCZoneEnd(_funcZone); return false; }
 	
 	#if BUILD_WITH_FREETYPE
@@ -1613,13 +1624,13 @@ PEXP FontGlyph* TryGetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fo
 		// 	);
 		// }
 		
+		//NOTE: Finding an appropriate font file is expensive, so we should only do it if we actually have space in an active atlas, or if we can create a new atlas
+		bool couldntFindFontFile = false;
 		uxx fontFileIndex = 0;
-		FontFile* fontFile = (codepoint == FONT_CODEPOINT_EMPTY) ? nullptr : TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, &fontFileIndex, nullptr);
-		UNUSED(fontFileIndex);
-		// if (codepoint != FONT_CODEPOINT_EMPTY && fontFile == nullptr) { PrintLine_D("No font file supports codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint)); }
+		FontFile* fontFile = nullptr;
 		
 		bool addedGlyphToActiveAtlas = false;
-		if (fontFile != nullptr && codepoint != FONT_CODEPOINT_EMPTY)
+		if (codepoint != FONT_CODEPOINT_EMPTY)
 		{
 			//Find a matching active font atlas if possible, try to add the glyph to the atlas (evicting glyphs if possible)
 			uxx activeAtlasSkipIndex = 0;
@@ -1635,6 +1646,17 @@ PEXP FontGlyph* TryGetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fo
 					AreSimilarR32(matchingActiveAtlas->fontSize, fontSize, DEFAULT_R32_TOLERANCE) &&
 					(matchingActiveAtlas->styleFlags & FontStyleFlag_FontAtlasFlags) == (styleFlags & FontStyleFlag_FontAtlasFlags))
 				{
+					if (fontFile == nullptr)
+					{
+						fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, false, &fontFileIndex, nullptr);
+						if (fontFile == nullptr)
+						{
+							// PrintLine_D("No font file supports codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint));
+							couldntFindFontFile = true;
+							break;
+						}
+					}
+					
 					FontGlyph* addedGlyph = TryAddGlyphToActiveFontAtlas(font, fontFile, matchingActiveAtlas, codepoint, styleFlags);
 					if (addedGlyph != nullptr)
 					{
@@ -1665,7 +1687,7 @@ PEXP FontGlyph* TryGetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fo
 		
 		//Attempt to make a new atlas
 		//NOTE: don't make an atlas for whitespace characters, it's often a waste of a whole atlas slot because style changes in rich strings sometimes cover whitespace and nothing else
-		if (fontFile != nullptr && !addedGlyphToActiveAtlas && !IsCodepointWhitespace(codepoint, true))
+		if (!addedGlyphToActiveAtlas && !IsCodepointWhitespace(codepoint, true) && !couldntFindFontFile)
 		{
 			//Try to evict until we are under the limit
 			while (font->atlases.length >= font->activeMaxNumAtlases)
@@ -1685,19 +1707,32 @@ PEXP FontGlyph* TryGetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fo
 			
 			if (font->atlases.length < font->activeMaxNumAtlases)
 			{
-				FontAtlas* newAtlas = AddNewActiveAtlas(font, fontFile, fontSize, styleFlags);
-				// PrintLine_D("Adding new active atlas[%llu] to make space for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s",
-				// 	font->atlases.length-1,
-				// 	codepoint, DebugGetCodepointName(codepoint),
-				// 	fontSize,
-				// 	isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
-				// );
-				matchingAtlas = newAtlas;
-				if (codepoint != FONT_CODEPOINT_EMPTY)
+				if (fontFile == nullptr)
 				{
-					FontGlyph* addedGlyph = TryAddGlyphToActiveFontAtlas(font, fontFile, newAtlas, codepoint, styleFlags);
-					NotNull(addedGlyph);
-					result = addedGlyph;
+					fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, false, &fontFileIndex, nullptr);
+					if (fontFile == nullptr)
+					{
+						// PrintLine_D("No font file supports codepoint U+%X \'%s\'", codepoint, DebugGetCodepointName(codepoint));
+						couldntFindFontFile = true;
+					}
+				}
+				
+				if (fontFile != nullptr)
+				{
+					FontAtlas* newAtlas = AddNewActiveAtlas(font, fontFile, fontSize, styleFlags);
+					// PrintLine_D("Adding new active atlas[%llu] to make space for codepoint U+%X \'%s\' at size=%g style=%s%s%s%s",
+					// 	font->atlases.length-1,
+					// 	codepoint, DebugGetCodepointName(codepoint),
+					// 	fontSize,
+					// 	isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "", (!isBold && !isItalic) ? "Regular" : ""
+					// );
+					matchingAtlas = newAtlas;
+					if (codepoint != FONT_CODEPOINT_EMPTY)
+					{
+						FontGlyph* addedGlyph = TryAddGlyphToActiveFontAtlas(font, fontFile, newAtlas, codepoint, styleFlags);
+						NotNull(addedGlyph);
+						result = addedGlyph;
+					}
 				}
 			}
 		}
@@ -1789,7 +1824,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 				const FontCharRange* charRange = &charRanges[rIndex];
 				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
 				{
-					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, nullptr);
+					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, true, nullptr, nullptr);
 					if (fontFile == nullptr)
 					{
 						PrintLine_E("Attached font files don't contain glyph for codepoint 0x%08X!", codepoint);
@@ -1921,7 +1956,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 				for (u32 codepoint = newCharRange->startCodepoint; codepoint <= newCharRange->endCodepoint; codepoint++)
 				{
 					unsigned int glyphIndex = 0;
-					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, nullptr, &glyphIndex);
+					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, false, nullptr, &glyphIndex);
 					NotNull(fontFile);
 					NotNull(fontFile->freeTypeFace->glyph); //TryFindFontFileForCodepointAtSize should have called FT_Load_Glyph for us
 					

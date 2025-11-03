@@ -234,7 +234,6 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		}
 	}
 	
-	bool drawHighlightsAfterLoop = true;
 	uxx lastWordEndIndex = UINTXX_MAX;
 	u32 prevCodepoint = UINT32_MAX;
 	
@@ -258,8 +257,6 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				isLineEnding || isHighlightedChanging)
 			{
 				DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
-				//Highlight is getting disabled, return to regular drawing of characters
-				// if (isHighlightedChanging) { drawHighlightsAfterLoop = false; }
 			}
 		}
 		
@@ -356,7 +353,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			while (fontGlyph == nullptr && substituteIndex < ArrayCount(substituteCodepoints))
 			{
 				fontGlyph = TryGetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
-				if (fontGlyph == nullptr) { MyBreak(); }
+				// if (fontGlyph == nullptr) { MyBreak(); }
 				if (fontGlyph != nullptr) { fontCodepoint = substituteCodepoints[substituteIndex]; break; }
 				else if (IsCodepointWhitespace(codepoint, true)) { break; } //don't do substitution characters for whitespace (esp. not new-line character)
 				// PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
@@ -371,20 +368,31 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				if (fontGlyph != nullptr) { glyphMetrics = fontGlyph->metrics; }
 				if (!AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE) || fontGlyph == nullptr)
 				{
+					//TODO: If we can figure out how to make TryGetFontGlyphMetrics (FT_Load_Glyph is slow) then we should do the more accurate logic instead
+					#if 1
+					r32 lineHeight = GetFontLineHeight(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
+					r32 predictedScale = lineHeight / fontAtlas->metrics.lineHeight;
+					#else
+					r32 predictedScale = 1.0f;
 					if (!TryGetFontGlyphMetrics(state->font, fontCodepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics))
 					{
 						FontLineMetrics lineMetrics = ZEROED;
 						if (TryGetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &lineMetrics))
 						{
-							r32 predictedScale = lineMetrics.lineHeight / fontAtlas->metrics.lineHeight;
-							glyphMetrics.glyphSize = NewV2i(
-								RoundR32i(glyphMetrics.glyphSize.Width * predictedScale),
-								RoundR32i(glyphMetrics.glyphSize.Height * predictedScale)
-							);
-							glyphMetrics.renderOffset = ScaleV2(glyphMetrics.renderOffset, predictedScale);
-							glyphMetrics.advanceX *= predictedScale;
-							glyphMetrics.logicalRec = ScaleRec(glyphMetrics.logicalRec, predictedScale);
+							predictedScale = lineMetrics.lineHeight / fontAtlas->metrics.lineHeight;
 						}
+					}
+					#endif
+					
+					if (predictedScale != 1.0f)
+					{
+						glyphMetrics.glyphSize = NewV2i(
+							RoundR32i(glyphMetrics.glyphSize.Width * predictedScale),
+							RoundR32i(glyphMetrics.glyphSize.Height * predictedScale)
+						);
+						glyphMetrics.renderOffset = ScaleV2(glyphMetrics.renderOffset, predictedScale);
+						glyphMetrics.advanceX *= predictedScale;
+						glyphMetrics.logicalRec = ScaleRec(glyphMetrics.logicalRec, predictedScale);
 					}
 				}
 				
@@ -507,7 +515,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	
 	if (flowOut != nullptr) { flowOut->endPos = state->position; }
 	
-	if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && drawHighlightsAfterLoop)
+	if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted))
 	{
 		DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 	}
