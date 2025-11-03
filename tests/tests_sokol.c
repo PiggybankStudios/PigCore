@@ -437,7 +437,7 @@ void AppInit(void)
 		RemoveAttachedFontFiles(&testFont);
 		#endif
 		
-		MakeFontActive(&testFont, 64, 256, 4, 0, 0);
+		MakeFontActive(&testFont, 64, 256, 5, 0, 0);
 		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
 		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
 		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult == Result_Success);
@@ -913,6 +913,7 @@ bool AppFrame(void)
 				Str8 displayStrs[] = {
 					StrLit("Lor[highlight]em\b \bipsum dolor sit " UNICODE_CHECK_MARK_STR " amet, [color=FF0000][size=8]consectetur [size=10]\badipiscing\b [size=12]elit, [size=14]sed [size=16]do [size][color]eiusmod tempor incididunt ut labore et dolore magna aliqua.[highlight] Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
 					StrLit("This is a test of font sizes! [size=8]This is a test of font sizes! [size=10]This is a test of font sizes! [size=12]This is a test of font sizes! [size=14]This is a test of font sizes! [size=16]This is a test of font sizes! [size=18]This is a test of font sizes!"),
+					StrLit("This is a test of \bbold text\b, and \aitalic text\a and \b\aBOLD ITALIC TEXT\b\a!"),
 					StrLit("This is 😂 \bBräcke 😂 € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!"), //\xE2\x97\xA1
 					StrLit("ABC[size=10]DEF[size]GHI ABCDEFGHI"),
 					StrLit("\xE3\x81\x82\xE3\x82\x8A\xE3\x81\x8C\xE3\x81\xA8\xE3\x81\x86\xE3\x81\x94\xE3\x81\x96\xE3\x81\x84\xE3\x81\xBE\xE3\x81\x97\xE3\x81\x9F"),

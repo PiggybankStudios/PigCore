@@ -366,7 +366,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				TracyCZoneN(_glyphLogic, "GlyphLogic", true);
 				FontGlyphMetrics glyphMetrics = ZEROED;
 				if (fontGlyph != nullptr) { glyphMetrics = fontGlyph->metrics; }
-				if (!AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE) || fontGlyph == nullptr)
+				if (fontAtlas != nullptr && !AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE))
 				{
 					//TODO: If we can figure out how to make TryGetFontGlyphMetrics (FT_Load_Glyph is slow) then we should do the more accurate logic instead
 					#if 1
@@ -396,9 +396,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					}
 				}
 				
-				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->metrics.lineHeight);
+				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas != nullptr ? fontAtlas->metrics.lineHeight : 0.0f);
 				
-				if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->metrics.fontScale == fontAtlas->metrics.fontScale && fontGlyph != nullptr) //TODO: Should we check the style flags match?
+				if (state->prevGlyphAtlas != nullptr && fontGlyph != nullptr && state->prevGlyphAtlas->metrics.fontScale == fontAtlas->metrics.fontScale) //TODO: Should we check the style flags match?
 				{
 					kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->metrics.fontScale, state->prevGlyph, fontGlyph);
 					state->position.X += kerning;

@@ -45,11 +45,16 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
+//TODO: Debug stb_truetype.h implementation
+//TODO: Add support for multiple font files in TryBakeFontAtlas stb_truetype.h codepath
+//TODO: Why are the glyphs a different size from FreeType vs. stb_truetype.h?
+//TODO: Add SVG support for stb_truetype.h path using Pluto SVG and: stbtt_FindSVGDoc, stbtt_GetCodepointSVG, stbtt_GetGlyphSVG
+//TODO: Do we want to do the centerOffset calculation with FreeType that we were doing with stb_truetype.h? (Using 'W' character VMetrics to get a more proper maxAscend)
 //TODO: Fix double-rendering of some highlight rectangles (when a wrapWidth causes a new line?)
 //TODO: Test rendering a full screen of text? How many characters can we get rendering at once in an optimized build?
 //TODO: Test rendering with no wrapWidth
-//TODO: Implement stb_truetype.h code path!
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
+//TODO: Does TryGetFontGlyphMetrics produce a different logicalRec than if we actually bake the character?
 
 //TODO: Add support for .svg files being used as glyph providers
 //TODO: Find a way to get glyph metrics from FreeType that isn't expensive? Then we can do GetFontGlyphMetrics in DoFontFlow when we want to scale a glyph
@@ -522,6 +527,7 @@ PEXP void RemoveCodepointsFromCharRanges(VarArray* charRanges, uxx numCodepoints
 	}
 }
 
+#if BUILD_WITH_FREETYPE
 static bool InitializeFreeTypeIfNeeded()
 {
 	if (FreeTypeLib == nullptr)
@@ -547,8 +553,10 @@ static bool InitializeFreeTypeIfNeeded()
 	}
 	return true;
 }
+#endif
 
 //NOTE: By "attach" we mean 2 things: Parse the file using FreeType or stb_truetype.h (this is the source for almost all failures to attach) and then add the font to the list of font files (there is a static maximum that may trigger an error)
+//      We also use this function as a place to initialize the FreeType library itself the first time it's called, since you have to attach a font file before any other FreeType functions would be accessed
 //NOTE: See TryAttachOsTtfFileToFont in cross_os_font_and_gfx_font.h
 PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena)
 {
@@ -558,6 +566,7 @@ PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents
 	NotNullStr(fileContents);
 	NotEmptyStr(fileContents);
 	if (font->numFiles >= FONT_MAX_FONT_FILES) { return Result_TooMany; }
+	TracyCZoneN(_funcZone, "TryAttachFontFile", true);
 	FontFile* newFile = &font->files[font->numFiles];
 	ClearPointer(newFile);
 	newFile->nameOrPath = AllocStr8(font->arena, nameOrPath);
@@ -612,14 +621,23 @@ PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents
 		
 	} while(false);
 	#else //!BUILD_WITH_FREETYPE
+	do
 	{
 		int firstFontOffset = stbtt_GetFontOffsetForIndex(newFile->fileContents.bytes, 0);
-		Assert(firstFontOffset >= 0); //TODO: Turn this into an error?
+		if (firstFontOffset < 0)
+		{
+			result = Result_ParsingFailure;
+			break;
+		}
 		int initFontResult = stbtt_InitFont(&newFile->ttfInfo, newFile->fileContents.bytes, firstFontOffset);
-		Assert(initFontResult != 0); //TODO: Turn this into an error?
+		if (initFontResult == 0)
+		{
+			result = Result_InitFailed;
+			break;
+		}
 		// int numOfFontsInTtf = stbtt_GetNumberOfFonts(newFile->fileContents.bytes);
 		// PrintLine_D("There %s %d font%s in this ttf file", PluralEx(numOfFontsInTtf, "is", "are"), numOfFontsInTtf, Plural(numOfFontsInTtf, "s"));
-	}
+	} while(false);
 	#endif //BUILD_WITH_FREETYPE
 	
 	if (result == Result_None)
@@ -632,6 +650,7 @@ PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents
 		FreeStr8(font->arena, &newFile->nameOrPath);
 		if (copyIntoFontArena) { FreeStr8(font->arena, &newFile->fileContents); }
 	}
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 
@@ -776,9 +795,15 @@ PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styl
 			}
 			#else //!BUILD_WITH_FREETYPE
 			{
-				//TODO: Implement me!
-				TracyCZoneEnd(_funcZone);
-				return nullptr;
+				int glyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, (int)codepoint);
+				if (glyphIndex != 0)
+				{
+					SetOptionalOutPntr(glyphIndexOut, glyphIndex);
+					SetOptionalOutPntr(fileIndexOut, fIndex);
+					matchingFile = fontFile;
+					matchingFileStyleDiff = styleDiff;
+					if (styleDiff == 0) { break; }
+				}
 			}
 			#endif //BUILD_WITH_FREETYPE
 		}
@@ -841,10 +866,16 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 			}
 			#else //!BUILD_WITH_FREETYPE
 			{
-				//TODO: Implement me!
-				TracyCZoneEnd(_funcZone_MetricsOnly);
-				TracyCZoneEnd(_funcZone);
-				return nullptr;
+				int glyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, (int)codepoint);
+				if (glyphIndex != 0)
+				{
+					UNUSED(forMetricsOnly);
+					SetOptionalOutPntr(glyphIndexOut, glyphIndex);
+					SetOptionalOutPntr(fileIndexOut, fIndex);
+					matchingFile = fontFile;
+					matchingFileStyleDiff = styleDiff;
+					if (styleDiff == 0) { break; }
+				}
 			}
 			#endif //BUILD_WITH_FREETYPE
 		}
@@ -860,7 +891,6 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	NotNull(font);
 	Assert(font->isActive);
 	Assert(font->activeMaxNumAtlases == 0 || font->atlases.length < font->activeMaxNumAtlases);
-	Assert(BUILD_WITH_FREETYPE); //TODO: Remove me once we implement code paths below!
 	
 	v2i atlasSize = FillV2i(font->activeAtlasMinSize);
 	FontLineMetrics lineMetrics = ZEROED;
@@ -876,11 +906,26 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	}
 	#else //!BUILD_WITH_FREETYPE
 	{
-		//TODO: Implement me!
-		//TODO: r32 lineHeight;
-		//TODO: r32 maxAscend;
-		//TODO: r32 maxDescend;
-		//TODO: r32 centerOffset;
+		lineMetrics.fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+		int ascent, descent, lineGap;
+		stbtt_GetFontVMetrics(&fontFile->ttfInfo, &ascent, &descent, &lineGap);
+		lineMetrics.maxAscend = (r32)ascent * lineMetrics.fontScale;
+		lineMetrics.maxDescend = (r32)(-descent) * lineMetrics.fontScale;
+		lineMetrics.lineHeight = lineMetrics.maxAscend + lineMetrics.maxDescend + ((r32)lineGap * lineMetrics.fontScale);
+		
+		//TODO: This is sort of a hack and causes problems with things like highlight/clip rectangles that need to really encompass the true maxAscend
+		//      So for now we are going to only use this value to inform the centerOffset
+		//The ascent value returned by GetFontVMetrics is often way higher than all the characters we normally print
+		//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
+		//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
+		int wBoxX0, wBoxY0, wBoxX1, wBoxY1;
+		int getBoxResult = stbtt_GetCodepointBox(&fontFile->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
+		if (getBoxResult > 0)
+		{
+			r32 pretendMaxAscend = MinR32(lineMetrics.maxAscend, (r32)wBoxY1 * lineMetrics.fontScale);
+			lineMetrics.centerOffset = pretendMaxAscend / 2.0f;
+		}
+		else { lineMetrics.centerOffset = lineMetrics.maxAscend - (lineMetrics.lineHeight / 2.0f); }
 	}
 	#endif //BUILD_WITH_FREETYPE
 	while (atlasSize.Width < CeilR32i(lineMetrics.lineHeight) && atlasSize.Width < font->activeAtlasMaxSize)
@@ -912,21 +957,29 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	ScratchEnd(scratch);
 	
 	newAtlas->isActive = true;
-	#if BUILD_WITH_FREETYPE
+	
 	//NOTE: Currently we take (lineHeight * scalar) of the first fontFile as the size of a square cell.
 	// Other font files might be larger and we may want to make our prediction of an appropriate cell size with more information.
 	// We used to take the largest lineHeight of all attached fonts, but with an emoji font attached it over-estimated and wasted a lot of space
+	#if BUILD_WITH_FREETYPE
 	FontFile* firstFontFile = &font->files[0];
 	FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
 	FT_Error setCharSizeError = FT_Set_Char_Size(firstFontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
 	DebugAssert(setCharSizeError == 0);
 	i32 cellSize = CeilR32i(TO_R32_FROM_FT26(firstFontFile->freeTypeFace->size->metrics.height) * FONT_CELL_SIZE_PREDICTION_LINE_HEIGHT_SCALAR);
+	#else //!BUILD_WITH_FREETYPE
+	//TODO: Should we do stbtt_GetFontBoundingBox instead of this estimate?
+	FontFile* firstFontFile = &font->files[0];
+	r32 fontScale = stbtt_ScaleForPixelHeight(&firstFontFile->ttfInfo, fontSize);
+	int ascent, descent, lineGap;
+	stbtt_GetFontVMetrics(&firstFontFile->ttfInfo, &ascent, &descent, &lineGap);
+	r32 lineHeight = ((r32)ascent + (r32)(-descent) + (r32)lineGap) * fontScale;
+	i32 cellSize = CeilR32i(lineHeight * FONT_CELL_SIZE_PREDICTION_LINE_HEIGHT_SCALAR);
+	#endif //BUILD_WITH_FREETYPE
 	if (cellSize > atlasSize.Width) { cellSize = atlasSize.Width; }
 	if (cellSize > atlasSize.Height) { cellSize = atlasSize.Height; }
 	newAtlas->activeCellSize = FillV2i(cellSize);
-	#else //!BUILD_WITH_FREETYPE
-	//TODO: Implement me!
-	#endif //BUILD_WITH_FREETYPE
+	
 	newAtlas->activeCellGridSize.Width = FloorR32i((r32)atlasSize.Width / (r32)newAtlas->activeCellSize.Width);
 	newAtlas->activeCellGridSize.Height = FloorR32i((r32)atlasSize.Height / (r32)newAtlas->activeCellSize.Height);
 	uxx numCells = (uxx)(newAtlas->activeCellGridSize.Width * newAtlas->activeCellGridSize.Height);
@@ -1169,16 +1222,27 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width),
 		TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height)
 	);
+	#else //!BUILD_WITH_FREETYPE
+	int glyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, (int)codepoint);
+	Assert(glyphIndex != 0);
+	r32 fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, activeAtlas->fontSize);
+	v2i glyphSize = V2i_Zero_Const;
+	if (!IsCodepointWhitespace(codepoint, true))
+	{
+		int boxX0, boxY0, boxX1, boxY1;
+		int getCodepointBoxResult = stbtt_GetGlyphBox(&fontFile->ttfInfo, glyphIndex, &boxX0, &boxY0, &boxX1, &boxY1);
+		if (getCodepointBoxResult == 0) { TracyCZoneEnd(_funcZone); return nullptr; }
+		glyphSize = NewV2i(
+			RoundR32i((boxX1 - boxX0) * fontScale),
+			RoundR32i((boxY1 - boxY0) * fontScale)
+		);
+	}
+	#endif //BUILD_WITH_FREETYPE
+	
 	v2i glyphCellSize = NewV2i(
 		CeilDivI32(glyphSize.Width, activeAtlas->activeCellSize.Width),
 		CeilDivI32(glyphSize.Height, activeAtlas->activeCellSize.Height)
 	);
-	#else //!BUILD_WITH_FREETYPE
-	v2i glyphSize = V2i_Zero_Const;
-	v2i glyphCellSize = V2i_Zero_Const;
-	TracyCZoneEnd(_funcZone);
-	return nullptr; //TODO: Implement me!
-	#endif //BUILD_WITH_FREETYPE
 	
 	bool foundSpace = (glyphSize.Width == 0 || glyphSize.Height == 0);
 	v2i cellPos = V2i_Zero_Const;
@@ -1235,13 +1299,24 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	
 	if (foundSpace)
 	{
+		ScratchBegin1(scratch, font->arena);
 		// PrintLine_D("Placing \'%s\' 0x%08X at cell(%d, %d) %dx%d in grid(%d, %d)", DebugGetCodepointName(codepoint), codepoint, cellPos.X, cellPos.Y, glyphCellSize.Width, glyphCellSize.Height, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height);
 		
 		#if BUILD_WITH_FREETYPE
 		FT_Error renderGlyphError = FT_Render_Glyph(fontFile->freeTypeFace->glyph, FT_RENDER_MODE_NORMAL);
 		Assert(renderGlyphError == 0);
 		#else
-		//TODO: Implement me!
+		stbtt_SetAllocUserData(&fontFile->ttfInfo, scratch);
+		int bitmapWidth = 0;
+		int bitmapHeight = 0;
+		int bitmapXOffset = 0;
+		int bitmapYOffset = 0;
+		unsigned char* bitmapPixels = nullptr;
+		if (glyphSize.Width > 0 && glyphSize.Height > 0)
+		{
+			bitmapPixels = stbtt_GetGlyphBitmap(&fontFile->ttfInfo, fontScale, fontScale, glyphIndex, &bitmapWidth, &bitmapHeight, &bitmapXOffset, &bitmapYOffset);
+			NotNull(bitmapPixels);
+		}
 		#endif
 		
 		//Add new FontGlyph
@@ -1256,7 +1331,9 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		NotNull(newGlyph);
 		ClearPointer(newGlyph);
 		newGlyph->codepoint = codepoint;
-		newGlyph->ttfGlyphIndex = 0; //TODO: Should we fill this?
+		#if !BUILD_WITH_FREETYPE //TODO: Should we fill this for FreeType?
+		newGlyph->ttfGlyphIndex = glyphIndex;
+		#endif
 		newGlyph->lastUsedTime = font->programTime;
 		newGlyph->atlasSourcePos = NewV2i(
 			cellPos.X * activeAtlas->activeCellSize.Width + (activeAtlas->activeCellSize.Width * glyphCellSize.Width)/2 - glyphSize.Width/2,
@@ -1268,9 +1345,13 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		newGlyph->metrics.renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
 		newGlyph->metrics.renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
 		newGlyph->metrics.logicalRec = NewRec(0, -activeAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, activeAtlas->metrics.maxAscend);
-		#else
-		//TODO: Implement me!
-		#endif
+		#else //!BUILD_WITH_FREETYPE
+		int glyphAdvanceX, glyphLeftSideBearing;
+		stbtt_GetGlyphHMetrics(&fontFile->ttfInfo, glyphIndex, &glyphAdvanceX, &glyphLeftSideBearing);
+		newGlyph->metrics.advanceX = IsCodepointZeroWidth(codepoint) ? 0 : (glyphAdvanceX * fontScale);
+		newGlyph->metrics.renderOffset = NewV2((r32)bitmapXOffset, (r32)bitmapYOffset); //TODO: Should we multiply this by fontScale?
+		newGlyph->metrics.logicalRec = NewRec(0, -activeAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, activeAtlas->metrics.maxAscend);
+		#endif //BUILD_WITH_FREETYPE
 		
 		// Bump glyphArrayStartIndex on any charRange that points to a glyph after our insertion index
 		VarArrayLoop(&activeAtlas->charRanges, rIndex)
@@ -1409,13 +1490,37 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 					}
 				}
 			}
-			#else
+			#else //!BUILD_WITH_FREETYPE
 			{
-				//TODO: Implement me!
+				v2i bitmapSize = NewV2i((i32)bitmapWidth, (i32)bitmapHeight);
+				FontActiveAtlasTextureUpdate* newUpdate = VarArrayAdd(FontActiveAtlasTextureUpdate, &activeAtlas->pendingTextureUpdates);
+				NotNull(newUpdate);
+				ClearPointer(newUpdate);
+				newUpdate->sourcePos = newGlyph->atlasSourcePos;
+				newUpdate->imageData.size = bitmapSize;
+				newUpdate->imageData.numPixels = (uxx)(bitmapSize.Width * bitmapSize.Height);
+				newUpdate->imageData.pixels = AllocArray(u32, font->arena, newUpdate->imageData.numPixels);
+				NotNull(newUpdate->imageData.pixels);
+				
+				for (uxx yOffset = 0; yOffset < (uxx)bitmapSize.Height; yOffset++)
+				{
+					for (uxx xOffset = 0; xOffset < (uxx)bitmapSize.Width; xOffset++)
+					{
+						Color32* pixelPntr = (Color32*)&newUpdate->imageData.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, bitmapSize.Width, bitmapSize.Height)];
+						pixelPntr->r = 255;
+						pixelPntr->g = 255;
+						pixelPntr->b = 255;
+						pixelPntr->a = bitmapPixels[INDEX_FROM_COORD2D(xOffset, yOffset, bitmapWidth, bitmapHeight)];
+					}
+				}
 			}
-			#endif
+			#endif //BUILD_WITH_FREETYPE
 		}
 		
+		#if !BUILD_WITH_FREETYPE
+		stbtt_SetAllocUserData(&fontFile->ttfInfo, nullptr);
+		#endif
+		ScratchEnd(scratch);
 		TracyCZoneEnd(_funcZone);
 		return newGlyph;
 	}
@@ -1467,12 +1572,14 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 	NotNull(metricsOut);
 	TracyCZoneN(_funcZone, "TryGetFontGlyphMetrics", true);
 	
-	FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, true, nullptr, nullptr);
+	unsigned int glyphIndex = 0;
+	FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, true, nullptr, &glyphIndex);
 	if (fontFile == nullptr) { TracyCZoneEnd(_funcZone); return false; }
 	
 	#if BUILD_WITH_FREETYPE
 	{
 		//NOTE: TryFindFontFileForCodepointAtSize already called FT_Set_Char_Size and FT_Load_Glyph for us
+		UNUSED(glyphIndex);
 		ClearPointer(metricsOut);
 		metricsOut->glyphSize = NewV2i(
 			TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width),
@@ -1486,19 +1593,43 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 		metricsOut->logicalRec = NewRec(
 			0,
 			-TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender),
-			IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x),
+			metricsOut->advanceX,
 			TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender)
 		);
 		TracyCZoneEnd(_funcZone);
 		return true;
 	}
-	#else
+	#else //!BUILD_WITH_FREETYPE
 	{
-		//TODO: Implement me!
+		ClearPointer(metricsOut);
+		
+		r32 fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+		if (!IsCodepointWhitespace(codepoint, true))
+		{
+			int boxX0, boxY0, boxX1, boxY1;
+			int getCodepointBoxResult = stbtt_GetGlyphBox(&fontFile->ttfInfo, glyphIndex, &boxX0, &boxY0, &boxX1, &boxY1);
+			if (getCodepointBoxResult == 0) { TracyCZoneEnd(_funcZone); return false; }
+			metricsOut->glyphSize = NewV2i(
+				RoundR32i((boxX1 - boxX0) * fontScale),
+				RoundR32i((boxY1 - boxY0) * fontScale)
+			);
+			metricsOut->renderOffset = NewV2(boxX0 * fontScale, boxY0 * fontScale);
+		}
+		int advanceX = 0;
+		int leftSideBearing = 0;
+		stbtt_GetGlyphHMetrics(&fontFile->ttfInfo, glyphIndex, &advanceX, &leftSideBearing);
+		
+		metricsOut->advanceX = IsCodepointZeroWidth(codepoint) ? 0 : (advanceX * fontScale);
+		metricsOut->logicalRec = NewRec(
+			0,
+			-metricsOut->renderOffset.Y,
+			metricsOut->advanceX,
+			metricsOut->renderOffset.Y
+		);
 		TracyCZoneEnd(_funcZone);
-		return false;
+		return true;
 	}
-	#endif 
+	#endif //BUILD_WITH_FREETYPE
 }
 
 //NOTE: This function is a little more complex than it may seem at first glance.
@@ -1730,7 +1861,7 @@ PEXP FontGlyph* TryGetFontGlyphForCodepoint(PigFont* font, u32 codepoint, r32 fo
 					if (codepoint != FONT_CODEPOINT_EMPTY)
 					{
 						FontGlyph* addedGlyph = TryAddGlyphToActiveFontAtlas(font, fontFile, newAtlas, codepoint, styleFlags);
-						NotNull(addedGlyph);
+						Assert(addedGlyph != nullptr || !BUILD_WITH_FREETYPE); //NOTE: In stb_truetype.h we may think we have a font file that can provide a glyph but the bake will still fail (probably SVG-based glyphs which aren't supported yet?) so we should be tolerant of a failure at this point
 						result = addedGlyph;
 					}
 				}
@@ -2525,18 +2656,40 @@ PEXP bool TryGetFontLineMetrics(const PigFont* font, r32 fontSize, u8 styleFlags
 	{
 		const FontFile* fontFile = &font->files[0];
 		#if BUILD_WITH_FREETYPE
-		FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
-		FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
-		DebugAssert(setCharSizeError == 0);
-		metricsOut->lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
-		metricsOut->maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
-		metricsOut->maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
-		metricsOut->centerOffset = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender) - (TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height) / 2.0f);
+		{
+			FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(fontSize);
+			FT_Error setCharSizeError = FT_Set_Char_Size(fontFile->freeTypeFace, freeTypeFontSize, freeTypeFontSize, FONT_FREETYPE_DPI, FONT_FREETYPE_DPI);
+			DebugAssert(setCharSizeError == 0);
+			metricsOut->lineHeight = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.height);
+			metricsOut->maxAscend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender);
+			metricsOut->maxDescend = TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.descender);
+			metricsOut->centerOffset = metricsOut->maxAscend - (metricsOut->lineHeight / 2.0f);
+		}
+		#else //!BUILD_WITH_FREETYPE
+		{
+			r32 fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+			int ascent, descent, lineGap;
+			stbtt_GetFontVMetrics(&fontFile->ttfInfo, &ascent, &descent, &lineGap);
+			metricsOut->maxAscend = (r32)ascent * fontScale;
+			metricsOut->maxDescend = (r32)(-descent) * fontScale;
+			metricsOut->lineHeight = metricsOut->maxAscend + metricsOut->maxDescend + ((r32)lineGap * fontScale);
+			//TODO: This is sort of a hack and causes problems with things like highlight/clip rectangles that need to really encompass the true maxAscend
+			//      So for now we are going to only use this value to inform the centerOffset
+			//The ascent value returned by GetFontVMetrics is often way higher than all the characters we normally print
+			//Rather than using that value, we'd prefer to use the ascent of a character like 'W' to get a more accurate idea of how far up the font will extend
+			//This helps look more visually appealing with positioning text vertically centered in a small space (like in a UI button)
+			int wBoxX0, wBoxY0, wBoxX1, wBoxY1;
+			int getBoxResult = stbtt_GetCodepointBox(&fontFile->ttfInfo, CharToU32('W'), &wBoxX0, &wBoxY0, &wBoxX1, &wBoxY1);
+			if (getBoxResult > 0)
+			{
+				r32 pretendMaxAscend = MinR32(metricsOut->maxAscend, (r32)wBoxY1 * fontScale);
+				metricsOut->centerOffset = pretendMaxAscend / 2.0f;
+			}
+			else { metricsOut->centerOffset = metricsOut->maxAscend - (metricsOut->lineHeight / 2.0f); }
+		}
+		#endif //BUILD_WITH_FREETYPE
+		
 		return true;
-		#else
-		//TODO: Implement me!
-		return false;
-		#endif
 	}
 	else if (closestAtlas != nullptr)
 	{
