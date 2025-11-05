@@ -97,3 +97,8 @@ type_view:
   type: bool
   expr: "bool($)"
 }
+watch_pin:
+{
+  expression: fontSize
+  source_location: "tests/tests_sokol.c:489:1"
+}

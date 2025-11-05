@@ -925,7 +925,7 @@ bool AppFrame(void)
 					// StrLit("\xF0\x9F\x98\x80\xF0\x9F\x98\x81\xF0\x9F\x98\x82\xF0\x9F\xA4\xA3\xF0\x9F\x98\x83\xF0\x9F\x98\xAB\xF0\x9F\x90\xB1\xE2\x8C\xA8"),
 					StrLit("😊[color=FF0000]😂[color]🤣😒😁[size=64]😍🙌"),
 					StrLit("Non" UNICODE_NON_BREAKING_HYPHEN_STR "breaking" UNICODE_NON_BREAKING_SPACE_STR "string Another" UNICODE_NON_BREAKING_SPACE_STR "non" UNICODE_NON_BREAKING_HYPHEN_STR "breaking" UNICODE_NON_BREAKING_SPACE_STR "string String" UNICODE_ZERO_WIDTH_SPACE_STR "With" UNICODE_ZERO_WIDTH_SPACE_STR "Zero" UNICODE_ZERO_WIDTH_SPACE_STR "Width" UNICODE_ZERO_WIDTH_SPACE_STR "Spaces"),
-					StrLit("This is a string\nwith new-line    \ncharacters in it!\r\nHello!"),
+					StrLit("This is [highlight]a string\nwith new-line    \ncharacters[highlight] in it!\r\nHello!"),
 				};
 				if (IsKeyboardKeyPressed(&keyboard, Key_Plus, true)) { displayStrIndex = ((displayStrIndex+1) % ArrayCount(displayStrs)); typeAnimCodepointIndex = 0; }
 				IncrementUXX(typeAnimCodepointIndex);
@@ -948,13 +948,25 @@ bool AppFrame(void)
 					}
 				}
 				BindFont(&testFont);
-				DrawWrappedRichTextWithFont(
-					&testFont, 18*textScale, FontStyleFlag_ColoredGlyphs,
-					displayStrRich,
-					textPos,
-					wrapWidth,
-					ColorWithAlpha(MonokaiWhite, 0.75f)
-				);
+				if (IsKeyboardKeyDown(&keyboard, Key_Shift))
+				{
+					DrawRichTextWithFont(
+						&testFont, 18*textScale, FontStyleFlag_ColoredGlyphs,
+						displayStrRich,
+						textPos,
+						ColorWithAlpha(MonokaiWhite, 0.75f)
+					);
+				}
+				else
+				{
+					DrawWrappedRichTextWithFont(
+						&testFont, 18*textScale, FontStyleFlag_ColoredGlyphs,
+						displayStrRich,
+						textPos,
+						wrapWidth,
+						ColorWithAlpha(MonokaiWhite, 0.75f)
+					);
+				}
 				// rec logicalRec = gfx.prevFontFlow.logicalRec;
 				// rec visualRec = gfx.prevFontFlow.visualRec;
 				// DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);

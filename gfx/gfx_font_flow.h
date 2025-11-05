@@ -16,9 +16,6 @@ Description:
 #ifndef _GFX_FONT_FLOW_H
 #define _GFX_FONT_FLOW_H
 
-//TODO: Test what happens when there is no wordWrapWidth set!
-//TODO: We shouldn't need to drawHighlightRecs while searching for next line break!
-
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
@@ -134,6 +131,16 @@ plex FontFlowCallbacks
 	FontFlowAfterChar_f* afterChar;
 };
 
+typedef plex TextLayout TextLayout;
+plex TextLayout
+{
+	Arena* arena;
+	FontFlow flow;
+	uxx numGlyphs;
+	uxx numGlyphsAlloc;
+	FontFlowGlyph* glyphs;
+};
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -152,6 +159,8 @@ plex FontFlowCallbacks
 	PIG_CORE_INLINE Str8 ShortenTextEndToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
 	PIG_CORE_INLINE Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, FilePath filePath, r32 maxWidth, Str8 ellipsesStr);
 	PIG_CORE_INLINE void ResetFontFlowInfo(FontFlow* flow);
+	PIG_CORE_INLINE void FreeTextLayout(TextLayout* layout);
+	Result DoTextLayoutInArena(Arena* arena, FontFlowState* state, TextLayout* layoutOut);
 #endif
 
 // +--------------------------------------------------------------+
@@ -709,12 +718,61 @@ PEXPI void ResetFontFlowInfo(FontFlow* flow)
 	flow->glyphs = glyphs;
 }
 
+PEXPI void FreeTextLayout(TextLayout* layout)
+{
+	if (layout->arena != nullptr)
+	{
+		if (layout->glyphs != nullptr) { FreeArray(FontFlowGlyph, layout->arena, layout->numGlyphsAlloc, layout->glyphs); }
+	}
+	ClearPointer(layout);
+}
+
+PEXP Result DoTextLayoutInArena(Arena* arena, FontFlowState* state, TextLayout* layoutOut)
+{
+	NotNull(arena);
+	NotNull(state);
+	NotNull(layoutOut);
+	
+	ClearPointer(layoutOut);
+	layoutOut->arena = arena;
+	
+	uxx numCodepoints = 0;
+	while (state->byteIndex < state->text.fullPiece.str.length)
+	{
+		u32 codepoint = 0;
+		u8 utf8ByteSize = GetCodepointForUtf8Str(state->text.fullPiece.str, state->byteIndex, &codepoint);
+		if (utf8ByteSize == 0)
+		{
+			//TODO: Should we handle invalid UTF-8 differently?
+			codepoint = CharToU32(state->text.fullPiece.str.chars[state->byteIndex]);
+			utf8ByteSize = 1;
+		}
+		numCodepoints++;
+		state->byteIndex += utf8ByteSize;
+	}
+	state->byteIndex = 0;
+	
+	layoutOut->numGlyphsAlloc = numCodepoints;
+	if (numCodepoints > 0)
+	{
+		layoutOut->glyphs = AllocArray(FontFlowGlyph, arena, layoutOut->numGlyphsAlloc);
+		if (layoutOut->glyphs == nullptr) { return Result_FailedToAllocateMemory; }
+		#if DEBUG_BUILD
+		MyMemSet(layoutOut->glyphs, 0xCC, sizeof(FontFlowGlyph) * layoutOut->numGlyphsAlloc);
+		#endif
+	}
+	layoutOut->flow.numGlyphsAlloc = layoutOut->numGlyphsAlloc;
+	layoutOut->flow.glyphs = layoutOut->glyphs;
+	
+	Result flowResult = DoFontFlow(state, nullptr, &layoutOut->flow);
+	Assert(layoutOut->flow.numGlyphs <= layoutOut->flow.numGlyphsAlloc);
+	layoutOut->numGlyphs = layoutOut->flow.numGlyphs;
+	
+	return flowResult;
+}
+
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_FONT_FLOW_H
-
-#if defined(_GFX_FONT_FLOW_H) && defined(_MEM_ARENA_H)
-#include "cross/cross_font_flow_and_mem_arena.h"
-#endif
