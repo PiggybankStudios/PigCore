@@ -45,9 +45,9 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Debug stb_truetype.h implementation
-//TODO: Add support for multiple font files in TryBakeFontAtlas stb_truetype.h codepath
-//TODO: Why are the glyphs a different size from FreeType vs. stb_truetype.h?
+//TODO: Sort/merge/cleanup the incoming charRanges in TryBakeFontAtlas!
+//TODO: Why are the spaces suddenly so large? Is that just my perception?
+//TODO: stb_truetype.h scaled glyph metrics are slightly wrong meaning the characters look like they zig-zag up/down by 1 pixel
 //TODO: Add SVG support for stb_truetype.h path using Pluto SVG and: stbtt_FindSVGDoc, stbtt_GetCodepointSVG, stbtt_GetGlyphSVG
 //TODO: Do we want to do the centerOffset calculation with FreeType that we were doing with stb_truetype.h? (Using 'W' character VMetrics to get a more proper maxAscend)
 //TODO: Fix double-rendering of some highlight rectangles (when a wrapWidth causes a new line?)
@@ -56,7 +56,8 @@ Description:
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 //TODO: Does TryGetFontGlyphMetrics produce a different logicalRec than if we actually bake the character?
 
-//TODO: Add support for .svg files being used as glyph providers
+//TODO: Add support for multiple font files being using in TryBakeFontAtlas when using stb_truetype.h (don't use stbtt_PackBegin, stbtt_PackFontRangesGatherRects, stbtt_PackFontRangesPackRects, stbtt_PackFontRangesRenderIntoRects)
+//TODO: Add support for loose .svg files being used as glyph providers
 //TODO: Find a way to get glyph metrics from FreeType that isn't expensive? Then we can do GetFontGlyphMetrics in DoFontFlow when we want to scale a glyph
 //TODO: When we don't have a perfect style match file attached, we can end up with multiple baked glyphs of the same codepoint in different atlases that are marked with different styles. Maybe we should prevent this? Maybe the font file we find should have an effect on which atlas we look at adding a glyph to?
 //TODO: Figure out what's happening with loading Meiryo on Windows 10 machine (is it giving us a portion of .ttc?). Add better debug options and error handling in OS font loading in general
@@ -309,14 +310,14 @@ FT_Library FreeTypeLib = nullptr;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define FontCharRange_ASCII                 NewFontCharRangeLength(UNICODE_PRINTABLE_ASCII_START, UNICODE_PRINTABLE_ASCII_COUNT)
+#define FontCharRange_ASCII                 NewFontCharRange(UNICODE_PRINTABLE_ASCII_START, UNICODE_PRINTABLE_ASCII_END-1)
 #define FontCharRange_UppercaseLetters      NewFontCharRange('A', 'Z')
 #define FontCharRange_LowercaseLetters      NewFontCharRange('a', 'z')
-#define FontCharRange_LatinSupplementAccent NewFontCharRangeLength(UNICODE_LATIN1_SUPPLEMENT_ACCENT_START, UNICODE_LATIN1_SUPPLEMENT_ACCENT_COUNT)
-#define FontCharRange_LatinExtA             NewFontCharRangeLength(UNICODE_LATIN_EXT_A_START, UNICODE_LATIN_EXT_A_COUNT)
-#define FontCharRange_Cyrillic              NewFontCharRangeLength(UNICODE_CYRILLIC_START, UNICODE_CYRILLIC_COUNT)
-#define FontCharRange_Hiragana              NewFontCharRangeLength(UNICODE_HIRAGANA_START, UNICODE_HIRAGANA_COUNT)
-#define FontCharRange_Katakana              NewFontCharRangeLength(UNICODE_KATAKANA_START, UNICODE_KATAKANA_COUNT)
+#define FontCharRange_LatinSupplementAccent NewFontCharRange(UNICODE_LATIN1_SUPPLEMENT_ACCENT_START, UNICODE_LATIN1_SUPPLEMENT_ACCENT_END-1)
+#define FontCharRange_LatinExtA             NewFontCharRange(UNICODE_LATIN_EXT_A_START, UNICODE_LATIN_EXT_A_END-1)
+#define FontCharRange_Cyrillic              NewFontCharRange(UNICODE_CYRILLIC_START, UNICODE_CYRILLIC_END-1)
+#define FontCharRange_Hiragana              NewFontCharRange(UNICODE_HIRAGANA_START, UNICODE_HIRAGANA_END-1)
+#define FontCharRange_Katakana              NewFontCharRange(UNICODE_KATAKANA_START, UNICODE_KATAKANA_END-1)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -1912,6 +1913,7 @@ PEXPI FontAtlas* TryGetFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, boo
 }
 
 //NOTE: This function can return Result_Partial which indicates that one or more codepoints did not have any font files that provided glyphs for them. This result can be ignored or it can be surfaced to the user (or hit a breakpoint in debug mode)
+//NOTE: When using stb_truetype.h this function can only bake glyphs from a single font file, it will use the first codepoint in charRanges to pick a font file to source glyphs from
 PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 styleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
 {
 	NotNull(font);
@@ -2261,8 +2263,9 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 	
 	do
 	{
-		Assert(font->numFiles > 0);
-		FontFile* fontFile = &font->files[0];
+		u32 firstCodepoint = (numCharRanges > 0) ? charRanges[0].startCodepoint : CharToU32(' ');
+		FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, firstCodepoint, fontSize, styleFlags, false, nullptr, nullptr);
+		NotNull(fontFile);
 		
 		stbtt_pack_range* stbRanges = AllocArray(stbtt_pack_range, scratch, numCharRanges);
 		NotNull(stbRanges);
@@ -2272,7 +2275,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 			const FontCharRange* charRange = &charRanges[rIndex];
 			Assert(charRange->endCodepoint >= charRange->startCodepoint);
 			stbtt_pack_range* stbRange = &stbRanges[rIndex];
-			stbRange->font_size = fontSize;
+			stbRange->font_size = STBTT_POINT_SIZE(fontSize);
 			stbRange->first_unicode_codepoint_in_range = (int)charRange->startCodepoint;
 			// int *array_of_unicode_codepoints;       // if non-zero, then this is an array of unicode codepoints
 			stbRange->num_chars = (int)(charRange->endCodepoint+1 - charRange->startCodepoint);
