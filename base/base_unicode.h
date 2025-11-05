@@ -94,6 +94,13 @@ Description:
 #define UNICODE_CHECK_MARK_CODEPOINT 0x2713
 #define UNICODE_CHECK_MARK_STR       "\xE2\x9C\x93" //UTF-8 encoding
 
+// See https://en.wikipedia.org/wiki/Quad_(typography)   and   https://en.wikipedia.org/wiki/Em_(typography)
+#define UNICODE_EN_QUAD_CODEPOINT         0x2000
+#define UNICODE_EM_QUAD_CODEPOINT         0x2001
+#define UNICODE_EN_SPACE_CODEPOINT        0x2002
+#define UNICODE_EM_SPACE_CODEPOINT        0x2003
+#define UNICODE_MIDDLE_SPACE_CODEPOINT    0x2005 //aka "Four-Per-Em Space"
+
 //These are all non-breaking characters which we check in IsCodepointNonBreaking
 #define UNICODE_NON_BREAKING_SPACE_CODEPOINT            0x00A0
 #define UNICODE_NON_BREAKING_SPACE_STR                  "\xC2\xA0" //UTF-8 encoding
@@ -195,6 +202,11 @@ PEXPI bool IsCodepointWhitespace(u32 codepoint, bool includeNewLines)
 		case UNICODE_LINE_FEED_CODEPOINT: return includeNewLines;
 		case UNICODE_CARRIAGE_RETURN_CODEPOINT: return includeNewLines;
 		case UNICODE_SPACE_CODEPOINT: return true;
+		case UNICODE_EN_QUAD_CODEPOINT: return true;
+		case UNICODE_EM_QUAD_CODEPOINT: return true;
+		case UNICODE_EN_SPACE_CODEPOINT: return true;
+		case UNICODE_EM_SPACE_CODEPOINT: return true;
+		case UNICODE_MIDDLE_SPACE_CODEPOINT: return true;
 		case UNICODE_NON_BREAKING_SPACE_CODEPOINT: return true;
 		case UNICODE_NARROW_NON_BREAKING_SPACE_CODEPOINT: return true;
 		case UNICODE_ZERO_WIDTH_SPACE_CODEPOINT: return true;

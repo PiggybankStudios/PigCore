@@ -46,7 +46,6 @@ Description:
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
 //TODO: Sort/merge/cleanup the incoming charRanges in TryBakeFontAtlas!
-//TODO: Why are the spaces suddenly so large? Is that just my perception?
 //TODO: stb_truetype.h scaled glyph metrics are slightly wrong meaning the characters look like they zig-zag up/down by 1 pixel
 //TODO: Add SVG support for stb_truetype.h path using Pluto SVG and: stbtt_FindSVGDoc, stbtt_GetCodepointSVG, stbtt_GetGlyphSVG
 //TODO: Do we want to do the centerOffset calculation with FreeType that we were doing with stb_truetype.h? (Using 'W' character VMetrics to get a more proper maxAscend)
@@ -64,6 +63,7 @@ Description:
 //TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
 //TODO: Do we want a function that helps rebake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
 //TODO: Selection rectangles should be drawn all the way to wrapWidth on the right if highlight is continuing to the next line (and wrapWidth != 0) (Maybe we should draw a rectangle from 0 to left-hand side of text on next line if selection includes new-line char?)
+//TODO: ColoredGlyphs style flag shouldn't mean the TryFindFontFileForCodepoint should prioritize the emoji font file for regular glyphs (especially stuff like space which usually exists in all fonts)
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
