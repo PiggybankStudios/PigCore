@@ -397,12 +397,14 @@ void AppInit(void)
 		Result attachResult = Result_None;
 		Result bakeResult = Result_None;
 		FontCharRange basicCharRanges[] = {
-			FontCharRange_ASCII,
-			FontCharRange_LatinSupplementAccent,
+			// FontCharRange_ASCII,
+			// FontCharRange_LowercaseLetters,
+			FontCharRange_UppercaseLetters,
+			// FontCharRange_LatinSupplementAccent,
 			// NewFontCharRangeSingle(UNICODE_ZERO_WIDTH_SPACE_CODEPOINT),
 			// NewFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
-			NewFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
-			NewFontCharRangeSingle(UNICODE_UNKNOWN_CHAR_CODEPOINT),
+			// NewFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
+			// NewFontCharRangeSingle(UNICODE_UNKNOWN_CHAR_CODEPOINT),
 		};
 		FontCharRange japaneseCharRanges[] = {
 			FontCharRange_Hiragana,
