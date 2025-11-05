@@ -17,6 +17,7 @@ Date:   11\05\2025
 #include "struct/struct_image_data.h"
 #include "struct/struct_rectangles.h"
 
+//NOTE: CharRanges are inclusive on the upper bound, so endCodepoint is part of the range! Care must be taken when using UNICODE_SOMETHING_END macros since those are exclusive!
 typedef plex FontCharRange FontCharRange;
 plex FontCharRange
 {
@@ -118,6 +119,10 @@ PEXPI CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph*
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_FONT_CHAR_RANGE_H
+
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_FONT_CHAR_RANGE_H)
+#include "cross/cross_mem_arena_and_font_char_range.h"
+#endif
 
 #if defined(_STRUCT_FONT_CHAR_RANGE_H) && defined(_STRUCT_VAR_ARRAY_H)
 #include "cross/cross_font_char_range_and_var_array.h"

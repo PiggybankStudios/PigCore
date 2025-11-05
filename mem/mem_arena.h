@@ -1315,3 +1315,11 @@ PEXPI bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr
 #if defined(_MEM_ARENA_H) && defined(_STRUCT_STRING_H) && defined(_BASE_UNICODE_H)
 #include "cross/cross_mem_arena_string_and_unicode.h"
 #endif
+
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_IMAGE_DATA_H)
+#include "cross/cross_mem_arena_and_image_data.h"
+#endif
+
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_FONT_CHAR_RANGE_H)
+#include "cross/cross_mem_arena_and_font_char_range.h"
+#endif

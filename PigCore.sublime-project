@@ -1398,6 +1398,7 @@
 			"FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint)",
 			"FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints)",
 			"FontCharRange NewFontCharRangeSingle(u32 codepoint)",
+			"FontCharRange* SortAndMergeFontCharRanges(Arena* arena, uxx numRanges, const FontCharRange* charRanges, uxx* numRangesOut)",
 			"FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styleFlags, uxx* fileIndexOut, unsigned int* glyphIndexOut)",
 			"FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r32 fontSize, u8 styleFlags, bool forMetricsOnly, uxx* fileIndexOut, unsigned int* glyphIndexOut)",
 			"FontFile* TryFindFontFileWithStyle(PigFont* font, u8 styleFlags, uxx* fileIndexOut)",

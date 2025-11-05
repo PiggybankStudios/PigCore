@@ -45,6 +45,7 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
+//TODO: Clean up usages of ImageData to use NewImageData and FreeImageData
 //TODO: Sort/merge/cleanup the incoming charRanges in TryBakeFontAtlas!
 //TODO: stb_truetype.h scaled glyph metrics are slightly wrong meaning the characters look like they zig-zag up/down by 1 pixel
 //TODO: Add SVG support for stb_truetype.h path using Pluto SVG and: stbtt_FindSVGDoc, stbtt_GetCodepointSVG, stbtt_GetGlyphSVG
@@ -1811,13 +1812,17 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 	Assert(numCustomGlyphRanges == 0 || customGlyphRanges != nullptr);
 	Result result = Result_None;
 	
+	uxx numSortedRanges = 0;
+	FontCharRange* sortedCharRanges = SortAndMergeFontCharRanges(scratch, numCharRanges, charRanges, &numSortedRanges);
+	Assert(numSortedRanges > 0 && sortedCharRanges != nullptr);
+	
 	u32 minCodepoint = UINT32_MAX;
 	u32 maxCodepoint = 0;
 	uxx numCodepointsInCharRanges = 0;
 	uxx numCodepointsInCustomRanges = 0;
-	for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+	for (uxx rIndex = 0; rIndex < numSortedRanges; rIndex++)
 	{
-		const FontCharRange* charRange = &charRanges[rIndex];
+		const FontCharRange* charRange = &sortedCharRanges[rIndex];
 		Assert(charRange->endCodepoint >= charRange->startCodepoint);
 		numCodepointsInCharRanges += (charRange->endCodepoint - charRange->startCodepoint)+1;
 		minCodepoint = MinU32(minCodepoint, charRange->startCodepoint);
@@ -1862,9 +1867,9 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 		NotNull(packRects);
 		{
 			uxx packedRecIndex = 0;
-			for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+			for (uxx rIndex = 0; rIndex < numSortedRanges; rIndex++)
 			{
-				const FontCharRange* charRange = &charRanges[rIndex];
+				const FontCharRange* charRange = &sortedCharRanges[rIndex];
 				for (u32 codepoint = charRange->startCodepoint; codepoint <= charRange->endCodepoint; codepoint++)
 				{
 					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, true, nullptr, nullptr);
@@ -1951,7 +1956,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 		newAtlas->styleFlags = styleFlags;
 		newAtlas->glyphRange.startCodepoint = minCodepoint;
 		newAtlas->glyphRange.endCodepoint = maxCodepoint;
-		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
+		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numSortedRanges + numCustomGlyphRanges);
 		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal - missingCodepoints.length);
 		
 		{
@@ -1968,9 +1973,9 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 		}
 		
 		//Add all charRanges to atlas info
-		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+		for (uxx rIndex = 0; rIndex < numSortedRanges; rIndex++)
 		{
-			const FontCharRange* charRange = &charRanges[rIndex];
+			const FontCharRange* charRange = &sortedCharRanges[rIndex];
 			FontCharRange* newCharRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
 			NotNull(newCharRange);
 			ClearPointer(newCharRange);
@@ -2148,16 +2153,16 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 	
 	do
 	{
-		u32 firstCodepoint = (numCharRanges > 0) ? charRanges[0].startCodepoint : CharToU32(' ');
+		u32 firstCodepoint = charRanges[0].startCodepoint;
 		FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, firstCodepoint, fontSize, styleFlags, false, nullptr, nullptr);
 		NotNull(fontFile);
 		
-		stbtt_pack_range* stbRanges = AllocArray(stbtt_pack_range, scratch, numCharRanges);
+		stbtt_pack_range* stbRanges = AllocArray(stbtt_pack_range, scratch, numSortedRanges);
 		NotNull(stbRanges);
-		MyMemSet(stbRanges, 0x00, sizeof(stbtt_pack_range) * numCharRanges);
-		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+		MyMemSet(stbRanges, 0x00, sizeof(stbtt_pack_range) * numSortedRanges);
+		for (uxx rIndex = 0; rIndex < numSortedRanges; rIndex++)
 		{
-			const FontCharRange* charRange = &charRanges[rIndex];
+			const FontCharRange* charRange = &sortedCharRanges[rIndex];
 			Assert(charRange->endCodepoint >= charRange->startCodepoint);
 			stbtt_pack_range* stbRange = &stbRanges[rIndex];
 			stbRange->font_size = STBTT_POINT_SIZE(fontSize);
@@ -2203,7 +2208,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 			);
 			Assert(beginResult != 0);
 			
-			numRects = stbtt_PackFontRangesGatherRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
+			numRects = stbtt_PackFontRangesGatherRects(&packContext, &fontInfo, stbRanges, (int)numSortedRanges, rects);
 			Assert(numRects >= 0 && (uxx)numRects == numCodepointsInCharRanges);
 			uxx customGlyphIndex = 0;
 			for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++)
@@ -2229,7 +2234,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 			}
 			
 			stbtt_PackFontRangesPackRects(&packContext, rects, (int)numCodepointsTotal);
-			int packResult = stbtt_PackFontRangesRenderIntoRects(&packContext, &fontInfo, stbRanges, (int)numCharRanges, rects);
+			int packResult = stbtt_PackFontRangesRenderIntoRects(&packContext, &fontInfo, stbRanges, (int)numSortedRanges, rects);
 			if (packResult > 0) { packedSuccessfully = true; break; }
 			ArenaResetToMark(scratch, scratchMark); //only reset scratch if we failed to pack! Thus pixelsPntr can live on for use below
 			atlasSideLength *= 2;
@@ -2315,11 +2320,11 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 			newAtlas->metrics.centerOffset = pretendMaxAscend / 2.0f;
 		}
 		
-		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numCharRanges + numCustomGlyphRanges);
+		InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, numSortedRanges + numCustomGlyphRanges);
 		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal);
-		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++)
+		for (uxx rIndex = 0; rIndex < numSortedRanges; rIndex++)
 		{
-			const FontCharRange* charRange = &charRanges[rIndex];
+			const FontCharRange* charRange = &sortedCharRanges[rIndex];
 			stbtt_pack_range* stbRange = &stbRanges[rIndex];
 			FontCharRange* altasRange = VarArrayAdd(FontCharRange, &newAtlas->charRanges);
 			MyMemCopy(altasRange, charRange, sizeof(FontCharRange));
