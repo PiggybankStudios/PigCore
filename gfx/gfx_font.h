@@ -78,6 +78,7 @@ Description:
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
 #include "struct/struct_rich_string.h"
+#include "struct/struct_font_char_range.h"
 #include "gfx/gfx_texture.h"
 #include "base/base_unicode.h"
 #include "base/base_debug_output.h"
@@ -94,29 +95,6 @@ Description:
 // If this prediction is too low for many glyphs our algorithm will run slow and inefficiently (many evictions) because we don't handle multi-cell glyphs terribly well
 // If this prediciton is too high we will waste a bunch of atlas space
 #define FONT_CELL_SIZE_PREDICTION_LINE_HEIGHT_SCALAR 1.1f
-
-typedef plex FontCharRange FontCharRange;
-plex FontCharRange
-{
-	u32 startCodepoint;
-	u32 endCodepoint;
-	uxx glyphArrayStartIndex;
-};
-
-typedef plex CustomFontGlyph CustomFontGlyph;
-plex CustomFontGlyph
-{
-	u32 codepoint;
-	ImageData imageData;
-	reci sourceRec;
-};
-typedef plex CustomFontCharRange CustomFontCharRange;
-plex CustomFontCharRange
-{
-	u32 startCodepoint;
-	u32 endCodepoint;
-	CustomFontGlyph* glyphs;
-};
 
 #define INVALID_TTF_GLYPH_INDEX INT32_MAX
 
@@ -310,14 +288,6 @@ FT_Library FreeTypeLib = nullptr;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define FontCharRange_ASCII                 NewFontCharRange(UNICODE_PRINTABLE_ASCII_START, UNICODE_PRINTABLE_ASCII_END-1)
-#define FontCharRange_UppercaseLetters      NewFontCharRange('A', 'Z')
-#define FontCharRange_LowercaseLetters      NewFontCharRange('a', 'z')
-#define FontCharRange_LatinSupplementAccent NewFontCharRange(UNICODE_LATIN1_SUPPLEMENT_ACCENT_START, UNICODE_LATIN1_SUPPLEMENT_ACCENT_END-1)
-#define FontCharRange_LatinExtA             NewFontCharRange(UNICODE_LATIN_EXT_A_START, UNICODE_LATIN_EXT_A_END-1)
-#define FontCharRange_Cyrillic              NewFontCharRange(UNICODE_CYRILLIC_START, UNICODE_CYRILLIC_END-1)
-#define FontCharRange_Hiragana              NewFontCharRange(UNICODE_HIRAGANA_START, UNICODE_HIRAGANA_END-1)
-#define FontCharRange_Katakana              NewFontCharRange(UNICODE_KATAKANA_START, UNICODE_KATAKANA_END-1)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -443,91 +413,6 @@ PEXPI void MakeFontActive(PigFont* font, i32 minAtlasSize, i32 maxAtlasSize, uxx
 	font->activeMaxNumAtlases = maxNumAtlases;
 	font->autoEvictGlyphTime = autoEvictGlyphTime;
 	font->autoEvictAtlasTime = autoEvictAtlasTime;
-}
-
-PEXPI FontCharRange NewFontCharRangeSingle(u32 codepoint)
-{
-	FontCharRange result = ZEROED;
-	result.startCodepoint = codepoint;
-	result.endCodepoint = codepoint;
-	return result;
-}
-PEXPI FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint)
-{
-	FontCharRange result = ZEROED;
-	result.startCodepoint = startCodepoint;
-	result.endCodepoint = endCodepoint;
-	return result;
-}
-PEXPI FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints)
-{
-	Assert(numCodepoints > 0);
-	return NewFontCharRange(startCodepoint, startCodepoint + numCodepoints-1);
-}
-
-PEXPI CustomFontCharRange NewCustomFontCharRangeSingle(CustomFontGlyph* glyph)
-{
-	NotNull(glyph);
-	CustomFontCharRange result = ZEROED;
-	result.startCodepoint = glyph->codepoint;
-	result.endCodepoint = glyph->codepoint;
-	result.glyphs = glyph;
-	return result;
-}
-PEXPI CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph* glyphs)
-{
-	NotNull(glyphs);
-	Assert(numGlyphs > 0);
-	CustomFontCharRange result = ZEROED;
-	u32 prevCodepoint = 0;
-	for (uxx gIndex = 0; gIndex < numGlyphs; gIndex++)
-	{
-		CustomFontGlyph* glyph = &glyphs[gIndex];
-		if (gIndex == 0) { result.startCodepoint = glyph->codepoint; }
-		else { AssertMsg(prevCodepoint == glyph->codepoint-1, "Codepoints in glyphs must be consecutive when calling NewCustomFontCharRange"); }
-		if (gIndex+1 == numGlyphs) { result.endCodepoint = glyph->codepoint; }
-		prevCodepoint = glyph->codepoint;
-	}
-	result.glyphs = glyphs;
-	return result;
-}
-
-PEXP void RemoveCodepointsFromCharRanges(VarArray* charRanges, uxx numCodepoints, u32* codepoints)
-{
-	for (uxx cIndex = 0; cIndex < numCodepoints; cIndex++)
-	{
-		u32 codepointToRemove = codepoints[cIndex];
-		bool foundCharRange = false;
-		VarArrayLoop(charRanges, rIndex)
-		{
-			VarArrayLoopGet(FontCharRange, charRange, charRanges, rIndex);
-			if (charRange->startCodepoint <= codepointToRemove && charRange->endCodepoint >= codepointToRemove)
-			{
-				foundCharRange = true;
-				if (charRange->startCodepoint == charRange->endCodepoint) //single codepoint range needs to be removed entirely
-				{
-					VarArrayRemoveAt(FontCharRange, charRanges, rIndex);
-				}
-				else if (charRange->startCodepoint == codepointToRemove) //bump up startCodepoint by one
-				{
-					charRange->startCodepoint++;
-				}
-				else if (charRange->endCodepoint == codepointToRemove) //bump down endCodepoint by one
-				{
-					charRange->endCodepoint--;
-				}
-				else //otherwise we need to split the charRange into two
-				{
-					FontCharRange lowerRange = NewFontCharRange(charRange->startCodepoint, codepointToRemove-1);
-					FontCharRange upperRange = NewFontCharRange(codepointToRemove+1, charRange->endCodepoint);
-					MyMemCopy(charRange, &lowerRange, sizeof(FontCharRange));
-					VarArrayInsertValue(FontCharRange, charRanges, rIndex+1, upperRange);
-				}
-				break;
-			}
-		}
-		Assert(foundCharRange);
-	}
 }
 
 #if BUILD_WITH_FREETYPE
