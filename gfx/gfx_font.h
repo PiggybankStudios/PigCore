@@ -1232,12 +1232,28 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	if (!IsCodepointWhitespace(codepoint, true))
 	{
 		int boxX0, boxY0, boxX1, boxY1;
-		int getCodepointBoxResult = stbtt_GetGlyphBox(&fontFile->ttfInfo, glyphIndex, &boxX0, &boxY0, &boxX1, &boxY1);
-		if (getCodepointBoxResult == 0) { TracyCZoneEnd(_funcZone); return nullptr; }
+		stbtt_GetGlyphBitmapBox(&fontFile->ttfInfo, glyphIndex, fontScale, fontScale, &boxX0, &boxY0, &boxX1, &boxY1);
 		glyphSize = NewV2i(
-			RoundR32i((boxX1 - boxX0) * fontScale),
-			RoundR32i((boxY1 - boxY0) * fontScale)
+			(i32)(boxX1 - boxX0),
+			(i32)(boxY1 - boxY0)
 		);
+		
+		// PrintLine_D("In atlas size=%g style=%s%s scale=%f",
+		// 	activeAtlas->fontSize,
+		// 	IsFlagSet(activeAtlas->styleFlags, FontStyleFlag_Bold) ? "Bold" : "",
+		// 	IsFlagSet(activeAtlas->styleFlags, FontStyleFlag_Italic) ? "Italic" : "",
+		// 	fontScale
+		// );
+		// PrintLine_D("glyph box \'%s\' U+%X: (%d, %d, %d, %d) or (%g, %g, %g, %g) or (%g, %g, %g, %g)",
+		// 	DebugGetCodepointName(codepoint), codepoint,
+		// 	boxX0, boxY0, boxX1, boxY1,
+		// 	boxX0 * fontScale, boxY0 * fontScale, boxX1 * fontScale, boxY1 * fontScale,
+		// 	boxX0 * fontScale, boxY0 * fontScale, (boxX1 - boxX0) * fontScale, (boxY1 - boxY0) * fontScale
+		// );
+		// PrintLine_D("glyph size \'%s\' U+%X: (%d, %d)",
+		// 	DebugGetCodepointName(codepoint), codepoint,
+		// 	glyphSize.Width, glyphSize.Height
+		// );
 	}
 	#endif //BUILD_WITH_FREETYPE
 	
@@ -1318,6 +1334,9 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		{
 			bitmapPixels = stbtt_GetGlyphBitmap(&fontFile->ttfInfo, fontScale, fontScale, glyphIndex, &bitmapWidth, &bitmapHeight, &bitmapXOffset, &bitmapYOffset);
 			NotNull(bitmapPixels);
+			Assert(bitmapWidth <= glyphSize.Width);
+			Assert(bitmapHeight <= glyphSize.Height);
+			// PrintLine_D("bitmap size \'%s\' U+%X: (%d, %d)", DebugGetCodepointName(codepoint), codepoint, bitmapWidth, bitmapHeight);
 		}
 		#endif
 		
