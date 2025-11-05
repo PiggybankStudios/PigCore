@@ -908,7 +908,8 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	}
 	#else //!BUILD_WITH_FREETYPE
 	{
-		lineMetrics.fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+		// lineMetrics.fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+		lineMetrics.fontScale = stbtt_ScaleForMappingEmToPixels(&fontFile->ttfInfo, fontSize);
 		int ascent, descent, lineGap;
 		stbtt_GetFontVMetrics(&fontFile->ttfInfo, &ascent, &descent, &lineGap);
 		lineMetrics.maxAscend = (r32)ascent * lineMetrics.fontScale;
@@ -940,7 +941,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	NotNull(newAtlas);
 	ClearPointer(newAtlas);
 	newAtlas->fontSize = fontSize;
-	newAtlas->metrics.fontScale = 1.0f; //TODO: Fill me?
+	newAtlas->metrics.fontScale = 1.0f; //TODO: Should we fill this for FreeType?
 	newAtlas->styleFlags = (styleFlags & FontStyleFlag_FontAtlasFlags);
 	newAtlas->glyphRange = NewFontCharRangeSingle(0);
 	newAtlas->metrics = lineMetrics;
@@ -972,7 +973,9 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	#else //!BUILD_WITH_FREETYPE
 	//TODO: Should we do stbtt_GetFontBoundingBox instead of this estimate?
 	FontFile* firstFontFile = &font->files[0];
-	r32 fontScale = stbtt_ScaleForPixelHeight(&firstFontFile->ttfInfo, fontSize);
+	// r32 fontScale = stbtt_ScaleForPixelHeight(&firstFontFile->ttfInfo, fontSize);
+	r32 fontScale = stbtt_ScaleForMappingEmToPixels(&firstFontFile->ttfInfo, fontSize);
+	newAtlas->metrics.fontScale = fontScale;
 	int ascent, descent, lineGap;
 	stbtt_GetFontVMetrics(&firstFontFile->ttfInfo, &ascent, &descent, &lineGap);
 	r32 lineHeight = ((r32)ascent + (r32)(-descent) + (r32)lineGap) * fontScale;
@@ -1227,7 +1230,8 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	#else //!BUILD_WITH_FREETYPE
 	int glyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, (int)codepoint);
 	Assert(glyphIndex != 0);
-	r32 fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, activeAtlas->fontSize);
+	// r32 fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, activeAtlas->fontSize);
+	r32 fontScale = stbtt_ScaleForMappingEmToPixels(&fontFile->ttfInfo, activeAtlas->fontSize);
 	v2i glyphSize = V2i_Zero_Const;
 	if (!IsCodepointWhitespace(codepoint, true))
 	{

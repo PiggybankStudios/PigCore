@@ -31,7 +31,7 @@ Description:
 
 //https://codepoints.net/basic_latin
 #define UNICODE_PRINTABLE_ASCII_START  0x0020
-#define UNICODE_PRINTABLE_ASCII_COUNT  126 //through U+007E
+#define UNICODE_PRINTABLE_ASCII_COUNT  94 //through U+007E
 #define UNICODE_PRINTABLE_ASCII_END    (UNICODE_PRINTABLE_ASCII_START + UNICODE_PRINTABLE_ASCII_COUNT)
 
 //https://codepoints.net/latin-1_supplement

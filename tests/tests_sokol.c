@@ -454,7 +454,7 @@ void AppInit(void)
 		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
 		
 		bakeResult = TryBakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
-		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
+		// bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
 	}
 	else
 	{

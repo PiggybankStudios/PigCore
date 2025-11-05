@@ -1,10 +1,10 @@
 // raddbg 0.9.22 project file
 
+recent_file: path: "tests/tests_sokol.c"
 recent_file: path: "gfx/gfx_font.h"
 recent_file: path: "cross/cross_string_and_unicode.h"
 recent_file: path: "struct/struct_matrices.h"
 recent_file: path: "third_party/freetype/src/sfnt/ttcmap.c"
-recent_file: path: "tests/tests_sokol.c"
 recent_file: path: "gfx/gfx_font_flow.h"
 recent_file: path: "gfx/gfx_texture.h"
 recent_file: path: "misc/misc_sokol_app_helpers.c"
