@@ -28,6 +28,7 @@ Description:
 #include "misc/misc_standard_colors.h"
 #include "mem/mem_arena.h"
 #include "misc/misc_parsing.h"
+#include "misc/misc_two_pass.h"
 
 typedef enum FontStyleFlag FontStyleFlag;
 enum FontStyleFlag

@@ -82,6 +82,7 @@ Description:
 #include "struct/struct_font_char_range.h"
 #include "gfx/gfx_texture.h"
 #include "base/base_unicode.h"
+#include "misc/misc_sorting.h"
 #include "base/base_debug_output.h"
 #include "lib/lib_freetype.h"
 #include "lib/lib_plutosvg.h"

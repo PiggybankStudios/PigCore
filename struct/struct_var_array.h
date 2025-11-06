@@ -610,10 +610,6 @@ PEXP void VarArrayCopy_(VarArray* destArray, const VarArray* sourceArray, Arena*
 
 #endif //  _STRUCT_VAR_ARRAY_H
 
-#if defined(_MISC_SORTING_H) && defined(_STRUCT_VAR_ARRAY_H)
-#include "cross/cross_sorting_and_var_array.h"
-#endif
-
 #if defined(_STRUCT_FONT_CHAR_RANGE_H) && defined(_STRUCT_VAR_ARRAY_H)
 #include "cross/cross_font_char_range_and_var_array.h"
 #endif
