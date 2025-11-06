@@ -120,8 +120,8 @@ PEXPI CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph*
 
 #endif //  _STRUCT_FONT_CHAR_RANGE_H
 
-#if defined(_MEM_ARENA_H) && defined(_STRUCT_FONT_CHAR_RANGE_H)
-#include "cross/cross_mem_arena_and_font_char_range.h"
+#if defined(_MISC_SORTING_H) && defined(_STRUCT_FONT_CHAR_RANGE_H)
+#include "cross/cross_sorting_and_font_char_range.h"
 #endif
 
 #if defined(_STRUCT_FONT_CHAR_RANGE_H) && defined(_STRUCT_VAR_ARRAY_H)

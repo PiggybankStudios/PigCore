@@ -65,6 +65,10 @@ static void StbImageWriteFree(void* allocPntr)
 #define STBIW_MEMMOVE(dest, source, length) MyMemMove((dest), (source), (length))
 // #define STBIW_ZLIB_COMPRESS TODO: Do we want to route this to our own version of zlib?
 
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable:4459) //declaration of 'crc_table' hides global declaration
+#endif
 #if (COMPILER_IS_CLANG || COMPILER_IS_EMSCRIPTEN)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
@@ -72,6 +76,9 @@ static void StbImageWriteFree(void* allocPntr)
 
 #include "third_party/stb/stb_image_write.h"
 
+#if COMPILER_IS_MSVC
+#pragma warning(pop)
+#endif
 #if (COMPILER_IS_CLANG || COMPILER_IS_EMSCRIPTEN)
 #pragma clang diagnostic pop
 #endif

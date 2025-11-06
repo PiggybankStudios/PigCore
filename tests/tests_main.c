@@ -1141,6 +1141,33 @@ int main(int argc, char* argv[])
 	#endif
 	
 	// +==============================+
+	// |     FontCharRange Tests      |
+	// +==============================+
+	#if 0
+	{
+		ScratchBegin(scratch);
+		FontCharRange testRanges[] = {
+			NewFontCharRange(8, 8),
+			NewFontCharRange(1, 5),
+			NewFontCharRange(10, 15),
+			NewFontCharRange(13, 14),
+			NewFontCharRange(20, 29),
+			NewFontCharRange(6, 6),
+			NewFontCharRange(24, 25),
+			NewFontCharRange(2, 2),
+		};
+		uxx numTestMergedRanges = 0;
+		FontCharRange* testMergedRanges = SortAndMergeFontCharRanges(scratch, ArrayCount(testRanges), &testRanges[0], &numTestMergedRanges);
+		PrintLine_D("%llu ranges merged into %llu:", (uxx)ArrayCount(testRanges), numTestMergedRanges);
+		for (uxx rIndex = 0; rIndex < numTestMergedRanges; rIndex++)
+		{
+			PrintLine_D("Range[%llu]: %u-%u", rIndex, testMergedRanges[rIndex].startCodepoint, testMergedRanges[rIndex].endCodepoint);
+		}
+		ScratchEnd(scratch);
+	}
+	#endif
+	
+	// +==============================+
 	// |        Protobuf Tests        |
 	// +==============================+
 	#if BUILD_WITH_PROTOBUF

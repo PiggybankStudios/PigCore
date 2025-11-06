@@ -1243,7 +1243,9 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		NotNull(newGlyph);
 		ClearPointer(newGlyph);
 		newGlyph->codepoint = codepoint;
-		#if !BUILD_WITH_FREETYPE //TODO: Should we fill this for FreeType?
+		#if BUILD_WITH_FREETYPE
+		newGlyph->ttfGlyphIndex = fontFileGlyphIndex;
+		#else
 		newGlyph->ttfGlyphIndex = glyphIndex;
 		#endif
 		newGlyph->lastUsedTime = font->programTime;
@@ -2109,7 +2111,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					NotNull(newGlyph);
 					ClearPointer(newGlyph);
 					newGlyph->codepoint = customGlyph->codepoint;
-					newGlyph->ttfGlyphIndex = 0;
+					newGlyph->ttfGlyphIndex = INVALID_TTF_GLYPH_INDEX;
 					newGlyph->metrics.advanceX = (r32)glyphSize.Width;
 					newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - glyphSize.Height/2.0f));
 					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)glyphSize.Width, newAtlas->metrics.maxAscend);

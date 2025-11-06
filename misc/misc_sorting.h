@@ -63,6 +63,10 @@ plex SortApi
 	PIG_CORE_INLINE uxx BinarySearchFlatOnFloatMember_(uxx memberOffset, uxx memberSize, void* arrayPntr, uxx numElements, uxx elementSize, const void* targetElement);
 #endif
 
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+//TODO: Should these take elementSize? Shouldn't that just be sizeof(type)?
 #define IsSortedFuncsOnIntMember(type, memberName, sortApiPntr)                          IsSortedFuncsOnIntMember_(true,  STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (sortApiPntr))
 #define IsSortedFuncsOnUintMember(type, memberName, sortApiPntr)                         IsSortedFuncsOnIntMember_(false, STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (sortApiPntr))
 #define IsSortedFuncsOnFloatMember(type, memberName, sortApiPntr)                        IsSortedFuncsOnFloatMember_(     STRUCT_VAR_OFFSET(type, memberName), STRUCT_VAR_SIZE(type, memberName), (sortApiPntr))
@@ -478,6 +482,10 @@ PEXPI uxx BinarySearchFlatOnFloatMember_(uxx memberOffset, uxx memberSize, void*
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _MISC_SORTING_H
+
+#if defined(_MISC_SORTING_H) && defined(_STRUCT_FONT_CHAR_RANGE_H)
+#include "cross/cross_sorting_and_font_char_range.h"
+#endif
 
 #if defined(_MISC_SORTING_H) && defined(_STRUCT_VAR_ARRAY_H)
 #include "cross/cross_sorting_and_var_array.h"

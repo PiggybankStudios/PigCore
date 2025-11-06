@@ -1,5 +1,6 @@
 // raddbg 0.9.22 project file
 
+recent_file: path: "cross/cross_mem_arena_and_font_char_range.h"
 recent_file: path: "tests/tests_sokol.c"
 recent_file: path: "gfx/gfx_font.h"
 recent_file: path: "cross/cross_string_and_unicode.h"
