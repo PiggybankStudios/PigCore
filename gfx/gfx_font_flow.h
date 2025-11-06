@@ -29,6 +29,13 @@ Description:
 #include "gfx/gfx_font.h"
 #include "lib/lib_tracy.h"
 
+//TODO: We should try to optimize DoFontFlow at some point. To layout a full-screen of 12pt text is taking around 39ms on my laptop (optimized build)
+//      EarlyFlowLogic: 14ms
+//      Other:          10ms
+//      GlyphLogic:     8ms
+//      CodepointLogic: 5ms
+//      PostLogic:      0.5ms
+
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
 #if BUILD_WITH_SOKOL_GFX
 
@@ -254,24 +261,25 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		
 		// If any of these things are changing in the next str piece then we need to draw a piece of the active highlight before we continue
 		bool isLineEnding = (state->byteIndex >= state->wordWrapByteIndex && !state->findingNextWordBeforeWrap);
-		bool isHighlightedChanging = (
-			state->textPieceByteIndex == 0 &&
-			IsFontStyleFlagChangingInRichStrStyleChange(&state->currentStyle, state->startFontStyle, currentPiece->styleChange, FontStyleFlag_Highlighted)
-		);
-		if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted))
+		bool isStartingNewPiece = (state->textPieceByteIndex == 0);
+		bool isHighlightedChanging = (isStartingNewPiece && IsFontStyleFlagChangingInRichStrStyleChange(&state->currentStyle, state->startFontStyle, currentPiece->styleChange, FontStyleFlag_Highlighted));
+		if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && (isStartingNewPiece || isLineEnding))
 		{
-			if (currentPiece->styleChange.type == RichStrStyleChangeType_Color ||
+			if (isLineEnding ||
+				isHighlightedChanging ||
+				currentPiece->styleChange.type == RichStrStyleChangeType_Color ||
 				currentPiece->styleChange.type == RichStrStyleChangeType_ColorAndAlpha ||
-				currentPiece->styleChange.type == RichStrStyleChangeType_FontSize ||
-				isLineEnding || isHighlightedChanging)
+				currentPiece->styleChange.type == RichStrStyleChangeType_FontSize)
 			{
 				DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 			}
 		}
 		
-		if (state->textPieceByteIndex == 0)
+		if (isStartingNewPiece)
 		{
+			TracyCZoneN(_applyRichStyleChangeZone, "ApplyRichStyleChange", true);
 			ApplyRichStyleChange(&state->currentStyle, currentPiece->styleChange, state->startFontSize, state->startFontStyle, state->startColor);
+			TracyCZoneEnd(_applyRichStyleChangeZone);
 		}
 		
 		//If highlighting is starting then we should do some look-ahead and render the highlight rectangles FIRST then render the text on top using backgroundColor
