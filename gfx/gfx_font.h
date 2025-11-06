@@ -45,17 +45,16 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Clean up usages of ImageData to use NewImageData and FreeImageData
-//TODO: Sort/merge/cleanup the incoming charRanges in TryBakeFontAtlas!
-//TODO: stb_truetype.h scaled glyph metrics are slightly wrong meaning the characters look like they zig-zag up/down by 1 pixel
+//TODO: Test rendering a full screen of text? How many characters can we get rendering at once in an optimized build?
 //TODO: Add SVG support for stb_truetype.h path using Pluto SVG and: stbtt_FindSVGDoc, stbtt_GetCodepointSVG, stbtt_GetGlyphSVG
 //TODO: Do we want to do the centerOffset calculation with FreeType that we were doing with stb_truetype.h? (Using 'W' character VMetrics to get a more proper maxAscend)
-//TODO: Fix double-rendering of some highlight rectangles (when a wrapWidth causes a new line?)
-//TODO: Test rendering a full screen of text? How many characters can we get rendering at once in an optimized build?
-//TODO: Test rendering with no wrapWidth
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 //TODO: Does TryGetFontGlyphMetrics produce a different logicalRec than if we actually bake the character?
 
+//TODO: Fix double-rendering of some highlight rectangles (when a wrapWidth causes a new line?)
+//TODO: stb_truetype.h scaled glyph metrics are slightly wrong meaning the characters look like they zig-zag up/down by 1 pixel
+//TODO: When custom glyphs are passed TryBakeFontAtlasWithCustomGlyphs they are probably unsorted compared to main charRanges. We should merge and resort after adding all glyphs to the atlas
+//TODO: Make stb_truetype.h version of TryBakeFontAtlas tolerable to missing glyphs in the font file
 //TODO: Add support for multiple font files being using in TryBakeFontAtlas when using stb_truetype.h (don't use stbtt_PackBegin, stbtt_PackFontRangesGatherRects, stbtt_PackFontRangesPackRects, stbtt_PackFontRangesRenderIntoRects)
 //TODO: Add support for loose .svg files being used as glyph providers
 //TODO: Find a way to get glyph metrics from FreeType that isn't expensive? Then we can do GetFontGlyphMetrics in DoFontFlow when we want to scale a glyph
@@ -988,10 +987,7 @@ PEXP void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx gl
 		NotNull(newUpdate);
 		ClearPointer(newUpdate);
 		newUpdate->sourcePos = removeGlyph->atlasSourcePos;
-		newUpdate->imageData.size = removeGlyph->metrics.glyphSize;
-		newUpdate->imageData.numPixels = (uxx)(removeGlyph->metrics.glyphSize.Width * removeGlyph->metrics.glyphSize.Height);
-		newUpdate->imageData.pixels = AllocArray(u32, font->arena, newUpdate->imageData.numPixels);
-		NotNull(newUpdate->imageData.pixels);
+		newUpdate->imageData = NewImageDataInArena(font->arena, removeGlyph->metrics.glyphSize);
 		MyMemSet(newUpdate->imageData.pixels, 0x00, sizeof(u32) * newUpdate->imageData.numPixels);
 	}
 	
@@ -1363,10 +1359,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 				NotNull(newUpdate);
 				ClearPointer(newUpdate);
 				newUpdate->sourcePos = newGlyph->atlasSourcePos;
-				newUpdate->imageData.size = bitmapSize;
-				newUpdate->imageData.numPixels = (uxx)(bitmapSize.Width * bitmapSize.Height);
-				newUpdate->imageData.pixels = AllocArray(u32, font->arena, newUpdate->imageData.numPixels);
-				NotNull(newUpdate->imageData.pixels);
+				newUpdate->imageData = NewImageDataInArena(font->arena, bitmapSize);
 				for (uxx yOffset = 0; yOffset < (uxx)bitmapSize.Height; yOffset++)
 				{
 					for (uxx xOffset = 0; xOffset < (uxx)bitmapSize.Width; xOffset++)
@@ -1411,10 +1404,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 				NotNull(newUpdate);
 				ClearPointer(newUpdate);
 				newUpdate->sourcePos = newGlyph->atlasSourcePos;
-				newUpdate->imageData.size = bitmapSize;
-				newUpdate->imageData.numPixels = (uxx)(bitmapSize.Width * bitmapSize.Height);
-				newUpdate->imageData.pixels = AllocArray(u32, font->arena, newUpdate->imageData.numPixels);
-				NotNull(newUpdate->imageData.pixels);
+				newUpdate->imageData = NewImageDataInArena(font->arena, bitmapSize);
 				
 				for (uxx yOffset = 0; yOffset < (uxx)bitmapSize.Height; yOffset++)
 				{
