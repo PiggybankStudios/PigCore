@@ -31,7 +31,7 @@ Description:
 // #define MINIZ_NO_ARCHIVE_APIS //to disable all ZIP archive API's.
 // #define MINIZ_NO_ARCHIVE_WRITING_APIS //to disable all writing related ZIP archive API's.
 // #define MINIZ_NO_ZLIB_APIS //to remove all ZLIB-style compression/decompression API's.
-// #define MINIZ_NO_ZLIB_COMPATIBLE_NAMES //to disable zlib names, to prevent conflicts against stock zlib.
+#define MINIZ_NO_ZLIB_COMPATIBLE_NAMES //to disable zlib names, to prevent conflicts against stock zlib. (We need this enabled in order to compile with FreeType in a unity build)
 // #define MINIZ_NO_MALLOC //to disable all calls to malloc, free, and realloc. 
 
 #define MINIZ_USE_UNALIGNED_LOADS_AND_STORES 1 //TODO: Is this true on all our platforms? Wasm32 specifically?

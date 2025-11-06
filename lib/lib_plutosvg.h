@@ -18,8 +18,10 @@ Date:   10\29\2025
 //TODO: Should we expose Pluto SVG functions when building as a DLL?
 #if BUILD_WITH_FREETYPE
 
-#define PLUTOVG_BUILD_STATIC
-#define PLUTOSVG_BUILD_STATIC
+#define PLUTOVG_BUILD
+#define PLUTOSVG_BUILD
+// #define PLUTOVG_BUILD_STATIC
+// #define PLUTOSVG_BUILD_STATIC
 
 #include "plutovg.h"
 #include "plutosvg.h"

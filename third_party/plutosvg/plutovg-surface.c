@@ -28,7 +28,7 @@ static plutovg_surface_t* plutovg_surface_create_uninitialized(int width, int he
     return surface;
 }
 
-plutovg_surface_t* plutovg_surface_create(int width, int height)
+PLUTOSVG_API plutovg_surface_t* plutovg_surface_create(int width, int height)
 {
     plutovg_surface_t* surface = plutovg_surface_create_uninitialized(width, height);
     if(surface)
@@ -36,7 +36,7 @@ plutovg_surface_t* plutovg_surface_create(int width, int height)
     return surface;
 }
 
-plutovg_surface_t* plutovg_surface_create_for_data(unsigned char* data, int width, int height, int stride)
+PLUTOSVG_API plutovg_surface_t* plutovg_surface_create_for_data(unsigned char* data, int width, int height, int stride)
 {
     plutovg_surface_t* surface = malloc(sizeof(plutovg_surface_t));
     plutovg_init_reference(surface);
@@ -57,7 +57,7 @@ static plutovg_surface_t* plutovg_surface_load_from_image(stbi_uc* image, int wi
 }
 
 #if !defined(STBI_NO_STDIO) //NOTE(Taylor): Disabled because we use stb_image.h with STBI_NO_STDIO
-plutovg_surface_t* plutovg_surface_load_from_image_file(const char* filename)
+PLUTOSVG_API plutovg_surface_t* plutovg_surface_load_from_image_file(const char* filename)
 {
     int width, height, channels;
     stbi_uc* image = stbi_load(filename, &width, &height, &channels, STBI_rgb_alpha);
@@ -67,7 +67,7 @@ plutovg_surface_t* plutovg_surface_load_from_image_file(const char* filename)
 }
 #endif //!defined(STBI_NO_STDIO)
 
-plutovg_surface_t* plutovg_surface_load_from_image_data(const void* data, int length)
+PLUTOSVG_API plutovg_surface_t* plutovg_surface_load_from_image_data(const void* data, int length)
 {
     int width, height, channels;
     stbi_uc* image = stbi_load_from_memory(data, length, &width, &height, &channels, STBI_rgb_alpha);
@@ -95,7 +95,7 @@ static const uint8_t base64_table[128] = {
     0x31, 0x32, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-plutovg_surface_t* plutovg_surface_load_from_image_base64(const char* data, int length)
+PLUTOSVG_API plutovg_surface_t* plutovg_surface_load_from_image_base64(const char* data, int length)
 {
     plutovg_surface_t* surface = NULL;
     uint8_t* output_data = NULL;
@@ -152,45 +152,45 @@ cleanup:
     return surface;
 }
 
-plutovg_surface_t* plutovg_surface_reference(plutovg_surface_t* surface)
+PLUTOSVG_API plutovg_surface_t* plutovg_surface_reference(plutovg_surface_t* surface)
 {
     plutovg_increment_reference(surface);
     return surface;
 }
 
-void plutovg_surface_destroy(plutovg_surface_t* surface)
+PLUTOSVG_API void plutovg_surface_destroy(plutovg_surface_t* surface)
 {
     if(plutovg_destroy_reference(surface)) {
         free(surface);
     }
 }
 
-int plutovg_surface_get_reference_count(const plutovg_surface_t* surface)
+PLUTOSVG_API int plutovg_surface_get_reference_count(const plutovg_surface_t* surface)
 {
     return plutovg_get_reference_count(surface);
 }
 
-unsigned char* plutovg_surface_get_data(const plutovg_surface_t* surface)
+PLUTOSVG_API unsigned char* plutovg_surface_get_data(const plutovg_surface_t* surface)
 {
     return surface->data;
 }
 
-int plutovg_surface_get_width(const plutovg_surface_t* surface)
+PLUTOSVG_API int plutovg_surface_get_width(const plutovg_surface_t* surface)
 {
     return surface->width;
 }
 
-int plutovg_surface_get_height(const plutovg_surface_t* surface)
+PLUTOSVG_API int plutovg_surface_get_height(const plutovg_surface_t* surface)
 {
     return surface->height;
 }
 
-int plutovg_surface_get_stride(const plutovg_surface_t* surface)
+PLUTOSVG_API int plutovg_surface_get_stride(const plutovg_surface_t* surface)
 {
     return surface->stride;
 }
 
-void plutovg_surface_clear(plutovg_surface_t* surface, const plutovg_color_t* color)
+PLUTOSVG_API void plutovg_surface_clear(plutovg_surface_t* surface, const plutovg_color_t* color)
 {
     uint32_t pixel = plutovg_premultiply_argb(plutovg_color_to_argb32(color));
     for(int y = 0; y < surface->height; y++) {
@@ -210,7 +210,7 @@ static void plutovg_surface_write_end(const plutovg_surface_t* surface)
 }
 
 #if !defined(STBI_NO_STDIO) //NOTE(Taylor): Disabled because we use stb_image.h with STBI_NO_STDIO
-bool plutovg_surface_write_to_png(const plutovg_surface_t* surface, const char* filename)
+PLUTOSVG_API bool plutovg_surface_write_to_png(const plutovg_surface_t* surface, const char* filename)
 {
     plutovg_surface_write_begin(surface);
     int success = stbi_write_png(filename, surface->width, surface->height, 4, surface->data, surface->stride);
@@ -218,7 +218,7 @@ bool plutovg_surface_write_to_png(const plutovg_surface_t* surface, const char* 
     return success;
 }
 
-bool plutovg_surface_write_to_jpg(const plutovg_surface_t* surface, const char* filename, int quality)
+PLUTOSVG_API bool plutovg_surface_write_to_jpg(const plutovg_surface_t* surface, const char* filename, int quality)
 {
     plutovg_surface_write_begin(surface);
     int success = stbi_write_jpg(filename, surface->width, surface->height, 4, surface->data, quality);
@@ -227,7 +227,7 @@ bool plutovg_surface_write_to_jpg(const plutovg_surface_t* surface, const char* 
 }
 #endif //!defined(STBI_NO_STDIO)
 
-bool plutovg_surface_write_to_png_stream(const plutovg_surface_t* surface, plutovg_write_func_t write_func, void* closure)
+PLUTOSVG_API bool plutovg_surface_write_to_png_stream(const plutovg_surface_t* surface, plutovg_write_func_t write_func, void* closure)
 {
     plutovg_surface_write_begin(surface);
     int success = stbi_write_png_to_func(write_func, closure, surface->width, surface->height, 4, surface->data, surface->stride);
@@ -235,7 +235,7 @@ bool plutovg_surface_write_to_png_stream(const plutovg_surface_t* surface, pluto
     return success;
 }
 
-bool plutovg_surface_write_to_jpg_stream(const plutovg_surface_t* surface, plutovg_write_func_t write_func, void* closure, int quality)
+PLUTOSVG_API bool plutovg_surface_write_to_jpg_stream(const plutovg_surface_t* surface, plutovg_write_func_t write_func, void* closure, int quality)
 {
     plutovg_surface_write_begin(surface);
     int success = stbi_write_jpg_to_func(write_func, closure, surface->width, surface->height, 4, surface->data, quality);
@@ -243,7 +243,7 @@ bool plutovg_surface_write_to_jpg_stream(const plutovg_surface_t* surface, pluto
     return success;
 }
 
-void plutovg_convert_argb_to_rgba(unsigned char* dst, const unsigned char* src, int width, int height, int stride)
+PLUTOSVG_API void plutovg_convert_argb_to_rgba(unsigned char* dst, const unsigned char* src, int width, int height, int stride)
 {
     for(int y = 0; y < height; y++) {
         const uint32_t* src_row = (const uint32_t*)(src + stride * y);
@@ -275,7 +275,7 @@ void plutovg_convert_argb_to_rgba(unsigned char* dst, const unsigned char* src, 
     }
 }
 
-void plutovg_convert_rgba_to_argb(unsigned char* dst, const unsigned char* src, int width, int height, int stride)
+PLUTOSVG_API void plutovg_convert_rgba_to_argb(unsigned char* dst, const unsigned char* src, int width, int height, int stride)
 {
     for(int y = 0; y < height; y++) {
         const unsigned char* src_row = src + stride * y;

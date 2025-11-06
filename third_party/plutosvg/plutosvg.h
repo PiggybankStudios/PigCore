@@ -71,7 +71,7 @@ PLUTOSVG_API int plutosvg_version(void);
 PLUTOSVG_API const char* plutosvg_version_string(void);
 
 //NOTE(Taylor): Added this function to set the global so ft_outline_convert_stroke in plutovg-rasterize.c can use it when calling FT_Stroker_New
-void plutosvg_set_library_pntr(FT_Library ft_library);
+PLUTOSVG_API void plutosvg_set_library_pntr(FT_Library ft_library);
 
 /**
  * @brief plutosvg_document_t

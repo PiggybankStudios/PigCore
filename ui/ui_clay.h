@@ -19,6 +19,7 @@ Description:
 #include "mem/mem_arena.h"
 #include "struct/struct_vectors.h"
 #include "struct/struct_rectangles.h"
+#include "struct/struct_typed_array.h"
 #include "struct/struct_string.h"
 #include "struct/struct_color.h"
 

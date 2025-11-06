@@ -8,13 +8,16 @@ Date:   10\15\2025
 #define _LIB_FREETYPE_H
 
 #include "base/base_defines_check.h"
+#include "misc/misc_zip.h"
 
 #if BUILD_WITH_FREETYPE
 
 #define FT2_BUILD_LIBRARY
+#define DLL_EXPORT
 #define FT_CONFIG_MODULES_H "lib/lib_freetype_modules.h"
 #define FT_CONFIG_OPTIONS_H "lib/lib_freetype_options.h"
 #define MINIZ_NO_ZLIB_COMPATIBLE_NAMES
+// #define Z_PREFIX
 
 #if !PIG_CORE_IMPLEMENTATION
 

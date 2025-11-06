@@ -169,8 +169,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				Assert(fontId < renderer->fonts.length);
 				Color32 drawColor = command->renderData.text.textColor;
 				ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)fontId);
-				FontLineMetrics fontLineMetrics = ZEROED;
-				GetFontLineMetrics(font->pntr, fontSize, font->styleFlags, &fontLineMetrics);
+				FontLineMetrics fontLineMetrics = GetFontLineMetrics(font->pntr, fontSize, font->styleFlags);
 				reci oldClipRec = ZEROED;
 				r32 textOffsetX = 0.0f;
 				if (command->renderData.text.userData.wrapWidth == 0.0f)

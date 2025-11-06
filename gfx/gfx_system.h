@@ -17,6 +17,7 @@ Description:
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "misc/misc_printing.h"
+#include "struct/struct_circles.h"
 #include "struct/struct_string.h"
 #include "struct/struct_rich_string.h"
 #include "struct/struct_color.h"

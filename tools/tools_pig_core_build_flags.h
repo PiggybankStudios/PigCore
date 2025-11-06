@@ -11,7 +11,7 @@ Description:
 #ifndef _TOOLS_PIG_CORE_BUILD_FLAGS_H
 #define _TOOLS_PIG_CORE_BUILD_FLAGS_H
 
-void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY, bool BUILD_WITH_FREETYPE)
+void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, Str8 pigCoreThirdPartyPath, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY, bool BUILD_WITH_FREETYPE)
 {
 	AddArg(cl_CommonFlags, DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
 	AddArg(cl_CommonFlags, CL_FULL_FILE_PATHS); //we need full file paths in errors for Sublime Text to be able to parse the errors and display them in the editor
@@ -34,8 +34,10 @@ void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP
 	AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]");
 	if (BUILD_WITH_FREETYPE)
 	{
-		AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/third_party/freetype/include");
-		AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/third_party/plutosvg");
+		Str8 freetypeDir = JoinStrings2(pigCoreThirdPartyPath, StrLit("/freetype/include"), false);
+		AddArgStr(cl_CommonFlags, CL_INCLUDE_DIR, freetypeDir);
+		Str8 plutosvgDir = JoinStrings2(pigCoreThirdPartyPath, StrLit("/plutosvg"), false);
+		AddArgStr(cl_CommonFlags, CL_INCLUDE_DIR, plutosvgDir);
 	}
 	if (DEBUG_BUILD)
 	{

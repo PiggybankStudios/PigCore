@@ -10,18 +10,18 @@
 //NOTE(Taylor): Added this global so ft_outline_convert_stroke in plutovg-rasterize.c can use it when calling FT_Stroker_New
 FT_Library ft_library_global = nullptr;
 
-int plutosvg_version(void)
+PLUTOSVG_API int plutosvg_version(void)
 {
     return PLUTOSVG_VERSION;
 }
 
-const char* plutosvg_version_string(void)
+PLUTOSVG_API const char* plutosvg_version_string(void)
 {
     return PLUTOSVG_VERSION_STRING;
 }
 
 //NOTE(Taylor): Added this function to set the global so ft_outline_convert_stroke in plutovg-rasterize.c can use it when calling FT_Stroker_New
-void plutosvg_set_library_pntr(FT_Library ft_library)
+PLUTOSVG_API void plutosvg_set_library_pntr(FT_Library ft_library)
 {
 	ft_library_global = ft_library;
 }
@@ -1169,7 +1169,7 @@ static plutosvg_document_t* plutosvg_document_create(float width, float height, 
     return document;
 }
 
-void plutosvg_document_destroy(plutosvg_document_t* document)
+PLUTOSVG_API void plutosvg_document_destroy(plutosvg_document_t* document)
 {
     if(document == NULL)
         return;
@@ -1260,7 +1260,7 @@ static bool parse_attributes(const char** begin, const char* end, element_t* ele
     return true;
 }
 
-plutosvg_document_t* plutosvg_document_load_from_data(const char* data, int length, float width, float height, plutovg_destroy_func_t destroy_func, void* closure)
+PLUTOSVG_API plutosvg_document_t* plutosvg_document_load_from_data(const char* data, int length, float width, float height, plutovg_destroy_func_t destroy_func, void* closure)
 {
     if(length == -1)
         length = strlen(data);
@@ -1472,7 +1472,7 @@ error:
     return NULL;
 }
 
-plutosvg_document_t* plutosvg_document_load_from_file(const char* filename, float width, float height)
+PLUTOSVG_API plutosvg_document_t* plutosvg_document_load_from_file(const char* filename, float width, float height)
 {
     FILE* fp = fopen(filename, "rb");
     if(fp == NULL) {
@@ -2550,7 +2550,7 @@ static void render_children(const element_t* element, const render_context_t* co
     }
 }
 
-bool plutosvg_document_render(const plutosvg_document_t* document, const char* id, plutovg_canvas_t* canvas, const plutovg_color_t* current_color, plutosvg_palette_func_t palette_func, void* closure)
+PLUTOSVG_API bool plutosvg_document_render(const plutosvg_document_t* document, const char* id, plutovg_canvas_t* canvas, const plutovg_color_t* current_color, plutosvg_palette_func_t palette_func, void* closure)
 {
     render_state_t state;
     state.parent = NULL;
@@ -2575,7 +2575,7 @@ bool plutosvg_document_render(const plutosvg_document_t* document, const char* i
     return true;
 }
 
-plutovg_surface_t* plutosvg_document_render_to_surface(const plutosvg_document_t* document, const char* id, int width, int height, const plutovg_color_t* current_color, plutosvg_palette_func_t palette_func, void* closure)
+PLUTOSVG_API plutovg_surface_t* plutosvg_document_render_to_surface(const plutosvg_document_t* document, const char* id, int width, int height, const plutovg_color_t* current_color, plutosvg_palette_func_t palette_func, void* closure)
 {
     plutovg_rect_t extents = {0, 0, document->width, document->height};
     if(id && !plutosvg_document_extents(document, id, &extents))
@@ -2607,17 +2607,17 @@ plutovg_surface_t* plutosvg_document_render_to_surface(const plutosvg_document_t
     return surface;
 }
 
-float plutosvg_document_get_width(const plutosvg_document_t* document)
+PLUTOSVG_API float plutosvg_document_get_width(const plutosvg_document_t* document)
 {
     return document->width;
 }
 
-float plutosvg_document_get_height(const plutosvg_document_t* document)
+PLUTOSVG_API float plutosvg_document_get_height(const plutosvg_document_t* document)
 {
     return document->height;
 }
 
-bool plutosvg_document_extents(const plutosvg_document_t* document, const char* id, plutovg_rect_t* extents)
+PLUTOSVG_API bool plutosvg_document_extents(const plutosvg_document_t* document, const char* id, plutovg_rect_t* extents)
 {
     render_state_t state;
     state.parent = NULL;
@@ -2655,13 +2655,13 @@ bool plutosvg_document_extents(const plutosvg_document_t* document, const char* 
 
 #include "plutosvg-ft.h"
 
-const void* plutosvg_ft_svg_hooks(void)
+PLUTOSVG_API const void* plutosvg_ft_svg_hooks(void)
 {
     return &plutosvg_ft_hooks;
 }
 
 #else
-const void* plutosvg_ft_svg_hooks(void)
+PLUTOSVG_API const void* plutosvg_ft_svg_hooks(void)
 {
     return NULL;
 }
