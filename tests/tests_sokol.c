@@ -407,10 +407,10 @@ void AppInit(void)
 			NewFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
 			// NewFontCharRangeSingle(UNICODE_UNKNOWN_CHAR_CODEPOINT),
 		};
-		FontCharRange japaneseCharRanges[] = {
-			FontCharRange_Hiragana,
-			FontCharRange_Katakana,
-		};
+		// FontCharRange japaneseCharRanges[] = {
+		// 	FontCharRange_Hiragana,
+		// 	FontCharRange_Katakana,
+		// };
 		
 		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
 		// bakeResult = TryBakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
@@ -809,7 +809,7 @@ bool AppFrame(void)
 	
 	TracyCZoneEnd(Zone_Update);
 	
-	r32 textScale = TEXT_SCALE/sapp_dpi_scale();
+	r32 textScale = TEXT_SCALE/sapp_dpi_scale(); UNUSED(textScale);
 	TracyCZoneN(Zone_Draw, "Draw", true);
 	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
 	{
@@ -890,8 +890,8 @@ bool AppFrame(void)
 			DrawTexturedRectangle(mipmapTextureRec, White, mipTextureToUse);
 			#endif
 			
-			rec testTextureRec = NewRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
-			DrawTexturedRectangle(testTextureRec, White, &testTexture);
+			// rec testTextureRec = NewRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
+			// DrawTexturedRectangle(testTextureRec, White, &testTexture);
 			
 			#if 1
 			{
@@ -1096,6 +1096,24 @@ bool AppFrame(void)
 					}
 				}
 			}
+			#endif
+			
+			#if 0
+			BindFont(&debugFont);
+			Str8 loremIpsum = StrLit("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum");
+			uxx numLines = (uxx)CeilR32i(mouse.position.Y / GetLineHeight());
+			Str8 lines;
+			lines.length = (loremIpsum.length+1) * numLines;
+			lines.chars = AllocArray(char, scratch, lines.length);
+			NotNull(lines.chars);
+			for (uxx lIndex = 0; lIndex < numLines; lIndex++)
+			{
+				char* linePntr = &lines.chars[lIndex * (loremIpsum.length+1)];
+				MyMemCopy(linePntr, loremIpsum.chars, loremIpsum.length);
+				linePntr[loremIpsum.length] = (lIndex < numLines-1) ? '\n' : '!';
+			}
+			v2 textPos = NewV2(5, 0 + GetMaxAscend());
+			DrawText(lines, textPos, MonokaiWhite);
 			#endif
 			
 			#if BUILD_WITH_BOX2D

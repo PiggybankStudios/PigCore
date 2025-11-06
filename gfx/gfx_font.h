@@ -45,12 +45,14 @@ Description:
 
 //NOTE: Checkout https://wakamaifondue.com/ when investigating what a particular font file supports
 
-//TODO: Test rendering a full screen of text? How many characters can we get rendering at once in an optimized build?
-//TODO: Add SVG support for stb_truetype.h path using Pluto SVG and: stbtt_FindSVGDoc, stbtt_GetCodepointSVG, stbtt_GetGlyphSVG
+// During Oct/Nov 2025 I did a bunch of work on the font structure to add support for dynamically baking glyphs ("active" fonts), and also support for using FreeType instead of stb_truetype.h
+//  The top of this file acted as a focused TODO: list so I could keep track of which things had been addressed as I made progress.
+//  At the end of that work this is the leftover TODO: items that didn't make the cut for priority over other work that needed to get done.
+//  We should eventually do some or all of these but for now they mostly serve as a list of known shortcomings and bugs
 //TODO: Do we want to do the centerOffset calculation with FreeType that we were doing with stb_truetype.h? (Using 'W' character VMetrics to get a more proper maxAscend)
+//TODO: Add SVG support for stb_truetype.h path using Pluto SVG and: stbtt_FindSVGDoc, stbtt_GetCodepointSVG, stbtt_GetGlyphSVG
 //TODO: How do we use a variable weight font file? Are any of the installed fonts on Windows variable weight?
 //TODO: Does TryGetFontGlyphMetrics produce a different logicalRec than if we actually bake the character?
-
 //TODO: Fix double-rendering of some highlight rectangles (when a wrapWidth causes a new line?)
 //TODO: stb_truetype.h scaled glyph metrics are slightly wrong meaning the characters look like they zig-zag up/down by 1 pixel
 //TODO: When custom glyphs are passed TryBakeFontAtlasWithCustomGlyphs they are probably unsorted compared to main charRanges. We should merge and resort after adding all glyphs to the atlas
