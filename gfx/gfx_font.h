@@ -63,7 +63,6 @@ Description:
 //TODO: How do we keep atlases/glyphs resident when we do stuff like pre-baking text layouts? Maybe we can make it convenient to collect which atlases/glyphs are used for a set of textured quads and we can pass that bulk set of references to some function every frame to update their lastUsedTime?
 //TODO: Do we want a function that helps rebake a static atlas at a new size? We often want latin characters baked into a static atlas but when the user resizes the font for the program we want to re-bake that static atlas at the new size (while keeping it at the same atlas index)
 //TODO: Selection rectangles should be drawn all the way to wrapWidth on the right if highlight is continuing to the next line (and wrapWidth != 0) (Maybe we should draw a rectangle from 0 to left-hand side of text on next line if selection includes new-line char?)
-//TODO: ColoredGlyphs style flag shouldn't mean the TryFindFontFileForCodepoint should prioritize the emoji font file for regular glyphs (especially stuff like space which usually exists in all fonts)
 
 #ifndef _GFX_FONT_H
 #define _GFX_FONT_H
@@ -656,6 +655,7 @@ PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styl
 	NotNull(font);
 	NotNull(font->arena);
 	TracyCZoneN(_funcZone, "TryFindFontFileForCodepoint", true);
+	bool isColorableCodepoint = IsCodepointColorable(codepoint);
 	FontFile* matchingFile = nullptr;
 	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
@@ -665,7 +665,7 @@ PEXP FontFile* TryFindFontFileForCodepoint(PigFont* font, u32 codepoint, u8 styl
 		// These flags should match FontStyleFlag_FontFileFlags
 		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiff += 2; }
 		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiff += 2; }
-		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_ColoredGlyphs) != IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { styleDiff += 1; }
+		if (isColorableCodepoint && IsFlagSet(fontFile->styleFlags, FontStyleFlag_ColoredGlyphs) != IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { styleDiff += 1; }
 		
 		if (matchingFile == nullptr || styleDiff < matchingFileStyleDiff)
 		{
@@ -706,6 +706,7 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 	NotNull(font->arena);
 	TracyCZoneN(_funcZone, "TryFindFontFileForCodepointAtSize", !forMetricsOnly);
 	TracyCZoneN(_funcZone_MetricsOnly, "MetricsOnly(TryFindFontFileForCodepointAtSize)", forMetricsOnly);
+	bool isColorableCodepoint = IsCodepointColorable(codepoint);
 	FontFile* matchingFile = nullptr;
 	u8 matchingFileStyleDiff = 0;
 	for (uxx fIndex = 0; fIndex < font->numFiles; fIndex++)
@@ -715,7 +716,7 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 		// These flags should match FontStyleFlag_FontFileFlags
 		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Bold) != IsFlagSet(styleFlags, FontStyleFlag_Bold)) { styleDiff += 2; }
 		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_Italic) != IsFlagSet(styleFlags, FontStyleFlag_Italic)) { styleDiff += 2; }
-		if (IsFlagSet(fontFile->styleFlags, FontStyleFlag_ColoredGlyphs) != IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { styleDiff += 1; }
+		if (isColorableCodepoint && IsFlagSet(fontFile->styleFlags, FontStyleFlag_ColoredGlyphs) != IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { styleDiff += 1; }
 		
 		if (matchingFile == nullptr || styleDiff < matchingFileStyleDiff)
 		{
@@ -733,7 +734,7 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 					Assert(setCharSizeError == 0);
 					FT_Int32 loadFlags = FT_LOAD_DEFAULT;
 					//TODO: Should we check FT_HAS_COLOR if IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)?
-					if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+					if (isColorableCodepoint && IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
 					
 					//TODO: FT_Load_Glyph is taking a bit of time, so we can't call it too often. If there is some set of flags we could pass to make it very cheap we should do that. After a little testing we never found the right flags, so DoFontFlow calls GetFontLineMetrics instead of GetFontGlyphMetrics when it's scaling glyphs
 					// if (forMetricsOnly) { loadFlags |= FT_LOAD_NO_BITMAP|FT_LOAD_COMPUTE_METRICS; }
@@ -1094,6 +1095,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	NotNull(activeAtlas);
 	TracyCZoneN(_funcZone, "TryAddGlyphToActiveFontAtlas", true);
 	u8 styleFlags = activeAtlas->styleFlags | extraStyleFlags;
+	bool isColorableCodepoint = IsCodepointColorable(codepoint);
 	
 	#if BUILD_WITH_FREETYPE
 	FT_F26Dot6 freeTypeFontSize = TO_FT26_FROM_R32(activeAtlas->fontSize);
@@ -1103,7 +1105,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	Assert(fontFileGlyphIndex != 0);
 	FT_Int32 loadFlags = FT_LOAD_DEFAULT;
 	//TODO: Should we check FT_HAS_COLOR?
-	if (IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
+	if (isColorableCodepoint && IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
 	FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, loadFlags);
 	Assert(loadGlyphError == 0);
 	v2i glyphSize = NewV2i(
@@ -1952,6 +1954,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 		InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, numCodepointsTotal - missingCodepoints.length);
 		
 		{
+			//TODO: Maybe instead of searching for closest style match here, we should just use whatever file the first codepoint matched with?
 			FontFile* fontFile = TryFindFontFileWithStyle(font, styleFlags, nullptr);
 			NotNull(fontFile);
 			NotNull(fontFile->freeTypeFace);

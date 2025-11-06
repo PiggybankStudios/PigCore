@@ -67,6 +67,22 @@ Description:
 #define UNICODE_BASIC_MULTILINGUAL_PLANE_COUNT 65535 //aka through U+FFFF
 #define UNICODE_BASIC_MULTILINGUAL_PLANE_END   (UNICODE_BASIC_MULTILINGUAL_PLANE_START + UNICODE_BASIC_MULTILINGUAL_PLANE_COUNT)
 
+#define UNICODE_MISC_SYMBOLS_AND_PICTS_START 0x1F300
+#define UNICODE_MISC_SYMBOLS_AND_PICTS_COUNT 768 //through 0x1F5FF
+#define UNICODE_MISC_SYMBOLS_AND_PICTS_END   (UNICODE_MISC_SYMBOLS_AND_PICTS_START + UNICODE_MISC_SYMBOLS_AND_PICTS_COUNT)
+
+#define UNICODE_EMOTICONS_START 0x1F600
+#define UNICODE_EMOTICONS_COUNT 80 //through 0x1F64F
+#define UNICODE_EMOTICONS_END   (UNICODE_EMOTICONS_START + UNICODE_EMOTICONS_COUNT)
+
+#define UNICODE_TRANSPORT_AND_MAP_SYMBOLS_START 0x1F680
+#define UNICODE_TRANSPORT_AND_MAP_SYMBOLS_COUNT 128 //through 0x1F6FF
+#define UNICODE_TRANSPORT_AND_MAP_SYMBOLS_END   (UNICODE_TRANSPORT_AND_MAP_SYMBOLS_START + UNICODE_TRANSPORT_AND_MAP_SYMBOLS_COUNT)
+
+#define UNICODE_SUPPL_SYMBOLS_AND_PICTS_START 0x1F900
+#define UNICODE_SUPPL_SYMBOLS_AND_PICTS_COUNT 256 //through 0x1F9FF
+#define UNICODE_SUPPL_SYMBOLS_AND_PICTS_END   (UNICODE_SUPPL_SYMBOLS_AND_PICTS_START + UNICODE_SUPPL_SYMBOLS_AND_PICTS_COUNT)
+
 // +==============================+
 // |  Specific Codepoint Defines  |
 // +==============================+
@@ -144,6 +160,7 @@ Description:
 	PIG_CORE_INLINE bool IsCodepointNonBreaking(u32 codepoint);
 	PIG_CORE_INLINE bool IsCodepointWhitespace(u32 codepoint, bool includeNewLines);
 	PIG_CORE_INLINE bool IsCodepointZeroWidth(u32 codepoint);
+	PIG_CORE_INLINE bool IsCodepointColorable(u32 codepoint);
 	u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions);
 	u8 GetCodepointUtf8Size(u32 codepoint);
 	u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut);
@@ -225,6 +242,14 @@ PEXPI bool IsCodepointZeroWidth(u32 codepoint)
 		case UNICODE_ZERO_WIDTH_NONJOINER_CODEPOINT: return true;
 		default: return false;
 	}
+}
+PEXPI bool IsCodepointColorable(u32 codepoint)
+{
+	if (codepoint >= UNICODE_MISC_SYMBOLS_AND_PICTS_START    && codepoint < UNICODE_MISC_SYMBOLS_AND_PICTS_END)    { return true; }
+	if (codepoint >= UNICODE_EMOTICONS_START                 && codepoint < UNICODE_EMOTICONS_END)                 { return true; }
+	if (codepoint >= UNICODE_TRANSPORT_AND_MAP_SYMBOLS_START && codepoint < UNICODE_TRANSPORT_AND_MAP_SYMBOLS_END) { return true; }
+	if (codepoint >= UNICODE_SUPPL_SYMBOLS_AND_PICTS_START   && codepoint < UNICODE_SUPPL_SYMBOLS_AND_PICTS_END)   { return true; }
+	return false;
 }
 
 // +--------------------------------------------------------------+
