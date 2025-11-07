@@ -99,22 +99,41 @@ Description:
 #define FlagEnumToggle(BitwiseField, Bit, enumType, castType) (BitwiseField) = (enumType)(((castType)(BitwiseField)) ^ ((castType)(Bit)))
 #define FlagEnumSetTo(BitwiseField, Bit, condition, enumType, castType) if (condition) { FlagEnumSet((BitwiseField), (Bit), (enumType), (castType)); } else { FlagEnumUnset((BitwiseField), (Bit), (enumType), (castType)); }
 
+// Metric System (SI) prefixes
+#define Tera(value)  ((value) * 1000000000000ULL)
+#define Giga(value)  ((value) * 1000000000ULL)
+#define Mega(value)  ((value) * 1000000ULL)
+#define Kilo(value)  ((value) * 1000ULL)
+#define Hecto(value) ((value) * 100ULL)
+#define Deca(value)  ((value) * 10ULL)
+// No Prefix = 1x
+#define Deci(value)  ((value) * 0.1)
+#define Centi(value) ((value) * 0.01)
+#define Milli(value) ((value) * 0.001)
+#define Micro(value) ((value) * 0.000001)
+#define Nano(value)  ((value) * 0.000000001)
+#define Pico(value)  ((value) * 0.000000000001)
+
+// English names for orders of magnitude
+#define Trillion(value)   Tera(value)
+#define Billion(value)    Giga(value)
+#define Million(value)    Mega(value)
+#define Thousand(value)   Kilo(value)
+#define Hundred(value)    Hecto(value)
+#define Tenth(value)      Deci(value)
+#define Hundredth(value)  Centi(value)
+#define Thousandth(value) Milli(value)
+#define Millionth(value)  Micro(value)
+#define Billionth(value)  Nano(value)
+#define Trillionth(value) Pico(value)
+
 // Shorthand for writing things like (4 * 1024 * 1024) as Megabytes(4).
 // Can be used for more than just memory sizes but these powers of 1024 are often
 // used when partitioning memory because they relate to binary bit patterns
-#define Kilo(value) ((value) * 1024ULL)
-#define Mega(value) (Kilo(value) * 1024ULL)
-#define Giga(value) (Mega(value) * 1024ULL)
-#define Tera(value) (Giga(value) * 1024ULL)
-#define Kilobytes(value) Kilo(value)
-#define Megabytes(value) Mega(value)
-#define Gigabytes(value) Giga(value)
-#define Terabytes(value) Tera(value)
-
-#define Thousand(value) ((value) * 1000ULL)
-#define Million(value)  ((value) * 1000000ULL)
-#define Billion(value)  ((value) * 1000000000ULL)
-#define Trillion(value) ((value) * 1000000000000ULL)
+#define Kilobytes(value) ((value) * 1024ULL)
+#define Megabytes(value) (Kilobytes(value) * 1024ULL)
+#define Gigabytes(value) (Megabytes(value) * 1024ULL)
+#define Terabytes(value) (Gigabytes(value) * 1024ULL)
 
 // Convert between radians and degrees, either with Pi32 or Pi64
 #define ToRadians32(degrees)		((degrees)/180.0f * Pi32)

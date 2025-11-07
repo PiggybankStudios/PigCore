@@ -20,6 +20,7 @@ Description:
 #include "input/input_btn_state.h"
 #include "mem/mem_arena.h"
 #include "gfx/gfx_clay_renderer.h"
+#include "os/os_process_info.h"
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
 
@@ -33,13 +34,14 @@ plex UiWidgetContext
 	r32 uiScale;
 	void** focusedUiElementPntr;
 	CursorShape cursorShape;
+	OsWindowHandle windowHandle;
 };
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr, CursorShape cursorShape);
+	PIG_CORE_INLINE UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr, CursorShape cursorShape, OsWindowHandle windowHandle);
 #endif
 
 // +--------------------------------------------------------------+
@@ -47,7 +49,7 @@ plex UiWidgetContext
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr, CursorShape cursorShape)
+PEXPI UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr, CursorShape cursorShape, OsWindowHandle windowHandle)
 {
 	UiWidgetContext result = ZEROED;
 	result.uiArena = uiArena;
@@ -57,6 +59,7 @@ PEXPI UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* rendere
 	result.uiScale = uiScale;
 	result.focusedUiElementPntr = focusedUiElementPntr;
 	result.cursorShape = cursorShape;
+	result.windowHandle = windowHandle;
 	return result;
 }
 

@@ -24,6 +24,16 @@ Description:
 #define LANGUAGE_IS_CPP 0
 #endif
 
+#ifdef __OBJC__
+#define LANGUAGE_IS_OBJECTIVE     1
+#define LANGUAGE_IS_OBJECTIVE_C   LANGUAGE_IS_C
+#define LANGUAGE_IS_OBJECTIVE_CPP LANGUAGE_IS_CPP
+#else
+#define LANGUAGE_IS_OBJECTIVE     0
+#define LANGUAGE_IS_OBJECTIVE_C   0
+#define LANGUAGE_IS_OBJECTIVE_CPP 0
+#endif
+
 // +--------------------------------------------------------------+
 // |                      Determine COMPILER                      |
 // +--------------------------------------------------------------+
@@ -64,7 +74,13 @@ Description:
 // +--------------------------------------------------------------+
 // |                  Determine TARGET Platform                   |
 // +--------------------------------------------------------------+
-#if ((defined(__linux__) || defined(__unix__)) && !COMPILER_IS_EMSCRIPTEN)
+#if defined(__ANDROID__)
+#define TARGET_IS_ANDROID 1
+#else
+#define TARGET_IS_ANDROID 0
+#endif
+
+#if ((defined(__linux__) || defined(__unix__)) && !COMPILER_IS_EMSCRIPTEN && !TARGET_IS_ANDROID)
 #define TARGET_IS_LINUX 1
 #else
 #define TARGET_IS_LINUX 0
@@ -106,10 +122,10 @@ Description:
 #endif
 
 //Make sure we have exactly one of the TARGET defines set to true
-#if TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA > 1
+#if TARGET_IS_ANDROID + TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA > 1
 #error Somehow we think we are on more than one TARGET based on the pre-defined compiler flags!
 #endif
-#if TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA < 1
+#if TARGET_IS_ANDROID + TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA < 1
 #error Failed to identify which TARGET we are compiling for based on the pre-defined compiler flags!
 #endif
 
@@ -143,7 +159,7 @@ Description:
 #define TARGET_HAS_OFFICIAL_STDLIB 1
 #endif
 
-#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX || TARGET_IS_OSX)
+#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 #define TARGET_HAS_THREADING 1
 #else
 #define TARGET_HAS_THREADING 0
@@ -153,6 +169,12 @@ Description:
 #define USING_CUSTOM_STDLIB 1
 #else
 #define USING_CUSTOM_STDLIB 0
+#endif
+
+#if LANGUAGE_IS_C && !LANGUAGE_IS_OBJECTIVE
+#define STATIC_ASSERT_AVAILABLE 1
+#else
+#define STATIC_ASSERT_AVAILABLE 0
 #endif
 
 // +--------------------------------------------------------------+

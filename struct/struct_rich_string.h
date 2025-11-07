@@ -28,19 +28,23 @@ Description:
 #include "misc/misc_standard_colors.h"
 #include "mem/mem_arena.h"
 #include "misc/misc_parsing.h"
+#include "misc/misc_two_pass.h"
 
 typedef enum FontStyleFlag FontStyleFlag;
 enum FontStyleFlag
 {
-	FontStyleFlag_None          = 0x00,
-	FontStyleFlag_Bold          = 0x01,
-	FontStyleFlag_Italic        = 0x02,
-	FontStyleFlag_Inverted      = 0x04,
-	FontStyleFlag_Underline     = 0x08,
-	FontStyleFlag_Strikethrough = 0x10,
-	FontStyleFlag_Outline       = 0x20,
-	FontStyleFlag_Highlighted   = 0x40,
-	FontStyleFlag_All           = 0x7F,
+	FontStyleFlag_None           = 0x00,
+	FontStyleFlag_Bold           = 0x01,
+	FontStyleFlag_Italic         = 0x02,
+	FontStyleFlag_Inverted       = 0x04,
+	FontStyleFlag_Underline      = 0x08,
+	FontStyleFlag_Strikethrough  = 0x10,
+	FontStyleFlag_Outline        = 0x20,
+	FontStyleFlag_Highlighted    = 0x40,
+	FontStyleFlag_ColoredGlyphs  = 0x80,
+	FontStyleFlag_All            = 0xFF,
+	FontStyleFlag_FontFileFlags  = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_ColoredGlyphs, //These are flags that affect which font file we pull from for rasterization
+	FontStyleFlag_FontAtlasFlags = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_Inverted, //These are flags that affect which font atlas we use
 };
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetFontStyleFlagStr(FontStyleFlag enumValue);
@@ -56,6 +60,7 @@ const char* GetFontStyleFlagStr(FontStyleFlag enumValue)
 		case FontStyleFlag_Strikethrough: return "Strikethrough";
 		case FontStyleFlag_Outline:       return "Outline";
 		case FontStyleFlag_Highlighted:   return "Highlighted";
+		case FontStyleFlag_ColoredGlyphs: return "ColoredGlyphs";
 		default: return UNKNOWN_STR;
 	}
 }

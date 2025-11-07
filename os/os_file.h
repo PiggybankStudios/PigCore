@@ -37,7 +37,7 @@ plex OsFileIter
 	FilePath folderPathWithWildcard;
 	WIN32_FIND_DATAA findData;
 	HANDLE handle;
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	DIR* dirHandle;
 	#endif
 };
@@ -84,7 +84,7 @@ plex OsFile
 	
 	#if TARGET_IS_WINDOWS
 	HANDLE handle;
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	FILE* handle;
 	#endif
 };
@@ -94,7 +94,7 @@ plex OsFileWriteTime
 {
 	#if TARGET_IS_WINDOWS
 	FILETIME fileTime;
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 	plex timespec timeSpec;
 	#else
 	u8 placeholder;
@@ -124,6 +124,7 @@ plex OsFileWriteTime
 	bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines);
 	PIG_CORE_INLINE bool OsWriteTextFile(FilePath path, Str8 fileContents);
 	PIG_CORE_INLINE bool OsWriteBinFile(FilePath path, Str8 fileContents);
+	PIG_CORE_INLINE bool OsCopyFile(FilePath fromPath, FilePath toPath);
 	Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded);
 	void OsCloseFile(OsFile* file);
 	bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calculateSize, OsFile* openFileOut);
@@ -188,7 +189,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 		
 		FixPathSlashes(result);
 	}
-	#elif TARGET_IS_LINUX || TARGET_IS_OSX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		FilePath relativePathNt = AllocFilePath(scratch, relativePath, true);
 		DebugAssert(PATH_MAX <= UINTXX_MAX);
@@ -287,7 +288,7 @@ PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 		}
 		ScratchEnd(scratch);
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin(scratch);
 		FilePath fullPath = OsGetFullPath(scratch, path);
@@ -351,7 +352,7 @@ PEXPI void OsFreeFileIter(OsFileIter* fileIter)
 		#if TARGET_IS_WINDOWS
 		if (CanArenaFree(fileIter->arena) && fileIter->folderPathWithWildcard.chars != nullptr) { FreeStr8WithNt(fileIter->arena, &fileIter->folderPathWithWildcard); }
 		if (fileIter->handle != INVALID_HANDLE_VALUE) { FindClose(fileIter->handle); }
-		#elif TARGET_IS_LINUX
+		#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 		if (fileIter->dirHandle != nullptr) { int closeResult = closedir(fileIter->dirHandle); Assert(closeResult == 0); }
 		#endif
 	}
@@ -381,7 +382,7 @@ PEXP OsFileIter OsIterateFiles(Arena* arena, FilePath path, bool includeFiles, b
 		NotNullStr(result.folderPathWithWildcard);
 		ScratchEnd(scratch);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin1(scratch, arena);
 		Str8 fullPath = OsGetFullPath(scratch, path);
@@ -467,7 +468,7 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 		}
 		Assert(false); //Shouldn't be possible to get here
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin1(scratch, fileIter->arena);
 		while (true)
@@ -586,7 +587,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		if (fileHandle == INVALID_HANDLE_VALUE)
 		{
 			DWORD errorCode = GetLastError();
-			if (errorCode == ERROR_FILE_NOT_FOUND)
+			if (errorCode == ERROR_FILE_NOT_FOUND || errorCode == ERROR_PATH_NOT_FOUND)
 			{
 				PrintLine_E("ERROR: File not found at \"%.*s\". Error code: %s", StrPrint(fullPath), Win32_GetErrorCodeStr(errorCode));
 			}
@@ -665,7 +666,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		
 		CloseHandle(fileHandle);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		Str8 fullPath = OsGetFullPath(scratch, path); //ensures null-termination
 		FILE* fileHandle = fopen(fullPath.chars, "r");
@@ -817,7 +818,7 @@ PEXP bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 		}
 		ScratchEnd(scratch);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin(scratch);
 		//NOTE: When writing files on linux we don't need to convert new-lines. We usually working with strings in memory using \n which is the line-ending style of Linux.
@@ -869,6 +870,15 @@ PEXPI bool OsWriteBinFile(FilePath path, Str8 fileContents) { return OsWriteFile
 //      This would probably require the code to know if an operation on that file is already in
 //      progress, otherwise we may run into conflicts with order of operations
 
+PEXPI bool OsCopyFile(FilePath fromPath, FilePath toPath)
+{
+	ScratchBegin(scratch);
+	Slice fileContents = Slice_Empty;
+	if (!OsReadBinFile(fromPath, scratch, &fileContents)) { ScratchEnd(scratch); return false; }
+	if (!OsWriteBinFile(toPath, fileContents)) { ScratchEnd(scratch); return false; }
+	return true;
+}
+
 // +--------------------------------------------------------------+
 // |                        Create Folders                        |
 // +--------------------------------------------------------------+
@@ -913,7 +923,7 @@ PEXP Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded)
 		
 		result = Result_Success;
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		if (!OsDoesFolderExist(path))
 		{
@@ -952,7 +962,7 @@ PEXP void OsCloseFile(OsFile* file)
 		}
 		ClearPointer(file);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		if (file->handle != nullptr)
 		{
@@ -1070,7 +1080,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 		NotNullStr(openFileOut->fullPath);
 		result = true;
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin1(scratch, arena);
 		Str8 fullPath = OsGetFullPath(scratch, path);
@@ -1109,7 +1119,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 			Assert(seekResult == 0);
 			long fileSize = ftell(fileHandle);
 			Assert(fileSize >= 0);
-			Assert((unsigned long)fileSize <= UINTXX_MAX);
+			Assert((unsigned long long)fileSize <= UINTXX_MAX);
 			openFileOut->fileSize = (uxx)fileSize;
 			
 			if (mode == OsOpenFileMode_Read)
@@ -1191,7 +1201,7 @@ PEXP Result OsReadFromOpenFile(OsFile* file, uxx numBytes, bool convertNewLines,
 		
 		result = (partialRead ? Result_Partial : Result_Success);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		Assert(file->isOpen && file->handle != nullptr);
 		Assert(!file->isKnownSize || file->cursorIndex <= file->fileSize);
@@ -1290,7 +1300,7 @@ PEXP bool OsWriteToOpenFile(OsFile* file, Str8 fileContentsPart, bool convertNew
 		result = true;
 		ScratchEnd(scratch);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		Assert(file->handle != nullptr);
 		//NOTE: When writing to file on non-Windows environments, we don't actually need to convert new-lines to \r\n
@@ -1355,7 +1365,7 @@ PEXP Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)
 		else { result = Result_NotFound; }
 		ScratchEnd(scratch);
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin(scratch);
 		Str8 filePathNt = AllocStrAndCopy(scratch, filePath.length, filePath.chars, true);
@@ -1391,7 +1401,7 @@ PEXPI i32 OsCompareFileWriteTime(OsFileWriteTime left, OsFileWriteTime right)
 		else if (leftTime.QuadPart < rightTime.QuadPart) { return -1; }
 		else { return 0; }
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 	{
 		if (left.timeSpec.tv_sec > right.timeSpec.tv_sec) { return 1; }
 		else if (left.timeSpec.tv_sec < right.timeSpec.tv_sec) { return -1; }

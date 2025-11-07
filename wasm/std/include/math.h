@@ -89,6 +89,8 @@
 #define predict_true(condition) __builtin_expect(!!(condition), 1)
 #define predict_false(condition) __builtin_expect(condition, 0)
 
+CONDITIONAL_EXTERN_C_START
+
 // +--------------------------------------------------------------+
 // |                       Helper Functions                       |
 // +--------------------------------------------------------------+

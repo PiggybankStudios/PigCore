@@ -13,6 +13,7 @@ Description:
 #define _OS_PROGRAM_H
 
 #include "base/base_defines_check.h"
+#include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "misc/misc_result.h"
@@ -21,6 +22,23 @@ Description:
 #include "misc/misc_printing.h"
 #include "os/os_path.h"
 #include "os/os_file.h"
+
+#if TARGET_IS_WINDOWS
+typedef HWND OsWindowHandle;
+#define OsWindowHandleEmpty NULL
+#elif TARGET_IS_LINUX
+typedef Window OsWindowHandle;
+#define OsWindowHandleEmpty nullptr //TODO: Check this
+#elif TARGET_IS_OSX
+typedef NSWindow* OsWindowHandle;
+#define OsWindowHandleEmpty nullptr
+#elif TARGET_IS_ANDROID
+typedef struct ANativeWindow* OsWindowHandle;
+#define OsWindowHandleEmpty nullptr
+#else
+typedef void* OsWindowHandle;
+#define OsWindowHandleEmpty nullptr
+#endif
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -133,7 +151,7 @@ PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 	// }
 	#else
 	{
-		AssertMsg(false, "OsGetExecutablePath does not support the current platform yet!")
+		AssertMsg(false, "OsGetExecutablePath does not support the current platform yet!");
 		SetOptionalOutPntr(resultOut, Result_UnsupportedPlatform);
 	}
 	#endif
@@ -231,7 +249,7 @@ PEXP FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
 	// }
 	#else
 	{
-		AssertMsg(false, "OsGetWorkingDirectory does not support the current platform yet!")
+		AssertMsg(false, "OsGetWorkingDirectory does not support the current platform yet!");
 		SetOptionalOutPntr(resultOut, Result_UnsupportedPlatform);
 	}
 	#endif
@@ -244,11 +262,11 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 	NotNull(arena);
 	NotNullStr(companyName);
 	NotNullStr(programName);
-	Assert(!IsEmptyStr(companyName) || !IsEmptyStr(programName));
 	FilePath result = FilePath_Empty;
 	
 	#if TARGET_IS_WINDOWS
 	{
+		Assert(!IsEmptyStr(companyName) || !IsEmptyStr(programName));
 		//TODO: Should we assert that companyName and programName have valid characters to use in folder names on the current OS?
 		ScratchBegin1(scratch, arena);
 		char* pathBuffer = (char*)AllocMem(arena, MAX_PATH);
@@ -321,6 +339,7 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 	}
 	#elif TARGET_IS_LINUX
 	{
+		Assert(!IsEmptyStr(companyName) || !IsEmptyStr(programName));
 		ScratchBegin1(scratch, arena);
 		plex passwd* passwordEntry = getpwuid(getuid());
 		const char* homeDirNt = passwordEntry->pw_dir;
@@ -337,6 +356,23 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		NotNullStr(result);
 		FixPathSlashes(result);
 		ScratchEnd(scratch);
+	}
+	#elif TARGET_IS_ANDROID
+	{
+		AssertMsg(AndroidNativeActivity != nullptr, "You must set AndroidNativeActivity global before calling OsGetSettingsSavePath!");
+		AssertMsg(AndroidJavaVM != nullptr, "You must set AndroidJavaVM global before calling OsGetSettingsSavePath!");
+		UNUSED(companyName);
+		UNUSED(programName);
+		UNUSED(createFolders);
+		
+		JavaVMAttachBlock(env)
+		{
+			jobject fileObj = jCall_getFilesDir(env, AndroidNativeActivity);
+			jstring pathString = jCall_getAbsolutePath(env, fileObj);
+			result = ToStr8FromJStr(env, arena, pathString, false);
+			FixPathSlashes(result);
+			(*env)->DeleteLocalRef(env, pathString);
+		}
 	}
 	#else
 	AssertMsg(false, "OsGetSettingsSavePath does not support the current platform yet!");

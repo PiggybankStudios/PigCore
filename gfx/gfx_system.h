@@ -17,13 +17,14 @@ Description:
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "misc/misc_printing.h"
+#include "struct/struct_circles.h"
 #include "struct/struct_string.h"
 #include "struct/struct_rich_string.h"
 #include "struct/struct_color.h"
 #include "struct/struct_var_array.h"
 #include "misc/misc_result.h"
 #include "gfx/gfx_vertices.h"
-#include "misc/misc_sokol_gfx_include.h"
+#include "lib/lib_sokol_gfx.h"
 #include "gfx/gfx_vert_buffer.h"
 #include "gfx/gfx_texture.h"
 #include "gfx/gfx_shader.h"
@@ -123,6 +124,12 @@ plex GfxSystem
 	PIG_CORE_INLINE void GfxSystem_BindFontEx(GfxSystem* system, PigFont* font, r32 fontSize, u8 fontStyleFlags);
 	PIG_CORE_INLINE void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSize);
 	PIG_CORE_INLINE void GfxSystem_BindFont(GfxSystem* system, PigFont* font);
+	PIG_CORE_INLINE r32 GfxSystem_GetLineHeight(GfxSystem* system);
+	PIG_CORE_INLINE r32 GfxSystem_GetMaxAscend(GfxSystem* system);
+	PIG_CORE_INLINE r32 GfxSystem_GetMaxDescend(GfxSystem* system);
+	PIG_CORE_INLINE r32 GfxSystem_GetCenterOffset(GfxSystem* system);
+	PIG_CORE_INLINE FontLineMetrics GfxSystem_GetLineMetrics(GfxSystem* system);
+	PIG_CORE_INLINE FontGlyphMetrics GfxSystem_GetGlyphMetricsFor(GfxSystem* system, u32 codepoint);
 	PIG_CORE_INLINE void GfxSystem_SetClipRec(GfxSystem* system, reci clipRec);
 	PIG_CORE_INLINE reci GfxSystem_AddClipRec(GfxSystem* system, reci clipRec);
 	PIG_CORE_INLINE void GfxSystem_DisableClipRec(GfxSystem* system);
@@ -536,15 +543,14 @@ PEXPI void GfxSystem_BindFontAtSize(GfxSystem* system, PigFont* font, r32 fontSi
 	u8 fontStyleFlags = FontStyleFlag_None;
 	if (font != nullptr && font->atlases.length > 0)
 	{
-		//TODO: This logic is wrong for choosing the styleFlags, we really should find the closest match similar to how GetFontGlyphForCodepoint works
-		FontAtlas* firstAtlas = VarArrayGetFirst(FontAtlas, &font->atlases);
-		fontStyleFlags = firstAtlas->styleFlags;
+		FontAtlas* closestAtlas = TryFindClosestMatchingFontAtlas(font, 0, FONT_CODEPOINT_EMPTY, fontSize, FontStyleFlag_None, FontStyleFlag_FontAtlasFlags, false, nullptr, nullptr, nullptr);
+		if (closestAtlas != nullptr) { fontStyleFlags = closestAtlas->styleFlags; }
 	}
 	GfxSystem_BindFontEx(system, font, fontSize, fontStyleFlags);
 }
 PEXPI void GfxSystem_BindFont(GfxSystem* system, PigFont* font)
 {
-	r32 fontSize = 16.0f;
+	r32 fontSize = 16.0f; //this is just a pointless default in case the font doesn't actually have any atlases created yet
 	u8 fontStyleFlags = FontStyleFlag_None;
 	if (font != nullptr && font->atlases.length > 0)
 	{
@@ -553,6 +559,40 @@ PEXPI void GfxSystem_BindFont(GfxSystem* system, PigFont* font)
 		fontStyleFlags = firstAtlas->styleFlags;
 	}
 	GfxSystem_BindFontEx(system, font, fontSize, fontStyleFlags);
+}
+
+PEXPI r32 GfxSystem_GetLineHeight(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontLineHeight(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI r32 GfxSystem_GetMaxAscend(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontMaxAscend(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI r32 GfxSystem_GetMaxDescend(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontMaxDescend(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI r32 GfxSystem_GetCenterOffset(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontCenterOffset(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI FontLineMetrics GfxSystem_GetLineMetrics(GfxSystem* system)
+{
+	NotNull(system->state.font);
+	return GetFontLineMetrics(system->state.font, system->state.fontSize, system->state.fontStyleFlags);
+}
+PEXPI FontGlyphMetrics GfxSystem_GetGlyphMetricsFor(GfxSystem* system, u32 codepoint)
+{
+	NotNull(system->state.font);
+	FontGlyphMetrics result = ZEROED;
+	bool gotMetrics = TryGetFontGlyphMetrics(system->state.font, codepoint, system->state.fontSize, system->state.fontStyleFlags, &result);
+	Assert(gotMetrics);
+	return result;
 }
 
 // +--------------------------------------------------------------+
@@ -1203,7 +1243,7 @@ PEXPI void GfxSystem_SetTextBackgroundColor(GfxSystem* system, Color32 color)
 // +====================================+
 // | GfxSystem_FontFlowDrawCharCallback |
 // +====================================+
-// void GfxSystem_FontFlowDrawCharCallback(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
+// void GfxSystem_FontFlowDrawCharCallback(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, FontGlyphMetrics glyphMetrics)
 FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 {
 	NotNull(state);
@@ -1212,26 +1252,27 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 	NotNull(glyph);
 	UNUSED(flow);
 	UNUSED(codepoint);
+	UNUSED(glyphMetrics);
 	GfxSystem* system = (GfxSystem*)state->contextPntr;
 	Color32 drawColor = state->currentStyle.color;
 	if (IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && state->backgroundColor.a != 0)
 	{
 		drawColor = state->backgroundColor;
 	}
-	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, drawColor, &atlas->texture, ToRecFromi(glyph->atlasSourceRec));
+	CommitFontAtlasTextureUpdates(state->font, atlas);
+	rec atlasSourceRec = ToRecFromi(NewReciV(glyph->atlasSourcePos, glyph->metrics.glyphSize));
+	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, drawColor, &atlas->texture, atlasSourceRec);
 }
 
 // +==========================================+
 // | GfxSystem_FontFlowDrawHighlightCallback  |
 // +==========================================+
-// void GfxSystem_FontFlowDrawHighlightCallback(FontFlowState* state, FontFlow* flow, rec highlightRec, FontAtlas* currentAtlas)
+// void GfxSystem_FontFlowDrawHighlightCallback(FontFlowState* state, FontFlow* flow, rec highlightRec)
 FONT_FLOW_DRAW_HIGHLIGHT_DEF(GfxSystem_FontFlowDrawHighlightCallback)
 {
 	UNUSED(flow);
-	UNUSED(currentAtlas);
 	NotNull(state);
 	NotNull(state->contextPntr);
-	NotNull(currentAtlas);
 	GfxSystem* system = (GfxSystem*)state->contextPntr;
 	GfxSystem_DrawRectangle(system, highlightRec, state->currentStyle.color);
 }
@@ -1241,6 +1282,7 @@ PEXP Result GfxSystem_DrawWrappedRichTextWithFont(GfxSystem* system, PigFont* fo
 	NotNull(system);
 	NotNull(font);
 	NotNullStr(text.fullPiece.str);
+	TracyCZoneN(_funcZone, "GfxSystem_DrawText", true);
 	
 	FontFlowState state = ZEROED;
 	state.contextPntr = (void*)system;
@@ -1259,6 +1301,7 @@ PEXP Result GfxSystem_DrawWrappedRichTextWithFont(GfxSystem* system, PigFont* fo
 	
 	Result result = DoFontFlow(&state, &callbacks, &system->prevFontFlow);
 	
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 PEXP Result GfxSystem_DrawRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, Color32 color)

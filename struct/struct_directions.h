@@ -67,6 +67,16 @@ enum Dir2
 	Dir2_Count = 4,
 };
 
+//NOTE: Rotation2 is an alias for Dir2, it's functionally exactly the same but the names are a little easier to
+//      remember and work with when we are talking about 90 degree rotations of a 2D object rather than directions
+typedef Dir2 Rot2;
+#define Rot2_None  Dir2_None
+#define Rot2_0     Dir2_Right
+#define Rot2_90    Dir2_Down
+#define Rot2_180   Dir2_Left
+#define Rot2_270   Dir2_Up
+#define Rot2_All   Dir2_All
+
 typedef enum Dir2Ex Dir2Ex;
 enum Dir2Ex
 {
@@ -208,6 +218,7 @@ enum Axis
 	PIG_CORE_INLINE u8 Dir2ExBitwiseCount(Dir2Ex dir2ex);
 	PIG_CORE_INLINE u8 Dir3BitwiseCount(Dir3 dir3);
 	const char* GetDir2String(Dir2 dir2);
+	const char* GetRot2String(Rot2 rot2);
 	const char* GetDir2ExString(Dir2Ex dir2ex);
 	const char* GetDir3String(Dir3 dir3);
 	const char* GetDir3SideString(Dir3 dir3);
@@ -699,6 +710,20 @@ PEXP const char* GetDir2String(Dir2 dir2)
 		case Dir2_All: return "All";
 		default: return UNKNOWN_STR;
 	};
+}
+
+PEXP const char* GetRot2String(Rot2 rot2)
+{
+	switch ((u8)rot2) //cast to satiate compiler warning
+	{
+		case Rot2_None: return "None";
+		case Rot2_0:    return "0";
+		case Rot2_90:   return "90";
+		case Rot2_180:  return "180";
+		case Rot2_270:  return "270";
+		case Rot2_All:  return "All";
+		default: return UNKNOWN_STR;
+	}
 }
 
 PEXP const char* GetDir2ExString(Dir2Ex dir2ex)

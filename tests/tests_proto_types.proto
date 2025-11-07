@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+message ProtoFileHeader
+{
+	enum FileType
+	{
+		NONE = 0;
+		PNG = 1;
+		JPEG = 2;
+		GIF = 3;
+	}
+	
+	required double v_double = 1;
+	required float v_float = 2;
+	required int32 v_int32 = 3;
+	required int64 v_int64 = 4;
+	required uint32 v_uint32 = 5;
+	required uint64 v_uint64 = 6;
+	required sint32 v_sint32 = 7;
+	required sint64 v_sint64 = 8;
+	required fixed32 v_fixed32 = 9;
+	required fixed64 v_fixed64 = 10;
+	required sfixed32 v_sfixed32 = 11;
+	required sfixed64 v_sfixed64 = 12;
+	required bool v_bool = 13;
+	required FileType v_file_type = 14;
+	optional int32 new_field = 15 [default = -1];
+	optional string v_string = 16;
+}

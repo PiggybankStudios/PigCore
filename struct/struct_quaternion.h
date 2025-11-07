@@ -16,10 +16,9 @@ Description:
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
 #include "struct/struct_vectors.h"
+#include "lib/lib_handmade_math.h"
 
-#include "struct/struct_handmade_math_include.h"
-
-//TODO: Updated HandmadeMath.h to get BYP's HMM_QFromNormPair/HMM_QFromVecPair
+//TODO: Update HandmadeMath.h to get BYP's HMM_QFromNormPair/HMM_QFromVecPair
 
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |

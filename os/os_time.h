@@ -55,8 +55,8 @@ Description:
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timezoneDoesDstOut); //, Arena* timezoneNameArena, Str8* timezoneNameOut);
-	PIG_CORE_INLINE u64 OsGetCurrentTimestamp(bool local);
+	u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, bool* timezoneDoesDstOut); //, Arena* timezoneNameArena, Str8* timezoneNameOut);
+	PIG_CORE_INLINE u64 OsGetCurrentTimestamp(bool offsetToLocal);
 #endif
 
 // +--------------------------------------------------------------+
@@ -65,14 +65,14 @@ Description:
 #if PIG_CORE_IMPLEMENTATION
 
 //TODO: Re-add the following output but in a cross file or some kind since it relies on ConvertUcs2StrToUtf8: Arena* timezoneNameArena, Str8* timezoneNameOut
-PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timezoneDoesDstOut) 
+PEXP u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, bool* timezoneDoesDstOut) 
 {
 	// if (timezoneNameOut != nullptr) { NotNull(timezoneNameArena); }
 	u64 result = 0;
 	
 	#if TARGET_IS_WINDOWS
 	{
-		if (local)
+		if (offsetToLocal)
 		{
 			u64 unixTimestamp = OsGetCurrentTimestampEx(false, nullptr, nullptr);
 			TIME_ZONE_INFORMATION timezoneInfo = ZEROED;
@@ -103,9 +103,9 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 			if (result >= WIN32_FILETIME_SEC_OFFSET) { result -= WIN32_FILETIME_SEC_OFFSET; }
 		}
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
-		if (local)
+		if (offsetToLocal)
 		{
 			time_t utcTime = time(NULL);
 			plex tm localTime = ZEROED;
@@ -121,13 +121,14 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 		{
 			plex timeval currentTimeVal = ZEROED;
 			int getTimeResult = gettimeofday(&currentTimeVal, NULL);
+			UNUSED(getTimeResult); //TODO: Should we check this result?
 			result = (u64)currentTimeVal.tv_sec;
 			//TODO: tv_usec is also available from currentTimeVal
 		}
 	}
 	#elif TARGET_IS_ORCA
 	{
-		if (local)
+		if (offsetToLocal)
 		{
 			//TODO: Implement me!
 			AssertMsg(false, "Orca does not currently have a way to get local time!");
@@ -140,7 +141,7 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 	}
 	#elif TARGET_IS_PLAYDATE
 	{
-		if (local)
+		if (offsetToLocal)
 		{
 			i32 timezoneOffset = pd->system->getTimezoneOffset();
 			u64 unixTimestamp = OsGetCurrentTimestampEx(false, nullptr, nullptr);
@@ -161,7 +162,7 @@ PEXP u64 OsGetCurrentTimestampEx(bool local, i64* timezoneOffsetOut, bool* timez
 	
 	return result;
 }
-PEXPI u64 OsGetCurrentTimestamp(bool local) { return OsGetCurrentTimestampEx(local, nullptr, nullptr); }
+PEXPI u64 OsGetCurrentTimestamp(bool offsetToLocal) { return OsGetCurrentTimestampEx(offsetToLocal, nullptr, nullptr); }
 
 #endif //PIG_CORE_IMPLEMENTATION
 

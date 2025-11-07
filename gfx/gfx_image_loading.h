@@ -19,21 +19,8 @@ Description:
 #include "misc/misc_result.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_image_data.h"
-
-//TODO: stb_image.h uses strtol which we currently don't have an implementation for in our custom standard library!
-#if USING_CUSTOM_STDLIB
-#define PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE 0
-#else
-#define PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE 1
-#endif
-
-#if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
-	#if PIG_CORE_IMPLEMENTATION
-	THREAD_LOCAL Arena* StbImageScratchArena = nullptr;
-	#else
-	extern THREAD_LOCAL Arena* StbImageScratchArena;
-	#endif
-#endif
+#include "lib/lib_tracy.h"
+#include "lib/lib_stb_image.h"
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -51,65 +38,18 @@ Description:
 
 #if PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE
 
-static void* StbImageMalloc(size_t numBytes)
-{
-	NotNull(StbImageScratchArena);
-	return AllocMem(StbImageScratchArena, (uxx)numBytes);
-}
-
-static void* StbImageRealloc(void* allocPntr, size_t oldNumBytes, size_t newNumBytes)
-{
-	NotNull(StbImageScratchArena);
-	if (allocPntr == nullptr)
-	{
-		return AllocMem(StbImageScratchArena, (uxx)newNumBytes);
-	}
-	else
-	{
-		return ReallocMem(StbImageScratchArena, allocPntr, (uxx)oldNumBytes, (uxx)newNumBytes);
-	}
-}
-static void StbImageFree(void* allocPntr)
-{
-	NotNull(StbImageScratchArena);
-	UNUSED(allocPntr);
-	//NOTE: We don't need to call FreeMem since we are allocating from a Stack type arena (the scratch arenas)
-}
-
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_NO_STDIO
-#define STB_IMAGE_STATIC
-#define STBI_ASSERT(condition) Assert(condition)
-#define STBI_MALLOC(numBytes)                                   StbImageMalloc(numBytes)
-#define STBI_REALLOC_SIZED(allocPntr, oldNumBytes, newNumBytes) StbImageRealloc((allocPntr), (oldNumBytes), (newNumBytes))
-#define STBI_FREE(allocPntr)                                    StbImageFree(allocPntr)
-#if COMPILER_IS_MSVC
-#pragma warning(push)
-#pragma warning(disable: 5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
-#endif
-#if (COMPILER_IS_CLANG || COMPILER_IS_EMSCRIPTEN)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
-#endif
-
-#include "third_party/stb/stb_image.h"
-
-#if COMPILER_IS_MSVC
-#pragma warning(pop)
-#endif
-#if (COMPILER_IS_CLANG || COMPILER_IS_EMSCRIPTEN)
-#pragma clang diagnostic pop
-#endif
-
 PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut)
 {
+	TracyCZoneN(funcZone, "TryParseImageFile", true);
 	NotNullStr(fileContents);
 	NotNull(imageDataOut);
 	ScratchBegin1(scratch, arena);
-	StbImageScratchArena = scratch;
+	StbImageArena = scratch;
 	int imageWidth, imageHeight, fileChannelCount;
 	const int numChannels = 4;
+	TracyCZoneN(_stbLoadFromMemory, "stbi_load_from_memory", true);
 	u8* imageData = stbi_load_from_memory(fileContents.bytes, (int)fileContents.length, &imageWidth, &imageHeight, &fileChannelCount, numChannels);
+	TracyCZoneEnd(_stbLoadFromMemory);
 	
 	if (imageData != nullptr)
 	{
@@ -123,22 +63,29 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 		if (imageDataOut->pixels == nullptr)
 		{
 			ScratchEnd(scratch);
+			TracyCZoneEnd(funcZone);
 			return Result_FailedToAllocateMemory;
 		}
+		TracyCZoneN(_CopyPixels, "CopyPixels", true);
 		MyMemCopy(imageDataOut->pixels, imageData, sizeof(u32) * imageDataOut->numPixels);
+		TracyCZoneEnd(_CopyPixels);
 		
+		TracyCZoneN(_stbImageFree, "stbi_image_free", true);
 		stbi_image_free(imageData);
+		TracyCZoneEnd(_stbImageFree);
 	}
 	else
 	{
 		ScratchEnd(scratch);
-		StbImageScratchArena = nullptr;
+		StbImageArena = nullptr;
+		TracyCZoneEnd(funcZone);
 		return Result_ParsingFailure;
 	}
 	
 	ScratchEnd(scratch);
-	StbImageScratchArena = nullptr;
+	StbImageArena = nullptr;
 	
+	TracyCZoneEnd(funcZone);
 	return Result_Success;
 }
 

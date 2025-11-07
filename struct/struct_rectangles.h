@@ -28,7 +28,7 @@ car Rectanglef
 	plex { r32 Left, Top, Unused1, Unused2; };
 	plex { v2 TopLeft, Size; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Rectanglef) == sizeof(r32) * 4, "Rectanglef contains padding!");
 #endif
 
@@ -42,7 +42,7 @@ car RectangleR64
 	plex { r64 Left, Top, Unused5, Unused6; };
 	plex { v2d TopLeft, Size; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(RectangleR64) == sizeof(r64) * 4, "RectangleR64 contains padding!");
 #endif
 
@@ -54,7 +54,7 @@ car Rectanglei
 	plex { i32 Left, Top, Unused1, Unused2; };
 	plex { v2i TopLeft, Size; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Rectanglei) == sizeof(i32) * 4, "Rectanglei contains padding!");
 #endif
 
@@ -66,7 +66,7 @@ car Box
 	plex { r32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
 	plex { v3 BottomLeftBack, Size; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Box) == sizeof(r32) * 6, "Box contains padding!");
 #endif
 
@@ -78,7 +78,7 @@ car BoxR64
 	plex { r64 Left, Bottom, Back, Unused1, Unused2, Unused3; };
 	plex { v3d BottomLeftBack, Size; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(BoxR64) == sizeof(r64) * 6, "BoxR64 contains padding!");
 #endif
 
@@ -90,7 +90,7 @@ car Boxi
 	plex { i32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
 	plex { v3i BottomLeftBack, Size; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Boxi) == sizeof(i32) * 6, "Boxi contains padding!");
 #endif
 
@@ -102,7 +102,7 @@ car Obb2D
 	plex { r32 CenterX, CenterY, Unused1, Unused2, Angle; };
 	plex { v2 Center, Size; r32 Unused3; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Obb2D) == sizeof(r32) * 5, "Obb2D contains padding!");
 #endif
 
@@ -114,7 +114,7 @@ car Obb2DR64
 	plex { r64 CenterX, CenterY, Unused1, Unused2, Angle; };
 	plex { v2d Center, Size; r64 Unused3; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Obb2DR64) == sizeof(r64) * 5, "Obb2DR64 contains padding!");
 #endif
 
@@ -128,7 +128,7 @@ car Obb3D
 	plex { r32 CenterX, CenterY, CenterZ, Unused1, Unused2, Unused3, Padding3, Padding4; quat Unused4; };
 	plex { v3 Center, Size; r32 Padding5, Padding6; quat Unused5; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Obb3D) == sizeof(r32) * 12, "Obb3D contains padding!");
 #endif
 
@@ -140,7 +140,7 @@ car Obb3DR64
 	plex { r64 CenterX, CenterY, CenterZ, Unused1, Unused2, Unused3; quatd Unused4; };
 	plex { v3d Center, Size; quatd Unused5; };
 };
-#if LANGUAGE_IS_C
+#if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Obb3DR64) == sizeof(r64) * 10, "Obb3DR64 contains padding!");
 #endif
 

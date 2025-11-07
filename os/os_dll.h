@@ -23,7 +23,7 @@ plex OsDll
 {
 	#if TARGET_IS_WINDOWS
 	HMODULE handle;
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 	void* handle;
 	#else
 	int placeholder;
@@ -34,6 +34,7 @@ plex OsDll
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	void OsUnloadDll(OsDll* dll);
 	Result OsLoadDll(FilePath path, OsDll* dllOut);
 	void* OsFindDllFunc(OsDll* dll, Str8 funcName);
 #endif
@@ -43,10 +44,26 @@ plex OsDll
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-// PEXP void OsCloseDll(OsDll* dll)
-// {
-//	TODO: Implement me!
-// }
+PEXP void OsUnloadDll(OsDll* dll)
+{
+	#if TARGET_IS_WINDOWS
+	{
+		Assert(dll->handle != NULL);
+		BOOL freeResult = FreeLibrary(dll->handle);
+		Assert(freeResult != 0);
+		ClearPointer(dll);
+	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	{
+		Assert(dll->handle != nullptr);
+		int closeResult = dlclose(dll->handle);
+		Assert(closeResult == 0);
+	}
+	#else
+	UNUSED(dll);
+	AssertMsg(false, "OsUnloadDll does not support the current platform yet!");
+	#endif
+}
 
 PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
 {
@@ -64,7 +81,7 @@ PEXP Result OsLoadDll(FilePath path, OsDll* dllOut)
 		else { result = Result_Failure; }
 		ScratchEnd(scratch);
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin(scratch);
 		FilePath pathNt = AllocFilePath(scratch, path, true);
@@ -104,7 +121,7 @@ PEXP void* OsFindDllFunc(OsDll* dll, Str8 funcName)
 		result = (void*)GetProcAddress(dll->handle, funcNameNt.chars);
 		ScratchEnd(scratch);
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin(scratch);
 		Str8 funcNameNt = AllocStrAndCopy(scratch, funcName.length, funcName.chars, true);

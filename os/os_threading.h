@@ -14,7 +14,8 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
 #include "base/base_macros.h"
-#include "misc/misc_profiling_tracy_include.h"
+#include "std/std_includes.h"
+#include "lib/lib_tracy.h"
 
 #if TARGET_HAS_THREADING
 
@@ -22,7 +23,7 @@ Description:
 
 #if TARGET_IS_WINDOWS
 typedef DWORD ThreadId;
-#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 typedef pthread_t ThreadId;
 #else
 #error TARGET does not have an implementation for ThreadId
@@ -44,7 +45,7 @@ typedef pthread_t ThreadId;
 
 #if TARGET_IS_WINDOWS
 typedef HANDLE Mutex;
-#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 typedef pthread_mutex_t Mutex;
 #else
 #error TARGET does not have an implementation for Mutex
@@ -87,10 +88,17 @@ PEXPI ThreadId OsGetCurrentThreadId()
 	{
 		result = GetCurrentThreadId();
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif TARGET_IS_OSX
 	{
-    	int returnCode = pthread_threadid_np(pthread_self(), &result);
-    	Assert(returnCode == 0);
+		result = pthread_self();
+	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
+	{
+		result = syscall(SYS_gettid); //TODO: This is technically pid_t which may not be pthread_t?
+		//TODO: Should we do either of these instead?
+		// result = pthread_self();
+		// int returnCode = pthread_threadid_np(pthread_self(), &result);
+		// Assert(returnCode == 0);
 	}
 	#else
 	AssertMsg(false, "OsGetCurrentThreadId does not support the current platform yet!");
@@ -112,7 +120,7 @@ PEXPI void InitMutex(Mutex* mutexPntr)
 		);
 		DebugAssert(*mutexPntr != NULL);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Test this code
 		int initResult = pthread_mutex_init(mutexPntr, NULL);
@@ -133,7 +141,7 @@ PEXPI void DestroyMutex(Mutex* mutexPntr)
 		Assert(closeResult != 0);
 		*mutexPntr = NULL;
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Test this code
 		int destroyResult = pthread_mutex_destroy(mutexPntr);
@@ -157,32 +165,37 @@ PEXPI bool LockMutex(Mutex* mutexPntr, uxx timeoutMs)
 		DebugAssertMsg(timeoutDword != INFINITE || lockResult == WAIT_OBJECT_0, "Failed to lock mutex with INFINITE timeout!");
 		return (lockResult == WAIT_OBJECT_0);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Test this code
-		if (timeoutMs == 0)
-		{
-			int lockResult = pthread_mutex_trylock(mutexPntr);
-			DebugAssert(lockResult == 0 || lockResult == EBUSY);
-			return (lockResult == 0);
-		}
-		else if (timeoutMs == TIMEOUT_FOREVER)
+		if (timeoutMs == TIMEOUT_FOREVER)
 		{
 			int lockResult = pthread_mutex_lock(mutexPntr);
 			DebugAssert(lockResult == 0);
 			return (lockResult == 0);
 		}
+		else if (timeoutMs == 0 || TARGET_IS_OSX)
+		{
+			int lockResult = pthread_mutex_trylock(mutexPntr);
+			DebugAssert(lockResult == 0 || lockResult == EBUSY);
+			return (lockResult == 0);
+		}
+		//NOTE: Apparently pthread_mutex_timedlock is not part of the POSIX standard, so it's not available on OSX's clang
+		#if !TARGET_IS_OSX
 		else
 		{
 			plex timespec absTimeout;
 			clock_gettime(CLOCK_REALTIME, &absTimeout);
 			absTimeout.tv_sec += (timeoutMs / Thousand(1));
 			absTimeout.tv_nsec += (timeoutMs % Thousand(1)) * Million(1);
-			if (absTimeout.tv_nsec >= Billion(1)) { absTimeout.tv_sec++; absTimeout.tv_nsec -= Billion(1); }
+			if ((u64)absTimeout.tv_nsec >= Billion(1)) { absTimeout.tv_sec++; absTimeout.tv_nsec -= Billion(1); }
 			int lockResult = pthread_mutex_timedlock(mutexPntr, &absTimeout);
 			DebugAssert(lockResult == 0 || lockResult == ETIMEDOUT);
 			return (lockResult == 0);
 		}
+		#else
+		{ Assert(false); return true; }
+		#endif
 	}
 	#else
 	AssertMsg(false, "LockMutex does not support the current platform yet!");
@@ -205,7 +218,7 @@ PEXPI void UnlockMutex(Mutex* mutexPntr)
 		BOOL releaseResult = ReleaseMutex(*mutexPntr);
 		DebugAssert(releaseResult != 0);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		int unlockResult = pthread_mutex_unlock(mutexPntr);
 		DebugAssert(unlockResult == 0);

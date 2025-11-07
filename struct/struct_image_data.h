@@ -11,7 +11,6 @@ Date:   02\15\2025
 #include "base/base_typedefs.h"
 #include "base/base_assert.h"
 #include "std/std_memset.h"
-#include "mem/mem_arena.h"
 #include "struct/struct_vectors.h"
 
 typedef plex ImageData ImageData;
@@ -26,7 +25,6 @@ plex ImageData
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE void FreeImageData(Arena* arena, ImageData* imageData);
 	PIG_CORE_INLINE ImageData NewImageData(v2i size, u32* pixels);
 #endif
 
@@ -34,17 +32,6 @@ plex ImageData
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
-
-PEXPI void FreeImageData(Arena* arena, ImageData* imageData)
-{
-	NotNull(arena);
-	NotNull(imageData);
-	if (imageData->pixels != nullptr)
-	{
-		FreeArray(u32, arena, imageData->numPixels, imageData->pixels);
-	}
-	ClearPointer(imageData);
-}
 
 PEXPI ImageData NewImageData(v2i size, u32* pixels)
 {
@@ -58,3 +45,7 @@ PEXPI ImageData NewImageData(v2i size, u32* pixels)
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //  _STRUCT_IMAGE_DATA_H
+
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_IMAGE_DATA_H)
+#include "cross/cross_mem_arena_and_image_data.h"
+#endif

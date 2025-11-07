@@ -26,7 +26,17 @@ Description:
 extern Arena* imguiArena; //defined in ui_imgui_main.cpp
 
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable:5287) //operands are different enum types 'ImGuiHoveredFlags_' and '<unnamed-enum-ImGuiHoveredFlags_DelayMask_>'; use an explicit cast to silence this warning
+#endif
+
 #include "third_party/cimgui/cimgui.h"
+
+#if COMPILER_IS_MSVC
+#pragma warning(pop)
+#endif
 
 typedef plex ImguiUI ImguiUI;
 plex ImguiUI

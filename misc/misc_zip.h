@@ -31,7 +31,7 @@ Description:
 // #define MINIZ_NO_ARCHIVE_APIS //to disable all ZIP archive API's.
 // #define MINIZ_NO_ARCHIVE_WRITING_APIS //to disable all writing related ZIP archive API's.
 // #define MINIZ_NO_ZLIB_APIS //to remove all ZLIB-style compression/decompression API's.
-// #define MINIZ_NO_ZLIB_COMPATIBLE_NAMES //to disable zlib names, to prevent conflicts against stock zlib.
+#define MINIZ_NO_ZLIB_COMPATIBLE_NAMES //to disable zlib names, to prevent conflicts against stock zlib. (We need this enabled in order to compile with FreeType in a unity build)
 // #define MINIZ_NO_MALLOC //to disable all calls to malloc, free, and realloc. 
 
 #define MINIZ_USE_UNALIGNED_LOADS_AND_STORES 1 //TODO: Is this true on all our platforms? Wasm32 specifically?
@@ -82,6 +82,7 @@ plex ZipArchive
 	Result AddZipArchiveFile(ZipArchive* archive, FilePath fileName, Slice fileContents, bool convertNewLines);
 	PIG_CORE_INLINE Result AddZipArchiveTextFile(ZipArchive* archive, FilePath fileName, Str8 fileContents);
 	PIG_CORE_INLINE Result AddZipArchiveBinFile(ZipArchive* archive, FilePath fileName, Slice fileContents);
+	Slice ZlibDecompressIntoArena(Arena* arena, Slice compressedBytes, uxx expectedSize);
 #endif
 
 // +--------------------------------------------------------------+
@@ -336,6 +337,38 @@ PEXP Result AddZipArchiveFile(ZipArchive* archive, FilePath fileName, Slice file
 }
 PEXPI Result AddZipArchiveTextFile(ZipArchive* archive, FilePath fileName, Str8 fileContents) { return AddZipArchiveFile(archive, fileName, fileContents, true); }
 PEXPI Result AddZipArchiveBinFile(ZipArchive* archive, FilePath fileName, Slice fileContents) { return AddZipArchiveFile(archive, fileName, fileContents, false); }
+
+//NOTE: This always allocates expectedSize from arena, when freeing the Slice don't use the length of the slice as the size
+PEXP Slice ZlibDecompressIntoArena(Arena* arena, Slice compressedBytes, uxx expectedSize)
+{
+	NotNull(arena);
+	Assert(expectedSize > 0);
+	Slice result;
+	result.length = expectedSize;
+	result.bytes = (u8*)AllocMem(arena, expectedSize);
+	if (result.bytes == nullptr) { return Slice_Empty; }
+	mz_ulong mzBufferLength = (mz_ulong)expectedSize;
+	int decompressResult = mz_uncompress(result.bytes, &mzBufferLength, compressedBytes.bytes, (mz_ulong)compressedBytes.length);
+	if (decompressResult != MZ_OK)
+	{
+		PrintLine_E("Failed to decompress: %d", decompressResult);
+		if (CanArenaFree(arena)) { FreeMem(arena, result.bytes, expectedSize); }
+		return Slice_Empty;
+	}
+	if (mzBufferLength < result.length) { result.length = (uxx)mzBufferLength; }
+	return result;
+}
+
+#if 0
+TODO: Should we wrap any of these functions for doing zlib decompression?
+MINIZ_EXPORT int mz_inflateInit(mz_streamp pStream);
+MINIZ_EXPORT int mz_inflateInit2(mz_streamp pStream, int window_bits);
+MINIZ_EXPORT int mz_inflateReset(mz_streamp pStream);
+MINIZ_EXPORT int mz_inflate(mz_streamp pStream, int flush);
+MINIZ_EXPORT int mz_inflateEnd(mz_streamp pStream);
+MINIZ_EXPORT int mz_uncompress(unsigned char *pDest, mz_ulong *pDest_len, const unsigned char *pSource, mz_ulong source_len);
+MINIZ_EXPORT int mz_uncompress2(unsigned char *pDest, mz_ulong *pDest_len, const unsigned char *pSource, mz_ulong *pSource_len);
+#endif
 
 #endif //PIG_CORE_IMPLEMENTATION
 

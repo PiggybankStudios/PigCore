@@ -737,6 +737,9 @@ STBTT_DEF int stbtt_InitFont(stbtt_fontinfo *info, const unsigned char *data, in
 // need to do anything special to free it, because the contents are pure
 // value data with no additional data structures. Returns 0 on failure.
 
+STBTT_DEF void stbtt_SetAllocUserData(stbtt_fontinfo *info, void* userdata);
+//NOTE: Added by Taylor in order to set an Arena* as the userdata context for STBTT_malloc/STBTT_free during functions like stbtt_GetGlyphBitmap
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -4954,6 +4957,11 @@ STBTT_DEF int stbtt_GetNumberOfFonts(const unsigned char *data)
 STBTT_DEF int stbtt_InitFont(stbtt_fontinfo *info, const unsigned char *data, int offset)
 {
    return stbtt_InitFont_internal(info, (unsigned char *) data, offset);
+}
+
+STBTT_DEF void stbtt_SetAllocUserData(stbtt_fontinfo *info, void* userdata)
+{
+	info->userdata = userdata;
 }
 
 STBTT_DEF int stbtt_FindMatchingFont(const unsigned char *fontdata, const char *name, int flags)

@@ -15,11 +15,10 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "std/std_includes.h"
-#include "std/std_basic_math.h" //Needed for SqrtR32
-#include "std/std_math_ex.h" //Needed for AreSimilarR32
-#include "std/std_trig.h" //Needed for SinR32, CosR32, and AcosR32
-
-#include "struct/struct_handmade_math_include.h"
+#include "std/std_basic_math.h"
+#include "std/std_math_ex.h"
+#include "std/std_trig.h"
+#include "lib/lib_handmade_math.h"
 
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
@@ -175,6 +174,70 @@ typedef HMM_Vec4 v4;
 typedef Vec4Raw  v4r;
 typedef Vec4i    v4i;
 typedef Vec4R64  v4d;
+
+// +--------------------------------------------------------------+
+// |                      Helper Slice Types                      |
+// +--------------------------------------------------------------+
+typedef plex Vec2Slice Vec2Slice;
+plex Vec2Slice
+{
+	uxx length;
+	car { void* pntr; r32 components; HMM_Vec2* vectors; };
+};
+typedef plex Vec2iSlice Vec2iSlice;
+plex Vec2iSlice
+{
+	uxx length;
+	car { void* pntr; i32 components; Vec2i* vectors; };
+};
+typedef plex Vec2R64Slice Vec2R64Slice;
+plex Vec2R64Slice
+{
+	uxx length;
+	car { void* pntr; r64 components; Vec2R64* vectors; };
+};
+typedef plex Vec3Slice Vec3Slice;
+plex Vec3Slice
+{
+	uxx length;
+	car { void* pntr; r32 components; HMM_Vec3* vectors; };
+};
+typedef plex Vec3iSlice Vec3iSlice;
+plex Vec3iSlice
+{
+	uxx length;
+	car { void* pntr; i32 components; Vec3i* vectors; };
+};
+typedef plex Vec3R64Slice Vec3R64Slice;
+plex Vec3R64Slice
+{
+	uxx length;
+	car { void* pntr; r64 components; Vec3R64* vectors; };
+};
+typedef plex Vec4Slice Vec4Slice;
+plex Vec4Slice
+{
+	uxx length;
+	car { void* pntr; r32 components; HMM_Vec4* vectors; };
+};
+typedef plex Vec4RawSlice Vec4RawSlice;
+plex Vec4RawSlice
+{
+	uxx length;
+	car { void* pntr; r32 components; Vec4Raw* vectors; };
+};
+typedef plex Vec4iSlice Vec4iSlice;
+plex Vec4iSlice
+{
+	uxx length;
+	car { void* pntr; i32 components; Vec4i* vectors; };
+};
+typedef plex Vec4R64Slice Vec4R64Slice;
+plex Vec4R64Slice
+{
+	uxx length;
+	car { void* pntr; r64 components; Vec4R64* vectors; };
+};
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -367,13 +430,18 @@ typedef Vec4R64  v4d;
 	PIG_CORE_INLINE v2d PerpLeftV2d(v2d vec2d);
 	PIG_CORE_INLINE v2 Vec2Rotate(v2 vec2, r32 angle);
 	PIG_CORE_INLINE v2d Vec2dRotate(v2d vec2d, r64 angle);
-	PIG_CORE_INLINE r32 Vec3AngleBetween(v3 left, v3 right);
-	PIG_CORE_INLINE r64 Vec3dAngleBetween(v3d left, v3d right);
+	PIG_CORE_INLINE r32 AngleBetweenV2(v2 left, v2 right);
+	PIG_CORE_INLINE r64 AngleBetweenV2d(v2d left, v2d right);
+	PIG_CORE_INLINE r32 AngleBetweenV3(v3 left, v3 right);
+	PIG_CORE_INLINE r64 AngleBetweenV3d(v3d left, v3d right);
 	PIG_CORE_INLINE v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius);
 	PIG_CORE_INLINE v3d Vec3dFrom2Angles(r64 facingDirection, r64 rotationUpDown, r64 radius);
 	PIG_CORE_INLINE void AlignV2ToV2(v2* vectorOut, v2 alignmentScale);
 	PIG_CORE_INLINE void AlignV2To(v2* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV2(v2* vectorOut);
+	PIG_CORE_INLINE void AlignV2dToV2d(v2d* vectorOut, v2d alignmentScale);
+	PIG_CORE_INLINE void AlignV2dTo(v2d* vectorOut, r64 alignmentScale);
+	PIG_CORE_INLINE void AlignV2d(v2d* vectorOut);
 	PIG_CORE_INLINE void AlignV3ToV3(v3* vectorOut, v3 alignmentScale);
 	PIG_CORE_INLINE void AlignV3To(v3* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV3(v3* vectorOut);
@@ -435,12 +503,12 @@ typedef Vec4R64  v4d;
 #define AreEqualV3(left, right) HMM_EqV3((left), (right))
 #define AreEqualV4(left, right) HMM_EqV4((left), (right))
 
-#define AreSimilarV2(left, right, tolerance) return (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)))
-#define AreSimilarV3(left, right, tolerance) return (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)) && AreSimilarR32((left).Z, (right).Z, (tolerance)))
-#define AreSimilarV4(left, right, tolerance) return (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)) && AreSimilarR32((left).Z, (right).Z, (tolerance)) && AreSimilarR32((left).W, (right).W, (tolerance)))
-#define AreSimilarV2d(left, right, tolerance) return (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)))
-#define AreSimilarV3d(left, right, tolerance) return (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)))
-#define AreSimilarV4d(left, right, tolerance) return (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)) && AreSimilarR64((left).W, (right).W, (tolerance)))
+#define AreSimilarV2(left, right, tolerance) (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)))
+#define AreSimilarV3(left, right, tolerance) (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)) && AreSimilarR32((left).Z, (right).Z, (tolerance)))
+#define AreSimilarV4(left, right, tolerance) (AreSimilarR32((left).X, (right).X, (tolerance)) && AreSimilarR32((left).Y, (right).Y, (tolerance)) && AreSimilarR32((left).Z, (right).Z, (tolerance)) && AreSimilarR32((left).W, (right).W, (tolerance)))
+#define AreSimilarV2d(left, right, tolerance) (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)))
+#define AreSimilarV3d(left, right, tolerance) (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)))
+#define AreSimilarV4d(left, right, tolerance) (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)) && AreSimilarR64((left).W, (right).W, (tolerance)))
 
 #define DotV2(left, right) HMM_DotV2((left), (right))
 #define DotV3(left, right) HMM_DotV3((left), (right))
@@ -561,6 +629,8 @@ typedef Vec4R64  v4d;
 #define V4_Nextward      NewV4( 0.0f,  0.0f,  0.0f, 1.0f)
 #define V4_Zero_Const   { .X=0.0f,.Y=0.0f,.Z=0.0f,.W=0.0f }
 #define V4_One_Const    { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
+#define V4r_Zero_Const  { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
+#define V4r_One_Const   { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
 
 #define V4i_Zero          NewV4i( 0,  0,  0, 0)
 #define V4i_One           NewV4i( 1,  1,  1, 0)
@@ -736,13 +806,13 @@ PEXPI r64 LengthSquaredV4d(v4d vec4d) { return DotV4d(vec4d, vec4d); }
 PEXPI r32 LengthV2i(v2i vec2i) { return SqrtR32((r32)LengthSquaredV2i(vec2i)); }
 PEXPI r32 LengthV3i(v3i vec3i) { return SqrtR32((r32)LengthSquaredV3i(vec3i)); }
 PEXPI r32 LengthV4i(v4i vec4i) { return SqrtR32((r32)LengthSquaredV4i(vec4i)); }
-PEXPI r64 LengthV2d(v2d vec2d) { return SqrtR64((r64)LengthSquaredV2d(vec2d)); }
-PEXPI r64 LengthV3d(v3d vec3d) { return SqrtR64((r64)LengthSquaredV3d(vec3d)); }
-PEXPI r64 LengthV4d(v4d vec4d) { return SqrtR64((r64)LengthSquaredV4d(vec4d)); }
+PEXPI r64 LengthV2d(v2d vec2d) { return SqrtR64(LengthSquaredV2d(vec2d)); }
+PEXPI r64 LengthV3d(v3d vec3d) { return SqrtR64(LengthSquaredV3d(vec3d)); }
+PEXPI r64 LengthV4d(v4d vec4d) { return SqrtR64(LengthSquaredV4d(vec4d)); }
 
-PEXPI v2d NormalizeV2d(v2d vec2d) { return ScaleV2d(vec2d, LengthV2d(vec2d)); }
-PEXPI v3d NormalizeV3d(v3d vec3d) { return ScaleV3d(vec3d, LengthV3d(vec3d)); }
-PEXPI v4d NormalizeV4d(v4d vec4d) { return ScaleV4d(vec4d, LengthV4d(vec4d)); }
+PEXPI v2d NormalizeV2d(v2d vec2d) { return ShrinkV2d(vec2d, LengthV2d(vec2d)); }
+PEXPI v3d NormalizeV3d(v3d vec3d) { return ShrinkV3d(vec3d, LengthV3d(vec3d)); }
+PEXPI v4d NormalizeV4d(v4d vec4d) { return ShrinkV4d(vec4d, LengthV4d(vec4d)); }
 
 PEXPI v2d LerpV2d(v2d start, v2d end, r64 amount) { return AddV2d(ScaleV2d(start, (1.0 - amount)), ScaleV2d(end, amount)); }
 PEXPI v3d LerpV3d(v3d start, v3d end, r64 amount) { return AddV3d(ScaleV3d(start, (1.0 - amount)), ScaleV3d(end, amount)); }
@@ -853,11 +923,24 @@ PEXPI v2d Vec2dRotate(v2d vec2d, r64 angle)
 	);
 }
 
-PEXPI r32 Vec3AngleBetween(v3 left, v3 right)
+PEXPI r32 AngleBetweenV2(v2 left, v2 right)
+{
+	r32 dotProduct = DotV2(left, right);
+	if (dotProduct == -1) { return Pi32; }
+	return SignOfR32(left.X * right.Y - left.Y * right.X) * AcosR32(dotProduct / (LengthV2(left) * LengthV2(right)));
+}
+PEXPI r64 AngleBetweenV2d(v2d left, v2d right)
+{
+	r64 dotProduct = DotV2d(left, right);
+	if (dotProduct == -1) { return Pi64; }
+	return SignOfR64(left.X * right.Y - left.Y * right.X) * AcosR64(dotProduct / (LengthV2d(left) * LengthV2d(right)));
+}
+
+PEXPI r32 AngleBetweenV3(v3 left, v3 right)
 {
 	return AcosR32(DotV3(left, right) / (LengthV3(left) * LengthV3(right)));
 }
-PEXPI r64 Vec3dAngleBetween(v3d left, v3d right)
+PEXPI r64 AngleBetweenV3d(v3d left, v3d right)
 {
 	return AcosR64(DotV3d(left, right) / (LengthV3d(left) * LengthV3d(right)));
 }
@@ -869,7 +952,7 @@ PEXPI v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius)
 	return NewV3(
 		CosR32(facingDirection) * circleRadius,
 		SinR32(facingDirection) * circleRadius,
-		SinR32(rotationUpDown)
+		SinR32(rotationUpDown) //TODO: Should this be multiplied by radius?
 	);
 }
 PEXPI v3d Vec3dFrom2Angles(r64 facingDirection, r64 rotationUpDown, r64 radius)

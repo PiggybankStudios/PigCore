@@ -18,7 +18,7 @@ Description:
 #include "std/std_malloc.h"
 #include "std/std_memset.h"
 #include "os/os_virtual_mem.h"
-#include "misc/misc_profiling_tracy_include.h"
+#include "lib/lib_tracy.h"
 
 #ifndef MEM_ARENA_DEBUG_NAMES
 #define MEM_ARENA_DEBUG_NAMES DEBUG_BUILD
@@ -116,6 +116,7 @@ plex Arena
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	void FreeArena(Arena* arena, Arena* sourceArena);
 	void InitArenaStdHeap(Arena* arenaOut);
 	void InitArenaFuncs(Arena* arenaOut, AllocFunc_f* allocFunc, FreeFunc_f* freeFunc, ReallocFunc_f* reallocFunc);
 	void InitArenaAlias(Arena* arenaOut, Arena* sourceArena);
@@ -193,10 +194,24 @@ plex Arena
 #if PIG_CORE_IMPLEMENTATION
 
 NODISCARD PEXP void* AllocMem(Arena* arena, uxx numBytes);
+PEXPI void FreeMem(Arena* arena, void* allocPntr, uxx allocSize);
 
 // +--------------------------------------------------------------+
 // |                   Initialization Functions                   |
 // +--------------------------------------------------------------+
+PEXP void FreeArena(Arena* arena, Arena* sourceArena)
+{
+	NotNull(arena);
+	switch (arena->type)
+	{
+		case ArenaType_Alias: FreeArena(arena->sourceArena, sourceArena); break;
+		case ArenaType_Stack: FreeMem(sourceArena, arena->mainPntr, arena->size); break;
+		case ArenaType_StackVirtual: OsFreeReservedMemory(arena->mainPntr, arena->size); break;
+		default: AssertMsg(arena->type != ArenaType_None && false, "Tried to free unsupported ArenaType!");
+	}
+	ClearPointer(arena);
+}
+
 PEXP void InitArenaStdHeap(Arena* arenaOut)
 {
 	NotNull(arenaOut);
@@ -1057,6 +1072,7 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 			else if (newSize > 0)
 			{
 				result = AllocMemAligned(arena, newSize, newAlignmentOverride);
+				if (oldSize > 0) { MyMemCopy(result, allocPntr, (oldSize <= newSize) ? oldSize : newSize); }
 			}
 			if (result == nullptr && newSize > 0 && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to reallocate in Stack Arena!"); }
 		} break;
@@ -1074,24 +1090,20 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 		// +====================================+
 		case ArenaType_StackVirtual:
 		{
-			//TODO: Should we be silently ignoring scenarios where we can't free things? Esp. when newSize == 0
+			//TODO: Should we be silently ignoring scenarios where we can't free things?
 			DebugNotNull(arena->mainPntr);
 			uxx allocIndex = (uxx)((u8*)allocPntr - (u8*)arena->mainPntr);
 			// If the allocation is the last thing on the arena, then we can actually just grow it
-			if (oldSize > 0 && allocIndex + oldSize == arena->used)
+			if (oldSize > 0 && allocIndex + oldSize == arena->used && IsAlignedTo(allocPntr, newAlignment))
 			{
-				if (newSize == 0)
+				if (newSize > oldSize)
 				{
-					FreeMem(arena, allocPntr, oldSize);
-				}
-				else if (newSize > oldSize)
-				{
-					void* newAlloc = AllocMemAligned(arena, newSize - oldSize, 0);
+					void* newAlloc = AllocMemAligned(arena, newSize - oldSize, 0); //we're re-using the page committing logic by calling AllocMemAligned here
 					Assert((u8*)newAlloc == (u8*)arena->mainPntr + allocIndex + oldSize);
 					arena->used = allocIndex + newSize;
 					result = allocPntr;
 				}
-				else if (newSize < oldSize)
+				else //if (newSize < oldSize)
 				{
 					//TODO: Do we want to uncommit committed pages?
 					arena->used = allocIndex + newSize;
@@ -1101,7 +1113,8 @@ NODISCARD PEXP void* ReallocMemAligned(Arena* arena, void* allocPntr, uxx oldSiz
 			//Otherwise a Realloc is the same as a call to Alloc, the old allocation will be "forgotten"
 			else if (newSize > 0)
 			{
-				result = AllocMem(arena, newSize);
+				result = AllocMemAligned(arena, newSize, newAlignmentOverride);
+				if (oldSize > 0) { MyMemCopy(result, allocPntr, (oldSize <= newSize) ? oldSize : newSize); }
 			}
 			if (result == nullptr && newSize > 0 && IsFlagSet(arena->flags, ArenaFlag_AssertOnFailedAlloc)) { AssertMsg(false, "Failed to reallocate in StackVirtual Arena!"); }
 		} break;
@@ -1303,6 +1316,6 @@ PEXPI bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr
 #include "cross/cross_mem_arena_string_and_unicode.h"
 #endif
 
-#if defined(_GFX_FONT_FLOW_H) && defined(_MEM_ARENA_H)
-#include "cross/cross_font_flow_and_mem_arena.h"
+#if defined(_MEM_ARENA_H) && defined(_STRUCT_IMAGE_DATA_H)
+#include "cross/cross_mem_arena_and_image_data.h"
 #endif

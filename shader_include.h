@@ -19,7 +19,7 @@ Description:
 #endif
 
 #define PIG_CORE_IMPLEMENTATION 0
-#include "misc/misc_sokol_gfx_include.h"
+#include "lib/lib_sokol_gfx.h"
 #include "struct/struct_vectors.h"
 #include "struct/struct_matrices.h"
 

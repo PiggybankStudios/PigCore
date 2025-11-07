@@ -61,6 +61,7 @@ PEXP FilePath OsGetTemporaryFolderPath(Arena* arena)
 	// 	//TODO: Implement me!
 	// }
 	#else
+	UNUSED(arena);
 	AssertMsg(false, "OsGetTemporaryFolderPath does not support the current platform yet!");
 	#endif
 	

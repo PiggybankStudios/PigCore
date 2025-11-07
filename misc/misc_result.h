@@ -34,13 +34,16 @@ enum Result
 	Result_Finished,
 	Result_Canceled,
 	
+	Result_NotImplemented,
 	Result_InvalidCharacter,
 	Result_InvalidUtf8,
 	Result_InvalidType,
+	Result_InvalidRole,
 	Result_TooShort,
 	Result_TooLong,
 	Result_EmptyString,
 	Result_EmptyPath,
+	Result_TooMany,
 	Result_EmptyFile,
 	Result_ExePathTooLong,
 	Result_FailedToAllocateMemory,
@@ -91,6 +94,26 @@ enum Result
 	Result_WinHTTPError,
 	Result_MissingItems,
 	Result_MissingPart,
+	Result_ValueTooLow,
+	Result_ValueTooHigh,
+	Result_UnexpectedEof,
+	Result_DecompressError,
+	Result_UnsupportedCompression,
+	Result_WrongInternalFormat,
+	Result_MissingData,
+	Result_MissingHeader,
+	Result_Mismatch,
+	Result_InvalidID,
+	Result_UnsupportedFileFormat,
+	Result_EndOfBuffer,
+	Result_EndOfFile,
+	Result_ElementNotFound,
+	Result_AttributeNotFound,
+	Result_InvalidAttributeValue,
+	Result_FailedToOpenClipboard,
+	Result_FailedToEmptyClipboard,
+	Result_NoScratchAvailable,
+	Result_InitFailed,
 	
 	Result_Count,
 };
@@ -108,13 +131,16 @@ PEXP const char* GetResultStr(Result result)
 		case Result_Unknown: return "Unknown";
 		case Result_Finished: return "Finished";
 		case Result_Canceled: return "Canceled";
+		case Result_NotImplemented: return "NotImplemented";
 		case Result_InvalidCharacter: return "InvalidCharacter";
 		case Result_InvalidUtf8: return "InvalidUtf8";
 		case Result_InvalidType: return "InvalidType";
+		case Result_InvalidRole: return "InvalidRole";
 		case Result_TooShort: return "TooShort";
 		case Result_TooLong: return "TooLong";
 		case Result_EmptyString: return "EmptyString";
 		case Result_EmptyPath: return "EmptyPath";
+		case Result_TooMany: return "TooMany";
 		case Result_EmptyFile: return "EmptyFile";
 		case Result_ExePathTooLong: return "ExePathTooLong";
 		case Result_FailedToAllocateMemory: return "FailedToAllocateMemory";
@@ -165,6 +191,26 @@ PEXP const char* GetResultStr(Result result)
 		case Result_WinHTTPError: return "WinHTTPError";
 		case Result_MissingItems: return "MissingItems";
 		case Result_MissingPart: return "MissingPart";
+		case Result_ValueTooLow: return "ValueTooLow";
+		case Result_ValueTooHigh: return "ValueTooHigh";
+		case Result_UnexpectedEof: return "UnexpectedEof";
+		case Result_DecompressError: return "DecompressError";
+		case Result_UnsupportedCompression: return "UnsupportedCompression";
+		case Result_WrongInternalFormat: return "WrongInternalFormat";
+		case Result_MissingData: return "MissingData";
+		case Result_MissingHeader: return "MissingHeader";
+		case Result_Mismatch: return "Mismatch";
+		case Result_InvalidID: return "InvalidID";
+		case Result_UnsupportedFileFormat: return "UnsupportedFileFormat";
+		case Result_EndOfBuffer: return "EndOfBuffer";
+		case Result_EndOfFile: return "EndOfFile";
+		case Result_ElementNotFound: return "ElementNotFound";
+		case Result_AttributeNotFound: return "AttributeNotFound";
+		case Result_InvalidAttributeValue: return "InvalidAttributeValue";
+		case Result_FailedToOpenClipboard: return "FailedToOpenClipboard";
+		case Result_FailedToEmptyClipboard: return "FailedToEmptyClipboard";
+		case Result_NoScratchAvailable: return "NoScratchAvailable";
+		case Result_InitFailed: return "InitFailed";
 		default: return UNKNOWN_STR;
 	}
 }

@@ -14,6 +14,8 @@ Description:
 	** since it's lifespan is short and it's memory requirements are tiny
 */
 
+//TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
+
 #include "tools/tools_shared.h"
 #include "tools/tools_str_array.h"
 #include "tools/tools_cli.h"
@@ -27,6 +29,7 @@ Description:
 
 #include "tools/tools_build_helpers.h"
 #include "tools/tools_pig_core_build_flags.h"
+#include "tools/tools_android_build_helpers.h"
 
 #define BUILD_CONFIG_PATH       "../build_config.h"
 
@@ -34,31 +37,38 @@ Description:
 #define FOLDERNAME_LINUX           "linux"
 #define FOLDERNAME_OSX             "osx"
 #define FOLDERNAME_WEB             "web"
+#define FOLDERNAME_ANDROID         "android"
 #define FOLDERNAME_ORCA            "orca"
 
-#define FILENAME_PIGGEN_EXE        "piggen.exe"
-#define FILENAME_PIGGEN            "piggen"
-#define FILENAME_TRACY_DLL         "tracy.dll"
-#define FILENAME_TRACY_LIB         "tracy.lib"
-#define FILENAME_TRACY_SO          "tracy.so"
-#define FILENAME_IMGUI_OBJ         "imgui.obj"
-#define FILENAME_IMGUI_O           "imgui.o"
-#define FILENAME_PHYSX_OBJ         "physx_capi.obj"
-#define FILENAME_PHYSX_O           "physx_capi.o"
-#define FILENAME_PIG_CORE_DLL      "pig_core.dll"
-#define FILENAME_PIG_CORE_SO       "libpig_core.so"
-#define FILENAME_TESTS             "tests"
-#define FILENAME_TESTS_EXE         "tests.exe"
-#define FILENAME_TESTS_OBJ         "tests.obj"
-#define FILENAME_APP_WASM          "app.wasm"
-#define FILENAME_APP_WAT           "app.wat"
-#define FILENAME_INDEX_HTML        "index.html"
-#define FILENAME_INDEX_WASM        "index.wasm"
-#define FILENAME_INDEX_WAT         "index.wat"
-#define FILENAME_MODULE_WASM       "module.wasm"
-#define FILENAME_PDEX_ELF          "pdex.elf"
-#define FILENAME_PDEX_DLL          "pdex.dll"
-#define FILENAME_TESTS_PDX         "tests.pdx"
+#define FILENAME_PIGGEN_EXE            "piggen.exe"
+#define FILENAME_PIGGEN                "piggen"
+#define FILENAME_TRACY_DLL             "tracy.dll"
+#define FILENAME_TRACY_LIB             "tracy.lib"
+#define FILENAME_TRACY_SO              "tracy.so"
+#define FILENAME_IMGUI_OBJ             "imgui.obj"
+#define FILENAME_IMGUI_O               "imgui.o"
+#define FILENAME_PHYSX_OBJ             "physx_capi.obj"
+#define FILENAME_PHYSX_O               "physx_capi.o"
+#define FILENAME_PIG_CORE_DLL          "pig_core.dll"
+#define FILENAME_PIG_CORE_SO           "libpig_core.so"
+#define FILENAME_TESTS                 "tests"
+#define FILENAME_TESTS_EXE             "tests.exe"
+#define FILENAME_TESTS_APK             "tests.apk"
+#define FILENAME_TESTS_SO              "libtests.so"
+#define FILENAME_TESTS_OBJ             "tests.obj"
+#define FILENAME_ANDROID_RESOURCES_ZIP "resources.zip"
+#define FILENAME_DUMMY_JAVA            "Dummy.java"
+#define FILENAME_DUMMY_CLASS           "Dummy.class"
+#define FILENAME_CLASSES_DEX           "classes.dex"
+#define FILENAME_APP_WASM              "app.wasm"
+#define FILENAME_APP_WAT               "app.wat"
+#define FILENAME_INDEX_HTML            "index.html"
+#define FILENAME_INDEX_WASM            "index.wasm"
+#define FILENAME_INDEX_WAT             "index.wat"
+#define FILENAME_MODULE_WASM           "module.wasm"
+#define FILENAME_PDEX_ELF              "pdex.elf"
+#define FILENAME_PDEX_DLL              "pdex.dll"
+#define FILENAME_TESTS_PDX             "tests.pdx"
 
 #if BUILDING_ON_WINDOWS
 #define TOOL_EXE_NAME      "pig_build.exe"
@@ -94,6 +104,8 @@ int main(int argc, char* argv[])
 	bool BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
 	bool BUILD_TESTS              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
 	bool RUN_TESTS                = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
+	bool INSTALL_TESTS_APK        = ExtractBoolDefine(buildConfigContents, StrLit("INSTALL_TESTS_APK"));
+	bool GENERATE_PROTOBUF        = ExtractBoolDefine(buildConfigContents, StrLit("GENERATE_PROTOBUF"));
 	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
 	bool DUMP_ASSEMBLY            = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
 	bool CONVERT_WASM_TO_WAT      = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
@@ -104,6 +116,8 @@ int main(int argc, char* argv[])
 	bool BUILD_LINUX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
 	bool BUILD_OSX                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_OSX"));
 	bool BUILD_WEB                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
+	bool BUILD_ANDROID            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID"));
+	bool BUILD_ANDROID_APK        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID_APK"));
 	bool BUILD_ORCA               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
 	bool BUILD_PLAYDATE_DEVICE    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
 	bool BUILD_PLAYDATE_SIMULATOR = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
@@ -117,6 +131,18 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_IMGUI         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
 	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
 	bool BUILD_WITH_HTTP          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
+	bool BUILD_WITH_PROTOBUF      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PROTOBUF"));
+	bool BUILD_WITH_FREETYPE      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"));
+	
+	Str8 ANDROID_SIGNING_KEY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")), false);
+	Str8 ANDROID_SIGNING_PASSWORD = ZEROED;
+	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASSWORD"), &ANDROID_SIGNING_PASSWORD)) { ANDROID_SIGNING_PASSWORD = CopyStr8(ANDROID_SIGNING_PASSWORD, false); }
+	Str8 ANDROID_SIGNING_PASS_PATH = ZEROED;
+	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASS_PATH"), &ANDROID_SIGNING_PASS_PATH)) { ANDROID_SIGNING_PASS_PATH = CopyStr8(ANDROID_SIGNING_PASS_PATH, false); }
+	Str8 ANDROID_NDK_VERSION = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_NDK_VERSION")), false);
+	Str8 ANDROID_PLATFORM_FOLDERNAME = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_PLATFORM_FOLDERNAME")), false);
+	Str8 ANDROID_BUILD_TOOLS_VERSION = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_BUILD_TOOLS_VERSION")), false);
+	Str8 ANDROID_ACTIVITY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_ACTIVITY_PATH")), false);
 	
 	free(buildConfigContents.chars);
 	
@@ -145,6 +171,23 @@ int main(int argc, char* argv[])
 		InitializeEmsdkIf(StrLit(".."), &isEmsdkInitialized);
 	}
 	
+	Str8 androidSdkDir = ZEROED;
+	Str8 androidSdkBuildToolsDir = ZEROED;
+	Str8 androidSdkPlatformDir = ZEROED;
+	Str8 androidNdkDir = ZEROED;
+	Str8 androidNdkToolchainDir = ZEROED;
+	if (BUILD_ANDROID)
+	{
+		androidSdkDir = GetAndroidSdkPath();
+		PrintLine("Android SDK path: \"%.*s\"", androidSdkDir.length, androidSdkDir.chars);
+		androidSdkBuildToolsDir = JoinStrings3(androidSdkDir, StrLit("/build-tools/"), ANDROID_BUILD_TOOLS_VERSION, false);
+		androidSdkPlatformDir = JoinStrings3(androidSdkDir, StrLit("/platforms/"), ANDROID_PLATFORM_FOLDERNAME, false);
+		androidNdkDir = JoinStrings3(androidSdkDir, StrLit("/ndk/"), ANDROID_NDK_VERSION, false);
+		//TODO: "windows-x86_64" is going to be different when compiling on Linux or OSX, we should figure out how we want that configured once we get there
+		androidNdkToolchainDir = JoinStrings3(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/"), StrLit("windows-x86_64"), false);
+		//TODO: We should check to see if all these folders actually exist and give a nice error to the user when they need to install something or change the build_config.h
+	}
+	
 	Str8 orcaSdkPath = ZEROED;
 	if (BUILD_ORCA)
 	{
@@ -164,15 +207,23 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |       Fill CliArgLists       |
 	// +==============================+
-	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY);
+	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY, BUILD_WITH_FREETYPE);
 	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
-	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
-	CliArgList clang_LinuxFlags                  = ZEROED; Fill_clang_LinuxFlags(&clang_LinuxFlags, DEBUG_BUILD);
+	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
+	CliArgList clang_LangCFlags                  = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags);
+	CliArgList clang_LangCppFlags                = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
+	CliArgList clang_LangObjectiveCFlags         = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
+	CliArgList clang_LinuxOrOsxFlags             = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
+	CliArgList clang_CommonLibraries             = ZEROED; Fill_clang_CommonLibraries(&clang_CommonLibraries);
 	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
+	CliArgList clang_OsxCommonLibraries          = ZEROED; Fill_clang_OsxCommonLibraries(&clang_OsxCommonLibraries, BUILD_WITH_SOKOL_APP);
 	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
-	CliArgList clang_PigCoreLibraries            = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX, !BUILDING_ON_OSX);
+	CliArgList clang_PigCoreLinuxLibraries       = ZEROED; Fill_clang_PigCoreLinuxLibraries(&clang_PigCoreLinuxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
+	CliArgList clang_PigCoreOsxLibraries         = ZEROED; Fill_clang_PigCoreOsxLibraries(&clang_PigCoreOsxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
+	CliArgList clang_AndroidFlags                = ZEROED; Fill_clang_AndroidFlags(&clang_AndroidFlags, androidNdkDir, androidNdkToolchainDir, DEBUG_BUILD);
+	CliArgList clang_AndroidLinkFlags            = ZEROED; Fill_clang_AndroidLinkFlags(&clang_AndroidLinkFlags, DEBUG_BUILD, BUILD_WITH_BOX2D);
 	CliArgList clang_WasmFlags                   = ZEROED; Fill_clang_WasmFlags(&clang_WasmFlags, DEBUG_BUILD);
 	CliArgList clang_WebFlags                    = ZEROED; Fill_clang_WebFlags(&clang_WebFlags, USE_EMSCRIPTEN);
 	CliArgList clang_OrcaFlags                   = ZEROED; Fill_clang_OrcaFlags(&clang_OrcaFlags, orcaSdkPath);
@@ -183,6 +234,63 @@ int main(int argc, char* argv[])
 	CliArgList gcc_PlaydateDeviceCompilerFlags   = ZEROED; Fill_gcc_PlaydateDeviceCompilerFlags(&gcc_PlaydateDeviceCompilerFlags);
 	CliArgList gcc_PlaydateDeviceLinkerFlags     = ZEROED; Fill_gcc_PlaydateDeviceLinkerFlags(&gcc_PlaydateDeviceLinkerFlags, playdateSdkDir);
 	CliArgList pdc_CommonFlags                   = ZEROED; Fill_pdc_CommonFlags(&pdc_CommonFlags, playdateSdkDir);
+	
+	if (BUILD_WITH_PROTOBUF)
+	{
+		//NOTE: Generated .pb-c.h files contain an #include that doesn't go through "third_party/protobuf_c/" so we add this as an
+		//      include directory explicitly and from there it can find <protobuf-c/protobuf-c.h>
+		AddArgNt(&cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/third_party/protobuf_c");
+		AddArgNt(&clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/protobuf_c");
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                   Generate Protobuf Files                    |
+	// +--------------------------------------------------------------+
+	if (GENERATE_PROTOBUF)
+	{
+		WriteLine("\n[Generating Protobuf...]");
+		
+		#define PROTOC_C_OUT_PATH "--c_out=\"[VAL]\""
+		#define PROTOC_PLUGIN_EXE_PATH "--plugin=\"[VAL]\""
+		#define PROTOC_PROTO_PATH "--proto_path=\"[VAL]\""
+		#define PROTOC_ERROR_FORMAT "--error_format=[VAL]"
+		
+		#if BUILDING_ON_WINDOWS
+		Str8 protocExe = StrLit("wsl protoc");
+		#else
+		Str8 protocExe = StrLit("protoc");
+		#endif
+		
+		CliArgList proto_CommonFlags = ZEROED;
+		AddArgNt(&proto_CommonFlags, PROTOC_PLUGIN_EXE_PATH, "[ROOT]/third_party/_tools/linux/protoc-gen-c");
+		AddArgNt(&proto_CommonFlags, PROTOC_ERROR_FORMAT, "msvs");
+		AddArgNt(&proto_CommonFlags, PROTOC_PROTO_PATH, "[ROOT]");
+		
+		//NOTE: For some reason when [ROOT] folder is given as the first proto_path it likes to make a folder next to the .proto file with the name of the folder it resides in (like making "parse" folder next to "parse/parse_proto_google_types.proto")
+		//      To counteract this, we add the primary folder proto_path first THEN add proto_CommonFlags which includes [ROOT] as a place to look for import resolves
+		
+		//TODO: The functions inside the generated files are not dllexport and will not be available to apps linking with pig_core.dll!
+		
+		//TODO: Rather than manually running on a specific set of .proto files, we should resursively search the folders and find all .proto files
+		{
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, PROTOC_PROTO_PATH, "[ROOT]/parse");
+			AddArgList(&cmd, &proto_CommonFlags);
+			AddArgNt(&cmd, PROTOC_C_OUT_PATH, "[ROOT]/parse");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/parse/parse_proto_google_types.proto");
+			RunCliProgramAndExitOnFailure(protocExe, &cmd, StrLit("protoc Failed on parse_proto_google_types.proto!"));
+		}
+		{
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, PROTOC_PROTO_PATH, "[ROOT]/tests");
+			AddArgList(&cmd, &proto_CommonFlags);
+			AddArgNt(&cmd, PROTOC_C_OUT_PATH, "[ROOT]/tests");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_proto_types.proto");
+			RunCliProgramAndExitOnFailure(protocExe, &cmd, StrLit("protoc Failed on tests_proto_types.proto!"));
+		}
+	}
 	
 	// +--------------------------------------------------------------+
 	// |                       Build piggen.exe                       |
@@ -223,7 +331,9 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
 			#if BUILDING_ON_LINUX
@@ -251,8 +361,10 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LinuxFlags); //TODO: If this works, we should rename this list
-			AddArgList(&cmd, &clang_LinuxCommonLibraries); //TODO: If this works, we should rename this list
+			AddArgList(&cmd, &clang_LangCFlags); //TODO: Should this be ObjectiveC?
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
+			AddArgList(&cmd, &clang_OsxCommonLibraries);
 			
 			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
@@ -292,8 +404,10 @@ int main(int argc, char* argv[])
 	// |                        Build Shaders                         |
 	// +--------------------------------------------------------------+
 	FindShadersContext findContext = ZEROED;
-	CliArgList cl_ShaderObjects = ZEROED;
-	CliArgList clang_ShaderObjects = ZEROED;
+	CliArgList cl_WindowsShaderObjects = ZEROED;
+	CliArgList clang_LinuxShaderObjects = ZEROED;
+	CliArgList clang_OsxShaderObjects = ZEROED;
+	CliArgList clang_AndroidShaderObjects[AndroidTargetArchitechture_Count] = ZEROED;
 	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
 	{
 		const char* ignoreList[] = { ".git", "_template", "third_party", "_build" };
@@ -311,7 +425,7 @@ int main(int argc, char* argv[])
 			for (uxx sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
 			{
 				Str8 objPath = findContext.objPaths.strings[sIndex];
-				AddArgStr(&cl_ShaderObjects, CLI_QUOTED_ARG, objPath);
+				AddArgStr(&cl_WindowsShaderObjects, CLI_QUOTED_ARG, objPath);
 				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", objPath.length, objPath.chars); BUILD_SHADERS = true; }
 			}
 		}
@@ -320,9 +434,35 @@ int main(int argc, char* argv[])
 			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
-				AddArgStr(&clang_ShaderObjects, CLI_QUOTED_ARG, oPath);
+				AddArgStr(&clang_LinuxShaderObjects, CLI_QUOTED_ARG, oPath);
 				Str8 oPathWithFolder = BUILDING_ON_LINUX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
+			}
+		}
+		if (BUILD_OSX)
+		{
+			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			{
+				Str8 oPath = findContext.oPaths.strings[sIndex];
+				AddArgStr(&clang_OsxShaderObjects, CLI_QUOTED_ARG, oPath);
+				Str8 oPathWithFolder = BUILDING_ON_OSX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_OSX "/"), oPath, false);
+				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
+			}
+		}
+		if (BUILD_ANDROID)
+		{
+			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			{
+				for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+				{
+					AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
+					Str8 archFolderName = NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture));
+					Str8 archFolderPath = JoinStrings3(StrLit("lib/"), archFolderName, StrLit("/"), false);
+					Str8 oPath = findContext.oPaths.strings[sIndex];
+					AddArgStr(&clang_AndroidShaderObjects[archIndex], CLI_QUOTED_ARG, oPath);
+					Str8 oRelativePath = JoinStrings3(StrLit(FOLDERNAME_ANDROID "/"), archFolderPath, oPath, false);
+					if (!DoesFileExist(oRelativePath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oRelativePath.length, oRelativePath.chars); BUILD_SHADERS = true; }
+				}
 			}
 		}
 		
@@ -363,7 +503,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, SHDC_FORMAT, "sokol_impl");
 			AddArgNt(&cmd, SHDC_ERROR_FORMAT, "msvc");
 			// AddArg(&cmd, SHDC_REFLECTION);
-			AddArgNt(&cmd, SHDC_SHADER_LANGUAGES, "hlsl5:glsl430:metal_macos");
+			AddArgNt(&cmd, SHDC_SHADER_LANGUAGES, "hlsl5:glsl430:glsl300es:metal_macos");
 			AddArgStr(&cmd, SHDC_INPUT, shaderPath);
 			AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
 			
@@ -409,17 +549,13 @@ int main(int argc, char* argv[])
 				AddArgList(&cmd, &cl_CommonFlags);
 				AddArgList(&cmd, &cl_LangCFlags);
 				
-				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build TODO: for Windows!"));
+				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), objPath, StrLit(" for Windows!"), false);
+				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorMessage);
 				AssertFileExist(objPath, true);
 			}
 			if (BUILD_LINUX)
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
-				//TODO: The path we store in the findContext needs to have [ROOT] at the beginning somehow so we can get rid of this logic
-				// Str8 fixedSourcePath = BUILDING_ON_LINUX ? CopyStr8(sourcePath, false) : JoinStrings2(StrLit("../"), sourcePath, false);
-				// FixPathSlashes(fixedSourcePath, '/');
-				// Str8 fixedHeaderDirectory = BUILDING_ON_LINUX ? CopyStr8(headerDirectory, false) : JoinStrings2(StrLit("../"), headerDirectory, false);
-				// FixPathSlashes(fixedHeaderDirectory, '/');
 				
 				CliArgList cmd = ZEROED;
 				cmd.pathSepChar = '/';
@@ -428,7 +564,8 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
 				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
 				AddArgList(&cmd, &clang_CommonFlags);
-				AddArgList(&cmd, &clang_LinuxFlags);
+				AddArgList(&cmd, &clang_LangCFlags);
+				AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 				
 				#if BUILDING_ON_LINUX
 				Str8 clangExe = StrLit(EXE_CLANG);
@@ -439,12 +576,69 @@ int main(int argc, char* argv[])
 				cmd.rootDirPath = StrLit("../..");
 				#endif
 				
-				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build TODO: for Linux!"));
+				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Linux!"), false);
+				RunCliProgramAndExitOnFailure(clangExe, &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 				
 				#if !BUILDING_ON_LINUX
 				chdir("..");
 				#endif
+			}
+			if (BUILD_OSX)
+			{
+				Str8 oPath = findContext.oPaths.strings[sIndex];
+				
+				CliArgList cmd = ZEROED;
+				cmd.pathSepChar = '/';
+				AddArg(&cmd, CLANG_COMPILE);
+				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
+				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
+				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
+				AddArgList(&cmd, &clang_CommonFlags);
+				AddArgList(&cmd, &clang_LangCFlags);
+				AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+				AddArgNt(&cmd, CLANG_DISABLE_WARNING, "unused-command-line-argument");
+				
+				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for OSX!"), false);
+				RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, errorMessage);
+				AssertFileExist(oPath, true);
+			}
+			if (BUILD_ANDROID)
+			{
+				mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
+				chdir(FOLDERNAME_ANDROID);
+				mkdir("lib", FOLDER_PERMISSIONS);
+				chdir("lib");
+				
+				for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+				{
+					AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
+					mkdir(GetAndroidTargetArchitechtureFolderName(architecture), FOLDER_PERMISSIONS);
+					chdir(GetAndroidTargetArchitechtureFolderName(architecture));
+					
+					Str8 oPath = findContext.oPaths.strings[sIndex];
+					
+					CliArgList cmd = ZEROED;
+					cmd.pathSepChar = '/';
+					cmd.rootDirPath = StrLit("../../../..");
+					AddArg(&cmd, CLANG_COMPILE);
+					AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
+					AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
+					AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
+					AddArgList(&cmd, &clang_CommonFlags);
+					AddArgList(&cmd, &clang_LangCFlags);
+					AddArgList(&cmd, &clang_AndroidFlags);
+					AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidTargetArchitechtureTargetStr(architecture));
+					
+					Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Android!"), false);
+					RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, errorMessage);
+					AssertFileExist(oPath, true);
+					
+					chdir("..");
+				}
+				
+				chdir("..");
+				chdir("..");
 			}
 		}
 		
@@ -598,9 +792,11 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
 			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLibraries);
+			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
 			
 			#if BUILDING_ON_LINUX
 			Str8 clangExe = StrLit(EXE_CLANG);
@@ -625,6 +821,7 @@ int main(int argc, char* argv[])
 	// |                       Build tests.exe                        |
 	// +--------------------------------------------------------------+
 	if (RUN_TESTS && !BUILD_TESTS && !DoesFileExist(StrLit(FILENAME_TESTS_EXE))) { PrintLine("Building %s because it's missing", FILENAME_TESTS_EXE); BUILD_TESTS = true; BUILD_WINDOWS = true; }
+	if (INSTALL_TESTS_APK && !BUILD_TESTS && !DoesFileExist(StrLit(FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK))) { PrintLine("Building %s because it's missing", FILENAME_TESTS_APK); BUILD_TESTS = true; BUILD_ANDROID = true; }
 	if (BUILD_TESTS)
 	{
 		if (BUILD_WINDOWS)
@@ -641,7 +838,7 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgList(&cmd, &cl_PigCoreLibraries);
-			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_ShaderObjects); }
+			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_WindowsShaderObjects); }
 			
 			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_TESTS_EXE "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_EXE), true);
@@ -657,10 +854,12 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLibraries);
-			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
+			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
+			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_LinuxShaderObjects); }
 			
 			#if BUILDING_ON_LINUX
 			Str8 clangExe = StrLit(EXE_CLANG);
@@ -685,13 +884,15 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for OSX...]", FILENAME_TESTS);
 			
 			CliArgList cmd = ZEROED;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.m");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LinuxFlags);
-			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLibraries);
-			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
+			AddArgList(&cmd, &clang_LangObjectiveCFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
+			AddArgList(&cmd, &clang_OsxCommonLibraries);
+			AddArgList(&cmd, &clang_PigCoreOsxLibraries);
+			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_OsxShaderObjects); }
 			
 			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS), true);
@@ -716,6 +917,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_HTML : FILENAME_APP_WASM);
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_WasmFlags);
 			AddArgList(&cmd, &clang_WebFlags);
 			
@@ -766,6 +968,181 @@ int main(int argc, char* argv[])
 			chdir("..");
 		}
 		
+		if (BUILD_ANDROID)
+		{
+			PrintLine("\n[Building %s for Android...]", BUILD_ANDROID_APK ? FILENAME_TESTS_APK : FILENAME_TESTS_SO);
+			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
+			chdir(FOLDERNAME_ANDROID);
+			
+			Str8 clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"), false);
+			FixPathSlashes(clangExe, PATH_SEP_CHAR);
+			Str8 javacExe = StrLit("javac.exe");
+			Str8 d8Exe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/d8.bat"), false);
+			FixPathSlashes(d8Exe, PATH_SEP_CHAR);
+			Str8 aaptExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/aapt2.exe"), false);
+			FixPathSlashes(aaptExe, PATH_SEP_CHAR);
+			Str8 apksignerExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/apksigner.bat"), false);
+			FixPathSlashes(apksignerExe, PATH_SEP_CHAR);
+			Str8 zipalignExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/zipalign"), false);
+			FixPathSlashes(zipalignExe, PATH_SEP_CHAR);
+			Str8 androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"), false);
+			
+			CliArgList cmdBase = ZEROED;
+			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
+			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
+			AddArgNt(&cmdBase, CLANG_LIB_SO_NAME, FILENAME_TESTS_SO);
+			
+			// MyRemoveDirectory(StrLit("lib"), true);
+			mkdir("lib", FOLDER_PERMISSIONS);
+			chdir("lib");
+			for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+			{
+				AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
+				mkdir(GetAndroidTargetArchitechtureFolderName(architecture), FOLDER_PERMISSIONS);
+				chdir(GetAndroidTargetArchitechtureFolderName(architecture));
+				PrintLine("Building for %s...", GetAndroidTargetArchitechtureFolderName(architecture));
+				
+				CliArgList cmd = ZEROED;
+				cmd.pathSepChar = '/';
+				cmd.rootDirPath = StrLit("../../../..");
+				AddArgList(&cmd, &cmdBase);
+				AddArgList(&cmd, &clang_CommonFlags);
+				AddArgList(&cmd, &clang_LangCFlags);
+				AddArgList(&cmd, &clang_AndroidFlags);
+				AddArgList(&cmd, &clang_AndroidLinkFlags);
+				AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidTargetArchitechtureTargetStr(architecture));
+				Str8 sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), NewStr8Nt(GetAndroidTargetArchitechtureToolchainFolderStr(architecture)), StrLit("/35/"), false);
+				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath, false));
+				if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_AndroidShaderObjects[archIndex]); }
+				
+				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
+				if (DUMP_PREPROCESSOR) { chdir(".."); continue; }
+				AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
+				
+				chdir("..");
+			}
+			chdir("..");
+			
+			if (BUILD_ANDROID_APK && !DUMP_PREPROCESSOR)
+			{
+				if (!DoesFileExist(StrLit(FILENAME_CLASSES_DEX)))
+				{
+					WriteLine("Compiling " FILENAME_DUMMY_JAVA "...");
+					
+					if (!DoesFileExist(StrLit(FILENAME_DUMMY_JAVA)))
+					{
+						const char* dummyClassCode = "public class Dummy { }\n";
+						CreateAndWriteFile(StrLit(FILENAME_DUMMY_JAVA), NewStr8Nt(dummyClassCode), true);
+					}
+					
+					CliArgList javacCmd = ZEROED;
+					javacCmd.pathSepChar = '/';
+					javacCmd.rootDirPath = StrLit("../..");
+					AddArgNt(&javacCmd, "-d \"[VAL]\"", ".");
+					AddArgStr(&javacCmd, "-classpath \"[VAL]\"", androidJarPath);
+					AddArgNt(&javacCmd, CLI_QUOTED_ARG, FILENAME_DUMMY_JAVA);
+					RunCliProgramAndExitOnFailure(javacExe, &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
+					AssertFileExist(StrLit(FILENAME_DUMMY_CLASS), true);
+					
+					CliArgList d8Cmd = ZEROED;
+					d8Cmd.pathSepChar = '/';
+					d8Cmd.rootDirPath = StrLit("../..");
+					AddArgStr(&d8Cmd, "--lib \"[VAL]\"", androidJarPath);
+					AddArgNt(&d8Cmd, "--output \"[VAL]\"", "./");
+					AddArgNt(&d8Cmd, CLI_QUOTED_ARG, FILENAME_DUMMY_CLASS);
+					RunCliProgramAndExitOnFailure(d8Exe, &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
+					AssertFileExist(StrLit(FILENAME_CLASSES_DEX), true);
+				}
+				
+				PrintLine("Compiling %s...", FILENAME_ANDROID_RESOURCES_ZIP);
+				CliArgList compileResCmd = ZEROED;
+				compileResCmd.pathSepChar = '/';
+				compileResCmd.rootDirPath = StrLit("../..");
+				AddArg(&compileResCmd, "compile");
+				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/tests/android/res");
+				AddArgNt(&compileResCmd, "-o \"[VAL]\"", FILENAME_ANDROID_RESOURCES_ZIP);
+				RunCliProgramAndExitOnFailure(aaptExe, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
+				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
+				
+				RemoveFile(StrLit(FILENAME_TESTS_APK));
+				PrintLine("Linking %s...", FILENAME_TESTS_APK);
+				CliArgList linkApkCmd = ZEROED;
+				linkApkCmd.pathSepChar = '/';
+				linkApkCmd.rootDirPath = StrLit("../..");
+				AddArg(&linkApkCmd, "link");
+				AddArgNt(&linkApkCmd, "-o \"[VAL]\"", FILENAME_TESTS_APK);
+				AddArgStr(&linkApkCmd, "-I \"[VAL]\"", androidJarPath);
+				AddArgNt(&linkApkCmd, "-0 [VAL]", "resources.arsc");
+				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/tests/android/AndroidManifest.xml");
+				AddArgNt(&linkApkCmd, CLI_QUOTED_ARG, FILENAME_ANDROID_RESOURCES_ZIP);
+				RunCliProgramAndExitOnFailure(aaptExe, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
+				AssertFileExist(StrLit(FILENAME_TESTS_APK), true);
+				
+				//NOTE: In order to insert our .so files into the apk, we need to unpack it into a folder, add the .so files manually, and then repack it
+				{
+					PrintLine("Inserting %s files (and " FILENAME_CLASSES_DEX ") into apk...", FILENAME_TESTS_SO);
+					MyRemoveDirectory(StrLit("apk_temp"), true);
+					mkdir("apk_temp", FOLDER_PERMISSIONS);
+					chdir("apk_temp");
+					
+					CliArgList unpackApkCmd = ZEROED;
+					AddArg(&unpackApkCmd, "xf");
+					AddArg(&unpackApkCmd, "../" FILENAME_TESTS_APK);
+					RunCliProgramAndExitOnFailure(StrLit("jar"), &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
+					
+					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"));
+					
+					mkdir("lib", FOLDER_PERMISSIONS);
+					for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+					{
+						AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
+						Str8 apkFolder = JoinStrings2(StrLit("lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
+						Str8 buildFolder = JoinStrings2(StrLit("../lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
+						mkdir(apkFolder.chars, FOLDER_PERMISSIONS);
+						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder);
+					}
+					
+					CliArgList repackApkCmd = ZEROED;
+					AddArg(&repackApkCmd, "cf0");
+					AddArg(&repackApkCmd, "../" FILENAME_TESTS_APK);
+					AddArg(&repackApkCmd, "*");
+					RunCliProgramAndExitOnFailure(StrLit("jar"), &repackApkCmd, StrLit("Failed to repack " FILENAME_TESTS_APK "!"));
+					
+					chdir("..");
+					MyRemoveDirectory(StrLit("apk_temp"), true);
+				}
+				
+				WriteLine("Performing ZIP alignment...");
+				Str8 tempAlignedApkName = StrLit("tests_aligned.apk");
+				RemoveFile(tempAlignedApkName);
+				CliArgList alignApkCmd = ZEROED;
+				AddArg(&alignApkCmd, "-v");
+				AddArg(&alignApkCmd, "4");
+				AddArgNt(&alignApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK); //input
+				AddArgStr(&alignApkCmd, CLI_QUOTED_ARG, tempAlignedApkName); //output
+				RunCliProgramAndExitOnFailure(zipalignExe, &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
+				AssertFileExist(tempAlignedApkName, true);
+				CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK));
+				RemoveFile(tempAlignedApkName);
+				
+				PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, ANDROID_SIGNING_KEY_PATH.length, ANDROID_SIGNING_KEY_PATH.chars);
+				CliArgList signApkCmd = ZEROED;
+				signApkCmd.pathSepChar = '/';
+				signApkCmd.rootDirPath = StrLit("../..");
+				AddArg(&signApkCmd, "sign");
+				AddArgStr(&signApkCmd, "--ks \"[VAL]\"", ANDROID_SIGNING_KEY_PATH);
+				if (ANDROID_SIGNING_PASSWORD.length > 0) { AddArgStr(&signApkCmd, "--ks-pass pass:[VAL]", ANDROID_SIGNING_PASSWORD); }
+				else if (ANDROID_SIGNING_PASS_PATH.length > 0) { AddArgStr(&signApkCmd, "--ks-pass file:[VAL]", ANDROID_SIGNING_PASS_PATH); }
+				else { WriteLine_E("You must provide either a ANDROID_SIGNING_PASSWORD or ANDROID_SIGNING_PASS_PATH in order to sign an Android .apk!"); exit(4); }
+				AddArgNt(&signApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK);
+				RunCliProgramAndExitOnFailure(apksignerExe, &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
+			}
+			
+			PrintLine("[Built %s for Android!]", BUILD_ANDROID_APK ? FILENAME_TESTS_APK : FILENAME_TESTS_SO);
+			chdir("..");
+		}
+		
 		if (BUILD_ORCA)
 		{
 			PrintLine("\n[Building %s for Orca...]", FILENAME_MODULE_WASM);
@@ -778,6 +1155,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_MODULE_WASM);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_WasmFlags);
 			AddArgList(&cmd, &clang_OrcaFlags);
 			
@@ -882,6 +1260,26 @@ int main(int argc, char* argv[])
 		PrintLine("\n[%s]", RUNNABLE_FILENAME_TESTS);
 		CliArgList cmd = ZEROED;
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_TESTS), &cmd, StrLit(RUNNABLE_FILENAME_TESTS " Exited With Error!"));
+	}
+	
+	if (INSTALL_TESTS_APK)
+	{
+		PrintLine("\n[Installing %s on AVD...]", FILENAME_TESTS_APK);
+		Str8 adbExe = JoinStrings2(androidSdkDir, StrLit("/platform-tools/adb.exe"), false);
+		
+		CliArgList installCmd = ZEROED;
+		installCmd.pathSepChar = '/';
+		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
+		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd.exe install exited With Error!"));
+		
+		PrintLine_E("Launching \"%.*s\"...", ANDROID_ACTIVITY_PATH.length, ANDROID_ACTIVITY_PATH.chars);
+		CliArgList launchCmd = ZEROED;
+		launchCmd.pathSepChar = '/';
+		AddArg(&launchCmd, "shell");
+		AddArg(&launchCmd, "am");
+		AddArg(&launchCmd, "start");
+		AddArgStr(&launchCmd, "-n \"[VAL]\"", ANDROID_ACTIVITY_PATH);
+		RunCliProgramAndExitOnFailure(adbExe, &launchCmd, StrLit("abd.exe shell exited With Error!"));
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", TOOL_EXE_NAME);

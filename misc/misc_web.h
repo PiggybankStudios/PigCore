@@ -17,6 +17,7 @@ Description:
 #include "struct/struct_ranges.h"
 #include "mem/mem_arena.h"
 #include "misc/misc_two_pass.h"
+#include "misc/misc_parsing.h"
 #include "struct/struct_string_error_list.h"
 
 typedef plex UriParts UriParts;

@@ -95,6 +95,13 @@ With this file:
 #define BindFontAtSize(fontPntr, fontSize)             GfxSystem_BindFontAtSize(&gfx, (fontPntr), (fontSize))
 #define BindFont(fontPntr)                             GfxSystem_BindFont(&gfx, (fontPntr))
 
+#define GetLineHeight()               GfxSystem_GetLineHeight(&gfx)
+#define GetMaxAscend()                GfxSystem_GetMaxAscend(&gfx)
+#define GetMaxDescend()               GfxSystem_GetMaxDescend(&gfx)
+#define GetCenterOffset()             GfxSystem_GetCenterOffset(&gfx)
+#define GetLineMetrics()              GfxSystem_GetLineMetrics(&gfx)
+#define GetGlyphMetricsFor(codepoint) GfxSystem_GetGlyphMetricsFor(&gfx, (codepoint))
+
 #define SetClipRec(clipRec)                      GfxSystem_SetClipRec(&gfx, (clipRec))
 #define AddClipRec(clipRec)                      GfxSystem_AddClipRec(&gfx, (clipRec))
 #define DisableClipRec()                         GfxSystem_DisableClipRec(&gfx)

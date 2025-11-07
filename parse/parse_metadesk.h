@@ -12,7 +12,7 @@ Date:   03\31\2025
 #include "base/base_assert.h"
 #include "mem/mem_arena.h"
 #include "struct/struct_string.h"
-#include "parse/parse_metadesk_include.h"
+#include "lib/lib_metadesk.h"
 
 #if BUILD_WITH_METADESK
 

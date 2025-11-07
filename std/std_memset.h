@@ -67,4 +67,11 @@ Description:
 	MyMemCopy((pntr1), &tempVarWithLongNameThatWontConflict, sizeof(varType)); \
 } while(0)
 
+#define SwapValues(type, variable1, variable2) do           \
+{                                                           \
+	type tempVarWithLongNameThatWontConflict = (variable1); \
+	(variable1) = (variable2);                              \
+	variable2 = tempVarWithLongNameThatWontConflict;        \
+} while (0)
+
 #endif //  _STD_MEMSET_H

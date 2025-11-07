@@ -22,7 +22,7 @@ Description:
 	#if TARGET_IS_WINDOWS
 	const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode);
 	#endif
-	#if (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#if (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	const char* GetErrnoStr(int errnoValue);
 	#endif
 #endif //!PIG_CORE_IMPLEMENTATION
@@ -40,6 +40,7 @@ PEXP const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 		// https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
 		case ERROR_SUCCESS:              return "ERROR_SUCCESS";              //0
 		case ERROR_FILE_NOT_FOUND:       return "ERROR_FILE_NOT_FOUND";       //2
+		case ERROR_PATH_NOT_FOUND:       return "ERROR_PATH_NOT_FOUND";       //3
 		case ERROR_ACCESS_DENIED:        return "ERROR_ACCESS_DENIED";        //5
 		case ERROR_SHARING_VIOLATION:    return "ERROR_SHARING_VIOLATION";    //32
 		case ERROR_FILE_EXISTS:          return "ERROR_FILE_EXISTS";          //80
@@ -55,7 +56,7 @@ PEXP const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 }
 #endif //TARGET_IS_WINDOWS
 
-#if (TARGET_IS_LINUX || TARGET_IS_OSX)
+#if (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 PEXP const char* GetErrnoStr(int errnoValue)
 {
 	switch (errnoValue)
@@ -158,7 +159,7 @@ PEXP const char* GetErrnoStr(int errnoValue)
 		case EWOULDBLOCK:     return "EWOULDBLOCK";     //Operation would block (may be same value as EAGAIN) (POSIX.1-2001).
 		#endif
 		case EXDEV:           return "EXDEV";           //Invalid cross-device link (POSIX.1-2001).
-		#if TARGET_IS_LINUX
+		#if (TARGET_IS_LINUX || TARGET_IS_ANDROID)
 		case EBADE:           return "EBADE";           // Invalid exchange.
 		case EBADFD:          return "EBADFD";          //File descriptor in bad state.
 		case EBADR:           return "EBADR";           // Invalid request descriptor.

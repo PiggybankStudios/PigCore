@@ -16,6 +16,7 @@ Description:
 #include "base/base_assert.h"
 #include "struct/struct_var_array.h"
 #include "mem/mem_arena.h"
+#include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
 #include "ui/ui_clay.h"
 #include "ui/ui_clay_widget_context.h"
@@ -440,14 +441,72 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		}
 	}
 	
+	// +==============================+
+	// |      Handle Ctrl+C Copy      |
+	// +==============================+
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_C, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWindowHandleEmpty)
+	{
+		Str8 selectedText = StrSlice(tbox->text, MinUXX(tbox->cursorStart, tbox->cursorEnd), MaxUXX(tbox->cursorStart, tbox->cursorEnd));
+		Result copyResult = OsSetClipboardString(context->windowHandle, selectedText);
+		if (copyResult != Result_Success) { PrintLine_E("Failed to copy text: %s", GetResultStr(copyResult)); }
+	}
+	
+	// +==============================+
+	// |      Handle Ctrl+X Cut       |
+	// +==============================+
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_X, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWindowHandleEmpty)
+	{
+		Str8 selectedText = StrSlice(tbox->text, MinUXX(tbox->cursorStart, tbox->cursorEnd), MaxUXX(tbox->cursorStart, tbox->cursorEnd));
+		Result copyResult = OsSetClipboardString(context->windowHandle, selectedText);
+		if (copyResult == Result_Success) { UiTextboxDeleteSelected(tbox); }
+		else{ PrintLine_E("Failed to copy text: %s", GetResultStr(copyResult)); }
+	}
+	
+	// +==============================+
+	// |     Handle Ctrl+V Paste      |
+	// +==============================+
+	if (tbox->isFocused && tbox->cursorActive && IsKeyboardKeyPressed(context->keyboard, Key_V, true) && IsKeyboardKeyDown(context->keyboard, Key_Control) && context->windowHandle != OsWindowHandleEmpty)
+	{
+		ScratchBegin1(scratch, tbox->arena);
+		Str8 clipboardStr = Str8_Empty;
+		Result pasteResult = OsGetClipboardString(context->windowHandle, scratch, &clipboardStr);
+		if (pasteResult != Result_Success) { PrintLine_E("Failed to paste: %s", GetResultStr(pasteResult)); }
+		else
+		{
+			if (tbox->cursorStart != tbox->cursorEnd)
+			{
+				UiTextboxDeleteSelected(tbox);
+				DebugAssert(tbox->cursorStart == tbox->cursorEnd);
+			}
+			
+			if (clipboardStr.length > 0)
+			{
+				VarArrayAddMulti(char, &tbox->textBuffer, clipboardStr.length);
+				tbox->text.chars = (char*)tbox->textBuffer.items;
+				
+				if (tbox->cursorEnd < tbox->text.length)
+				{
+					uxx numCharsToMove = tbox->text.length - tbox->cursorEnd;
+					MyMemMove(&tbox->text.chars[tbox->cursorEnd + clipboardStr.length], &tbox->text.chars[tbox->cursorEnd], numCharsToMove);
+				}
+				MyMemCopy(&tbox->text.chars[tbox->cursorEnd], clipboardStr.chars, clipboardStr.length);
+				tbox->text.length += clipboardStr.length;
+				tbox->cursorStart += clipboardStr.length;
+				tbox->cursorEnd += clipboardStr.length;
+				tbox->textChanged = true;
+				tbox->cursorMoved = true;
+			}
+		}
+		ScratchEnd(scratch);
+	}
+	
 	//TODO: Update horizontal scroll
 	//TODO: Follow cursor movements when cursor leaves viewable area
 	//TODO: Handle copy/paste/cut to/from clipboard
 	//TODO: Double/Triple Click to Select Word/Line
 	
 	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
-	FontAtlas* fontAtlas = GetFontAtlas(font, fontSize, fontStyle);
-	NotNull(fontAtlas);
+	FontLineMetrics fontLineMetrics = GetFontLineMetrics(font, fontSize, fontStyle);
 	
 	if (tbox->flow.numGlyphsAlloc < tbox->text.length)
 	{
@@ -467,7 +526,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		//When there is no text being rendered, we need to figure out the start position of the text
 		cursorRelativePos = NewV2(
 			(r32)UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X),
-			textboxRec.Height/2 + fontAtlas->centerOffset
+			textboxRec.Height/2 + fontLineMetrics.centerOffset
 		);
 		AlignV2(&cursorRelativePos);
 	}
@@ -488,7 +547,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		.layout = {
 			.sizing = {
 				.width = CLAY_SIZING_GROW(0),
-				.height = CLAY_SIZING_FIXED(fontAtlas->lineHeight + UISCALE_R32(uiScale, TEXTBOX_INNER_PADDING_Y)),
+				.height = CLAY_SIZING_FIXED(fontLineMetrics.lineHeight + UISCALE_R32(uiScale, TEXTBOX_INNER_PADDING_Y)),
 			},
 			.padding = {
 				UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X), UISCALE_U16(uiScale, TEXTBOX_INNER_PADDING_X),
@@ -548,11 +607,11 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		
 		if (tbox->isFocused && tbox->cursorActive)
 		{
-			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(uiScale, -1), fontAtlas->maxDescend - fontAtlas->lineHeight));
+			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(uiScale, -1), fontLineMetrics.maxDescend - fontLineMetrics.lineHeight));
 			CLAY({.id = ToClayIdPrint(context->uiArena, "%.*sCursor", StrPrint(tbox->idStr)),
 				.backgroundColor = MonokaiYellow, //TODO: Change this color
 				.layout = {
-					.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 2)), .height = CLAY_SIZING_FIXED(fontAtlas->lineHeight) },
+					.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(uiScale, 2)), .height = CLAY_SIZING_FIXED(fontLineMetrics.lineHeight) },
 				},
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,

@@ -6,9 +6,9 @@ Description:
 	** This file acts as the API for using the PigFont structure that
 	** is defined in gfx_font.h to layout rastered glyphs from the
 	** atlases in the font based on information that was extracted
-	** from the ttf for how place each glyph relative to the one before.
-	** NOTE: This layout code is relatively straightforward but it
-	** needs to disparate use cases so the primary implementation of
+	** from the ttf for how to place each glyph relative to the one before.
+	** NOTE: This layout code is relatively straightforward but it's
+	** needed by disparate use cases so the primary implementation of
 	** the logic has a lot of parameters to change it's behavior and
 	** hook in to the process.
 */
@@ -27,6 +27,14 @@ Description:
 #include "struct/struct_string.h"
 #include "struct/struct_rich_string.h"
 #include "gfx/gfx_font.h"
+#include "lib/lib_tracy.h"
+
+//TODO: We should try to optimize DoFontFlow at some point. To layout a full-screen of 12pt text is taking around 39ms on my laptop (optimized build)
+//      EarlyFlowLogic: 14ms
+//      Other:          10ms
+//      GlyphLogic:     8ms
+//      CodepointLogic: 5ms
+//      PostLogic:      0.5ms
 
 //TODO: Eventually we may want to support using Font stuff in Raylib! That would require making a gfx_texture implementation for Raylib first so we aren't doing that for now
 #if BUILD_WITH_SOKOL_GFX
@@ -109,16 +117,16 @@ plex TextMeasure
 	};
 };
 
-#define FONT_FLOW_BEFORE_CHAR_DEF(functionName) void functionName(FontFlowState* state, FontFlow* flow, u32 codepoint)
+#define FONT_FLOW_BEFORE_CHAR_DEF(functionName)     void functionName(FontFlowState* state, FontFlow* flow, u32 codepoint)
 typedef FONT_FLOW_BEFORE_CHAR_DEF(FontFlowBeforeChar_f);
 
-#define FONT_FLOW_DRAW_CHAR_DEF(functionName)   void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph)
+#define FONT_FLOW_DRAW_CHAR_DEF(functionName)       void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, FontGlyphMetrics glyphMetrics)
 typedef FONT_FLOW_DRAW_CHAR_DEF(FontFlowDrawChar_f);
 
-#define FONT_FLOW_DRAW_HIGHLIGHT_DEF(functionName)   void functionName(FontFlowState* state, FontFlow* flow, rec highlightRec, FontAtlas* currentAtlas)
+#define FONT_FLOW_DRAW_HIGHLIGHT_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec highlightRec)
 typedef FONT_FLOW_DRAW_HIGHLIGHT_DEF(FontFlowDrawHighlight_f);
 
-#define FONT_FLOW_AFTER_CHAR_DEF(functionName)  void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, rec glyphLogicalRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
+#define FONT_FLOW_AFTER_CHAR_DEF(functionName)      void functionName(FontFlowState* state, FontFlow* flow, rec glyphDrawRec, rec glyphLogicalRec, u32 codepoint, FontAtlas* atlas, FontGlyph* glyph, r32 kerning)
 typedef FONT_FLOW_AFTER_CHAR_DEF(FontFlowAfterChar_f);
 
 typedef plex FontFlowCallbacks FontFlowCallbacks;
@@ -128,6 +136,16 @@ plex FontFlowCallbacks
 	FontFlowDrawChar_f* drawChar;
 	FontFlowDrawHighlight_f* drawHighlight;
 	FontFlowAfterChar_f* afterChar;
+};
+
+typedef plex TextLayout TextLayout;
+plex TextLayout
+{
+	Arena* arena;
+	FontFlow flow;
+	uxx numGlyphs;
+	uxx numGlyphsAlloc;
+	FontFlowGlyph* glyphs;
 };
 
 // +--------------------------------------------------------------+
@@ -148,6 +166,8 @@ plex FontFlowCallbacks
 	PIG_CORE_INLINE Str8 ShortenTextEndToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr);
 	PIG_CORE_INLINE Str8 ShortenFilePathToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, FilePath filePath, r32 maxWidth, Str8 ellipsesStr);
 	PIG_CORE_INLINE void ResetFontFlowInfo(FontFlow* flow);
+	PIG_CORE_INLINE void FreeTextLayout(TextLayout* layout);
+	Result DoTextLayoutInArena(Arena* arena, FontFlowState* state, TextLayout* layoutOut);
 #endif
 
 // +--------------------------------------------------------------+
@@ -182,18 +202,17 @@ static Result DoFontFlow_FindNextWordWrapIndex(const FontFlowState* realState, F
 
 static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
 {
-	FontAtlas* currentAtlas = GetFontAtlas(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
-	NotNull(currentAtlas);
+	FontLineMetrics metrics = GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
 	rec highlightRec = NewRec(
 		state->highlightStartPos.X,
-		state->highlightStartPos.Y - currentAtlas->centerOffset - currentAtlas->lineHeight/2.0f - 1,
+		state->highlightStartPos.Y - metrics.centerOffset - metrics.lineHeight/2.0f - 1,
 		state->position.X - state->highlightStartPos.X,
-		currentAtlas->lineHeight+2
+		metrics.lineHeight+2
 	);
 	AlignRecToV2(&highlightRec, state->alignPixelSize);
 	if (callbacks != nullptr && callbacks->drawHighlight != nullptr)
 	{
-		callbacks->drawHighlight(state, flowOut, highlightRec, currentAtlas);
+		callbacks->drawHighlight(state, flowOut, highlightRec);
 	}
 	state->highlightStartPos = state->position;
 }
@@ -203,6 +222,9 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	NotNull(state);
 	NotNullStr(state->text.fullPiece.str);
 	NotNull(state->font);
+	TracyCZoneN(_funcZone, "DoFontFlow", !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap);
+	TracyCZoneN(_funcZone_DrawHighlightRecs, "DrawHighlightRecs(DoFontFlow)", state->drawingHighlightRecs);
+	TracyCZoneN(_funcZone_FindingNextWordBeforeWrap, "FindingNextWordBeforeWrap(DoFontFlow)", state->findingNextWordBeforeWrap);
 	Result result = Result_Success;
 	
 	//Initial copying of state between start/current and flowOut, doesn't need to happen if we're drawing highlight recs or finding word wrap index because the parent DoFontFlow already did this
@@ -221,44 +243,49 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			flowOut->endPos = state->position;
 			flowOut->visualRec = NewRecV(state->position, V2_Zero);
 			flowOut->logicalRec = NewRecV(state->position, V2_Zero);
-			FontAtlas* firstAtlas = GetFontAtlas(state->font, state->startFontSize, state->startFontStyle);
-			if (firstAtlas != nullptr)
-			{
-				flowOut->logicalRec.Y -= firstAtlas->maxAscend;
-				flowOut->logicalRec.Height = firstAtlas->maxAscend;
-			}
+			FontLineMetrics lineMetrics = GetFontLineMetrics(state->font, state->startFontSize, state->startFontStyle);
+			flowOut->logicalRec.Y -= lineMetrics.maxAscend;
+			flowOut->logicalRec.Height = lineMetrics.maxAscend;
 			flowOut->numGlyphs = 0;
 		}
 	}
 	
-	bool drawHighlightsAfterLoop = true;
 	uxx lastWordEndIndex = UINTXX_MAX;
 	u32 prevCodepoint = UINT32_MAX;
 	
 	while (state->byteIndex < state->text.fullPiece.str.length)
 	{
+		TracyCZoneN(_earlyFlowLogic, "EarlyFlowLogic", true);
 		RichStrPiece* currentPiece = GetRichStrPiece(&state->text, state->textPieceIndex);
 		DebugAssert(currentPiece != nullptr);
 		
 		// If any of these things are changing in the next str piece then we need to draw a piece of the active highlight before we continue
-		bool isLineEnding = (state->wordWrapByteIndexIsLineEnd && state->byteIndex >= state->wordWrapByteIndex && state->wrapWidth > 0.0f);
-		bool isHighlightedChanging = IsFontStyleFlagChangingInRichStrStyleChange(&state->currentStyle, state->startFontStyle, currentPiece->styleChange, FontStyleFlag_Highlighted);
-		if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted))
+		bool isLineEnding = (state->byteIndex >= state->wordWrapByteIndex && !state->findingNextWordBeforeWrap);
+		bool isStartingNewPiece = (state->textPieceByteIndex == 0);
+		bool isHighlightedChanging = (isStartingNewPiece && IsFontStyleFlagChangingInRichStrStyleChange(&state->currentStyle, state->startFontStyle, currentPiece->styleChange, FontStyleFlag_Highlighted));
+		if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && (isStartingNewPiece || isLineEnding))
 		{
-			if (currentPiece->styleChange.type == RichStrStyleChangeType_Color ||
+			if (isLineEnding ||
+				isHighlightedChanging ||
+				currentPiece->styleChange.type == RichStrStyleChangeType_Color ||
 				currentPiece->styleChange.type == RichStrStyleChangeType_ColorAndAlpha ||
-				currentPiece->styleChange.type == RichStrStyleChangeType_FontSize ||
-				isLineEnding || isHighlightedChanging)
+				currentPiece->styleChange.type == RichStrStyleChangeType_FontSize)
 			{
 				DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
-				//Highlight is getting disabled, return to regular drawing of characters
-				if (isHighlightedChanging) { drawHighlightsAfterLoop = false; break; }
 			}
 		}
 		
-		ApplyRichStyleChange(&state->currentStyle, currentPiece->styleChange, state->startFontSize, state->startFontStyle, state->startColor);
+		if (isStartingNewPiece)
+		{
+			TracyCZoneN(_applyRichStyleChangeZone, "ApplyRichStyleChange", true);
+			ApplyRichStyleChange(&state->currentStyle, currentPiece->styleChange, state->startFontSize, state->startFontStyle, state->startColor);
+			TracyCZoneEnd(_applyRichStyleChangeZone);
+		}
 		
-		if (!state->drawingHighlightRecs && isHighlightedChanging && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && callbacks != nullptr && callbacks->drawHighlight != nullptr)
+		//If highlighting is starting then we should do some look-ahead and render the highlight rectangles FIRST then render the text on top using backgroundColor
+		if (!state->drawingHighlightRecs && !state->findingNextWordBeforeWrap &&
+			isHighlightedChanging && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) &&
+			callbacks != nullptr && callbacks->drawHighlight != nullptr)
 		{
 			if (state->byteIndex >= state->highlightRecsDrawnToByteIndex)
 			{
@@ -266,12 +293,13 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				if (drawHighlightResult != Result_Success && drawHighlightResult != Result_InvalidUtf8)
 				{
 					result = drawHighlightResult;
+					TracyCZoneEnd(_earlyFlowLogic);
 					break;
 				}
 			}
 		}
 		
-		if (state->byteIndex >= state->wordWrapByteIndex && !state->findingNextWordBeforeWrap)
+		if (isLineEnding)
 		{
 			if (state->wordWrapByteIndexIsLineEnd)
 			{
@@ -282,24 +310,26 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				}
 				else
 				{
-					FontAtlas* atlas = GetFontAtlas(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
-					NotNull(atlas); //TODO: Should we be tolerant of this? We need a FontAtlas so we know how much to vertically advance
-					state->position.Y += atlas->lineHeight;
+					state->position.Y += GetFontLineHeight(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
 				}
 				state->maxLineHeightThisLine = 0.0f;
+				state->highlightStartPos = state->position;
 			}
 			
 			Result findWrapResult = DoFontFlow_FindNextWordWrapIndex(state, callbacks, &state->wordWrapByteIndex);
 			if (findWrapResult != Result_Success && findWrapResult != Result_InvalidUtf8)
 			{
 				result = findWrapResult;
+				TracyCZoneEnd(_earlyFlowLogic);
 				break;
 			}
 			state->wordWrapByteIndexIsLineEnd = true;
 		}
+		TracyCZoneEnd(_earlyFlowLogic);
 		
 		if (state->textPieceByteIndex < currentPiece->str.length)
 		{
+			TracyCZoneN(_codepointLogic, "CodepointLogic", true);
 			u32 codepoint = 0;
 			u8 utf8ByteSize = GetCodepointForUtf8Str(currentPiece->str, state->textPieceByteIndex, &codepoint);
 			if (utf8ByteSize == 0)
@@ -313,41 +343,87 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			if (codepoint == '\n' && state->findingNextWordBeforeWrap) //TODO: Should we handle \r\n new-line sequence?
 			{
 				state->byteIndex += utf8ByteSize;
+				TracyCZoneEnd(_codepointLogic);
 				break;
 			}
-			if (prevCodepoint != UINT32_MAX && state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f)
+			if (prevCodepoint != UINT32_MAX && state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f && IsWordBoundary(prevCodepoint, codepoint))
 			{
-				bool isNextCharWord = IsCharAlphaNumeric(codepoint);
-				bool isPrevCharWord = IsCharAlphaNumeric(prevCodepoint);
-				bool isNextCharWhitespace = IsCharWhitespace(codepoint, true);
-				bool isPrevCharWhitespace = IsCharWhitespace(prevCodepoint, true);
-				if (isNextCharWord != isPrevCharWord || isNextCharWhitespace != isPrevCharWhitespace) { lastWordEndIndex = state->byteIndex; }
+				lastWordEndIndex = state->byteIndex;
 			}
 			
 			if (callbacks != nullptr && callbacks->beforeChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
 			{
 				callbacks->beforeChar(state, flowOut, codepoint);
 			}
-			if (state->byteIndex >= state->text.fullPiece.str.length) { break; }
+			if (state->byteIndex >= state->text.fullPiece.str.length) { TracyCZoneEnd(_codepointLogic); break; }
 			
 			r32 kerning = 0.0f;
 			rec glyphDrawRec = Rec_Zero;
 			rec glyphLogicalRec = Rec_Zero;
+			
+			u32 fontCodepoint = codepoint;
 			FontAtlas* fontAtlas = nullptr;
-			FontGlyph* fontGlyph = GetFontGlyphForCodepoint(state->font, codepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &fontAtlas);
-			if (fontGlyph != nullptr)
+			FontGlyph* fontGlyph = nullptr;
+			
+			u32 substituteCodepoints[] = { codepoint, UNICODE_UNKNOWN_CHAR_CODEPOINT, CharToU32('?') };
+			uxx substituteIndex = 0;
+			while (fontGlyph == nullptr && substituteIndex < ArrayCount(substituteCodepoints))
 			{
-				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas->lineHeight);
-				
-				if (state->prevGlyphAtlas != nullptr && state->prevGlyphAtlas->fontScale == fontAtlas->fontScale) //TODO: Should we check the style flags match?
+				fontGlyph = TryGetFontGlyphForCodepoint(state->font, substituteCodepoints[substituteIndex], state->currentStyle.fontSize, state->currentStyle.fontStyle, true, &fontAtlas);
+				// if (fontGlyph == nullptr) { MyBreak(); }
+				if (fontGlyph != nullptr) { fontCodepoint = substituteCodepoints[substituteIndex]; break; }
+				else if (IsCodepointWhitespace(codepoint, true)) { break; } //don't do substitution characters for whitespace (esp. not new-line character)
+				// PrintLine_D("Couldn't find a glyph for codepoint U+%X \'%s\'", substituteCodepoints[substituteIndex], DebugGetCodepointName(substituteCodepoints[substituteIndex]));
+				substituteIndex++;
+			}
+			TracyCZoneEnd(_codepointLogic);
+			
+			if (fontGlyph != nullptr || IsCodepointWhitespace(codepoint, false))
+			{
+				TracyCZoneN(_glyphLogic, "GlyphLogic", true);
+				FontGlyphMetrics glyphMetrics = ZEROED;
+				if (fontGlyph != nullptr) { glyphMetrics = fontGlyph->metrics; }
+				if (fontAtlas != nullptr && !AreSimilarR32(fontAtlas->fontSize, state->currentStyle.fontSize, DEFAULT_R32_TOLERANCE))
 				{
-					kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->fontScale, state->prevGlyph, fontGlyph);
+					//TODO: If we can figure out how to make TryGetFontGlyphMetrics (FT_Load_Glyph is slow) then we should do the more accurate logic instead
+					#if 1
+					r32 lineHeight = GetFontLineHeight(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
+					r32 predictedScale = lineHeight / fontAtlas->metrics.lineHeight;
+					#else
+					r32 predictedScale = 1.0f;
+					if (!TryGetFontGlyphMetrics(state->font, fontCodepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics))
+					{
+						FontLineMetrics lineMetrics = ZEROED;
+						if (TryGetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle, &lineMetrics))
+						{
+							predictedScale = lineMetrics.lineHeight / fontAtlas->metrics.lineHeight;
+						}
+					}
+					#endif
+					
+					if (predictedScale != 1.0f)
+					{
+						glyphMetrics.glyphSize = NewV2i(
+							RoundR32i(glyphMetrics.glyphSize.Width * predictedScale),
+							RoundR32i(glyphMetrics.glyphSize.Height * predictedScale)
+						);
+						glyphMetrics.renderOffset = ScaleV2(glyphMetrics.renderOffset, predictedScale);
+						glyphMetrics.advanceX *= predictedScale;
+						glyphMetrics.logicalRec = ScaleRec(glyphMetrics.logicalRec, predictedScale);
+					}
+				}
+				
+				state->maxLineHeightThisLine = MaxR32(state->maxLineHeightThisLine, fontAtlas != nullptr ? fontAtlas->metrics.lineHeight : 0.0f);
+				
+				if (state->prevGlyphAtlas != nullptr && fontGlyph != nullptr && state->prevGlyphAtlas->metrics.fontScale == fontAtlas->metrics.fontScale) //TODO: Should we check the style flags match?
+				{
+					kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->metrics.fontScale, state->prevGlyph, fontGlyph);
 					state->position.X += kerning;
 					// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
 				}
 				
-				glyphDrawRec = NewRecV(Add(state->position, fontGlyph->renderOffset), ToV2Fromi(fontGlyph->atlasSourceRec.Size));
-				glyphLogicalRec = NewRecV(Add(state->position, fontGlyph->logicalRec.TopLeft), fontGlyph->logicalRec.Size);
+				glyphDrawRec = NewRecV(Add(state->position, glyphMetrics.renderOffset), ToV2Fromi(glyphMetrics.glyphSize));
+				glyphLogicalRec = NewRecV(Add(state->position, glyphMetrics.logicalRec.TopLeft), glyphMetrics.logicalRec.Size);
 				if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
 				if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
 				
@@ -364,7 +440,6 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					}
 					
 					// Consume any whitespace and up to one new-line character as part of the line break
-					bool foundNewLine = false;
 					while (state->byteIndex < state->text.fullPiece.str.length)
 					{
 						uxx pieceByteIndex = 0;
@@ -372,20 +447,25 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 						NotNull(richStrPiece);
 						u32 maybeSpaceCodepoint = 0;
 						u8 maybeSpaceUtf8ByteSize = GetCodepointForUtf8Str(richStrPiece->str, pieceByteIndex, &maybeSpaceCodepoint);
-						if (IsCharWhitespace(maybeSpaceCodepoint, !foundNewLine))
+						if (IsCharWhitespace(maybeSpaceCodepoint, false))
 						{
 							state->byteIndex += maybeSpaceUtf8ByteSize;
-							if (maybeSpaceCodepoint == '\n') { foundNewLine = true; }
+						}
+						else if (maybeSpaceCodepoint == '\n')
+						{
+							state->byteIndex += maybeSpaceUtf8ByteSize;
+							break;
 						}
 						else { break; }
 					}
 					
+					TracyCZoneEnd(_glyphLogic);
 					break;
 				}
 				
-				if (callbacks != nullptr && callbacks->drawChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap)
+				if (callbacks != nullptr && callbacks->drawChar != nullptr && !state->drawingHighlightRecs && !state->findingNextWordBeforeWrap && fontGlyph != nullptr)
 				{
-					callbacks->drawChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph);
+					callbacks->drawChar(state, flowOut, glyphDrawRec, codepoint, fontAtlas, fontGlyph, glyphMetrics);
 				}
 				
 				//TODO: Draw Strikethrough
@@ -403,6 +483,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 						flowGlyph->byteIndex = state->byteIndex;
 						flowGlyph->atlas = fontAtlas;
 						flowGlyph->glyph = fontGlyph;
+						//TODO: Should we store glyphMetrics here? Since fontGlyph can be nullptr now? 
 						flowGlyph->position = state->position;
 						flowGlyph->drawRec = glyphDrawRec;
 						flowGlyph->color = state->currentStyle.color;
@@ -414,14 +495,16 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					flowOut->numGlyphs++;
 				}
 				
-				state->position.X += fontGlyph->advanceX;
+				state->position.X += glyphMetrics.advanceX;
 				state->glyphIndex++;
+				TracyCZoneEnd(_glyphLogic);
 			}
 			else
 			{
 				//TODO: What should we do if we don't find the glyph? Render a default character maybe?
 			}
 			
+			TracyCZoneN(_postLogic, "PostLogic", true);
 			state->charIndex++;
 			state->byteIndex += utf8ByteSize;
 			state->textPieceByteIndex += utf8ByteSize;
@@ -438,6 +521,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			}
 			
 			prevCodepoint = codepoint;
+			TracyCZoneEnd(_postLogic);
 		}
 		else
 		{
@@ -448,17 +532,21 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 	
 	if (flowOut != nullptr) { flowOut->endPos = state->position; }
 	
-	if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted) && drawHighlightsAfterLoop)
+	if (state->drawingHighlightRecs && IsFlagSet(state->currentStyle.fontStyle, FontStyleFlag_Highlighted))
 	{
 		DoFontFlow_DrawHighlightRec(state, callbacks, flowOut);
 	}
 	
+	TracyCZoneEnd(_funcZone_FindingNextWordBeforeWrap);
+	TracyCZoneEnd(_funcZone_DrawHighlightRecs);
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 
 PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text, FontFlow* flowOut)
 {
 	NotNull(flowOut);
+	TracyCZoneN(_funcZone, "MeasureRichTextFlow", true);
 	FontFlowState state = ZEROED;
 	state.font = (PigFont*)font;
 	state.position = V2_Zero;
@@ -478,6 +566,7 @@ PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styl
 	{
 		result.logicalRec.Width = flowOut->endPos.X - result.logicalRec.X;
 	}
+	TracyCZoneEnd(_funcZone);
 	return result;
 }
 PEXPI TextMeasure MeasureRichTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, RichStr text)
@@ -515,10 +604,12 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	NotNullStr(ellipsesStr);
 	Assert(ellipsesIndex <= text.length);
 	Assert(!IsInfiniteOrNanR32(maxWidth));
+	TracyCZoneN(_funcZone, "ShortenTextToFitWidthEx", true);
 	if (maxWidth <= 0)
 	{
 		SetOptionalOutPntr(beforeEllipseStrOut, NewStr8(0, &text.chars[0]));
 		SetOptionalOutPntr(afterEllipseStrOut, NewStr8(0, &text.chars[text.length-1]));
+		TracyCZoneEnd(_funcZone);
 		return text.length;
 	}
 	ScratchBegin(scratch);
@@ -543,6 +634,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 		SetOptionalOutPntr(beforeEllipseStrOut, text);
 		SetOptionalOutPntr(afterEllipseStrOut, NewStr8(0, &text.chars[text.length-1]));
 		ScratchEnd(scratch);
+		TracyCZoneEnd(_funcZone);
 		return 0;
 	}
 	
@@ -589,6 +681,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	SetOptionalOutPntr(afterEllipseStrOut, rightPortion);
 	
 	ScratchEnd(scratch);
+	TracyCZoneEnd(_funcZone);
 	return numCharsRemoved;
 }
 PEXPI Str8 ShortenTextToFitWidth(Arena* arena, const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex)
@@ -633,12 +726,61 @@ PEXPI void ResetFontFlowInfo(FontFlow* flow)
 	flow->glyphs = glyphs;
 }
 
+PEXPI void FreeTextLayout(TextLayout* layout)
+{
+	if (layout->arena != nullptr)
+	{
+		if (layout->glyphs != nullptr) { FreeArray(FontFlowGlyph, layout->arena, layout->numGlyphsAlloc, layout->glyphs); }
+	}
+	ClearPointer(layout);
+}
+
+PEXP Result DoTextLayoutInArena(Arena* arena, FontFlowState* state, TextLayout* layoutOut)
+{
+	NotNull(arena);
+	NotNull(state);
+	NotNull(layoutOut);
+	
+	ClearPointer(layoutOut);
+	layoutOut->arena = arena;
+	
+	uxx numCodepoints = 0;
+	while (state->byteIndex < state->text.fullPiece.str.length)
+	{
+		u32 codepoint = 0;
+		u8 utf8ByteSize = GetCodepointForUtf8Str(state->text.fullPiece.str, state->byteIndex, &codepoint);
+		if (utf8ByteSize == 0)
+		{
+			//TODO: Should we handle invalid UTF-8 differently?
+			codepoint = CharToU32(state->text.fullPiece.str.chars[state->byteIndex]);
+			utf8ByteSize = 1;
+		}
+		numCodepoints++;
+		state->byteIndex += utf8ByteSize;
+	}
+	state->byteIndex = 0;
+	
+	layoutOut->numGlyphsAlloc = numCodepoints;
+	if (numCodepoints > 0)
+	{
+		layoutOut->glyphs = AllocArray(FontFlowGlyph, arena, layoutOut->numGlyphsAlloc);
+		if (layoutOut->glyphs == nullptr) { return Result_FailedToAllocateMemory; }
+		#if DEBUG_BUILD
+		MyMemSet(layoutOut->glyphs, 0xCC, sizeof(FontFlowGlyph) * layoutOut->numGlyphsAlloc);
+		#endif
+	}
+	layoutOut->flow.numGlyphsAlloc = layoutOut->numGlyphsAlloc;
+	layoutOut->flow.glyphs = layoutOut->glyphs;
+	
+	Result flowResult = DoFontFlow(state, nullptr, &layoutOut->flow);
+	Assert(layoutOut->flow.numGlyphs <= layoutOut->flow.numGlyphsAlloc);
+	layoutOut->numGlyphs = layoutOut->flow.numGlyphs;
+	
+	return flowResult;
+}
+
 #endif //PIG_CORE_IMPLEMENTATION
 
 #endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_FONT_FLOW_H
-
-#if defined(_GFX_FONT_FLOW_H) && defined(_MEM_ARENA_H)
-#include "cross/cross_font_flow_and_mem_arena.h"
-#endif

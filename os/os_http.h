@@ -39,7 +39,7 @@ References:
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
 #include "os/os_threading.h"
-#include "misc/misc_profiling_tracy_include.h"
+#include "lib/lib_tracy.h"
 #include "misc/misc_two_pass.h"
 #include "misc/misc_web.h"
 

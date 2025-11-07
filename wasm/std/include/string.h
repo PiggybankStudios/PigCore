@@ -9,6 +9,8 @@ Date:   01\10\2025
 
 #include <internal/wasm_std_common.h>
 
+//TODO: Should we #include <stdint.h> because we use size_t?
+
 CONDITIONAL_EXTERN_C_START
 
 void* _memset(void* pntr, int value, size_t numBytes);

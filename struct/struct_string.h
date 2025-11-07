@@ -88,24 +88,6 @@ plex Str8Pair
 	};
 };
 
-typedef enum EscapeSequence EscapeSequence;
-enum EscapeSequence
-{
-	EscapeSequence_None = 0x00,
-	
-	EscapeSequence_Backslash      = 0x01,
-	EscapeSequence_Quote          = 0x02,
-	EscapeSequence_Apostrophe     = 0x04,
-	EscapeSequence_NewLine        = 0x08,
-	EscapeSequence_CarriageReturn = 0x10,
-	EscapeSequence_Tab            = 0x20,
-	EscapeSequence_Backspace      = 0x40,
-	EscapeSequence_Bell           = 0x80,
-	
-	EscapeSequence_All            = 0xFF,
-	EscapeSequence_Common         = (EscapeSequence_Backslash|EscapeSequence_Quote|EscapeSequence_Apostrophe|EscapeSequence_Tab|EscapeSequence_NewLine), //Not CarriageReturn, Backspace, or Bell
-};
-
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+

@@ -66,6 +66,7 @@ Description:
 	PIG_CORE_INLINE u32 ReinterpretCastI32ToU32(i32 value);
 	PIG_CORE_INLINE i64 ReinterpretCastU64ToI64(u64 value);
 	PIG_CORE_INLINE u64 ReinterpretCastI64ToU64(i64 value);
+	PIG_CORE_INLINE i32 CeilCastR32ToI32(r32 value);
 	PIG_CORE_INLINE u8  AbsDiffU8(u8   value1, u8  value2);
 	PIG_CORE_INLINE u16 AbsDiffU16(u16 value1, u16 value2);
 	PIG_CORE_INLINE u32 AbsDiffU32(u32 value1, u32 value2);
@@ -166,6 +167,7 @@ PEXPI i32 ReinterpretCastU32ToI32(u32 value) { return *((i32*)&value); }
 PEXPI u32 ReinterpretCastI32ToU32(i32 value) { return *((u32*)&value); }
 PEXPI i64 ReinterpretCastU64ToI64(u64 value) { return *((i64*)&value); }
 PEXPI u64 ReinterpretCastI64ToU64(i64 value) { return *((u64*)&value); }
+PEXPI i32 CeilCastR32ToI32(r32 value) { return ((r32)((i32)value) != value) ? ((i32)value + (value < 0 ? 0 : 1)) : (i32)value; } //TODO: Test this one negative numbers!
 
 PEXPI u8  AbsDiffU8(u8   value1, u8  value2) { return (value1 >= value2) ? (value1 - value2) : (value2 - value1); }
 PEXPI u16 AbsDiffU16(u16 value1, u16 value2) { return (value1 >= value2) ? (value1 - value2) : (value2 - value1); }

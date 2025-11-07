@@ -6,6 +6,8 @@ Description:
 	** Contains functions that help us ask the operating system for font files like .ttf
 */
 
+//TODO: On Windows we may want to look at registry entries at HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontLink\SystemLink to determine good fallback fonts for a particular font selected by the user
+
 #ifndef _OS_FONT_H
 #define _OS_FONT_H
 
@@ -156,6 +158,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 	}
 	#elif TARGET_IS_LINUX
 	{
+		UNUSED(fontSize);
 		ScratchBegin1(scratch, arena);
 		
 		if (fontConfig == nullptr)
@@ -217,8 +220,31 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		*fileContentsOut = fontFileContents;
 		result = Result_Success;
 	}
+	#elif TARGET_IS_ANDROID
+	{
+		UNUSED(fontSize);
+		UNUSED(bold);
+		UNUSED(italic);
+		ScratchBegin1(scratch, arena);
+		FilePath fontPath = JoinStringsInArena3(scratch, FilePathLit("/system/fonts/"), fontName, StrLit(".ttf"), true);
+		if (OsDoesFileExist(fontPath))
+		{
+			if (OsReadBinFile(fontPath, arena, fileContentsOut))
+			{
+				result = Result_Success;
+			}
+			else { result = Result_FailedToReadFile; }
+		}
+		else
+		{
+			PrintLine_W("Couldn't find \"%.*s\"", StrPrint(fontPath));
+			result = Result_NotFound;
+		}
+		ScratchEnd(scratch);
+	}
 	#else
 	AssertMsg(false, "OsReadPlatformFont does not support the current platform yet!");
+	result = Result_NotImplemented;
 	#endif
 	return result;
 }

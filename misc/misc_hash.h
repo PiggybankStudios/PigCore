@@ -13,11 +13,13 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 
-#define FNV_HASH_BASE_U64   0xcbf29ce484222325ULL //= DEC(14695981039346656037)
-#define FNV_HASH_PRIME_U64  0x100000001b3ULL      //= DEC(1099511628211)
+#define FNV_HASH_BASE_U64   0xcbf29ce484222325ULL //= DEC(14,695,981,039,346,656,037)
+#define FNV_HASH_PRIME_U64  0x00000100000001b3ULL //= DEC(1,099,511,628,211)
+#define FNV_HASH_BASE_U32   0x811C9DC5U //= DEC(2,166,136,261)
+#define FNV_HASH_PRIME_U32  0x01000193U //= DEC(16,777,619)
 
 //NOTE: Apple's Clang does not support certain x86 instruction restrictions that meowhash relies on!
-#if TARGET_IS_WASM || TARGET_IS_PLAYDATE || (TARGET_IS_OSX && COMPILER_IS_CLANG)
+#if (TARGET_IS_WASM || TARGET_IS_PLAYDATE || (TARGET_IS_OSX && COMPILER_IS_CLANG) || TARGET_IS_ANDROID)
 #define MEOW_HASH_AVAILABLE 0
 #else
 #define MEOW_HASH_AVAILABLE 1
@@ -42,6 +44,7 @@ car Hash128
 	PIG_CORE_INLINE bool AreEqualHash128(Hash128 left, Hash128 right);
 	u64 FnvHashU64Ex(const void* bufferPntr, u64 numBytes, u64 startingState);
 	PIG_CORE_INLINE u64 FnvHashU64(const void* bufferPntr, u64 numBytes);
+	u32 FnvHashU32Ex(const void* bufferPntr, u64 numBytes, u32 startingState);
 	PIG_CORE_INLINE u32 FnvHashU32(const void* bufferPntr, u64 numBytes);
 	PIG_CORE_INLINE u16 FnvHashU16(const void* bufferPntr, u64 numBytes);
 	PIG_CORE_INLINE u8 FnvHashU8(const void* bufferPntr, u64 numBytes);
@@ -53,6 +56,18 @@ car Hash128
 	u8 MeowHashU8(const void* bufferPntr, u64 numBytes);
 	#endif //MEOW_HASH_AVAILABLE
 #endif //!PIG_CORE_IMPLEMENTATION
+
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+// See https://www.cantorsparadise.com/cantor-pairing-function-e213a8a89c2b
+#define CantorPair(x, y) ((((x) + (y))*((x) + (y) + 1) + (y)) / 2)
+#define CantorPairV(vector) CantorPair((vector).X, (vector).Y)
+//NOTE: CantorTriplet seems to perform worse than FnvHashV3 when used for a hash table, even for tightly packed values, like our test with all values between (0,0,0) and (10,10,10)
+#define CantorTriplet(x, y, z) (((CantorPair((x), (y)) + (z))*(CantorPair((x), (y)) + (z) + 1) + (z)) / 2)
+#define CantorTripletV(vector) CantorTriplet((vector).X, (vector).Y, (vector).Z)
+
+#define FnvHashV3(x, y, z) ((((((FNV_HASH_BASE_U32 ^ (u32)(x)) * FNV_HASH_PRIME_U32) ^ (u32)(y)) * FNV_HASH_PRIME_U32) ^ (u32)(z)) * FNV_HASH_PRIME_U32)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -78,9 +93,20 @@ PEXP u64 FnvHashU64Ex(const void* bufferPntr, u64 numBytes, u64 startingState)
 	return result;
 }
 PEXPI u64 FnvHashU64(const void* bufferPntr, u64 numBytes) { return FnvHashU64Ex(bufferPntr, numBytes, FNV_HASH_BASE_U64); }
-PEXPI u32 FnvHashU32(const void* bufferPntr, u64 numBytes) { return (u32)FnvHashU64(bufferPntr, numBytes); }
-PEXPI u16 FnvHashU16(const void* bufferPntr, u64 numBytes) { return (u16)FnvHashU64(bufferPntr, numBytes); }
-PEXPI u8 FnvHashU8(const void* bufferPntr, u64 numBytes) { return (u8)FnvHashU64(bufferPntr, numBytes); }
+PEXP u32 FnvHashU32Ex(const void* bufferPntr, u64 numBytes, u32 startingState)
+{
+	const u8* bytePntr = (const u8*)bufferPntr;
+	u32 result = startingState;
+	for (u64 bIndex = 0; bIndex < numBytes; bIndex++)
+	{
+		result = result ^ bytePntr[bIndex];
+		result = result * FNV_HASH_PRIME_U32;
+	}
+	return result;
+}
+PEXPI u32 FnvHashU32(const void* bufferPntr, u64 numBytes) { return FnvHashU32Ex(bufferPntr, numBytes, FNV_HASH_BASE_U32); }
+PEXPI u16 FnvHashU16(const void* bufferPntr, u64 numBytes) { return (u16)FnvHashU32(bufferPntr, numBytes); }
+PEXPI u8 FnvHashU8(const void* bufferPntr, u64 numBytes) { return (u8)FnvHashU32(bufferPntr, numBytes); }
 
 // +--------------------------------------------------------------+
 // |                     meow_hash Algorithm                      |

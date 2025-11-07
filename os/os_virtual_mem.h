@@ -16,7 +16,7 @@ Description:
 #include "base/base_assert.h"
 #include "std/std_includes.h"
 #include "os/os_error.h"
-#include "misc/misc_profiling_tracy_include.h"
+#include "lib/lib_tracy.h"
 
 #if (TARGET_IS_WASM && !USING_CUSTOM_STDLIB)
 #define WASM_MEMORY_PAGE_SIZE      (64*1024ULL) //64kB or 65,536b
@@ -58,7 +58,7 @@ PEXP uxx OsGetMemoryPageSize()
 		TracyCZoneEnd(funcZone);
 		return (uxx)systemInfo.dwPageSize;
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//NOTE: getpagesize() was not available on Ubunutu in WSL
 		uxx result = sysconf(_SC_PAGESIZE);
@@ -103,7 +103,7 @@ PEXP void* OsReserveMemory(uxx numBytes)
 		);
 		if (result != nullptr) { Assert((size_t)result % pageSize == 0); }
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		// WSL Ubuntu Problems with mmap? https://github.com/microsoft/WSL/issues/658
 		// https://unix.stackexchange.com/questions/405883/can-an-application-explicitly-commit-and-decommit-memory
@@ -154,7 +154,7 @@ PEXP void OsCommitReservedMemory(void* memoryPntr, uxx numBytes)
 		Assert(commitResult == memoryPntr); //TODO: Handle errors, call GetLastError and return an OsError_t
 		UNUSED(commitResult);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		int protectResult = mprotect(
 			memoryPntr,
@@ -191,7 +191,7 @@ PEXP void OsDecommitReservedMemory(void* memoryPntr, uxx committedSize)
 		);
 		Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Do either of these return anything that we should Assert on?
 	    mprotect(memoryPntr, committedSize, PROT_NONE);
@@ -219,7 +219,7 @@ PEXP void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 		);
 		Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		Assert((memoryPntr == nullptr) == (reservedSize == 0)); //NOTE: This Assert is not true on Windows! There are scenarios where you want the reservedSize to be 0 for VirtualAlloc to succeed
 		int unmapResult = munmap(memoryPntr, reservedSize);

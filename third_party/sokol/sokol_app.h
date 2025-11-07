@@ -1795,6 +1795,7 @@ typedef struct sapp_desc {
     sapp_icon_desc icon;                // the initial window icon to set
     sapp_allocator allocator;           // optional memory allocation overrides (default: malloc/free)
     sapp_logger logger;                 // logging callback override (default: NO LOGGING!)
+    bool enable_touch_input;            // For desktop platforms this enables touch inputs as separate events from mouse input
 
     // backend-specific options
     int gl_major_version;               // override GL major and minor version (the default GL version is 4.1 on macOS, 4.3 elsewhere)
@@ -7461,6 +7462,32 @@ _SOKOL_PRIVATE void _sapp_win32_timing_measure(void) {
     #endif
 }
 
+sapp_event_type _sapp_win32_get_touch_event_type(DWORD dwFlags, DWORD dwMask)
+{
+	//TODO: Should we check TOUCHEVENTF_PEN flag and set android_tooltype?
+	//TODO: Should we check TOUCHEVENTF_PRIMARY flag and send this info to the application somehow?
+	//TODO: Should we check TOUCHEVENTF_INRANGE flag and handle hovering touches (like pens)
+	bool upFlagSupported = ((dwMask & TOUCHEVENTF_UP) != 0);
+	if ((dwFlags & TOUCHEVENTF_DOWN) != 0)
+	{
+		return SAPP_EVENTTYPE_TOUCHES_BEGAN;
+	}
+	else if (upFlagSupported && (dwFlags & TOUCHEVENTF_UP) != 0)
+	{
+		return SAPP_EVENTTYPE_TOUCHES_ENDED;
+	}
+	else if ((dwFlags & TOUCHEVENTF_MOVE) != 0)
+	{
+		return SAPP_EVENTTYPE_TOUCHES_MOVED;
+	}
+	else if (!upFlagSupported)
+	{
+		//TODO: Is this correct? How do we know about ended touches when UP flag is not supported!
+		return SAPP_EVENTTYPE_TOUCHES_ENDED;
+	}
+	else { return SAPP_EVENTTYPE_INVALID; }
+}
+
 _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (!_sapp.win32.in_create_window) {
         switch (uMsg) {
@@ -7724,6 +7751,57 @@ _SOKOL_PRIVATE LRESULT CALLBACK _sapp_win32_wndproc(HWND hWnd, UINT uMsg, WPARAM
                 // refresh rate might have changed
                 _sapp_timing_reset(&_sapp.timing);
                 break;
+			case WM_TOUCH:
+				if (_sapp.desc.enable_touch_input)
+				{
+					WORD numTouches = (WORD)((wParam >> 0) & 0xFFFF);
+					// char printBuffer[256] = {};
+					// int printLength = snprintf(printBuffer, 256, "WM_TOUCH %d touch%s\n", numTouches, numTouches == 1 ? "" : "es");
+					// printBuffer[printLength] = '\0';
+					// OutputDebugStringA(printBuffer);
+					if (numTouches == 0) { break; }
+					if (numTouches > SAPP_MAX_TOUCHPOINTS) { numTouches = SAPP_MAX_TOUCHPOINTS; }
+					
+					TOUCHINPUT touchInfos[SAPP_MAX_TOUCHPOINTS];
+					BOOL getTouchInputInfoResult = GetTouchInputInfo(
+						(HTOUCHINPUT)lParam,
+						SAPP_MAX_TOUCHPOINTS,
+						&touchInfos[0],
+						sizeof(touchInfos[0])
+					);
+					SOKOL_ASSERT(getTouchInputInfoResult != 0);
+					
+					sapp_event_type eventType = SAPP_EVENTTYPE_INVALID;
+					for (WORD tIndex = 0; tIndex < numTouches; tIndex++)
+					{
+						eventType = _sapp_win32_get_touch_event_type(touchInfos[tIndex].dwFlags, touchInfos[tIndex].dwMask);
+						if (eventType == SAPP_EVENTTYPE_TOUCHES_BEGAN || eventType == SAPP_EVENTTYPE_TOUCHES_ENDED || eventType == SAPP_EVENTTYPE_TOUCHES_CANCELLED) { break; }
+					}
+					if (eventType == SAPP_EVENTTYPE_INVALID) { break; }
+					
+					_sapp_init_event(eventType);
+					_sapp.event.num_touches = numTouches;
+					for (WORD tIndex = 0; tIndex < numTouches; tIndex++)
+					{
+						TOUCHINPUT* touchInfo = &touchInfos[tIndex];
+						sapp_event_type thisEventType = _sapp_win32_get_touch_event_type(touchInfo->dwFlags, touchInfo->dwMask);
+						sapp_touchpoint* touch = &_sapp.event.touches[_sapp.event.num_touches];
+						touch->identifier = (uintptr_t)touchInfo->dwID;
+						touch->changed = (thisEventType == eventType);
+						POINT touchPoint = { touchInfo->x/100, touchInfo->y/100 };
+						ScreenToClient(_sapp.win32.hwnd, &touchPoint);
+						//TODO: Use the hundredths in the original TOUCHINFO x and y to offset floating point value!
+						touch->pos_x = ((float)touchPoint.x / _sapp.window_width) * _sapp.framebuffer_width;
+						touch->pos_y = ((float)touchPoint.y / _sapp.window_height) * _sapp.framebuffer_height;
+						//TODO: Should we use the dwTime member of TOUCHINPUT?
+						//TODO: Should we look at cxContact and cyContact to determine the size of the touch input? Somehow pass this to the application?
+						_sapp.event.num_touches++;
+					}
+					_sapp_call_event(&_sapp.event);
+					
+					CloseTouchInputHandle((HTOUCHINPUT)lParam);
+				}
+				break;
 
             default:
                 break;
@@ -7788,6 +7866,12 @@ _SOKOL_PRIVATE void _sapp_win32_create_window(void) {
     }
     ShowWindow(_sapp.win32.hwnd, SW_SHOW);
     DragAcceptFiles(_sapp.win32.hwnd, 1);
+    if (_sapp.desc.enable_touch_input)
+    {
+    	//TODO: Do we want TWF_FINETOUCH or TWF_WANTPALM
+    	BOOL registerTouchResult = RegisterTouchWindow(_sapp.win32.hwnd, 0);
+    	SOKOL_ASSERT(registerTouchResult != 0);
+    }
 }
 
 _SOKOL_PRIVATE void _sapp_win32_destroy_window(void) {
@@ -8439,7 +8523,7 @@ _SOKOL_PRIVATE void _sapp_android_frame(void) {
     _sapp_timing_measure(&_sapp.timing);
     _sapp_android_update_dimensions(_sapp.android.current.window, false);
     bool frameResult = _sapp_frame();
-    //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
+    UNUSED(frameResult); //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
     eglSwapBuffers(_sapp.android.display, _sapp.android.surface);
 }
 

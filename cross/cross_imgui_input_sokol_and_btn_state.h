@@ -85,7 +85,7 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 			ImGuiKey imKey = GetImGuiKey(key);
 			if (imKey != ImGuiKey_None)
 			{
-				if (IsKeyboardKeyPressed(input->keyboard, key)) { ImGuiIO_AddKeyEvent(imgui->io, imKey, true); }
+				if (IsKeyboardKeyPressed(input->keyboard, key, false)) { ImGuiIO_AddKeyEvent(imgui->io, imKey, true); }
 				if (IsKeyboardKeyReleased(input->keyboard, key)) { ImGuiIO_AddKeyEvent(imgui->io, imKey, false); }
 			}
 		}

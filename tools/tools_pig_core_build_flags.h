@@ -11,7 +11,7 @@ Description:
 #ifndef _TOOLS_PIG_CORE_BUILD_FLAGS_H
 #define _TOOLS_PIG_CORE_BUILD_FLAGS_H
 
-void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY)
+void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, Str8 pigCoreThirdPartyPath, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY, bool BUILD_WITH_FREETYPE)
 {
 	AddArg(cl_CommonFlags, DEBUG_BUILD ? CL_STD_LIB_DYNAMIC_DBG : CL_STD_LIB_DYNAMIC);
 	AddArg(cl_CommonFlags, CL_FULL_FILE_PATHS); //we need full file paths in errors for Sublime Text to be able to parse the errors and display them in the editor
@@ -32,6 +32,13 @@ void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, bool DEBUG_BUILD, bool DUMP
 	AddArgInt(cl_CommonFlags, CL_DISABLE_WARNING, CL_WARNING_NAMED_TYPEDEF_IN_PARENTHESES);
 	AddArgInt(cl_CommonFlags, CL_ENABLE_WARNING, CL_WARNING_SWITCH_FALLTHROUGH);
 	AddArgNt(cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]");
+	if (BUILD_WITH_FREETYPE)
+	{
+		Str8 freetypeDir = JoinStrings2(pigCoreThirdPartyPath, StrLit("/freetype/include"), false);
+		AddArgStr(cl_CommonFlags, CL_INCLUDE_DIR, freetypeDir);
+		Str8 plutosvgDir = JoinStrings2(pigCoreThirdPartyPath, StrLit("/plutosvg"), false);
+		AddArgStr(cl_CommonFlags, CL_INCLUDE_DIR, plutosvgDir);
+	}
 	if (DEBUG_BUILD)
 	{
 		AddArg(cl_CommonFlags, CL_DEBUG_INFO);
@@ -66,34 +73,56 @@ void Fill_cl_LangCppFlags(CliArgList* cl_LangCppFlags)
 }
 
 // Flags that we use when compiling any C program using Clang
-void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR)
+void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool BUILD_WITH_FREETYPE)
 {
 	AddArg(clang_CommonFlags, CLANG_FULL_FILE_PATHS); //Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
-	AddArgNt(clang_CommonFlags, CLANG_LANG_VERSION, "gnu2x"); //Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
 	AddArgNt(clang_CommonFlags, CLANG_WARNING_LEVEL, "all"); //This enables all the warnings about constructions that some users consider questionable, and that are easy to avoid (or modify to prevent the warning), even in conjunction with macros
 	AddArgNt(clang_CommonFlags, CLANG_WARNING_LEVEL, "extra"); //This enables some extra warning flags that are not enabled by -Wall
 	AddArgNt(clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_SHADOWING);
 	AddArgNt(clang_CommonFlags, CLANG_ENABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH);
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_SWITCH_MISSING_CASES);
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_FUNCTION);
+	if (BUILD_WITH_FREETYPE)
+	{
+		AddArgNt(clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/freetype/include");
+		AddArgNt(clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/plutosvg");
+	}
 	if (DEBUG_BUILD)
 	{
 		//We don't care about these warnings in debug builds, but we will solve them when we go to build in release mode because they probably indicate mistakes at that point
 		AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, "unused-parameter");
 		AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, "unused-variable");
 	}
-	if (DUMP_PREPROCESSOR) { AddArg(clang_CommonFlags, CLANG_PRECOMPILE_ONLY); }
+	if (DUMP_PREPROCESSOR)
+	{
+		AddArg(clang_CommonFlags, CLANG_PRECOMPILE_ONLY);
+		AddArg(clang_CommonFlags, CLANG_INCLUDE_MACROS);
+	}
+}
+
+void Fill_clang_LangCFlags(CliArgList* clang_LangCFlags)
+{
+	AddArgNt(clang_LangCFlags, CLANG_LANG_VERSION, "gnu2x"); //Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
+}
+void Fill_clang_LangCppFlags(CliArgList* clang_LangCppFlags)
+{
+	AddArgNt(clang_LangCppFlags, CLANG_LANG_VERSION, "c++20");//TODO: What option should we actually choose here?
+}
+void Fill_clang_LangObjectiveCFlags(CliArgList* clang_LangObjectiveCFlags)
+{
+	AddArgNt(clang_LangObjectiveCFlags, CLANG_LANG_VERSION, "gnu2x"); //NOTE: We still ask for gnu23 features in Objective-C mode, the distinguishing factor is that we compile a .m file not a .c file
+	AddArg(clang_LangObjectiveCFlags, CLANG_ENABLE_OBJC_ARC);
 }
 
 // Flags for when we are compiling the linux version of a program using Clang
-void Fill_clang_LinuxFlags(CliArgList* clang_LinuxFlags, bool DEBUG_BUILD)
+void Fill_clang_LinuxOrOsxFlags(CliArgList* clang_LinuxOrOsxFlags, bool DEBUG_BUILD)
 {
-	AddArgNt(clang_LinuxFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
-	AddArgNt(clang_LinuxFlags, CLANG_INCLUDE_DIR, "[ROOT]");
-	AddArgStr(clang_LinuxFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
-	AddArg(clang_LinuxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
-	AddArg(clang_LinuxFlags, "-maes"); //For MeowHash to work we need aes support
-	if (DEBUG_BUILD) { AddArgNt(clang_LinuxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "[ROOT]");
+	AddArgStr(clang_LinuxOrOsxFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
+	AddArg(clang_LinuxOrOsxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
+	AddArg(clang_LinuxOrOsxFlags, "-maes"); //For MeowHash to work we need aes support
+	if (DEBUG_BUILD) { AddArgNt(clang_LinuxOrOsxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
 }
 
 void Fill_cl_CommonLinkerFlags(CliArgList* cl_CommonLinkerFlags, bool DEBUG_BUILD)
@@ -102,15 +131,28 @@ void Fill_cl_CommonLinkerFlags(CliArgList* cl_CommonLinkerFlags, bool DEBUG_BUIL
 	AddArg(cl_CommonLinkerFlags, LINK_DISABLE_INCREMENTAL);
 }
 
+void Fill_clang_CommonLibraries(CliArgList* clang_CommonLibraries)
+{
+	AddArgNt(clang_CommonLibraries, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
+	AddArgNt(clang_CommonLibraries, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
+}
+
 void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, bool BUILD_WITH_SOKOL_APP)
 {
-	AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "m"); //Include the math library (required for stuff like sinf, atan, etc.)
-	AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
 	if (BUILD_WITH_SOKOL_APP)
 	{
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "X11");
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "Xi");
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "Xcursor");
+	}
+}
+void Fill_clang_OsxCommonLibraries(CliArgList* clang_OsxCommonLibraries, bool BUILD_WITH_SOKOL_APP)
+{
+	if (BUILD_WITH_SOKOL_APP)
+	{
+		AddArgNt(clang_OsxCommonLibraries, CLANG_FRAMEWORK, "Cocoa");
+		AddArgNt(clang_OsxCommonLibraries, CLANG_FRAMEWORK, "QuartzCore");
+		// AddArgNt(clang_OsxCommonLibraries, CLANG_FRAMEWORK, "AudioToolbox");
 	}
 }
 
@@ -136,11 +178,73 @@ void Fill_cl_PigCoreLibraries(CliArgList* cl_PigCoreLibraries, bool BUILD_WITH_R
 }
 
 // These are all the libraries we need when compiling a Linux binary that contains code from PigCore
-void Fill_clang_PigCoreLibraries(CliArgList* clang_PigCoreLibraries, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SOKOL_GFX, bool TARGET_IS_LINUX)
+void Fill_clang_PigCoreLinuxLibraries(CliArgList* clang_PigCoreLinuxLibraries, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SOKOL_GFX)
 {
-	if (TARGET_IS_LINUX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig"); }
-	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
-	if (BUILD_WITH_BOX2D) { AddArgNt(clang_PigCoreLibraries, CLANG_SYSTEM_LIBRARY, "box2d"); }
+	AddArgNt(clang_PigCoreLinuxLibraries, CLANG_SYSTEM_LIBRARY, "pthread");
+	AddArgNt(clang_PigCoreLinuxLibraries, CLANG_SYSTEM_LIBRARY, "fontconfig");
+	if (BUILD_WITH_SOKOL_GFX) { AddArgNt(clang_PigCoreLinuxLibraries, CLANG_SYSTEM_LIBRARY, "GL"); }
+	if (BUILD_WITH_BOX2D) { AddArgNt(clang_PigCoreLinuxLibraries, CLANG_SYSTEM_LIBRARY, "box2d"); }
+}
+// These are all the libraries we need when compiling an OSX binary that contains code from PigCore
+void Fill_clang_PigCoreOsxLibraries(CliArgList* clang_PigCoreOsxLibraries, bool BUILD_WITH_BOX2D, bool BUILD_WITH_SOKOL_GFX)
+{
+	AddArgNt(clang_PigCoreOsxLibraries, CLANG_SYSTEM_LIBRARY, "pthread");
+	if (BUILD_WITH_SOKOL_GFX)
+	{
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "Foundation");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "UIKit");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "AudioToolbox");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "AVFoundation");
+		AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "Metal");
+		AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "MetalKit");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "OpenGL");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "OpenGLES");
+		// AddArgNt(clang_PigCoreOsxLibraries, CLANG_FRAMEWORK, "GLKit");
+	}
+	if (BUILD_WITH_BOX2D) { AddArgNt(clang_PigCoreOsxLibraries, CLANG_SYSTEM_LIBRARY, "box2d"); }
+}
+
+void Fill_clang_AndroidFlags(CliArgList* clang_AndroidFlags, Str8 androidNdkDir, Str8 androidNdkToolchainDir, bool DEBUG_BUILD)
+{
+	AddArgNt(clang_AndroidFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
+	AddArgNt(clang_AndroidFlags, CLANG_INCLUDE_DIR, "[ROOT]");
+	AddArgStr(clang_AndroidFlags, CLANG_STDLIB_FOLDER, JoinStrings2(androidNdkToolchainDir, StrLit("/sysroot"), false));
+	AddArgStr(clang_AndroidFlags, CLANG_INCLUDE_DIR, JoinStrings2(androidNdkDir, StrLit("/sources/android/native_app_glue"), false));
+	if (DEBUG_BUILD) { AddArg(clang_AndroidFlags, CLANG_DEBUG_INFO_DEFAULT); } //TODO: Should we do dwarf-4 debug info instead?
+	AddArgNt(clang_AndroidFlags, CLANG_DEFINE, "pig_core_EXPORTS"); //TODO: Can we remove this?
+	AddArgNt(clang_AndroidFlags, CLANG_DEFINE, "ANDROID"); //TODO: Can we remove this?
+	AddArgNt(clang_AndroidFlags, CLANG_DEFINE, "_FORTIFY_SOURCE=2"); //TODO: Can we remove this?
+	AddArg(clang_AndroidFlags, CLANG_DATA_SECTIONS);
+	AddArg(clang_AndroidFlags, CLANG_FUNCTION_SECTIONS);
+	AddArg(clang_AndroidFlags, CLANG_UNWIND_TABLES);
+	AddArg(clang_AndroidFlags, CLANG_STACK_PROTECTOR_STRONG);
+	AddArg(clang_AndroidFlags, CLANG_NO_CANONICAL_PREFIXES);
+	AddArgNt(clang_AndroidFlags, CLANG_ENABLE_WARNING, "format");
+	AddArgNt(clang_AndroidFlags, CLANG_ENABLE_WARNING, "error=format-security");
+	AddArg(clang_AndroidFlags, CLANG_NO_STDLIB_CPP);
+	AddArgNt(clang_AndroidFlags, CLANG_Q_FLAG, "unused-arguments");
+}
+
+void Fill_clang_AndroidLinkFlags(CliArgList* clang_AndroidLinkFlags, bool DEBUG_BUILD, bool BUILD_WITH_BOX2D)
+{
+	AddArg(clang_AndroidLinkFlags, CLANG_fPIC);
+	AddArgStr(clang_AndroidLinkFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
+	AddArg(clang_AndroidLinkFlags, CLANG_NO_UNDEFINED);
+	AddArg(clang_AndroidLinkFlags, CLANG_FATAL_WARNINGS);
+	AddArg(clang_AndroidLinkFlags, CLANG_NO_UNDEFINED_VERSION);
+	AddArgNt(clang_AndroidLinkFlags, CLANG_MAX_PAGE_SIZE, "16384");
+	AddArgNt(clang_AndroidLinkFlags, CLANG_BUILD_ID, "sha1");
+	AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "m");
+	AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "dl");
+	AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "android");
+	AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "log");
+	AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "atomic");
+	AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "EGL");
+	AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "GLESv3");
+	// AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "pthread"); //TODO: Do we need this on Android? What is it called if so?
+	// AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "fontconfig"); //TODO: Do we need this on Android? What is it called if so?
+	if (BUILD_WITH_BOX2D) { AddArgNt(clang_AndroidLinkFlags, CLANG_SYSTEM_LIBRARY, "box2d"); } //TODO: We probably need a separate folder or lib name for a Box2D that was compiled for Android!
+	// TODO: -Wl,--dependency-file=CMakeFiles\pig-core.dir\link.d
 }
 
 void Fill_clang_WasmFlags(CliArgList* clang_WasmFlags, bool DEBUG_BUILD)

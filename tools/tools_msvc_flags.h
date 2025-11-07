@@ -104,7 +104,7 @@ Description:
 // +==============================+
 // |           RC Flags           |
 // +==============================+
-#define RC_NO_LOGO      "/nologo"
-#define RC_OUTPUT_FILE  "/Fo\"[VAL]\""
+#define RC_NO_LOGO     "/nologo"
+#define RC_OUTPUT_FILE "/Fo\"[VAL]\""
 
 #endif //  _TOOLS_MSVC_FLAGS_H
