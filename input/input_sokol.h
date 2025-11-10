@@ -16,6 +16,7 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
+#include "base/base_notifications.h"
 #include "input/input_keys.h"
 #include "input/input_mouse_btns.h"
 #include "input/input_controller_btns.h"
@@ -378,7 +379,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 					{
 						// PrintLine_W("Starting new touch %llu", touchId);
 						touch = StartNewTouch(touchscreen, touchId, touchPos, currentTime);
-						if (touch == nullptr) { WriteLine_E("Ran out of touch slots in TouchscreenState!"); continue; }
+						if (touch == nullptr) { NotifyPrint_E("Ran out of touch slots in TouchscreenState!"); continue; }
 					}
 					if (touch != nullptr) { UpdateTouchStatePosition(touch, touchPos, currentTime); }
 				}

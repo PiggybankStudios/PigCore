@@ -11,6 +11,7 @@ Date:   09\11\2025
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
+#include "base/base_notifications.h"
 #include "std/std_memset.h"
 #include "mem/mem_arena.h"
 #include "struct/struct_string.h"
@@ -54,7 +55,7 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 		if (hasCopyButton && isBtnHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left) && context->windowHandle != OsWindowHandleEmpty)
 		{
 			Result copyResult = OsSetClipboardString(context->windowHandle, label);
-			if (copyResult != Result_Success) { PrintLine_E("Failed to copy label: %s", GetResultStr(copyResult)); }
+			if (copyResult != Result_Success) { NotifyPrint_E("Failed to copy label: %s", GetResultStr(copyResult)); }
 		}
 		
 		CLAY({ .id = containerId,

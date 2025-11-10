@@ -15,6 +15,7 @@ Description:
 #include "base/base_compiler_check.h"
 #include "base/base_defines_check.h"
 #include "base/base_macros.h"
+#include "base/base_notifications.h"
 #include "std/std_includes.h"
 #include "struct/struct_string.h"
 #include "mem/mem_arena.h"
@@ -242,7 +243,7 @@ PEXP JvmReturn jObjCall(JNIEnv* env, jobject jobj, bool isStaticMethod, const ch
 	jmethodID methodId = isStaticMethod
 		? (*env)->GetStaticMethodID(env, classRef, funcNameNt, funcTypeSignatureNt)
 		: (*env)->GetMethodID(env, classRef, funcNameNt, funcTypeSignatureNt);
-	if (methodId == nullptr) { PrintLine_E("Couldn't find method \"%s\" of type \"%s\" on Java object", funcNameNt, funcTypeSignatureNt); }
+	if (methodId == nullptr) { NotifyPrint_E("Couldn't find method \"%s\" of type \"%s\" on Java object", funcNameNt, funcTypeSignatureNt); }
 	AssertMsg(methodId != nullptr, "Couldn't find Java method by name/signature on object's class!");
 	va_list args;
 	va_start(args, methodId);
@@ -268,7 +269,7 @@ PEXP JvmReturn jObjCall(JNIEnv* env, jobject jobj, bool isStaticMethod, const ch
 	va_end(args);
 	if (assertOnNullReturn && (returnType == JvmType_Object || returnType == JvmType_String))
 	{
-		if (result.objectValue == nullptr) { PrintLine_E("Got null from method \"%s\" with type \"%s\" on Java object", funcNameNt, funcTypeSignatureNt); }
+		if (result.objectValue == nullptr) { NotifyPrint_E("Got null from method \"%s\" with type \"%s\" on Java object", funcNameNt, funcTypeSignatureNt); }
 		AssertMsg(result.objectValue != nullptr, "Java method returned null jobject!");
 	}
 	return result;
@@ -277,10 +278,10 @@ PEXP JvmReturn jObjCall(JNIEnv* env, jobject jobj, bool isStaticMethod, const ch
 PEXP JvmReturn jClassCall(JNIEnv* env, const char* classNameNt, const char* funcNameNt, const char* funcTypeSignatureNt, JvmType returnType, bool assertOnNullReturn, ...)
 {
 	jclass classRef = (*env)->FindClass(env, classNameNt);
-	if (classRef == nullptr) { PrintLine_E("Couldn't find Java class named \"%s\"", classNameNt); }
+	if (classRef == nullptr) { NotifyPrint_E("Couldn't find Java class named \"%s\"", classNameNt); }
 	AssertMsg(classRef != nullptr, "Couldn't find Java class by name!");
 	jmethodID methodId = (*env)->GetStaticMethodID(env, classRef, funcNameNt, funcTypeSignatureNt);
-	if (methodId == nullptr) { PrintLine_E("Couldn't find method \"%s\" of type \"%s\" on Java class \"%s\"", funcNameNt, funcTypeSignatureNt, classNameNt); }
+	if (methodId == nullptr) { NotifyPrint_E("Couldn't find method \"%s\" of type \"%s\" on Java class \"%s\"", funcNameNt, funcTypeSignatureNt, classNameNt); }
 	AssertMsg(methodId != nullptr, "Couldn't find Java method by name/signature on found class!");
 	va_list args;
 	va_start(args, methodId);
@@ -306,7 +307,7 @@ PEXP JvmReturn jClassCall(JNIEnv* env, const char* classNameNt, const char* func
 	va_end(args);
 	if (assertOnNullReturn && (returnType == JvmType_Object || returnType == JvmType_String))
 	{
-		if (result.objectValue == nullptr) { PrintLine_E("Got null from method \"%s\" with type \"%s\" on Java class \"%s\"", funcNameNt, funcTypeSignatureNt, classNameNt); }
+		if (result.objectValue == nullptr) { NotifyPrint_E("Got null from method \"%s\" with type \"%s\" on Java class \"%s\"", funcNameNt, funcTypeSignatureNt, classNameNt); }
 		AssertMsg(result.objectValue != nullptr, "Java method returned null jobject!");
 	}
 	return result;
@@ -320,7 +321,7 @@ PEXP JvmReturn jObjGetField(JNIEnv* env, jobject jobj, bool isStaticField, const
 		? (*env)->GetStaticFieldID(env, classRef, fieldNameNt, typeSignatureNt)
 		: (*env)->GetFieldID(env, classRef, fieldNameNt, typeSignatureNt);
 	
-	if (fieldId == nullptr) { PrintLine_E("Couldn't find field \"%s\" of type \"%s\" on Java object", fieldNameNt, typeSignatureNt); }
+	if (fieldId == nullptr) { NotifyPrint_E("Couldn't find field \"%s\" of type \"%s\" on Java object", fieldNameNt, typeSignatureNt); }
 	AssertMsg(fieldId != nullptr, "Couldn't find Java field by name/signature on object's class!");
 	JvmReturn result = { .type = fieldType };
 	switch (fieldType)
@@ -342,7 +343,7 @@ PEXP JvmReturn jObjGetField(JNIEnv* env, jobject jobj, bool isStaticField, const
 	}
 	if (assertOnNull && (fieldType == JvmType_Object || fieldType == JvmType_String))
 	{
-		if (result.objectValue == nullptr) { PrintLine_E("Field \"%s\" of type \"%s\" is null on Java object", fieldNameNt, typeSignatureNt); }
+		if (result.objectValue == nullptr) { NotifyPrint_E("Field \"%s\" of type \"%s\" is null on Java object", fieldNameNt, typeSignatureNt); }
 		AssertMsg(result.objectValue != nullptr, "Java field was null!");
 	}
 	return result;
@@ -351,10 +352,10 @@ PEXP JvmReturn jObjGetField(JNIEnv* env, jobject jobj, bool isStaticField, const
 PEXP JvmReturn jClassGetField(JNIEnv* env, const char* classNameNt, const char* fieldNameNt, const char* typeSignatureNt, JvmType fieldType, bool assertOnNull)
 {
 	jclass classRef = (*env)->FindClass(env, classNameNt);
-	if (classRef == nullptr) { PrintLine_E("Couldn't find Java class named \"%s\"", classNameNt); }
+	if (classRef == nullptr) { NotifyPrint_E("Couldn't find Java class named \"%s\"", classNameNt); }
 	AssertMsg(classRef != nullptr, "Couldn't find Java class by name!");
 	jfieldID fieldId = (*env)->GetStaticFieldID(env, classRef, fieldNameNt, typeSignatureNt);
-	if (fieldId == nullptr) { PrintLine_E("Couldn't find field \"%s\" of type \"%s\" on Java class \"%s\"", fieldNameNt, typeSignatureNt, classNameNt); }
+	if (fieldId == nullptr) { NotifyPrint_E("Couldn't find field \"%s\" of type \"%s\" on Java class \"%s\"", fieldNameNt, typeSignatureNt, classNameNt); }
 	AssertMsg(fieldId != nullptr, "Couldn't find Java field by name/signature on found class!");
 	JvmReturn result = { .type = fieldType };
 	switch (fieldType)
@@ -376,7 +377,7 @@ PEXP JvmReturn jClassGetField(JNIEnv* env, const char* classNameNt, const char* 
 	}
 	if (assertOnNull && (fieldType == JvmType_Object || fieldType == JvmType_String))
 	{
-		if (result.objectValue == nullptr) { PrintLine_E("Field \"%s\" of type \"%s\" is null on Java class \"%s\"", fieldNameNt, typeSignatureNt, classNameNt); }
+		if (result.objectValue == nullptr) { NotifyPrint_E("Field \"%s\" of type \"%s\" is null on Java class \"%s\"", fieldNameNt, typeSignatureNt, classNameNt); }
 		AssertMsg(result.objectValue != nullptr, "Java field was null!");
 	}
 	return result;

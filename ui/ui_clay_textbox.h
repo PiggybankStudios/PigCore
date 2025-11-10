@@ -14,6 +14,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
+#include "base/base_notifications.h"
 #include "struct/struct_var_array.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
@@ -448,7 +449,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	{
 		Str8 selectedText = StrSlice(tbox->text, MinUXX(tbox->cursorStart, tbox->cursorEnd), MaxUXX(tbox->cursorStart, tbox->cursorEnd));
 		Result copyResult = OsSetClipboardString(context->windowHandle, selectedText);
-		if (copyResult != Result_Success) { PrintLine_E("Failed to copy text: %s", GetResultStr(copyResult)); }
+		if (copyResult != Result_Success) { NotifyPrint_E("Failed to copy text: %s", GetResultStr(copyResult)); }
 	}
 	
 	// +==============================+
@@ -459,7 +460,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		Str8 selectedText = StrSlice(tbox->text, MinUXX(tbox->cursorStart, tbox->cursorEnd), MaxUXX(tbox->cursorStart, tbox->cursorEnd));
 		Result copyResult = OsSetClipboardString(context->windowHandle, selectedText);
 		if (copyResult == Result_Success) { UiTextboxDeleteSelected(tbox); }
-		else{ PrintLine_E("Failed to copy text: %s", GetResultStr(copyResult)); }
+		else{ NotifyPrint_E("Failed to copy text: %s", GetResultStr(copyResult)); }
 	}
 	
 	// +==============================+
@@ -470,7 +471,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		ScratchBegin1(scratch, tbox->arena);
 		Str8 clipboardStr = Str8_Empty;
 		Result pasteResult = OsGetClipboardString(context->windowHandle, scratch, &clipboardStr);
-		if (pasteResult != Result_Success) { PrintLine_E("Failed to paste: %s", GetResultStr(pasteResult)); }
+		if (pasteResult != Result_Success) { NotifyPrint_E("Failed to paste: %s", GetResultStr(pasteResult)); }
 		else
 		{
 			if (tbox->cursorStart != tbox->cursorEnd)

@@ -15,6 +15,7 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_compiler_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_notifications.h"
 #include "std/std_includes.h"
 #include "misc/misc_result.h"
 #include "mem/mem_arena.h"
@@ -33,7 +34,7 @@ typedef Window OsWindowHandle;
 typedef NSWindow* OsWindowHandle;
 #define OsWindowHandleEmpty nullptr
 #elif TARGET_IS_ANDROID
-typedef struct ANativeWindow* OsWindowHandle;
+typedef plex ANativeWindow* OsWindowHandle;
 #define OsWindowHandleEmpty nullptr
 #else
 typedef void* OsWindowHandle;
@@ -280,7 +281,7 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		);
 		if (getFolderPathResult == FALSE)
 		{
-			WriteLine_E("SHGetSpecialFolderPathA(CSIDL_APPDATA) failed!");
+			NotifyPrint_E("SHGetSpecialFolderPathA(CSIDL_APPDATA) failed!");
 			ScratchEnd(scratch);
 			return FilePath_Empty;
 		}
@@ -347,7 +348,7 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		NotNullStr(homeDir);
 		if (homeDir.length == 0)
 		{
-			WriteLine_E("Failed to get home directory for current user!");
+			Notify_E("Failed to get home directory for current user!");
 			ScratchEnd(scratch);
 			return FilePath_Empty;
 		}

@@ -14,7 +14,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
-#include "base/base_debug_output.h"
+#include "base/base_notifications.h"
 #include "std/std_memset.h"
 #include "mem/mem_arena.h"
 #include "struct/struct_vectors.h"
@@ -131,7 +131,7 @@ typedef Clay_ElementId ClayId;
 
 static void ClayErrorCallback(Clay_ErrorData errorData)
 {
-	PrintLine_E("Clay Error: %s", errorData.errorText.chars);
+	NotifyPrint_E("Clay Error: %s", errorData.errorText.chars);
 	//TODO: Implement me better!
 }
 

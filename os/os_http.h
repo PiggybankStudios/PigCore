@@ -32,6 +32,7 @@ References:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
+#include "base/base_notifications.h"
 #include "std/std_memset.h"
 #include "std/std_includes.h"
 #include "mem/mem_arena.h"
@@ -619,7 +620,7 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 		if (request->requestHandle == NULL)
 		{
 			DWORD error = GetLastError();
-			PrintLine_E("Failed to open request! Error: %s (0x%04X)", GetWinHttpErrorStr(error), error);
+			NotifyPrint_E("Failed to open request! Error: %s (0x%04X)", GetWinHttpErrorStr(error), error);
 			request->state = HttpRequestState_Failure;
 			request->error = Result_FailedToOpenRequest;
 		}

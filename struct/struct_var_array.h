@@ -444,7 +444,7 @@ PEXPI void* VarArrayGet_(uxx itemSize, uxx itemAlignment, const VarArray* array,
 	{
 		if (assertOnFailure)
 		{
-			// GyLibPrintLine_E("Tried to get item %llu/%llu in VarArray %s of itemSize %llu", index, array->length, (array->name.pntr != nullptr) ? array->name.pntr : "[unnamed]", array->itemSize);
+			// PrintLine_E("Tried to get item %llu/%llu in VarArray %s of itemSize %llu", index, array->length, (array->name.pntr != nullptr) ? array->name.pntr : "[unnamed]", array->itemSize);
 			AssertMsg(false, "VarArrayGet out of bounds!");
 		}
 		return nullptr;

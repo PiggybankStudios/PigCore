@@ -17,6 +17,7 @@ Description:
 #include "struct/struct_string.h"
 #include "mem/mem_scratch.h"
 #include "base/base_debug_output.h" //TODO: Remove the need for debug output in this file? Return Result values instead!
+#include "base/base_notifications.h"
 #include "os/os_error.h"
 #include "misc/misc_result.h"
 #include "os/os_path.h"
@@ -683,7 +684,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		DebugAssert(fileSizeInt >= 0);
 		if ((unsigned int)fileSizeInt > (unsigned int)UINTXX_MAX)
 		{
-			PrintLine_E("File is %d bytes, too big for uxx type!", fileSizeInt);
+			NotifyPrint_E("File is %d bytes, too big for uxx type!", fileSizeInt);
 			fclose(fileHandle);
 			ScratchEnd(scratch);
 			return false;
@@ -704,7 +705,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		Assert((uxx)readResult <= contentsOut->length);
 		if ((uxx)readResult < contentsOut->length)
 		{
-			PrintLine_E("Read %llu/%llu bytes! Did fseek(SEEK_END) and ftell() lie to us about the file size?", (u64)readResult, (u64)contentsOut->length);
+			NotifyPrint_E("Read %llu/%llu bytes! Did fseek(SEEK_END) and ftell() lie to us about the file size?", (u64)readResult, (u64)contentsOut->length);
 			fclose(fileHandle);
 			if (CanArenaFree(arena) && !convertNewLines) { FreeMem(arena, contentsOut->chars, contentsOut->length+1); }
 			ScratchEnd(scratch);
@@ -803,7 +804,7 @@ PEXP bool OsWriteFile(FilePath path, Str8 fileContents, bool convertNewLines)
 				}
 				else
 				{
-					PrintLine_E("WARNING: Only wrote %u/%llu bytes to file at \"%.*s\"", bytesWritten, fileContents.length, StrPrint(fullPath));
+					PrintLine_W("WARNING: Only wrote %u/%llu bytes to file at \"%.*s\"", bytesWritten, fileContents.length, StrPrint(fullPath));
 				}
 			}
 			else
@@ -1037,7 +1038,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 			);
 			if (newCursorPos == INVALID_SET_FILE_POINTER)
 			{
-				PrintLine_E("ERROR: Failed to seek to the end of the file when opened for %s \"%.*s\"!", GetOsOpenFileModeStr(mode), StrPrint(fullPath));
+				NotifyPrint_E("ERROR: Failed to seek to the end of the file when opened for %s \"%.*s\"!", GetOsOpenFileModeStr(mode), StrPrint(fullPath));
 				CloseHandle(fileHandle);
 				ScratchEnd(scratch);
 				return false;

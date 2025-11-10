@@ -1873,7 +1873,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					FontFile* fontFile = TryFindFontFileForCodepointAtSize(font, codepoint, fontSize, styleFlags, true, nullptr, nullptr);
 					if (fontFile == nullptr)
 					{
-						PrintLine_E("Attached font files don't contain glyph for codepoint 0x%08X!", codepoint);
+						PrintLine_W("Attached font files don't contain glyph for codepoint 0x%08X!", codepoint);
 						// DebugAssertMsg(fontFile != nullptr, "Font files don't contain glyph for codepoint in TryBakeFontAtlas!");
 						VarArrayAddValue(u32, &missingCodepoints, codepoint);
 						result = Result_Partial;
