@@ -52,21 +52,21 @@ Description:
 #endif
 
 #if PIG_CORE_IMPLEMENTATION
-PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, const char* message);
-PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, uxx printBufferLength, char* printBuffer, const char* formatString, ...);
+PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, const char* message);
+PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, uxx printBufferLength, char* printBuffer, const char* formatString, ...);
 #else
-void NotificationRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, const char* message);
-void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, uxx printBufferLength, char* printBuffer, const char* formatString, ...);
+void NotificationRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, const char* message);
+void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, uxx printBufferLength, char* printBuffer, const char* formatString, ...);
 #endif
 
-#define NotifyAt(level, message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, (level), (message))
-#define NotifyPrintAt(level, formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, (level), 0, nullptr, (formatString), ##__VA_ARGS__)
-#define NotifyBufferPrintAt(level, arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, (level), ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define NotifyAt(level, duration, message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, (level), (duration), (message))
+#define NotifyPrintAt(level, duration, formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, (level), (duration), 0, nullptr, (formatString), ##__VA_ARGS__)
+#define NotifyBufferPrintAt(level, duration, arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, (level), (duration), ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 
 #if ENABLE_NOTIFICATION_LEVEL_DEBUG
-#define Notify_D(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Debug, (message))
-#define NotifyPrint_D(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Debug, 0, nullptr, (formatString), ##__VA_ARGS__)
-#define NotifyBufferPrint_D(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Debug, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define Notify_D(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Debug, 0, (message))
+#define NotifyPrint_D(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Debug, 0, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define NotifyBufferPrint_D(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Debug, 0, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
 #define Notify_D(message)                                   //nothing
 #define NotifyPrint_D(formatString, ...)                    //nothing
@@ -74,9 +74,9 @@ void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* f
 #endif
 
 #if ENABLE_NOTIFICATION_LEVEL_REGULAR
-#define Notify_R(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Regular, (message))
-#define NotifyPrint_R(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Regular, 0, nullptr, (formatString), ##__VA_ARGS__)
-#define NotifyBufferPrint_R(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Regular, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define Notify_R(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Regular, 0, (message))
+#define NotifyPrint_R(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Regular, 0, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define NotifyBufferPrint_R(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Regular, 0, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
 #define Notify_R(message)                                   //nothing
 #define NotifyPrint_R(formatString, ...)                    //nothing
@@ -84,9 +84,9 @@ void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* f
 #endif
 
 #if ENABLE_NOTIFICATION_LEVEL_INFO
-#define Notify_I(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Info, (message))
-#define NotifyPrint_I(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Info, 0, nullptr, (formatString), ##__VA_ARGS__)
-#define NotifyBufferPrint_I(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Info, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define Notify_I(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Info, 0, (message))
+#define NotifyPrint_I(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Info, 0, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define NotifyBufferPrint_I(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Info, 0, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
 #define Notify_I(message)                                   //nothing
 #define NotifyPrint_I(formatString, ...)                    //nothing
@@ -94,9 +94,9 @@ void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* f
 #endif
 
 #if ENABLE_NOTIFICATION_LEVEL_NOTIFY
-#define Notify_N(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Notify, (message))
-#define NotifyPrint_N(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Notify, 0, nullptr, (formatString), ##__VA_ARGS__)
-#define NotifyBufferPrint_N(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Notify, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define Notify_N(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Notify, 0, (message))
+#define NotifyPrint_N(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Notify, 0, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define NotifyBufferPrint_N(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Notify, 0, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
 #define Notify_N(message)                                   //nothing
 #define NotifyPrint_N(formatString, ...)                    //nothing
@@ -104,9 +104,9 @@ void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* f
 #endif
 
 #if ENABLE_NOTIFICATION_LEVEL_OTHER
-#define Notify_O(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Other, (message))
-#define NotifyPrint_O(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Other, 0, nullptr, (formatString), ##__VA_ARGS__)
-#define NotifyBufferPrint_O(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Other, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define Notify_O(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Other, 0, (message))
+#define NotifyPrint_O(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Other, 0, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define NotifyBufferPrint_O(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Other, 0, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
 #define Notify_O(message)                                   //nothing
 #define NotifyPrint_O(formatString, ...)                    //nothing
@@ -114,9 +114,9 @@ void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* f
 #endif
 
 #if ENABLE_NOTIFICATION_LEVEL_WARNING
-#define Notify_W(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Warning, (message))
-#define NotifyPrint_W(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Warning, 0, nullptr, (formatString), ##__VA_ARGS__)
-#define NotifyBufferPrint_W(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Warning, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define Notify_W(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Warning, 0, (message))
+#define NotifyPrint_W(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Warning, 0, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define NotifyBufferPrint_W(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Warning, 0, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
 #define Notify_W(message)                                   //nothing
 #define NotifyPrint_W(formatString, ...)                    //nothing
@@ -124,9 +124,9 @@ void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* f
 #endif
 
 #if ENABLE_NOTIFICATION_LEVEL_ERROR
-#define Notify_E(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Error, (message))
-#define NotifyPrint_E(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Error, 0, nullptr, (formatString), ##__VA_ARGS__)
-#define NotifyBufferPrint_E(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Error, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
+#define Notify_E(message)                                   NotificationRouter     (__FILE__, __LINE__, __func__, DbgLevel_Error, 0, (message))
+#define NotifyPrint_E(formatString, ...)                    NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Error, 0, 0, nullptr, (formatString), ##__VA_ARGS__)
+#define NotifyBufferPrint_E(arrayBuffer, formatString, ...) NotificationRouterPrint(__FILE__, __LINE__, __func__, DbgLevel_Error, 0, ArrayCount(arrayBuffer), (arrayBuffer), (formatString), ##__VA_ARGS__)
 #else
 #define Notify_E(message)                                   //nothing
 #define NotifyPrint_E(formatString, ...)                    //nothing

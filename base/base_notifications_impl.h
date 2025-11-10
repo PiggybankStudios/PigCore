@@ -45,7 +45,7 @@ PEXPI void SetGlobalNotificationQueue(NotificationQueue* queue)
 }
 #endif //NOTIFICATION_QUEUE_AVAILABLE
 
-PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, const char* message)
+PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, const char* message)
 {
 	if ((level == DbgLevel_Debug   && ENABLE_NOTIFICATION_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_NOTIFICATION_LEVEL_REGULAR) ||
@@ -62,7 +62,9 @@ PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* f
 		#if NOTIFICATION_QUEUE_AVAILABLE
 		if (GlobalNotificationQueue != nullptr && GlobalNotificationQueue->arena != nullptr)
 		{
-			AddNotificationToQueue(GlobalNotificationQueue, level, StrLit(message));
+			Notification* newNotification = AddNotificationToQueue(GlobalNotificationQueue, level, StrLit(message));
+			NotNull(newNotification);
+			newNotification->duration = (duration != 0) ? duration : DEFAULT_NOTIFICATION_TIME;
 			sentToQueue = true;
 		}
 		#endif //NOTIFICATION_QUEUE_AVAILABLE
@@ -76,7 +78,7 @@ PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* f
 	}
 }
 
-PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, uxx printBufferLength, char* printBuffer, const char* formatString, ...)
+PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, uxx printBufferLength, char* printBuffer, const char* formatString, ...)
 {
 	if ((level == DbgLevel_Debug   && ENABLE_NOTIFICATION_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_NOTIFICATION_LEVEL_REGULAR) ||
@@ -97,13 +99,13 @@ PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const ch
 			if (printResult >= 0)
 			{
 				printBuffer[printBufferLength-1] = '\0';
-				NotificationRouter(filePath, lineNumber, funcName, level, printBuffer);
+				NotificationRouter(filePath, lineNumber, funcName, level, duration, printBuffer);
 			}
 			#if NOTIFICATION_ERRORS_ON_FORMAT_FAILURE
 			else
 			{
-				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, "NOTIFICATION_BUFFER_PRINT_FAILED! FORMAT:");
-				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, formatString);
+				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, "NOTIFICATION_BUFFER_PRINT_FAILED! FORMAT:");
+				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, formatString);
 			}
 			#endif //NOTIFICATION_ERRORS_ON_FORMAT_FAILURE
 		}
@@ -115,20 +117,20 @@ PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const ch
 				PrintInArenaVa(scratch, messageStr, messageLength, formatString);
 				if (messageLength >= 0 && (messageStr != nullptr || messageLength == 0))
 				{
-					NotificationRouter(filePath, lineNumber, funcName, level, messageStr);
+					NotificationRouter(filePath, lineNumber, funcName, level, duration, messageStr);
 				}
 				#if NOTIFICATION_ERRORS_ON_FORMAT_FAILURE
 				else
 				{
-					NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, "NOTIFICATION_SCRATCH_PRINT_FAILED! FORMAT:");
-					NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, formatString);
+					NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, "NOTIFICATION_SCRATCH_PRINT_FAILED! FORMAT:");
+					NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, formatString);
 				}
 				#endif //NOTIFICATION_ERRORS_ON_FORMAT_FAILURE
 			}
 			else
 			{
-				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, "NO_SCRATCH_FOR_NOTIFICATION_PRINT! FORMAT:");
-				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, formatString);
+				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, "NO_SCRATCH_FOR_NOTIFICATION_PRINT! FORMAT:");
+				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, formatString);
 			}
 			ScratchEnd(scratch);
 		}

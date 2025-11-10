@@ -45,7 +45,6 @@ Description:
 #define NOTIFICATION_DISAPPEAR_ANIM_TIME   300 //ms
 #define NOTIFICATION_SCREEN_MARGIN_RIGHT   4 //px
 #define NOTIFICATION_SCREEN_MARGIN_BOTTOM  4 //px
-#define NOTIFICATION_ICON_SIZE             32 //px
 #define NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT 0.5f //percent of screen height
 
 typedef plex Notification Notification;
@@ -66,6 +65,7 @@ plex NotificationIcon
 {
 	DbgLevel level;
 	Texture* texture;
+	r32 scale;
 	rec sourceRec;
 	Color32 color;
 };
@@ -88,7 +88,8 @@ plex NotificationQueue
 	PIG_CORE_INLINE void FreeNotification(Notification* notification);
 	PIG_CORE_INLINE void FreeNotificationQueue(NotificationQueue* queue);
 	PIG_CORE_INLINE void InitNotificationQueue(Arena* arena, NotificationQueue* queueOut);
-	PIG_CORE_INLINE void SetNotificationIcon(NotificationQueue* queue, DbgLevel level, Texture* texture, rec sourceRec, Color32 color);
+	PIG_CORE_INLINE void SetNotificationIconEx(NotificationQueue* queue, DbgLevel level, Texture* texture, r32 scale, Color32 color, rec sourceRec);
+	PIG_CORE_INLINE void SetNotificationIcon(NotificationQueue* queue, DbgLevel level, Texture* texture, r32 scale, Color32 color);
 	Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message);
 	void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize);
 #endif
@@ -131,12 +132,21 @@ PEXPI void InitNotificationQueue(Arena* arena, NotificationQueue* queueOut)
 	for (uxx lIndex = 0; lIndex < DbgLevel_Count; lIndex++) { queueOut->icons[lIndex].level = (DbgLevel)lIndex; }
 }
 
-PEXPI void SetNotificationIcon(NotificationQueue* queue, DbgLevel level, Texture* texture, rec sourceRec, Color32 color)
+PEXPI void SetNotificationIconEx(NotificationQueue* queue, DbgLevel level, Texture* texture, r32 scale, Color32 color, rec sourceRec)
 {
 	Assert(level < DbgLevel_Count);
 	queue->icons[level].texture = texture;
+	queue->icons[level].scale = scale;
 	queue->icons[level].sourceRec = sourceRec;
+	if (sourceRec.X == 0 && sourceRec.Y == 0 && sourceRec.Width == 0 && sourceRec.Height == 0 && texture != nullptr)
+	{
+		queue->icons[level].sourceRec = NewRec(0, 0, (r32)texture->Width, (r32)texture->Height);
+	}
 	queue->icons[level].color = color;
+}
+PEXPI void SetNotificationIcon(NotificationQueue* queue, DbgLevel level, Texture* texture, r32 scale, Color32 color)
+{
+	SetNotificationIconEx(queue, level, texture, scale, color, NEW_STRUCT(rec)Rec_Zero_Const);
 }
 
 PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message)
@@ -276,8 +286,8 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 					CLAY({
 						.layout = {
 							.sizing = {
-								.width = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, NOTIFICATION_ICON_SIZE)),
-								.height = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, NOTIFICATION_ICON_SIZE)),
+								.width = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, icon->sourceRec.Width * icon->scale)),
+								.height = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, icon->sourceRec.Height * icon->scale)),
 							},
 						},
 						.image = {
