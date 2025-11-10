@@ -422,8 +422,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
 				}
 				
-				glyphDrawRec = NewRecV(Add(state->position, glyphMetrics.renderOffset), ToV2Fromi(glyphMetrics.glyphSize));
-				glyphLogicalRec = NewRecV(Add(state->position, glyphMetrics.logicalRec.TopLeft), glyphMetrics.logicalRec.Size);
+				glyphDrawRec = NewRecV(AddV2(state->position, glyphMetrics.renderOffset), ToV2Fromi(glyphMetrics.glyphSize));
+				glyphLogicalRec = NewRecV(AddV2(state->position, glyphMetrics.logicalRec.TopLeft), glyphMetrics.logicalRec.Size);
 				if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
 				if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
 				

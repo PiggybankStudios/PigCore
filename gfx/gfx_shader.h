@@ -15,6 +15,8 @@ Description:
 #include "struct/struct_vectors.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
+#include "struct/struct_vectors.h"
+#include "struct/struct_matrices.h"
 #include "struct/struct_string.h"
 #include "misc/misc_result.h"
 #include "gfx/gfx_vertices.h"

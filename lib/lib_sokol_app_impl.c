@@ -37,7 +37,7 @@ void SokolLogCallback(const char* tag, u32 logLevel, u32 logId, const char* mess
 		case 3: dbgLevel = DbgLevel_Other; break;
 		default: dbgLevel = DbgLevel_None; break;
 	}
-	DebugOutputRouter(filePath, lineNum, __func__, dbgLevel, true, message);
+	DebugOutputRouter(filePath, lineNum, __func__, dbgLevel, false, true, message);
 	if (logLevel == 0) { Assert(false); }
 }
 

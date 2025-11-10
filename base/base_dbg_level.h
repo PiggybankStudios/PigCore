@@ -33,8 +33,8 @@ enum DbgLevel
 	DbgLevel_None = 0,
 	DbgLevel_Debug,
 	DbgLevel_Regular,
-	DbgLevel_Info,
-	DbgLevel_Notify,
+	DbgLevel_Info, //TODO: We could rename this to something like "success" since that's what we generally use it as. We expect it to show up green in colored logs and usually indicates something good has happened
+	DbgLevel_Notify, //TODO: We should really rename this since we are using DbgLevel for "notifications" and having a "Notify" level for notifications is confusing
 	DbgLevel_Other,
 	DbgLevel_Warning,
 	DbgLevel_Error,

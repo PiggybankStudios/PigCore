@@ -261,7 +261,9 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				Texture* texturePntr = (Texture*)command->renderData.image.imageData;
 				Color32 drawColor = command->renderData.image.backgroundColor;
 				if (drawColor.valueU32 == 0) { drawColor = White; } //default value means "untinted"
-				GfxSystem_DrawTexturedRectangle(system, drawRec, drawColor, texturePntr);
+				rec sourceRec = command->userData.imageSourceRec;
+				if (sourceRec.X == 0 && sourceRec.Y == 0 && sourceRec.Width == 0 && sourceRec.Height == 0 && texturePntr != nullptr) { sourceRec.Size = ToV2Fromi(texturePntr->size); }
+				GfxSystem_DrawTexturedRectangleEx(system, drawRec, drawColor, texturePntr, sourceRec);
 				TracyCZoneEnd(Zone_COMMAND_IMAGE);
 			} break;
 			

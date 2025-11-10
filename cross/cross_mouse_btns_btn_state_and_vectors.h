@@ -86,7 +86,7 @@ PEXPI void UpdateMouseLockedDelta(MouseState* mouse, u64 currentTime, v2 lockedP
 	NotNull(mouse);
 	if (!AreEqualV2(lockedPosDelta, V2_Zero))
 	{
-		mouse->lockedPosDelta = Add(mouse->lockedPosDelta, lockedPosDelta);
+		mouse->lockedPosDelta = AddV2(mouse->lockedPosDelta, lockedPosDelta);
 		mouse->lastMoveTime = currentTime;
 	}
 }
@@ -97,8 +97,8 @@ PEXPI void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta)
 	NotNull(mouse);
 	if (!AreEqualV2(scrollDelta, V2_Zero))
 	{
-		mouse->scrollDelta = Add(mouse->scrollDelta, scrollDelta);
-		mouse->scrollValue = Add(mouse->scrollValue, scrollDelta);
+		mouse->scrollDelta = AddV2(mouse->scrollDelta, scrollDelta);
+		mouse->scrollValue = AddV2(mouse->scrollValue, scrollDelta);
 	}
 }
 

@@ -13,6 +13,7 @@ Description:
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
+#include "std/std_angles.h"
 #include "struct/struct_vectors.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"

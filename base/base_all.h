@@ -21,11 +21,13 @@ Description:
 #include "base/base_debug_output.h"
 #include "base/base_macros.h"
 #include "base/base_math.h"
+#include "base/base_notifications.h"
 #include "base/base_plex_is_struct.h"
 #include "base/base_typedefs.h"
 #include "base/base_unicode.h"
 #include "os/os_threading.h"
 
 // #include "base/base_debug_output_impl.h" //TODO: Re-enable me once we get this working on Playdate
+#include "base/base_notifications_impl.h"
 
 #endif //  _BASE_ALL_H

@@ -2,6 +2,9 @@
 File:   ui_clay_notifications.h
 Author: Taylor Robbins
 Date:   11\07\2025
+Description:
+	** This is the graphical side of the notification queue when using Clay as the layout engine and sokol_gfx.h
+	** The NotificationQueue can be used as the output for base_notifications.h in graphical applications, otherwise notifications are treated as regular debug output
 */
 
 #ifndef _UI_CLAY_NOTIFICATIONS_H
@@ -12,13 +15,26 @@ Date:   11\07\2025
 #include "base/base_dbg_level.h"
 #include "base/base_macros.h"
 #include "base/base_assert.h"
+#include "misc/misc_easing.h"
+#include "struct/struct_vectors.h"
+#include "struct/struct_rectangles.h"
 #include "struct/struct_string.h"
+#include "struct/struct_color.h"
 #include "mem/mem_arena.h"
 #include "struct/struct_var_array.h"
 #include "ui/ui_clay.h"
+#include "ui/ui_clay_widget_context.h"
 #include "lib/lib_sokol_gfx.h"
+#include "gfx/gfx_font.h"
+#include "gfx/gfx_texture.h"
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
+#define NOTIFICATION_QUEUE_AVAILABLE 1
+#else
+#define NOTIFICATION_QUEUE_AVAILABLE 0
+#endif
+
+#if NOTIFICATION_QUEUE_AVAILABLE
 
 #define MAX_NOTIFICATIONS                  16
 #define DEFAULT_NOTIFICATION_TIME          5*1000 //ms
@@ -32,8 +48,8 @@ Date:   11\07\2025
 #define NOTIFICATION_ICON_SIZE             32 //px
 #define NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT 0.5f //percent of screen height
 
-typedef struct Notification Notification;
-struct Notification
+typedef plex Notification Notification;
+plex Notification
 {
 	Arena* arena;
 	u64 id;
@@ -45,13 +61,24 @@ struct Notification
 	DbgLevel level;
 };
 
-typedef struct NotificationQueue NotificationQueue;
-struct NotificationQueue
+typedef plex NotificationIcon NotificationIcon;
+plex NotificationIcon
+{
+	DbgLevel level;
+	Texture* texture;
+	rec sourceRec;
+	Color32 color;
+};
+
+typedef plex NotificationQueue NotificationQueue;
+plex NotificationQueue
 {
 	Arena* arena;
 	u64 nextId;
 	VarArray notifications; //Notification
 	v2i prevScreenSize;
+	u64 currentProgramTime;
+	NotificationIcon icons[DbgLevel_Count];
 };
 
 // +--------------------------------------------------------------+
@@ -61,7 +88,8 @@ struct NotificationQueue
 	PIG_CORE_INLINE void FreeNotification(Notification* notification);
 	PIG_CORE_INLINE void FreeNotificationQueue(NotificationQueue* queue);
 	PIG_CORE_INLINE void InitNotificationQueue(Arena* arena, NotificationQueue* queueOut);
-	Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message, u64 programTime);
+	PIG_CORE_INLINE void SetNotificationIcon(NotificationQueue* queue, DbgLevel level, Texture* texture, rec sourceRec, Color32 color);
+	Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message);
 	void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize);
 #endif
 
@@ -99,9 +127,19 @@ PEXPI void InitNotificationQueue(Arena* arena, NotificationQueue* queueOut)
 	queueOut->arena = arena;
 	InitVarArray(Notification, &queueOut->notifications, arena);
 	queueOut->nextId = 1;
+	queueOut->currentProgramTime = 0;
+	for (uxx lIndex = 0; lIndex < DbgLevel_Count; lIndex++) { queueOut->icons[lIndex].level = (DbgLevel)lIndex; }
 }
 
-PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message, u64 programTime)
+PEXPI void SetNotificationIcon(NotificationQueue* queue, DbgLevel level, Texture* texture, rec sourceRec, Color32 color)
+{
+	Assert(level < DbgLevel_Count);
+	queue->icons[level].texture = texture;
+	queue->icons[level].sourceRec = sourceRec;
+	queue->icons[level].color = color;
+}
+
+PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message)
 {
 	NotNull(queue);
 	NotNull(queue->arena);
@@ -123,7 +161,7 @@ PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel lev
 	newNotification->id = queue->nextId;
 	queue->nextId++;
 	newNotification->messageStr = AllocStr8(queue->arena, message);
-	newNotification->spawnTime = programTime;
+	newNotification->spawnTime = queue->currentProgramTime;
 	newNotification->duration = DEFAULT_NOTIFICATION_TIME;
 	newNotification->level = level;
 	
@@ -136,6 +174,7 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 	NotNull(queue);
 	NotNull(queue->arena);
 	NotNull(font);
+	queue->currentProgramTime = context->programTime;
 	
 	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
 	bool screenSizeChanged = (!AreEqualV2i(queue->prevScreenSize, screenSize));
@@ -194,10 +233,9 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 			appearAnimAmount = (r32)spawnAnimTime / (r32)NOTIFICATION_APPEAR_ANIM_TIME;
 		}
 		
-		Color32 backgroundColor = ColorWithAlpha(MonokaiGray2, 1.0f - disappearAnimAmount);
+		Color32 backgroundColor = ColorWithAlpha(MonokaiDarkGray, 1.0f - disappearAnimAmount);
 		Color32 textColor = ColorWithAlpha(MonokaiWhite, 1.0f - disappearAnimAmount);
 		Color32 borderColor = ColorWithAlpha(MonokaiLightGray, 1.0f - disappearAnimAmount);
-		Color32 iconColor = MonokaiWhite;
 		v2 offset = NewV2(
 			-UISCALE_R32(context->uiScale, NOTIFICATION_SCREEN_MARGIN_RIGHT),
 			-UISCALE_R32(context->uiScale, NOTIFICATION_SCREEN_MARGIN_BOTTOM) - notification->currentOffsetY
@@ -206,12 +244,9 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		{
 			offset.X += notificationDrawRec.Width * EaseExponentialIn(1.0f - appearAnimAmount);
 		}
-		#if 1
-		Texture* iconTexture = nullptr;
-		#else
-		AppIcon appIcon = GetAppIconForNotificationLevel(notification->level, &iconColor);
-		Texture* iconTexture = (appIcon != AppIcon_None) ? &app->icons[appIcon] : nullptr;
-		#endif
+		NotificationIcon* icon = (notification->level < DbgLevel_Count) ? &queue->icons[notification->level] : nullptr;
+		Texture* iconTexture = (icon != nullptr) ? icon->texture : nullptr;
+		Color32 iconColor = (icon != nullptr) ? icon->color : MonokaiWhite;
 		
 		CLAY({ .id = notificationId,
 			.layout = {
@@ -236,10 +271,23 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		{
 			CLAY({ .layout={ .layoutDirection=CLAY_LEFT_TO_RIGHT, .childGap=UISCALE_U16(context->uiScale, 5), .childAlignment={ .y=CLAY_ALIGN_Y_CENTER } } })
 			{
-				// if (iconTexture != nullptr)
-				// {
-				// 	CLAY_ICON(iconTexture, FillV2(UISCALE_R32(context->uiScale, NOTIFICATION_ICON_SIZE)), ColorWithAlpha(iconColor, 1.0f - disappearAnimAmount));
-				// }
+				if (iconTexture != nullptr)
+				{
+					CLAY({
+						.layout = {
+							.sizing = {
+								.width = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, NOTIFICATION_ICON_SIZE)),
+								.height = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, NOTIFICATION_ICON_SIZE)),
+							},
+						},
+						.image = {
+							.imageData = iconTexture,
+							.sourceDimensions = ToV2Fromi(iconTexture->size),
+						},
+						.backgroundColor = ColorWithAlpha(iconColor, 1.0f - disappearAnimAmount),
+						.userData = { .imageSourceRec = icon->sourceRec },
+					}) {}
+				}
 				
 				CLAY_TEXT(
 					notification->messageStr,
@@ -258,6 +306,6 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
+#endif //NOTIFICATION_QUEUE_AVAILABLE
 
 #endif //  _UI_CLAY_NOTIFICATIONS_H

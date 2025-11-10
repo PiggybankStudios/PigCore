@@ -68,14 +68,6 @@ Description:
 
 #include "base/base_debug_output_impl.h"
 
-#if PIG_CORE_DLL_INCLUDE_BASE
-#include "base/base_all.h"
-#endif
-
-#if PIG_CORE_DLL_INCLUDE_BASE
-#include "base/base_all.h"
-#endif
-
 #if PIG_CORE_DLL_INCLUDE_STD
 #include "std/std_all.h"
 #endif

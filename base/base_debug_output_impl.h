@@ -53,9 +53,11 @@ THREAD_LOCAL bool DebugOutputLineOverflowOccurred = false;
 // +==============================+
 // |      DebugOutputRouter       |
 // +==============================+
-// void DebugOutputRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* message)
+// void DebugOutputRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool isNotification, bool newLine, const char* message)
 PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 {
+	if (!DEBUG_OUTPUT_SHOW_NOTIFICATIONS && isNotification) { return; }
+	
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR) ||
 		(level == DbgLevel_Info    && ENABLE_DEBUG_OUTPUT_LEVEL_INFO)    ||
@@ -72,14 +74,14 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
 		if (DebugOutputIsOnNewLine)
 		{
-			MyPrintNoLine("%s: %s%s", GetDbgLevelStr(level), message, newLine ? "\n" : "");
+			MyPrintNoLine("%s%s: %s%s", isNotification ? "NOTIFICATION: " : "", GetDbgLevelStr(level), message, newLine ? "\n" : "");
 		}
 		else
 		{
-			MyPrintNoLine("%s%s", message, newLine ? "\n" : "");
+			MyPrintNoLine("%s%s%s", isNotification ? "NOTIFICATION: " : "", message, newLine ? "\n" : "");
 		}
 		#else
-		MyPrintNoLine("%s%s", message, newLine ? "\n" : "");
+		MyPrintNoLine("%s%s%s", isNotification ? "NOTIFICATION: " : "", message, newLine ? "\n" : "");
 		#endif
 		
 		#if TARGET_IS_WINDOWS
@@ -88,6 +90,10 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 			//      Visual Studio and most Windows debuggers do not show things printed to stdout in
 			//      the "Output" window when debugging. Sending our debug output to OutputDebugString
 			//      ensures that our debug output can be viewed from the "Output" window in Windows debuggers.
+			if (isNotification)
+			{
+				OutputDebugStringA("NOTIFICATION: ");
+			}
 			#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
 			if (DebugOutputIsOnNewLine)
 			{
@@ -153,7 +159,7 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 					}
 					if (message[bIndex] == '\n' || newLine)
 					{
-						DebugOutputCallback(filePath, lineNumber, funcName, level, true, &DebugOutputLineBuffer[0]);
+						DebugOutputCallback(filePath, lineNumber, funcName, level, isNotification, true, &DebugOutputLineBuffer[0]);
 						DebugOutputLineLength = 0;
 					}
 					prevNewLineIndex = bIndex+1;
@@ -169,7 +175,7 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		#if (DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE && DEBUG_OUTPUT_ERRORS_ON_LINE_OVERFLOW)
 		if (!isLineOverflowOutput && DebugOutputLineOverflowOccurred)
 		{
-			DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, true, "DEBUG_OUTPUT_LINE_BUFFER_OVERFLOW!");
+			DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, true, "DEBUG_OUTPUT_LINE_BUFFER_OVERFLOW!");
 			DebugOutputLineOverflowOccurred = false;
 		}
 		#endif
@@ -188,9 +194,11 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 // +==============================+
 // |       DebugPrintRouter       |
 // +==============================+
-// void DebugPrintRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, uxx printBufferLength, char* printBuffer, const char* formatString, ...)
+// void DebugPrintRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool isNotification, bool newLine, uxx printBufferLength, char* printBuffer, const char* formatString, ...)
 PEXP DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
 {
+	if (!DEBUG_OUTPUT_SHOW_NOTIFICATIONS && isNotification) { return; }
+	
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR) ||
 		(level == DbgLevel_Info    && ENABLE_DEBUG_OUTPUT_LEVEL_INFO)    ||
@@ -210,14 +218,16 @@ PEXP DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
 			if (printResult >= 0)
 			{
 				printBuffer[printBufferLength-1] = '\0';
-				DebugOutputRouter(filePath, lineNumber, funcName, level, newLine, printBuffer);
+				DebugOutputRouter(filePath, lineNumber, funcName, level, isNotification, newLine, printBuffer);
 			}
+			#if DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE
 			else
 			{
-				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, "\nDEBUG_OUTPUT_BUFFER_PRINT_FAILED!\n\tFORMAT: \"");
-				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, formatString);
-				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, true, "\"");
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, false, "\nDEBUG_OUTPUT_BUFFER_PRINT_FAILED!\n\tFORMAT: \"");
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, false, formatString);
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, true, "\"");
 			}
+			#endif //DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE
 		}
 		else
 		{
@@ -227,22 +237,22 @@ PEXP DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
 				PrintInArenaVa(scratch, messageStr, messageLength, formatString);
 				if (messageLength >= 0 && (messageStr != nullptr || messageLength == 0))
 				{
-					DebugOutputRouter(filePath, lineNumber, funcName, level, newLine, messageStr);
+					DebugOutputRouter(filePath, lineNumber, funcName, level, isNotification, newLine, messageStr);
 				}
 				#if DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE
 				else
 				{
-					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, "\nDEBUG_OUTPUT_ARENA_PRINT_FAILED!\n\tFORMAT: \"");
-					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, formatString);
-					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, true, "\"");
+					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, false, "\nDEBUG_OUTPUT_SCRATCH_PRINT_FAILED!\n\tFORMAT: \"");
+					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, false, formatString);
+					DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, true, "\"");
 				}
-				#endif
+				#endif //DEBUG_OUTPUT_ERRORS_ON_FORMAT_FAILURE
 			}
 			else
 			{
-				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, "\nNO_SCRATCH_FOR_PRINT!\n\tFORMAT: \"");
-				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, false, formatString);
-				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, true, "\"");
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, false, "\nNO_SCRATCH_FOR_DEBUG_OUTPUT_PRINT!\n\tFORMAT: \"");
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, false, formatString);
+				DebugOutputRouter(filePath, lineNumber, funcName, DbgLevel_Error, isNotification, true, "\"");
 			}
 			ScratchEnd(scratch);
 		}

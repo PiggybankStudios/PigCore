@@ -29,6 +29,7 @@ typedef plex ClayElementUserData ClayElementUserData;
 plex ClayElementUserData
 {
 	bool outsideBorder;
+	rec imageSourceRec;
 };
 
 typedef enum TextContraction TextContraction;
