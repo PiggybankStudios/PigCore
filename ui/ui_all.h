@@ -14,6 +14,7 @@ Date:   02\16\2025
 #include "ui/ui_clay_label.h"
 #include "ui/ui_clay_large_textview.h"
 #include "ui/ui_clay_listview.h"
+#include "ui/ui_clay_notifications.h"
 #include "ui/ui_clay_resizable_split.h"
 #include "ui/ui_clay_textbox.h"
 #include "ui/ui_clay_widget_context.h"
