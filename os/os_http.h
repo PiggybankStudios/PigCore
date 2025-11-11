@@ -596,7 +596,7 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 	
 	PrintLine_D("Starting HTTP request %llu to \"%.*s\"...", request->id, StrPrint(request->args.urlStr));
 	
-	Str8 verbStr = StrLit(GetHttpVerbStr(request->args.verb));
+	Str8 verbStr = NewStr8Nt(GetHttpVerbStr(request->args.verb));
 	
 	#if TARGET_IS_WINDOWS
 	{
@@ -636,7 +636,7 @@ static bool HttpRequestManagerStartRequest(HttpRequestManager* manager, uxx requ
 			NotNull(allHeaders);
 			if (request->args.numHeaders > 0) { MyMemCopy(allHeaders, request->args.headers, sizeof(Str8Pair) * request->args.numHeaders); }
 			allHeaders[request->args.numHeaders + 0].key = StrLit("Content-Type");
-			allHeaders[request->args.numHeaders + 0].value = StrLit(GetMimeTypeOfficialName(request->args.contentEncoding));
+			allHeaders[request->args.numHeaders + 0].value = NewStr8Nt(GetMimeTypeOfficialName(request->args.contentEncoding));
 			Str8 encodedHeaders = EncodeHttpHeaders(scratch, numAllHeaders, allHeaders, false);
 			Str16 encodedHeaders16 = ConvertUtf8StrToUcs2(scratch, encodedHeaders, true);
 			request->encodedContent = EncodeHttpKeyValuePairContent(manager->arena,

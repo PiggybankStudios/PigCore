@@ -45,9 +45,10 @@ typedef Str8 FilePath;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define NewFilePath(length, pntr) (NewStr8((length), (pntr)))
-#define FilePathLit(nullTermStr)  (StrLit(nullTermStr))
-#define AsFilePath(string)        (string)
+#define NewFilePath(length, pntr)  (NewStr8((length), (pntr)))
+#define NewFilePathNt(nullTermStr) (NewStr8Nt(nullTermStr))
+#define FilePathLit(nullTermStr)   (StrLit(nullTermStr))
+#define AsFilePath(string)         (string)
 
 #define FreeFilePath(arenaPntr, pathPntr) FreeStr8((arenaPntr), (pathPntr))
 #define FreeFilePathWithNt(arenaPntr, pathPntr) FreeStr8WithNt((arenaPntr), (pathPntr))

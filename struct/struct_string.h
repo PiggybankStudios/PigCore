@@ -94,6 +94,7 @@ plex Str8Pair
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE Str8 StrLit(const char* nullTermStr);
 	PIG_CORE_INLINE Str8 NewStr8(uxx length, const void* pntr);
+	PIG_CORE_INLINE Str8 NewStr8Nt(const void* nullTermStr);
 	PIG_CORE_INLINE Str16 Str16Lit(const char16_t* nullTermStr);
 	PIG_CORE_INLINE Str16 NewStr16(uxx length, const void* pntr);
 	PIG_CORE_INLINE Str8Pair NewStr8Pair(Str8 left, Str8 right);
@@ -184,6 +185,8 @@ plex Str8Pair
 #define DebugNotEmptyStrPntr(stringPntr) //nothing
 #endif
 
+#define StrLit(stringLiteral) NEW_STRUCT(Str8){ .length=ArrayCount(CheckStrLit(stringLiteral))-1, .chars=CheckStrLit(stringLiteral) }
+
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
@@ -192,18 +195,18 @@ plex Str8Pair
 // +--------------------------------------------------------------+
 // |                       Basic String API                       |
 // +--------------------------------------------------------------+
-PEXPI Str8 StrLit(const char* nullTermStr)
-{
-	Str8 result;
-	result.length = (nullTermStr != nullptr) ? (uxx)MyStrLength64(nullTermStr) : 0;
-	result.chars = (char*)nullTermStr; //throw away const qualifier
-	return result;
-}
 PEXPI Str8 NewStr8(uxx length, const void* pntr)
 {
 	Str8 result;
 	result.length = length;
 	result.pntr = (void*)pntr; //throw away const qualifier
+	return result;
+}
+PEXPI Str8 NewStr8Nt(const void* nullTermStr)
+{
+	Str8 result;
+	result.length = (nullTermStr != nullptr) ? (uxx)MyStrLength64(nullTermStr) : 0;
+	result.chars = (char*)nullTermStr; //throw away const qualifier
 	return result;
 }
 

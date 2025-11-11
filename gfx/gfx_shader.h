@@ -288,7 +288,7 @@ PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const Sha
 		ScratchEnd(scratch);
 		return result;
 	}
-	result.name = AllocStr8(arena, StrLit(shaderDesc->label));
+	result.name = AllocStr8(arena, NewStr8Nt(shaderDesc->label));
 	NotNull(result.name.chars);
 	result.numImages = shaderMetadata->numImages;
 	result.numSamplers = shaderMetadata->numSamplers;
@@ -341,7 +341,7 @@ PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const Sha
 		{
 			ShaderUniformType type = (ShaderUniformType)tIndex;
 			if (uniformDef->size == GetShaderUniformMatchSize(type) &&
-				StrContains(uniform->name, StrLit(GetShaderUniformMatchStr(type)), false))
+				StrContains(uniform->name, NewStr8Nt(GetShaderUniformMatchStr(type)), false))
 			{
 				uniform->type = type;
 				break;
@@ -402,7 +402,7 @@ PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const Sha
 		for (uxx tIndex = 1; tIndex < VertAttributeType_Count; tIndex++)
 		{
 			VertAttributeType type = (VertAttributeType)tIndex;
-			if (StrContains(attribute->name, StrLit(GetVertAttributeMatchStr(type)), false)) { attribute->type = type; break; }
+			if (StrContains(attribute->name, NewStr8Nt(GetVertAttributeMatchStr(type)), false)) { attribute->type = type; break; }
 		}
 	}
 	

@@ -453,11 +453,11 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 				{
 					if (giveFullPath)
 					{
-						*pathOut = JoinStringsInArena(pathOutArena, fileIter->folderPath, StrLit(fileIter->findData.cFileName), false);
+						*pathOut = JoinStringsInArena(pathOutArena, fileIter->folderPath, NewStr8Nt(fileIter->findData.cFileName), false);
 					}
 					else
 					{
-						*pathOut = AllocFilePath(pathOutArena, StrLit(fileIter->findData.cFileName), false);
+						*pathOut = AllocFilePath(pathOutArena, NewStr8Nt(fileIter->findData.cFileName), false);
 					}
 					NotNullStr(*pathOut);
 					FixPathSlashes(*pathOut);

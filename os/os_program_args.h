@@ -130,7 +130,7 @@ PEXP void ParseProgramArgs(Arena* arena, uxx numArguments, const char** argument
 	{
 		ProgramArg* newArg = VarArrayAdd(ProgramArg, &argsOut->args);
 		NotNull(newArg);
-		ParseProgramArgStr(arena, StrLit(arguments[aIndex]), newArg);
+		ParseProgramArgStr(arena, NewStr8Nt(arguments[aIndex]), newArg);
 	}
 }
 

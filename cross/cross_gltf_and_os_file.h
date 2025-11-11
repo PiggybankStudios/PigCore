@@ -35,7 +35,7 @@ static CGLTF_READ_FILE_FUNC_DEF(cgltfReadFileFunc)
 	Arena* arena = (Arena*)fileOptions->user_data;
 	NotNull(path);
 	// PrintLine_D("glTF is reading \"%s\"...", path);
-	FilePath filePath = FilePathLit(path);
+	FilePath filePath = NewFilePathNt(path);
 	Slice fileContents = Slice_Empty;
 	bool readFileResult = OsReadFile(filePath, arena, false, &fileContents);
 	if (readFileResult == false) { WriteLine_E("glTF failed to read file!"); return cgltf_result_file_not_found; }

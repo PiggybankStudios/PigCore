@@ -239,7 +239,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 		newTexture->index = modelData.textures.length-1;
 		newTexture->name = AllocStr8Nt(arena, parsedTexture->name);
 		NotNull(parsedTexture->image);
-		Str8 imageName = StrLit(parsedTexture->image->name);
+		Str8 imageName = NewStr8Nt(parsedTexture->image->name);
 		if (IsEmptyStr(newTexture->name) && !IsEmptyStr(imageName)) { newTexture->name = AllocStr8(arena, imageName); }
 		if (parsedTexture->image->buffer_view == nullptr)
 		{
@@ -247,7 +247,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 			{
 				Assert(StrExactEndsWith(gltfDir, StrLit("/")) || StrExactEndsWith(gltfDir, StrLit("\\")));
 				uxx scratchMark = ArenaGetMark(scratch);
-				FilePath imageFilePathNt = JoinStringsInArena(scratch, gltfDir, StrLit(parsedTexture->image->uri), true);
+				FilePath imageFilePathNt = JoinStringsInArena(scratch, gltfDir, NewStr8Nt(parsedTexture->image->uri), true);
 				cgltf_size dataSize = 0;
 				void* dataPntr = nullptr;
 				cgltf_result readFileResult = readFileFunc(&parseOptions.memory, &parseOptions.file, imageFilePathNt.chars, &dataSize, &dataPntr);
