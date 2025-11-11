@@ -463,6 +463,17 @@ plex Vec4R64Slice
 #define NewV3(x, y, z) HMM_V3((x), (y), (z))
 #define NewV4(x, y, z, w) HMM_V4((x), (y), (z), (w))
 
+#define MakeV2(x, y)         NEW_STRUCT(v2){ .X=(x), .Y=(y) }
+#define MakeV2i(x, y)       NEW_STRUCT(v2i){ .X=(x), .Y=(y) }
+#define MakeV2d(x, y)       NEW_STRUCT(v2d){ .X=(x), .Y=(y) }
+#define MakeV3(x, y, z)      NEW_STRUCT(v3){ .X=(x), .Y=(y), .Z=(z) }
+#define MakeV3i(x, y, z)    NEW_STRUCT(v3i){ .X=(x), .Y=(y), .Z=(z) }
+#define MakeV3d(x, y, z)    NEW_STRUCT(v3d){ .X=(x), .Y=(y), .Z=(z) }
+#define MakeV4(x, y, z, w)   NEW_STRUCT(v4){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeV4r(x, y, z, w) NEW_STRUCT(v4r){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeV4i(x, y, z, w) NEW_STRUCT(v4i){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeV4d(x, y, z, w) NEW_STRUCT(v4d){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+
 #define FillV2(value)  NewV2((value), (value))
 #define FillV2i(value) NewV2i((value), (value))
 #define FillV2d(value) NewV2d((value), (value))
@@ -542,8 +553,8 @@ plex Vec4R64Slice
 #define V2_Right         NewV2( 1.0f,  0.0f)
 #define V2_Up            NewV2( 0.0f, -1.0f)
 #define V2_Down          NewV2( 0.0f,  1.0f)
-#define V2_Zero_Const    { .X=0.0f,.Y=0.0f }
-#define V2_One_Const     { .X=1.0f,.Y=1.0f }
+#define V2_Zero_Const    MakeV2(0.0f,  0.0f)
+#define V2_One_Const     MakeV2(1.0f,  1.0f)
 
 #define V2i_Zero          NewV2i( 0,  0)
 #define V2i_One           NewV2i( 1,  1)
@@ -551,8 +562,8 @@ plex Vec4R64Slice
 #define V2i_Right         NewV2i( 1,  0)
 #define V2i_Up            NewV2i( 0, -1)
 #define V2i_Down          NewV2i( 0,  1)
-#define V2i_Zero_Const     { .X=0,.Y=0 }
-#define V2i_One_Const      { .X=1,.Y=1 }
+#define V2i_Zero_Const    MakeV2i(0,  0)
+#define V2i_One_Const     MakeV2i(1,  1)
 
 #define V2d_Zero          NewV2d( 0.0,  0.0)
 #define V2d_One           NewV2d( 1.0,  1.0)
@@ -561,8 +572,8 @@ plex Vec4R64Slice
 #define V2d_Right         NewV2d( 1.0,  0.0)
 #define V2d_Up            NewV2d( 0.0, -1.0)
 #define V2d_Down          NewV2d( 0.0,  1.0)
-#define V2d_Zero_Const     { .X=0.0,.Y=0.0 }
-#define V2d_One_Const      { .X=1.0,.Y=1.0 }
+#define V2d_Zero_Const    MakeV2d(0.0,  0.0)
+#define V2d_One_Const     MakeV2d(1.0,  1.0)
 
 //NOTE: See struct_directions.h for an explanation of the coordinate system handed-ness and up direction
 #define V3_Zero          NewV3( 0.0f,  0.0f,  0.0f)
@@ -578,8 +589,8 @@ plex Vec4R64Slice
 #define V3_Up            NewV3( 0.0f,  1.0f,  0.0f)
 #define V3_Backward      NewV3( 0.0f,  0.0f, -1.0f)
 #define V3_Forward       NewV3( 0.0f,  0.0f,  1.0f)
-#define V3_Zero_Const     { .X=0.0f,.Y=0.0f,.Z=0.0f }
-#define V3_One_Const      { .X=1.0f,.Y=1.0f,.Z=1.0f }
+#define V3_Zero_Const    MakeV3(0.0f,  0.0f,  0.0f)
+#define V3_One_Const     MakeV3(1.0f,  1.0f,  1.0f)
 
 #define V3i_Zero          NewV3i( 0,  0,  0)
 #define V3i_One           NewV3i( 1,  1,  1)
@@ -593,8 +604,8 @@ plex Vec4R64Slice
 #define V3i_Up            NewV3i( 0,  1,  0)
 #define V3i_Backward      NewV3i( 0,  0, -1)
 #define V3i_Forward       NewV3i( 0,  0,  1)
-#define V3i_Zero_Const      { .X=0,.Y=0,.Z=0 }
-#define V3i_One_Const       { .X=1,.Y=1,.Z=1 }
+#define V3i_Zero_Const    MakeV3i(0,  0,  0)
+#define V3i_One_Const     MakeV3i(1,  1,  1)
 
 #define V3d_Zero          NewV3d( 0.0,  0.0,  0.0)
 #define V3d_One           NewV3d( 1.0,  1.0,  1.0)
@@ -609,63 +620,63 @@ plex Vec4R64Slice
 #define V3d_Up            NewV3d( 0.0,  1.0,  0.0)
 #define V3d_Backward      NewV3d( 0.0,  0.0, -1.0)
 #define V3d_Forward       NewV3d( 0.0,  0.0,  1.0)
-#define V3d_Zero_Const      { .X=0.0,.Y=0.0,.Z=0.0 }
-#define V3d_One_Const       { .X=1.0,.Y=1.0,.Z=1.0 }
+#define V3d_Zero_Const    MakeV3d(0.0,  0.0,  0.0)
+#define V3d_One_Const     MakeV3d(1.0,  1.0,  1.0)
 
-#define V4_Zero          NewV4( 0.0f,  0.0f,  0.0f, 0.0f)
-#define V4_One           NewV4( 1.0f,  1.0f,  1.0f, 1.0f)
-#define V4_Half          NewV4( 0.5f,  0.5f,  0.5f, 0.5f)
-#define V4_Left          NewV4(-1.0f,  0.0f,  0.0f, 0.0f)
-#define V4_Right         NewV4( 1.0f,  0.0f,  0.0f, 0.0f)
-#define V4_Bottom        NewV4( 0.0f, -1.0f,  0.0f, 0.0f)
-#define V4_Top           NewV4( 0.0f,  1.0f,  0.0f, 0.0f)
-#define V4_Back          NewV4( 0.0f,  0.0f, -1.0f, 0.0f)
-#define V4_Front         NewV4( 0.0f,  0.0f,  1.0f, 0.0f)
-#define V4_Down          NewV4( 0.0f, -1.0f,  0.0f, 0.0f)
-#define V4_Up            NewV4( 0.0f,  1.0f,  0.0f, 0.0f)
-#define V4_Backward      NewV4( 0.0f,  0.0f, -1.0f, 0.0f)
-#define V4_Forward       NewV4( 0.0f,  0.0f,  1.0f, 0.0f)
-#define V4_Prevward      NewV4( 0.0f,  0.0f,  0.0f,-1.0f)
-#define V4_Nextward      NewV4( 0.0f,  0.0f,  0.0f, 1.0f)
-#define V4_Zero_Const   { .X=0.0f,.Y=0.0f,.Z=0.0f,.W=0.0f }
-#define V4_One_Const    { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
-#define V4r_Zero_Const  { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
-#define V4r_One_Const   { .X=1.0f,.Y=1.0f,.Z=1.0f,.W=1.0f }
+#define V4_Zero          NewV4( 0.0f,  0.0f,  0.0f,  0.0f)
+#define V4_One           NewV4( 1.0f,  1.0f,  1.0f,  1.0f)
+#define V4_Half          NewV4( 0.5f,  0.5f,  0.5f,  0.5f)
+#define V4_Left          NewV4(-1.0f,  0.0f,  0.0f,  0.0f)
+#define V4_Right         NewV4( 1.0f,  0.0f,  0.0f,  0.0f)
+#define V4_Bottom        NewV4( 0.0f, -1.0f,  0.0f,  0.0f)
+#define V4_Top           NewV4( 0.0f,  1.0f,  0.0f,  0.0f)
+#define V4_Back          NewV4( 0.0f,  0.0f, -1.0f,  0.0f)
+#define V4_Front         NewV4( 0.0f,  0.0f,  1.0f,  0.0f)
+#define V4_Down          NewV4( 0.0f, -1.0f,  0.0f,  0.0f)
+#define V4_Up            NewV4( 0.0f,  1.0f,  0.0f,  0.0f)
+#define V4_Backward      NewV4( 0.0f,  0.0f, -1.0f,  0.0f)
+#define V4_Forward       NewV4( 0.0f,  0.0f,  1.0f,  0.0f)
+#define V4_Prevward      NewV4( 0.0f,  0.0f,  0.0f, -1.0f)
+#define V4_Nextward      NewV4( 0.0f,  0.0f,  0.0f,  1.0f)
+#define V4_Zero_Const    MakeV4(0.0f,  0.0f,  0.0f,  0.0f)
+#define V4_One_Const     MakeV4(1.0f,  1.0f,  1.0f,  1.0f)
+#define V4r_Zero_Const   MakeV4r(0.0f, 0.0f,  0.0f,  0.0f)
+#define V4r_One_Const    MakeV4r(1.0f, 1.0f,  1.0f,  1.0f)
 
-#define V4i_Zero          NewV4i( 0,  0,  0, 0)
-#define V4i_One           NewV4i( 1,  1,  1, 0)
-#define V4i_Left          NewV4i(-1,  0,  0, 0)
-#define V4i_Right         NewV4i( 1,  0,  0, 0)
-#define V4i_Bottom        NewV4i( 0, -1,  0, 0)
-#define V4i_Top           NewV4i( 0,  1,  0, 0)
-#define V4i_Back          NewV4i( 0,  0, -1, 0)
-#define V4i_Front         NewV4i( 0,  0,  1, 0)
-#define V4i_Down          NewV4i( 0, -1,  0, 0)
-#define V4i_Up            NewV4i( 0,  1,  0, 0)
-#define V4i_Backward      NewV4i( 0,  0, -1, 0)
-#define V4i_Forward       NewV4i( 0,  0,  1, 0)
-#define V4i_Prevward      NewV4i( 0,  0,  0,-1)
-#define V4i_Nextward      NewV4i( 0,  0,  0, 1)
-#define V4i_Zero_Const    { .X=0,.Y=0,.Z=0,.W=0 }
-#define V4i_One_Const     { .X=1,.Y=1,.Z=1,.W=1 }
+#define V4i_Zero          NewV4i( 0,  0,  0,  0)
+#define V4i_One           NewV4i( 1,  1,  1,  0)
+#define V4i_Left          NewV4i(-1,  0,  0,  0)
+#define V4i_Right         NewV4i( 1,  0,  0,  0)
+#define V4i_Bottom        NewV4i( 0, -1,  0,  0)
+#define V4i_Top           NewV4i( 0,  1,  0,  0)
+#define V4i_Back          NewV4i( 0,  0, -1,  0)
+#define V4i_Front         NewV4i( 0,  0,  1,  0)
+#define V4i_Down          NewV4i( 0, -1,  0,  0)
+#define V4i_Up            NewV4i( 0,  1,  0,  0)
+#define V4i_Backward      NewV4i( 0,  0, -1,  0)
+#define V4i_Forward       NewV4i( 0,  0,  1,  0)
+#define V4i_Prevward      NewV4i( 0,  0,  0, -1)
+#define V4i_Nextward      NewV4i( 0,  0,  0,  1)
+#define V4i_Zero_Const    MakeV4i(0,  0,  0,  0)
+#define V4i_One_Const     MakeV4i(1,  1,  1,  1)
 
-#define V4d_Zero          NewV4d( 0.0,  0.0,  0.0, 0.0)
-#define V4d_One           NewV4d( 1.0,  1.0,  1.0, 1.0)
-#define V4d_Half          NewV4d( 0.5,  0.5,  0.5, 0.5)
-#define V4d_Left          NewV4d(-1.0,  0.0,  0.0, 0.0)
-#define V4d_Right         NewV4d( 1.0,  0.0,  0.0, 0.0)
-#define V4d_Bottom        NewV4d( 0.0, -1.0,  0.0, 0.0)
-#define V4d_Top           NewV4d( 0.0,  1.0,  0.0, 0.0)
-#define V4d_Back          NewV4d( 0.0,  0.0, -1.0, 0.0)
-#define V4d_Front         NewV4d( 0.0,  0.0,  1.0, 0.0)
-#define V4d_Down          NewV4d( 0.0, -1.0,  0.0, 0.0)
-#define V4d_Up            NewV4d( 0.0,  1.0,  0.0, 0.0)
-#define V4d_Backward      NewV4d( 0.0,  0.0, -1.0, 0.0)
-#define V4d_Forward       NewV4d( 0.0,  0.0,  1.0, 0.0)
-#define V4d_Prevward      NewV4d( 0.0,  0.0,  0.0,-1.0)
-#define V4d_Nextward      NewV4d( 0.0,  0.0,  0.0, 1.0)
-#define V4d_Zero_Const    { .X=0.0,.Y=0.0,.Z=0.0,.W=0.0 }
-#define V4d_One_Const     { .X=1.0,.Y=1.0,.Z=1.0,.W=1.0 }
+#define V4d_Zero          NewV4d( 0.0,  0.0,  0.0,  0.0)
+#define V4d_One           NewV4d( 1.0,  1.0,  1.0,  1.0)
+#define V4d_Half          NewV4d( 0.5,  0.5,  0.5,  0.5)
+#define V4d_Left          NewV4d(-1.0,  0.0,  0.0,  0.0)
+#define V4d_Right         NewV4d( 1.0,  0.0,  0.0,  0.0)
+#define V4d_Bottom        NewV4d( 0.0, -1.0,  0.0,  0.0)
+#define V4d_Top           NewV4d( 0.0,  1.0,  0.0,  0.0)
+#define V4d_Back          NewV4d( 0.0,  0.0, -1.0,  0.0)
+#define V4d_Front         NewV4d( 0.0,  0.0,  1.0,  0.0)
+#define V4d_Down          NewV4d( 0.0, -1.0,  0.0,  0.0)
+#define V4d_Up            NewV4d( 0.0,  1.0,  0.0,  0.0)
+#define V4d_Backward      NewV4d( 0.0,  0.0, -1.0,  0.0)
+#define V4d_Forward       NewV4d( 0.0,  0.0,  1.0,  0.0)
+#define V4d_Prevward      NewV4d( 0.0,  0.0,  0.0, -1.0)
+#define V4d_Nextward      NewV4d( 0.0,  0.0,  0.0,  1.0)
+#define V4d_Zero_Const    MakeV4d(0.0,  0.0,  0.0,  0.0)
+#define V4d_One_Const     MakeV4d(1.0,  1.0,  1.0,  1.0)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
