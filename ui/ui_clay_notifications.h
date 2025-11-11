@@ -7,6 +7,8 @@ Description:
 	** The NotificationQueue can be used as the output for base_notifications.h in graphical applications, otherwise notifications are treated as regular debug output
 */
 
+//TODO: Notifications with '\n' character cause incorrect behavior because clay is handling them even when wrapMode=CLAY_TEXT_WRAP_NONE on the text element
+
 #ifndef _UI_CLAY_NOTIFICATIONS_H
 #define _UI_CLAY_NOTIFICATIONS_H
 
@@ -45,6 +47,7 @@ Description:
 #define NOTIFICATION_DISAPPEAR_ANIM_TIME   300 //ms
 #define NOTIFICATION_SCREEN_MARGIN_RIGHT   4 //px
 #define NOTIFICATION_SCREEN_MARGIN_BOTTOM  4 //px
+#define NOTIFICATION_MAX_WIDTH_PERCENT     0.50f //percent of screen width
 #define NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT 0.5f //percent of screen height
 
 typedef plex Notification Notification;
@@ -57,6 +60,9 @@ plex Notification
 	Str8 messageStr;
 	r32 currentOffsetY;
 	r32 gotoOffsetY;
+	TextMeasure textMeasure;
+	r32 textMeasureWrapWidth;
+	r32 textMeasureLineHeight;
 	DbgLevel level;
 };
 
@@ -160,6 +166,7 @@ PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel lev
 	if (queue->notifications.length >= MAX_NOTIFICATIONS)
 	{
 		Notification* oldestNotification = VarArrayGetLast(Notification, &queue->notifications);
+		// PrintLine_D("Removing notification (limit reached) \"%.*s\"", StrPrint(oldestNotification->messageStr));
 		FreeNotification(oldestNotification);
 		VarArrayRemoveLast(Notification, &queue->notifications);
 	}
@@ -181,6 +188,8 @@ PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel lev
 PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize)
 {
 	NotNull(context);
+	NotNull(context->uiArena);
+	NotNull(context->renderer);
 	NotNull(queue);
 	NotNull(queue->arena);
 	NotNull(font);
@@ -188,8 +197,9 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 	
 	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
 	bool screenSizeChanged = (!AreEqualV2i(queue->prevScreenSize, screenSize));
+	r32 lineHeight = GetFontLineHeight(font, fontSize, fontStyle);
+	r32 wrapWidth = (screenSize.Width * NOTIFICATION_MAX_WIDTH_PERCENT) - (r32)(2*UISCALE_U16(context->uiScale, NOTIFICATION_PADDING));
 	
-	rec prevNotificationDrawRec = Rec_Zero;
 	VarArrayLoop(&queue->notifications, nIndex)
 	{
 		VarArrayLoopGet(Notification, notification, &queue->notifications, nIndex);
@@ -197,6 +207,7 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		// If we're halfway up the screen, auto-dismiss the notification by shortening the duration
 		if (notification->gotoOffsetY >= screenSize.Height * (r32)NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT)
 		{
+			// PrintLine_D("Dismissing notification (height limit) \"%.*s\"", StrPrint(notification->messageStr));
 			u64 currentTime = TimeSinceBy(context->programTime, notification->spawnTime);
 			if (currentTime < notification->duration - NOTIFICATION_DISAPPEAR_ANIM_TIME)
 			{
@@ -206,18 +217,28 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		
 		if (TimeSinceBy(context->programTime, notification->spawnTime) >= notification->duration)
 		{
+			// PrintLine_D("Dismissing notification (timeout) \"%.*s\"", StrPrint(notification->messageStr));
 			FreeNotification(notification);
 			VarArrayRemoveAt(Notification, &queue->notifications, nIndex);
 			nIndex--;
 			continue;
 		}
+		
+		if (!AreSimilarR32(wrapWidth, notification->textMeasureWrapWidth, DEFAULT_R32_TOLERANCE) ||
+			!AreSimilarR32(lineHeight, notification->textMeasureLineHeight, DEFAULT_R32_TOLERANCE) ||
+			(notification->textMeasure.Width == 0 && notification->textMeasure.Height == 0 && !IsEmptyStr(notification->messageStr)))
+		{
+			notification->textMeasure = MeasureTextEx(font, fontSize, fontStyle, false, wrapWidth, notification->messageStr);
+			notification->textMeasureWrapWidth = wrapWidth;
+			notification->textMeasureLineHeight = lineHeight;
+		}
 	}
 	
+	rec prevNotificationDrawRec = Rec_Zero;
 	VarArrayLoop(&queue->notifications, nIndex)
 	{
 		VarArrayLoopGet(Notification, notification, &queue->notifications, nIndex);
-		Str8 notificationIdStr = ScratchPrintStr("Notification%llu", (u64)notification->id);
-		ClayId notificationId = ToClayId(notificationIdStr);
+		ClayId notificationId = ToClayIdPrint(context->uiArena, "Notification%llu", (u64)notification->id);
 		rec notificationDrawRec = GetClayElementDrawRec(notificationId);
 		bool isSizeKnown = (notificationDrawRec.Width > 0);
 		
@@ -260,7 +281,7 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		
 		CLAY({ .id = notificationId,
 			.layout = {
-				.sizing = { .width = CLAY_SIZING_FIT(0, screenSize.Width*0.75f), .height = CLAY_SIZING_FIT(0) },
+				.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0) },
 				.padding = CLAY_PADDING_ALL(UISCALE_U16(context->uiScale, NOTIFICATION_PADDING)),
 				.childAlignment = { CLAY_ALIGN_X_CENTER, CLAY_ALIGN_Y_CENTER },
 			},
@@ -299,14 +320,20 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 					}) {}
 				}
 				
-				CLAY_TEXT(
-					notification->messageStr,
-					CLAY_TEXT_CONFIG({
-						.fontId = fontId,
-						.fontSize = (u16)fontSize,
-						.textColor = textColor,
-					})
-				);
+				CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(notification->textMeasure.visualRec.Width), .height = CLAY_SIZING_FIXED(notification->textMeasure.visualRec.Height) } } })
+				{
+					CLAY_TEXT(
+						AllocStr8(context->uiArena, notification->messageStr),
+						CLAY_TEXT_CONFIG({
+							.fontId = fontId,
+							.fontSize = (u16)fontSize,
+							.textColor = textColor,
+							.wrapMode = CLAY_TEXT_WRAP_NONE,
+							.textAlignment = CLAY_TEXT_ALIGN_LEFT,
+							.userData = { .wrapWidth = wrapWidth },
+						})
+					);
+				}
 			}
 		}
 	}

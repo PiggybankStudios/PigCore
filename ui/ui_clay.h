@@ -35,7 +35,8 @@ plex ClayElementUserData
 typedef enum TextContraction TextContraction;
 enum TextContraction
 {
-	TextContraction_ClipRight = 0,
+	TextContraction_None = 0,
+	TextContraction_ClipRight,
 	TextContraction_ClipLeft,
 	TextContraction_EllipseRight,
 	TextContraction_EllipseMiddle,
@@ -47,6 +48,7 @@ const char* GetTextContractionStr(TextContraction enumValue)
 {
 	switch (enumValue)
 	{
+		case TextContraction_None:            return "None";
 		case TextContraction_ClipRight:       return "ClipRight";
 		case TextContraction_ClipLeft:        return "ClipLeft";
 		case TextContraction_EllipseRight:    return "EllipseRight";

@@ -83,14 +83,18 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	//NOTE: Clay asks us for sizes of words, not entire strings. And it expects the composition of each word + spaces together should match the size of the whole string measured together
 	//      Our text measuring code does not treat advanceX as part of the logical space, so if the final character in a word is a glyph that has advanceX > glyphWidth then it will return
 	//      glyphWidth when measured as a word, but the advanceX will be used to shift the following space/words in the full string resulting in a larger full-text size
-	//      The cater to Clay we need to include the advanceX of the last character in the measurement
-	const bool includeAdvanceX = true;
-	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, includeAdvanceX, config->userData.wrapWidth, richText);
+	//      To cater to Clay we need to includeAdvanceX of the last character in the measurement
+	//NOTE: We do NOT include the wrapWidth set in ClayTextUserData here since the height we give clay should not matter,
+	//      the renderer will handle wrapWidth below and render all the text in the correct place.
+	//      All text elements with wrapWidth set should have a FIXED_SIZE height container around them.
+	//      We clamp the width of the measure to wrapWidth below
+	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, /*includeAdvanceX=*/true, /*wrapWidth=*/0.0f, richText);
 	
 	r32 lineHeight = GetFontLineHeight(font->pntr, fontSize, font->styleFlags);
 	if (measure.Height < lineHeight) { measure.Height = lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
 	v2 result = NewV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.Height, measure.visualRec.Height)));
+	if (config->userData.wrapWidth != 0.0f) { result.Width = MinR32(result.Width, config->userData.wrapWidth); }
 	ScratchEnd(scratch);
 	return result;
 }
@@ -170,6 +174,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				Color32 drawColor = command->renderData.text.textColor;
 				ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)fontId);
 				FontLineMetrics fontLineMetrics = GetFontLineMetrics(font->pntr, fontSize, font->styleFlags);
+				bool addedClipRec = false;
 				reci oldClipRec = ZEROED;
 				r32 textOffsetX = 0.0f;
 				if (command->renderData.text.userData.wrapWidth == 0.0f)
@@ -195,6 +200,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						}
 						// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(MonokaiPurple, 0.2f));
 						oldClipRec = GfxSystem_AddClipRec(system, ToReciFromf(textClipRec));
+						addedClipRec = true;
 					}
 					else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft)
 					{
@@ -243,8 +249,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				
 				// GfxSystem_DrawRectangle(system, NewRecV(textPos, V2_One), MonokaiRed);
 				
-				if (command->renderData.text.userData.contraction == TextContraction_ClipLeft ||
-					command->renderData.text.userData.contraction == TextContraction_ClipRight)
+				if (addedClipRec)
 				{
 					GfxSystem_SetClipRec(system, oldClipRec);
 				}
