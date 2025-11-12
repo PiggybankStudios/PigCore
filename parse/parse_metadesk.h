@@ -29,7 +29,7 @@ Date:   03\31\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI Str8 ToStr8FromMd(MD_String8 mdStr) { DebugAssert(mdStr.size <= UINTXX_MAX); return NewStr8((uxx)mdStr.size, mdStr.str); }
+PEXPI Str8 ToStr8FromMd(MD_String8 mdStr) { DebugAssert(mdStr.size <= UINTXX_MAX); return MakeStr8((uxx)mdStr.size, mdStr.str); }
 PEXPI MD_String8 ToMdString8(Str8 str) { return MD_S8(str.bytes, str.length); }
 
 #endif //PIG_CORE_IMPLEMENTATION

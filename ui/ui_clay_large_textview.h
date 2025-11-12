@@ -401,9 +401,9 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 						VarArrayLoop(&text->lines, lIndex)
 						{
 							VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
-							rec lineRec = NewRecV(
-								AddV2(textOffset, NewV2(0, line->verticalOffset)),
-								NewV2(tview->wordWrapEnabled ? containerRec.Width : line->measure.logicalRec.Width, line->height)
+							rec lineRec = MakeRecV(
+								AddV2(textOffset, MakeV2(0, line->verticalOffset)),
+								MakeV2(tview->wordWrapEnabled ? containerRec.Width : line->measure.logicalRec.Width, line->height)
 							);
 							r32 extraRenderHeight = MaxR32(100, containerRec.Height);
 							
@@ -466,7 +466,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 						scrollbarXPercent = ClampR32(-scrollData.scrollPosition->X / (scrollData.contentDimensions.Width - scrollData.scrollContainerDimensions.Width), 0.0f, 1.0f);
 					}
 					rec scrollGutterDrawRec = GetClayElementDrawRec(horiGutterId);
-					v2 scrollBarSize = NewV2(
+					v2 scrollBarSize = MakeV2(
 						MaxR32(MinR32(UISCALE_R32(context->uiScale, 20), scrollGutterDrawRec.Width*0.25f), scrollGutterDrawRec.Width * scrollbarSizePercent),
 						UISCALE_R32(context->uiScale, 8)
 					);
@@ -478,7 +478,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 						},
 						.floating = {
 							.attachTo = CLAY_ATTACH_TO_PARENT,
-							.offset = NewV2(scrollBarOffsetX, UISCALE_R32(context->uiScale, 1)),
+							.offset = MakeV2(scrollBarOffsetX, UISCALE_R32(context->uiScale, 1)),
 						},
 						.backgroundColor = (isHoriScrollbarHovered || tview->draggingHoriScrollbar) ? MonokaiWhite : MonokaiLightGray,
 						.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),
@@ -509,7 +509,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->Y / (scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height), 0.0f, 1.0f);
 				}
 				rec scrollGutterDrawRec = GetClayElementDrawRec(vertGutterId);
-				v2 scrollBarSize = NewV2(
+				v2 scrollBarSize = MakeV2(
 					UISCALE_R32(context->uiScale, 8),
 					MaxR32(MinR32(UISCALE_R32(context->uiScale, 20), scrollGutterDrawRec.Height*0.25f), scrollGutterDrawRec.Height * scrollbarSizePercent)
 				);
@@ -521,7 +521,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 					},
 					.floating = {
 						.attachTo = CLAY_ATTACH_TO_PARENT,
-						.offset = NewV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
+						.offset = MakeV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
 					},
 					.backgroundColor = (isVertScrollbarHovered || tview->draggingVertScrollbar) ? MonokaiWhite : MonokaiLightGray,
 					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),

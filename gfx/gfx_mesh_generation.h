@@ -81,13 +81,13 @@ PEXP GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32*
 	result.indices = AllocArray(i32, arena, result.numIndices);
 	NotNull(result.indices);
 	
-	v4 colorsV4[BOX_NUM_FACES];
-	colorsV4[0] = ToV4FromColor32(colors[0]);
-	colorsV4[1] = ToV4FromColor32(colors[1]);
-	colorsV4[2] = ToV4FromColor32(colors[2]);
-	colorsV4[3] = ToV4FromColor32(colors[3]);
-	colorsV4[4] = ToV4FromColor32(colors[4]);
-	colorsV4[5] = ToV4FromColor32(colors[5]);
+	v4r colorsV4r[BOX_NUM_FACES];
+	colorsV4r[0] = ToV4rFromColor32(colors[0]);
+	colorsV4r[1] = ToV4rFromColor32(colors[1]);
+	colorsV4r[2] = ToV4rFromColor32(colors[2]);
+	colorsV4r[3] = ToV4rFromColor32(colors[3]);
+	colorsV4r[4] = ToV4rFromColor32(colors[4]);
+	colorsV4r[5] = ToV4rFromColor32(colors[5]);
 	
 	v3 vertPositions[8];
 	const uxx blbIndex = 0; //bottomLeftBack
@@ -98,59 +98,59 @@ PEXP GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32*
 	const uxx trbIndex = 5; //topRightBack
 	const uxx tlfIndex = 6; //topLeftFront
 	const uxx trfIndex = 7; //topRightFront
-	vertPositions[blbIndex] = NewV3(boundingBox.X,                     boundingBox.Y,                      boundingBox.Z);
-	vertPositions[brbIndex] = NewV3(boundingBox.X + boundingBox.Width, boundingBox.Y,                      boundingBox.Z);
-	vertPositions[blfIndex] = NewV3(boundingBox.X,                     boundingBox.Y,                      boundingBox.Z + boundingBox.Depth);
-	vertPositions[brfIndex] = NewV3(boundingBox.X + boundingBox.Width, boundingBox.Y,                      boundingBox.Z + boundingBox.Depth);
-	vertPositions[tlbIndex] = NewV3(boundingBox.X,                     boundingBox.Y + boundingBox.Height, boundingBox.Z);
-	vertPositions[trbIndex] = NewV3(boundingBox.X + boundingBox.Width, boundingBox.Y + boundingBox.Height, boundingBox.Z);
-	vertPositions[tlfIndex] = NewV3(boundingBox.X,                     boundingBox.Y + boundingBox.Height, boundingBox.Z + boundingBox.Depth);
-	vertPositions[trfIndex] = NewV3(boundingBox.X + boundingBox.Width, boundingBox.Y + boundingBox.Height, boundingBox.Z + boundingBox.Depth);
+	vertPositions[blbIndex] = MakeV3(boundingBox.X,                     boundingBox.Y,                      boundingBox.Z);
+	vertPositions[brbIndex] = MakeV3(boundingBox.X + boundingBox.Width, boundingBox.Y,                      boundingBox.Z);
+	vertPositions[blfIndex] = MakeV3(boundingBox.X,                     boundingBox.Y,                      boundingBox.Z + boundingBox.Depth);
+	vertPositions[brfIndex] = MakeV3(boundingBox.X + boundingBox.Width, boundingBox.Y,                      boundingBox.Z + boundingBox.Depth);
+	vertPositions[tlbIndex] = MakeV3(boundingBox.X,                     boundingBox.Y + boundingBox.Height, boundingBox.Z);
+	vertPositions[trbIndex] = MakeV3(boundingBox.X + boundingBox.Width, boundingBox.Y + boundingBox.Height, boundingBox.Z);
+	vertPositions[tlfIndex] = MakeV3(boundingBox.X,                     boundingBox.Y + boundingBox.Height, boundingBox.Z + boundingBox.Depth);
+	vertPositions[trfIndex] = MakeV3(boundingBox.X + boundingBox.Width, boundingBox.Y + boundingBox.Height, boundingBox.Z + boundingBox.Depth);
 	
 	i32 vIndex = 0;
 	i32 iIndex = 0;
 	
 	//top face (+y) forward is up
 	i32 topStartIndex = vIndex; DebugAssert(topStartIndex == BOX_MESH_TOP_FACE_INDEX * BOX_MESH_NUM_VERTICES_PER_FACES);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[tlfIndex], V3_Up, NewV2(0, 0), colorsV4[BOX_MESH_TOP_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[trfIndex], V3_Up, NewV2(1, 0), colorsV4[BOX_MESH_TOP_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[trbIndex], V3_Up, NewV2(1, 1), colorsV4[BOX_MESH_TOP_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[tlbIndex], V3_Up, NewV2(0, 1), colorsV4[BOX_MESH_TOP_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[tlfIndex], V3_Up, MakeV2(0, 0), colorsV4r[BOX_MESH_TOP_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[trfIndex], V3_Up, MakeV2(1, 0), colorsV4r[BOX_MESH_TOP_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[trbIndex], V3_Up, MakeV2(1, 1), colorsV4r[BOX_MESH_TOP_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[tlbIndex], V3_Up, MakeV2(0, 1), colorsV4r[BOX_MESH_TOP_FACE_INDEX]);
 	
 	//right face (+x) up is up
 	i32 rightStartIndex = vIndex; DebugAssert(rightStartIndex == BOX_MESH_RIGHT_FACE_INDEX * BOX_MESH_NUM_VERTICES_PER_FACES);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[trbIndex], V3_Right, NewV2(0, 0), colorsV4[BOX_MESH_RIGHT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[trfIndex], V3_Right, NewV2(1, 0), colorsV4[BOX_MESH_RIGHT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[brfIndex], V3_Right, NewV2(1, 1), colorsV4[BOX_MESH_RIGHT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[brbIndex], V3_Right, NewV2(0, 1), colorsV4[BOX_MESH_RIGHT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[trbIndex], V3_Right, MakeV2(0, 0), colorsV4r[BOX_MESH_RIGHT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[trfIndex], V3_Right, MakeV2(1, 0), colorsV4r[BOX_MESH_RIGHT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[brfIndex], V3_Right, MakeV2(1, 1), colorsV4r[BOX_MESH_RIGHT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[brbIndex], V3_Right, MakeV2(0, 1), colorsV4r[BOX_MESH_RIGHT_FACE_INDEX]);
 	
 	//front face (+z) up is up
 	i32 frontStartIndex = vIndex; DebugAssert(frontStartIndex == BOX_MESH_FRONT_FACE_INDEX * BOX_MESH_NUM_VERTICES_PER_FACES);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[trfIndex], V3_Forward, NewV2(0, 0), colorsV4[BOX_MESH_FRONT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[tlfIndex], V3_Forward, NewV2(1, 0), colorsV4[BOX_MESH_FRONT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[blfIndex], V3_Forward, NewV2(1, 1), colorsV4[BOX_MESH_FRONT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[brfIndex], V3_Forward, NewV2(0, 1), colorsV4[BOX_MESH_FRONT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[trfIndex], V3_Forward, MakeV2(0, 0), colorsV4r[BOX_MESH_FRONT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[tlfIndex], V3_Forward, MakeV2(1, 0), colorsV4r[BOX_MESH_FRONT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[blfIndex], V3_Forward, MakeV2(1, 1), colorsV4r[BOX_MESH_FRONT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[brfIndex], V3_Forward, MakeV2(0, 1), colorsV4r[BOX_MESH_FRONT_FACE_INDEX]);
 	
 	//left face (-x) up is up
 	i32 leftStartIndex = vIndex; DebugAssert(leftStartIndex == BOX_MESH_LEFT_FACE_INDEX * BOX_MESH_NUM_VERTICES_PER_FACES);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[tlfIndex], V3_Left, NewV2(0, 0), colorsV4[BOX_MESH_LEFT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[tlbIndex], V3_Left, NewV2(1, 0), colorsV4[BOX_MESH_LEFT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[blbIndex], V3_Left, NewV2(1, 1), colorsV4[BOX_MESH_LEFT_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[blfIndex], V3_Left, NewV2(0, 1), colorsV4[BOX_MESH_LEFT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[tlfIndex], V3_Left, MakeV2(0, 0), colorsV4r[BOX_MESH_LEFT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[tlbIndex], V3_Left, MakeV2(1, 0), colorsV4r[BOX_MESH_LEFT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[blbIndex], V3_Left, MakeV2(1, 1), colorsV4r[BOX_MESH_LEFT_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[blfIndex], V3_Left, MakeV2(0, 1), colorsV4r[BOX_MESH_LEFT_FACE_INDEX]);
 	
 	//back face (-z) up is up
 	i32 backStartIndex = vIndex; DebugAssert(backStartIndex == BOX_MESH_BACK_FACE_INDEX * BOX_MESH_NUM_VERTICES_PER_FACES);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[tlbIndex], V3_Backward, NewV2(0, 0), colorsV4[BOX_MESH_BACK_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[trbIndex], V3_Backward, NewV2(1, 0), colorsV4[BOX_MESH_BACK_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[brbIndex], V3_Backward, NewV2(1, 1), colorsV4[BOX_MESH_BACK_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[blbIndex], V3_Backward, NewV2(0, 1), colorsV4[BOX_MESH_BACK_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[tlbIndex], V3_Backward, MakeV2(0, 0), colorsV4r[BOX_MESH_BACK_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[trbIndex], V3_Backward, MakeV2(1, 0), colorsV4r[BOX_MESH_BACK_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[brbIndex], V3_Backward, MakeV2(1, 1), colorsV4r[BOX_MESH_BACK_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[blbIndex], V3_Backward, MakeV2(0, 1), colorsV4r[BOX_MESH_BACK_FACE_INDEX]);
 	
 	//bottom face (-y) backward is up
 	i32 bottomStartIndex = vIndex; DebugAssert(bottomStartIndex == BOX_MESH_BOTTOM_FACE_INDEX * BOX_MESH_NUM_VERTICES_PER_FACES);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[blbIndex], V3_Down, NewV2(0, 0), colorsV4[BOX_MESH_BOTTOM_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[brbIndex], V3_Down, NewV2(1, 0), colorsV4[BOX_MESH_BOTTOM_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[brfIndex], V3_Down, NewV2(1, 1), colorsV4[BOX_MESH_BOTTOM_FACE_INDEX]);
-	result.vertices[vIndex++] = NewVertex3D(vertPositions[blfIndex], V3_Down, NewV2(0, 1), colorsV4[BOX_MESH_BOTTOM_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[blbIndex], V3_Down, MakeV2(0, 0), colorsV4r[BOX_MESH_BOTTOM_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[brbIndex], V3_Down, MakeV2(1, 0), colorsV4r[BOX_MESH_BOTTOM_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[brfIndex], V3_Down, MakeV2(1, 1), colorsV4r[BOX_MESH_BOTTOM_FACE_INDEX]);
+	result.vertices[vIndex++] = MakeVertex3D(vertPositions[blfIndex], V3_Down, MakeV2(0, 1), colorsV4r[BOX_MESH_BOTTOM_FACE_INDEX]);
 	
 	DebugAssert((uxx)vIndex == result.numVertices);
 	
@@ -232,8 +232,8 @@ PEXP GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRi
 	const i32 bottomCenterIndex = 0;
 	const i32 topCenterIndex = (i32)result.numVertices-1;
 	
-	result.vertices[topCenterIndex].position    = NewV3(sphere.X, sphere.Y + sphere.Radius, sphere.Z);
-	result.vertices[bottomCenterIndex].position = NewV3(sphere.X, sphere.Y - sphere.Radius, sphere.Z);
+	result.vertices[topCenterIndex].position    = MakeV3(sphere.X, sphere.Y + sphere.Radius, sphere.Z);
+	result.vertices[bottomCenterIndex].position = MakeV3(sphere.X, sphere.Y - sphere.Radius, sphere.Z);
 	
 	v4r colorV4r = ToV4rFromColor32(color);
 	r32 ringStep = Pi32 / (r32)(numRings+1);
@@ -250,9 +250,9 @@ PEXP GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRi
 			r32 segmentAngle = (sIndex * segmentStep);
 			i32 ringVertIndex = (i32)(1 + (rIndex * numSegments) + sIndex);
 			Assert((uxx)ringVertIndex < result.numVertices);
-			result.vertices[ringVertIndex].position = NewV3(sphere.X + CosR32(segmentAngle) * ringRadius, ringY, sphere.Z + SinR32(segmentAngle) * ringRadius);
+			result.vertices[ringVertIndex].position = MakeV3(sphere.X + CosR32(segmentAngle) * ringRadius, ringY, sphere.Z + SinR32(segmentAngle) * ringRadius);
 			result.vertices[ringVertIndex].normal = NormalizeV3(SubV3(result.vertices[ringVertIndex].position, sphere.Center));
-			result.vertices[ringVertIndex].texCoord = NewV2(1.0f - ((r32)sIndex * texCoordStepX), 1.0f - ((r32)rIndex * texCoordStepY));
+			result.vertices[ringVertIndex].texCoord = MakeV2(1.0f - ((r32)sIndex * texCoordStepX), 1.0f - ((r32)rIndex * texCoordStepY));
 			result.vertices[ringVertIndex].color = colorV4r;
 		}
 	}

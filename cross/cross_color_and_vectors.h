@@ -39,14 +39,18 @@ typedef v4 Colorf;
 	#endif //TARGET_IS_ORCA
 #endif
 
-#define NewColorf(r, g, b, a)   NewV4((r), (g), (b), (a))
+// +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+#define MakeColorf(r, g, b, a)  MakeV4((r), (g), (b), (a))
+#define FillColorf(value)       FillV4(value)
 #define ToColorfFrom32(color32) ToV4FromColor32(color32)
 #define ToColor32Fromf(color)   ToColor32FromV4(color)
 
 #define Colorf_NoColor                 V4_Zero
 #define Colorf_TransparentBlack        V4_Zero
-#define Colorf_Transparent             NewColorf(1.0f, 1.0f, 1.0f, 0.0f)
-#define Colorf_TransparentWhite        NewColorf(1.0f, 1.0f, 1.0f, 0.0f)
+#define Colorf_TransparentWhite        MakeColorf(1.0f, 1.0f, 1.0f, 0.0f)
+#define Colorf_Transparent             Colorf_TransparentWhite
 
 #define TO_LINEAR_FROM_GAMMA_R32(channelValue) (((channelValue) < 0.04045f)   ? (channelValue) * 0.0773993808f :           PowR32((channelValue) * 0.9478672986f + 0.0521327014f, 2.4f))
 #define TO_GAMMA_FROM_LINEAR_R32(channelValue) (((channelValue) < 0.0031308f) ? (channelValue) * 12.92f        : (1.055f * PowR32((channelValue), 0.41666f)) - 0.055f)
@@ -63,7 +67,7 @@ typedef v4 Colorf;
 
 PEXPI v4 ToV4FromColor32(Color32 color)
 {
-	return NewV4(
+	return MakeV4(
 		(r32)color.r / 255.0f,
 		(r32)color.g / 255.0f,
 		(r32)color.b / 255.0f,
@@ -72,7 +76,7 @@ PEXPI v4 ToV4FromColor32(Color32 color)
 }
 PEXPI Color32 ToColor32FromV4(v4 vector)
 {
-	return NewColor(
+	return MakeColor(
 		ClampCastI32ToU8(RoundR32i(vector.X * 255.0f)),
 		ClampCastI32ToU8(RoundR32i(vector.Y * 255.0f)),
 		ClampCastI32ToU8(RoundR32i(vector.Z * 255.0f)),
@@ -82,7 +86,7 @@ PEXPI Color32 ToColor32FromV4(v4 vector)
 
 PEXPI v4r ToV4rFromColor32(Color32 color)
 {
-	return NewV4r(
+	return MakeV4r(
 		(r32)color.r / 255.0f,
 		(r32)color.g / 255.0f,
 		(r32)color.b / 255.0f,
@@ -91,7 +95,7 @@ PEXPI v4r ToV4rFromColor32(Color32 color)
 }
 PEXPI Color32 ToColor32FromV4r(v4r vector)
 {
-	return NewColor(
+	return MakeColor(
 		ClampCastI32ToU8(RoundR32i(vector.X * 255.0f)),
 		ClampCastI32ToU8(RoundR32i(vector.Y * 255.0f)),
 		ClampCastI32ToU8(RoundR32i(vector.Z * 255.0f)),
@@ -113,7 +117,7 @@ PEXPI r32 ToGammaFromLinearR32(r32 channelValue)
 }
 PEXP Colorf ToLinearFromGamma(Colorf color)
 {
-	return NewColorf(
+	return MakeColorf(
 		ToLinearFromGammaR32(color.R),
 		ToLinearFromGammaR32(color.G),
 		ToLinearFromGammaR32(color.B),
@@ -122,7 +126,7 @@ PEXP Colorf ToLinearFromGamma(Colorf color)
 }
 PEXP Colorf ToGammaFromLinear(Colorf color)
 {
-	return NewColorf(
+	return MakeColorf(
 		ToGammaFromLinearR32(color.R),
 		ToGammaFromLinearR32(color.G),
 		ToGammaFromLinearR32(color.B),

@@ -1258,10 +1258,10 @@ PEXPI v2 Get2DCornerVecByIndex(u64 cornerIndex)
 {
 	switch (cornerIndex % 4)
 	{
-		case 0: return NewVec2(0, 0);
-		case 1: return NewVec2(1, 0);
-		case 2: return NewVec2(1, 1);
-		case 3: return NewVec2(0, 1);
+		case 0: return MakeVec2(0, 0);
+		case 1: return MakeVec2(1, 0);
+		case 2: return MakeVec2(1, 1);
+		case 3: return MakeVec2(0, 1);
 		default: Assert(false); return Vec2_Zero;
 	}
 }

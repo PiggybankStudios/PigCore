@@ -106,14 +106,14 @@ PEXPI Str8 StrBuffSlice(StringBuffer* buffer, uxx startIndex, uxx endIndex)
 	Assert(startIndex <= buffer->length);
 	Assert(endIndex <= buffer->length);
 	Assert(endIndex >= startIndex);
-	return NewStr8(endIndex - startIndex, &buffer->chars[startIndex]);
+	return MakeStr8(endIndex - startIndex, &buffer->chars[startIndex]);
 }
 PEXPI Str8 StrBuffSliceFrom(StringBuffer* buffer, uxx startIndex)
 {
 	NotNull(buffer);
 	NotNull(buffer->chars);
 	Assert(startIndex <= buffer->length);
-	return NewStr8(buffer->length - startIndex, &buffer->chars[startIndex]);
+	return MakeStr8(buffer->length - startIndex, &buffer->chars[startIndex]);
 }
 PEXPI Str8 StrBuffSliceLength(StringBuffer* buffer, uxx startIndex, uxx length)
 {
@@ -121,7 +121,7 @@ PEXPI Str8 StrBuffSliceLength(StringBuffer* buffer, uxx startIndex, uxx length)
 	NotNull(buffer->chars);
 	Assert(startIndex <= buffer->length);
 	Assert(startIndex + length <= buffer->length);
-	return NewStr8(length, &buffer->chars[startIndex]);
+	return MakeStr8(length, &buffer->chars[startIndex]);
 }
 
 // +==============================+
@@ -179,7 +179,7 @@ PEXPI void AppendToStrBuffStr(StringBuffer* buffer, Str8 str)
 }
 PEXPI void AppendToStrBuffChar(StringBuffer* buffer, char character)
 {
-	AppendToStrBuffStr(buffer, NewStr8(1, &character));
+	AppendToStrBuffStr(buffer, MakeStr8(1, &character));
 }
 
 //TODO: Add an AnyCase version?

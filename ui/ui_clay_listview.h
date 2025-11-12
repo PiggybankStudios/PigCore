@@ -290,7 +290,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->Y / (scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height), 0.0f, 1.0f);
 				}
 				rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
-				v2 scrollBarSize = NewV2(
+				v2 scrollBarSize = MakeV2(
 					UISCALE_R32(context->uiScale, 8),
 					scrollGutterDrawRec.Height * scrollbarSizePercent
 				);
@@ -302,7 +302,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 					},
 					.floating = {
 						.attachTo = CLAY_ATTACH_TO_PARENT,
-						.offset = NewV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
+						.offset = MakeV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
 					},
 					.backgroundColor = (isScrollbarHovered || list->draggingScrollbar) ? MonokaiWhite : MonokaiLightGray,
 					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),

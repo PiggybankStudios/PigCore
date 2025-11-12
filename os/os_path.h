@@ -21,6 +21,13 @@ Description:
 //NOTE: Although this is named "File" it can also hold a path to a folder too
 typedef Str8 FilePath;
 
+#define MakeFilePath       MakeStr8
+#define MakeFilePathNt     MakeStr8Nt
+#define MakeFilePathChar   MakeStr8Char
+#define FilePathLit        StrLit
+#define FreeFilePath       FreeStr8
+#define FreeFilePathWithNt FreeStr8WithNt
+
 #define FilePath_Empty Str8_Empty
 
 // +--------------------------------------------------------------+
@@ -41,17 +48,6 @@ typedef Str8 FilePath;
 	FilePath ShortenFilePath(Arena* arena, FilePath fullPath, uxx maxNumChars, Str8 ellipsesStr);
 	// Str8 CollapsePathParts(FilePath path);
 #endif //!PIG_CORE_IMPLEMENTATION
-
-// +--------------------------------------------------------------+
-// |                            Macros                            |
-// +--------------------------------------------------------------+
-#define NewFilePath(length, pntr)  (NewStr8((length), (pntr)))
-#define NewFilePathNt(nullTermStr) (NewStr8Nt(nullTermStr))
-#define FilePathLit(nullTermStr)   (StrLit(nullTermStr))
-#define AsFilePath(string)         (string)
-
-#define FreeFilePath(arenaPntr, pathPntr) FreeStr8((arenaPntr), (pathPntr))
-#define FreeFilePathWithNt(arenaPntr, pathPntr) FreeStr8WithNt((arenaPntr), (pathPntr))
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -110,8 +106,8 @@ PEXP Str8 GetFileNamePart(FilePath path, bool includeExtension)
 		if (path.chars[cIndex] == '.' && cIndex < firstPeriodIndex) { firstPeriodIndex = cIndex; }
 	}
 	return includeExtension
-		? NewStr8(path.length - (lastSlashIndex+1), path.chars + lastSlashIndex+1)
-		: NewStr8(firstPeriodIndex - (lastSlashIndex+1), path.chars + lastSlashIndex+1);
+		? MakeStr8(path.length - (lastSlashIndex+1), path.chars + lastSlashIndex+1)
+		: MakeStr8(firstPeriodIndex - (lastSlashIndex+1), path.chars + lastSlashIndex+1);
 }
 //NOTE: "subExtensions" are things like "important" in "file.important.txt"
 PEXP Str8 GetFileExtPart(FilePath path, bool includeSubExtensions, bool includeLeadingPeriod)
@@ -122,10 +118,10 @@ PEXP Str8 GetFileExtPart(FilePath path, bool includeSubExtensions, bool includeL
 		if (path.chars[cIndex] == '/' || path.chars[cIndex] == '\\') { periodIndex = path.length; }
 		if (path.chars[cIndex] == '.' && (!includeSubExtensions || cIndex < periodIndex)) { periodIndex = cIndex; }
 	}
-	if (periodIndex >= path.length) { return NewStr8(0, path.chars + path.length); }
+	if (periodIndex >= path.length) { return MakeStr8(0, path.chars + path.length); }
 	return includeLeadingPeriod
-		? NewStr8(path.length - periodIndex, path.chars + periodIndex)
-		: NewStr8(path.length - (periodIndex+1), path.chars + periodIndex+1);
+		? MakeStr8(path.length - periodIndex, path.chars + periodIndex)
+		: MakeStr8(path.length - (periodIndex+1), path.chars + periodIndex+1);
 }
 //NOTE: If you have a path that is already a folder, this will trim the last part of the path unless there is a trailing slash!
 PEXPI FilePath GetFileFolderPart(FilePath path)
@@ -135,7 +131,7 @@ PEXPI FilePath GetFileFolderPart(FilePath path)
 	{
 		if (path.chars[cIndex] == '/' || path.chars[cIndex] == '\\') { lastSlashIndex = cIndex; }
 	}
-	return NewFilePath(lastSlashIndex < path.length ? lastSlashIndex+1 : lastSlashIndex, path.chars);
+	return MakeFilePath(lastSlashIndex < path.length ? lastSlashIndex+1 : lastSlashIndex, path.chars);
 }
 
 PEXPI bool DoesPathHaveExt(FilePath path)
@@ -183,7 +179,7 @@ PEXP Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
 				{
 					if (currentPartIndex == (uxx)partIndex)
 					{
-						return NewStr8(cIndex - partBegin, path.chars + partBegin);
+						return MakeStr8(cIndex - partBegin, path.chars + partBegin);
 					}
 					else
 					{
@@ -193,7 +189,7 @@ PEXP Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
 				partBegin = cIndex+1;
 			}
 		}
-		return NewStr8(0, path.chars + path.length);
+		return MakeStr8(0, path.chars + path.length);
 	}
 	else //index is from beginning
 	{
@@ -207,7 +203,7 @@ PEXP Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
 				{
 					if (currentPartIndex == (uxx)(-partIndex))
 					{
-						return NewStr8((uxx)((ixx)partBegin - cIndex), path.chars + cIndex);
+						return MakeStr8((uxx)((ixx)partBegin - cIndex), path.chars + cIndex);
 					}
 					else
 					{
@@ -217,7 +213,7 @@ PEXP Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
 				partBegin = cIndex-1;
 			}
 		}
-		return NewStr8(0, path.chars);
+		return MakeStr8(0, path.chars);
 	}
 }
 

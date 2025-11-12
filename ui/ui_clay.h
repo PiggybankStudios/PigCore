@@ -161,7 +161,7 @@ static CLAY_HASH_TEXT_USERDATA_DEF(HashTextUserData)
 // +--------------------------------------------------------------+
 PEXPI ClayId ToClayIdEx(Str8 idStr, uxx index) { Assert(index <= UINT32_MAX); return Clay__HashString(idStr, (uint32_t)index, 0); }
 PEXPI ClayId ToClayId(Str8 idStr) { return ToClayIdEx(idStr, 0); }
-PEXPI ClayId ToClayIdNt(const char* idNullTermString) { return ToClayId(NewStr8Nt(idNullTermString)); }
+PEXPI ClayId ToClayIdNt(const char* idNullTermString) { return ToClayId(MakeStr8Nt(idNullTermString)); }
 
 // +--------------------------------------------------------------+
 // |                   Initialize and Begin/End                   |
@@ -201,7 +201,7 @@ PEXPI void BeginClayUIRender(ClayUI* clay, v2 windowSize, bool isMouseOverOther,
 	Clay_SetLayoutDimensions(windowSize);
 	if (isMouseOverOther)
 	{
-		Clay_SetPointerState(NewV2(-1, -1), false);
+		Clay_SetPointerState(FillV2(-1), false);
 	}
 	else
 	{

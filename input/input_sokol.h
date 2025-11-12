@@ -303,7 +303,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 		// +==============================+
 		case SAPP_EVENTTYPE_MOUSE_SCROLL:
 		{
-			UpdateMouseScroll(mouse, currentTime, NewV2(event->scroll_x, event->scroll_y));
+			UpdateMouseScroll(mouse, currentTime, MakeV2(event->scroll_x, event->scroll_y));
 			handled = true;
 		} break;
 		
@@ -315,11 +315,11 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			if (isMouseLocked)
 			{
 				if (!mouse->isOverWindow) { mouse->isOverWindow = true; } //if the mouse is locked, we assume it's over the window
-				UpdateMouseLockedDelta(mouse, currentTime, NewV2(event->mouse_dx, event->mouse_dy));
+				UpdateMouseLockedDelta(mouse, currentTime, MakeV2(event->mouse_dx, event->mouse_dy));
 			}
 			else
 			{
-				UpdateMousePosition(mouse, currentTime, NewV2(event->mouse_x, event->mouse_y));
+				UpdateMousePosition(mouse, currentTime, MakeV2(event->mouse_x, event->mouse_y));
 				
 				//NOTE: This check is needed because isOverWindow starts as false even if the mouse is inside the window when our application starts.
 				// With this, we consider it inside the window the minute it moves. We don't need to handle mouse leaving the window since we should
@@ -371,7 +371,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 					const sapp_touchpoint* sokolTouch = &event->touches[tIndex];
 					DebugAssert(sokolTouch->identifier < UINT32_MAX);
 					uxx touchId = (uxx)sokolTouch->identifier+1;
-					v2 touchPos = NewV2(sokolTouch->pos_x, sokolTouch->pos_y);
+					v2 touchPos = MakeV2(sokolTouch->pos_x, sokolTouch->pos_y);
 					//TODO: Should we use sokolTouch->android_tooltype (i.e. to check if it's a stylus, mouse, or touch)
 					// PrintLine_W("Finding touch %llu", touchId);
 					TouchState* touch = FindTouchById(touchscreen, touchId);
@@ -403,7 +403,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 					TouchState* touch = FindTouchById(touchscreen, touchId);
 					if (touch != nullptr)
 					{
-						v2 touchPos = NewV2(sokolTouch->pos_x, sokolTouch->pos_y);
+						v2 touchPos = MakeV2(sokolTouch->pos_x, sokolTouch->pos_y);
 						UpdateTouchStatePosition(touch, touchPos, currentTime);
 						if (sokolTouch->changed)
 						{
@@ -434,7 +434,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 					TouchState* touch = FindTouchById(touchscreen, touchId);
 					if (touch != nullptr)
 					{
-						v2 touchPos = NewV2(sokolTouch->pos_x, sokolTouch->pos_y);
+						v2 touchPos = MakeV2(sokolTouch->pos_x, sokolTouch->pos_y);
 						UpdateTouchStatePosition(touch, touchPos, currentTime);
 						if (sokolTouch->changed)
 						{
@@ -462,7 +462,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 					DebugAssert(sokolTouch->identifier < UINT32_MAX);
 					uxx touchId = (uxx)sokolTouch->identifier+1;
 					TouchState* touch = FindTouchById(touchscreen, touchId);
-					if (touch != nullptr) { UpdateTouchStatePosition(touch, NewV2(sokolTouch->pos_x, sokolTouch->pos_y), currentTime); }
+					if (touch != nullptr) { UpdateTouchStatePosition(touch, MakeV2(sokolTouch->pos_x, sokolTouch->pos_y), currentTime); }
 				}
 				handled = true;
 			}

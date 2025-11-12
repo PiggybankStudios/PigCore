@@ -245,8 +245,8 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	systemOut->state.projectionMat = Mat4_Identity;
 	systemOut->state.viewMat = Mat4_Identity;
 	systemOut->state.worldMat = Mat4_Identity;
-	systemOut->state.tintColor = NewV4r(1.0f, 1.0f, 1.0f, 1.0f);
-	systemOut->state.sourceRec = NewV4r(0.0f, 0.0f, 1.0f, 1.0f);
+	systemOut->state.tintColor = FillV4r(1.0f);
+	systemOut->state.sourceRec = MakeV4r(0.0f, 0.0f, 1.0f, 1.0f);
 	
 	Color32 pixel = White;
 	systemOut->pixelTexture = InitTexture(arena, StrLit("pixel"), V2i_One, &pixel, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
@@ -268,11 +268,11 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	{
 		r32 angle0 = (r32)(sIndex+0) * (TwoPi32 / GFX_SYSTEM_CIRCLE_NUM_SIDES);
 		r32 angle1 = (r32)(sIndex+1) * (TwoPi32 / GFX_SYSTEM_CIRCLE_NUM_SIDES);
-		v2 positionAndTexCoord0 = NewV2(0.5f + CosR32(angle0)*0.5f, 0.5f + SinR32(angle0)*0.5f);
-		v2 positionAndTexCoord1 = NewV2(0.5f + CosR32(angle1)*0.5f, 0.5f + SinR32(angle1)*0.5f);
-		circleVertices[sIndex*3 + 0] = NewVertex2D(positionAndTexCoord0, positionAndTexCoord0, NewV4(1, 1, 1, 1));
-		circleVertices[sIndex*3 + 1] = NewVertex2D(positionAndTexCoord1, positionAndTexCoord1, NewV4(1, 1, 1, 1));
-		circleVertices[sIndex*3 + 2] = NewVertex2D(V2_Half, V2_Half, NewV4(1, 1, 1, 1));
+		v2 positionAndTexCoord0 = MakeV2(0.5f + CosR32(angle0)*0.5f, 0.5f + SinR32(angle0)*0.5f);
+		v2 positionAndTexCoord1 = MakeV2(0.5f + CosR32(angle1)*0.5f, 0.5f + SinR32(angle1)*0.5f);
+		circleVertices[sIndex*3 + 0] = MakeVertex2D(positionAndTexCoord0, positionAndTexCoord0, FillV4r(1));
+		circleVertices[sIndex*3 + 1] = MakeVertex2D(positionAndTexCoord1, positionAndTexCoord1, FillV4r(1));
+		circleVertices[sIndex*3 + 2] = MakeVertex2D(V2_Half, V2_Half, FillV4r(1));
 	}
 	systemOut->circleBuffer = InitVertBuffer2D(arena, StrLit("circle"), VertBufferUsage_Static, ArrayCount(circleVertices), &circleVertices[0], false);
 	Assert(systemOut->circleBuffer.error == Result_Success);
@@ -286,16 +286,16 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 		{
 			r32 angle0 = (r32)(sIndex+0) * (TwoPi32 / GFX_SYSTEM_RING_NUM_SIDES);
 			r32 angle1 = (r32)(sIndex+1) * (TwoPi32 / GFX_SYSTEM_RING_NUM_SIDES);
-			v2 positionAndTexCoordInner0 = NewV2(0.5f + CosR32(angle0)*innerRadius, 0.5f + SinR32(angle0)*innerRadius);
-			v2 positionAndTexCoordOuter0 = NewV2(0.5f + CosR32(angle0)*outerRadius, 0.5f + SinR32(angle0)*outerRadius);
-			v2 positionAndTexCoordInner1 = NewV2(0.5f + CosR32(angle1)*innerRadius, 0.5f + SinR32(angle1)*innerRadius);
-			v2 positionAndTexCoordOuter1 = NewV2(0.5f + CosR32(angle1)*outerRadius, 0.5f + SinR32(angle1)*outerRadius);
-			ringVertices[sIndex*6 + 0] = NewVertex2D(positionAndTexCoordInner0, positionAndTexCoordInner0, NewV4(1, 1, 1, 1));
-			ringVertices[sIndex*6 + 1] = NewVertex2D(positionAndTexCoordOuter0, positionAndTexCoordOuter0, NewV4(1, 1, 1, 1));
-			ringVertices[sIndex*6 + 2] = NewVertex2D(positionAndTexCoordOuter1, positionAndTexCoordOuter1, NewV4(1, 1, 1, 1));
-			ringVertices[sIndex*6 + 3] = NewVertex2D(positionAndTexCoordInner0, positionAndTexCoordInner0, NewV4(1, 1, 1, 1));
-			ringVertices[sIndex*6 + 4] = NewVertex2D(positionAndTexCoordOuter1, positionAndTexCoordOuter1, NewV4(1, 1, 1, 1));
-			ringVertices[sIndex*6 + 5] = NewVertex2D(positionAndTexCoordInner1, positionAndTexCoordInner1, NewV4(1, 1, 1, 1));
+			v2 positionAndTexCoordInner0 = MakeV2(0.5f + CosR32(angle0)*innerRadius, 0.5f + SinR32(angle0)*innerRadius);
+			v2 positionAndTexCoordOuter0 = MakeV2(0.5f + CosR32(angle0)*outerRadius, 0.5f + SinR32(angle0)*outerRadius);
+			v2 positionAndTexCoordInner1 = MakeV2(0.5f + CosR32(angle1)*innerRadius, 0.5f + SinR32(angle1)*innerRadius);
+			v2 positionAndTexCoordOuter1 = MakeV2(0.5f + CosR32(angle1)*outerRadius, 0.5f + SinR32(angle1)*outerRadius);
+			ringVertices[sIndex*6 + 0] = MakeVertex2D(positionAndTexCoordInner0, positionAndTexCoordInner0, FillV4r(1));
+			ringVertices[sIndex*6 + 1] = MakeVertex2D(positionAndTexCoordOuter0, positionAndTexCoordOuter0, FillV4r(1));
+			ringVertices[sIndex*6 + 2] = MakeVertex2D(positionAndTexCoordOuter1, positionAndTexCoordOuter1, FillV4r(1));
+			ringVertices[sIndex*6 + 3] = MakeVertex2D(positionAndTexCoordInner0, positionAndTexCoordInner0, FillV4r(1));
+			ringVertices[sIndex*6 + 4] = MakeVertex2D(positionAndTexCoordOuter1, positionAndTexCoordOuter1, FillV4r(1));
+			ringVertices[sIndex*6 + 5] = MakeVertex2D(positionAndTexCoordInner1, positionAndTexCoordInner1, FillV4r(1));
 		}
 		systemOut->ringBuffers[tIndex] = InitVertBuffer2D(arena, ScratchPrintStr("ring%llu", (u64)tIndex+1), VertBufferUsage_Static, ArrayCount(ringVertices), &ringVertices[0], false);
 		Assert(systemOut->ringBuffers[tIndex].error == Result_Success);
@@ -392,8 +392,8 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 	
 	sg_apply_viewport(0, 0, (int)screenSize.Width, (int)screenSize.Height, true);
 	
-	system->state.clipRec = NewReciV(V2i_Zero, screenSize);
-	system->state.textBackgroundColor = NewColorU32(0x00000000);
+	system->state.clipRec = MakeReciV(V2i_Zero, screenSize);
+	system->state.textBackgroundColor = NoColor;
 	system->screenSize = screenSize;
 	
 	system->state.shader = nullptr;
@@ -620,7 +620,7 @@ PEXPI reci GfxSystem_AddClipRec(GfxSystem* system, reci clipRec)
 	}
 	return oldClipRec;
 }
-PEXPI void GfxSystem_DisableClipRec(GfxSystem* system) { GfxSystem_SetClipRec(system, NewReciV(V2i_Zero, system->screenSize)); }
+PEXPI void GfxSystem_DisableClipRec(GfxSystem* system) { GfxSystem_SetClipRec(system, MakeReciV(V2i_Zero, system->screenSize)); }
 
 PEXPI void GfxSystem_SetColorWriteEnabled(GfxSystem* system, bool colorWriteEnabled)
 {
@@ -780,7 +780,7 @@ PEXP void GfxSystem_DrawTexturedRectangleEx(GfxSystem* system, rec rectangle, Co
 }
 PEXPI void GfxSystem_DrawTexturedRectangle(GfxSystem* system, rec rectangle, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
+	rec sourceRec = (texture != nullptr) ? MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
 	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawRectangle(GfxSystem* system, rec rectangle, Color32 color)
@@ -792,7 +792,7 @@ PEXPI void GfxSystem_DrawTexturedRectangleOutlineSidesEx(GfxSystem* system, rec 
 {
 	if (outside)
 	{
-		rec inflatedRec = NewRec(rectangle.X - leftThickness, rectangle.Y - topThickness, rectangle.Width + leftThickness + rightThickness, rectangle.Height + topThickness + bottomThickness);
+		rec inflatedRec = MakeRec(rectangle.X - leftThickness, rectangle.Y - topThickness, rectangle.Width + leftThickness + rightThickness, rectangle.Height + topThickness + bottomThickness);
 		GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, inflatedRec, leftThickness, rightThickness, topThickness, bottomThickness, color, false, texture, sourceRec);
 		return;
 	}
@@ -808,28 +808,28 @@ PEXPI void GfxSystem_DrawTexturedRectangleOutlineSidesEx(GfxSystem* system, rec 
 	}
 	if (topThickness > 0) //Top Side
 	{
-		rec sideRec = NewRec(rectangle.X, rectangle.Y, rectangle.Width, topThickness);
+		rec sideRec = MakeRec(rectangle.X, rectangle.Y, rectangle.Width, topThickness);
 		GfxSystem_DrawTexturedRectangleEx(system, sideRec, color, texture, RelativeRec(rectangle, sideRec, sourceRec));
 	}
 	if (bottomThickness > 0) //Bottom Side
 	{
-		rec sideRec = NewRec(rectangle.X, rectangle.Y + rectangle.Height - bottomThickness, rectangle.Width, bottomThickness);
+		rec sideRec = MakeRec(rectangle.X, rectangle.Y + rectangle.Height - bottomThickness, rectangle.Width, bottomThickness);
 		GfxSystem_DrawTexturedRectangleEx(system, sideRec, color, texture, RelativeRec(rectangle, sideRec, sourceRec));
 	}
 	if (leftThickness > 0) //Left Side
 	{
-		rec sideRec = NewRec(rectangle.X, rectangle.Y + topThickness, leftThickness, rectangle.Height - (topThickness+bottomThickness));
+		rec sideRec = MakeRec(rectangle.X, rectangle.Y + topThickness, leftThickness, rectangle.Height - (topThickness+bottomThickness));
 		GfxSystem_DrawTexturedRectangleEx(system, sideRec, color, texture, RelativeRec(rectangle, sideRec, sourceRec));
 	}
 	if (rightThickness > 0) //Right Side
 	{
-		rec sideRec = NewRec(rectangle.X + rectangle.Width - rightThickness, rectangle.Y + topThickness, rightThickness, rectangle.Height - (topThickness+bottomThickness));
+		rec sideRec = MakeRec(rectangle.X + rectangle.Width - rightThickness, rectangle.Y + topThickness, rightThickness, rectangle.Height - (topThickness+bottomThickness));
 		GfxSystem_DrawTexturedRectangleEx(system, sideRec, color, texture, RelativeRec(rectangle, sideRec, sourceRec));
 	}
 }
 PEXPI void GfxSystem_DrawTexturedRectangleOutlineSides(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
+	rec sourceRec = (texture != nullptr) ? MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
 	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, leftThickness, rightThickness, topThickness, bottomThickness, color, true, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawTexturedRectangleOutlineEx(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, bool outside, Texture* texture, rec sourceRec)
@@ -838,7 +838,7 @@ PEXPI void GfxSystem_DrawTexturedRectangleOutlineEx(GfxSystem* system, rec recta
 }
 PEXPI void GfxSystem_DrawTexturedRectangleOutline(GfxSystem* system, rec rectangle, r32 borderThickness, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
+	rec sourceRec = (texture != nullptr) ? MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
 	GfxSystem_DrawTexturedRectangleOutlineSidesEx(system, rectangle, borderThickness, borderThickness, borderThickness, borderThickness, color, true, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawRectangleOutlineSidesEx(GfxSystem* system, rec rectangle, r32 leftThickness, r32 rightThickness, r32 topThickness, r32 bottomThickness, Color32 color, bool outside)
@@ -885,7 +885,7 @@ PEXPI void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Col
 }
 PEXPI void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
+	rec sourceRec = (texture != nullptr) ? MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
 	GfxSystem_DrawTexturedObb2Ex(system, boundingBox, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color)
@@ -897,9 +897,9 @@ PEXPI void GfxSystem_DrawLine(GfxSystem* system, v2 startPos, v2 endPos, r32 thi
 {
 	if (AreEqualV2(startPos, endPos)) { return; }
 	v2 lineMidpoint = Div(Add(startPos, endPos), 2.0f);
-	v2 lineSize = NewV2(LengthV2(Sub(endPos, startPos)), thickness);
+	v2 lineSize = MakeV2(LengthV2(Sub(endPos, startPos)), thickness);
 	r32 lineRotation = AtanR32(endPos.Y - startPos.Y, endPos.X - startPos.X);
-	obb2 lineBox = NewObb2V(lineMidpoint, lineSize, lineRotation);
+	obb2 lineBox = MakeObb2V(lineMidpoint, lineSize, lineRotation);
 	GfxSystem_DrawObb2(system, lineBox, color);
 }
 
@@ -951,7 +951,7 @@ PEXP void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, 
 }
 PEXPI void GfxSystem_DrawTexturedCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
+	rec sourceRec = (texture != nullptr) ? MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
 	GfxSystem_DrawTexturedCirclePieceEx(system, circle, angleMin, angleMax, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawTexturedCircleEx(GfxSystem* system, Circle circle, Color32 color, Texture* texture, rec sourceRec)
@@ -960,7 +960,7 @@ PEXPI void GfxSystem_DrawTexturedCircleEx(GfxSystem* system, Circle circle, Colo
 }
 PEXPI void GfxSystem_DrawTexturedCircle(GfxSystem* system, Circle circle, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
+	rec sourceRec = (texture != nullptr) ? MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
 	GfxSystem_DrawTexturedCirclePieceEx(system, circle, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color)
@@ -984,53 +984,53 @@ PEXP void GfxSystem_DrawTexturedRoundedRectangleEx(GfxSystem* system, rec rectan
 	{
 		if (radiusTL > 0 || radiusTR > 0) //Top Rec
 		{
-			rec sideRec = NewRec(rectangle.X + radiusTL, rectangle.Y, rectangle.Width - radiusTR - radiusTL, MaxR32(radiusTR, radiusTL));
+			rec sideRec = MakeRec(rectangle.X + radiusTL, rectangle.Y, rectangle.Width - radiusTR - radiusTL, MaxR32(radiusTR, radiusTL));
 			GfxSystem_DrawTexturedRectangleEx(system, sideRec, color, texture, RelativeRec(rectangle, sideRec, sourceRec));
 		}
 		if (radiusBL > 0 || radiusBR > 0) //Bottom Rec
 		{
-			rec sideRec = NewRec(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - MaxR32(radiusBL, radiusBR), rectangle.Width - radiusBR - radiusBL, MaxR32(radiusBL, radiusBR));
+			rec sideRec = MakeRec(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - MaxR32(radiusBL, radiusBR), rectangle.Width - radiusBR - radiusBL, MaxR32(radiusBL, radiusBR));
 			GfxSystem_DrawTexturedRectangleEx(system, sideRec, color, texture, RelativeRec(rectangle, sideRec, sourceRec));
 		}
 		if (radiusTL > 0 || radiusBL > 0) //Left Rec
 		{
-			rec sideRec = NewRec(rectangle.X, rectangle.Y + radiusTL, MaxR32(radiusTL, radiusBL), rectangle.Height - radiusBL - radiusTL);
+			rec sideRec = MakeRec(rectangle.X, rectangle.Y + radiusTL, MaxR32(radiusTL, radiusBL), rectangle.Height - radiusBL - radiusTL);
 			GfxSystem_DrawTexturedRectangleEx(system, sideRec, color, texture, RelativeRec(rectangle, sideRec, sourceRec));
 		}
 		if (radiusTR > 0 || radiusBR > 0) //Right Rec
 		{
-			rec sideRec = NewRec(rectangle.X + rectangle.Width - MaxR32(radiusTR, radiusBR), rectangle.Y + radiusTR, MaxR32(radiusTR, radiusBR), rectangle.Height - radiusBR - radiusTR);
+			rec sideRec = MakeRec(rectangle.X + rectangle.Width - MaxR32(radiusTR, radiusBR), rectangle.Y + radiusTR, MaxR32(radiusTR, radiusBR), rectangle.Height - radiusBR - radiusTR);
 			GfxSystem_DrawTexturedRectangleEx(system, sideRec, color, texture, RelativeRec(rectangle, sideRec, sourceRec));
 		}
 		
 		if (!isDegenerate) //Center Rec
 		{
-			rec centerRec = NewRec(rectangle.X + MaxR32(radiusTL, radiusBL), rectangle.Y + MaxR32(radiusTL, radiusTR), rectangle.Width - MaxR32(radiusTL, radiusBL) - MaxR32(radiusTR, radiusBR), rectangle.Height - MaxR32(radiusTL, radiusTR) - MaxR32(radiusBL, radiusBR));
+			rec centerRec = MakeRec(rectangle.X + MaxR32(radiusTL, radiusBL), rectangle.Y + MaxR32(radiusTL, radiusTR), rectangle.Width - MaxR32(radiusTL, radiusBL) - MaxR32(radiusTR, radiusBR), rectangle.Height - MaxR32(radiusTL, radiusTR) - MaxR32(radiusBL, radiusBR));
 			GfxSystem_DrawTexturedRectangleEx(system, centerRec, color, texture, RelativeRec(rectangle, centerRec, sourceRec));
 		}
 		
 		if (radiusBR > 0) //BottomRight Quarter Circle
 		{
-			Circle cornerCircle = NewCircle(rectangle.X + rectangle.Width - radiusBR, rectangle.Y + rectangle.Height - radiusBR, radiusBR);
-			rec cornerFullCircleRec = NewRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			Circle cornerCircle = MakeCircle(rectangle.X + rectangle.Width - radiusBR, rectangle.Y + rectangle.Height - radiusBR, radiusBR);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
 			GfxSystem_DrawTexturedCirclePieceEx(system, cornerCircle, 0, HalfPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusBL > 0) //BottomLeft Quarter Circle
 		{
-			Circle cornerCircle = NewCircle(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - radiusBL, radiusBL);
-			rec cornerFullCircleRec = NewRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			Circle cornerCircle = MakeCircle(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - radiusBL, radiusBL);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
 			GfxSystem_DrawTexturedCirclePieceEx(system, cornerCircle, HalfPi32, Pi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusTL > 0) //TopLeft Quarter Circle
 		{
-			Circle cornerCircle = NewCircle(rectangle.X + radiusTL, rectangle.Y + radiusTL, radiusTL);
-			rec cornerFullCircleRec = NewRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			Circle cornerCircle = MakeCircle(rectangle.X + radiusTL, rectangle.Y + radiusTL, radiusTL);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
 			GfxSystem_DrawTexturedCirclePieceEx(system, cornerCircle, Pi32, ThreeHalfsPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusTR > 0) //TopRight Quarter Circle
 		{
-			Circle cornerCircle = NewCircle(rectangle.X + rectangle.Width - radiusTR, rectangle.Y + radiusTR, radiusTR);
-			rec cornerFullCircleRec = NewRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			Circle cornerCircle = MakeCircle(rectangle.X + rectangle.Width - radiusTR, rectangle.Y + radiusTR, radiusTR);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
 			GfxSystem_DrawTexturedCirclePieceEx(system, cornerCircle, ThreeHalfsPi32, TwoPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 	}
@@ -1111,7 +1111,7 @@ PEXP void GfxSystem_DrawTexturedRingPieceEx(GfxSystem* system, Circle circle, r3
 }
 PEXPI void GfxSystem_DrawTexturedRingPiece(GfxSystem* system, Circle circle, r32 thickness, r32 angleMin, r32 angleMax, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
+	rec sourceRec = (texture != nullptr) ? MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
 	GfxSystem_DrawTexturedRingPieceEx(system, circle, thickness, angleMin, angleMax, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawTexturedRingEx(GfxSystem* system, Circle circle, r32 thickness, Color32 color, Texture* texture, rec sourceRec)
@@ -1120,7 +1120,7 @@ PEXPI void GfxSystem_DrawTexturedRingEx(GfxSystem* system, Circle circle, r32 th
 }
 PEXPI void GfxSystem_DrawTexturedRing(GfxSystem* system, Circle circle, r32 thickness, Color32 color, Texture* texture)
 {
-	rec sourceRec = (texture != nullptr) ? NewRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
+	rec sourceRec = (texture != nullptr) ? MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height) : Rec_Zero;
 	GfxSystem_DrawTexturedRingPieceEx(system, circle, thickness, 0, TwoPi32-DEFAULT_R32_TOLERANCE, color, texture, sourceRec);
 }
 PEXPI void GfxSystem_DrawRingPiece(GfxSystem* system, Circle circle, r32 thickness, r32 angleMin, r32 angleMax, Color32 color)
@@ -1141,7 +1141,7 @@ PEXP void GfxSystem_DrawTexturedRoundedRectangleOutlineEx(GfxSystem* system, rec
 		if (radiusTR > 0) { radiusTR += thickness; }
 		if (radiusBR > 0) { radiusBR += thickness; }
 		if (radiusBL > 0) { radiusBL += thickness; }
-		GfxSystem_DrawTexturedRoundedRectangleOutlineEx(system, NewRec(rectangle.X - thickness, rectangle.Y - thickness, rectangle.Width + thickness*2, rectangle.Height + thickness*2), thickness, radiusTL, radiusTR, radiusBR, radiusBL, color, false, texture, sourceRec);
+		GfxSystem_DrawTexturedRoundedRectangleOutlineEx(system, MakeRec(rectangle.X - thickness, rectangle.Y - thickness, rectangle.Width + thickness*2, rectangle.Height + thickness*2), thickness, radiusTL, radiusTR, radiusBR, radiusBL, color, false, texture, sourceRec);
 		return;
 	}
 	if (radiusTL + radiusBL > rectangle.Height) { radiusTL = rectangle.Height/2; radiusBL = rectangle.Height/2; }
@@ -1150,37 +1150,37 @@ PEXP void GfxSystem_DrawTexturedRoundedRectangleOutlineEx(GfxSystem* system, rec
 	if (radiusBL + radiusBR > rectangle.Width) { radiusBL = rectangle.Width/2; radiusBR = rectangle.Width/2; }
 	if (radiusTL != 0 || radiusTR != 0 || radiusBL != 0 || radiusBR != 0)
 	{
-		rec topRec = NewRec(rectangle.X + radiusTL, rectangle.Y, rectangle.Width - radiusTR - radiusTL, thickness);
+		rec topRec = MakeRec(rectangle.X + radiusTL, rectangle.Y, rectangle.Width - radiusTR - radiusTL, thickness);
 		GfxSystem_DrawTexturedRectangleEx(system, topRec, color, texture, RelativeRec(rectangle, topRec, sourceRec)); //top side
-		rec leftRec = NewRec(rectangle.X, rectangle.Y + radiusTL, thickness, rectangle.Height - radiusBL - radiusTL);
+		rec leftRec = MakeRec(rectangle.X, rectangle.Y + radiusTL, thickness, rectangle.Height - radiusBL - radiusTL);
 		GfxSystem_DrawTexturedRectangleEx(system, leftRec, color, texture, RelativeRec(rectangle, leftRec, sourceRec)); //left side
-		rec bottomRec = NewRec(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - thickness, rectangle.Width - radiusBR - radiusBL, thickness);
+		rec bottomRec = MakeRec(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - thickness, rectangle.Width - radiusBR - radiusBL, thickness);
 		GfxSystem_DrawTexturedRectangleEx(system, bottomRec, color, texture, RelativeRec(rectangle, bottomRec, sourceRec)); //bottom side
-		rec rightRec = NewRec(rectangle.X + rectangle.Width - thickness, rectangle.Y + radiusTR, thickness, rectangle.Height - radiusBR - radiusTR);
+		rec rightRec = MakeRec(rectangle.X + rectangle.Width - thickness, rectangle.Y + radiusTR, thickness, rectangle.Height - radiusBR - radiusTR);
 		GfxSystem_DrawTexturedRectangleEx(system, rightRec, color, texture, RelativeRec(rectangle, rightRec, sourceRec)); //right side
 		
 		if (radiusBR > 0) //BottomRight Ring Piece
 		{
-			Circle cornerCircle = NewCircle(rectangle.X + rectangle.Width - radiusBR, rectangle.Y + rectangle.Height - radiusBR, radiusBR);
-			rec cornerFullCircleRec = NewRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			Circle cornerCircle = MakeCircle(rectangle.X + rectangle.Width - radiusBR, rectangle.Y + rectangle.Height - radiusBR, radiusBR);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
 			GfxSystem_DrawTexturedRingPieceEx(system, cornerCircle, thickness, 0, HalfPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusBL > 0) //BottomLeft Ring Piece
 		{
-			Circle cornerCircle = NewCircle(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - radiusBL, radiusBL);
-			rec cornerFullCircleRec = NewRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			Circle cornerCircle = MakeCircle(rectangle.X + radiusBL, rectangle.Y + rectangle.Height - radiusBL, radiusBL);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
 			GfxSystem_DrawTexturedRingPieceEx(system, cornerCircle, thickness, HalfPi32, Pi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusTL > 0) //TopLeft Ring Piece
 		{
-			Circle cornerCircle = NewCircle(rectangle.X + radiusTL, rectangle.Y + radiusTL, radiusTL);
-			rec cornerFullCircleRec = NewRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			Circle cornerCircle = MakeCircle(rectangle.X + radiusTL, rectangle.Y + radiusTL, radiusTL);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
 			GfxSystem_DrawTexturedRingPieceEx(system, cornerCircle, thickness, Pi32, ThreeHalfsPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusTR > 0) //TopRight Ring Piece
 		{
-			Circle cornerCircle = NewCircle(rectangle.X + rectangle.Width - radiusTR, rectangle.Y + radiusTR, radiusTR);
-			rec cornerFullCircleRec = NewRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			Circle cornerCircle = MakeCircle(rectangle.X + rectangle.Width - radiusTR, rectangle.Y + radiusTR, radiusTR);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.X - cornerCircle.R, cornerCircle.Y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
 			GfxSystem_DrawTexturedRingPieceEx(system, cornerCircle, thickness, ThreeHalfsPi32, TwoPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 	}
@@ -1224,7 +1224,7 @@ PEXPI void GfxSystem_ClearDepthBuffer(GfxSystem* system, r32 clearDepth)
 	GfxSystem_SetCullingEnabled(system, false);
 	GfxSystem_SetDepth(system, clearDepth);
 	
-	GfxSystem_DrawRectangle(system, NewRec(-1, -1, 2, 2), MonokaiPurple);
+	GfxSystem_DrawRectangle(system, Rec_UnitRec, MonokaiPurple);
 	
 	GfxSystem_SetDepth(system, oldDepth);
 	GfxSystem_SetCullingEnabled(system, oldCullingEnabled);
@@ -1261,7 +1261,7 @@ FONT_FLOW_DRAW_CHAR_DEF(GfxSystem_FontFlowDrawCharCallback)
 		drawColor = state->backgroundColor;
 	}
 	CommitFontAtlasTextureUpdates(state->font, atlas);
-	rec atlasSourceRec = ToRecFromi(NewReciV(glyph->atlasSourcePos, glyph->metrics.glyphSize));
+	rec atlasSourceRec = ToRecFromi(MakeReciV(glyph->atlasSourcePos, glyph->metrics.glyphSize));
 	GfxSystem_DrawTexturedRectangleEx(system, glyphDrawRec, drawColor, &atlas->texture, atlasSourceRec);
 }
 

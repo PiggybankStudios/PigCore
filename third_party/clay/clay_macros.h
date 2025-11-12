@@ -34,7 +34,7 @@ Description:
 #define CLAY_IDI_LOCAL(label, index) Clay__HashString(CLAY_STRING(label), index, Clay__GetParentElementId())
 
 // Note: If an error led you here, it's because CLAY_STRING can only be used with string literals, i.e. CLAY_STRING("SomeString") and not CLAY_STRING(yourString)
-#define CLAY_STRING(stringLiteral) NewStr8(StrLitLength(CheckStrLit(stringLiteral)), (stringLiteral))
+#define CLAY_STRING(stringLiteral) MakeStr8(StrLitLength(CheckStrLit(stringLiteral)), (stringLiteral))
 #define CLAY_STRING_CONST(string) { .length = StrLitLength(CheckStrLit(string)), .chars = (string) }
 
 /* This macro looks scary on the surface, but is actually quite simple.

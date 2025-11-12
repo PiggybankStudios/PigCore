@@ -48,22 +48,22 @@ plex TwoPassStr8
 	u8 pass;
 	uxx index; //reset on each pass, tracks current calculated size or current write index into str.chars
 };
+#define MakeTwoPassStr8Ex(arenaPntr, addNullTermBool, strValue, passValue, indexValue) NEW_STRUCT(TwoPassStr8){ .arena=(arenaPntr), .addNullTerm=(addNullTermBool), .str=(strValue), .pass=(passValue), .index=(indexValue) }
+#define MakeTwoPassStr8(arenaPntr, addNullTermBool) MakeTwoPassStr8Ex((arenaPntr), (addNullTermBool), Str8_Empty, 0, 0)
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE TwoPassStr8 NewTwoPassStr8(Arena* arena, bool addNullTerm);
 	void TwoPassPrint(TwoPassStr8* twoPassStrPntr, const char* formatString, ...);
 #endif
 
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define TwoPassStr8_Empty       NewTwoPassStr8(nullptr, false)
-#define TwoPassStr8_Empty_Const { .arena=nullptr, .addNullTerm=false, .str=Str8_Empty_Const, .pass=0, .index=0 }
+#define TwoPassStr8_Empty MakeTwoPassStr8(nullptr, false)
 
-#define TwoPassStr8Loop(structName, arenaPntr, addNullTerm) TwoPassStr8 structName = NewTwoPassStr8((arenaPntr), (addNullTerm)); \
+#define TwoPassStr8Loop(structName, arenaPntr, addNullTerm) TwoPassStr8 structName = MakeTwoPassStr8((arenaPntr), (addNullTerm)); \
 	for (structName.pass = 0, structName.index = 0; structName.pass < 2; structName.pass++, structName.index = 0)
 
 #define TwoPassStr8LoopEnd(twoPassStrPntr) do {                                                                                                            \
@@ -137,14 +137,6 @@ plex TwoPassStr8
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
-
-PEXPI TwoPassStr8 NewTwoPassStr8(Arena* arena, bool addNullTerm)
-{
-	TwoPassStr8 result = TwoPassStr8_Empty_Const;
-	result.arena = arena;
-	result.addNullTerm = addNullTerm;
-	return result;
-}
 
 // Sometimes we want to do a single memory allocation for a collection of strings
 // TwoPassPrint is meant to be put inside a loop that runs twice, first pass it only

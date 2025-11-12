@@ -27,6 +27,8 @@ plex LineParser
 	Str8 inputStr;
 	//TODO: Should we add support for Streams again?
 };
+#define MakeLineParserEx(byteIndexValue, lineBeginByteIndexValue, lineIndexValue, inputStrValue) NEW_STRUCT(LineParser){ .byteIndex=(byteIndexValue), .lineBeginByteIndex=(lineBeginByteIndexValue), .lineIndex=(lineIndexValue), .inputStr=(inputStrValue) }
+#define MakeLineParser(inputStr) MakeLineParserEx(0, 0, 0, (inputStr))
 
 typedef enum ParsingTokenType ParsingTokenType;
 enum ParsingTokenType
@@ -63,6 +65,8 @@ plex ParsingToken
 	Str8 key;
 	Str8 value;
 };
+#define MakeParsingToken(typeValue, strValue, keyStr, valueStr) NEW_STRUCT(ParsingToken){ .type=(typeValue), .str=(strVale) .key=(keyStr), .value=(valueStr) }
+
 typedef plex TextParser TextParser;
 plex TextParser
 {
@@ -71,13 +75,13 @@ plex TextParser
 	uxx byteIndex;
 	bool noComments;
 };
+#define MakeTextParserEx(lineParserValue, currentLineValue, byteIndexValue, noCommentsValue) NEW_STRUCT(TextParser){ .lineParser=(lineParserValue), .currentLine=(currentLineValue), .byteIndex=(byteIndexValue), .noComments=(noCommentsValue) }
+#define MakeTextParser(inputStr) MakeTextParserEx(MakeLineParser(inputStr), Str8_Empty, 0, false)
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE LineParser NewLineParser(Str8 inputStr);
-	PIG_CORE_INLINE TextParser NewTextParser(Str8 inputStr);
 	bool LineParserGetLine(LineParser* parser, Str8* lineOut);
 	PIG_CORE_INLINE bool LineParserIsFinished(const LineParser* parser);
 	bool TextParserGetToken(TextParser* parser, ParsingToken* tokenOut);
@@ -89,28 +93,9 @@ plex TextParser
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI LineParser NewLineParser(Str8 inputStr)
-{
-	NotNullStr(inputStr);
-	LineParser result = ZEROED;
-	result.byteIndex = 0;
-	result.lineIndex = 0;
-	result.inputStr = inputStr;
-	return result;
-}
-
-PEXPI TextParser NewTextParser(Str8 inputStr)
-{
-	NotNullStr(inputStr);
-	TextParser result = ZEROED;
-	result.lineParser = NewLineParser(inputStr);
-	result.noComments = false;
-	return result;
-}
-
 /*
 Usage Example:
-LineParser lineParser = NewLineParser(fileContents);
+LineParser lineParser = MakeLineParser(fileContents);
 Str8 line = Str8_Empty;
 while (LineParserGetLine(&lineParser, &line))
 {
@@ -152,7 +137,7 @@ PEXP bool LineParserGetLine(LineParser* parser, Str8* lineOut)
 		}
 	}
 	
-	Str8 line = NewStr8(parser->byteIndex - startIndex, &parser->inputStr.chars[startIndex]);
+	Str8 line = MakeStr8(parser->byteIndex - startIndex, &parser->inputStr.chars[startIndex]);
 	parser->byteIndex += endOfLineByteSize;
 	SetOptionalOutPntr(lineOut, line);
 	return true;

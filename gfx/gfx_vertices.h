@@ -11,6 +11,7 @@ Description:
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_macros.h"
 #include "struct/struct_vectors.h"
 
 #define MAX_NUM_VERT_ATTRIBUTES    8
@@ -86,6 +87,7 @@ car Vertex2D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Vertex2D) == sizeof(r32)*8, "Vertex2D contains padding!");
 #endif
+#define MakeVertex2D(positionV2, texCoordV2, colorV4r) NEW_STRUCT(Vertex2D){ .position=(positionV2), .texCoord=(texCoordV2), .color=(colorV4r) }
 
 typedef car Vertex3D Vertex3D;
 car Vertex3D
@@ -109,49 +111,17 @@ car Vertex3D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Vertex3D) == sizeof(r32)*12, "Vertex3D contains padding!");
 #endif
+#define MakeVertex3D(positionV3, normalV3, texCoordV2, colorV4r) NEW_STRUCT(Vertex3D){ .position=(positionV3), .normal=(normalV3), .texCoord=(texCoordV2), .color=(colorV4r) }
 
 // +--------------------------------------------------------------+
-// |                 Header Function Declarations                 |
+// |                           Defines                            |
 // +--------------------------------------------------------------+
-#if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE Vertex2D NewVertex2D(v2 position, v2 texCoord, v4 color);
-	PIG_CORE_INLINE Vertex3D NewVertex3D(v3 position, v3 normal, v2 texCoord, v4 color);
-#endif
-
 #define Vertex2D_Size       sizeof(Vertex2D)
 #define Vertex2D_NumFloats  (sizeof(Vertex2D)/sizeof(r32))
-#define Vertex2D_Zero       NewVertex2D(V2_Zero_Const, V2_Zero_Const, V4_Zero_Const)
-#define Vertex2D_Zero_Const { .position = V2_Zero_Const, .texCoord = V2_Zero_Const, .color = V4_Zero_Const }
+#define Vertex2D_Zero       MakeVertex2D(V2_Zero, V2_Zero, V4r_Zero)
 
 #define Vertex3D_Size       sizeof(Vertex3D)
 #define Vertex3D_NumFloats  (sizeof(Vertex3D)/sizeof(r32))
-#define Vertex3D_Zero       NewVertex3D(V3_Zero_Const, V3_Zero_Const, V2_Zero_Const, V4_Zero_Const)
-#define Vertex3D_Zero_Const { .position = V3_Zero_Const, .normal = V3_Zero_Const, .texCoord = V2_Zero_Const, .color = V4_Zero_Const }
-
-// +--------------------------------------------------------------+
-// |                   Function Implementations                   |
-// +--------------------------------------------------------------+
-#if PIG_CORE_IMPLEMENTATION
-
-PEXPI Vertex2D NewVertex2D(v2 position, v2 texCoord, v4 color)
-{
-	Vertex2D result;
-	result.position = position;
-	result.texCoord = texCoord;
-	result.color = ToV4rFrom4(color);
-	return result;
-}
-
-PEXPI Vertex3D NewVertex3D(v3 position, v3 normal, v2 texCoord, v4 color)
-{
-	Vertex3D result;
-	result.position = position;
-	result.normal = normal;
-	result.texCoord = texCoord;
-	result.color = ToV4rFrom4(color);
-	return result;
-}
-
-#endif //PIG_CORE_IMPLEMENTATION
+#define Vertex3D_Zero       MakeVertex3D(V3_Zero, V3_Zero, V2_Zero, V4r_Zero)
 
 #endif //  _GFX_VERTICES_H

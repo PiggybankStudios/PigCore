@@ -14,6 +14,7 @@ Description:
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_macros.h"
 #include "std/std_includes.h"
 #include "std/std_basic_math.h"
 #include "std/std_math_ex.h"
@@ -23,55 +24,12 @@ Description:
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
 // +--------------------------------------------------------------+
-typedef car Vec2i Vec2i;
-car Vec2i
-{
-	plex { i32 X, Y; };
-	plex { i32 U, V; };
-	plex { i32 Left, Right; };
-	plex { i32 Width, Height; };
-	i32 Elements[2];
-};
-
-typedef car Vec3i Vec3i;
-car Vec3i
-{
-	plex { i32 X, Y, Z; };
-	plex { i32 U, V, W; };
-	plex { i32 R, G, B; };
-	plex { Vec2i XY; i32 _Ignored0; };
-	plex { i32 _Ignored1; Vec2i YZ; };
-	plex { Vec2i UV; i32 _Ignored2; };
-	plex { i32 _Ignored3; Vec2i VW; };
-	i32 Elements[3];
-};
-
-typedef car Vec4i Vec4i;
-car Vec4i
-{
-	plex
-	{
-		car
-		{
-			Vec3i XYZ;
-			plex { i32 X, Y, Z; };
-		};
-		i32 W;
-	};
-	plex
-	{
-		car
-		{
-			Vec3i RGB;
-			plex { i32 R, G, B; };
-		};
-		i32 A;
-	};
-	plex { Vec2i XY; i32 _Ignored0; i32 _Ignored1; };
-	plex { i32 _Ignored2; Vec2i YZ; i32 _Ignored3; };
-	plex { i32 _Ignored4; i32 _Ignored5; Vec2i ZW; };
-	i32 Elements[4];
-};
+#define MakeV2(x, y)       NEW_STRUCT(HMM_Vec2){ .X=(x), .Y=(y) }
+#define MakeV3(x, y, z)    NEW_STRUCT(HMM_Vec3){ .X=(x), .Y=(y), .Z=(z) }
+#define MakeV4(x, y, z, w) NEW_STRUCT(HMM_Vec4){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define FillV2(value)      MakeV2((value), (value))
+#define FillV3(value)      MakeV3((value), (value), (value))
+#define FillV4(value)      MakeV4((value), (value), (value), (value))
 
 //NOTE: Vec4Raw is exactly the same as HMM_Vec4 but it doesn't include the SSE type __m128
 //      which means it's alignment is 4 instead of 16! HMM_Vec4 is the only HMM vector
@@ -105,6 +63,64 @@ car Vec4Raw
 	plex { r32 _Ignored4; r32 _Ignored5; HMM_Vec2 ZW; };
 
 };
+#define MakeV4r(x, y, z, w) NEW_STRUCT(Vec4Raw){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define FillV4r(value) MakeV4r((value), (value), (value), (value))
+
+typedef car Vec2i Vec2i;
+car Vec2i
+{
+	plex { i32 X, Y; };
+	plex { i32 U, V; };
+	plex { i32 Left, Right; };
+	plex { i32 Width, Height; };
+	i32 Elements[2];
+};
+#define MakeV2i(x, y) NEW_STRUCT(Vec2i){ .X=(x), .Y=(y) }
+#define FillV2i(value) MakeV2i((value), (value))
+
+typedef car Vec3i Vec3i;
+car Vec3i
+{
+	plex { i32 X, Y, Z; };
+	plex { i32 U, V, W; };
+	plex { i32 R, G, B; };
+	plex { Vec2i XY; i32 _Ignored0; };
+	plex { i32 _Ignored1; Vec2i YZ; };
+	plex { Vec2i UV; i32 _Ignored2; };
+	plex { i32 _Ignored3; Vec2i VW; };
+	i32 Elements[3];
+};
+#define MakeV3i(x, y, z) NEW_STRUCT(Vec3i){ .X=(x), .Y=(y), .Z=(z) }
+#define FillV3i(value) MakeV3i((value), (value), (value))
+
+typedef car Vec4i Vec4i;
+car Vec4i
+{
+	plex
+	{
+		car
+		{
+			Vec3i XYZ;
+			plex { i32 X, Y, Z; };
+		};
+		i32 W;
+	};
+	plex
+	{
+		car
+		{
+			Vec3i RGB;
+			plex { i32 R, G, B; };
+		};
+		i32 A;
+	};
+	plex { Vec2i XY; i32 _Ignored0; i32 _Ignored1; };
+	plex { i32 _Ignored2; Vec2i YZ; i32 _Ignored3; };
+	plex { i32 _Ignored4; i32 _Ignored5; Vec2i ZW; };
+	i32 Elements[4];
+};
+#define MakeV4i(x, y, z, w) NEW_STRUCT(Vec4i){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define FillV4i(value) MakeV4i((value), (value), (value), (value))
 
 typedef car Vec2R64 Vec2R64;
 car Vec2R64
@@ -116,6 +132,8 @@ car Vec2R64
 	plex { r64 Lon, Lat; };
 	plex { r64 Longitude, Latitude; };
 };
+#define MakeV2d(x, y) NEW_STRUCT(Vec2R64){ .X=(x), .Y=(y) }
+#define FillV2d(value) MakeV2d((value), (value))
 
 typedef car Vec3R64 Vec3R64;
 car Vec3R64
@@ -130,6 +148,8 @@ car Vec3R64
 	plex { r64 _Ignored4; Vec2R64 VW; };
 	plex { r64 Width, Height, Depth; };
 };
+#define MakeV3d(x, y, z) NEW_STRUCT(Vec3R64){ .X=(x), .Y=(y), .Z=(z) }
+#define FillV3d(value) MakeV3d((value), (value), (value))
 
 typedef car Vec4R64 Vec4R64;
 car Vec4R64
@@ -157,6 +177,8 @@ car Vec4R64
 	plex { r64 _Ignored2; Vec2R64 YZ; r64 _Ignored3; };
 	plex { r64 _Ignored4; r64 _Ignored5; Vec2R64 ZW; };
 };
+#define MakeV4d(x, y, z, w) NEW_STRUCT(Vec4R64){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define FillV4d(value) MakeV4d((value), (value), (value), (value))
 
 //NOTE: The default assumption for vectors is r32 members
 //    'i' suffix refers to "integer" members and implicitly means 32-bit (unsigned and 64-bit integers are not yet supported)
@@ -243,13 +265,6 @@ plex Vec4R64Slice
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE v2d NewV2d(r64 x, r64 y);
-	PIG_CORE_INLINE v2i NewV2i(i32 x, i32 y);
-	PIG_CORE_INLINE v3d NewV3d(r64 x, r64 y, r64 z);
-	PIG_CORE_INLINE v3i NewV3i(i32 x, i32 y, i32 z);
-	PIG_CORE_INLINE v4d NewV4d(r64 x, r64 y, r64 z, r64 w);
-	PIG_CORE_INLINE v4i NewV4i(i32 x, i32 y, i32 z, i32 w);
-	PIG_CORE_INLINE v4r NewV4r(r32 x, r32 y, r32 z, r32 w);
 	PIG_CORE_INLINE v2 ToV2Fromi(v2i vec2i);
 	PIG_CORE_INLINE v2d ToV2dFromi(v2i vec2i);
 	PIG_CORE_INLINE v2d ToV2dFromf(v2 vec2);
@@ -459,30 +474,15 @@ plex Vec4R64Slice
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define NewV2(x, y)       HMM_V2((x), (y))
-#define NewV3(x, y, z)    HMM_V3((x), (y), (z))
-#define NewV4(x, y, z, w) HMM_V4((x), (y), (z), (w))
-
-#define MakeV2(x, y)         NEW_STRUCT(v2){ .X=(x), .Y=(y) }
-#define MakeV2i(x, y)       NEW_STRUCT(v2i){ .X=(x), .Y=(y) }
-#define MakeV2d(x, y)       NEW_STRUCT(v2d){ .X=(x), .Y=(y) }
-#define MakeV3(x, y, z)      NEW_STRUCT(v3){ .X=(x), .Y=(y), .Z=(z) }
-#define MakeV3i(x, y, z)    NEW_STRUCT(v3i){ .X=(x), .Y=(y), .Z=(z) }
-#define MakeV3d(x, y, z)    NEW_STRUCT(v3d){ .X=(x), .Y=(y), .Z=(z) }
-#define MakeV4(x, y, z, w)   NEW_STRUCT(v4){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define MakeV4r(x, y, z, w) NEW_STRUCT(v4r){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define MakeV4i(x, y, z, w) NEW_STRUCT(v4i){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define MakeV4d(x, y, z, w) NEW_STRUCT(v4d){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-
-#define FillV2(value)  MakeV2((value), (value))
-#define FillV2i(value) MakeV2i((value), (value))
-#define FillV2d(value) MakeV2d((value), (value))
-#define FillV3(value)  MakeV3((value), (value), (value))
-#define FillV3i(value) MakeV3i((value), (value), (value))
-#define FillV3d(value) MakeV3d((value), (value), (value))
-#define FillV4(value)  MakeV4((value), (value), (value), (value))
-#define FillV4i(value) MakeV4i((value), (value), (value), (value))
-#define FillV4d(value) MakeV4d((value), (value), (value), (value))
+#define COORD2D_FROM_INDEX(index, arrayWidth, arrayHeight) MakeV2i( \
+	COORD2D_X_FROM_INDEX((index), (arrayWidth), (arrayHeight)),     \
+	COORD2D_Y_FROM_INDEX((index), (arrayWidth), (arrayHeight))      \
+)
+#define COORD3D_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth) MakeV3i( \
+	(i32)COORD3D_X_FROM_INDEX(voxelIndex, arrayWidth),                               \
+	(i32)COORD3D_Y_FROM_INDEX(voxelIndex, arrayWidth, arrayDepth),                   \
+	(i32)COORD3D_Z_FROM_INDEX(voxelIndex, arrayWidth, arrayHeight, arrayDepth)       \
+)
 
 #define ToV4From3(vec3, w) HMM_V4V((vec3), (w))
 
@@ -627,6 +627,22 @@ plex Vec4R64Slice
 #define V4_Prevward  MakeV4( 0.0f,  0.0f,  0.0f, -1.0f)
 #define V4_Nextward  MakeV4( 0.0f,  0.0f,  0.0f,  1.0f)
 
+#define V4r_Zero      MakeV4r( 0.0f,  0.0f,  0.0f,  0.0f)
+#define V4r_One       MakeV4r( 1.0f,  1.0f,  1.0f,  1.0f)
+#define V4r_Half      MakeV4r( 0.5f,  0.5f,  0.5f,  0.5f)
+#define V4r_Left      MakeV4r(-1.0f,  0.0f,  0.0f,  0.0f)
+#define V4r_Right     MakeV4r( 1.0f,  0.0f,  0.0f,  0.0f)
+#define V4r_Bottom    MakeV4r( 0.0f, -1.0f,  0.0f,  0.0f)
+#define V4r_Top       MakeV4r( 0.0f,  1.0f,  0.0f,  0.0f)
+#define V4r_Back      MakeV4r( 0.0f,  0.0f, -1.0f,  0.0f)
+#define V4r_Front     MakeV4r( 0.0f,  0.0f,  1.0f,  0.0f)
+#define V4r_Down      MakeV4r( 0.0f, -1.0f,  0.0f,  0.0f)
+#define V4r_Up        MakeV4r( 0.0f,  1.0f,  0.0f,  0.0f)
+#define V4r_Backward  MakeV4r( 0.0f,  0.0f, -1.0f,  0.0f)
+#define V4r_Forward   MakeV4r( 0.0f,  0.0f,  1.0f,  0.0f)
+#define V4r_Prevward  MakeV4r( 0.0f,  0.0f,  0.0f, -1.0f)
+#define V4r_Nextward  MakeV4r( 0.0f,  0.0f,  0.0f,  1.0f)
+
 #define V4i_Zero      MakeV4i( 0,  0,  0,  0)
 #define V4i_One       MakeV4i( 1,  1,  1,  0)
 #define V4i_Left      MakeV4i(-1,  0,  0,  0)
@@ -663,62 +679,54 @@ plex Vec4R64Slice
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI v2d NewV2d(r64 x, r64 y) { v2d result; result.X = x; result.Y = y; return result; }
-PEXPI v2i NewV2i(i32 x, i32 y) { v2i result; result.X = x; result.Y = y; return result; }
-PEXPI v3d NewV3d(r64 x, r64 y, r64 z) { v3d result; result.X = x; result.Y = y; result.Z = z; return result; }
-PEXPI v3i NewV3i(i32 x, i32 y, i32 z) { v3i result; result.X = x; result.Y = y; result.Z = z; return result; }
-PEXPI v4d NewV4d(r64 x, r64 y, r64 z, r64 w) { v4d result; result.X = x; result.Y = y; result.Z = z; result.W = w; return result; }
-PEXPI v4i NewV4i(i32 x, i32 y, i32 z, i32 w) { v4i result; result.X = x; result.Y = y; result.Z = z; result.W = w; return result; }
-PEXPI v4r NewV4r(r32 x, r32 y, r32 z, r32 w) { v4r result; result.X = x; result.Y = y; result.Z = z; result.W = w; return result; }
-
 // +--------------------------------------------------------------+
 // |                 Simple Conversions and Casts                 |
 // +--------------------------------------------------------------+
-PEXPI v2 ToV2Fromi(v2i vec2i) { return NewV2((r32)vec2i.X, (r32)vec2i.Y); }
-PEXPI v2d ToV2dFromi(v2i vec2i) { return NewV2d((r64)vec2i.X, (r64)vec2i.Y); }
-PEXPI v2d ToV2dFromf(v2 vec2) { return NewV2d((r64)vec2.X, (r64)vec2.Y); }
-PEXPI v2 ToV2Fromd(v2d vec2d) { return NewV2((r32)vec2d.X, (r32)vec2d.Y); }
-PEXPI v2 ToV2From3(v3 vec3) { return NewV2(vec3.X, vec3.Y); }
-PEXPI v2 ToV2From3XZ(v3 vec3) { return NewV2(vec3.X, vec3.Z); }
-PEXPI v2 ToV2From3YZ(v3 vec3) { return NewV2(vec3.Y, vec3.Z); }
-PEXPI v2i ToV2iFrom3(v3i vec3i) { return NewV2i(vec3i.X, vec3i.Y); }
-PEXPI v2i ToV2iFrom3XZ(v3i vec3i) { return NewV2i(vec3i.X, vec3i.Z); }
-PEXPI v2i ToV2iFrom3YZ(v3i vec3i) { return NewV2i(vec3i.Y, vec3i.Z); }
+PEXPI v2 ToV2Fromi(v2i vec2i) { return MakeV2((r32)vec2i.X, (r32)vec2i.Y); }
+PEXPI v2d ToV2dFromi(v2i vec2i) { return MakeV2d((r64)vec2i.X, (r64)vec2i.Y); }
+PEXPI v2d ToV2dFromf(v2 vec2) { return MakeV2d((r64)vec2.X, (r64)vec2.Y); }
+PEXPI v2 ToV2Fromd(v2d vec2d) { return MakeV2((r32)vec2d.X, (r32)vec2d.Y); }
+PEXPI v2 ToV2From3(v3 vec3) { return MakeV2(vec3.X, vec3.Y); }
+PEXPI v2 ToV2From3XZ(v3 vec3) { return MakeV2(vec3.X, vec3.Z); }
+PEXPI v2 ToV2From3YZ(v3 vec3) { return MakeV2(vec3.Y, vec3.Z); }
+PEXPI v2i ToV2iFrom3(v3i vec3i) { return MakeV2i(vec3i.X, vec3i.Y); }
+PEXPI v2i ToV2iFrom3XZ(v3i vec3i) { return MakeV2i(vec3i.X, vec3i.Z); }
+PEXPI v2i ToV2iFrom3YZ(v3i vec3i) { return MakeV2i(vec3i.Y, vec3i.Z); }
 
-PEXPI v3 ToV3Fromi(v3i vec3i) { return NewV3((r32)vec3i.X, (r32)vec3i.Y, (r32)vec3i.Z); }
-PEXPI v3d ToV3dFromi(v3i vec3i) { return NewV3d((r64)vec3i.X, (r64)vec3i.Y, (r64)vec3i.Z); }
-PEXPI v3d ToV3dFromf(v3 vec3) { return NewV3d((r64)vec3.X, (r64)vec3.Y, (r64)vec3.Z); }
-PEXPI v3 ToV3Fromd(v3d vec3d) { return NewV3((r32)vec3d.X, (r32)vec3d.Y, (r32)vec3d.Z); }
-PEXPI v3 ToV3From2(v2 vec2, r32 z) { return NewV3(vec2.X, vec2.Y, z); }
-PEXPI v3 ToV3From2XZ(v2 vec2, r32 y) { return NewV3(vec2.X, y, vec2.Y); }
-PEXPI v3 ToV3From4(v4 vec4) { return NewV3(vec4.X, vec4.Y, vec4.Z); }
-PEXPI v3i ToV3iFrom2(v2i vec2i, i32 z) { return NewV3i(vec2i.X, vec2i.Y, z); }
-PEXPI v3i ToV3iFrom2XZ(v2i vec2i, i32 y) { return NewV3i(vec2i.X, y, vec2i.Y); }
-PEXPI v3i ToV3iFrom4(v4i vec4i) { return NewV3i(vec4i.X, vec4i.Y, vec4i.Z); }
+PEXPI v3 ToV3Fromi(v3i vec3i) { return MakeV3((r32)vec3i.X, (r32)vec3i.Y, (r32)vec3i.Z); }
+PEXPI v3d ToV3dFromi(v3i vec3i) { return MakeV3d((r64)vec3i.X, (r64)vec3i.Y, (r64)vec3i.Z); }
+PEXPI v3d ToV3dFromf(v3 vec3) { return MakeV3d((r64)vec3.X, (r64)vec3.Y, (r64)vec3.Z); }
+PEXPI v3 ToV3Fromd(v3d vec3d) { return MakeV3((r32)vec3d.X, (r32)vec3d.Y, (r32)vec3d.Z); }
+PEXPI v3 ToV3From2(v2 vec2, r32 z) { return MakeV3(vec2.X, vec2.Y, z); }
+PEXPI v3 ToV3From2XZ(v2 vec2, r32 y) { return MakeV3(vec2.X, y, vec2.Y); }
+PEXPI v3 ToV3From4(v4 vec4) { return MakeV3(vec4.X, vec4.Y, vec4.Z); }
+PEXPI v3i ToV3iFrom2(v2i vec2i, i32 z) { return MakeV3i(vec2i.X, vec2i.Y, z); }
+PEXPI v3i ToV3iFrom2XZ(v2i vec2i, i32 y) { return MakeV3i(vec2i.X, y, vec2i.Y); }
+PEXPI v3i ToV3iFrom4(v4i vec4i) { return MakeV3i(vec4i.X, vec4i.Y, vec4i.Z); }
 
-PEXPI v4 ToV4Fromi(v4i vec4i) { return NewV4((r32)vec4i.X, (r32)vec4i.Y, (r32)vec4i.Z, (r32)vec4i.W); }
-PEXPI v4d ToV4dFromi(v4i vec4i) { return NewV4d((r64)vec4i.X, (r64)vec4i.Y, (r64)vec4i.Z, (r64)vec4i.W); }
-PEXPI v4d ToV4dFromf(v4 vec4) { return NewV4d((r64)vec4.X, (r64)vec4.Y, (r64)vec4.Z, (r64)vec4.W); }
-PEXPI v4 ToV4Fromd(v4d vec4d) { return NewV4((r32)vec4d.X, (r32)vec4d.Y, (r32)vec4d.Z, (r32)vec4d.W); }
-PEXPI v4i ToV4iFrom3(v3i vec3i, i32 w) { return NewV4i(vec3i.X, vec3i.Y, vec3i.Z, w); }
-PEXPI v4r ToV4rFrom4(v4 vec4) { return NewV4r(vec4.X, vec4.Y, vec4.Z, vec4.W); }
-PEXPI v4 ToV4Fromr(v4r vec4r) { return NewV4(vec4r.X, vec4r.Y, vec4r.Z, vec4r.W); }
+PEXPI v4 ToV4Fromi(v4i vec4i) { return MakeV4((r32)vec4i.X, (r32)vec4i.Y, (r32)vec4i.Z, (r32)vec4i.W); }
+PEXPI v4d ToV4dFromi(v4i vec4i) { return MakeV4d((r64)vec4i.X, (r64)vec4i.Y, (r64)vec4i.Z, (r64)vec4i.W); }
+PEXPI v4d ToV4dFromf(v4 vec4) { return MakeV4d((r64)vec4.X, (r64)vec4.Y, (r64)vec4.Z, (r64)vec4.W); }
+PEXPI v4 ToV4Fromd(v4d vec4d) { return MakeV4((r32)vec4d.X, (r32)vec4d.Y, (r32)vec4d.Z, (r32)vec4d.W); }
+PEXPI v4i ToV4iFrom3(v3i vec3i, i32 w) { return MakeV4i(vec3i.X, vec3i.Y, vec3i.Z, w); }
+PEXPI v4r ToV4rFrom4(v4 vec4) { return MakeV4r(vec4.X, vec4.Y, vec4.Z, vec4.W); }
+PEXPI v4 ToV4Fromr(v4r vec4r) { return MakeV4(vec4r.X, vec4r.Y, vec4r.Z, vec4r.W); }
 
 #if TARGET_IS_ORCA
 PEXPI oc_vec2 ToOcVec2(v2 vector) { return NEW_STRUCT(oc_vec2){ .x = vector.X, .y = vector.Y }; }
-PEXPI v2 ToV2FromOc(oc_vec2 orcaVector) { return NewV2(orcaVector.x, orcaVector.y); }
+PEXPI v2 ToV2FromOc(oc_vec2 orcaVector) { return MakeV2(orcaVector.x, orcaVector.y); }
 
 PEXPI oc_vec2i ToOcVec2i(v2i vector) { return NEW_STRUCT(oc_vec2i){ .x = vector.X, .y = vector.Y }; }
-PEXPI v2i ToV2iFromOc(oc_vec2i orcaVector) { return NewV2i(orcaVector.x, orcaVector.y); }
+PEXPI v2i ToV2iFromOc(oc_vec2i orcaVector) { return MakeV2i(orcaVector.x, orcaVector.y); }
 
 PEXPI oc_vec3 ToOcVec3(v3 vector) { return NEW_STRUCT(oc_vec3){ .x = vector.X, .y = vector.Y, .z = vector.Z }; }
-PEXPI v3 ToV3FromOc(oc_vec3 orcaVector) { return NewV3(orcaVector.x, orcaVector.y, orcaVector.z); }
+PEXPI v3 ToV3FromOc(oc_vec3 orcaVector) { return MakeV3(orcaVector.x, orcaVector.y, orcaVector.z); }
 
 PEXPI oc_vec4 ToOcVec4(v4 vector) { return NEW_STRUCT(oc_vec4){ .x = vector.X, .y = vector.Y, .z = vector.Z, .w = vector.W }; }
-PEXPI v4 ToV4FromOc(oc_vec4 orcaVector) { return NewV4(orcaVector.x, orcaVector.y, orcaVector.z, orcaVector.w); }
+PEXPI v4 ToV4FromOc(oc_vec4 orcaVector) { return MakeV4(orcaVector.x, orcaVector.y, orcaVector.z, orcaVector.w); }
 
 PEXPI oc_color ToOcColorFromV4r(v4r colorVec) { return NEW_STRUCT(oc_color){ .r = colorVec.X, .g = colorVec.Y, .b = colorVec.Z, .a = colorVec.W }; }
-PEXPI v4r ToV4rFromOcColor(oc_color orcaColor) { return NewV4r(orcaColor.r, orcaColor.g, orcaColor.b, orcaColor.a); }
+PEXPI v4r ToV4rFromOcColor(oc_color orcaColor) { return MakeV4r(orcaColor.r, orcaColor.g, orcaColor.b, orcaColor.a); }
 #endif //TARGET_IS_ORCA
 
 // +--------------------------------------------------------------+
@@ -784,8 +792,8 @@ PEXPI r64 DotV2d(v2d left, v2d right) { return (left.X * right.X) + (left.Y * ri
 PEXPI r64 DotV3d(v3d left, v3d right) { return (left.X * right.X) + (left.Y * right.Y) + (left.Z * right.Z); }
 PEXPI r64 DotV4d(v4d left, v4d right) { return (left.X * right.X) + (left.Y * right.Y) + (left.Z * right.Z) + (left.W * right.W); }
 
-PEXPI v3i CrossV3i(v3i left, v3i right) { return NewV3i(left.Y*right.Z - left.Z*right.Y, left.Z*right.X - left.X*right.Z, left.X*right.Y - left.Y*right.X); }
-PEXPI v3d CrossV3d(v3d left, v3d right) { return NewV3d(left.Y*right.Z - left.Z*right.Y, left.Z*right.X - left.X*right.Z, left.X*right.Y - left.Y*right.X); }
+PEXPI v3i CrossV3i(v3i left, v3i right) { return MakeV3i(left.Y*right.Z - left.Z*right.Y, left.Z*right.X - left.X*right.Z, left.X*right.Y - left.Y*right.X); }
+PEXPI v3d CrossV3d(v3d left, v3d right) { return MakeV3d(left.Y*right.Z - left.Z*right.Y, left.Z*right.X - left.X*right.Z, left.X*right.Y - left.Y*right.X); }
 
 PEXPI i32 LengthSquaredV2i(v2i vec2i) { return DotV2i(vec2i, vec2i); }
 PEXPI i32 LengthSquaredV3i(v3i vec3i) { return DotV3i(vec3i, vec3i); }
@@ -816,99 +824,99 @@ PEXPI v4d LerpV4d(v4d start, v4d end, r64 amount) { return AddV4d(ScaleV4d(start
 // They actually take floating point vector types, even though the name reads like
 // functions that take integer vector types. They RETURN integer vector types, and
 // that's what the i suffix is meant to convey.
-PEXPI v2 FloorV2(v2 vec2) { return NewV2(FloorR32(vec2.X), FloorR32(vec2.Y)); }
-PEXPI v3 FloorV3(v3 vec3) { return NewV3(FloorR32(vec3.X), FloorR32(vec3.Y), FloorR32(vec3.Z)); }
-PEXPI v4 FloorV4(v4 vec4) { return NewV4(FloorR32(vec4.X), FloorR32(vec4.Y), FloorR32(vec4.Z), FloorR32(vec4.W)); }
-PEXPI v2i FloorV2i(v2 vec2) { return NewV2i(FloorR32i(vec2.X), FloorR32i(vec2.Y)); }
-PEXPI v3i FloorV3i(v3 vec3) { return NewV3i(FloorR32i(vec3.X), FloorR32i(vec3.Y), FloorR32i(vec3.Z)); }
-PEXPI v4i FloorV4i(v4 vec4) { return NewV4i(FloorR32i(vec4.X), FloorR32i(vec4.Y), FloorR32i(vec4.Z), FloorR32i(vec4.W)); }
-PEXPI v2d FloorV2d(v2d vec2d) { return NewV2d(FloorR64(vec2d.X), FloorR64(vec2d.Y)); }
-PEXPI v3d FloorV3d(v3d vec3d) { return NewV3d(FloorR64(vec3d.X), FloorR64(vec3d.Y), FloorR64(vec3d.Z)); }
-PEXPI v4d FloorV4d(v4d vec4d) { return NewV4d(FloorR64(vec4d.X), FloorR64(vec4d.Y), FloorR64(vec4d.Z), FloorR64(vec4d.W)); }
-PEXPI v2i FloorV2di(v2d vec2d) { return NewV2i((i32)FloorR64i(vec2d.X), (i32)FloorR64i(vec2d.Y)); }
-PEXPI v3i FloorV3di(v3d vec3d) { return NewV3i((i32)FloorR64i(vec3d.X), (i32)FloorR64i(vec3d.Y), (i32)FloorR64i(vec3d.Z)); }
-PEXPI v4i FloorV4di(v4d vec4d) { return NewV4i((i32)FloorR64i(vec4d.X), (i32)FloorR64i(vec4d.Y), (i32)FloorR64i(vec4d.Z), (i32)FloorR64i(vec4d.W)); }
+PEXPI v2 FloorV2(v2 vec2) { return MakeV2(FloorR32(vec2.X), FloorR32(vec2.Y)); }
+PEXPI v3 FloorV3(v3 vec3) { return MakeV3(FloorR32(vec3.X), FloorR32(vec3.Y), FloorR32(vec3.Z)); }
+PEXPI v4 FloorV4(v4 vec4) { return MakeV4(FloorR32(vec4.X), FloorR32(vec4.Y), FloorR32(vec4.Z), FloorR32(vec4.W)); }
+PEXPI v2i FloorV2i(v2 vec2) { return MakeV2i(FloorR32i(vec2.X), FloorR32i(vec2.Y)); }
+PEXPI v3i FloorV3i(v3 vec3) { return MakeV3i(FloorR32i(vec3.X), FloorR32i(vec3.Y), FloorR32i(vec3.Z)); }
+PEXPI v4i FloorV4i(v4 vec4) { return MakeV4i(FloorR32i(vec4.X), FloorR32i(vec4.Y), FloorR32i(vec4.Z), FloorR32i(vec4.W)); }
+PEXPI v2d FloorV2d(v2d vec2d) { return MakeV2d(FloorR64(vec2d.X), FloorR64(vec2d.Y)); }
+PEXPI v3d FloorV3d(v3d vec3d) { return MakeV3d(FloorR64(vec3d.X), FloorR64(vec3d.Y), FloorR64(vec3d.Z)); }
+PEXPI v4d FloorV4d(v4d vec4d) { return MakeV4d(FloorR64(vec4d.X), FloorR64(vec4d.Y), FloorR64(vec4d.Z), FloorR64(vec4d.W)); }
+PEXPI v2i FloorV2di(v2d vec2d) { return MakeV2i((i32)FloorR64i(vec2d.X), (i32)FloorR64i(vec2d.Y)); }
+PEXPI v3i FloorV3di(v3d vec3d) { return MakeV3i((i32)FloorR64i(vec3d.X), (i32)FloorR64i(vec3d.Y), (i32)FloorR64i(vec3d.Z)); }
+PEXPI v4i FloorV4di(v4d vec4d) { return MakeV4i((i32)FloorR64i(vec4d.X), (i32)FloorR64i(vec4d.Y), (i32)FloorR64i(vec4d.Z), (i32)FloorR64i(vec4d.W)); }
 
-PEXPI v2 CeilV2(v2 vec2) { return NewV2(CeilR32(vec2.X), CeilR32(vec2.Y)); }
-PEXPI v3 CeilV3(v3 vec3) { return NewV3(CeilR32(vec3.X), CeilR32(vec3.Y), CeilR32(vec3.Z)); }
-PEXPI v4 CeilV4(v4 vec4) { return NewV4(CeilR32(vec4.X), CeilR32(vec4.Y), CeilR32(vec4.Z), CeilR32(vec4.W)); }
-PEXPI v2i CeilV2i(v2 vec2) { return NewV2i(CeilR32i(vec2.X), CeilR32i(vec2.Y)); }
-PEXPI v3i CeilV3i(v3 vec3) { return NewV3i(CeilR32i(vec3.X), CeilR32i(vec3.Y), CeilR32i(vec3.Z)); }
-PEXPI v4i CeilV4i(v4 vec4) { return NewV4i(CeilR32i(vec4.X), CeilR32i(vec4.Y), CeilR32i(vec4.Z), CeilR32i(vec4.W)); }
-PEXPI v2d CeilV2d(v2d vec2d) { return NewV2d(CeilR64(vec2d.X), CeilR64(vec2d.Y)); }
-PEXPI v3d CeilV3d(v3d vec3d) { return NewV3d(CeilR64(vec3d.X), CeilR64(vec3d.Y), CeilR64(vec3d.Z)); }
-PEXPI v4d CeilV4d(v4d vec4d) { return NewV4d(CeilR64(vec4d.X), CeilR64(vec4d.Y), CeilR64(vec4d.Z), CeilR64(vec4d.W)); }
-PEXPI v2i CeilV2di(v2d vec2d) { return NewV2i((i32)CeilR64i(vec2d.X), (i32)CeilR64i(vec2d.Y)); }
-PEXPI v3i CeilV3di(v3d vec3d) { return NewV3i((i32)CeilR64i(vec3d.X), (i32)CeilR64i(vec3d.Y), (i32)CeilR64i(vec3d.Z)); }
-PEXPI v4i CeilV4di(v4d vec4d) { return NewV4i((i32)CeilR64i(vec4d.X), (i32)CeilR64i(vec4d.Y), (i32)CeilR64i(vec4d.Z), (i32)CeilR64i(vec4d.W)); }
+PEXPI v2 CeilV2(v2 vec2) { return MakeV2(CeilR32(vec2.X), CeilR32(vec2.Y)); }
+PEXPI v3 CeilV3(v3 vec3) { return MakeV3(CeilR32(vec3.X), CeilR32(vec3.Y), CeilR32(vec3.Z)); }
+PEXPI v4 CeilV4(v4 vec4) { return MakeV4(CeilR32(vec4.X), CeilR32(vec4.Y), CeilR32(vec4.Z), CeilR32(vec4.W)); }
+PEXPI v2i CeilV2i(v2 vec2) { return MakeV2i(CeilR32i(vec2.X), CeilR32i(vec2.Y)); }
+PEXPI v3i CeilV3i(v3 vec3) { return MakeV3i(CeilR32i(vec3.X), CeilR32i(vec3.Y), CeilR32i(vec3.Z)); }
+PEXPI v4i CeilV4i(v4 vec4) { return MakeV4i(CeilR32i(vec4.X), CeilR32i(vec4.Y), CeilR32i(vec4.Z), CeilR32i(vec4.W)); }
+PEXPI v2d CeilV2d(v2d vec2d) { return MakeV2d(CeilR64(vec2d.X), CeilR64(vec2d.Y)); }
+PEXPI v3d CeilV3d(v3d vec3d) { return MakeV3d(CeilR64(vec3d.X), CeilR64(vec3d.Y), CeilR64(vec3d.Z)); }
+PEXPI v4d CeilV4d(v4d vec4d) { return MakeV4d(CeilR64(vec4d.X), CeilR64(vec4d.Y), CeilR64(vec4d.Z), CeilR64(vec4d.W)); }
+PEXPI v2i CeilV2di(v2d vec2d) { return MakeV2i((i32)CeilR64i(vec2d.X), (i32)CeilR64i(vec2d.Y)); }
+PEXPI v3i CeilV3di(v3d vec3d) { return MakeV3i((i32)CeilR64i(vec3d.X), (i32)CeilR64i(vec3d.Y), (i32)CeilR64i(vec3d.Z)); }
+PEXPI v4i CeilV4di(v4d vec4d) { return MakeV4i((i32)CeilR64i(vec4d.X), (i32)CeilR64i(vec4d.Y), (i32)CeilR64i(vec4d.Z), (i32)CeilR64i(vec4d.W)); }
 
-PEXPI v2 RoundV2(v2 vec2) { return NewV2(RoundR32(vec2.X), RoundR32(vec2.Y)); }
-PEXPI v3 RoundV3(v3 vec3) { return NewV3(RoundR32(vec3.X), RoundR32(vec3.Y), RoundR32(vec3.Z)); }
-PEXPI v4 RoundV4(v4 vec4) { return NewV4(RoundR32(vec4.X), RoundR32(vec4.Y), RoundR32(vec4.Z), RoundR32(vec4.W)); }
-PEXPI v2i RoundV2i(v2 vec2) { return NewV2i(RoundR32i(vec2.X), RoundR32i(vec2.Y)); }
-PEXPI v3i RoundV3i(v3 vec3) { return NewV3i(RoundR32i(vec3.X), RoundR32i(vec3.Y), RoundR32i(vec3.Z)); }
-PEXPI v4i RoundV4i(v4 vec4) { return NewV4i(RoundR32i(vec4.X), RoundR32i(vec4.Y), RoundR32i(vec4.Z), RoundR32i(vec4.W)); }
-PEXPI v2d RoundV2d(v2d vec2d) { return NewV2d(RoundR64(vec2d.X), RoundR64(vec2d.Y)); }
-PEXPI v3d RoundV3d(v3d vec3d) { return NewV3d(RoundR64(vec3d.X), RoundR64(vec3d.Y), RoundR64(vec3d.Z)); }
-PEXPI v4d RoundV4d(v4d vec4d) { return NewV4d(RoundR64(vec4d.X), RoundR64(vec4d.Y), RoundR64(vec4d.Z), RoundR64(vec4d.W)); }
-PEXPI v2i RoundV2di(v2d vec2d) { return NewV2i((i32)RoundR64i(vec2d.X), (i32)RoundR64i(vec2d.Y)); }
-PEXPI v3i RoundV3di(v3d vec3d) { return NewV3i((i32)RoundR64i(vec3d.X), (i32)RoundR64i(vec3d.Y), (i32)RoundR64i(vec3d.Z)); }
-PEXPI v4i RoundV4di(v4d vec4d) { return NewV4i((i32)RoundR64i(vec4d.X), (i32)RoundR64i(vec4d.Y), (i32)RoundR64i(vec4d.Z), (i32)RoundR64i(vec4d.W)); }
+PEXPI v2 RoundV2(v2 vec2) { return MakeV2(RoundR32(vec2.X), RoundR32(vec2.Y)); }
+PEXPI v3 RoundV3(v3 vec3) { return MakeV3(RoundR32(vec3.X), RoundR32(vec3.Y), RoundR32(vec3.Z)); }
+PEXPI v4 RoundV4(v4 vec4) { return MakeV4(RoundR32(vec4.X), RoundR32(vec4.Y), RoundR32(vec4.Z), RoundR32(vec4.W)); }
+PEXPI v2i RoundV2i(v2 vec2) { return MakeV2i(RoundR32i(vec2.X), RoundR32i(vec2.Y)); }
+PEXPI v3i RoundV3i(v3 vec3) { return MakeV3i(RoundR32i(vec3.X), RoundR32i(vec3.Y), RoundR32i(vec3.Z)); }
+PEXPI v4i RoundV4i(v4 vec4) { return MakeV4i(RoundR32i(vec4.X), RoundR32i(vec4.Y), RoundR32i(vec4.Z), RoundR32i(vec4.W)); }
+PEXPI v2d RoundV2d(v2d vec2d) { return MakeV2d(RoundR64(vec2d.X), RoundR64(vec2d.Y)); }
+PEXPI v3d RoundV3d(v3d vec3d) { return MakeV3d(RoundR64(vec3d.X), RoundR64(vec3d.Y), RoundR64(vec3d.Z)); }
+PEXPI v4d RoundV4d(v4d vec4d) { return MakeV4d(RoundR64(vec4d.X), RoundR64(vec4d.Y), RoundR64(vec4d.Z), RoundR64(vec4d.W)); }
+PEXPI v2i RoundV2di(v2d vec2d) { return MakeV2i((i32)RoundR64i(vec2d.X), (i32)RoundR64i(vec2d.Y)); }
+PEXPI v3i RoundV3di(v3d vec3d) { return MakeV3i((i32)RoundR64i(vec3d.X), (i32)RoundR64i(vec3d.Y), (i32)RoundR64i(vec3d.Z)); }
+PEXPI v4i RoundV4di(v4d vec4d) { return MakeV4i((i32)RoundR64i(vec4d.X), (i32)RoundR64i(vec4d.Y), (i32)RoundR64i(vec4d.Z), (i32)RoundR64i(vec4d.W)); }
 
-PEXPI v2 MinV2(v2 left, v2 right) { return NewV2(MinR32(left.X, right.X), MinR32(left.Y, right.Y)); }
-PEXPI v3 MinV3(v3 left, v3 right) { return NewV3(MinR32(left.X, right.X), MinR32(left.Y, right.Y), MinR32(left.Z, right.Z)); }
-PEXPI v4 MinV4(v4 left, v4 right) { return NewV4(MinR32(left.X, right.X), MinR32(left.Y, right.Y), MinR32(left.Z, right.Z), MinR32(left.W, right.W)); }
-PEXPI v2d MinV2d(v2d left, v2d right) { return NewV2d(MinR64(left.X, right.X), MinR64(left.Y, right.Y)); }
-PEXPI v3d MinV3d(v3d left, v3d right) { return NewV3d(MinR64(left.X, right.X), MinR64(left.Y, right.Y), MinR64(left.Z, right.Z)); }
-PEXPI v4d MinV4d(v4d left, v4d right) { return NewV4d(MinR64(left.X, right.X), MinR64(left.Y, right.Y), MinR64(left.Z, right.Z), MinR64(left.W, right.W)); }
+PEXPI v2 MinV2(v2 left, v2 right) { return MakeV2(MinR32(left.X, right.X), MinR32(left.Y, right.Y)); }
+PEXPI v3 MinV3(v3 left, v3 right) { return MakeV3(MinR32(left.X, right.X), MinR32(left.Y, right.Y), MinR32(left.Z, right.Z)); }
+PEXPI v4 MinV4(v4 left, v4 right) { return MakeV4(MinR32(left.X, right.X), MinR32(left.Y, right.Y), MinR32(left.Z, right.Z), MinR32(left.W, right.W)); }
+PEXPI v2d MinV2d(v2d left, v2d right) { return MakeV2d(MinR64(left.X, right.X), MinR64(left.Y, right.Y)); }
+PEXPI v3d MinV3d(v3d left, v3d right) { return MakeV3d(MinR64(left.X, right.X), MinR64(left.Y, right.Y), MinR64(left.Z, right.Z)); }
+PEXPI v4d MinV4d(v4d left, v4d right) { return MakeV4d(MinR64(left.X, right.X), MinR64(left.Y, right.Y), MinR64(left.Z, right.Z), MinR64(left.W, right.W)); }
 
-PEXPI v2 MaxV2(v2 left, v2 right) { return NewV2(MaxR32(left.X, right.X), MaxR32(left.Y, right.Y)); }
-PEXPI v3 MaxV3(v3 left, v3 right) { return NewV3(MaxR32(left.X, right.X), MaxR32(left.Y, right.Y), MaxR32(left.Z, right.Z)); }
-PEXPI v4 MaxV4(v4 left, v4 right) { return NewV4(MaxR32(left.X, right.X), MaxR32(left.Y, right.Y), MaxR32(left.Z, right.Z), MaxR32(left.W, right.W)); }
-PEXPI v2d MaxV2d(v2d left, v2d right) { return NewV2d(MaxR64(left.X, right.X), MaxR64(left.Y, right.Y)); }
-PEXPI v3d MaxV3d(v3d left, v3d right) { return NewV3d(MaxR64(left.X, right.X), MaxR64(left.Y, right.Y), MaxR64(left.Z, right.Z)); }
-PEXPI v4d MaxV4d(v4d left, v4d right) { return NewV4d(MaxR64(left.X, right.X), MaxR64(left.Y, right.Y), MaxR64(left.Z, right.Z), MaxR64(left.W, right.W)); }
+PEXPI v2 MaxV2(v2 left, v2 right) { return MakeV2(MaxR32(left.X, right.X), MaxR32(left.Y, right.Y)); }
+PEXPI v3 MaxV3(v3 left, v3 right) { return MakeV3(MaxR32(left.X, right.X), MaxR32(left.Y, right.Y), MaxR32(left.Z, right.Z)); }
+PEXPI v4 MaxV4(v4 left, v4 right) { return MakeV4(MaxR32(left.X, right.X), MaxR32(left.Y, right.Y), MaxR32(left.Z, right.Z), MaxR32(left.W, right.W)); }
+PEXPI v2d MaxV2d(v2d left, v2d right) { return MakeV2d(MaxR64(left.X, right.X), MaxR64(left.Y, right.Y)); }
+PEXPI v3d MaxV3d(v3d left, v3d right) { return MakeV3d(MaxR64(left.X, right.X), MaxR64(left.Y, right.Y), MaxR64(left.Z, right.Z)); }
+PEXPI v4d MaxV4d(v4d left, v4d right) { return MakeV4d(MaxR64(left.X, right.X), MaxR64(left.Y, right.Y), MaxR64(left.Z, right.Z), MaxR64(left.W, right.W)); }
 
-PEXPI v2 AbsV2(v2 vec2) { return NewV2(AbsR32(vec2.X), AbsR32(vec2.Y)); }
-PEXPI v3 AbsV3(v3 vec3) { return NewV3(AbsR32(vec3.X), AbsR32(vec3.Y), AbsR32(vec3.Z)); }
-PEXPI v4 AbsV4(v4 vec4) { return NewV4(AbsR32(vec4.X), AbsR32(vec4.Y), AbsR32(vec4.Z), AbsR32(vec4.W)); }
-PEXPI v2i AbsV2i(v2i vec2i) { return NewV2i(AbsI32(vec2i.X), AbsI32(vec2i.Y)); }
-PEXPI v3i AbsV3i(v3i vec3i) { return NewV3i(AbsI32(vec3i.X), AbsI32(vec3i.Y), AbsI32(vec3i.Z)); }
-PEXPI v4i AbsV4i(v4i vec4i) { return NewV4i(AbsI32(vec4i.X), AbsI32(vec4i.Y), AbsI32(vec4i.Z), AbsI32(vec4i.W)); }
-PEXPI v2d AbsV2d(v2d vec2d) { return NewV2d(AbsR64(vec2d.X), AbsR64(vec2d.Y)); }
-PEXPI v3d AbsV3d(v3d vec3d) { return NewV3d(AbsR64(vec3d.X), AbsR64(vec3d.Y), AbsR64(vec3d.Z)); }
-PEXPI v4d AbsV4d(v4d vec4d) { return NewV4d(AbsR64(vec4d.X), AbsR64(vec4d.Y), AbsR64(vec4d.Z), AbsR64(vec4d.W)); }
+PEXPI v2 AbsV2(v2 vec2) { return MakeV2(AbsR32(vec2.X), AbsR32(vec2.Y)); }
+PEXPI v3 AbsV3(v3 vec3) { return MakeV3(AbsR32(vec3.X), AbsR32(vec3.Y), AbsR32(vec3.Z)); }
+PEXPI v4 AbsV4(v4 vec4) { return MakeV4(AbsR32(vec4.X), AbsR32(vec4.Y), AbsR32(vec4.Z), AbsR32(vec4.W)); }
+PEXPI v2i AbsV2i(v2i vec2i) { return MakeV2i(AbsI32(vec2i.X), AbsI32(vec2i.Y)); }
+PEXPI v3i AbsV3i(v3i vec3i) { return MakeV3i(AbsI32(vec3i.X), AbsI32(vec3i.Y), AbsI32(vec3i.Z)); }
+PEXPI v4i AbsV4i(v4i vec4i) { return MakeV4i(AbsI32(vec4i.X), AbsI32(vec4i.Y), AbsI32(vec4i.Z), AbsI32(vec4i.W)); }
+PEXPI v2d AbsV2d(v2d vec2d) { return MakeV2d(AbsR64(vec2d.X), AbsR64(vec2d.Y)); }
+PEXPI v3d AbsV3d(v3d vec3d) { return MakeV3d(AbsR64(vec3d.X), AbsR64(vec3d.Y), AbsR64(vec3d.Z)); }
+PEXPI v4d AbsV4d(v4d vec4d) { return MakeV4d(AbsR64(vec4d.X), AbsR64(vec4d.Y), AbsR64(vec4d.Z), AbsR64(vec4d.W)); }
 
-PEXPI v2 ClampV2(v2 vec2, v2 minVec2, v2 maxVec2) { return NewV2(ClampR32(vec2.X, minVec2.X, maxVec2.X), ClampR32(vec2.Y, minVec2.Y, maxVec2.Y)); }
-PEXPI v3 ClampV3(v3 vec3, v3 minVec3, v3 maxVec3) { return NewV3(ClampR32(vec3.X, minVec3.X, maxVec3.X), ClampR32(vec3.Y, minVec3.Y, maxVec3.Y), ClampR32(vec3.Z, minVec3.Z, maxVec3.Z)); }
-PEXPI v4 ClampV4(v4 vec4, v4 minVec4, v4 maxVec4) { return NewV4(ClampR32(vec4.X, minVec4.X, maxVec4.X), ClampR32(vec4.Y, minVec4.Y, maxVec4.Y), ClampR32(vec4.Z, minVec4.Z, maxVec4.Z), ClampR32(vec4.W, minVec4.W, maxVec4.W)); }
-PEXPI v2i ClampV2i(v2i vec2i, v2i minVec2i, v2i maxVec2i) { return NewV2i(ClampI32(vec2i.X, minVec2i.X, maxVec2i.X), ClampI32(vec2i.Y, minVec2i.Y, maxVec2i.Y)); }
-PEXPI v3i ClampV3i(v3i vec3i, v3i minVec3i, v3i maxVec3i) { return NewV3i(ClampI32(vec3i.X, minVec3i.X, maxVec3i.X), ClampI32(vec3i.Y, minVec3i.Y, maxVec3i.Y), ClampI32(vec3i.Z, minVec3i.Z, maxVec3i.Z)); }
-PEXPI v4i ClampV4i(v4i vec4i, v4i minVec4i, v4i maxVec4i) { return NewV4i(ClampI32(vec4i.X, minVec4i.X, maxVec4i.X), ClampI32(vec4i.Y, minVec4i.Y, maxVec4i.Y), ClampI32(vec4i.Z, minVec4i.Z, maxVec4i.Z), ClampI32(vec4i.W, minVec4i.W, maxVec4i.W)); }
-PEXPI v2d ClampV2d(v2d vec2d, v2d minVec2d, v2d maxVec2d) { return NewV2d(ClampR64(vec2d.X, minVec2d.X, maxVec2d.X), ClampR64(vec2d.Y, minVec2d.Y, maxVec2d.Y)); }
-PEXPI v3d ClampV3d(v3d vec3d, v3d minVec3d, v3d maxVec3d) { return NewV3d(ClampR64(vec3d.X, minVec3d.X, maxVec3d.X), ClampR64(vec3d.Y, minVec3d.Y, maxVec3d.Y), ClampR64(vec3d.Z, minVec3d.Z, maxVec3d.Z)); }
-PEXPI v4d ClampV4d(v4d vec4d, v4d minVec4d, v4d maxVec4d) { return NewV4d(ClampR64(vec4d.X, minVec4d.X, maxVec4d.X), ClampR64(vec4d.Y, minVec4d.Y, maxVec4d.Y), ClampR64(vec4d.Z, minVec4d.Z, maxVec4d.Z), ClampR64(vec4d.W, minVec4d.W, maxVec4d.W)); }
+PEXPI v2 ClampV2(v2 vec2, v2 minVec2, v2 maxVec2) { return MakeV2(ClampR32(vec2.X, minVec2.X, maxVec2.X), ClampR32(vec2.Y, minVec2.Y, maxVec2.Y)); }
+PEXPI v3 ClampV3(v3 vec3, v3 minVec3, v3 maxVec3) { return MakeV3(ClampR32(vec3.X, minVec3.X, maxVec3.X), ClampR32(vec3.Y, minVec3.Y, maxVec3.Y), ClampR32(vec3.Z, minVec3.Z, maxVec3.Z)); }
+PEXPI v4 ClampV4(v4 vec4, v4 minVec4, v4 maxVec4) { return MakeV4(ClampR32(vec4.X, minVec4.X, maxVec4.X), ClampR32(vec4.Y, minVec4.Y, maxVec4.Y), ClampR32(vec4.Z, minVec4.Z, maxVec4.Z), ClampR32(vec4.W, minVec4.W, maxVec4.W)); }
+PEXPI v2i ClampV2i(v2i vec2i, v2i minVec2i, v2i maxVec2i) { return MakeV2i(ClampI32(vec2i.X, minVec2i.X, maxVec2i.X), ClampI32(vec2i.Y, minVec2i.Y, maxVec2i.Y)); }
+PEXPI v3i ClampV3i(v3i vec3i, v3i minVec3i, v3i maxVec3i) { return MakeV3i(ClampI32(vec3i.X, minVec3i.X, maxVec3i.X), ClampI32(vec3i.Y, minVec3i.Y, maxVec3i.Y), ClampI32(vec3i.Z, minVec3i.Z, maxVec3i.Z)); }
+PEXPI v4i ClampV4i(v4i vec4i, v4i minVec4i, v4i maxVec4i) { return MakeV4i(ClampI32(vec4i.X, minVec4i.X, maxVec4i.X), ClampI32(vec4i.Y, minVec4i.Y, maxVec4i.Y), ClampI32(vec4i.Z, minVec4i.Z, maxVec4i.Z), ClampI32(vec4i.W, minVec4i.W, maxVec4i.W)); }
+PEXPI v2d ClampV2d(v2d vec2d, v2d minVec2d, v2d maxVec2d) { return MakeV2d(ClampR64(vec2d.X, minVec2d.X, maxVec2d.X), ClampR64(vec2d.Y, minVec2d.Y, maxVec2d.Y)); }
+PEXPI v3d ClampV3d(v3d vec3d, v3d minVec3d, v3d maxVec3d) { return MakeV3d(ClampR64(vec3d.X, minVec3d.X, maxVec3d.X), ClampR64(vec3d.Y, minVec3d.Y, maxVec3d.Y), ClampR64(vec3d.Z, minVec3d.Z, maxVec3d.Z)); }
+PEXPI v4d ClampV4d(v4d vec4d, v4d minVec4d, v4d maxVec4d) { return MakeV4d(ClampR64(vec4d.X, minVec4d.X, maxVec4d.X), ClampR64(vec4d.Y, minVec4d.Y, maxVec4d.Y), ClampR64(vec4d.Z, minVec4d.Z, maxVec4d.Z), ClampR64(vec4d.W, minVec4d.W, maxVec4d.W)); }
 
 //TODO: Should we add "Inner" and "Determinant" functions like we had in GyLib?
 
 // +--------------------------------------------------------------+
 // |                   Other Helpful Functions                    |
 // +--------------------------------------------------------------+
-PEXPI v2 PerpRightV2(v2 vec2) { return NewV2(-vec2.Y, vec2.X); }
-PEXPI v2 PerpLeftV2(v2 vec2) { return NewV2(vec2.Y, -vec2.X); }
-PEXPI v2d PerpRightV2d(v2d vec2d) { return NewV2d(-vec2d.Y, vec2d.X); }
-PEXPI v2d PerpLeftV2d(v2d vec2d) { return NewV2d(vec2d.Y, -vec2d.X); }
+PEXPI v2 PerpRightV2(v2 vec2) { return MakeV2(-vec2.Y, vec2.X); }
+PEXPI v2 PerpLeftV2(v2 vec2) { return MakeV2(vec2.Y, -vec2.X); }
+PEXPI v2d PerpRightV2d(v2d vec2d) { return MakeV2d(-vec2d.Y, vec2d.X); }
+PEXPI v2d PerpLeftV2d(v2d vec2d) { return MakeV2d(vec2d.Y, -vec2d.X); }
 
 PEXPI v2 Vec2Rotate(v2 vec2, r32 angle)
 {
-	return NewV2(
+	return MakeV2(
 		CosR32(angle) * vec2.X - SinR32(angle) * vec2.Y,
 		SinR32(angle) * vec2.X + CosR32(angle) * vec2.Y
 	);
 }
 PEXPI v2d Vec2dRotate(v2d vec2d, r64 angle)
 {
-	return NewV2d(
+	return MakeV2d(
 		CosR64(angle) * vec2d.X - SinR64(angle) * vec2d.Y,
 		SinR64(angle) * vec2d.X + CosR64(angle) * vec2d.Y
 	);
@@ -940,7 +948,7 @@ PEXPI r64 AngleBetweenV3d(v3d left, v3d right)
 PEXPI v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius)
 {
 	r32 circleRadius = CosR32(rotationUpDown) * radius;
-	return NewV3(
+	return MakeV3(
 		CosR32(facingDirection) * circleRadius,
 		SinR32(facingDirection) * circleRadius,
 		SinR32(rotationUpDown) //TODO: Should this be multiplied by radius?
@@ -949,7 +957,7 @@ PEXPI v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius)
 PEXPI v3d Vec3dFrom2Angles(r64 facingDirection, r64 rotationUpDown, r64 radius)
 {
 	r64 circleRadius = CosR64(rotationUpDown) * radius;
-	return NewV3d(
+	return MakeV3d(
 		CosR64(facingDirection) * circleRadius,
 		SinR64(facingDirection) * circleRadius,
 		SinR64(rotationUpDown)

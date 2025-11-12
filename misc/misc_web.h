@@ -126,10 +126,10 @@ PEXP UriParts GetUriParts(Str8 uriStr)
 	bool foundParametersQuestion = false;
 	bool foundAnchorPound = false;
 	RangeUXX protocolRange = RangeUXX_Zero;
-	RangeUXX hostnameRange = NewRangeUXX(0, uriStr.length);
-	RangeUXX pathRange = NewRangeUXX(uriStr.length, uriStr.length);
-	RangeUXX parametersRange = NewRangeUXX(uriStr.length, uriStr.length);
-	RangeUXX anchorRange = NewRangeUXX(uriStr.length, uriStr.length);
+	RangeUXX hostnameRange = MakeRangeUXX(0, uriStr.length);
+	RangeUXX pathRange = FillRangeUXX(uriStr.length);
+	RangeUXX parametersRange = FillRangeUXX(uriStr.length);
+	RangeUXX anchorRange = FillRangeUXX(uriStr.length);
 	
 	for (uxx cIndex = 0; cIndex < uriStr.length; cIndex++)
 	{
@@ -169,7 +169,7 @@ PEXP UriParts GetUriParts(Str8 uriStr)
 						if (character == ':')
 						{
 							foundProtocolColon = true;
-							protocolRange = NewRangeUXX(0, cIndex);
+							protocolRange = MakeRangeUXX(0, cIndex);
 							if (cIndex+2 < uriStr.length && uriStr.chars[cIndex+1] == '/' && uriStr.chars[cIndex+2] == '/')
 							{
 								hostnameRange = ClampAboveRangeUXX(hostnameRange, cIndex+3);
@@ -225,11 +225,11 @@ PEXP uxx GetUriErrors(Str8 uriStr, StrErrorList* list)
 		char lastChar = uriStr.chars[hostnameRange.max-1];
 		if (!IsCharAlphaNumeric(firstChar))
 		{
-			AddStrErrorPrint(list, NewRangeUXX(hostnameRange.min, hostnameRange.min+1), "Hostname cannot start with '%c'", firstChar);
+			AddStrErrorPrint(list, MakeRangeUXXLength(hostnameRange.min, 1), "Hostname cannot start with '%c'", firstChar);
 		}
 		if (!IsCharAlphaNumeric(lastChar))
 		{
-			AddStrErrorPrint(list, NewRangeUXX(hostnameRange.max-1, hostnameRange.max), "Hostname cannot end with '%c'", lastChar);
+			AddStrErrorPrint(list, MakeRangeUXXLength(hostnameRange.max-1, 1), "Hostname cannot end with '%c'", lastChar);
 		}
 		uxx numColonsFound = 0;
 		for (uxx cIndex = hostnameRange.min; cIndex < hostnameRange.max; cIndex++)
@@ -248,7 +248,7 @@ PEXP uxx GetUriErrors(Str8 uriStr, StrErrorList* list)
 				}
 				else
 				{
-					AddStrError(list, NewRangeUXX(cIndex, cIndex+1), StrLit("Multiple ':' characters not allowed in hostname"));
+					AddStrError(list, MakeRangeUXXLength(cIndex, 1), StrLit("Multiple ':' characters not allowed in hostname"));
 				}
 				numColonsFound++;
 			}
@@ -267,11 +267,11 @@ PEXP uxx GetUriErrors(Str8 uriStr, StrErrorList* list)
 			codepoint != ')' && codepoint != '*' && codepoint != '+' && codepoint != ',' && codepoint != ';' && codepoint != '=' &&
 			codepoint != '-' && codepoint != '.' && codepoint != '_' && codepoint != '~' && codepoint != '%')
 		{
-			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &uriStr.chars[cIndex]);
+			AddStrErrorPrint(list, MakeRangeUXXLength(cIndex, codepointSize), "Invalid character: \'%.*s\'", codepointSize, &uriStr.chars[cIndex]);
 		}
 		if (codepoint == '.' && prevCodepoint == '.' && cIndex >= hostnameRange.min && cIndex < hostnameRange.max)
 		{
-			AddStrError(list, NewRangeUXX(cIndex-1, cIndex+1), StrLit("Two '.' in a row is not allowed in hostname"));
+			AddStrError(list, MakeRangeUXXLength(cIndex-1, 2), StrLit("Two '.' in a row is not allowed in hostname"));
 		}
 		if (codepoint == '%')
 		{
@@ -281,7 +281,7 @@ PEXP uxx GetUriErrors(Str8 uriStr, StrErrorList* list)
 			}
 			else if (!IsCharHexadecimal(uriStr.chars[cIndex+1]) || !IsCharHexadecimal(uriStr.chars[cIndex+2]))
 			{
-				AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex+3), "Invalid characters after '%%' (expected 2 hex chars): \"%.*s\"", 2, &uriStr.chars[cIndex+1]);
+				AddStrErrorPrint(list, MakeRangeUXXLength(cIndex, 3), "Invalid characters after '%%' (expected 2 hex chars): \"%.*s\"", 2, &uriStr.chars[cIndex+1]);
 			}
 		}
 		
@@ -303,7 +303,7 @@ PEXP uxx GetHttpHeaderKeyErrors(Str8 key, StrErrorList* list)
 		//TODO: It seems like we can't have all URI reserved and unreserved characters for the name key, for example ':' definitely can't be allowed, so which characters are allowed exactly?
 		if (!IsCharAlphaNumeric(codepoint) && codepoint != '-' && codepoint != '_')
 		{
-			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &key.chars[cIndex]);
+			AddStrErrorPrint(list, MakeRangeUXXLength(cIndex, codepointSize), "Invalid character: \'%.*s\'", codepointSize, &key.chars[cIndex]);
 		}
 		if (codepointSize > 1) { cIndex += codepointSize-1; }
 	}
@@ -323,7 +323,7 @@ PEXP uxx GetHttpHeaderValueErrors(Str8 value, StrErrorList* list)
 			codepoint != ')' && codepoint != '*' && codepoint != '+' && codepoint != ',' && codepoint != ';' && codepoint != '=' &&
 			codepoint != '-' && codepoint != '.' && codepoint != '_' && codepoint != '~' && codepoint != '%')
 		{
-			AddStrErrorPrint(list, NewRangeUXX(cIndex, cIndex + codepointSize), "Invalid character: \'%.*s\'", codepointSize, &value.chars[cIndex]);
+			AddStrErrorPrint(list, MakeRangeUXXLength(cIndex, codepointSize), "Invalid character: \'%.*s\'", codepointSize, &value.chars[cIndex]);
 		}
 		if (codepointSize > 1) { cIndex += codepointSize-1; }
 	}

@@ -25,7 +25,7 @@ Date:   02\01\2025
 PEXP bool TryParseColorEx(Str8 str, Color32* valueOut, Result* errorOut, bool alphaAtBeginning)
 {
 	NotNullStr(str);
-	Color32 result = NewColorU32(0x00000000);
+	Color32 result = MakeColorU32(0x00000000);
 	if (StrExactStartsWith(str, StrLit("#"))) { str = StrSliceFrom(str, 1); }
 	if (str.length == 8)
 	{

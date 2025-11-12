@@ -46,7 +46,7 @@ PEXP Result OsGetClipboardString(OsWindowHandle windowHandle, Arena* arena, Str8
 			HANDLE dataHandle = GetClipboardData(CF_UNICODETEXT);
 			if (dataHandle != nullptr)
 			{
-				Str16 wideStr = Str16Lit((char16_t*)GlobalLock(dataHandle));
+				Str16 wideStr = MakeStr16Nt((char16_t*)GlobalLock(dataHandle));
 				SetOptionalOutPntr(clipboardStrOut, ConvertUcs2StrToUtf8(arena, wideStr, false));
 				GlobalUnlock(dataHandle);
 				result = Result_Success;

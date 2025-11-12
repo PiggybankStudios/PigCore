@@ -10,18 +10,22 @@ NOTE: This file may need to be included manually if you include raylib.h AFTER i
 
 //NOTE: Intentionally no includes here
 
+#if BUILD_WITH_RAYLIB
+
+#define rlMakeQuaternion(xValue, yValue, zValue, wValue) NEW_STRUCT(Quaternion){ .x=(xValue), .y=(yValue), .z=(zValue), .w=(wValue) }
+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE Quaternion NewQuaternion(r32 x, r32 y, r32 z, r32 w);
 	PIG_CORE_INLINE Quaternion QuaternionFromQuat(quat quaternion);
 	PIG_CORE_INLINE quat QuatFromQuaternion(Quaternion quaternion);
 #endif
 
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI Quaternion NewQuaternion(r32 x, r32 y, r32 z, r32 w) { return (Quaternion){ x, y, z, w }; }
-PEXPI Quaternion QuaternionFromQuat(quat quaternion) { return (Quaternion){ quaternion.X, quaternion.Y, quaternion.Z, quaternion.W }; }
-PEXPI quat QuatFromQuaternion(Quaternion quaternion) { return NewQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w); }
+PEXPI Quaternion QuaternionFromQuat(quat quaternion) { return rlMakeQuaternion(quaternion.X, quaternion.Y, quaternion.Z, quaternion.W); }
+PEXPI quat QuatFromQuaternion(Quaternion quaternion) { return MakeQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w); }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //BUILD_WITH_RAYLIB
 
 #endif //  _CROSS_QUATERNION_AND_RAYLIB_H

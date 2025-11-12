@@ -49,7 +49,7 @@ PEXP v2 GetBlueNoisePosInRec(u64 seed, rec bounds, u64 numOfPositions, u64 index
 		{
 			numRows--;
 		}
-		arraySize = NewVec2i(CeilR32i((r32)numOfPositions / (r32)numRows), (i32)numRows);
+		arraySize = MakeVec2i(CeilR32i((r32)numOfPositions / (r32)numRows), (i32)numRows);
 	}
 	else //tall bounds
 	{
@@ -59,7 +59,7 @@ PEXP v2 GetBlueNoisePosInRec(u64 seed, rec bounds, u64 numOfPositions, u64 index
 		{
 			numColumns--;
 		}
-		arraySize = NewVec2i((i32)numColumns, CeilR32i((r32)numOfPositions / (r32)numColumns));
+		arraySize = MakeVec2i((i32)numColumns, CeilR32i((r32)numOfPositions / (r32)numColumns));
 	}
 	
 	u32 actualIndex = (u32)index;
@@ -75,10 +75,10 @@ PEXP v2 GetBlueNoisePosInRec(u64 seed, rec bounds, u64 numOfPositions, u64 index
 	// return bounds.topLeft + bounds.size/2;
 	
 	v2 cellSize = Vec2Divide(bounds.size, ToVec2(arraySize));
-	v2i gridPos = NewVec2i((i32)(actualIndex % arraySize.width), (i32)(actualIndex / arraySize.width));
+	v2i gridPos = MakeVec2i((i32)(actualIndex % arraySize.width), (i32)(actualIndex / arraySize.width));
 	v2 offset = Vec2Multiply(ToVec2(gridPos), cellSize) + cellSize/2;
 	
-	v2 jitter = NewVec2(GetRandR32(&tempSeries)*2 - 1.0f, GetRandR32(&tempSeries)*2 - 0.5f);
+	v2 jitter = MakeVec2(GetRandR32(&tempSeries)*2 - 1.0f, GetRandR32(&tempSeries)*2 - 0.5f);
 	jitter = Vec2Multiply(jitter, cellSize/4);
 	offset += jitter;
 	

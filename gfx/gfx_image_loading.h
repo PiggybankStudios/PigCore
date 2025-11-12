@@ -57,7 +57,7 @@ PEXP Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* image
 		// PrintLine_D("imageData: %p %dx%d (%llu pixels)", imageData, imageWidth, imageHeight, (uxx)(imageWidth * imageHeight));
 		
 		ClearPointer(imageDataOut);
-		imageDataOut->size = NewV2i(imageWidth, imageHeight);
+		imageDataOut->size = MakeV2i(imageWidth, imageHeight);
 		imageDataOut->numPixels = (uxx)(imageWidth * imageHeight);
 		imageDataOut->pixels = AllocArray(u32, arena, imageDataOut->numPixels);
 		if (imageDataOut->pixels == nullptr)

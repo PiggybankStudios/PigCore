@@ -52,6 +52,7 @@ plex PbBuffer
 	uxx allocLength;
 	u8* pntr; 
 };
+//TODO: Should we do the MakePbBuffer macro  instead of NewPbBuffer function?
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -155,7 +156,7 @@ PEXPI Slice ProtobufPackInArena_(Arena* arena, const ProtobufCMessage* message)
 	size_t packResult = protobuf_c_message_pack_to_buffer(message, &buffer.buffer);
 	DebugAssert((uxx)packResult == bufferSize);
 	DebugAssert(buffer.length == buffer.allocLength);
-	return NewStr8(bufferSize, buffer.pntr);
+	return MakeStr8(bufferSize, buffer.pntr);
 }
 
 PEXPI void* ProtobufUnpackInArena_(const ProtobufCMessageDescriptor* descriptorPntr, Arena* arena, Slice packedSlice)

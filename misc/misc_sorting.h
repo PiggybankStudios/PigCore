@@ -480,7 +480,7 @@ PEXP void QuickSortFlat(void* arrayPntr, uxx numElements, uxx elementSize, Compa
 	
 	VarArray partitions = ZEROED;
 	InitVarArray(RangeUXX, &partitions, scratch);
-	VarArrayAddValue(RangeUXX, &partitions, NewRangeUXX(0, numElements));
+	VarArrayAddValue(RangeUXX, &partitions, MakeRangeUXX(0, numElements));
 	while (partitions.length > 0)
 	{
 		DebugAssert(partitions.length <= numElements+1);
@@ -489,8 +489,8 @@ PEXP void QuickSortFlat(void* arrayPntr, uxx numElements, uxx elementSize, Compa
 		if (nextPartition.max - nextPartition.min > 1)
 		{
 			ixx partitionIndex = QuickSortFlatPartition((u8*)arrayPntr + elementSize*nextPartition.min, nextPartition.max - nextPartition.min, elementSize, workingSpace, compareFunc, contextPntr);
-			VarArrayAddValue(RangeUXX, &partitions, NewRangeUXX(nextPartition.min, nextPartition.min + (uxx)partitionIndex));
-			VarArrayAddValue(RangeUXX, &partitions, NewRangeUXX(nextPartition.min + (uxx)partitionIndex + 1, nextPartition.max));
+			VarArrayAddValue(RangeUXX, &partitions, MakeRangeUXX(nextPartition.min, nextPartition.min + (uxx)partitionIndex));
+			VarArrayAddValue(RangeUXX, &partitions, MakeRangeUXX(nextPartition.min + (uxx)partitionIndex + 1, nextPartition.max));
 		}
 	}
 	

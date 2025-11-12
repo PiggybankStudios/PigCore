@@ -416,7 +416,7 @@ int main(int argc, char* argv[])
 		findContext.ignoreList = (Str8*)malloc(sizeof(Str8) * findContext.ignoreListLength);
 		for (uxx iIndex = 0; iIndex < findContext.ignoreListLength; iIndex++)
 		{
-			findContext.ignoreList[iIndex] = NewStr8Nt(ignoreList[iIndex]);
+			findContext.ignoreList[iIndex] = MakeStr8Nt(ignoreList[iIndex]);
 		}
 		
 		RecursiveDirWalk(StrLit(".."), FindShaderFilesCallback, &findContext);
@@ -457,7 +457,7 @@ int main(int argc, char* argv[])
 				for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
 				{
 					AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
-					Str8 archFolderName = NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture));
+					Str8 archFolderName = MakeStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture));
 					Str8 archFolderPath = JoinStrings3(StrLit("lib/"), archFolderName, StrLit("/"), false);
 					Str8 oPath = findContext.oPaths.strings[sIndex];
 					AddArgStr(&clang_AndroidShaderObjects[archIndex], CLI_QUOTED_ARG, oPath);
@@ -931,7 +931,7 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
-				AssertFileExist(NewStr8Nt(FILENAME_APP_WASM), true);
+				AssertFileExist(MakeStr8Nt(FILENAME_APP_WASM), true);
 			}
 			PrintLine("[Built %s for Web!]", FILENAME_APP_WASM);
 			
@@ -1013,7 +1013,7 @@ int main(int argc, char* argv[])
 				AddArgList(&cmd, &clang_AndroidFlags);
 				AddArgList(&cmd, &clang_AndroidLinkFlags);
 				AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidTargetArchitechtureTargetStr(architecture));
-				Str8 sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), NewStr8Nt(GetAndroidTargetArchitechtureToolchainFolderStr(architecture)), StrLit("/35/"), false);
+				Str8 sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), MakeStr8Nt(GetAndroidTargetArchitechtureToolchainFolderStr(architecture)), StrLit("/35/"), false);
 				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath, false));
 				if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_AndroidShaderObjects[archIndex]); }
 				
@@ -1034,7 +1034,7 @@ int main(int argc, char* argv[])
 					if (!DoesFileExist(StrLit(FILENAME_DUMMY_JAVA)))
 					{
 						const char* dummyClassCode = "public class Dummy { }\n";
-						CreateAndWriteFile(StrLit(FILENAME_DUMMY_JAVA), NewStr8Nt(dummyClassCode), true);
+						CreateAndWriteFile(StrLit(FILENAME_DUMMY_JAVA), MakeStr8Nt(dummyClassCode), true);
 					}
 					
 					CliArgList javacCmd = ZEROED;
@@ -1098,8 +1098,8 @@ int main(int argc, char* argv[])
 					for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
 					{
 						AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
-						Str8 apkFolder = JoinStrings2(StrLit("lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
-						Str8 buildFolder = JoinStrings2(StrLit("../lib/"), NewStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
+						Str8 apkFolder = JoinStrings2(StrLit("lib/"), MakeStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
+						Str8 buildFolder = JoinStrings2(StrLit("../lib/"), MakeStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
 						mkdir(apkFolder.chars, FOLDER_PERMISSIONS);
 						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder);
 					}

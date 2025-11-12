@@ -102,24 +102,24 @@ Str8 FormatArg(const CliArg* arg, Str8 rootDirPath, char pathSepChar)
 void AddArgStr(CliArgList* list, const char* formatStrNt, Str8 valueStr)
 {
 	if (list->numArgs >= CLI_MAX_ARGS) { WriteLine_E("Too many CLI arguments!"); exit(4); }
-	list->args[list->numArgs].format = CopyStr8(NewStr8Nt(formatStrNt), false);
+	list->args[list->numArgs].format = CopyStr8(MakeStr8Nt(formatStrNt), false);
 	list->args[list->numArgs].value = CopyStr8(valueStr, false);
 	list->numArgs++;
 }
 void AddArgNt(CliArgList* list, const char* formatStrNt, const char* valueStr)
 {
-	AddArgStr(list, formatStrNt, NewStr8Nt(valueStr));
+	AddArgStr(list, formatStrNt, MakeStr8Nt(valueStr));
 }
 void AddArgInt(CliArgList* list, const char* formatStrNt, int32_t valueInt)
 {
 	char printBuffer[12];
 	int printResult = snprintf(&printBuffer[0], 12, "%d", valueInt);
 	printBuffer[printResult] = '\0';
-	AddArgStr(list, formatStrNt, NewStr8((uxx)printResult, &printBuffer[0]));
+	AddArgStr(list, formatStrNt, MakeStr8((uxx)printResult, &printBuffer[0]));
 }
 void AddArg(CliArgList* list, const char* formatStrNt)
 {
-	AddArgStr(list, formatStrNt, NewStr8(0, nullptr));
+	AddArgStr(list, formatStrNt, MakeStr8(0, nullptr));
 }
 
 void AddArgList(CliArgList* dest, const CliArgList* source)
@@ -223,7 +223,7 @@ void ParseAndApplyEnvironmentVariables(Str8 environmentVars)
 		char nextChar = (cIndex+1 < environmentVars.length) ? environmentVars.chars[cIndex+1] : '\0';
 		if (character == '\n' || (character == '\r' && nextChar == '\n'))
 		{
-			Str8 line = NewStr8(cIndex - lineStart, &environmentVars.chars[lineStart]);
+			Str8 line = MakeStr8(cIndex - lineStart, &environmentVars.chars[lineStart]);
 			
 			if (equalsIndex >= lineStart)
 			{

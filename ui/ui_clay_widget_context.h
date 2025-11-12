@@ -37,35 +37,17 @@ plex UiWidgetContext
 	OsWindowHandle windowHandle;
 	u64 programTime;
 };
-
-// +--------------------------------------------------------------+
-// |                 Header Function Declarations                 |
-// +--------------------------------------------------------------+
-#if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr, CursorShape cursorShape, OsWindowHandle windowHandle, u64 programTime);
-#endif
-
-// +--------------------------------------------------------------+
-// |                   Function Implementations                   |
-// +--------------------------------------------------------------+
-#if PIG_CORE_IMPLEMENTATION
-
-PEXPI UiWidgetContext NewUiWidgetContext(Arena* uiArena, ClayUIRenderer* renderer, KeyboardState* keyboard, MouseState* mouse, r32 uiScale, void** focusedUiElementPntr, CursorShape cursorShape, OsWindowHandle windowHandle, u64 programTime)
-{
-	UiWidgetContext result = ZEROED;
-	result.uiArena = uiArena;
-	result.renderer = renderer;
-	result.keyboard = keyboard;
-	result.mouse = mouse;
-	result.uiScale = uiScale;
-	result.focusedUiElementPntr = focusedUiElementPntr;
-	result.cursorShape = cursorShape;
-	result.windowHandle = windowHandle;
-	result.programTime = programTime;
-	return result;
+#define MakeUiWidgetContext(uiArenaPntr, rendererPntr, keyboardPntr, mousePntr, uiScaleValue, focusedUiElementPntrPntr, cursorShapeValue, windowHandleValue, programTimeValue) NEW_STRUCT(UiWidgetContext) { \
+	.uiArena = (uiArenaPntr),                                                                                                                                                                                \
+	.renderer = (rendererPntr),                                                                                                                                                                              \
+	.keyboard = (keyboardPntr),                                                                                                                                                                              \
+	.mouse = (mousePntr),                                                                                                                                                                                    \
+	.uiScale = (uiScaleValue),                                                                                                                                                                               \
+	.focusedUiElementPntr = (focusedUiElementPntrPntr),                                                                                                                                                      \
+	.cursorShape = (cursorShapeValue),                                                                                                                                                                       \
+	.windowHandle = (windowHandleValue),                                                                                                                                                                     \
+	.programTime = (programTimeValue),                                                                                                                                                                       \
 }
-
-#endif //PIG_CORE_IMPLEMENTATION
 
 #endif //BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
 

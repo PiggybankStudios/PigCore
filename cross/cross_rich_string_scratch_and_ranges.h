@@ -57,10 +57,7 @@ PEXP RichStr NewRichStrFromRanges(Arena* arena, Str8 str, uxx numRanges, const R
 	Assert(numRanges == 0 || ranges != nullptr);
 	if (numRanges == 0)
 	{
-		RichStrPiece singlePiece = ZEROED;
-		singlePiece.styleChange = RichStrStyleChange_None;
-		singlePiece.str = str;
-		return NewRichStr(arena, 1, &singlePiece);
+		return ToRichStr(str);
 	}
 	ScratchBegin1(scratch, arena);
 	
@@ -69,7 +66,7 @@ PEXP RichStr NewRichStrFromRanges(Arena* arena, Str8 str, uxx numRanges, const R
 	NotNull(edges);
 	for (uxx rIndex = 0; rIndex < numRanges; rIndex++)
 	{
-		RangeUXX clampedRange = ClampRangeToRangeUXX(ranges[rIndex].range, NewRangeUXX(0, str.length));
+		RangeUXX clampedRange = ClampRangeToRangeUXX(ranges[rIndex].range, MakeRangeUXX(0, str.length));
 		RichStrStyleChangeEdge* edge1 = &edges[rIndex*2 + 0];
 		RichStrStyleChangeEdge* edge2 = &edges[rIndex*2 + 1];
 		edge1->index = clampedRange.min; edge1->range = &ranges[rIndex]; edge1->begin = true;

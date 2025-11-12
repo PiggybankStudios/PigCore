@@ -25,6 +25,10 @@ plex FontCharRange
 	u32 endCodepoint;
 	uxx glyphArrayStartIndex;
 };
+#define MakeFontCharRangeEx(startCodepointValue, endCodepointValue, glyphArrayStartIndexValue) NEW_STRUCT(FontCharRange){ .startCodepoint=(startCodepointValue), .endCodepoint=(endCodepointValue), .glyphArrayStartIndex=(glyphArrayStartIndexValue) }
+#define MakeFontCharRange(startCodepointValue, endCodepointValue)                              MakeFontCharRangeEx(startCodepointValue, endCodepointValue, 0)
+#define MakeFontCharRangeLength(startCodepointValue, numCodepoints)                            MakeFontCharRange(startCodepointValue, (startCodepointValue) + (numCodepoints)-1)
+#define MakeFontCharRangeSingle(codepoint)                                                     MakeFontCharRange(codepoint, codepoint)
 
 typedef plex CustomFontGlyph CustomFontGlyph;
 plex CustomFontGlyph
@@ -40,83 +44,21 @@ plex CustomFontCharRange
 	u32 endCodepoint;
 	CustomFontGlyph* glyphs;
 };
+#define MakeCustomFontCharRange(startCodepointValue, endCodepointValue, glyphsPntr) NEW_STRUCT(CustomFontCharRange){ .startCodepoint=(startCodepointValue), .endCodepoint=(endCodepointValue), .glyphs=(glyphsPntr) }
+#define MakeCustomFontCharRangeSingle(glyphPntr) MakeCustomFontCharRange((glyphPntr)->codepoint, (glyphPntr)->codepoint, (glyphPntr))
+#define MakeCustomFontCharRangeArray(numGlyphs, glyphsPntr) MakeCustomFontCharRange((glyphsPntr)[0].codepoint, (glyphsPntr)[numGlyphs-1].codepoint, (glyphsPntr))
 
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define FontCharRange_ASCII                 NewFontCharRange(UNICODE_PRINTABLE_ASCII_START, UNICODE_PRINTABLE_ASCII_END-1)
-#define FontCharRange_UppercaseLetters      NewFontCharRange('A', 'Z')
-#define FontCharRange_LowercaseLetters      NewFontCharRange('a', 'z')
-#define FontCharRange_LatinSupplementAccent NewFontCharRange(UNICODE_LATIN1_SUPPLEMENT_ACCENT_START, UNICODE_LATIN1_SUPPLEMENT_ACCENT_END-1)
-#define FontCharRange_LatinExtA             NewFontCharRange(UNICODE_LATIN_EXT_A_START, UNICODE_LATIN_EXT_A_END-1)
-#define FontCharRange_Cyrillic              NewFontCharRange(UNICODE_CYRILLIC_START, UNICODE_CYRILLIC_END-1)
-#define FontCharRange_Hiragana              NewFontCharRange(UNICODE_HIRAGANA_START, UNICODE_HIRAGANA_END-1)
-#define FontCharRange_Katakana              NewFontCharRange(UNICODE_KATAKANA_START, UNICODE_KATAKANA_END-1)
-
-// +--------------------------------------------------------------+
-// |                 Header Function Declarations                 |
-// +--------------------------------------------------------------+
-#if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE FontCharRange NewFontCharRangeSingle(u32 codepoint);
-	PIG_CORE_INLINE FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint);
-	PIG_CORE_INLINE FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints);
-	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRangeSingle(CustomFontGlyph* glyph);
-	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph* glyphs);
-#endif
-
-// +--------------------------------------------------------------+
-// |                   Function Implementations                   |
-// +--------------------------------------------------------------+
-#if PIG_CORE_IMPLEMENTATION
-
-PEXPI FontCharRange NewFontCharRangeSingle(u32 codepoint)
-{
-	FontCharRange result = ZEROED;
-	result.startCodepoint = codepoint;
-	result.endCodepoint = codepoint;
-	return result;
-}
-PEXPI FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint)
-{
-	FontCharRange result = ZEROED;
-	result.startCodepoint = startCodepoint;
-	result.endCodepoint = endCodepoint;
-	return result;
-}
-PEXPI FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints)
-{
-	Assert(numCodepoints > 0);
-	return NewFontCharRange(startCodepoint, startCodepoint + numCodepoints-1);
-}
-
-PEXPI CustomFontCharRange NewCustomFontCharRangeSingle(CustomFontGlyph* glyph)
-{
-	NotNull(glyph);
-	CustomFontCharRange result = ZEROED;
-	result.startCodepoint = glyph->codepoint;
-	result.endCodepoint = glyph->codepoint;
-	result.glyphs = glyph;
-	return result;
-}
-PEXPI CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph* glyphs)
-{
-	NotNull(glyphs);
-	Assert(numGlyphs > 0);
-	CustomFontCharRange result = ZEROED;
-	u32 prevCodepoint = 0;
-	for (uxx gIndex = 0; gIndex < numGlyphs; gIndex++)
-	{
-		CustomFontGlyph* glyph = &glyphs[gIndex];
-		if (gIndex == 0) { result.startCodepoint = glyph->codepoint; }
-		else { AssertMsg(prevCodepoint == glyph->codepoint-1, "Codepoints in glyphs must be consecutive when calling NewCustomFontCharRange"); }
-		if (gIndex+1 == numGlyphs) { result.endCodepoint = glyph->codepoint; }
-		prevCodepoint = glyph->codepoint;
-	}
-	result.glyphs = glyphs;
-	return result;
-}
-
-#endif //PIG_CORE_IMPLEMENTATION
+#define FontCharRange_ASCII                 MakeFontCharRange(UNICODE_PRINTABLE_ASCII_START, UNICODE_PRINTABLE_ASCII_END-1)
+#define FontCharRange_UppercaseLetters      MakeFontCharRange('A', 'Z')
+#define FontCharRange_LowercaseLetters      MakeFontCharRange('a', 'z')
+#define FontCharRange_LatinSupplementAccent MakeFontCharRange(UNICODE_LATIN1_SUPPLEMENT_ACCENT_START, UNICODE_LATIN1_SUPPLEMENT_ACCENT_END-1)
+#define FontCharRange_LatinExtA             MakeFontCharRange(UNICODE_LATIN_EXT_A_START, UNICODE_LATIN_EXT_A_END-1)
+#define FontCharRange_Cyrillic              MakeFontCharRange(UNICODE_CYRILLIC_START, UNICODE_CYRILLIC_END-1)
+#define FontCharRange_Hiragana              MakeFontCharRange(UNICODE_HIRAGANA_START, UNICODE_HIRAGANA_END-1)
+#define FontCharRange_Katakana              MakeFontCharRange(UNICODE_KATAKANA_START, UNICODE_KATAKANA_END-1)
 
 #endif //  _STRUCT_FONT_CHAR_RANGE_H
 

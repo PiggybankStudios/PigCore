@@ -162,10 +162,10 @@ static ModelDataTransform CummulativeTransformForCgltfNode(cgltf_node* node)
 	{
 		cgltf_node* ancestor = node;
 		for (uxx walkIndex = 0; walkIndex < pIndex; walkIndex++) { ancestor = ancestor->parent; }
-		result.position = Add(result.position, NewV3(ancestor->translation[0], ancestor->translation[1], ancestor->translation[2]));
+		result.position = Add(result.position, MakeV3(ancestor->translation[0], ancestor->translation[1], ancestor->translation[2]));
 		//TODO: We should handle negative scale as reversing the indices order??
-		result.scale = Mul(result.scale, NewV3(AbsR32(ancestor->scale[0]), AbsR32(ancestor->scale[1]), AbsR32(ancestor->scale[2])));
-		result.rotation = MulQuat(result.rotation, NewQuat(ancestor->rotation[0], ancestor->rotation[1], ancestor->rotation[2], ancestor->rotation[3]));
+		result.scale = Mul(result.scale, MakeV3(AbsR32(ancestor->scale[0]), AbsR32(ancestor->scale[1]), AbsR32(ancestor->scale[2])));
+		result.rotation = MulQuat(result.rotation, MakeQuat(ancestor->rotation[0], ancestor->rotation[1], ancestor->rotation[2], ancestor->rotation[3]));
 	}
 	return result;
 }
@@ -239,7 +239,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 		newTexture->index = modelData.textures.length-1;
 		newTexture->name = AllocStr8Nt(arena, parsedTexture->name);
 		NotNull(parsedTexture->image);
-		Str8 imageName = NewStr8Nt(parsedTexture->image->name);
+		Str8 imageName = MakeStr8Nt(parsedTexture->image->name);
 		if (IsEmptyStr(newTexture->name) && !IsEmptyStr(imageName)) { newTexture->name = AllocStr8(arena, imageName); }
 		if (parsedTexture->image->buffer_view == nullptr)
 		{
@@ -247,7 +247,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 			{
 				Assert(StrExactEndsWith(gltfDir, StrLit("/")) || StrExactEndsWith(gltfDir, StrLit("\\")));
 				uxx scratchMark = ArenaGetMark(scratch);
-				FilePath imageFilePathNt = JoinStringsInArena(scratch, gltfDir, NewStr8Nt(parsedTexture->image->uri), true);
+				FilePath imageFilePathNt = JoinStringsInArena(scratch, gltfDir, MakeStr8Nt(parsedTexture->image->uri), true);
 				cgltf_size dataSize = 0;
 				void* dataPntr = nullptr;
 				cgltf_result readFileResult = readFileFunc(&parseOptions.memory, &parseOptions.file, imageFilePathNt.chars, &dataSize, &dataPntr);
@@ -270,7 +270,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 			NotNull(parsedTexture->image->buffer_view->buffer);
 			NotNull(parsedTexture->image->buffer_view->buffer->data);
 			//TODO: Should we somehow handle the parsedTexture->image->uri?
-			Slice imageFileContents = NewStr8(
+			Slice imageFileContents = MakeSlice(
 				(uxx)parsedTexture->image->buffer_view->size,
 				((u8*)parsedTexture->image->buffer_view->buffer->data) + parsedTexture->image->buffer_view->offset
 			);
@@ -307,7 +307,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 		
 		if (parsedMaterial->has_pbr_metallic_roughness)
 		{
-			material->albedoFactor = NewV4r(parsedMaterial->pbr_metallic_roughness.base_color_factor[0], parsedMaterial->pbr_metallic_roughness.base_color_factor[1], parsedMaterial->pbr_metallic_roughness.base_color_factor[2], parsedMaterial->pbr_metallic_roughness.base_color_factor[3]);
+			material->albedoFactor = MakeV4r(parsedMaterial->pbr_metallic_roughness.base_color_factor[0], parsedMaterial->pbr_metallic_roughness.base_color_factor[1], parsedMaterial->pbr_metallic_roughness.base_color_factor[2], parsedMaterial->pbr_metallic_roughness.base_color_factor[3]);
 			material->metallicFactor = parsedMaterial->pbr_metallic_roughness.metallic_factor;
 			material->roughnessFactor = parsedMaterial->pbr_metallic_roughness.roughness_factor;
 			if (parsedMaterial->pbr_metallic_roughness.base_color_texture.texture != nullptr)
@@ -327,7 +327,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 		}
 		else
 		{
-			material->albedoFactor = NewV4r(1, 1, 1, 1);
+			material->albedoFactor = FillV4r(1);
 			material->metallicFactor = 0.0f;
 			material->roughnessFactor = 0.5f;
 			material->albedoTextureIndex = UINTXX_MAX;
@@ -449,7 +449,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 						(vIndex * positionAttrib->data->stride) +
 						positionAttrib->data->offset
 					];
-					newVertex->position = NewV3(positionDataPntr[0], positionDataPntr[1], positionDataPntr[2]);
+					newVertex->position = MakeV3(positionDataPntr[0], positionDataPntr[1], positionDataPntr[2]);
 					
 					if (normalAttrib != nullptr)
 					{
@@ -463,7 +463,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 							(vIndex * normalAttrib->data->stride) +
 							normalAttrib->data->offset
 						];
-						newVertex->normal = NewV3(normalDataPntr[0], normalDataPntr[1], normalDataPntr[2]);
+						newVertex->normal = MakeV3(normalDataPntr[0], normalDataPntr[1], normalDataPntr[2]);
 					}
 					else { newVertex->normal = V3_Up; }
 					if (texCoordAttrib != nullptr)
@@ -478,7 +478,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 							(vIndex * texCoordAttrib->data->stride) +
 							texCoordAttrib->data->offset
 						];
-						newVertex->texCoord = NewV2(texCoordDataPntr[0], texCoordDataPntr[1]);
+						newVertex->texCoord = MakeV2(texCoordDataPntr[0], texCoordDataPntr[1]);
 					}
 					else { newVertex->texCoord = V2_Zero; }
 					if (colorAttrib != nullptr)
@@ -493,9 +493,9 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 							(vIndex * colorAttrib->data->stride) +
 							colorAttrib->data->offset
 						];
-						newVertex->color = NewV4r(colorDataPntr[0], colorDataPntr[1], colorDataPntr[2], colorDataPntr[3]);
+						newVertex->color = MakeV4r(colorDataPntr[0], colorDataPntr[1], colorDataPntr[2], colorDataPntr[3]);
 					}
-					else { newVertex->color = NewV4r(1, 1, 1, 1); }
+					else { newVertex->color = FillV4r(1); }
 				}
 				
 				if (primitive->indices != nullptr)

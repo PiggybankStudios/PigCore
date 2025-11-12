@@ -93,7 +93,7 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	r32 lineHeight = GetFontLineHeight(font->pntr, fontSize, font->styleFlags);
 	if (measure.Height < lineHeight) { measure.Height = lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
-	v2 result = NewV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.Height, measure.visualRec.Height)));
+	v2 result = MakeV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.Height, measure.visualRec.Height)));
 	if (config->userData.wrapWidth != 0.0f) { result.Width = MinR32(result.Width, config->userData.wrapWidth); }
 	ScratchEnd(scratch);
 	return result;
@@ -166,7 +166,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				// GfxSystem_DrawRectangle(system, drawRec, ColorWithAlpha(MonokaiGreen, 0.25f));
 				
 				uxx scratchMark = ArenaGetMark(scratch);
-				Str8 text = NewStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
+				Str8 text = MakeStr8(command->renderData.text.stringContents.length, command->renderData.text.stringContents.chars);
 				RichStr richText = command->renderData.text.userData.richText ? DecodeStrToRichStr(scratch, text) : ToRichStr(text);
 				u16 fontId = command->renderData.text.fontId;
 				r32 fontSize = (r32)command->renderData.text.fontSize;
@@ -183,7 +183,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						command->renderData.text.userData.contraction == TextContraction_ClipRight ||
 						richText.numPieces > 1) //TODO: We don't support ellipses style contractions with RichStr right now!
 					{
-						rec textClipRec = NewRec(
+						rec textClipRec = MakeRec(
 							drawRec.X,
 							drawRec.Y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset - fontLineMetrics.maxAscend,
 							drawRec.Width,
@@ -223,7 +223,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						richText = ToRichStr(text);
 					}
 				}
-				v2 textPos = NewV2(drawRec.X + textOffsetX, drawRec.Y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset);
+				v2 textPos = MakeV2(drawRec.X + textOffsetX, drawRec.Y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset);
 				AlignV2(&textPos);
 				
 				FontFlowState state = ZEROED;
@@ -247,7 +247,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				Result drawResult = DoFontFlow(&state, &callbacks, flowTarget);
 				Assert(drawResult == Result_Success || drawResult == Result_InvalidUtf8);
 				
-				// GfxSystem_DrawRectangle(system, NewRecV(textPos, V2_One), MonokaiRed);
+				// GfxSystem_DrawRectangle(system, MakeRecV(textPos, V2_One), MonokaiRed);
 				
 				if (addedClipRec)
 				{

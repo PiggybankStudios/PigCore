@@ -245,12 +245,6 @@ FT_Library FreeTypeLib = nullptr;
 	void ClearFontAtlases(PigFont* font);
 	PigFont InitFont(Arena* arena, Str8 name);
 	PIG_CORE_INLINE void MakeFontActive(PigFont* font, i32 minAtlasSize, i32 maxAtlasSize, uxx maxNumAtlases, u64 autoEvictGlyphTime, u64 autoEvictAtlasTime);
-	PIG_CORE_INLINE FontCharRange NewFontCharRangeSingle(u32 codepoint);
-	PIG_CORE_INLINE FontCharRange NewFontCharRange(u32 startCodepoint, u32 endCodepoint);
-	PIG_CORE_INLINE FontCharRange NewFontCharRangeLength(u32 startCodepoint, u32 numCodepoints);
-	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRangeSingle(CustomFontGlyph* glyph);
-	PIG_CORE_INLINE CustomFontCharRange NewCustomFontCharRange(uxx numGlyphs, CustomFontGlyph* glyph);
-	void RemoveCodepointsFromCharRanges(VarArray* charRanges, uxx numCodepoints, u32* codepoints);
 	Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents, u8 styleFlags, bool copyIntoFontArena);
 	void FillFontKerningTable(PigFont* font);
 	PIG_CORE_INLINE FontAtlas* GetDefaultFontAtlas(PigFont* font);
@@ -834,7 +828,7 @@ PEXP FontAtlas* AddNewActiveAtlas(PigFont* font, FontFile* fontFile, r32 fontSiz
 	newAtlas->fontSize = fontSize;
 	newAtlas->metrics.fontScale = 1.0f; //TODO: Should we fill this for FreeType?
 	newAtlas->styleFlags = (styleFlags & FontStyleFlag_FontAtlasFlags);
-	newAtlas->glyphRange = NewFontCharRangeSingle(0);
+	newAtlas->glyphRange = MakeFontCharRangeSingle(0);
 	newAtlas->metrics = lineMetrics;
 	InitVarArrayWithInitial(FontCharRange, &newAtlas->charRanges, font->arena, 1);
 	InitVarArrayWithInitial(FontGlyph, &newAtlas->glyphs, font->arena, 1);
@@ -935,7 +929,7 @@ PEXP void ResizeActiveFontAtlas(PigFont* font, FontAtlas* activeAtlas, v2i newSi
 	Assert(activeAtlas->texture.error == Result_Success);
 	activeAtlas->pushedTextureUpdates = true;
 	
-	v2i newGridSize = NewV2i(
+	v2i newGridSize = MakeV2i(
 		FloorR32i((r32)newSize.Width / (r32)activeAtlas->activeCellSize.Width),
 		FloorR32i((r32)newSize.Height / (r32)activeAtlas->activeCellSize.Height)
 	);
@@ -968,11 +962,11 @@ PEXP void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx gl
 	// Remove texture pixels and activeCell references
 	if (removeGlyph->metrics.glyphSize.Width > 0 && removeGlyph->metrics.glyphSize.Height > 0)
 	{
-		v2i glyphCellPos = NewV2i(
+		v2i glyphCellPos = MakeV2i(
 			removeGlyph->atlasSourcePos.X / activeAtlas->activeCellSize.Width,
 			removeGlyph->atlasSourcePos.Y / activeAtlas->activeCellSize.Height
 		);
-		v2i glyphCellSize = NewV2i(
+		v2i glyphCellSize = MakeV2i(
 			CeilDivI32(removeGlyph->metrics.glyphSize.Width, activeAtlas->activeCellSize.Width),
 			CeilDivI32(removeGlyph->metrics.glyphSize.Height, activeAtlas->activeCellSize.Height)
 		);
@@ -1007,7 +1001,7 @@ PEXP void RemoveGlyphFromFontAtlas(PigFont* font, FontAtlas* activeAtlas, uxx gl
 				VarArrayRemoveAt(FontCharRange, &activeAtlas->charRanges, rIndex);
 				if (activeAtlas->charRanges.length == 0)
 				{
-					activeAtlas->glyphRange = NewFontCharRangeSingle(0);
+					activeAtlas->glyphRange = MakeFontCharRangeSingle(0);
 				}
 				else if (rIndex == 0)
 				{
@@ -1112,7 +1106,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	if (isColorableCodepoint && IsFlagSet(styleFlags, FontStyleFlag_ColoredGlyphs)) { loadFlags |= FT_LOAD_COLOR; }
 	FT_Error loadGlyphError = FT_Load_Glyph(fontFile->freeTypeFace, fontFileGlyphIndex, loadFlags);
 	Assert(loadGlyphError == 0);
-	v2i glyphSize = NewV2i(
+	v2i glyphSize = MakeV2i(
 		TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width),
 		TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height)
 	);
@@ -1121,12 +1115,12 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	Assert(glyphIndex != 0);
 	// r32 fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, activeAtlas->fontSize);
 	r32 fontScale = stbtt_ScaleForMappingEmToPixels(&fontFile->ttfInfo, activeAtlas->fontSize);
-	v2i glyphSize = V2i_Zero_Const;
+	v2i glyphSize = V2i_Zero;
 	if (!IsCodepointWhitespace(codepoint, true))
 	{
 		int boxX0, boxY0, boxX1, boxY1;
 		stbtt_GetGlyphBitmapBox(&fontFile->ttfInfo, glyphIndex, fontScale, fontScale, &boxX0, &boxY0, &boxX1, &boxY1);
-		glyphSize = NewV2i(
+		glyphSize = MakeV2i(
 			(i32)(boxX1 - boxX0),
 			(i32)(boxY1 - boxY0)
 		);
@@ -1150,7 +1144,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	}
 	#endif //BUILD_WITH_FREETYPE
 	
-	v2i glyphCellSize = NewV2i(
+	v2i glyphCellSize = MakeV2i(
 		CeilDivI32(glyphSize.Width, activeAtlas->activeCellSize.Width),
 		CeilDivI32(glyphSize.Height, activeAtlas->activeCellSize.Height)
 	);
@@ -1170,7 +1164,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 					{
 						for (i32 offsetX = 0; offsetX < glyphCellSize.Width && !foundFilledCell; offsetX++)
 						{
-							v2i gridPos = NewV2i(cellX + offsetX, cellY + offsetY);
+							v2i gridPos = MakeV2i(cellX + offsetX, cellY + offsetY);
 							FontActiveCell* cell = &activeAtlas->cells[INDEX_FROM_COORD2D(gridPos.X, gridPos.Y, activeAtlas->activeCellGridSize.Width, activeAtlas->activeCellGridSize.Height)];
 							if (cell->codepoint != FONT_CODEPOINT_EMPTY) { foundFilledCell = true; break; }
 						}
@@ -1178,7 +1172,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 					
 					if (!foundFilledCell)
 					{
-						cellPos = NewV2i(cellX, cellY);
+						cellPos = MakeV2i(cellX, cellY);
 						foundSpace = true;
 						break;
 					}
@@ -1189,7 +1183,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		
 		if (activeAtlas->texture.Width < font->activeAtlasMaxSize)
 		{
-			v2i newSize = NewV2i(
+			v2i newSize = MakeV2i(
 				MinI32(font->activeAtlasMaxSize, activeAtlas->texture.Width*2),
 				MinI32(font->activeAtlasMaxSize, activeAtlas->texture.Height*2)
 			);
@@ -1251,7 +1245,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		newGlyph->ttfGlyphIndex = glyphIndex;
 		#endif
 		newGlyph->lastUsedTime = font->programTime;
-		newGlyph->atlasSourcePos = NewV2i(
+		newGlyph->atlasSourcePos = MakeV2i(
 			cellPos.X * activeAtlas->activeCellSize.Width + (activeAtlas->activeCellSize.Width * glyphCellSize.Width)/2 - glyphSize.Width/2,
 			cellPos.Y * activeAtlas->activeCellSize.Height + (activeAtlas->activeCellSize.Height * glyphCellSize.Height)/2 - glyphSize.Height/2
 		);
@@ -1260,13 +1254,13 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		newGlyph->metrics.advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
 		newGlyph->metrics.renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
 		newGlyph->metrics.renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
-		newGlyph->metrics.logicalRec = NewRec(0, -activeAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, activeAtlas->metrics.maxAscend);
+		newGlyph->metrics.logicalRec = MakeRec(0, -activeAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, activeAtlas->metrics.maxAscend);
 		#else //!BUILD_WITH_FREETYPE
 		int glyphAdvanceX, glyphLeftSideBearing;
 		stbtt_GetGlyphHMetrics(&fontFile->ttfInfo, glyphIndex, &glyphAdvanceX, &glyphLeftSideBearing);
 		newGlyph->metrics.advanceX = IsCodepointZeroWidth(codepoint) ? 0 : (glyphAdvanceX * fontScale);
-		newGlyph->metrics.renderOffset = NewV2((r32)bitmapXOffset, (r32)bitmapYOffset); //TODO: Should we multiply this by fontScale?
-		newGlyph->metrics.logicalRec = NewRec(0, -activeAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, activeAtlas->metrics.maxAscend);
+		newGlyph->metrics.renderOffset = MakeV2((r32)bitmapXOffset, (r32)bitmapYOffset); //TODO: Should we multiply this by fontScale?
+		newGlyph->metrics.logicalRec = MakeRec(0, -activeAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, activeAtlas->metrics.maxAscend);
 		#endif //BUILD_WITH_FREETYPE
 		
 		// Bump glyphArrayStartIndex on any charRange that points to a glyph after our insertion index
@@ -1292,7 +1286,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		// Extend glyphRange
 		if (activeAtlas->glyphs.length == 1)
 		{
-			activeAtlas->glyphRange = NewFontCharRangeSingle(codepoint);
+			activeAtlas->glyphRange = MakeFontCharRangeSingle(codepoint);
 		}
 		else if (codepoint < activeAtlas->glyphRange.startCodepoint)
 		{
@@ -1355,7 +1349,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 			// Store a FontActiveAtlasTextureUpdate
 			#if BUILD_WITH_FREETYPE
 			{
-				v2i bitmapSize = NewV2i((i32)fontFile->freeTypeFace->glyph->bitmap.width, (i32)fontFile->freeTypeFace->glyph->bitmap.rows);
+				v2i bitmapSize = MakeV2i((i32)fontFile->freeTypeFace->glyph->bitmap.width, (i32)fontFile->freeTypeFace->glyph->bitmap.rows);
 				Assert(bitmapSize.Width > 0 && bitmapSize.Height > 0);
 				//NOTE: the bitmapSize can be smaller than glyph metrics reported AND it can be 1 pixel larger too! We added 2 pixels of padding so we can allow it to take the right and bottom padding area if needed
 				Assert(bitmapSize.Width >= glyphSize.Width-2 && bitmapSize.Width <= glyphSize.Width+1);
@@ -1405,7 +1399,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 			}
 			#else //!BUILD_WITH_FREETYPE
 			{
-				v2i bitmapSize = NewV2i((i32)bitmapWidth, (i32)bitmapHeight);
+				v2i bitmapSize = MakeV2i((i32)bitmapWidth, (i32)bitmapHeight);
 				FontActiveAtlasTextureUpdate* newUpdate = VarArrayAdd(FontActiveAtlasTextureUpdate, &activeAtlas->pendingTextureUpdates);
 				NotNull(newUpdate);
 				ClearPointer(newUpdate);
@@ -1491,16 +1485,16 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 		//NOTE: TryFindFontFileForCodepointAtSize already called FT_Set_Char_Size and FT_Load_Glyph for us
 		UNUSED(glyphIndex);
 		ClearPointer(metricsOut);
-		metricsOut->glyphSize = NewV2i(
+		metricsOut->glyphSize = MakeV2i(
 			TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width),
 			TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height)
 		);
 		metricsOut->advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
-		metricsOut->renderOffset = NewV2(
+		metricsOut->renderOffset = MakeV2(
 			(r32)fontFile->freeTypeFace->glyph->bitmap_left,
 			-(r32)fontFile->freeTypeFace->glyph->bitmap_top
 		);
-		metricsOut->logicalRec = NewRec(
+		metricsOut->logicalRec = MakeRec(
 			0,
 			-TO_R32_FROM_FT26(fontFile->freeTypeFace->size->metrics.ascender),
 			metricsOut->advanceX,
@@ -1519,18 +1513,18 @@ PEXP bool TryGetFontGlyphMetrics(PigFont* font, u32 codepoint, r32 fontSize, u8 
 			int boxX0, boxY0, boxX1, boxY1;
 			int getCodepointBoxResult = stbtt_GetGlyphBox(&fontFile->ttfInfo, glyphIndex, &boxX0, &boxY0, &boxX1, &boxY1);
 			if (getCodepointBoxResult == 0) { TracyCZoneEnd(_funcZone); return false; }
-			metricsOut->glyphSize = NewV2i(
+			metricsOut->glyphSize = MakeV2i(
 				RoundR32i((boxX1 - boxX0) * fontScale),
 				RoundR32i((boxY1 - boxY0) * fontScale)
 			);
-			metricsOut->renderOffset = NewV2(boxX0 * fontScale, boxY0 * fontScale);
+			metricsOut->renderOffset = MakeV2(boxX0 * fontScale, boxY0 * fontScale);
 		}
 		int advanceX = 0;
 		int leftSideBearing = 0;
 		stbtt_GetGlyphHMetrics(&fontFile->ttfInfo, glyphIndex, &advanceX, &leftSideBearing);
 		
 		metricsOut->advanceX = IsCodepointZeroWidth(codepoint) ? 0 : (advanceX * fontScale);
-		metricsOut->logicalRec = NewRec(
+		metricsOut->logicalRec = MakeRec(
 			0,
 			-metricsOut->renderOffset.Y,
 			metricsOut->advanceX,
@@ -1881,7 +1875,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					}
 					NotNull(fontFile->freeTypeFace->glyph); //TryFindFontFileForCodepointAtSize should have called FT_Load_Glyph for us
 					
-					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
+					v2i glyphSize = MakeV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
 					if (glyphSize.Width > 0 && glyphSize.Height > 0)
 					{
 						DebugAssert(packedRecIndex < numCodepointsTotal);
@@ -1990,7 +1984,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 				newAtlas->glyphRange.startCodepoint = VarArrayGetFirst(FontCharRange, &newAtlas->charRanges)->startCodepoint;
 				newAtlas->glyphRange.endCodepoint = VarArrayGetLast(FontCharRange, &newAtlas->charRanges)->endCodepoint;
 			}
-			else { newAtlas->glyphRange = NewFontCharRangeSingle(0); }
+			else { newAtlas->glyphRange = MakeFontCharRangeSingle(0); }
 		}
 		
 		{
@@ -2018,9 +2012,9 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					newGlyph->metrics.advanceX = IsCodepointZeroWidth(codepoint) ? 0 : TO_R32_FROM_FT26(fontFile->freeTypeFace->glyph->advance.x);
 					newGlyph->metrics.renderOffset.X = (r32)fontFile->freeTypeFace->glyph->bitmap_left;
 					newGlyph->metrics.renderOffset.Y = -(r32)fontFile->freeTypeFace->glyph->bitmap_top;
-					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, newAtlas->metrics.maxAscend);
+					newGlyph->metrics.logicalRec = MakeRec(0, -newAtlas->metrics.maxAscend, newGlyph->metrics.advanceX, newAtlas->metrics.maxAscend);
 					
-					v2i glyphSize = NewV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
+					v2i glyphSize = MakeV2i(TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.width), TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height));
 					if (glyphSize.Width > 0 && glyphSize.Height > 0)
 					{
 						Assert(packedRecIndex < numGlyphsInAtlas);
@@ -2028,13 +2022,13 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 						packedRecIndex++;
 						Assert(packedRec.was_packed);
 						
-						v2i bitmapSize = NewV2i((i32)fontFile->freeTypeFace->glyph->bitmap.width, (i32)fontFile->freeTypeFace->glyph->bitmap.rows);
+						v2i bitmapSize = MakeV2i((i32)fontFile->freeTypeFace->glyph->bitmap.width, (i32)fontFile->freeTypeFace->glyph->bitmap.rows);
 						Assert(bitmapSize.Width > 0 && bitmapSize.Height > 0);
 						//NOTE: the bitmapSize can be smaller than glyph metrics reported AND it can be 1 pixel larger too! We added 2 pixels of padding so we can allow it to take the right and bottom padding area if needed
 						Assert(bitmapSize.Width >= glyphSize.Width-2 && bitmapSize.Width <= glyphSize.Width+1);
 						Assert(bitmapSize.Height >= glyphSize.Height-2 && bitmapSize.Height <= glyphSize.Height+1);
 						
-						newGlyph->atlasSourcePos = NewV2i(packedRec.x + packingPadding, packedRec.y + packingPadding);
+						newGlyph->atlasSourcePos = MakeV2i(packedRec.x + packingPadding, packedRec.y + packingPadding);
 						newGlyph->metrics.glyphSize = bitmapSize;
 						newGlyph->metrics.logicalRec.Width = MaxR32(newGlyph->metrics.renderOffset.X + (r32)newGlyph->metrics.glyphSize.Width, newGlyph->metrics.advanceX);
 						
@@ -2110,8 +2104,8 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					newGlyph->codepoint = customGlyph->codepoint;
 					newGlyph->ttfGlyphIndex = INVALID_TTF_GLYPH_INDEX;
 					newGlyph->metrics.advanceX = (r32)glyphSize.Width;
-					newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - glyphSize.Height/2.0f));
-					newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)glyphSize.Width, newAtlas->metrics.maxAscend);
+					newGlyph->metrics.renderOffset = MakeV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - glyphSize.Height/2.0f));
+					newGlyph->metrics.logicalRec = MakeRec(0, -newAtlas->metrics.maxAscend, (r32)glyphSize.Width, newAtlas->metrics.maxAscend);
 					
 					if (glyphSize.Width > 0 && glyphSize.Height > 0)
 					{
@@ -2120,8 +2114,8 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 						packedRecIndex++;
 						Assert(packedRec.was_packed);
 						
-						newGlyph->atlasSourcePos = NewV2i(packedRec.x, packedRec.y);
-						newGlyph->metrics.glyphSize = NewV2i(packedRec.w - packingPadding*2, packedRec.h - packingPadding*2);
+						newGlyph->atlasSourcePos = MakeV2i(packedRec.x, packedRec.y);
+						newGlyph->metrics.glyphSize = MakeV2i(packedRec.w - packingPadding*2, packedRec.h - packingPadding*2);
 						
 						for (i32 rowIndex = 0; rowIndex < customGlyph->imageData.size.Height; rowIndex++)
 						{
@@ -2219,8 +2213,8 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
 					DebugAssert(customGlyphIndex < numCodepointsInCustomRanges);
 					stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphIndex];
-					reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
-						? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
+					reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero)
+						? MakeReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
 						: customGlyph->sourceRec;
 					Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
 					Assert(sourceRec.Width > 0 && sourceRec.Height > 0);
@@ -2263,8 +2257,8 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
 				DebugAssert(customGlyphCopyIndex < numCodepointsInCustomRanges);
 				stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphCopyIndex];
-				reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero_Const)
-					? NewReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
+				reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero)
+					? MakeReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
 					: customGlyph->sourceRec;
 				Assert(customGlyphRec->w == (int)sourceRec.Width);
 				Assert(customGlyphRec->h == (int)sourceRec.Height);
@@ -2273,7 +2267,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 				Assert(customGlyphRec->y + customGlyphRec->h <= (int)atlasSize.Height);
 				for (i32 yOffset = 0; yOffset < sourceRec.Height; yOffset++)
 				{
-					v2i targetPos = NewV2i((i32)customGlyphRec->x, (i32)customGlyphRec->y + yOffset);
+					v2i targetPos = MakeV2i((i32)customGlyphRec->x, (i32)customGlyphRec->y + yOffset);
 					u32* targetPntr = (u32*)&pixelsPntr[INDEX_FROM_COORD2D(targetPos.X, targetPos.Y, atlasSize.Width, atlasSize.Height)];
 					u32* sourcePntr = &customGlyph->imageData.pixels[INDEX_FROM_COORD2D(sourceRec.X, sourceRec.Y + yOffset, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)];
 					MyMemCopy(targetPntr, sourcePntr, sizeof(u32) * sourceRec.Width);
@@ -2350,11 +2344,11 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 				DebugAssert(stbCharInfo->y0 <= atlasSize.Height);
 				DebugAssert(stbCharInfo->y1 >= 0);
 				DebugAssert(stbCharInfo->y1 <= atlasSize.Height);
-				glyph->atlasSourcePos = NewV2i((i32)stbCharInfo->x0, (i32)stbCharInfo->y0);
-				glyph->metrics.glyphSize = NewV2i((i32)(stbCharInfo->x1 - stbCharInfo->x0), (i32)(stbCharInfo->y1 - stbCharInfo->y0));
+				glyph->atlasSourcePos = MakeV2i((i32)stbCharInfo->x0, (i32)stbCharInfo->y0);
+				glyph->metrics.glyphSize = MakeV2i((i32)(stbCharInfo->x1 - stbCharInfo->x0), (i32)(stbCharInfo->y1 - stbCharInfo->y0));
 				glyph->metrics.advanceX = IsCodepointZeroWidth(glyph->codepoint) ? 0 : stbCharInfo->xadvance;
-				glyph->metrics.renderOffset = NewV2(stbCharInfo->xoff, stbCharInfo->yoff);
-				glyph->metrics.logicalRec = NewRec(stbCharInfo->xoff, -newAtlas->metrics.maxAscend, (r32)glyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
+				glyph->metrics.renderOffset = MakeV2(stbCharInfo->xoff, stbCharInfo->yoff);
+				glyph->metrics.logicalRec = MakeRec(stbCharInfo->xoff, -newAtlas->metrics.maxAscend, (r32)glyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
 				if (glyph->metrics.logicalRec.Width == 0)
 				{
 					glyph->metrics.logicalRec.Width = glyph->metrics.advanceX;
@@ -2386,11 +2380,11 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 				ClearPointer(newGlyph);
 				newGlyph->codepoint = customGlyph->codepoint;
 				newGlyph->ttfGlyphIndex = INVALID_TTF_GLYPH_INDEX;
-				newGlyph->atlasSourcePos = NewV2i((i32)packedGlyphRec->x, (i32)packedGlyphRec->y);
-				newGlyph->metrics.glyphSize = NewV2i((i32)packedGlyphRec->w, (i32)packedGlyphRec->h);
+				newGlyph->atlasSourcePos = MakeV2i((i32)packedGlyphRec->x, (i32)packedGlyphRec->y);
+				newGlyph->metrics.glyphSize = MakeV2i((i32)packedGlyphRec->w, (i32)packedGlyphRec->h);
 				newGlyph->metrics.advanceX = (r32)newGlyph->metrics.glyphSize.Width;
-				newGlyph->metrics.renderOffset = NewV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - newGlyph->metrics.glyphSize.Height/2.0f));
-				newGlyph->metrics.logicalRec = NewRec(0, -newAtlas->metrics.maxAscend, (r32)newGlyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
+				newGlyph->metrics.renderOffset = MakeV2(0, RoundR32(-newAtlas->metrics.maxAscend + (newAtlas->metrics.maxAscend + newAtlas->metrics.maxDescend)/2.0f - newGlyph->metrics.glyphSize.Height/2.0f));
+				newGlyph->metrics.logicalRec = MakeRec(0, -newAtlas->metrics.maxAscend, (r32)newGlyph->metrics.glyphSize.Width, newAtlas->metrics.maxAscend);
 				customGlyphInfoIndex++;
 			}
 		}

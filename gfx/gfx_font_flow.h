@@ -203,7 +203,7 @@ static Result DoFontFlow_FindNextWordWrapIndex(const FontFlowState* realState, F
 static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks* callbacks, FontFlow* flowOut)
 {
 	FontLineMetrics metrics = GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
-	rec highlightRec = NewRec(
+	rec highlightRec = MakeRec(
 		state->highlightStartPos.X,
 		state->highlightStartPos.Y - metrics.centerOffset - metrics.lineHeight/2.0f - 1,
 		state->position.X - state->highlightStartPos.X,
@@ -241,8 +241,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			flowOut->font = state->font;
 			flowOut->startPos = state->position;
 			flowOut->endPos = state->position;
-			flowOut->visualRec = NewRecV(state->position, V2_Zero);
-			flowOut->logicalRec = NewRecV(state->position, V2_Zero);
+			flowOut->visualRec = MakeRecV(state->position, V2_Zero);
+			flowOut->logicalRec = MakeRecV(state->position, V2_Zero);
 			FontLineMetrics lineMetrics = GetFontLineMetrics(state->font, state->startFontSize, state->startFontStyle);
 			flowOut->logicalRec.Y -= lineMetrics.maxAscend;
 			flowOut->logicalRec.Height = lineMetrics.maxAscend;
@@ -403,7 +403,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					
 					if (predictedScale != 1.0f)
 					{
-						glyphMetrics.glyphSize = NewV2i(
+						glyphMetrics.glyphSize = MakeV2i(
 							RoundR32i(glyphMetrics.glyphSize.Width * predictedScale),
 							RoundR32i(glyphMetrics.glyphSize.Height * predictedScale)
 						);
@@ -422,8 +422,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
 				}
 				
-				glyphDrawRec = NewRecV(AddV2(state->position, glyphMetrics.renderOffset), ToV2Fromi(glyphMetrics.glyphSize));
-				glyphLogicalRec = NewRecV(AddV2(state->position, glyphMetrics.logicalRec.TopLeft), glyphMetrics.logicalRec.Size);
+				glyphDrawRec = MakeRecV(AddV2(state->position, glyphMetrics.renderOffset), ToV2Fromi(glyphMetrics.glyphSize));
+				glyphLogicalRec = MakeRecV(AddV2(state->position, glyphMetrics.logicalRec.TopLeft), glyphMetrics.logicalRec.Size);
 				if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
 				if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
 				
@@ -607,8 +607,8 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	TracyCZoneN(_funcZone, "ShortenTextToFitWidthEx", true);
 	if (maxWidth <= 0)
 	{
-		SetOptionalOutPntr(beforeEllipseStrOut, NewStr8(0, &text.chars[0]));
-		SetOptionalOutPntr(afterEllipseStrOut, NewStr8(0, &text.chars[text.length-1]));
+		SetOptionalOutPntr(beforeEllipseStrOut, MakeStr8(0, &text.chars[0]));
+		SetOptionalOutPntr(afterEllipseStrOut, MakeStr8(0, &text.chars[text.length-1]));
 		TracyCZoneEnd(_funcZone);
 		return text.length;
 	}
@@ -632,7 +632,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	if (flow.logicalRec.Width <= maxWidth)
 	{
 		SetOptionalOutPntr(beforeEllipseStrOut, text);
-		SetOptionalOutPntr(afterEllipseStrOut, NewStr8(0, &text.chars[text.length-1]));
+		SetOptionalOutPntr(afterEllipseStrOut, MakeStr8(0, &text.chars[text.length-1]));
 		ScratchEnd(scratch);
 		TracyCZoneEnd(_funcZone);
 		return 0;

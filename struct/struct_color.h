@@ -12,9 +12,11 @@ Description:
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_macros.h"
 #include "std/std_basic_math.h"
 
 //NOTE: The name "Color" conflicts with a definition in <windows.h>
+//NOTE: This is BGRA order in memory, or in hex that's 0xAARRGGBB
 typedef car Color32 Color32;
 car Color32
 {
@@ -23,39 +25,36 @@ car Color32
 	plex { u8 b, g, r, a; };
 	plex { u8 blue, green, red, alpha; };
 };
+#define MakeColorU32(value)   NEW_STRUCT(Color32){ .valueU32=(value) }
+#define MakeColor(r, g, b, a) NEW_STRUCT(Color32){ .blue=(b), .green=(g), .red=(r), .alpha=(a) }
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE Color32 NewColorU32(u32 valueU32);
-	PIG_CORE_INLINE Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha);
 	PIG_CORE_INLINE Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount);
 	PIG_CORE_INLINE Color32 ColorWithAlphaU8(Color32 rgbColor, u8 alpha);
 	PIG_CORE_INLINE Color32 ColorWithAlpha(Color32 rgbColor, r32 alpha);
 #endif //!PIG_CORE_IMPLEMENTATION
 
+#define NoColor_Value                 0x00000000UL
+#define TransparentBlack_Value        0x00000000UL
+#define TransparentWhite_Value        0x00FFFFFFUL
+#define Transparent_Value             TransparentWhite_Value
+#define Black_Value                   0xFF000000UL
+#define White_Value                   0xFFFFFFFFUL
+
+#define NoColor                 MakeColorU32(NoColor_Value)
+#define TransparentBlack        MakeColorU32(TransparentBlack_Value)
+#define TransparentWhite        MakeColorU32(TransparentWhite_Value)
+#define Transparent             TransparentWhite
+#define Black                   MakeColorU32(Black_Value)
+#define White                   MakeColorU32(White_Value)
+
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
-
-//NOTE: This is BGRA order in memory, or in hex that's 0xAARRGGBB
-PEXPI Color32 NewColorU32(u32 valueU32)
-{
-	Color32 result;
-	result.valueU32 = valueU32;
-	return result;
-}
-PEXPI Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
-{
-	Color32 result;
-	result.red = red;
-	result.green = green;
-	result.blue = blue;
-	result.alpha = alpha;
-	return result;
-}
 
 // +--------------------------------------------------------------+
 // |                     Basic Math Functions                     |
@@ -63,7 +62,7 @@ PEXPI Color32 NewColor(u8 red, u8 green, u8 blue, u8 alpha)
 //"Simple" meaning we don't do lerp in linear color space, we lerp in Gamma sRGB space, which is innaccurate but simple to do
 PEXPI Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount)
 {
-	return NewColor(
+	return MakeColor(
 		ClampCastI32ToU8(RoundR32i((r32)start.r + (r32)(end.r - start.r) * amount)),
 		ClampCastI32ToU8(RoundR32i((r32)start.g + (r32)(end.g - start.g) * amount)),
 		ClampCastI32ToU8(RoundR32i((r32)start.b + (r32)(end.b - start.b) * amount)),
@@ -73,7 +72,7 @@ PEXPI Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount)
 
 PEXPI Color32 ColorWithAlphaU8(Color32 rgbColor, u8 alpha)
 {
-	return NewColor(rgbColor.r, rgbColor.g, rgbColor.b, alpha);
+	return MakeColor(rgbColor.r, rgbColor.g, rgbColor.b, alpha);
 }
 PEXPI Color32 ColorWithAlpha(Color32 rgbColor, r32 alpha)
 {

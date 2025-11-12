@@ -106,7 +106,7 @@ PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 		resultBuffer[resultLength] = '\0';
 		
 		Assert(resultLength <= UINTXX_MAX);
-		resultPath = NewFilePath((uxx)resultLength, resultBuffer);
+		resultPath = MakeFilePath((uxx)resultLength, resultBuffer);
 		FixPathSlashes(resultPath);
 		SetOptionalOutPntr(resultOut, Result_Success);
 	}
@@ -198,7 +198,7 @@ PEXP FilePath OsGetWorkingDirectory(Arena* arena, Result* resultOut)
 		);
 		Assert(resultLength == bufferSizeNeeded-1);
 		
-		resultPath = AllocFolderPath(arena, NewStr8((uxx)resultLength, scratchBuffer), true);
+		resultPath = AllocFolderPath(arena, MakeStr8((uxx)resultLength, scratchBuffer), true);
 		SetOptionalOutPntr(resultOut, Result_Success);
 		ScratchEnd(scratch);
 	}
@@ -287,7 +287,7 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		}
 		// Assert(BufferIsNullTerminated(MAX_PATH, pathBuffer)); TODO: Re-enable me once we have BufferIsNullTerminated?
 		
-		result = NewFilePath((uxx)MyStrLength(&pathBuffer[0]), pathBuffer);
+		result = MakeFilePath((uxx)MyStrLength(&pathBuffer[0]), pathBuffer);
 		Assert(!IsEmptyStr(result));
 		FixPathSlashes(result);
 		

@@ -28,14 +28,14 @@ PEXPI ClayId ToClayIdPrintEx(Arena* arena, uxx index, const char* formatString, 
 {
 	PrintInArenaVa(arena, formattedString, formattedStringLength, formatString);
 	Assert(formattedStringLength >= 0);
-	ClayId result = ToClayIdEx(NewStr8((uxx)formattedStringLength, formattedString), index);
+	ClayId result = ToClayIdEx(MakeStr8((uxx)formattedStringLength, formattedString), index);
 	return result;
 }
 PEXPI ClayId ToClayIdPrint(Arena* arena, const char* formatString, ...)
 {
 	PrintInArenaVa(arena, formattedString, formattedStringLength, formatString);
 	Assert(formattedStringLength >= 0);
-	ClayId result = ToClayIdEx(NewStr8((uxx)formattedStringLength, formattedString), 0);
+	ClayId result = ToClayIdEx(MakeStr8((uxx)formattedStringLength, formattedString), 0);
 	return result;
 }
 

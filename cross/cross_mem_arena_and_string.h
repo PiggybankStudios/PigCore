@@ -71,14 +71,14 @@ PEXPI Str8 AllocStrAndCopy(Arena* arena, uxx numChars, const char* charsToCopy, 
 {
 	DebugNotNull(arena);
 	char* allocatedChars = AllocAndCopyChars(arena, numChars, charsToCopy, addNullTerm);
-	return (allocatedChars != nullptr) ? NewStr8(numChars, allocatedChars) : Str8_Empty;
+	return (allocatedChars != nullptr) ? MakeStr8(numChars, allocatedChars) : Str8_Empty;
 }
 PEXPI Str8 AllocStrAndCopyNt(Arena* arena, const char* nullTermStr, bool addNullTerm)
 {
 	DebugNotNull(arena);
 	uxx numChars = (nullTermStr != nullptr) ? MyStrLength64(nullTermStr) : 0;
 	char* allocatedChars = AllocAndCopyChars(arena, numChars, nullTermStr, addNullTerm);
-	return (allocatedChars != nullptr) ? NewStr8(numChars, allocatedChars) : Str8_Empty;
+	return (allocatedChars != nullptr) ? MakeStr8(numChars, allocatedChars) : Str8_Empty;
 }
 
 PEXPI void FreeStr8(Arena* arena, Str8* stringPntr)

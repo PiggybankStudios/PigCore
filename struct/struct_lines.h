@@ -22,6 +22,8 @@ car Line2D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Line2D) == sizeof(r32)*4, "Line2D contains padding!");
 #endif
+#define MakeLine2D(x0, y0, x1, y1) NEW_STRUCT(Line2D){ .Start=MakeV2((x0), (y0)), .End=MakeV2((x1), (y1)) }
+#define MakeLine2DV(startV2, endV2) NEW_STRUCT(Line2D){ .Start=(startV2), .End=(endV2) }
 
 typedef car Line2DR64 Line2DR64;
 car Line2DR64
@@ -30,6 +32,8 @@ car Line2DR64
 	v2d Points[2];
 	plex { v2d Start; v2d End; };
 };
+#define MakeLine2DR64(x0, y0, x1, y1) NEW_STRUCT(Line2DR64){ .Start=MakeV2d((x0), (y0)), .End=MakeV2d((x1), (y1)) }
+#define MakeLine2DR64V(startV2d, endV2d) NEW_STRUCT(Line2DR64){ .Start=(startV2d), .End=(endV2d) }
 
 typedef car Line3D Line3D;
 car Line3D
@@ -41,17 +45,13 @@ car Line3D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Line3D) == sizeof(r32)*6, "Line3D contains padding!");
 #endif
+#define MakeLine3D(x0, y0, z0, x1, y1, z1) NEW_STRUCT(Line3D){ .Start=MakeV3((x0), (y0), (z0)), .End=MakeV3((x1), (y1), (z1)) }
+#define MakeLine3DV(startV3, endV3) NEW_STRUCT(Line3D){ .Start=(startV3), .End=(endV3) }
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE Line2D NewLine2D(r32 startX, r32 startY, r32 endX, r32 endY);
-	PIG_CORE_INLINE Line2D NewLine2DV(v2 start, v2 end);
-	PIG_CORE_INLINE Line2DR64 NewLine2DR64(r64 startX, r64 startY, r64 endX, r64 endY);
-	PIG_CORE_INLINE Line2DR64 NewLine2DR64V(v2d start, v2d end);
-	PIG_CORE_INLINE Line3D NewLine3D(r32 startX, r32 startY, r32 startZ, r32 endX, r32 endY, r32 endZ);
-	PIG_CORE_INLINE Line3D NewLine3DV(v3 start, v3 end);
 	PIG_CORE_INLINE r32 DistanceToLine2D(Line2D line, v2 point, v2* closestPointOut);
 	PIG_CORE_INLINE r64 DistanceToLine2DR64(Line2DR64 line, v2d point, v2d* closestPointOut);
 #endif
@@ -60,59 +60,6 @@ _Static_assert(sizeof(Line3D) == sizeof(r32)*6, "Line3D contains padding!");
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
-
-PEXPI Line2D NewLine2D(r32 startX, r32 startY, r32 endX, r32 endY)
-{
-	Line2D result = ZEROED;
-	result.Start.X = startX;
-	result.Start.Y = startY;
-	result.End.X = endX;
-	result.End.Y = endY;
-	return result;
-}
-PEXPI Line2D NewLine2DV(v2 start, v2 end)
-{
-	Line2D result = ZEROED;
-	result.Start = start;
-	result.End = end;
-	return result;
-}
-
-PEXPI Line2DR64 NewLine2DR64(r64 startX, r64 startY, r64 endX, r64 endY)
-{
-	Line2DR64 result = ZEROED;
-	result.Start.X = startX;
-	result.Start.Y = startY;
-	result.End.X = endX;
-	result.End.Y = endY;
-	return result;
-}
-PEXPI Line2DR64 NewLine2DR64V(v2d start, v2d end)
-{
-	Line2DR64 result = ZEROED;
-	result.Start = start;
-	result.End = end;
-	return result;
-}
-
-PEXPI Line3D NewLine3D(r32 startX, r32 startY, r32 startZ, r32 endX, r32 endY, r32 endZ)
-{
-	Line3D result = ZEROED;
-	result.Start.X = startX;
-	result.Start.Y = startY;
-	result.Start.Z = startZ;
-	result.End.X = endX;
-	result.End.Y = endY;
-	result.End.Z = endZ;
-	return result;
-}
-PEXPI Line3D NewLine3DV(v3 start, v3 end)
-{
-	Line3D result = ZEROED;
-	result.Start = start;
-	result.End = end;
-	return result;
-}
 
 PEXPI r32 DistanceToLine2D(Line2D line, v2 point, v2* closestPointOut)
 {

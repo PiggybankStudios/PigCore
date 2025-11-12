@@ -108,7 +108,7 @@ PEXP Str8 PrintInArenaStr(Arena* arena, const char* formatString, ...)
 	
 	result[length] = '\0';
 	
-	return NewStr8((uxx)length, result);
+	return MakeStr8((uxx)length, result);
 }
 
 PEXP int PrintVa_Measure(const char* formatString, va_list args)

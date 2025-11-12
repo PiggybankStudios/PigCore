@@ -14,7 +14,9 @@ Description:
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_macros.h"
 #include "std/std_includes.h"
+#include "std/std_trig.h"
 #include "struct/struct_vectors.h"
 #include "lib/lib_handmade_math.h"
 
@@ -23,6 +25,8 @@ Description:
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
 // +--------------------------------------------------------------+
+#define MakeQuat(x, y, z, w) NEW_STRUCT(HMM_Quat){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+
 typedef car QuatR64 QuatR64;
 car QuatR64
 {
@@ -37,6 +41,7 @@ car QuatR64
 		r64 W;
 	};
 };
+#define MakeQuatd(x, y, z, w) NEW_STRUCT(QuatR64){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
 
 typedef HMM_Quat quat;
 typedef QuatR64 quatd;
@@ -45,7 +50,6 @@ typedef QuatR64 quatd;
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE quatd NewQuatd(r64 x, r64 y, r64 z, r64 w);
 	PIG_CORE_INLINE quatd ToQuatdFromAxis(v3d axis, r64 angle);
 	PIG_CORE_INLINE quatd AddQuatd(quatd left, quatd right);
 	PIG_CORE_INLINE quatd SubQuatd(quatd left, quatd right);
@@ -64,11 +68,6 @@ typedef QuatR64 quatd;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define NewQuat(x, y, z, w) HMM_Q((x), (y), (z), (w))
-
-#define MakeQuat(x, y, z, w) NEW_STRUCT(quat){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define MakeQuatd(x, y, z, w) NEW_STRUCT(quatd){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-
 #define ToQuatFromV4(vec4) HMM_QV4(vec4)
 #define ToQuatdFromV4d(vec4d) MakeQuatd((vec4d).X, (vec4d).Y, (vec4d).Z, (vec4d).W)
 #define ToV4FromQuat(quaternion) MakeV4((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
@@ -104,16 +103,6 @@ typedef QuatR64 quatd;
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
-
-PEXPI quatd NewQuatd(r64 x, r64 y, r64 z, r64 w)
-{
-	quatd result;
-	result.X = x;
-	result.Y = y;
-	result.Z = z;
-	result.W = w;
-	return result;
-}
 
 PEXPI quatd ToQuatdFromAxis(v3d axis, r64 angle)
 {
@@ -212,7 +201,7 @@ PEXPI quatd SlerpQuatd(quatd start, quatd end, r64 amount)
 	if (cosTheta < 0.0)
 	{
 		cosTheta = -cosTheta;
-		end = NewQuatd(-end.X, -end.Y, -end.Z, -end.W);
+		end = MakeQuatd(-end.X, -end.Y, -end.Z, -end.W);
 	}
 	
 	if (cosTheta > 0.9995) //TODO: Should we choose a number closer to 1.0 when working in 64-bit floats?

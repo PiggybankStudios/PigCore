@@ -54,25 +54,34 @@ Description:
 // +--------------------------------------------------------------+
 // |                       String Structure                       |
 // +--------------------------------------------------------------+
-//NOTE: Str8 could hold UTF-8, ASCII, or any other encoding that uses 8-bit pieces
+//NOTE: Str8 could hold UTF-8, ASCII, or any other encoding that uses 8-bit pieces. This structure also doubles as a generic "Slice"
 typedef plex Str8 Str8;
 plex Str8
 {
 	uxx length;
-	car { char* chars; u8* bytes; void* pntr; };
+	car { char* chars; u8* bytes; void* pntr; const char* charsConst; const void* pntrConst; };
 };
+#define MakeStr8(lengthValue, charPntr) NEW_STRUCT(Str8){ .length=(lengthValue), .charsConst=(charPntr) }
+#define MakeStr8Nt(nullTermStr)         NEW_STRUCT(Str8){ .length=(uxx)MyStrLength(nullTermStr), .charsConst=(nullTermStr) }
+#define MakeStr8Char(charStrLit)        NEW_STRUCT(Str8){ .length=1, .charsConst=(charStrLit) }
+#define StrLit(stringLiteral)           NEW_STRUCT(Str8){ .length=ArrayCount(CheckStrLit(stringLiteral))-1, .charsConst=CheckStrLit(stringLiteral) }
+
 //NOTE: This structure is useful for all sorts of data encapsulation. "Slice" alias indicates that a piece of code isn't
 //      treating the contents of the data as a "string" in the traditional sense, but it's still operating with the same
 //      structure layout: a uxx length and void* pntr.
 typedef Str8 Slice;
+#define MakeSlice(lengthValue, voidPntr) NEW_STRUCT(Slice){ .length=(lengthValue), .pntrConst=(voidPntr) }
 
 //NOTE: Str16 could hold UTF-16 or USC2 or any other encoding that uses 16-bit pieces
 typedef plex Str16 Str16;
 plex Str16
 {
 	uxx length;
-	car { char16_t* chars; u16* words; void* pntr; };
+	car { char16_t* chars; u16* words; void* pntr; const char16_t* charsConst; };
 };
+#define MakeStr16(lengthValue, char16Pntr) NEW_STRUCT(Str16){ .length=(lengthValue), .charsConst=(char16Pntr) }
+#define MakeStr16Nt(nullTermStr)         NEW_STRUCT(Str16){ .length=(uxx)MyWideStrLength(nullTermStr), .charsConst=(nullTermStr) }
+//TODO: Can we do Str16Lit? What is the cross-platform syntax in C for wide string literals? Does ArrayCount return the correct value?
 
 typedef plex Str8Pair Str8Pair;
 plex Str8Pair
@@ -87,17 +96,12 @@ plex Str8Pair
 		};
 	};
 };
+#define MakeStr8Pair(leftStr8, rightStr8) NEW_STRUCT(Str8Pair){ .left=(leftStr8), .right=(rightStr8) }
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE Str8 StrLit(const char* nullTermStr);
-	PIG_CORE_INLINE Str8 NewStr8(uxx length, const void* pntr);
-	PIG_CORE_INLINE Str8 NewStr8Nt(const void* nullTermStr);
-	PIG_CORE_INLINE Str16 Str16Lit(const char16_t* nullTermStr);
-	PIG_CORE_INLINE Str16 NewStr16(uxx length, const void* pntr);
-	PIG_CORE_INLINE Str8Pair NewStr8Pair(Str8 left, Str8 right);
 	#if TARGET_IS_ORCA
 	PIG_CORE_INLINE oc_str8 ToOcStr8(Str8 str);
 	PIG_CORE_INLINE Str8 ToStr8FromOc(oc_str8 orcaStr);
@@ -145,19 +149,11 @@ plex Str8Pair
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define Str8_Empty        NewStr8(0, nullptr)
-#define Str8_Empty_Const  ((Str8)ZEROED)
-#define Str8_Space        NewStr8(1, " ")
-#define Str8_Space_Const  NEW_STRUCT(Str8){ .length=1, .chars=" " }
-
-#define Slice_Empty       NewStr8(0, nullptr)
-#define Slice_Empty_Const ((Slice)ZEROED)
-
-#define Str16_Empty       NewStr16(0, nullptr)
-#define Str16_Empty_Const ((Str16)ZEROED)
-
-#define Str8Pair_Empty       NewStr8Pair(MyStr_Empty_Const, MyStr_Empty_Const)
-#define Str8Pair_Empty_Const ((Str8Pair)ZEROED)
+#define Str8_Empty        MakeStr8(0, nullptr)
+#define Str8_Space        MakeStr8Char(" ")
+#define Slice_Empty       MakeSlice(0, nullptr)
+#define Str16_Empty       MakeStr16(0, nullptr)
+#define Str8Pair_Empty    MakeStr8Pair(Str8_Empty, Str8_Empty)
 
 //NOTE: These are meant to be used when formatting Str8 using any printf like functions
 //      Use the format specifier %.*s and then this macro in the var-args
@@ -185,8 +181,6 @@ plex Str8Pair
 #define DebugNotEmptyStrPntr(stringPntr) //nothing
 #endif
 
-#define StrLit(stringLiteral) NEW_STRUCT(Str8){ .length=ArrayCount(CheckStrLit(stringLiteral))-1, .chars=CheckStrLit(stringLiteral) }
-
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
@@ -195,47 +189,9 @@ plex Str8Pair
 // +--------------------------------------------------------------+
 // |                       Basic String API                       |
 // +--------------------------------------------------------------+
-PEXPI Str8 NewStr8(uxx length, const void* pntr)
-{
-	Str8 result;
-	result.length = length;
-	result.pntr = (void*)pntr; //throw away const qualifier
-	return result;
-}
-PEXPI Str8 NewStr8Nt(const void* nullTermStr)
-{
-	Str8 result;
-	result.length = (nullTermStr != nullptr) ? (uxx)MyStrLength64(nullTermStr) : 0;
-	result.chars = (char*)nullTermStr; //throw away const qualifier
-	return result;
-}
-
-PEXPI Str16 Str16Lit(const char16_t* nullTermStr)
-{
-	Str16 result;
-	result.length = ((nullTermStr != nullptr) ? (uxx)MyWideStrLength(nullTermStr) : 0);
-	result.chars = (char16_t*)nullTermStr;
-	return result;
-}
-PEXPI Str16 NewStr16(uxx length, const void* pntr)
-{
-	Str16 result;
-	result.length = length;
-	result.pntr = (void*)pntr; //throw away const qualifier
-	return result;
-}
-
-PEXPI Str8Pair NewStr8Pair(Str8 left, Str8 right)
-{
-	Str8Pair result;
-	result.left = left;
-	result.right = right;
-	return result;
-}
-
 #if TARGET_IS_ORCA
 PEXPI oc_str8 ToOcStr8(Str8 str) { return NEW_STRUCT(oc_str8){ .ptr = str.chars, .len = (size_t)str.length }; }
-PEXPI Str8 ToStr8FromOc(oc_str8 orcaStr) { DebugAssert(orcaStr.len <= UINTXX_MAX); return NewStr8((uxx)orcaStr.len, orcaStr.ptr); }
+PEXPI Str8 ToStr8FromOc(oc_str8 orcaStr) { DebugAssert(orcaStr.len <= UINTXX_MAX); return MakeStr8((uxx)orcaStr.len, orcaStr.ptr); }
 #endif //TARGET_IS_ORCA
 
 PEXPI bool IsEmptyStr(Str8 string) { return (string.length == 0); }
@@ -332,7 +288,7 @@ PEXPI Str8 StrSlice(Str8 target, uxx startIndex, uxx endIndex)
 	DebugAssert(startIndex <= target.length);
 	DebugAssert(endIndex <= target.length);
 	DebugAssert(startIndex <= endIndex);
-	return NewStr8(endIndex - startIndex, target.chars + startIndex);
+	return MakeStr8(endIndex - startIndex, target.chars + startIndex);
 }
 PEXPI Str8 StrSlicePntrs(Str8 target, const void* startPntr, const void* endPntr)
 {

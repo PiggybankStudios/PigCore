@@ -80,7 +80,7 @@ PEXP void GfxSystem_RenderImDrawData(GfxSystem* system, Arena* vertBufferArena, 
 					const ImDrawVert* imVert = &cmdDrawList->VtxBuffer.Data[vIndex];
 					verticesPntr[vIndex].position = ToV2FromImgui(imVert->pos);
 					verticesPntr[vIndex].texCoord = ToV2FromImgui(imVert->uv);
-					verticesPntr[vIndex].color = ToV4rFromColor32(NewColorU32(
+					verticesPntr[vIndex].color = ToV4rFromColor32(MakeColorU32(
 						(imVert->col & 0xFF00FF00) |
 						((imVert->col & 0x00FF0000) >> 16) |
 						((imVert->col & 0x000000FF) << 16)
@@ -146,11 +146,11 @@ PEXP void GfxSystem_RenderImDrawData(GfxSystem* system, Arena* vertBufferArena, 
 				else
 				{
 					GfxSystem_SetWorldMat(system, Mat4_Identity);
-					GfxSystem_SetClipRec(system, ToReciFromf(NewRec(cmd->ClipRect.x, cmd->ClipRect.y, cmd->ClipRect.z - cmd->ClipRect.x, cmd->ClipRect.w - cmd->ClipRect.y)));
+					GfxSystem_SetClipRec(system, ToReciFromf(MakeRec(cmd->ClipRect.x, cmd->ClipRect.y, cmd->ClipRect.z - cmd->ClipRect.x, cmd->ClipRect.w - cmd->ClipRect.y)));
 					Texture* texture = (Texture*)ImDrawCmd_GetTexID((ImDrawCmd*)cmd);
 					GfxSystem_BindTexture(system, texture);
-					GfxSystem_SetSourceRec(system, NewRecV(V2_Zero, (texture != nullptr) ? ToV2Fromi(texture->size) : V2_One));
-					GfxSystem_SetTintColorRaw(system, NewV4r(1, 1, 1, 1));
+					GfxSystem_SetSourceRec(system, MakeRecV(V2_Zero, (texture != nullptr) ? ToV2Fromi(texture->size) : V2_One));
+					GfxSystem_SetTintColorRaw(system, FillV4r(1));
 					GfxSystem_SetVertexOffset(system, sizeof(Vertex2D) * (vertexOffset + cmd->VtxOffset));
 					GfxSystem_DrawVerticesEx(system, indexOffset + cmd->IdxOffset, cmd->ElemCount);
 				}

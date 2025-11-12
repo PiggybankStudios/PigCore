@@ -70,7 +70,7 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 		
 		if (pathOut != nullptr)
 		{
-			Str16 filePathStr16 = Str16Lit(filePathPntr16);
+			Str16 filePathStr16 = MakeStr16Nt(filePathPntr16);
 			*pathOut = ConvertUcs2StrToUtf8(arena, filePathStr16, false);
 			NotNullStr(*pathOut);
 			FixPathSlashes(*pathOut);
@@ -176,7 +176,7 @@ PEXP Result OsDoSaveFileDialog(uxx numExtensions, Str8Pair* extensions, uxx defa
 		
 		if (pathOut != nullptr)
 		{
-			Str16 filePathStr16 = Str16Lit(filePathPntr16);
+			Str16 filePathStr16 = MakeStr16Nt(filePathPntr16);
 			*pathOut = ConvertUcs2StrToUtf8(arena, filePathStr16, false);
 			NotNullStr(*pathOut);
 			FixPathSlashes(*pathOut);

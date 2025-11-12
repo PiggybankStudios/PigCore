@@ -86,7 +86,7 @@ PEXP u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, boo
 			SetOptionalOutPntr(timezoneDoesDstOut, localTimezoneDoesDst);
 			// if (timezoneNameOut != nullptr)
 			// {
-			// 	*timezoneNameOut = ConvertUcs2StrToUtf8(timezoneNameArena, Str16Lit(&timezoneInfo.StandardName[0]), false);
+			// 	*timezoneNameOut = ConvertUcs2StrToUtf8(timezoneNameArena, MakeStr16Nt(&timezoneInfo.StandardName[0]), false);
 			// }
 		}
 		else

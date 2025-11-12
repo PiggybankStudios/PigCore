@@ -146,7 +146,7 @@ PEXPI void SetNotificationIconEx(NotificationQueue* queue, DbgLevel level, Textu
 	queue->icons[level].sourceRec = sourceRec;
 	if (sourceRec.X == 0 && sourceRec.Y == 0 && sourceRec.Width == 0 && sourceRec.Height == 0 && texture != nullptr)
 	{
-		queue->icons[level].sourceRec = NewRec(0, 0, (r32)texture->Width, (r32)texture->Height);
+		queue->icons[level].sourceRec = MakeRec(0, 0, (r32)texture->Width, (r32)texture->Height);
 	}
 	queue->icons[level].color = color;
 }
@@ -267,7 +267,7 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		Color32 backgroundColor = ColorWithAlpha(MonokaiDarkGray, 1.0f - disappearAnimAmount);
 		Color32 textColor = ColorWithAlpha(MonokaiWhite, 1.0f - disappearAnimAmount);
 		Color32 borderColor = ColorWithAlpha(MonokaiLightGray, 1.0f - disappearAnimAmount);
-		v2 offset = NewV2(
+		v2 offset = MakeV2(
 			-UISCALE_R32(context->uiScale, NOTIFICATION_SCREEN_MARGIN_RIGHT),
 			-UISCALE_R32(context->uiScale, NOTIFICATION_SCREEN_MARGIN_BOTTOM) - notification->currentOffsetY
 		);

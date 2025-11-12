@@ -18,9 +18,30 @@ Description:
 #include "struct/struct_vectors.h"
 #include "lib/lib_handmade_math.h"
 
-// +--------------------------------------------------------------+
-// |                           Typedefs                           |
-// +--------------------------------------------------------------+
+#define MakeMat2(r0c0, r0c1, r1c0, r1c1) NEW_STRUCT(HMM_Mat2){ \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1),                \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1)                 \
+}
+#define MakeMat3(r0c0, r0c1, r0c2, r1c0, r1c1, r1c2, r2c0, r2c1, r2c2) NEW_STRUCT(HMM_Mat3){ \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2),                        \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2),                        \
+	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2)                         \
+}
+#define MakeMat4(r0c0, r0c1, r0c2, r0c3, r1c0, r1c1, r1c2, r1c3, r2c0, r2c1, r2c2, r2c3, r3c0, r3c1, r3c2, r3c3) NEW_STRUCT(HMM_Mat4){ \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2), .Columns[3].X=(r0c3),                                            \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2), .Columns[3].Y=(r1c3),                                            \
+	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2), .Columns[3].Z=(r2c3),                                            \
+	.Columns[0].W=(r3c0), .Columns[1].W=(r3c1), .Columns[2].W=(r3c2), .Columns[3].W=(r3c3)                                             \
+}
+
+#define FillMat2(value) MakeMat2((value), (value), (value), (value))
+#define FillMat3(value) MakeMat3((value), (value), (value), (value), (value), (value), (value), (value), (value))
+#define FillMat4(value) MakeMat4((value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value))
+
+#define FillDiagonalMat2(value) MakeMat2((value), 0.0f, 0.0f, (value))
+#define FillDiagonalMat3(value) MakeMat3((value), 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, (value))
+#define FillDiagonalMat4(value) MakeMat4((value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value))
+
 typedef HMM_Mat2 mat2;
 typedef HMM_Mat3 mat3;
 typedef HMM_Mat4 mat4;
@@ -32,9 +53,6 @@ typedef HMM_Mat4 mat4;
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE mat2 NewMat2(r32 r0c0, r32 r0c1, r32 r1c0, r32 r1c1);
-	PIG_CORE_INLINE mat3 NewMat3(r32 r0c0, r32 r0c1, r32 r0c2, r32 r1c0, r32 r1c1, r32 r1c2, r32 r2c0, r32 r2c1, r32 r2c2);
-	PIG_CORE_INLINE mat4 NewMat4(r32 r0c0, r32 r0c1, r32 r0c2, r32 r0c3, r32 r1c0, r32 r1c1, r32 r1c2, r32 r1c3, r32 r2c0, r32 r2c1, r32 r2c2, r32 r2c3, r32 r3c0, r32 r3c1, r32 r3c2, r32 r3c3);
 	PIG_CORE_INLINE mat3 ToMat3From4(mat4 matrix4);
 	PIG_CORE_INLINE mat4 ToMat4From3(mat3 matrix3);
 	PIG_CORE_INLINE bool AreEqualMat2(mat2 left, mat2 right);
@@ -49,30 +67,6 @@ typedef HMM_Mat4 mat4;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define MakeMat2(r0c0, r0c1, r1c0, r1c1) NEW_STRUCT(mat2){ \
-	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1),            \
-	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1)             \
-}
-#define MakeMat3(r0c0, r0c1, r0c2, r1c0, r1c1, r1c2, r2c0, r2c1, r2c2) NEW_STRUCT(mat3){ \
-	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2),                    \
-	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2),                    \
-	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2)                     \
-}
-#define MakeMat4(r0c0, r0c1, r0c2, r0c3, r1c0, r1c1, r1c2, r1c3, r2c0, r2c1, r2c2, r2c3, r3c0, r3c1, r3c2, r3c3) NEW_STRUCT(mat4){ \
-	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2), .Columns[3].X=(r0c3),                                        \
-	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2), .Columns[3].Y=(r1c3),                                        \
-	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2), .Columns[3].Z=(r2c3),                                        \
-	.Columns[0].W=(r3c0), .Columns[1].W=(r3c1), .Columns[2].W=(r3c2), .Columns[3].W=(r3c3)                                         \
-}
-
-#define FillMat2(value) MakeMat2((value), (value), (value), (value))
-#define FillMat3(value) MakeMat3((value), (value), (value), (value), (value), (value), (value), (value), (value))
-#define FillMat4(value) MakeMat4((value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value))
-
-#define FillDiagonalMat2(value) MakeMat2((value), 0.0f, 0.0f, (value))
-#define FillDiagonalMat3(value) MakeMat3((value), 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, (value))
-#define FillDiagonalMat4(value) MakeMat4((value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value))
-
 #define Mat2_Zero     FillMat2(0.0f)
 #define Mat2_Identity FillDiagonalMat2(1.0f)
 #define Mat3_Zero     FillMat3(0.0f)
@@ -125,27 +119,27 @@ typedef HMM_Mat4 mat4;
 //TODO: Not entirely sure what this is useful for?
 #define LinearCombineV4Mat4(vec4Left, matrix4Right) HMM_LinearCombineV4M4((vec4Left), (matrix4Right))
 
-#define MakeTranslateXMat3(x) MakeTranslateMat3(NewV2((x), 0.0f))
-#define MakeTranslateYMat3(y) MakeTranslateMat3(NewV2(0.0f, (y)))
+#define MakeTranslateXMat3(x) MakeTranslateMat3(MakeV2((x), 0.0f))
+#define MakeTranslateYMat3(y) MakeTranslateMat3(MakeV2(0.0f, (y)))
 
 #define MakeTranslateMat4(vec3) HMM_Translate(vec3)
-#define MakeTranslateXYZMat4(x, y, z) HMM_Translate(NewV3((x), (y), (z)))
-#define MakeTranslateXMat4(x) HMM_Translate(NewV3((x), 0.0f, 0.0f))
-#define MakeTranslateYMat4(y) HMM_Translate(NewV3(0.0f, (y), 0.0f))
-#define MakeTranslateZMat4(z) HMM_Translate(NewV3(0.0f, 0.0f, (z)))
+#define MakeTranslateXYZMat4(x, y, z) HMM_Translate(MakeV3((x), (y), (z)))
+#define MakeTranslateXMat4(x) HMM_Translate(MakeV3((x), 0.0f, 0.0f))
+#define MakeTranslateYMat4(y) HMM_Translate(MakeV3(0.0f, (y), 0.0f))
+#define MakeTranslateZMat4(z) HMM_Translate(MakeV3(0.0f, 0.0f, (z)))
 
 #define Make2DScaleMat3(vec2) MakeScaleMat3(ToV3From2((vec2), 1.0f))
-#define MakeScaleXYZMat3(x, y, z) MakeScaleMat3(NewV3((x), (y), (z)))
-#define MakeScaleXMat3(x) MakeScaleMat3(NewV3((x), 1.0f, 1.0f))
-#define MakeScaleYMat3(y) MakeScaleMat3(NewV3(1.0f, (y), 1.0f))
-#define MakeScaleZMat3(z) MakeScaleMat3(NewV3(1.0f, 1.0f, (z)))
+#define MakeScaleXYZMat3(x, y, z) MakeScaleMat3(MakeV3((x), (y), (z)))
+#define MakeScaleXMat3(x) MakeScaleMat3(MakeV3((x), 1.0f, 1.0f))
+#define MakeScaleYMat3(y) MakeScaleMat3(MakeV3(1.0f, (y), 1.0f))
+#define MakeScaleZMat3(z) MakeScaleMat3(MakeV3(1.0f, 1.0f, (z)))
 
 #define MakeScaleMat4(vec3) HMM_Scale(vec3)
 #define Make2DScaleMat4(vec2) HMM_Scale(ToV3From2((vec2), 1.0f))
-#define MakeScaleXYZMat4(x, y, z) HMM_Scale(NewV3((x), (y), (z)))
-#define MakeScaleXMat4(x) HMM_Scale(NewV3((x), 1.0f, 1.0f))
-#define MakeScaleYMat4(y) HMM_Scale(NewV3(1.0f, (y), 1.0f))
-#define MakeScaleZMat4(z) HMM_Scale(NewV3(1.0f, 1.0f, (z)))
+#define MakeScaleXYZMat4(x, y, z) HMM_Scale(MakeV3((x), (y), (z)))
+#define MakeScaleXMat4(x) HMM_Scale(MakeV3((x), 1.0f, 1.0f))
+#define MakeScaleYMat4(y) HMM_Scale(MakeV3(1.0f, (y), 1.0f))
+#define MakeScaleZMat4(z) HMM_Scale(MakeV3(1.0f, 1.0f, (z)))
 // TODO: MakeScaleWMat4(w)?
 
 //TODO: MakeRotateMat3(angle)? (for 2D rotations?)
@@ -182,46 +176,9 @@ typedef HMM_Mat4 mat4;
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-// +--------------------------------------------------------------+
-// |                        New Functions                         |
-// +--------------------------------------------------------------+
-PEXPI mat2 NewMat2(
-	r32 r0c0, r32 r0c1,
-	r32 r1c0, r32 r1c1)
-{
-	mat2 result;
-	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1;
-	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1;
-	return result;
-}
-PEXPI mat3 NewMat3(
-	r32 r0c0, r32 r0c1, r32 r0c2,
-	r32 r1c0, r32 r1c1, r32 r1c2,
-	r32 r2c0, r32 r2c1, r32 r2c2)
-{
-	mat3 result;
-	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1; result.Elements[2][0] = r0c2;
-	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1; result.Elements[2][1] = r1c2;
-	result.Elements[0][2] = r2c0; result.Elements[1][2] = r2c1; result.Elements[2][2] = r2c2;
-	return result;
-}
-PEXPI mat4 NewMat4(
-	r32 r0c0, r32 r0c1, r32 r0c2, r32 r0c3,
-	r32 r1c0, r32 r1c1, r32 r1c2, r32 r1c3,
-	r32 r2c0, r32 r2c1, r32 r2c2, r32 r2c3,
-	r32 r3c0, r32 r3c1, r32 r3c2, r32 r3c3)
-{
-	mat4 result;
-	result.Elements[0][0] = r0c0; result.Elements[1][0] = r0c1; result.Elements[2][0] = r0c2; result.Elements[3][0] = r0c3;
-	result.Elements[0][1] = r1c0; result.Elements[1][1] = r1c1; result.Elements[2][1] = r1c2; result.Elements[3][1] = r1c3;
-	result.Elements[0][2] = r2c0; result.Elements[1][2] = r2c1; result.Elements[2][2] = r2c2; result.Elements[3][2] = r2c3;
-	result.Elements[0][3] = r3c0; result.Elements[1][3] = r3c1; result.Elements[2][3] = r3c2; result.Elements[3][3] = r3c3;
-	return result;
-}
-
 PEXPI mat3 ToMat3From4(mat4 matrix4)
 {
-	return NewMat3(
+	return MakeMat3(
 		matrix4.Elements[0][0], matrix4.Elements[1][0], matrix4.Elements[2][0],
 		matrix4.Elements[0][1], matrix4.Elements[1][1], matrix4.Elements[2][1],
 		matrix4.Elements[0][2], matrix4.Elements[1][2], matrix4.Elements[2][2]
@@ -229,7 +186,7 @@ PEXPI mat3 ToMat3From4(mat4 matrix4)
 }
 PEXPI mat4 ToMat4From3(mat3 matrix3)
 {
-	return NewMat4(
+	return MakeMat4(
 		matrix3.Elements[0][0], matrix3.Elements[1][0], matrix3.Elements[2][0], 0,
 		matrix3.Elements[0][1], matrix3.Elements[1][1], matrix3.Elements[2][1], 0,
 		matrix3.Elements[0][2], matrix3.Elements[1][2], matrix3.Elements[2][2], 0,
@@ -259,7 +216,7 @@ PEXPI v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation) { return M
 
 PEXPI mat3 MakeTranslateMat3(v2 vec2)
 {
-	return NewMat3(
+	return MakeMat3(
 		1.0f, 0.0f, vec2.X,
 		0.0f, 1.0f, vec2.Y,
 		0.0f, 0.0f, 1.0f
@@ -268,7 +225,7 @@ PEXPI mat3 MakeTranslateMat3(v2 vec2)
 
 PEXPI mat3 MakeScaleMat3(v3 vec3)
 {
-	return NewMat3(
+	return MakeMat3(
 		vec3.X, 0.0f, 0.0f,
 		0.0f, vec3.Y, 0.0f,
 		0.0f, 0.0f, vec3.Z

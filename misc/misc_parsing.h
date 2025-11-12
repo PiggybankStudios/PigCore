@@ -482,7 +482,7 @@ PEXP bool TryParseR32Ex(Str8 str, r32* valueOut, Result* errorOut, bool allowSuf
 	char localBuffer[MAX_FLOAT_PARSE_LENGTH+1];
 	MyMemCopy(&localBuffer[0], str.chars, str.length);
 	localBuffer[str.length] = '\0';
-	Str8 tempStr = NewStr8(str.length, &localBuffer[0]);
+	Str8 tempStr = MakeStr8(str.length, &localBuffer[0]);
 	
 	r64 resultR64 = MyStrToFloat(tempStr.chars);
 	if (!allowInfinityOrNan && IsInfiniteOrNanR64(resultR64))

@@ -47,8 +47,8 @@ PEXP void RemoveCodepointsFromCharRanges(VarArray* charRanges, uxx numCodepoints
 				}
 				else //otherwise we need to split the charRange into two
 				{
-					FontCharRange lowerRange = NewFontCharRange(charRange->startCodepoint, codepointToRemove-1);
-					FontCharRange upperRange = NewFontCharRange(codepointToRemove+1, charRange->endCodepoint);
+					FontCharRange lowerRange = MakeFontCharRange(charRange->startCodepoint, codepointToRemove-1);
+					FontCharRange upperRange = MakeFontCharRange(codepointToRemove+1, charRange->endCodepoint);
 					MyMemCopy(charRange, &lowerRange, sizeof(FontCharRange));
 					VarArrayInsertValue(FontCharRange, charRanges, rIndex+1, upperRange);
 				}

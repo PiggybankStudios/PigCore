@@ -46,7 +46,7 @@ PEXPI Str8 ScratchPrintStr(const char* formatString, ...)
 	result[length] = '\0';
 	
 	//Intentionally no ScratchEnd
-	return NewStr8((uxx)length, result);
+	return MakeStr8((uxx)length, result);
 }
 
 PEXPI char* ScratchPrint(const char* formatString, ...)

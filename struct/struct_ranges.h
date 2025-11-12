@@ -5,6 +5,9 @@ Date:   08\08\2025
 Description:
 	** Ranges are similar to Vector2 types but conceptually they encode different data
 	** and are often used for different purposes (and often want different types like uxx and ixx)
+	** NOTE: Ranges are expected to have min <= max. In this file there is MakeRange and NewRange functions.
+	**       MakeRange will assume min is <= max while NewRange will swap the values to ensure proper ordering.
+	**       Usage code should use MakeRange and NewRange appropriately
 */
 
 #ifndef _STRUCT_RANGES_H
@@ -24,6 +27,9 @@ car RangeUXX
 	struct { uxx start, end; };
 	struct { uxx low, high; };
 };
+#define MakeRangeUXX(minValue, maxValue) NEW_STRUCT(RangeUXX){ .min=(minValue), .max=(maxValue) }
+#define MakeRangeUXXLength(min, length) MakeRangeUXX((min), (min) + (length))
+#define FillRangeUXX(value) MakeRangeUXX((value), (value))
 
 typedef car RangeIXX RangeIXX;
 car RangeIXX
@@ -33,6 +39,9 @@ car RangeIXX
 	struct { ixx start, end; };
 	struct { ixx low, high; };
 };
+#define MakeRangeIXX(minValue, maxValue) NEW_STRUCT(RangeIXX){ .min=(minValue), .max=(maxValue) }
+#define MakeRangeIXXLength(min, length) MakeRangeIXX((min), (min) + (length))
+#define FillRangeIXX(value) MakeRangeIXX((value), (value))
 
 typedef car RangeR32 RangeR32;
 car RangeR32
@@ -42,6 +51,10 @@ car RangeR32
 	struct { r32 start, end; };
 	struct { r32 low, high; };
 };
+#define MakeRangeR32(minValue, maxValue) NEW_STRUCT(RangeR32){ .min=(minValue), .max=(maxValue) }
+#define MakeRangeR32Length(min, length) MakeRangeR32((min), (min) + (length))
+#define FillRangeR32(value) MakeRangeR32((value), (value))
+
 typedef car RangeR64 RangeR64;
 car RangeR64
 {
@@ -50,6 +63,9 @@ car RangeR64
 	struct { r64 start, end; };
 	struct { r64 low, high; };
 };
+#define MakeRangeR64(minValue, maxValue) NEW_STRUCT(RangeR64){ .min=(minValue), .max=(maxValue) }
+#define MakeRangeR64Length(min, length) MakeRangeR64((min), (min) + (length))
+#define FillRangeR64(value) MakeRangeR64((value), (value))
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -63,10 +79,6 @@ car RangeR64
 	PIG_CORE_INLINE RangeIXX NewRangeIXXLength(ixx start, ixx length);
 	PIG_CORE_INLINE RangeR32 NewRangeR32Length(r32 start, r32 length);
 	PIG_CORE_INLINE RangeR64 NewRangeR64Length(r64 start, r64 length);
-	PIG_CORE_INLINE RangeUXX FillRangeUXX(uxx value);
-	PIG_CORE_INLINE RangeIXX FillRangeIXX(ixx value);
-	PIG_CORE_INLINE RangeR32 FillRangeR32(r32 value);
-	PIG_CORE_INLINE RangeR64 FillRangeR64(r64 value);
 	PIG_CORE_INLINE bool AreEqualRangeUXX(RangeUXX left, RangeUXX right);
 	PIG_CORE_INLINE bool AreEqualRangeIXX(RangeIXX left, RangeIXX right);
 	PIG_CORE_INLINE bool AreEqualRangeR32(RangeR32 left, RangeR32 right);
@@ -103,11 +115,6 @@ car RangeR64
 // +--------------------------------------------------------------+
 // |                           Defines                            |
 // +--------------------------------------------------------------+
-#define MakeRangeUXX(minValue, maxValue) NEW_STRUCT(RangeUXX){ .min=(minValue), .max=(maxValue) }
-#define MakeRangeIXX(minValue, maxValue) NEW_STRUCT(RangeIXX){ .min=(minValue), .max=(maxValue) }
-#define MakeRangeR32(minValue, maxValue) NEW_STRUCT(RangeR32){ .min=(minValue), .max=(maxValue) }
-#define MakeRangeR64(minValue, maxValue) NEW_STRUCT(RangeR64){ .min=(minValue), .max=(maxValue) }
-
 #define RangeUXX_Zero    MakeRangeUXX(0U, 0U)
 #define RangeIXX_Zero    MakeRangeIXX(0, 0)
 #define RangeR32_Zero    MakeRangeR32(0.0f, 0.0f)
@@ -176,35 +183,6 @@ PEXPI RangeR64 NewRangeR64Length(r64 start, r64 length)
 	return result;
 }
 
-PEXPI RangeUXX FillRangeUXX(uxx value)
-{
-	RangeUXX result = RangeUXX_Zero;
-	result.min = value;
-	result.max = value;
-	return result;
-}
-PEXPI RangeIXX FillRangeIXX(ixx value)
-{
-	RangeIXX result = RangeIXX_Zero;
-	result.min = value;
-	result.max = value;
-	return result;
-}
-PEXPI RangeR32 FillRangeR32(r32 value)
-{
-	RangeR32 result = RangeR32_Zero;
-	result.min = value;
-	result.max = value;
-	return result;
-}
-PEXPI RangeR64 FillRangeR64(r64 value)
-{
-	RangeR64 result = RangeR64_Zero;
-	result.min = value;
-	result.max = value;
-	return result;
-}
-
 PEXPI bool AreEqualRangeUXX(RangeUXX left, RangeUXX right) { return (left.min == right.min && left.max == right.max); }
 PEXPI bool AreEqualRangeIXX(RangeIXX left, RangeIXX right) { return (left.min == right.min && left.max == right.max); }
 PEXPI bool AreEqualRangeR32(RangeR32 left, RangeR32 right) { return (left.min == right.min && left.max == right.max); }
@@ -220,19 +198,19 @@ PEXPI bool DoesOverlapRangeR64(RangeR64 left, RangeR64 right, bool inclusive) { 
 
 PEXPI RangeUXX BothRangeUXX(RangeUXX range1, RangeUXX range2)
 {
-	return NewRangeUXX(MinUXX(range1.min, range2.min), MaxUXX(range1.max, range2.max));
+	return MakeRangeUXX(MinUXX(range1.min, range2.min), MaxUXX(range1.max, range2.max));
 }
 PEXPI RangeIXX BothRangeIXX(RangeIXX range1, RangeIXX range2)
 {
-	return NewRangeIXX(MinIXX(range1.min, range2.min), MaxIXX(range1.max, range2.max));
+	return MakeRangeIXX(MinIXX(range1.min, range2.min), MaxIXX(range1.max, range2.max));
 }
 PEXPI RangeR32 BothRangeR32(RangeR32 range1, RangeR32 range2)
 {
-	return NewRangeR32(MinR32(range1.min, range2.min), MaxR32(range1.max, range2.max));
+	return MakeRangeR32(MinR32(range1.min, range2.min), MaxR32(range1.max, range2.max));
 }
 PEXPI RangeR64 BothRangeR64(RangeR64 range1, RangeR64 range2)
 {
-	return NewRangeR64(MinR64(range1.min, range2.min), MaxR64(range1.max, range2.max));
+	return MakeRangeR64(MinR64(range1.min, range2.min), MaxR64(range1.max, range2.max));
 }
 
 PEXPI RangeUXX OverlapPartRangeUXX(RangeUXX range1, RangeUXX range2)
@@ -270,53 +248,53 @@ PEXPI RangeR64 OverlapPartRangeR64(RangeR64 range1, RangeR64 range2)
 
 PEXPI RangeUXX ClampBelowRangeUXX(RangeUXX range, uxx maxValue)
 {
-	return NewRangeUXX(MinUXX(range.min, maxValue), MinUXX(range.max, maxValue));
+	return MakeRangeUXX(MinUXX(range.min, maxValue), MinUXX(range.max, maxValue));
 }
 PEXPI RangeIXX ClampBelowRangeIXX(RangeIXX range, ixx maxValue)
 {
-	return NewRangeIXX(MinIXX(range.min, maxValue), MinIXX(range.max, maxValue));
+	return MakeRangeIXX(MinIXX(range.min, maxValue), MinIXX(range.max, maxValue));
 }
 PEXPI RangeR32 ClampBelowRangeR32(RangeR32 range, r32 maxValue)
 {
-	return NewRangeR32(MinR32(range.min, maxValue), MinR32(range.max, maxValue));
+	return MakeRangeR32(MinR32(range.min, maxValue), MinR32(range.max, maxValue));
 }
 PEXPI RangeR64 ClampBelowRangeR64(RangeR64 range, r64 maxValue)
 {
-	return NewRangeR64(MinR64(range.min, maxValue), MinR64(range.max, maxValue));
+	return MakeRangeR64(MinR64(range.min, maxValue), MinR64(range.max, maxValue));
 }
 
 PEXPI RangeUXX ClampAboveRangeUXX(RangeUXX range, uxx minValue)
 {
-	return NewRangeUXX(MaxUXX(range.min, minValue), MaxUXX(range.max, minValue));
+	return MakeRangeUXX(MaxUXX(range.min, minValue), MaxUXX(range.max, minValue));
 }
 PEXPI RangeIXX ClampAboveRangeIXX(RangeIXX range, ixx minValue)
 {
-	return NewRangeIXX(MaxIXX(range.min, minValue), MaxIXX(range.max, minValue));
+	return MakeRangeIXX(MaxIXX(range.min, minValue), MaxIXX(range.max, minValue));
 }
 PEXPI RangeR32 ClampAboveRangeR32(RangeR32 range, r32 minValue)
 {
-	return NewRangeR32(MaxR32(range.min, minValue), MaxR32(range.max, minValue));
+	return MakeRangeR32(MaxR32(range.min, minValue), MaxR32(range.max, minValue));
 }
 PEXPI RangeR64 ClampAboveRangeR64(RangeR64 range, r64 minValue)
 {
-	return NewRangeR64(MaxR64(range.min, minValue), MaxR64(range.max, minValue));
+	return MakeRangeR64(MaxR64(range.min, minValue), MaxR64(range.max, minValue));
 }
 
 PEXPI RangeUXX ClampRangeToRangeUXX(RangeUXX range, RangeUXX limits)
 {
-	return NewRangeUXX(ClampUXX(range.min, limits.min, limits.max), ClampUXX(range.max, limits.min, limits.max));
+	return MakeRangeUXX(ClampUXX(range.min, limits.min, limits.max), ClampUXX(range.max, limits.min, limits.max));
 }
 PEXPI RangeIXX ClampRangeToRangeIXX(RangeIXX range, RangeIXX limits)
 {
-	return NewRangeIXX(ClampIXX(range.min, limits.min, limits.max), ClampIXX(range.max, limits.min, limits.max));
+	return MakeRangeIXX(ClampIXX(range.min, limits.min, limits.max), ClampIXX(range.max, limits.min, limits.max));
 }
 PEXPI RangeR32 ClampRangeToRangeR32(RangeR32 range, RangeR32 limits)
 {
-	return NewRangeR32(ClampR32(range.min, limits.min, limits.max), ClampR32(range.max, limits.min, limits.max));
+	return MakeRangeR32(ClampR32(range.min, limits.min, limits.max), ClampR32(range.max, limits.min, limits.max));
 }
 PEXPI RangeR64 ClampRangeToRangeR64(RangeR64 range, RangeR64 limits)
 {
-	return NewRangeR64(ClampR64(range.min, limits.min, limits.max), ClampR64(range.max, limits.min, limits.max));
+	return MakeRangeR64(ClampR64(range.min, limits.min, limits.max), ClampR64(range.max, limits.min, limits.max));
 }
 
 PEXP uxx CombineOverlappingAndConsecutiveRangesUXX(uxx numRanges, RangeUXX* ranges)

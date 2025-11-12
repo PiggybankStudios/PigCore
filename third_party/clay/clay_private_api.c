@@ -14,7 +14,7 @@ Str8 Clay__WriteStringToCharBuffer(charArray* buffer, Str8 string)
 		buffer->items[buffer->length + cIndex] = string.chars[cIndex];
 	}
 	buffer->length += string.length;
-	return NewStr8(string.length, buffer->items + buffer->length - string.length);
+	return MakeStr8(string.length, buffer->items + buffer->length - string.length);
 }
 
 Clay_LayoutElement* Clay__GetOpenLayoutElement(void)
@@ -674,12 +674,12 @@ CLAY_DECOR void Clay__OpenTextElement(Str8 text, Clay_TextElementConfig* textCon
 	textElement->id = elementId.id;
 	Clay__AddHashMapItem(elementId, textElement, 0);
 	Str8Array_Add(&context->layoutElementIdStrings, elementId.stringId);
-	v2 textDimensions = NewV2(
+	v2 textDimensions = MakeV2(
 		textMeasured->unwrappedDimensions.Width,
 		textConfig->lineHeight > 0 ? (r32)textConfig->lineHeight : textMeasured->unwrappedDimensions.Height
 	);
 	textElement->dimensions = textDimensions;
-	textElement->minDimensions = NewV2(textMeasured->unwrappedDimensions.Height, textDimensions.Height); // TODO not sure this is the best way to decide min width for text
+	textElement->minDimensions = MakeV2(textMeasured->unwrappedDimensions.Height, textDimensions.Height); // TODO not sure this is the best way to decide min width for text
 	textElement->childrenOrTextContent.textElementData = Clay__TextElementDataArray_Add(&context->textElementData, NEW_STRUCT(Clay__TextElementData) { .text = text, .preferredDimensions = textMeasured->unwrappedDimensions, .elementIndex = context->layoutElements.length - 1 });
 	textElement->elementConfigs = NEW_STRUCT(Clay__ElementConfigArraySlice) {
 		.length = 1,
@@ -842,7 +842,7 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
 		}
 		if (!scrollOffset)
 		{
-			scrollOffset = Clay__ScrollContainerDataInternalArray_Add(&context->scrollContainerDatas, NEW_STRUCT(Clay__ScrollContainerDataInternal){.layoutElement = openLayoutElement, .scrollOrigin = NewV2(-1,-1), .elementId = openLayoutElement->id, .scrollLag = declaration.scroll.scrollLag, .openThisFrame = true});
+			scrollOffset = Clay__ScrollContainerDataInternalArray_Add(&context->scrollContainerDatas, NEW_STRUCT(Clay__ScrollContainerDataInternal){.layoutElement = openLayoutElement, .scrollOrigin = FillV2(-1), .elementId = openLayoutElement->id, .scrollLag = declaration.scroll.scrollLag, .openThisFrame = true});
 		}
 		if (context->externalScrollHandlingEnabled)
 		{
@@ -1207,7 +1207,7 @@ Str8 Clay__IntToString(i32 integer)
 		chars[k] = temp;
 	}
 	context->dynamicStringData.length += length;
-	return NewStr8(length, chars);
+	return MakeStr8(length, chars);
 }
 
 void Clay__AddRenderCommand(Clay_RenderCommand renderCommand)
@@ -1278,7 +1278,7 @@ void Clay__CalculateFinalLayout(void)
 			// Only word on the line is too large, just render it anyway
 			if (lineLengthChars == 0 && lineWidth + measuredWord->width > containerElement->dimensions.Width && considerMaxWidth)
 			{
-				Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { NewV2(measuredWord->width, lineHeight), { .length = measuredWord->length, .chars = &textElementData->text.chars[measuredWord->startOffset] } });
+				Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(measuredWord->width, lineHeight), { .length = measuredWord->length, .chars = &textElementData->text.chars[measuredWord->startOffset] } });
 				textElementData->wrappedLines.length++;
 				wordIndex = measuredWord->next;
 				lineStartOffset = measuredWord->startOffset + measuredWord->length;
@@ -1288,7 +1288,7 @@ void Clay__CalculateFinalLayout(void)
 			{
 				// Wrapped text lines list has overflowed, just render out the line
 				bool finalCharIsSpace = textElementData->text.chars[lineStartOffset + lineLengthChars - 1] == ' ';
-				Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { NewV2(lineWidth + (finalCharIsSpace ? -spaceWidth : 0), lineHeight), { .length = lineLengthChars + (finalCharIsSpace ? -1 : 0), .chars = &textElementData->text.chars[lineStartOffset] } });
+				Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(lineWidth + (finalCharIsSpace ? -spaceWidth : 0), lineHeight), { .length = lineLengthChars + (finalCharIsSpace ? -1 : 0), .chars = &textElementData->text.chars[lineStartOffset] } });
 				textElementData->wrappedLines.length++;
 				if (lineLengthChars == 0 || measuredWord->length == 0) { wordIndex = measuredWord->next; }
 				lineWidth = 0;
@@ -1304,7 +1304,7 @@ void Clay__CalculateFinalLayout(void)
 		}
 		if (lineLengthChars > 0)
 		{
-			Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { NewV2(lineWidth, lineHeight), {.length = lineLengthChars, .chars = &textElementData->text.chars[lineStartOffset] } });
+			Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(lineWidth, lineHeight), {.length = lineLengthChars, .chars = &textElementData->text.chars[lineStartOffset] } });
 			textElementData->wrappedLines.length++;
 		}
 		containerElement->dimensions.Height = lineHeight * (r32)textElementData->wrappedLines.length;
@@ -1511,7 +1511,7 @@ void Clay__CalculateFinalLayout(void)
 			{
 				context->treeNodeVisited.items[dfsBuffer.length - 1] = true;
 				
-				rec currentElementBoundingBox = NewRec(currentElementTreeNode->position.X, currentElementTreeNode->position.Y, currentElement->dimensions.Width, currentElement->dimensions.Height);
+				rec currentElementBoundingBox = MakeRec(currentElementTreeNode->position.X, currentElementTreeNode->position.Y, currentElement->dimensions.Width, currentElement->dimensions.Height);
 				if (Clay__ElementHasConfig(currentElement, CLAY__ELEMENT_CONFIG_TYPE_FLOATING))
 				{
 					Clay_FloatingElementConfig* floatingElementConfig = Clay__FindElementConfigWithType(currentElement, CLAY__ELEMENT_CONFIG_TYPE_FLOATING).floatingElementConfig;
@@ -1664,7 +1664,7 @@ void Clay__CalculateFinalLayout(void)
 								{
 									offset /= 2;
 								}
-								rec boundingBox = NewRec(
+								rec boundingBox = MakeRec(
 									currentElementBoundingBox.X + offset,
 									currentElementBoundingBox.Y + yPosition,
 									wrappedLine->dimensions.Width,
@@ -1781,7 +1781,7 @@ void Clay__CalculateFinalLayout(void)
 					
 					if (scrollContainerData)
 					{
-						scrollContainerData->contentSize = NewV2(contentSize.Width + (r32)(layoutConfig->padding.left + layoutConfig->padding.right), contentSize.Height + (r32)(layoutConfig->padding.top + layoutConfig->padding.bottom));
+						scrollContainerData->contentSize = MakeV2(contentSize.Width + (r32)(layoutConfig->padding.left + layoutConfig->padding.right), contentSize.Height + (r32)(layoutConfig->padding.top + layoutConfig->padding.bottom));
 					}
 				}
 			}
@@ -1830,7 +1830,7 @@ void Clay__CalculateFinalLayout(void)
 						if (borderConfig->width.betweenChildren > 0 && borderConfig->color.a > 0)
 						{
 							r32 halfGap = layoutConfig->childGap / 2;
-							v2 borderOffset = NewV2((r32)layoutConfig->padding.left - halfGap, (r32)layoutConfig->padding.top - halfGap);
+							v2 borderOffset = MakeV2((r32)layoutConfig->padding.left - halfGap, (r32)layoutConfig->padding.top - halfGap);
 							if (layoutConfig->layoutDirection == CLAY_LEFT_TO_RIGHT)
 							{
 								for (i32 i = 0; i < currentElement->childrenOrTextContent.children.length; ++i)
@@ -1839,7 +1839,7 @@ void Clay__CalculateFinalLayout(void)
 									if (i > 0)
 									{
 										Clay__AddRenderCommand(NEW_STRUCT(Clay_RenderCommand) {
-											.boundingBox = NewRec(currentElementBoundingBox.X + borderOffset.X + scrollOffset.X, currentElementBoundingBox.Y + scrollOffset.Y, (r32)borderConfig->width.betweenChildren, currentElement->dimensions.Height),
+											.boundingBox = MakeRec(currentElementBoundingBox.X + borderOffset.X + scrollOffset.X, currentElementBoundingBox.Y + scrollOffset.Y, (r32)borderConfig->width.betweenChildren, currentElement->dimensions.Height),
 											.renderData = { .rectangle = {
 												.backgroundColor = borderConfig->color,
 											} },
@@ -1859,7 +1859,7 @@ void Clay__CalculateFinalLayout(void)
 									if (i > 0)
 									{
 										Clay__AddRenderCommand(NEW_STRUCT(Clay_RenderCommand) {
-											.boundingBox = NewRec(currentElementBoundingBox.X + scrollOffset.X, currentElementBoundingBox.Y + borderOffset.Y + scrollOffset.Y, currentElement->dimensions.Width, (r32)borderConfig->width.betweenChildren),
+											.boundingBox = MakeRec(currentElementBoundingBox.X + scrollOffset.X, currentElementBoundingBox.Y + borderOffset.Y + scrollOffset.Y, currentElement->dimensions.Width, (r32)borderConfig->width.betweenChildren),
 											.renderData = { .rectangle = {
 													.backgroundColor = borderConfig->color,
 											} },
@@ -1918,7 +1918,7 @@ void Clay__CalculateFinalLayout(void)
 						}
 					}
 					
-					v2 childPosition = NewV2(
+					v2 childPosition = MakeV2(
 						currentElementTreeNode->position.X + currentElementTreeNode->nextChildOffset.X + scrollOffset.X,
 						currentElementTreeNode->position.Y + currentElementTreeNode->nextChildOffset.Y + scrollOffset.Y
 					);

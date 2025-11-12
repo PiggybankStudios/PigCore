@@ -241,7 +241,7 @@ CLAY_DECOR bool Clay_UpdateScrollContainers(bool enableDragScrolling, v2 scrollD
 		}
 		else
 		{
-			v2 targetDelta = NewV2(
+			v2 targetDelta = MakeV2(
 				scrollData->scrollTarget.X - scrollData->scrollPosition.X,
 				scrollData->scrollTarget.Y - scrollData->scrollPosition.Y
 			);
@@ -354,7 +354,7 @@ CLAY_DECOR void Clay_BeginLayout(void)
 	context->generation++;
 	context->dynamicElementIndex = 0;
 	// Set up the root container that covers the entire window
-	v2 rootDimensions = NewV2(context->layoutDimensions.Width, context->layoutDimensions.Height);
+	v2 rootDimensions = MakeV2(context->layoutDimensions.Width, context->layoutDimensions.Height);
 	if (context->debugModeEnabled) { rootDimensions.Width -= (r32)Clay__debugViewWidth; }
 	context->booleanWarnings = NEW_STRUCT(Clay_BooleanWarnings) ZEROED;
 	Clay__OpenElement();
@@ -390,7 +390,7 @@ CLAY_DECOR Clay_RenderCommandArray Clay_EndLayout(void)
 			message = StrLit("Clay Error: Layout elements exceeded Clay__maxElementCount");
 		}
 		Clay__AddRenderCommand(NEW_STRUCT(Clay_RenderCommand ) {
-			.boundingBox = NewRec(context->layoutDimensions.Width / 2 - 59 * 4, context->layoutDimensions.Height / 2, 0, 0),
+			.boundingBox = MakeRec(context->layoutDimensions.Width / 2 - 59 * 4, context->layoutDimensions.Height / 2, 0, 0),
 			.renderData = { .text = { .stringContents = message, .textColor = {.valueU32=0xFFFF0000}, .fontSize = 16 } }, //(255, 0, 0, 255)
 			.commandType = CLAY_RENDER_COMMAND_TYPE_TEXT
 		});
@@ -475,7 +475,7 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
 				return NEW_STRUCT(Clay_ScrollContainerData) {
 					.scrollTarget = &scrollContainerData->scrollTarget,
 					.scrollPosition = &scrollContainerData->scrollPosition,
-					.scrollContainerDimensions = NewV2(scrollContainerData->boundingBox.Width, scrollContainerData->boundingBox.Height),
+					.scrollContainerDimensions = MakeV2(scrollContainerData->boundingBox.Width, scrollContainerData->boundingBox.Height),
 					.contentDimensions = scrollContainerData->contentSize,
 					.config = (scrollConfig != nullptr ? *scrollConfig : NEW_STRUCT(Clay_ScrollElementConfig) ZEROED),
 					.found = true

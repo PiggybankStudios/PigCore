@@ -86,7 +86,7 @@ PEXPI void ToOdeMatrix4(mat3 matrix, dReal* matrixOut)
 }
 PEXPI mat3 ToMat3FromOde(const dReal* matrixPntr)
 {
-	return NewMat3(
+	return MakeMat3(
 		matrixPntr[0], matrixPntr[1], matrixPntr[2],
 		matrixPntr[3], matrixPntr[4], matrixPntr[5],
 		matrixPntr[6], matrixPntr[7], matrixPntr[8]
@@ -94,7 +94,7 @@ PEXPI mat3 ToMat3FromOde(const dReal* matrixPntr)
 }
 PEXPI mat3 ToMat3FromOde4x3(const dReal* matrixPntr)
 {
-	return NewMat3(
+	return MakeMat3(
 		matrixPntr[0], matrixPntr[1], matrixPntr[2],
 		matrixPntr[4], matrixPntr[5], matrixPntr[6],
 		matrixPntr[8], matrixPntr[9], matrixPntr[10]
@@ -102,7 +102,7 @@ PEXPI mat3 ToMat3FromOde4x3(const dReal* matrixPntr)
 }
 PEXPI mat4 ToMat4FromOde(const dReal* matrixPntr)
 {
-	return NewMat4(
+	return MakeMat4(
 		matrixPntr[0], matrixPntr[1], matrixPntr[2], matrixPntr[3],
 		matrixPntr[4], matrixPntr[5], matrixPntr[6], matrixPntr[7],
 		matrixPntr[8], matrixPntr[9], matrixPntr[10], matrixPntr[11],
@@ -111,7 +111,7 @@ PEXPI mat4 ToMat4FromOde(const dReal* matrixPntr)
 }
 PEXPI mat4 ToMat4FromOde4x3(const dReal* matrixPntr)
 {
-	return NewMat4(
+	return MakeMat4(
 		matrixPntr[0], matrixPntr[1], matrixPntr[2], matrixPntr[3],
 		matrixPntr[4], matrixPntr[5], matrixPntr[6], matrixPntr[7],
 		matrixPntr[8], matrixPntr[9], matrixPntr[10], matrixPntr[11],
@@ -257,7 +257,7 @@ PEXPI v3 GetBodyPosition(PhysicsWorld* world, uxx bodyIndex)
 	Assert(bodyIndex < world->bodies.length);
 	PhysicsBody* body = VarArrayGetHard(PhysicsBody, &world->bodies, bodyIndex);
 	const dReal* bodyPositionFloats = dBodyGetPosition(body->bodyId);
-	return NewV3(bodyPositionFloats[0], bodyPositionFloats[1], bodyPositionFloats[2]);
+	return MakeV3(bodyPositionFloats[0], bodyPositionFloats[1], bodyPositionFloats[2]);
 }
 PEXPI quat GetBodyRotation(PhysicsWorld* world, uxx bodyIndex)
 {

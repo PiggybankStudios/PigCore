@@ -20,29 +20,8 @@ plex ImageData
 	uxx numPixels;
 	u32* pixels;
 };
-
-// +--------------------------------------------------------------+
-// |                 Header Function Declarations                 |
-// +--------------------------------------------------------------+
-#if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE ImageData NewImageData(v2i size, u32* pixels);
-#endif
-
-// +--------------------------------------------------------------+
-// |                   Function Implementations                   |
-// +--------------------------------------------------------------+
-#if PIG_CORE_IMPLEMENTATION
-
-PEXPI ImageData NewImageData(v2i size, u32* pixels)
-{
-	ImageData result = ZEROED;
-	result.size = size;
-	result.numPixels = (uxx)(size.Width * size.Height);
-	result.pixels = pixels;
-	return result;
-}
-
-#endif //PIG_CORE_IMPLEMENTATION
+#define MakeImageDataEx(sizeV2i, numPixelsValue, pixelsPntr) NEW_STRUCT(ImageData){ .size=(sizeV2i), .numPixels=(numPixelsValue), .pixels=(pixelsPntr) }
+#define MakeImageData(sizeV2i, pixelsPntr) NEW_STRUCT(ImageData){ .size=(sizeV2i), .numPixels=(uxx)((sizeV2i).Width * (sizeV2i).Height), .pixels=(pixelsPntr) }
 
 #endif //  _STRUCT_IMAGE_DATA_H
 

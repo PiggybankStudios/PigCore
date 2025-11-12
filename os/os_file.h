@@ -153,7 +153,7 @@ plex OsFileWriteTime
 PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 {
 	NotNullStr(relativePath);
-	FilePath result = Str8_Empty_Const;
+	FilePath result = Str8_Empty;
 	ScratchBegin1(scratch, arena);
 	
 	#if TARGET_IS_WINDOWS
@@ -172,7 +172,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 		);
 		if (getPathResult1 == 0) { ScratchEnd(scratch); return Str8_Empty; }
 		
-		result = NewFilePath((uxx)getPathResult1-1, nullptr);
+		result = MakeFilePath((uxx)getPathResult1-1, nullptr);
 		if (arena == nullptr) { ScratchEnd(scratch); return result; }
 		
 		result.chars = (char*)AllocMem(arena, result.length+1);
@@ -207,7 +207,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 			}
 			else
 			{
-				result = NewStr8((uxx)MyStrLength(realPathResult), nullptr);
+				result = MakeStr8((uxx)MyStrLength(realPathResult), nullptr);
 			}
 		}
 		else
@@ -220,7 +220,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 				ScratchEnd(scratch);
 				return AllocStrAndCopy(arena, relativePath.length, relativePath.chars, true);
 			}
-			FilePath fileNamePart = NewFilePath(relativePathNt.length - folderPathNt.length, &relativePathNt.chars[folderPathNt.length]);
+			FilePath fileNamePart = MakeFilePath(relativePathNt.length - folderPathNt.length, &relativePathNt.chars[folderPathNt.length]);
 			Assert(folderPathNt.chars[folderPathNt.length-1] == '\\' || folderPathNt.chars[folderPathNt.length-1] == '/');
 			folderPathNt.length--;
 			folderPathNt.chars[folderPathNt.length] = '\0'; //we can do this because relativePathNt was allocated in scratch above
@@ -234,7 +234,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 				}
 				else
 				{
-					result = NewStr8((uxx)MyStrLength(realPathResult) + 1 + fileNamePart.length, nullptr);
+					result = MakeStr8((uxx)MyStrLength(realPathResult) + 1 + fileNamePart.length, nullptr);
 				}
 			}
 			else
@@ -453,11 +453,11 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 				{
 					if (giveFullPath)
 					{
-						*pathOut = JoinStringsInArena(pathOutArena, fileIter->folderPath, NewStr8Nt(fileIter->findData.cFileName), false);
+						*pathOut = JoinStringsInArena(pathOutArena, fileIter->folderPath, MakeStr8Nt(fileIter->findData.cFileName), false);
 					}
 					else
 					{
-						*pathOut = AllocFilePath(pathOutArena, NewStr8Nt(fileIter->findData.cFileName), false);
+						*pathOut = AllocFilePath(pathOutArena, MakeStr8Nt(fileIter->findData.cFileName), false);
 					}
 					NotNullStr(*pathOut);
 					FixPathSlashes(*pathOut);
@@ -620,7 +620,7 @@ PEXP bool OsReadFile(FilePath path, Arena* arena, bool convertNewLines, Slice* c
 		uxx fileSize = (uxx)fileSizeLargeInt.QuadPart;
 		u8* fileData = (u8*)AllocMem(arena, fileSize+1); //+1 for null-term
 		AssertMsg(fileData != nullptr, "Failed to allocate space to hold file contents. The application probably tried to open a massive file");
-		Slice result = NewStr8(fileSize, fileData);
+		Slice result = MakeSlice(fileSize, fileData);
 		
 		if (fileSize > 0)
 		{
@@ -1193,7 +1193,7 @@ PEXP Result OsReadFromOpenFile(OsFile* file, uxx numBytes, bool convertNewLines,
 		if (convertNewLines)
 		{
 			ScratchBegin(scratch);
-			Str8 scratchStr = StrReplace(scratch, NewStr8((uxx)numBytesRead, bufferOut), StrLit("\r\n"), StrLit("\n"), false);
+			Str8 scratchStr = StrReplace(scratch, MakeStr8((uxx)numBytesRead, bufferOut), StrLit("\r\n"), StrLit("\n"), false);
 			DebugAssert(scratchStr.length <= (uxx)numBytesRead);
 			MyMemCopy(bufferOut, scratchStr.bytes, scratchStr.length);
 			SetOptionalOutPntr(numBytesReadOut, scratchStr.length);

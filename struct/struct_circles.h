@@ -22,9 +22,8 @@ car Circle
 	plex { r32 X, Y; r32 R; };
 	plex { v2 Center; r32 Radius; };
 };
-#if STATIC_ASSERT_AVAILABLE
-_Static_assert(sizeof(Circle) == sizeof(r32)*3, "Circle contains padding!");
-#endif
+#define MakeCircle(x, y, radius) NEW_STRUCT(Circle){ .X=(x), .Y=(y), .R=(radius) }
+#define MakeCircleV(center, radius) NEW_STRUCT(Circle){ .Center=(center), .Radius=(radius) }
 
 typedef car Sphere Sphere;
 car Sphere
@@ -33,58 +32,7 @@ car Sphere
 	plex { r32 X, Y, Z; r32 R; };
 	plex { v3 Center; r32 Radius; };
 };
-#if STATIC_ASSERT_AVAILABLE
-_Static_assert(sizeof(Sphere) == sizeof(r32)*4, "Sphere contains padding!");
-#endif
-
-// +--------------------------------------------------------------+
-// |                 Header Function Declarations                 |
-// +--------------------------------------------------------------+
-#if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE Circle NewCircle(r32 x, r32 y, r32 radius);
-	PIG_CORE_INLINE Circle NewCircleV(v2 center, r32 radius);
-	PIG_CORE_INLINE Sphere NewSphere(r32 x, r32 y, r32 z, r32 radius);
-	PIG_CORE_INLINE Sphere NewSphereV(v3 center, r32 radius);
-#endif
-
-// +--------------------------------------------------------------+
-// |                   Function Implementations                   |
-// +--------------------------------------------------------------+
-#if PIG_CORE_IMPLEMENTATION
-
-PEXPI Circle NewCircle(r32 x, r32 y, r32 radius)
-{
-	Circle result = ZEROED;
-	result.X = x;
-	result.Y = y;
-	result.Radius = radius;
-	return result;
-}
-PEXPI Circle NewCircleV(v2 center, r32 radius)
-{
-	Circle result = ZEROED;
-	result.Center = center;
-	result.Radius = radius;
-	return result;
-}
-
-PEXPI Sphere NewSphere(r32 x, r32 y, r32 z, r32 radius)
-{
-	Sphere result = ZEROED;
-	result.X = x;
-	result.Y = y;
-	result.Z = z;
-	result.Radius = radius;
-	return result;
-}
-PEXPI Sphere NewSphereV(v3 center, r32 radius)
-{
-	Sphere result = ZEROED;
-	result.Center = center;
-	result.Radius = radius;
-	return result;
-}
-
-#endif //PIG_CORE_IMPLEMENTATION
+#define MakeSphere(x, y, z, radius) NEW_STRUCT(Sphere){.X=(x), .Y=(y), .Z=(z), .R=(radius) }
+#define MakeSphereV(center, radius) NEW_STRUCT(Sphere){.Center=(center), .Radius=(radius) }
 
 #endif //  _STRUCT_CIRCLES_H

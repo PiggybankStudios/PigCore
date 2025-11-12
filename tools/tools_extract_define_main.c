@@ -42,8 +42,8 @@ int main(int argc, char* argv[])
 	
 	const char* filePathNt = argv[1];
 	const char* defineNameNt = argv[2];
-	Str8 filePath = NewStr8Nt(filePathNt);
-	Str8 defineName = NewStr8Nt(defineNameNt);
+	Str8 filePath = MakeStr8Nt(filePathNt);
+	Str8 defineName = MakeStr8Nt(defineNameNt);
 	
 	Str8 fileContents = ReadEntireFile(filePath);
 	

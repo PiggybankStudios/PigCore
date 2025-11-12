@@ -97,7 +97,7 @@ const char* GetRichStrStyleChangeTypeStr(RichStrStyleChangeType enumValue)
 #endif
 
 #define RICH_STYLE_DEFAULT_COLOR_VALUE  0x00FFFFFF
-#define RICH_STYLE_DEFAULT_COLOR  NewColorU32(RICH_STYLE_DEFAULT_COLOR_VALUE)
+#define RICH_STYLE_DEFAULT_COLOR  MakeColorU32(RICH_STYLE_DEFAULT_COLOR_VALUE)
 
 typedef plex RichStrStyle RichStrStyle;
 plex RichStrStyle
@@ -106,6 +106,7 @@ plex RichStrStyle
 	u8 fontStyle;
 	Color32 color;
 };
+#define MakeRichStrStyle(size, style, colorValue) NEW_STRUCT(RichStrStyle){ .fontSize=(size), .fontStyle=(style), .color=(colorValue) }
 
 // Each piece has a set of changes to the style, not a style directly
 typedef plex RichStrStyleChange RichStrStyleChange;
@@ -123,8 +124,19 @@ plex RichStrStyleChange
 		};
 		Color32 color; // (TransparentWhite means default color)
 		r32 alpha; // (-1.0f means default alpha)
+		u32 Unused1;
 	};
 };
+#define MakeRichStrStyleChangeOfType(typeValue)               NEW_STRUCT(RichStrStyleChange){ .type=(typeValue), .Unused1 = 0x00000000 }
+#define MakeRichStrStyleChangeSize(size)                      NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontSize, { .fontSize=(size) } }
+#define MakeRichStrStyleChangeEnableFlags(styleFlags)         NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, { .enableStyleFlags=(styleFlags), .disableStyleFlags=0, .defaultStyleFlags=0 } }
+#define MakeRichStrStyleChangeDisableFlags(styleFlags)        NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, { .enableStyleFlags=0, .disableStyleFlags=(styleFlags), .defaultStyleFlags=0 } }
+#define MakeRichStrStyleChangeDefaultFlags(styleFlags)        NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, { .enableStyleFlags=0, .disableStyleFlags=0, .defaultStyleFlags=(styleFlags) } }
+#define MakeRichStrStyleChangeColor(colorValue, includeAlpha) NEW_STRUCT(RichStrStyleChange){ .type=(includeAlpha ? RichStrStyleChangeType_ColorAndAlpha : RichStrStyleChangeType_Color), { .color=(colorValue) } }
+#define MakeRichStrStyleChangeAlpha(alphaValue)               NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_Alpha, { .alpha=(alphaValue) } }
+#define MakeRichStrStyleChangeAlphaU8(alphaValueU8)           NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_Alpha, { .alpha=(r32)(alphaValueU8) / 255.0f } }
+
+#define RichStrStyleChange_None MakeRichStrStyleChangeOfType(RichStrStyleChangeType_None)
 
 typedef plex RichStrPiece RichStrPiece;
 plex RichStrPiece
@@ -132,6 +144,7 @@ plex RichStrPiece
 	RichStrStyleChange styleChange;
 	Str8 str;
 };
+#define MakeRichStrPiece(styleChangeValue, strValue) NEW_STRUCT(RichStrPiece){ .styleChange=(styleChangeValue), .str=(strValue) }
 
 //NOTE: When a RichStr has only one piece we store it directly in RichStr structure in fullPiece,
 // otherwise the pieces are allocated separately but the str in each piece is just a slice of fullPiece.str
@@ -142,23 +155,20 @@ plex RichStr
 	uxx numPieces;
 	RichStrPiece* pieces;
 };
+#define MakeRichStr(fullPieceValue, numPiecesValue, piecesPntr) NEW_STRUCT(RichStr){ .fullPiece=(fullPieceValue), .numPieces=(numPiecesValue), .pieces=(piecesPntr) }
+//TODO: We used to set numPieces to 0 if strValue was empty. Should we do that? Is a 1 piece RichStr with an empty piece valid?
+#define ToRichStrEx(strValue, styleChange) MakeRichStr(MakeRichStrPiece((styleChange), (strValue)), 1, nullptr)
+#define ToRichStr(strValue) MakeRichStr(MakeRichStrPiece(RichStrStyleChange_None, (strValue)), 1, nullptr)
+#define MakeRichStrLit(strLit) ToRichStr(StrLit(strLit))
+#define MakeRichStrNt(nullTermStr) ToRichStr(MakeStr8Nt(nullTermStr))
+
+#define RichStr_Empty MakeRichStr(MakeRichStrPiece(RichStrStyleChange_None, Str8_Empty), 0, nullptr)
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE RichStrStyle NewRichStrStyle(r32 fontSize, u8 fontStyle, Color32 color);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChange(RichStrStyleChangeType type, r32 fontSize, u8 enableStyleFlags, u8 disableStyleFlags, u8 defaultStyleFlags, Color32 color, r32 alpha);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeSize(r32 fontSize);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeEnableFlags(u8 enableStyleFlags);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeDisableFlags(u8 disableStyleFlags);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeDefaultFlags(u8 defaultStyleFlags);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeColor(Color32 color, bool includeAlpha);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeAlpha(r32 alpha);
-	PIG_CORE_INLINE RichStrStyleChange NewRichStrStyleChangeAlphaU8(u8 alpha);
 	PIG_CORE_INLINE RichStrStyleChange OppositeRichStrStyleChange(RichStrStyleChange change);
-	PIG_CORE_INLINE RichStr ToRichStrEx(Str8 string, RichStrStyleChange styleChange);
-	PIG_CORE_INLINE RichStr ToRichStr(Str8 string);
 	PIG_CORE_INLINE void FreeRichStr(Arena* arena, RichStr* richStrPntr);
 	PIG_CORE_INLINE RichStr NewRichStr(Arena* arena, uxx numPieces, const RichStrPiece* pieces);
 	PIG_CORE_INLINE RichStrPiece* GetRichStrPiece(RichStr* richStr, uxx pieceIndex);
@@ -174,71 +184,14 @@ plex RichStr
 	Str8 EncodeRichStr(Arena* arena, RichStr richStr, bool useBackspaceAndBellChars, bool addNullTerm);
 #endif
 
-#define RichStrStyleChange_None NewRichStrStyleChange(RichStrStyleChangeType_None, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f)
-#define RichStrStyleChange_None_Const (RichStrStyleChange){ .type=RichStrStyleChangeType_None }
-
-#define RichStr_Empty NewRichStr(nullptr, 0, nullptr)
-
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI RichStrStyle NewRichStrStyle(r32 fontSize, u8 fontStyle, Color32 color)
-{
-	RichStrStyle result = ZEROED;
-	result.fontSize = fontSize;
-	result.fontStyle = fontStyle;
-	result.color = color;
-	return result;
-}
-PEXPI RichStrStyleChange NewRichStrStyleChange(RichStrStyleChangeType type, r32 fontSize, u8 enableStyleFlags, u8 disableStyleFlags, u8 defaultStyleFlags, Color32 color, r32 alpha)
-{
-	RichStrStyleChange result = ZEROED;
-	result.type = type;
-	if (type == RichStrStyleChangeType_FontSize) { result.fontSize = fontSize; }
-	if (type == RichStrStyleChangeType_FontStyle)
-	{
-		result.enableStyleFlags = enableStyleFlags;
-		result.disableStyleFlags = disableStyleFlags;
-		result.defaultStyleFlags = defaultStyleFlags;
-	}
-	if (type == RichStrStyleChangeType_Color || type == RichStrStyleChangeType_ColorAndAlpha) { result.color = color; }
-	if (type == RichStrStyleChangeType_Alpha) { result.alpha = alpha; }
-	return result;
-}
-PEXPI RichStrStyleChange NewRichStrStyleChangeSize(r32 fontSize)
-{
-	return NewRichStrStyleChange(RichStrStyleChangeType_FontSize, fontSize, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f);
-}
-PEXPI RichStrStyleChange NewRichStrStyleChangeEnableFlags(u8 enableStyleFlags)
-{
-	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, enableStyleFlags, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f);
-}
-PEXPI RichStrStyleChange NewRichStrStyleChangeDisableFlags(u8 disableStyleFlags)
-{
-	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, 0x00, disableStyleFlags, 0x00, RICH_STYLE_DEFAULT_COLOR, 0.0f);
-}
-PEXPI RichStrStyleChange NewRichStrStyleChangeDefaultFlags(u8 defaultStyleFlags)
-{
-	return NewRichStrStyleChange(RichStrStyleChangeType_FontStyle, 0.0f, 0x00, 0x00, defaultStyleFlags, RICH_STYLE_DEFAULT_COLOR, 0.0f);
-}
-PEXPI RichStrStyleChange NewRichStrStyleChangeColor(Color32 color, bool includeAlpha)
-{
-	return NewRichStrStyleChange(includeAlpha ? RichStrStyleChangeType_ColorAndAlpha : RichStrStyleChangeType_Color, 0.0f, 0x00, 0x00, 0x00, color, 0.0f);
-}
-PEXPI RichStrStyleChange NewRichStrStyleChangeAlpha(r32 alpha)
-{
-	return NewRichStrStyleChange(RichStrStyleChangeType_Alpha, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, alpha);
-}
-PEXPI RichStrStyleChange NewRichStrStyleChangeAlphaU8(u8 alpha)
-{
-	return NewRichStrStyleChange(RichStrStyleChangeType_Alpha, 0.0f, 0x00, 0x00, 0x00, RICH_STYLE_DEFAULT_COLOR, (r32)alpha / 255.0f);
-}
-
 PEXPI RichStrStyleChange OppositeRichStrStyleChange(RichStrStyleChange change)
 {
-	RichStrStyleChange result = RichStrStyleChange_None_Const;
+	RichStrStyleChange result = RichStrStyleChange_None;
 	result.type = change.type;
 	if (change.type == RichStrStyleChangeType_FontSize)
 	{
@@ -271,19 +224,6 @@ PEXPI RichStrStyleChange OppositeRichStrStyleChange(RichStrStyleChange change)
 	return result;
 }
 
-PEXPI RichStr ToRichStrEx(Str8 string, RichStrStyleChange styleChange)
-{
-	RichStr result = ZEROED;
-	result.fullPiece.styleChange = styleChange;
-	result.fullPiece.str = string;
-	result.numPieces = IsEmptyStr(string) ? 0 : 1;
-	return result;
-}
-PEXPI RichStr ToRichStr(Str8 string)
-{
-	return ToRichStrEx(string, RichStrStyleChange_None_Const);
-}
-
 PEXPI void FreeRichStr(Arena* arena, RichStr* richStrPntr)
 {
 	NotNull(richStrPntr);
@@ -303,7 +243,7 @@ PEXPI void FreeRichStr(Arena* arena, RichStr* richStrPntr)
 
 PEXPI RichStr NewRichStr(Arena* arena, uxx numPieces, const RichStrPiece* pieces)
 {
-	if (numPieces == 0) { return ToRichStrEx(Str8_Empty_Const, RichStrStyleChange_None_Const); }
+	if (numPieces == 0) { return ToRichStrEx(Str8_Empty, RichStrStyleChange_None); }
 	NotNull(arena);
 	NotNull(pieces);
 	if (numPieces == 1) { return ToRichStrEx(AllocStr8(arena, pieces[0].str), pieces[0].styleChange); }
@@ -346,7 +286,7 @@ PEXPI RichStr NewRichStr(Arena* arena, uxx numPieces, const RichStrPiece* pieces
 		const RichStrPiece* inPiece = &pieces[pIndex];
 		RichStrPiece* newPiece = &result.pieces[pIndex];
 		newPiece->styleChange = inPiece->styleChange;
-		newPiece->str = NewStr8(inPiece->str.length, &result.fullPiece.str.chars[bIndex]);
+		newPiece->str = MakeStr8(inPiece->str.length, &result.fullPiece.str.chars[bIndex]);
 		bIndex += inPiece->str.length;
 	}
 	
@@ -416,13 +356,13 @@ PEXP RichStr ToRichStrWithHighlight(Arena* arena, Str8 string, uxx highlightStar
 	}
 	
 	pieces[pIndex].str = StrSlice(string, highlightStartIndex, highlightEndIndex);
-	pieces[pIndex].styleChange = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Highlighted);
+	pieces[pIndex].styleChange = MakeRichStrStyleChangeEnableFlags(FontStyleFlag_Highlighted);
 	pIndex++;
 	
 	if (highlightEndIndex < string.length)
 	{
 		pieces[pIndex].str = StrSliceFrom(string, highlightEndIndex);
-		pieces[pIndex].styleChange = NewRichStrStyleChangeDefaultFlags(FontStyleFlag_Highlighted);
+		pieces[pIndex].styleChange = MakeRichStrStyleChangeDefaultFlags(FontStyleFlag_Highlighted);
 		pIndex++;
 	}
 	
@@ -612,7 +552,7 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 	state.encodedString = encodedString;
 	for (u8 pass = 0; pass < 2; pass++)
 	{
-		state.nextStyleChange = RichStrStyleChange_None_Const;
+		state.nextStyleChange = RichStrStyleChange_None;
 		state.pieceStartIndex = 0;
 		state.fullStrByteIndex = 0;
 		state.pieceIndex = 0;
@@ -633,12 +573,12 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 				TwoPassRichStrPiece(&state, pass, bIndex);
 				if (IsFlagSet(state.enabledFlags, FontStyleFlag_Bold))
 				{
-					state.nextStyleChange = NewRichStrStyleChangeDefaultFlags(FontStyleFlag_Bold);
+					state.nextStyleChange = MakeRichStrStyleChangeDefaultFlags(FontStyleFlag_Bold);
 					FlagUnset(state.enabledFlags, FontStyleFlag_Bold);
 				}
 				else
 				{
-					state.nextStyleChange = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Bold);
+					state.nextStyleChange = MakeRichStrStyleChangeEnableFlags(FontStyleFlag_Bold);
 					FlagSet(state.enabledFlags, FontStyleFlag_Bold);
 				}
 			}
@@ -647,18 +587,18 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 				TwoPassRichStrPiece(&state, pass, bIndex);
 				if (IsFlagSet(state.enabledFlags, FontStyleFlag_Italic))
 				{
-					state.nextStyleChange = NewRichStrStyleChangeDefaultFlags(FontStyleFlag_Italic);
+					state.nextStyleChange = MakeRichStrStyleChangeDefaultFlags(FontStyleFlag_Italic);
 					FlagUnset(state.enabledFlags, FontStyleFlag_Italic);
 				}
 				else
 				{
-					state.nextStyleChange = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Italic);
+					state.nextStyleChange = MakeRichStrStyleChangeEnableFlags(FontStyleFlag_Italic);
 					FlagSet(state.enabledFlags, FontStyleFlag_Italic);
 				}
 			}
 			else if (codepoint == '[' && !state.prevCharWasEscape)
 			{
-				RichStrStyleChange styleChange = RichStrStyleChange_None_Const;
+				RichStrStyleChange styleChange = RichStrStyleChange_None;
 				uxx styleChangePartLength = 0;
 				
 				uxx nextPipeIndex = FindNextCharInStr(encodedString, bIndex + state.utf8ByteSize, StrLit("]"));

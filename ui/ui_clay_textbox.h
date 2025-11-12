@@ -108,13 +108,13 @@ PEXP void InitUiTextbox(Arena* arena, Str8 idStr, Str8 initialText, UiTextbox* t
 	tbox->id = ToClayId(tbox->idStr);
 	InitVarArrayWithInitial(char, &tbox->textBuffer, arena, initialText.length);
 	InitVarArray(RichStrStyleChangeRange, &tbox->syntaxRanges, arena);
-	tbox->text = NewStr8(0, (char*)tbox->textBuffer.items);
+	tbox->text = MakeStr8(0, (char*)tbox->textBuffer.items);
 	if (!IsEmptyStr(initialText))
 	{
 		char* newChars = VarArrayAddMulti(char, &tbox->textBuffer, initialText.length);
 		NotNull(newChars);
 		MyMemCopy(newChars, initialText.chars, initialText.length);
-		tbox->text = NewStr8(initialText.length, newChars);
+		tbox->text = MakeStr8(initialText.length, newChars);
 	}
 }
 
@@ -525,7 +525,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	if (tbox->text.length == 0)
 	{
 		//When there is no text being rendered, we need to figure out the start position of the text
-		cursorRelativePos = NewV2(
+		cursorRelativePos = MakeV2(
 			(r32)UISCALE_U16(context->uiScale, TEXTBOX_INNER_PADDING_X),
 			textboxRec.Height/2 + fontLineMetrics.centerOffset
 		);
@@ -572,7 +572,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		if (tbox->cursorActive && tbox->cursorEnd != tbox->cursorStart)
 		{
 			styleRanges[numStyleRanges].range = NewRangeUXX(tbox->cursorStart, tbox->cursorEnd);
-			styleRanges[numStyleRanges].style = NewRichStrStyleChangeEnableFlags(FontStyleFlag_Highlighted);
+			styleRanges[numStyleRanges].style = MakeRichStrStyleChangeEnableFlags(FontStyleFlag_Highlighted);
 			numStyleRanges++;
 		}
 		VarArrayLoop(&tbox->syntaxRanges, rIndex)
@@ -608,7 +608,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		
 		if (tbox->isFocused && tbox->cursorActive)
 		{
-			v2 cursorTopLeft = Add(cursorRelativePos, NewV2(UISCALE_R32(context->uiScale, -1), fontLineMetrics.maxDescend - fontLineMetrics.lineHeight));
+			v2 cursorTopLeft = Add(cursorRelativePos, MakeV2(UISCALE_R32(context->uiScale, -1), fontLineMetrics.maxDescend - fontLineMetrics.lineHeight));
 			CLAY({.id = ToClayIdPrint(context->uiArena, "%.*sCursor", StrPrint(tbox->idStr)),
 				.backgroundColor = MonokaiYellow, //TODO: Change this color
 				.layout = {

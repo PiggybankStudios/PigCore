@@ -116,7 +116,7 @@ PEXP RegexResult StrRegexFind(Str8 haystack, Str8 needleRegexPattern, bool caseS
 			//TODO: We need to figure out why the matchResult is sometimes coming back as 1 past the end!
 			Assert(IsSizedPntrWithin(haystackNt.chars, haystackNt.length+1, slreCapture->ptr, slreCapture->len));
 			if (slreCapture->ptr + slreCapture->len == haystackNt.chars + haystackNt.length+1) { Decrement(slreCapture->len); } //subtract 1 from the length if it dangles off the end
-			result.captures[result.numCaptures] = NewStr8((uxx)slreCapture->len, &haystack.chars[(slreCapture->ptr - haystackNt.chars)]);
+			result.captures[result.numCaptures] = MakeStr8((uxx)slreCapture->len, &haystack.chars[(slreCapture->ptr - haystackNt.chars)]);
 			result.captureIndices[result.numCaptures] = (uxx)(slreCapture->ptr - haystack.chars);
 			// PrintLine_D("slreCapture[%llu]: \"%.*s\" at %llu", (u64)cIndex, StrPrint(result.captures[result.numCaptures]), (u64)result.captureIndices[result.numCaptures]);
 			result.numCaptures++;

@@ -171,7 +171,7 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_ELEMENT_WITH_ID,
 					.parentId = secondSectionId.id,
-					.offset = NewV2(split->horizontal ? -(dividerPadding/2.0f) : 0, split->horizontal ? 0 : -(dividerPadding/2.0f)),
+					.offset = MakeV2(split->horizontal ? -(dividerPadding/2.0f) : 0, split->horizontal ? 0 : -(dividerPadding/2.0f)),
 					.attachPoints = {
 						.parent = CLAY_ATTACH_POINT_LEFT_TOP,
 						.element = split->horizontal ? CLAY_ATTACH_POINT_CENTER_TOP : CLAY_ATTACH_POINT_LEFT_CENTER,

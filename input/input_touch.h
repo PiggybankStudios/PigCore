@@ -30,7 +30,7 @@ Description:
 #define MAX_TOUCH_INPUTS 16 //maximum number of simultaneous touch inputs supported
 #define TOUCH_ID_INVALID 0 //we use id=0 to indicate the TouchState is empty
 #define TOUCH_PATH_LENGTH 16 //positions
-#define TOUCH_PATH_INVALID NewV2(INFINITY, INFINITY)
+#define TOUCH_PATH_INVALID MakeV2(INFINITY, INFINITY)
 
 typedef plex TouchState TouchState;
 plex TouchState
@@ -126,7 +126,7 @@ PEXP TouchState* StartNewTouch(TouchscreenState* touchscreen, uxx id, v2 startPo
 			result->prevPos = startPos;
 			result->pos = startPos;
 			result->visitRadius = 0.0f;
-			result->visitBounds = NewRec(startPos.X, startPos.Y, 0, 0);
+			result->visitBounds = MakeRec(startPos.X, startPos.Y, 0, 0);
 			for (uxx pIndex = 1; pIndex < TOUCH_PATH_LENGTH; pIndex++) { result->path[pIndex] = TOUCH_PATH_INVALID; }
 			result->path[0] = startPos;
 		}
@@ -138,7 +138,7 @@ PEXP void UpdateTouchStatePosition(TouchState* touch, v2 position, u64 currentTi
 {
 	NotNull(touch);
 	touch->visitRadius = MaxR32(touch->visitRadius, LengthV2(SubV2(position, touch->startPos)));
-	touch->visitBounds = BothRec(touch->visitBounds, NewRecV(position, V2_Zero));
+	touch->visitBounds = BothRec(touch->visitBounds, MakeRecV(position, V2_Zero));
 	if (!AreEqualV2(touch->pos, position))
 	{
 		touch->pos = position;

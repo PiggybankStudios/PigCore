@@ -143,7 +143,7 @@ static inline Str8 GetEmscriptenSdkPath()
 		WriteLine_E("Please set the EMSCRIPTEN_SDK_PATH environment variable before trying to build for the web with USE_EMSCRIPTEN");
 		exit(7);
 	}
-	Str8 result = NewStr8Nt(sdkEnvVariable);
+	Str8 result = MakeStr8Nt(sdkEnvVariable);
 	if (IS_SLASH(result.chars[result.length-1])) { result.length--; } //no trailing slash
 	result = CopyStr8(result, true);
 	FixPathSlashes(result, PATH_SEP_CHAR);
@@ -182,7 +182,7 @@ static inline Str8 GetPlaydateSdkPath()
 		WriteLine_E("Please set the PLAYDATE_SDK_PATH environment variable before trying to build for the Playdate");
 		exit(7);
 	}
-	Str8 result = NewStr8Nt(sdkEnvVariable);
+	Str8 result = MakeStr8Nt(sdkEnvVariable);
 	if (IS_SLASH(result.chars[result.length-1])) { result.length--; }
 	result = CopyStr8(result, true);
 	FixPathSlashes(result, PATH_SEP_CHAR);

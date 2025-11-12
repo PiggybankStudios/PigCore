@@ -99,7 +99,7 @@ PEXP void AddStrErrorPrint(StrErrorList* list, RangeUXX range, const char* forma
 	if (list->numErrors >= list->maxNumErrors) { return; }
 	ScratchBegin1(scratch, list->arena);
 	
-	Str8 errorStr = Str8_Empty_Const;
+	Str8 errorStr = Str8_Empty;
 	va_list args;
 	va_start(args, formatString);
 	int printResult1 = MyVaListPrintf(nullptr, 0, formatString, args); //Measure first

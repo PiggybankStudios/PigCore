@@ -15,6 +15,7 @@ plex StrRange
 	Str8 str;
 	RangeUXX range;
 };
+#define MakeStrRange(strValue, rangeValue) NEW_STRUCT(StrRange){ .str=(strValue), .range=(rangeValue) }
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -22,7 +23,6 @@ plex StrRange
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE RangeUXX SliceToRangeUXX(Str8 str, Str8 slice);
 	PIG_CORE_INLINE Str8 StrSliceRange(Str8 str, RangeUXX range);
-	PIG_CORE_INLINE StrRange NewStrRange(Str8 str, RangeUXX range);
 	PIG_CORE_INLINE Str8 ToStr8FromRange(StrRange strRange);
 	PIG_CORE_INLINE StrRange ToStrRange(Str8 str, Str8 slice);
 #endif
@@ -38,18 +38,10 @@ PEXPI RangeUXX SliceToRangeUXX(Str8 str, Str8 slice)
 	NotNull(slice.chars);
 	NotNull(str.chars);
 	Assert(IsSizedPntrWithin(str.chars, str.length, slice.chars, slice.length));
-	return NewRangeUXX((uxx)(slice.chars - str.chars), (uxx)(slice.chars - str.chars) + slice.length);
+	return MakeRangeUXX((uxx)(slice.chars - str.chars), (uxx)(slice.chars - str.chars) + slice.length);
 }
 
 PEXPI Str8 StrSliceRange(Str8 str, RangeUXX range) { return StrSlice(str, range.min, range.max); }
-
-PEXPI StrRange NewStrRange(Str8 str, RangeUXX range)
-{
-	StrRange result = ZEROED;
-	result.str = str;
-	result.range = range;
-	return result;
-}
 
 PEXPI Str8 ToStr8FromRange(StrRange strRange)
 {
@@ -58,7 +50,7 @@ PEXPI Str8 ToStr8FromRange(StrRange strRange)
 
 PEXPI StrRange ToStrRange(Str8 str, Str8 slice)
 {
-	return NewStrRange(str, SliceToRangeUXX(str, slice));
+	return MakeStrRange(str, SliceToRangeUXX(str, slice));
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

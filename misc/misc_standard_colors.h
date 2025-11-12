@@ -21,12 +21,7 @@ Description:
 	#define NUM_PREDEF_PURE_COLORS       6
 	#define NUM_PREDEF_GREYSCALE_COLORS  16
 	
-	#define NoColor_Value                 0x00000000UL
-	#define TransparentBlack_Value        0x00000000UL
-	#define Transparent_Value             0x00FFFFFFUL
-	#define TransparentWhite_Value        0x00FFFFFFUL
-	
-	#define Black_Value                   0xFF000000UL
+	#define Grey0_Value                   Black_Value
 	#define Grey1_Value                   0xFF111111UL
 	#define Grey2_Value                   0xFF222222UL
 	#define Grey3_Value                   0xFF333333UL
@@ -41,7 +36,7 @@ Description:
 	#define Grey12_Value                  0xFFCCCCCCUL
 	#define Grey13_Value                  0xFFDDDDDDUL
 	#define Grey14_Value                  0xFFEEEEEEUL
-	#define White_Value                   0xFFFFFFFFUL
+	#define Grey15_Value                  White_Value
 	
 	#define PureRed_Value                 0xFFFF0000UL
 	#define PureOrange_Value              0xFFFFA500UL
@@ -50,32 +45,29 @@ Description:
 	#define PureBlue_Value                0xFF0000FFUL
 	#define PurePurple_Value              0xFF800080UL
 	
-	#define NoColor                 NewColorU32(NoColor_Value)
-	#define TransparentBlack        NewColorU32(TransparentBlack_Value)
-	#define Transparent             NewColorU32(Transparent_Value)
-	#define TransparentWhite        NewColorU32(TransparentWhite_Value)
-	#define Black                   NewColorU32(Black_Value)
-	#define Grey1                   NewColorU32(Grey1_Value)
-	#define Grey2                   NewColorU32(Grey2_Value)
-	#define Grey3                   NewColorU32(Grey3_Value)
-	#define Grey4                   NewColorU32(Grey4_Value)
-	#define Grey5                   NewColorU32(Grey5_Value)
-	#define Grey6                   NewColorU32(Grey6_Value)
-	#define Grey7                   NewColorU32(Grey7_Value)
-	#define Grey8                   NewColorU32(Grey8_Value)
-	#define Grey9                   NewColorU32(Grey9_Value)
-	#define Grey10                  NewColorU32(Grey10_Value)
-	#define Grey11                  NewColorU32(Grey11_Value)
-	#define Grey12                  NewColorU32(Grey12_Value)
-	#define Grey13                  NewColorU32(Grey13_Value)
-	#define Grey14                  NewColorU32(Grey14_Value)
-	#define White                   NewColorU32(White_Value)
-	#define PureRed                 NewColorU32(PureRed_Value)
-	#define PureOrange              NewColorU32(PureOrange_Value)
-	#define PureYellow              NewColorU32(PureYellow_Value)
-	#define PureGreen               NewColorU32(PureGreen_Value)
-	#define PureBlue                NewColorU32(PureBlue_Value)
-	#define PurePurple              NewColorU32(PurePurple_Value)
+	#define Grey0                   Black
+	#define Grey1                   MakeColorU32(Grey1_Value)
+	#define Grey2                   MakeColorU32(Grey2_Value)
+	#define Grey3                   MakeColorU32(Grey3_Value)
+	#define Grey4                   MakeColorU32(Grey4_Value)
+	#define Grey5                   MakeColorU32(Grey5_Value)
+	#define Grey6                   MakeColorU32(Grey6_Value)
+	#define Grey7                   MakeColorU32(Grey7_Value)
+	#define Grey8                   MakeColorU32(Grey8_Value)
+	#define Grey9                   MakeColorU32(Grey9_Value)
+	#define Grey10                  MakeColorU32(Grey10_Value)
+	#define Grey11                  MakeColorU32(Grey11_Value)
+	#define Grey12                  MakeColorU32(Grey12_Value)
+	#define Grey13                  MakeColorU32(Grey13_Value)
+	#define Grey14                  MakeColorU32(Grey14_Value)
+	#define Grey15                  White
+	
+	#define PureRed                 MakeColorU32(PureRed_Value)
+	#define PureOrange              MakeColorU32(PureOrange_Value)
+	#define PureYellow              MakeColorU32(PureYellow_Value)
+	#define PureGreen               MakeColorU32(PureGreen_Value)
+	#define PureBlue                MakeColorU32(PureBlue_Value)
+	#define PurePurple              MakeColorU32(PurePurple_Value)
 	
 	#if !PIG_CORE_IMPLEMENTATION
 	Color32 GetPureColorByIndex(uxx index);
@@ -102,7 +94,7 @@ Description:
 	{
 		switch (index % NUM_PREDEF_GREYSCALE_COLORS)
 		{
-			case 0:  return Black;
+			case 0:  return Grey0;
 			case 1:  return Grey1;
 			case 2:  return Grey2;
 			case 3:  return Grey3;
@@ -117,8 +109,8 @@ Description:
 			case 12: return Grey12;
 			case 13: return Grey13;
 			case 14: return Grey14;
-			case 15: return White;
-			default: return Black;
+			case 15: return Grey15;
+			default: return Grey0;
 		}
 	}
 	PEXP uxx GetPureColorIndexByValue(u32 colorValue)
@@ -142,7 +134,7 @@ Description:
 	{
 		switch (colorValue)
 		{
-			case Black_Value:  return 0;
+			case Grey0_Value:  return 0;
 			case Grey1_Value:  return 1;
 			case Grey2_Value:  return 2;
 			case Grey3_Value:  return 3;
@@ -157,7 +149,7 @@ Description:
 			case Grey12_Value: return 12;
 			case Grey13_Value: return 13;
 			case Grey14_Value: return 14;
-			case White_Value:  return 15;
+			case Grey15_Value:  return 15;
 			default: return NUM_PREDEF_GREYSCALE_COLORS;
 		}
 	}
@@ -255,87 +247,87 @@ Description:
 	#define PalBlackLight_Value           0xFF3C3C39
 	#define PalBlackLighter_Value         0xFF53534E
 	
-	#define PalRedDarker            NewColorU32(PalRedDarker_Value)
-	#define PalRedDark              NewColorU32(PalRedDark_Value)
-	#define PalRed                  NewColorU32(PalRed_Value)
-	#define PalRedLight             NewColorU32(PalRedLight_Value)
-	#define PalRedLighter           NewColorU32(PalRedLighter_Value)
-	#define PalPinkDarker           NewColorU32(PalPinkDarker_Value)
-	#define PalPinkDark             NewColorU32(PalPinkDark_Value)
-	#define PalPink                 NewColorU32(PalPink_Value)
-	#define PalPinkLight            NewColorU32(PalPinkLight_Value)
-	#define PalPinkLighter          NewColorU32(PalPinkLighter_Value)
-	#define PalOrangeDarker         NewColorU32(PalOrangeDarker_Value)
-	#define PalOrangeDark           NewColorU32(PalOrangeDark_Value)
-	#define PalOrange               NewColorU32(PalOrange_Value)
-	#define PalOrangeLight          NewColorU32(PalOrangeLight_Value)
-	#define PalOrangeLighter        NewColorU32(PalOrangeLighter_Value)
-	#define PalHoneyDarker          NewColorU32(PalHoneyDarker_Value)
-	#define PalHoneyDark            NewColorU32(PalHoneyDark_Value)
-	#define PalHoney                NewColorU32(PalHoney_Value)
-	#define PalHoneyLight           NewColorU32(PalHoneyLight_Value)
-	#define PalHoneyLighter         NewColorU32(PalHoneyLighter_Value)
-	#define PalYellowDarker         NewColorU32(PalYellowDarker_Value)
-	#define PalYellowDark           NewColorU32(PalYellowDark_Value)
-	#define PalYellow               NewColorU32(PalYellow_Value)
-	#define PalYellowLight          NewColorU32(PalYellowLight_Value)
-	#define PalYellowLighter        NewColorU32(PalYellowLighter_Value)
-	#define PalBananaDarker         NewColorU32(PalBananaDarker_Value)
-	#define PalBananaDark           NewColorU32(PalBananaDark_Value)
-	#define PalBanana               NewColorU32(PalBanana_Value)
-	#define PalBananaLight          NewColorU32(PalBananaLight_Value)
-	#define PalBananaLighter        NewColorU32(PalBananaLighter_Value)
-	#define PalGreenDarker          NewColorU32(PalGreenDarker_Value)
-	#define PalGreenDark            NewColorU32(PalGreenDark_Value)
-	#define PalGreen                NewColorU32(PalGreen_Value)
-	#define PalGreenLight           NewColorU32(PalGreenLight_Value)
-	#define PalGreenLighter         NewColorU32(PalGreenLighter_Value)
-	#define PalGrassDarker          NewColorU32(PalGrassDarker_Value)
-	#define PalGrassDark            NewColorU32(PalGrassDark_Value)
-	#define PalGrass                NewColorU32(PalGrass_Value)
-	#define PalGrassLight           NewColorU32(PalGrassLight_Value)
-	#define PalGrassLighter         NewColorU32(PalGrassLighter_Value)
-	#define PalBlueDarker           NewColorU32(PalBlueDarker_Value)
-	#define PalBlueDark             NewColorU32(PalBlueDark_Value)
-	#define PalBlue                 NewColorU32(PalBlue_Value)
-	#define PalBlueLight            NewColorU32(PalBlueLight_Value)
-	#define PalBlueLighter          NewColorU32(PalBlueLighter_Value)
-	#define PalSkyDarker            NewColorU32(PalSkyDarker_Value)
-	#define PalSkyDark              NewColorU32(PalSkyDark_Value)
-	#define PalSky                  NewColorU32(PalSky_Value)
-	#define PalSkyLight             NewColorU32(PalSkyLight_Value)
-	#define PalSkyLighter           NewColorU32(PalSkyLighter_Value)
-	#define PalPurpleDarker         NewColorU32(PalPurpleDarker_Value)
-	#define PalPurpleDark           NewColorU32(PalPurpleDark_Value)
-	#define PalPurple               NewColorU32(PalPurple_Value)
-	#define PalPurpleLight          NewColorU32(PalPurpleLight_Value)
-	#define PalPurpleLighter        NewColorU32(PalPurpleLighter_Value)
-	#define PalVioletDarker         NewColorU32(PalVioletDarker_Value)
-	#define PalVioletDark           NewColorU32(PalVioletDark_Value)
-	#define PalViolet               NewColorU32(PalViolet_Value)
-	#define PalVioletLight          NewColorU32(PalVioletLight_Value)
-	#define PalVioletLighter        NewColorU32(PalVioletLighter_Value)
-	#define PalNeutralDarker        NewColorU32(PalNeutralDarker_Value)
-	#define PalNeutralDark          NewColorU32(PalNeutralDark_Value)
-	#define PalNeutral              NewColorU32(PalNeutral_Value)
-	#define PalNeutralLight         NewColorU32(PalNeutralLight_Value)
-	#define PalNeutralLighter       NewColorU32(PalNeutralLighter_Value)
+	#define PalRedDarker            MakeColorU32(PalRedDarker_Value)
+	#define PalRedDark              MakeColorU32(PalRedDark_Value)
+	#define PalRed                  MakeColorU32(PalRed_Value)
+	#define PalRedLight             MakeColorU32(PalRedLight_Value)
+	#define PalRedLighter           MakeColorU32(PalRedLighter_Value)
+	#define PalPinkDarker           MakeColorU32(PalPinkDarker_Value)
+	#define PalPinkDark             MakeColorU32(PalPinkDark_Value)
+	#define PalPink                 MakeColorU32(PalPink_Value)
+	#define PalPinkLight            MakeColorU32(PalPinkLight_Value)
+	#define PalPinkLighter          MakeColorU32(PalPinkLighter_Value)
+	#define PalOrangeDarker         MakeColorU32(PalOrangeDarker_Value)
+	#define PalOrangeDark           MakeColorU32(PalOrangeDark_Value)
+	#define PalOrange               MakeColorU32(PalOrange_Value)
+	#define PalOrangeLight          MakeColorU32(PalOrangeLight_Value)
+	#define PalOrangeLighter        MakeColorU32(PalOrangeLighter_Value)
+	#define PalHoneyDarker          MakeColorU32(PalHoneyDarker_Value)
+	#define PalHoneyDark            MakeColorU32(PalHoneyDark_Value)
+	#define PalHoney                MakeColorU32(PalHoney_Value)
+	#define PalHoneyLight           MakeColorU32(PalHoneyLight_Value)
+	#define PalHoneyLighter         MakeColorU32(PalHoneyLighter_Value)
+	#define PalYellowDarker         MakeColorU32(PalYellowDarker_Value)
+	#define PalYellowDark           MakeColorU32(PalYellowDark_Value)
+	#define PalYellow               MakeColorU32(PalYellow_Value)
+	#define PalYellowLight          MakeColorU32(PalYellowLight_Value)
+	#define PalYellowLighter        MakeColorU32(PalYellowLighter_Value)
+	#define PalBananaDarker         MakeColorU32(PalBananaDarker_Value)
+	#define PalBananaDark           MakeColorU32(PalBananaDark_Value)
+	#define PalBanana               MakeColorU32(PalBanana_Value)
+	#define PalBananaLight          MakeColorU32(PalBananaLight_Value)
+	#define PalBananaLighter        MakeColorU32(PalBananaLighter_Value)
+	#define PalGreenDarker          MakeColorU32(PalGreenDarker_Value)
+	#define PalGreenDark            MakeColorU32(PalGreenDark_Value)
+	#define PalGreen                MakeColorU32(PalGreen_Value)
+	#define PalGreenLight           MakeColorU32(PalGreenLight_Value)
+	#define PalGreenLighter         MakeColorU32(PalGreenLighter_Value)
+	#define PalGrassDarker          MakeColorU32(PalGrassDarker_Value)
+	#define PalGrassDark            MakeColorU32(PalGrassDark_Value)
+	#define PalGrass                MakeColorU32(PalGrass_Value)
+	#define PalGrassLight           MakeColorU32(PalGrassLight_Value)
+	#define PalGrassLighter         MakeColorU32(PalGrassLighter_Value)
+	#define PalBlueDarker           MakeColorU32(PalBlueDarker_Value)
+	#define PalBlueDark             MakeColorU32(PalBlueDark_Value)
+	#define PalBlue                 MakeColorU32(PalBlue_Value)
+	#define PalBlueLight            MakeColorU32(PalBlueLight_Value)
+	#define PalBlueLighter          MakeColorU32(PalBlueLighter_Value)
+	#define PalSkyDarker            MakeColorU32(PalSkyDarker_Value)
+	#define PalSkyDark              MakeColorU32(PalSkyDark_Value)
+	#define PalSky                  MakeColorU32(PalSky_Value)
+	#define PalSkyLight             MakeColorU32(PalSkyLight_Value)
+	#define PalSkyLighter           MakeColorU32(PalSkyLighter_Value)
+	#define PalPurpleDarker         MakeColorU32(PalPurpleDarker_Value)
+	#define PalPurpleDark           MakeColorU32(PalPurpleDark_Value)
+	#define PalPurple               MakeColorU32(PalPurple_Value)
+	#define PalPurpleLight          MakeColorU32(PalPurpleLight_Value)
+	#define PalPurpleLighter        MakeColorU32(PalPurpleLighter_Value)
+	#define PalVioletDarker         MakeColorU32(PalVioletDarker_Value)
+	#define PalVioletDark           MakeColorU32(PalVioletDark_Value)
+	#define PalViolet               MakeColorU32(PalViolet_Value)
+	#define PalVioletLight          MakeColorU32(PalVioletLight_Value)
+	#define PalVioletLighter        MakeColorU32(PalVioletLighter_Value)
+	#define PalNeutralDarker        MakeColorU32(PalNeutralDarker_Value)
+	#define PalNeutralDark          MakeColorU32(PalNeutralDark_Value)
+	#define PalNeutral              MakeColorU32(PalNeutral_Value)
+	#define PalNeutralLight         MakeColorU32(PalNeutralLight_Value)
+	#define PalNeutralLighter       MakeColorU32(PalNeutralLighter_Value)
 	
-	#define PalBackgroundDarker     NewColorU32(PalBackgroundDarker_Value)
-	#define PalBackgroundDark       NewColorU32(PalBackgroundDark_Value)
-	#define PalBackground           NewColorU32(PalBackground_Value)
-	#define PalBackgroundLight      NewColorU32(PalBackgroundLight_Value)
-	#define PalBackgroundLighter    NewColorU32(PalBackgroundLighter_Value)
-	#define PalGreyDarker           NewColorU32(PalGreyDarker_Value)
-	#define PalGreyDark             NewColorU32(PalGreyDark_Value)
-	#define PalGrey                 NewColorU32(PalGrey_Value)
-	#define PalGreyLight            NewColorU32(PalGreyLight_Value)
-	#define PalGreyLighter          NewColorU32(PalGreyLighter_Value)
-	#define PalBlackDarker          NewColorU32(PalBlackDarker_Value)
-	#define PalBlackDark            NewColorU32(PalBlackDark_Value)
-	#define PalBlack                NewColorU32(PalBlack_Value)
-	#define PalBlackLight           NewColorU32(PalBlackLight_Value)
-	#define PalBlackLighter         NewColorU32(PalBlackLighter_Value)
+	#define PalBackgroundDarker     MakeColorU32(PalBackgroundDarker_Value)
+	#define PalBackgroundDark       MakeColorU32(PalBackgroundDark_Value)
+	#define PalBackground           MakeColorU32(PalBackground_Value)
+	#define PalBackgroundLight      MakeColorU32(PalBackgroundLight_Value)
+	#define PalBackgroundLighter    MakeColorU32(PalBackgroundLighter_Value)
+	#define PalGreyDarker           MakeColorU32(PalGreyDarker_Value)
+	#define PalGreyDark             MakeColorU32(PalGreyDark_Value)
+	#define PalGrey                 MakeColorU32(PalGrey_Value)
+	#define PalGreyLight            MakeColorU32(PalGreyLight_Value)
+	#define PalGreyLighter          MakeColorU32(PalGreyLighter_Value)
+	#define PalBlackDarker          MakeColorU32(PalBlackDarker_Value)
+	#define PalBlackDark            MakeColorU32(PalBlackDark_Value)
+	#define PalBlack                MakeColorU32(PalBlack_Value)
+	#define PalBlackLight           MakeColorU32(PalBlackLight_Value)
+	#define PalBlackLighter         MakeColorU32(PalBlackLighter_Value)
 
 	#if !PIG_CORE_IMPLEMENTATION
 	Color32 GetPredefPalColorByIndex(uxx index);
@@ -539,26 +531,26 @@ Description:
 	#define MonokaiGray2_Value              0xFF75715E
 	#define MonokaiDarkGray_Value           0xFF212121
 
-	#define MonokaiBack                     NewColorU32(MonokaiBack_Value)
-	#define MonokaiYellow                   NewColorU32(MonokaiYellow_Value)
-	#define MonokaiLightYellow              NewColorU32(MonokaiLightYellow_Value)
-	#define MonokaiFadedYellow              NewColorU32(MonokaiFadedYellow_Value)
-	#define MonokaiPurple                   NewColorU32(MonokaiPurple_Value)
-	#define MonokaiLightPurple              NewColorU32(MonokaiLightPurple_Value)
-	#define MonokaiGreen                    NewColorU32(MonokaiGreen_Value)
-	#define MonokaiDarkGreen                NewColorU32(MonokaiDarkGreen_Value)
-	#define MonokaiOrange                   NewColorU32(MonokaiOrange_Value)
-	#define MonokaiBrown                    NewColorU32(MonokaiBrown_Value)
-	#define MonokaiMagenta                  NewColorU32(MonokaiMagenta_Value)
-	#define MonokaiRed                      NewColorU32(MonokaiRed_Value)
-	#define MonokaiLightRed                 NewColorU32(MonokaiLightRed_Value)
-	#define MonokaiBlue                     NewColorU32(MonokaiBlue_Value)
-	#define MonokaiLightBlue                NewColorU32(MonokaiLightBlue_Value)
-	#define MonokaiWhite                    NewColorU32(MonokaiWhite_Value)
-	#define MonokaiLightGray                NewColorU32(MonokaiLightGray_Value)
-	#define MonokaiGray1                    NewColorU32(MonokaiGray1_Value)
-	#define MonokaiGray2                    NewColorU32(MonokaiGray2_Value)
-	#define MonokaiDarkGray                 NewColorU32(MonokaiDarkGray_Value)
+	#define MonokaiBack                     MakeColorU32(MonokaiBack_Value)
+	#define MonokaiYellow                   MakeColorU32(MonokaiYellow_Value)
+	#define MonokaiLightYellow              MakeColorU32(MonokaiLightYellow_Value)
+	#define MonokaiFadedYellow              MakeColorU32(MonokaiFadedYellow_Value)
+	#define MonokaiPurple                   MakeColorU32(MonokaiPurple_Value)
+	#define MonokaiLightPurple              MakeColorU32(MonokaiLightPurple_Value)
+	#define MonokaiGreen                    MakeColorU32(MonokaiGreen_Value)
+	#define MonokaiDarkGreen                MakeColorU32(MonokaiDarkGreen_Value)
+	#define MonokaiOrange                   MakeColorU32(MonokaiOrange_Value)
+	#define MonokaiBrown                    MakeColorU32(MonokaiBrown_Value)
+	#define MonokaiMagenta                  MakeColorU32(MonokaiMagenta_Value)
+	#define MonokaiRed                      MakeColorU32(MonokaiRed_Value)
+	#define MonokaiLightRed                 MakeColorU32(MonokaiLightRed_Value)
+	#define MonokaiBlue                     MakeColorU32(MonokaiBlue_Value)
+	#define MonokaiLightBlue                MakeColorU32(MonokaiLightBlue_Value)
+	#define MonokaiWhite                    MakeColorU32(MonokaiWhite_Value)
+	#define MonokaiLightGray                MakeColorU32(MonokaiLightGray_Value)
+	#define MonokaiGray1                    MakeColorU32(MonokaiGray1_Value)
+	#define MonokaiGray2                    MakeColorU32(MonokaiGray2_Value)
+	#define MonokaiDarkGray                 MakeColorU32(MonokaiDarkGray_Value)
 	
 	#if !PIG_CORE_IMPLEMENTATION
 	Color32 GetMonokaiColorByIndex(uxx index);
@@ -642,16 +634,16 @@ Description:
 	#define UiSelectedBlue_Value        0xFF0079A6
 	#define UiErrorRed_Value            0xFFFF6666
 
-	#define UiTextWhite           NewColorU32(UiTextWhite_Value)
-	#define UiTextLightGray       NewColorU32(UiTextLightGray_Value)
-	#define UiTextGray            NewColorU32(UiTextGray_Value)
-	#define UiBackgroundBlack     NewColorU32(UiBackgroundBlack_Value)
-	#define UiBackgroundDarkGray  NewColorU32(UiBackgroundDarkGray_Value)
-	#define UiBackgroundGray      NewColorU32(UiBackgroundGray_Value)
-	#define UiOutlineGray         NewColorU32(UiOutlineGray_Value)
-	#define UiHoveredBlue         NewColorU32(UiHoveredBlue_Value)
-	#define UiSelectedBlue        NewColorU32(UiSelectedBlue_Value)
-	#define UiErrorRed            NewColorU32(UiErrorRed_Value)
+	#define UiTextWhite           MakeColorU32(UiTextWhite_Value)
+	#define UiTextLightGray       MakeColorU32(UiTextLightGray_Value)
+	#define UiTextGray            MakeColorU32(UiTextGray_Value)
+	#define UiBackgroundBlack     MakeColorU32(UiBackgroundBlack_Value)
+	#define UiBackgroundDarkGray  MakeColorU32(UiBackgroundDarkGray_Value)
+	#define UiBackgroundGray      MakeColorU32(UiBackgroundGray_Value)
+	#define UiOutlineGray         MakeColorU32(UiOutlineGray_Value)
+	#define UiHoveredBlue         MakeColorU32(UiHoveredBlue_Value)
+	#define UiSelectedBlue        MakeColorU32(UiSelectedBlue_Value)
+	#define UiErrorRed            MakeColorU32(UiErrorRed_Value)
 	
 	#if !PIG_CORE_IMPLEMENTATION
 	Color32 GetUiColorByIndex(uxx index);

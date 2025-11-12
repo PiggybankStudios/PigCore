@@ -141,7 +141,7 @@ typedef RECURSIVE_DIR_WALK_CALLBACK_DEF(RecursiveDirWalkCallback_f);
 // +--------------------------------------------------------------+
 #define StrLitLength(stringLiteral) ((sizeof(stringLiteral) / sizeof((stringLiteral)[0])) - sizeof((stringLiteral)[0]))
 #define CheckStrLit(stringLiteral) ("" stringLiteral "")
-#define StrLit(stringLiteral) NewStr8(StrLitLength(CheckStrLit(stringLiteral)), (stringLiteral))
+#define StrLit(stringLiteral) MakeStr8(StrLitLength(CheckStrLit(stringLiteral)), (stringLiteral))
 #define ArrayCount(array) (sizeof(array) / sizeof((array)[0]))
 
 #define WriteLine(messageStr) printf(messageStr "\n")
@@ -154,14 +154,14 @@ typedef RECURSIVE_DIR_WALK_CALLBACK_DEF(RecursiveDirWalkCallback_f);
 // +--------------------------------------------------------------+
 // |                        Str Functions                         |
 // +--------------------------------------------------------------+
-static inline Str8 NewStr8(uxx length, const void* pntr)
+static inline Str8 MakeStr8(uxx length, const void* pntr)
 {
 	Str8 result;
 	result.length = length;
 	result.pntr = (void*)pntr; //throw away const qualifier
 	return result;
 }
-static inline Str8 NewStr8Nt(const void* nullTermPntr)
+static inline Str8 MakeStr8Nt(const void* nullTermPntr)
 {
 	Str8 result;
 	result.length = (uxx)strlen(nullTermPntr);
@@ -182,7 +182,7 @@ static inline Str8 StrSlice(Str8 target, uxx startIndex, uxx endIndex)
 	assert(startIndex <= target.length);
 	assert(endIndex <= target.length);
 	assert(startIndex <= endIndex);
-	return NewStr8(endIndex - startIndex, target.chars + startIndex);
+	return MakeStr8(endIndex - startIndex, target.chars + startIndex);
 }
 static inline Str8 StrSliceFrom(Str8 target, uxx startIndex)
 {
@@ -373,8 +373,8 @@ static inline Str8 JoinStrings3(Str8 left, Str8 middle, Str8 right, bool addNull
 	return result;
 }
 
-#define CONCAT2(leftNt, rightNt)           JoinStrings2(NewStr8Nt(leftNt), NewStr8Nt(rightNt), true)
-#define CONCAT3(leftNt, middleNt, rightNt) JoinStrings3(NewStr8Nt(leftNt), NewStr8Nt(middleNt), NewStr8Nt(rightNt), true)
+#define CONCAT2(leftNt, rightNt)           JoinStrings2(MakeStr8Nt(leftNt), MakeStr8Nt(rightNt), true)
+#define CONCAT3(leftNt, middleNt, rightNt) JoinStrings3(MakeStr8Nt(leftNt), MakeStr8Nt(middleNt), MakeStr8Nt(rightNt), true)
 
 //Returns the number of target characters that were replaced
 static inline uxx StrReplaceChars(Str8 haystack, char targetChar, char replaceChar)
@@ -502,7 +502,7 @@ static inline bool LineParserGetLine(LineParser* parser, Str8* lineOut)
 		}
 	}
 	
-	Str8 line = NewStr8(parser->byteIndex - startIndex, &parser->inputStr.chars[startIndex]);
+	Str8 line = MakeStr8(parser->byteIndex - startIndex, &parser->inputStr.chars[startIndex]);
 	parser->byteIndex += endOfLineByteSize;
 	if (lineOut != nullptr) { *lineOut = line; }
 	return true;
@@ -758,7 +758,7 @@ static inline void AppendPrintToFile(Str8 filePath, const char* formatString, ..
 	va_end(args);
 	assert(printResult >= 0);
 	assert(printResult < ArrayCount(printBuffer));
-	Str8 printedStr = NewStr8((uxx)printResult, &printBuffer[0]);
+	Str8 printedStr = MakeStr8((uxx)printResult, &printBuffer[0]);
 	AppendToFile(filePath, printedStr, true);
 }
 
@@ -817,7 +817,7 @@ static inline void MyRemoveDirectory(Str8 folderPath, bool recursive)
 				Str8 fullPath = JoinStrings3(
 					folderPath,
 					needsTrailingSlash ? StrLit(PATH_SEP_CHAR_STR) : StrLit(""),
-					NewStr8Nt(findData.cFileName),
+					MakeStr8Nt(findData.cFileName),
 					false
 				);
 				
@@ -860,7 +860,7 @@ static inline void CopyFileToFolder(Str8 filePath, Str8 folderPath)
 {
 	Str8 fileName = GetFileNamePart(filePath, true);
 	const char* joinStr = (folderPath.length == 0 || !IS_SLASH(folderPath.chars[folderPath.length-1])) ? "/" : "";
-	Str8 newPath = JoinStrings3(folderPath, NewStr8Nt(joinStr), fileName, false);
+	Str8 newPath = JoinStrings3(folderPath, MakeStr8Nt(joinStr), fileName, false);
 	CopyFileToPath(filePath, newPath);
 	free(newPath.chars);
 }
@@ -962,7 +962,7 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 				}
 			}
 			
-			Str8 fileName = NewStr8Nt(fileIter->findData.cFileName);
+			Str8 fileName = MakeStr8Nt(fileIter->findData.cFileName);
 			
 			//ignore current and parent folder entries
 			if (StrExactEquals(fileName, StrLit(".")) || StrExactEquals(fileName, StrLit("..")))
@@ -1006,7 +1006,7 @@ static bool StepFileIter(FileIter* fileIter, Str8* pathOut, bool* isFolderOut)
 				return false;
 			}
 			
-			Str8 fileName = NewStr8Nt(entry->d_name);
+			Str8 fileName = MakeStr8Nt(entry->d_name);
 			if (StrExactEquals(fileName, StrLit(".")) || StrExactEquals(fileName, StrLit(".."))) { continue; } //ignore current and parent folder entries
 			
 			Str8 fullPath = JoinStrings2(fileIter->folderPathNt, fileName, true);
@@ -1104,7 +1104,7 @@ bool TryExtractDefineFrom(Str8 headerFileContents, Str8 defineName, Str8* valueO
 				(character == '\r' && nextCharacter == '\n') ||
 				(character == '\n' && nextCharacter == '\r');
 			
-			Str8 lineStr = NewStr8(byteIndex - lineStartIndex, &headerFileContents.chars[lineStartIndex]);
+			Str8 lineStr = MakeStr8(byteIndex - lineStartIndex, &headerFileContents.chars[lineStartIndex]);
 			
 			Str8 defineValue = ZEROED;
 			if (IsHeaderLineDefine(defineName, lineStr, &defineValue))

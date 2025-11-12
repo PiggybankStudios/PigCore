@@ -147,7 +147,7 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 	TracyCZoneEnd(linearConversion);
 	
 	ImageData result = ZEROED;
-	result.size = NewV2i(upperLayer.size.Width/2, upperLayer.size.Height/2);
+	result.size = MakeV2i(upperLayer.size.Width/2, upperLayer.size.Height/2);
 	result.numPixels = (uxx)(result.size.Width * result.size.Height);
 	result.pixels = AllocArray(u32, arena, result.numPixels);
 	NotNull(result.pixels);
@@ -156,7 +156,7 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 		for (i32 xOffset = 0; xOffset < result.size.Width; xOffset++)
 		{
 			Color32* outPixel = (Color32*)&result.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, result.size.Width, result.size.Height)];
-			v2i upperPos = NewV2i(xOffset*2, yOffset*2);
+			v2i upperPos = MakeV2i(xOffset*2, yOffset*2);
 			if (upperPos.X >= upperLayer.size.Width) { upperPos.X = upperLayer.size.Width-1; }
 			if (upperPos.Y >= upperLayer.size.Height) { upperPos.Y = upperLayer.size.Height-1; }
 			float* inRow0 = (float*)(&upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y, upperLayer.size.Width, upperLayer.size.Height)]);
@@ -383,12 +383,12 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 			u8* destRow = &texture->pixelsU8[INDEX_FROM_COORD2D(sourceRec.X + 0, sourceRec.Y + rowIndex, texture->Width, texture->Height) * texture->pixelSize];
 			MyMemCopy(destRow, sourceRow, sourceRec.Width * texture->pixelSize);
 		}
-		newImageData = NewImageData(texture->size, texture->pixelsPntr);
+		newImageData = MakeImageData(texture->size, texture->pixelsPntr);
 	}
 	else
 	{
 		Assert(sourceRec.X == 0 && sourceRec.Y == 0 && sourceRec.Width == texture->Width && sourceRec.Height == texture->Height);
-		newImageData = NewImageData(texture->size, (u32*)pixelsPntr);
+		newImageData = MakeImageData(texture->size, (u32*)pixelsPntr);
 	}
 	
 	if (IsFlagSet(texture->flags, TextureFlag_Mutable))
@@ -408,7 +408,7 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 
 PEXPI void UpdateTexture(Texture* texture, const void* pixelsPntr)
 {
-	UpdateTexturePart(texture, NewReci(0, 0, texture->Width, texture->Height), pixelsPntr);
+	UpdateTexturePart(texture, MakeReci(0, 0, texture->Width, texture->Height), pixelsPntr);
 }
 
 PEXPI void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex)

@@ -62,7 +62,7 @@ PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* f
 		#if NOTIFICATION_QUEUE_AVAILABLE
 		if (GlobalNotificationQueue != nullptr && GlobalNotificationQueue->arena != nullptr)
 		{
-			Notification* newNotification = AddNotificationToQueue(GlobalNotificationQueue, level, NewStr8Nt(message));
+			Notification* newNotification = AddNotificationToQueue(GlobalNotificationQueue, level, MakeStr8Nt(message));
 			NotNull(newNotification);
 			newNotification->duration = (duration != 0) ? duration : DEFAULT_NOTIFICATION_TIME;
 			sentToQueue = true;

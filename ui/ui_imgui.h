@@ -74,25 +74,25 @@ plex ImguiUI
 
 PEXPI v2 ToV2FromImgui(ImVec2 vector)
 {
-	return NewV2(vector.x, vector.y);
+	return MakeV2(vector.x, vector.y);
 }
 PEXPI ImVec2 ToImVec2(v2 vector)
 {
-	return (ImVec2){ .x = vector.X, .y = vector.Y };
+	return NEW_STRUCT(ImVec2){ .x=vector.X, .y=vector.Y };
 }
 
 PEXPI v4 ToV4FromImgui(ImVec4 vector)
 {
-	return NewV4(vector.x, vector.y, vector.z, vector.w);
+	return MakeV4(vector.x, vector.y, vector.z, vector.w);
 }
 PEXPI ImVec4 ToImVec4(v4 vector)
 {
-	return (ImVec4){ .x = vector.X, .y = vector.Y, .z = vector.Z, .w = vector.W };
+	return NEW_STRUCT(ImVec4){ .x=vector.X, .y=vector.Y, .z=vector.Z, .w=vector.W };
 }
 PEXPI ImVec4 ToImVec4FromColor(Color32 color)
 {
 	v4 colorVec = ToV4FromColor32(color);
-	return (ImVec4){ .x = colorVec.X, .y = colorVec.Y, .z = colorVec.Z, .w = colorVec.W };
+	return NEW_STRUCT(ImVec4){ .x=colorVec.X, .y=colorVec.Y, .z=colorVec.Z, .w=colorVec.W };
 }
 
 static void* ImguiAllocCallback(size_t numBytes, void* userData)
@@ -191,7 +191,7 @@ PEXP ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr)
 	NotNull(fontAtlasPixels);
 	Assert(fontAtlasWidth > 0 && fontAtlasHeight > 0);
 	
-	result->fontTexture = InitTexture(arena, StrLit("ImGuiFontAtlas"), NewV2i((i32)fontAtlasWidth, (i32)fontAtlasHeight), fontAtlasPixels, TextureFlag_NoMipmaps);
+	result->fontTexture = InitTexture(arena, StrLit("ImGuiFontAtlas"), MakeV2i((i32)fontAtlasWidth, (i32)fontAtlasHeight), fontAtlasPixels, TextureFlag_NoMipmaps);
 	Assert(result->fontTexture.error == Result_Success);
 	ImFontAtlas_SetTexID(result->io->Fonts, (ImTextureID)&result->fontTexture);
 	

@@ -109,7 +109,7 @@ MD_String8 MdLoadEntireFile(MD_Arena* arena, MD_String8 filePath)
 	Arena callbackArena = ZEROED;
 	InitArenaFuncs(&callbackArena, MdAllocCallback, nullptr, nullptr);
 	Str8 resultStr = Str8_Empty;
-	bool readSuccess = OsReadTextFile(NewStr8((uxx)filePath.size, filePath.str), &callbackArena, &resultStr);
+	bool readSuccess = OsReadTextFile(MakeStr8((uxx)filePath.size, filePath.str), &callbackArena, &resultStr);
 	mdArenaForCallback = nullptr;
 	if (readSuccess) { return MD_S8(resultStr.bytes, resultStr.length); }
 	else { return MD_S8Lit(""); }

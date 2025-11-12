@@ -27,7 +27,7 @@ Date:   09\13\2025
 
 #define SparseSetV3i_HeaderSize  sizeof(v3i)
 #define SparseSetV3i_EmptyValue  INT32_MAX
-#define SparseSetV3i_EmptyV3i    NewV3i(SparseSetV3i_EmptyValue, SparseSetV3i_EmptyValue, SparseSetV3i_EmptyValue)
+#define SparseSetV3i_EmptyV3i    FillV3i(SparseSetV3i_EmptyValue)
 
 typedef plex SparseSetV3i SparseSetV3i;
 plex SparseSetV3i
