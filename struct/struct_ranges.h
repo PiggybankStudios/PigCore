@@ -103,15 +103,15 @@ car RangeR64
 // +--------------------------------------------------------------+
 // |                           Defines                            |
 // +--------------------------------------------------------------+
-#define RangeUXX_Zero    NewRangeUXX(0U, 0U)
-#define RangeIXX_Zero    NewRangeIXX(0, 0)
-#define RangeR32_Zero    NewRangeR32(0.0f, 0.0f)
-#define RangeR64_Zero    NewRangeR64(0.0, 0.0)
+#define MakeRangeUXX(minValue, maxValue) NEW_STRUCT(RangeUXX){ .min=(minValue), .max=(maxValue) }
+#define MakeRangeIXX(minValue, maxValue) NEW_STRUCT(RangeIXX){ .min=(minValue), .max=(maxValue) }
+#define MakeRangeR32(minValue, maxValue) NEW_STRUCT(RangeR32){ .min=(minValue), .max=(maxValue) }
+#define MakeRangeR64(minValue, maxValue) NEW_STRUCT(RangeR64){ .min=(minValue), .max=(maxValue) }
 
-#define RangeUXX_Zero_Const    {.min=0U,.max=0U}
-#define RangeIXX_Zero_Const    {.min=0,.max=0}
-#define RangeR32_Zero_Const    {.min=0.0f,.max=0.0f}
-#define RangeR64_Zero_Const    {.min=0.0,.max=0.0}
+#define RangeUXX_Zero    MakeRangeUXX(0U, 0U)
+#define RangeIXX_Zero    MakeRangeIXX(0, 0)
+#define RangeR32_Zero    MakeRangeR32(0.0f, 0.0f)
+#define RangeR64_Zero    MakeRangeR64(0.0, 0.0)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -120,28 +120,28 @@ car RangeR64
 
 PEXPI RangeUXX NewRangeUXX(uxx value1, uxx value2)
 {
-	RangeUXX result = RangeUXX_Zero_Const;
+	RangeUXX result = RangeUXX_Zero;
 	result.min = MinUXX(value1, value2);
 	result.max = MaxUXX(value1, value2);
 	return result;
 }
 PEXPI RangeIXX NewRangeIXX(ixx value1, ixx value2)
 {
-	RangeIXX result = RangeIXX_Zero_Const;
+	RangeIXX result = RangeIXX_Zero;
 	result.min = MinIXX(value1, value2);
 	result.max = MaxIXX(value1, value2);
 	return result;
 }
 PEXPI RangeR32 NewRangeR32(r32 value1, r32 value2)
 {
-	RangeR32 result = RangeR32_Zero_Const;
+	RangeR32 result = RangeR32_Zero;
 	result.min = MinR32(value1, value2);
 	result.max = MaxR32(value1, value2);
 	return result;
 }
 PEXPI RangeR64 NewRangeR64(r64 value1, r64 value2)
 {
-	RangeR64 result = RangeR64_Zero_Const;
+	RangeR64 result = RangeR64_Zero;
 	result.min = MinR64(value1, value2);
 	result.max = MaxR64(value1, value2);
 	return result;
@@ -149,28 +149,28 @@ PEXPI RangeR64 NewRangeR64(r64 value1, r64 value2)
 
 PEXPI RangeUXX NewRangeUXXLength(uxx start, uxx length)
 {
-	RangeUXX result = RangeUXX_Zero_Const;
+	RangeUXX result = RangeUXX_Zero;
 	result.min = start;
 	result.max = start + length;
 	return result;
 }
 PEXPI RangeIXX NewRangeIXXLength(ixx start, ixx length)
 {
-	RangeIXX result = RangeIXX_Zero_Const;
+	RangeIXX result = RangeIXX_Zero;
 	result.min = (length >= 0) ? start : start + length;
 	result.max = (length >= 0) ? start + length : start;
 	return result;
 }
 PEXPI RangeR32 NewRangeR32Length(r32 start, r32 length)
 {
-	RangeR32 result = RangeR32_Zero_Const;
+	RangeR32 result = RangeR32_Zero;
 	result.min = (length >= 0.0f) ? start : start + length;
 	result.max = (length >= 0.0f) ? start + length : start;
 	return result;
 }
 PEXPI RangeR64 NewRangeR64Length(r64 start, r64 length)
 {
-	RangeR64 result = RangeR64_Zero_Const;
+	RangeR64 result = RangeR64_Zero;
 	result.min = (length >= 0.0f) ? start : start + length;
 	result.max = (length >= 0.0f) ? start + length : start;
 	return result;
@@ -178,28 +178,28 @@ PEXPI RangeR64 NewRangeR64Length(r64 start, r64 length)
 
 PEXPI RangeUXX FillRangeUXX(uxx value)
 {
-	RangeUXX result = RangeUXX_Zero_Const;
+	RangeUXX result = RangeUXX_Zero;
 	result.min = value;
 	result.max = value;
 	return result;
 }
 PEXPI RangeIXX FillRangeIXX(ixx value)
 {
-	RangeIXX result = RangeIXX_Zero_Const;
+	RangeIXX result = RangeIXX_Zero;
 	result.min = value;
 	result.max = value;
 	return result;
 }
 PEXPI RangeR32 FillRangeR32(r32 value)
 {
-	RangeR32 result = RangeR32_Zero_Const;
+	RangeR32 result = RangeR32_Zero;
 	result.min = value;
 	result.max = value;
 	return result;
 }
 PEXPI RangeR64 FillRangeR64(r64 value)
 {
-	RangeR64 result = RangeR64_Zero_Const;
+	RangeR64 result = RangeR64_Zero;
 	result.min = value;
 	result.max = value;
 	return result;

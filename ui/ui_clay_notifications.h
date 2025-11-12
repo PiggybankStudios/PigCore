@@ -152,7 +152,7 @@ PEXPI void SetNotificationIconEx(NotificationQueue* queue, DbgLevel level, Textu
 }
 PEXPI void SetNotificationIcon(NotificationQueue* queue, DbgLevel level, Texture* texture, r32 scale, Color32 color)
 {
-	SetNotificationIconEx(queue, level, texture, scale, color, NEW_STRUCT(rec)Rec_Zero_Const);
+	SetNotificationIconEx(queue, level, texture, scale, color, Rec_Zero);
 }
 
 PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message)

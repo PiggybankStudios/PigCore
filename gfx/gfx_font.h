@@ -1156,7 +1156,7 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 	);
 	
 	bool foundSpace = (glyphSize.Width == 0 || glyphSize.Height == 0);
-	v2i cellPos = V2i_Zero_Const;
+	v2i cellPos = V2i_Zero;
 	while (!foundSpace)
 	{
 		if (glyphCellSize.Width <= activeAtlas->activeCellGridSize.Width && glyphCellSize.Height <= activeAtlas->activeCellGridSize.Height)

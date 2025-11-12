@@ -66,17 +66,17 @@ typedef QuatR64 quatd;
 // +--------------------------------------------------------------+
 #define NewQuat(x, y, z, w) HMM_Q((x), (y), (z), (w))
 
+#define MakeQuat(x, y, z, w) NEW_STRUCT(quat){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeQuatd(x, y, z, w) NEW_STRUCT(quatd){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+
 #define ToQuatFromV4(vec4) HMM_QV4(vec4)
-#define ToQuatdFromV4d(vec4d) NewQuatd((vec4d).X, (vec4d).Y, (vec4d).Z, (vec4d).W)
-#define ToV4FromQuat(quaternion) NewV4((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
-#define ToV4dFromQuatd(quaternion) NewV4d((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
+#define ToQuatdFromV4d(vec4d) MakeQuatd((vec4d).X, (vec4d).Y, (vec4d).Z, (vec4d).W)
+#define ToV4FromQuat(quaternion) MakeV4((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
+#define ToV4dFromQuatd(quaternion) MakeV4d((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
 #define ToQuatFromAxis(axis, angle) HMM_QFromAxisAngle_LH((axis), (angle))
 
-#define Quat_Identity NewQuat(0.0f, 0.0f, 0.0f, 1.0f)
-#define Quat_Identity_Const { .X=0.0f,.Y=0.0f,.Z=0.0f,.W=1.0f }
-
-#define Quatd_Identity NewQuatd(0.0, 0.0, 0.0, 1.0)
-#define Quatd_Identity_Const { .X=0.0,.Y=0.0,.Z=0.0,.W=1.0 }
+#define Quat_Identity  MakeQuat(0.0f, 0.0f, 0.0f, 1.0f)
+#define Quatd_Identity MakeQuatd(0.0, 0.0, 0.0, 1.0)
 
 #define AddQuat(left, right) HMM_AddQ((left), (right))
 #define SubQuat(left, right) HMM_SubQ((left), (right))

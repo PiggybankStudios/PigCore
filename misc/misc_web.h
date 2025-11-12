@@ -125,7 +125,7 @@ PEXP UriParts GetUriParts(Str8 uriStr)
 	bool foundPathSlash = false;
 	bool foundParametersQuestion = false;
 	bool foundAnchorPound = false;
-	RangeUXX protocolRange = RangeUXX_Zero_Const;
+	RangeUXX protocolRange = RangeUXX_Zero;
 	RangeUXX hostnameRange = NewRangeUXX(0, uriStr.length);
 	RangeUXX pathRange = NewRangeUXX(uriStr.length, uriStr.length);
 	RangeUXX parametersRange = NewRangeUXX(uriStr.length, uriStr.length);

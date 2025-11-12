@@ -368,77 +368,56 @@ typedef Obb3DR64 obb3d;
 // +--------------------------------------------------------------+
 // |                   Simple Value Definitions                   |
 // +--------------------------------------------------------------+
-#define Rec_Zero          NewRec(0.0f, 0.0f, 0.0f, 0.0f)
-#define Rec_Default       NewRec(0.0f, 0.0f, 1.0f, 1.0f)
-#define Rec_UnitRec       NewRec(-1.0f, -1.0f, 2.0f, 2.0f)
-#define Rec_Zero_Const    { .X=0.0f,.Y=0.0f,.Width=0.0f,.Height=0.0f }
-#define Rec_Default_Const { .X=0.0f,.Y=0.0f,.Width=1.0f,.Height=1.0f }
-#define Rec_UnitRec_Const { .X=-1.0f,.Y=-1.0f,.Width=2.0f,.Height=2.0f }
+#define MakeRec(x, y, width, height)                         NEW_STRUCT(rec){ .X=(x), .Y=(y), .Width=(width), .Height=(height) }
+#define MakeReci(x, y, width, height)                       NEW_STRUCT(reci){ .X=(x), .Y=(y), .Width=(width), .Height=(height) }
+#define MakeRecd(x, y, width, height)                       NEW_STRUCT(recd){ .X=(x), .Y=(y), .Width=(width), .Height=(height) }
+#define MakeBox(x, y, z, width, height, depth)               NEW_STRUCT(box){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
+#define MakeBoxi(x, y, z, width, height, depth)             NEW_STRUCT(boxi){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
+#define MakeBoxd(x, y, z, width, height, depth)             NEW_STRUCT(boxd){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
+#define MakeObb2(x, y, width, height, rotation)             NEW_STRUCT(obb2){ .X=(x), .Y=(y), .Width=(width), .Height=(height), .Rotation=(rotation) }
+#define MakeObb2d(x, y, width, height, rotation)           NEW_STRUCT(obb2d){ .X=(x), .Y=(y), .Width=(width), .Height=(height), .Rotation=(rotation) }
+#define MakeObb3(x, y, z, width, height, depth, rotation)   NEW_STRUCT(obb3){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Padding1=0, .Padding2=0, .Rotation=(rotation) }
+#define MakeObb3d(x, y, z, width, height, depth, rotation) NEW_STRUCT(obb3d){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Padding1=0, .Padding2=0, .Rotation=(rotation) }
 
-#define Reci_Zero NewReci(0, 0, 0, 0)
-#define Reci_Default NewReci(0, 0, 1, 1)
-#define Reci_UnitRec NewReci(-1, -1, 2, 2)
-#define Reci_Zero_Const    { .X=0,.Y=0,.Width=0,.Height=0 }
-#define Reci_Default_Const { .X=0,.Y=0,.Width=1,.Height=1 }
-#define Reci_UnitRec_Const { .X=-1,.Y=-1,.Width=2,.Height=2 }
+#define Rec_Zero     MakeRec( 0.0f,  0.0f, 0.0f, 0.0f)
+#define Rec_Default  MakeRec( 0.0f,  0.0f, 1.0f, 1.0f)
+#define Rec_UnitRec  MakeRec(-1.0f, -1.0f, 2.0f, 2.0f)
 
-#define Recd_Zero NewRecd(0.0, 0.0, 0.0, 0.0)
-#define Recd_Default NewRecd(0.0, 0.0, 1.0, 1.0)
-#define Recd_UnitRec NewRecd(-1.0, -1.0, 2.0, 2.0)
-#define Recd_Zero_Const    { .X=0.0,.Y=0.0,.Width=0.0,.Height=0.0 }
-#define Recd_Default_Const { .X=0.0,.Y=0.0,.Width=1.0,.Height=1.0 }
-#define Recd_UnitRec_Const { .X=-1.0,.Y=-1.0,.Width=2.0,.Height=2.0 }
+#define Reci_Zero     MakeReci( 0,  0, 0, 0)
+#define Reci_Default  MakeReci( 0,  0, 1, 1)
+#define Reci_UnitRec  MakeReci(-1, -1, 2, 2)
 
-#define Box_Zero NewBox(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
-#define Box_Default NewBox(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f)
-#define Box_UnitBox NewBox(-1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f)
-#define Box_Zero_Const    { .X=0.0f,.Y=0.0f,.Z=0.0f,.Width=0.0f,.Height=0.0f,.Depth=0.0f }
-#define Box_Default_Const { .X=0.0f,.Y=0.0f,.Z=0.0f,.Width=1.0f,.Height=1.0f,.Depth=1.0f }
-#define Box_UnitBox_Const { .X=-1.0f,.Y=-1.0f,.Z=-1.0f,.Width=2.0f,.Height=2.0f,.Depth=2.0f }
+#define Recd_Zero     MakeRecd( 0.0,  0.0, 0.0, 0.0)
+#define Recd_Default  MakeRecd( 0.0,  0.0, 1.0, 1.0)
+#define Recd_UnitRec  MakeRecd(-1.0, -1.0, 2.0, 2.0)
 
-#define Boxi_Zero NewBoxi(0, 0, 0, 0, 0, 0)
-#define Boxi_Default NewBoxi(0, 0, 0, 1, 1, 1)
-#define Boxi_UnitBox NewBoxi(-1, -1, -1, 2, 2, 2)
-#define Boxi_Zero_Const    { .X=0,.Y=0,.Z=0,.Width=0,.Height=0,.Depth=0 }
-#define Boxi_Default_Const { .X=0,.Y=0,.Z=0,.Width=1,.Height=1,.Depth=1 }
-#define Boxi_UnitBox_Const { .X=-1,.Y=-1,.Z=-1,.Width=2,.Height=2,.Depth=2 }
+#define Box_Zero     MakeBox(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+#define Box_Default  MakeBox(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f)
+#define Box_UnitBox  MakeBox(-1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f)
 
-#define Boxd_Zero NewBoxd(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-#define Boxd_Default NewBoxd(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
-#define Boxd_UnitBox NewBoxd(-1.0, -1.0, -1.0, 2.0, 2.0, 2.0)
-#define Boxd_Zero_Const    { .X=0.0,.Y=0.0,.Z=0.0,.Width=0.0,.Height=0.0,.Depth=0.0 }
-#define Boxd_Default_Const { .X=0.0,.Y=0.0,.Z=0.0,.Width=1.0,.Height=1.0,.Depth=1.0 }
-#define Boxd_UnitBox_Const { .X=-1.0,.Y=-1.0,.Z=-1.0,.Width=2.0,.Height=2.0,.Depth=2.0 }
+#define Boxi_Zero     MakeBoxi(0, 0, 0, 0, 0, 0)
+#define Boxi_Default  MakeBoxi(0, 0, 0, 1, 1, 1)
+#define Boxi_UnitBox  MakeBoxi(-1, -1, -1, 2, 2, 2)
 
-#define Obb2_Zero NewObb2(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
-#define Obb2_Default NewObb2(0.5f, 0.5f, 1.0f, 1.0f, 0.0f)
-#define Obb2_UnitBox NewObb2(0.0f, 0.0f, 2.0f, 2.0f, 0.0f)
-#define Obb2_Zero_Const    { .X=0.0f,.Y=0.0f,.Width=0.0f,.Height=0.0f,.Rotation=0.0f }
-#define Obb2_Default_Const { .X=0.5f,.Y=0.5f,.Width=1.0f,.Height=1.0f,.Rotation=0.0f }
-#define Obb2_UnitBox_Const { .X=0.0f,.Y=0.0f,.Width=2.0f,.Height=2.0f,.Rotation=0.0f }
+#define Boxd_Zero     MakeBoxd(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+#define Boxd_Default  MakeBoxd(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
+#define Boxd_UnitBox  MakeBoxd(-1.0, -1.0, -1.0, 2.0, 2.0, 2.0)
 
-#define Obb2d_Zero NewObb2d(0.0, 0.0, 0.0, 0.0, 0.0)
-#define Obb2d_Default NewObb2d(0.5, 0.5, 1.0, 1.0, 0.0)
-#define Obb2d_UnitBox NewObb2d(0.0, 0.0, 2.0, 2.0, 0.0)
-#define Obb2d_Zero_Const    { .X=0.0,.Y=0.0,.Width=0.0,.Height=0.0,.Rotation=0.0 }
-#define Obb2d_Default_Const { .X=0.5,.Y=0.5,.Width=1.0,.Height=1.0,.Rotation=0.0 }
-#define Obb2d_UnitBox_Const { .X=0.0,.Y=0.0,.Width=2.0,.Height=2.0,.Rotation=0.0 }
+#define Obb2_Zero     MakeObb2(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+#define Obb2_Default  MakeObb2(0.5f, 0.5f, 1.0f, 1.0f, 0.0f)
+#define Obb2_UnitBox  MakeObb2(0.0f, 0.0f, 2.0f, 2.0f, 0.0f)
 
-#define Obb3_Zero NewObb3(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, Quat_Identity)
-#define Obb3_Default NewObb3(0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, Quat_Identity)
-#define Obb3_UnitBox NewObb3(0.0f, 0.0f, 0.0f, 2.0f, 2.0f, 2.0f, Quat_Identity)
-//TODO: For some reason these curly brack initializations only work if we have name designations?
-#define Obb3_Zero_Const    { .X=0.0f,.Y=0.0f,.Z=0.0f,.Width=0.0f,.Height=0.0f,.Depth=0.0f,.Padding1=0.0f,.Padding2=0.0f,.Rotation=Quat_Identity_Const }
-#define Obb3_Default_Const { .X=0.5f,.Y=0.5f,.Z=0.5f,.Width=1.0f,.Height=1.0f,.Depth=1.0f,.Padding1=0.0f,.Padding2=0.0f,.Rotation=Quat_Identity_Const }
-#define Obb3_UnitBox_Const { .X=0.0f,.Y=0.0f,.Z=0.0f,.Width=2.0f,.Height=2.0f,.Depth=2.0f,.Padding1=0.0f,.Padding2=0.0f,.Rotation=Quat_Identity_Const }
+#define Obb2d_Zero     MakeObb2d(0.0, 0.0, 0.0, 0.0, 0.0)
+#define Obb2d_Default  MakeObb2d(0.5, 0.5, 1.0, 1.0, 0.0)
+#define Obb2d_UnitBox  MakeObb2d(0.0, 0.0, 2.0, 2.0, 0.0)
 
-#define Obb3d_Zero NewObb3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Quatd_Identity)
-#define Obb3d_Default NewObb3d(0.5, 0.5, 0.5, 1.0, 1.0, 1.0, Quatd_Identity)
-#define Obb3d_UnitBox NewObb3d(0.0, 0.0, 0.0, 2.0, 2.0, 2.0, Quatd_Identity)
-//TODO: For some reason these curly brack initializations only work if we have name designations?
-#define Obb3d_Zero_Const    { .X=0.0,.Y=0.0,.Z=0.0,.Width=0.0,.Height=0.0,.Depth=0.0,.Padding1=0.0,.Padding2=0.0,.Rotation=Quatd_Identity_Const }
-#define Obb3d_Default_Const { .X=0.5,.Y=0.5,.Z=0.5,.Width=1.0,.Height=1.0,.Depth=1.0,.Padding1=0.0,.Padding2=0.0,.Rotation=Quatd_Identity_Const }
-#define Obb3d_UnitBox_Const { .X=0.0,.Y=0.0,.Z=0.0,.Width=2.0,.Height=2.0,.Depth=2.0,.Padding1=0.0,.Padding2=0.0,.Rotation=Quatd_Identity_Const }
+#define Obb3_Zero     MakeObb3(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, Quat_Identity)
+#define Obb3_Default  MakeObb3(0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, Quat_Identity)
+#define Obb3_UnitBox  MakeObb3(0.0f, 0.0f, 0.0f, 2.0f, 2.0f, 2.0f, Quat_Identity)
+
+#define Obb3d_Zero     MakeObb3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Quatd_Identity)
+#define Obb3d_Default  MakeObb3d(0.5, 0.5, 0.5, 1.0, 1.0, 1.0, Quatd_Identity)
+#define Obb3d_UnitBox  MakeObb3d(0.0, 0.0, 0.0, 2.0, 2.0, 2.0, Quatd_Identity)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |

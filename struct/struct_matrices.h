@@ -49,51 +49,36 @@ typedef HMM_Mat4 mat4;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
+#define MakeMat2(r0c0, r0c1, r1c0, r1c1) NEW_STRUCT(mat2){ \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1),            \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1)             \
+}
+#define MakeMat3(r0c0, r0c1, r0c2, r1c0, r1c1, r1c2, r2c0, r2c1, r2c2) NEW_STRUCT(mat3){ \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2),                    \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2),                    \
+	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2)                     \
+}
+#define MakeMat4(r0c0, r0c1, r0c2, r0c3, r1c0, r1c1, r1c2, r1c3, r2c0, r2c1, r2c2, r2c3, r3c0, r3c1, r3c2, r3c3) NEW_STRUCT(mat4){ \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2), .Columns[3].X=(r0c3),                                        \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2), .Columns[3].Y=(r1c3),                                        \
+	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2), .Columns[3].Z=(r2c3),                                        \
+	.Columns[0].W=(r3c0), .Columns[1].W=(r3c1), .Columns[2].W=(r3c2), .Columns[3].W=(r3c3)                                         \
+}
 
-#define FillMat2(value) NewMat2((value), (value), (value), (value))
-#define FillMat3(value) NewMat3((value), (value), (value), (value), (value), (value), (value), (value), (value))
-#define FillMat4(value) NewMat4((value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value))
+#define FillMat2(value) MakeMat2((value), (value), (value), (value))
+#define FillMat3(value) MakeMat3((value), (value), (value), (value), (value), (value), (value), (value), (value))
+#define FillMat4(value) MakeMat4((value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value))
 
-#define FillDiagonalMat2(value) HMM_M2D(value)
-#define FillDiagonalMat3(value) HMM_M3D(value)
-#define FillDiagonalMat4(value) HMM_M4D(value)
+#define FillDiagonalMat2(value) MakeMat2((value), 0.0f, 0.0f, (value))
+#define FillDiagonalMat3(value) MakeMat3((value), 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, (value))
+#define FillDiagonalMat4(value) MakeMat4((value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value))
 
-#define Mat2_Zero FillMat2(0.0f)
+#define Mat2_Zero     FillMat2(0.0f)
 #define Mat2_Identity FillDiagonalMat2(1.0f)
-#define Mat2_Zero_Const {                   \
-	.Columns[0].X=0.0f, .Columns[1].X=0.0f, \
-	.Columns[0].Y=0.0f, .Columns[1].Y=0.0f  \
-}
-#define Mat2_Identity_Const {               \
-	.Columns[0].X=1.0f, .Columns[1].X=0.0f, \
-	.Columns[0].Y=0.0f, .Columns[1].Y=1.0f  \
-}
+#define Mat3_Zero     FillMat3(0.0f)
 #define Mat3_Identity FillDiagonalMat3(1.0f)
-#define Mat3_Zero FillMat3(0.0f)
-#define Mat3_Zero_Const {                                       \
-	.Columns[0].X=0.0f, .Columns[1].X=0.0f, .Columns[2].X=0.0f, \
-	.Columns[0].Y=0.0f, .Columns[1].Y=0.0f, .Columns[2].Y=0.0f, \
-	.Columns[0].Z=0.0f, .Columns[1].Z=0.0f, .Columns[2].Z=0.0f  \
-}
-#define Mat3_Identity_Const {                                   \
-	.Columns[0].X=1.0f, .Columns[1].X=0.0f, .Columns[2].X=0.0f, \
-	.Columns[0].Y=0.0f, .Columns[1].Y=1.0f, .Columns[2].Y=0.0f, \
-	.Columns[0].Z=0.0f, .Columns[1].Z=0.0f, .Columns[2].Z=1.0f  \
-}
+#define Mat4_Zero     FillMat4(0.0f)
 #define Mat4_Identity FillDiagonalMat4(1.0f)
-#define Mat4_Zero FillMat4(0.0f)
-#define Mat4_Zero_Const {                                                           \
-	.Columns[0].X=0.0f, .Columns[1].X=0.0f, .Columns[2].X=0.0f, .Columns[3].X=0.0f, \
-	.Columns[0].Y=0.0f, .Columns[1].Y=0.0f, .Columns[2].Y=0.0f, .Columns[3].Y=0.0f, \
-	.Columns[0].Z=0.0f, .Columns[1].Z=0.0f, .Columns[2].Z=0.0f, .Columns[3].Z=0.0f, \
-	.Columns[0].W=0.0f, .Columns[1].W=0.0f, .Columns[2].W=0.0f, .Columns[3].W=0.0f  \
-}
-#define Mat4_Identity_Const {                                                       \
-	.Columns[0].X=1.0f, .Columns[1].X=0.0f, .Columns[2].X=0.0f, .Columns[3].X=0.0f, \
-	.Columns[0].Y=0.0f, .Columns[1].Y=1.0f, .Columns[2].Y=0.0f, .Columns[3].Y=0.0f, \
-	.Columns[0].Z=0.0f, .Columns[1].Z=0.0f, .Columns[2].Z=1.0f, .Columns[3].Z=0.0f, \
-	.Columns[0].W=0.0f, .Columns[1].W=0.0f, .Columns[2].W=0.0f, .Columns[3].W=1.0f  \
-}
 
 #define AddMat2(left, right) HMM_AddM2((left), (right))
 #define AddMat3(left, right) HMM_AddM3((left), (right))
