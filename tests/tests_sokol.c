@@ -344,6 +344,56 @@ void AppInit(void)
 	
 	InitGfxSystem(stdHeap, &gfx);
 	
+	mat2 testMat1  = Mat2_Identity;
+	mat2 testMat2  = Mat2_Identity_Const;
+	mat2 testMat3  = MakeMat2(1, 2, 3, 4);
+	mat2 testMat4  = MakeMat2_Const(1, 2, 3, 4);
+	mat3 testMat5  = Mat3_Identity;
+	mat3 testMat6  = Mat3_Identity_Const;
+	mat3 testMat7  = MakeMat3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+	mat3 testMat8  = MakeMat3_Const(1, 2, 3, 4, 5, 6, 7, 8, 9);
+	mat4 testMat9  = Mat4_Identity;
+	mat4 testMat10 = Mat4_Identity_Const;
+	mat4 testMat11 = MakeMat4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+	mat4 testMat12 = MakeMat4_Const(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+	
+	PrintLine_D("mat4: size=%zu align=%zu", sizeof(mat4), _Alignof(mat4));
+	
+	PrintLine_D("mat4.Column[0]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0]), STRUCT_VAR_SIZE(mat4, Columns[0]));
+	PrintLine_D("mat4.Columns[1]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1]), STRUCT_VAR_SIZE(mat4, Columns[1]));
+	PrintLine_D("mat4.Columns[2]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2]), STRUCT_VAR_SIZE(mat4, Columns[2]));
+	PrintLine_D("mat4.Columns[3]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3]), STRUCT_VAR_SIZE(mat4, Columns[3]));
+	
+	PrintLine_D("mat4.Columns[0].X: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].X), STRUCT_VAR_SIZE(mat4, Columns[0].X));
+	PrintLine_D("mat4.Columns[0].Y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].Y), STRUCT_VAR_SIZE(mat4, Columns[0].Y));
+	PrintLine_D("mat4.Columns[0].Z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].Z), STRUCT_VAR_SIZE(mat4, Columns[0].Z));
+	PrintLine_D("mat4.Columns[0].W: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].W), STRUCT_VAR_SIZE(mat4, Columns[0].W));
+	
+	PrintLine_D("mat4.Columns[1].X: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].X), STRUCT_VAR_SIZE(mat4, Columns[1].X));
+	PrintLine_D("mat4.Columns[1].Y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].Y), STRUCT_VAR_SIZE(mat4, Columns[1].Y));
+	PrintLine_D("mat4.Columns[1].Z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].Z), STRUCT_VAR_SIZE(mat4, Columns[1].Z));
+	PrintLine_D("mat4.Columns[1].W: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].W), STRUCT_VAR_SIZE(mat4, Columns[1].W));
+	
+	PrintLine_D("mat4.Columns[2].X: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].X), STRUCT_VAR_SIZE(mat4, Columns[2].X));
+	PrintLine_D("mat4.Columns[2].Y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].Y), STRUCT_VAR_SIZE(mat4, Columns[2].Y));
+	PrintLine_D("mat4.Columns[2].Z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].Z), STRUCT_VAR_SIZE(mat4, Columns[2].Z));
+	PrintLine_D("mat4.Columns[2].W: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].W), STRUCT_VAR_SIZE(mat4, Columns[2].W));
+	
+	PrintLine_D("mat4.Columns[3].X: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].X), STRUCT_VAR_SIZE(mat4, Columns[3].X));
+	PrintLine_D("mat4.Columns[3].Y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].Y), STRUCT_VAR_SIZE(mat4, Columns[3].Y));
+	PrintLine_D("mat4.Columns[3].Z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].Z), STRUCT_VAR_SIZE(mat4, Columns[3].Z));
+	PrintLine_D("mat4.Columns[3].W: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].W), STRUCT_VAR_SIZE(mat4, Columns[3].W));
+	
+	PrintLine_D("mat4.Elements[0][0]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[0][0]), STRUCT_VAR_SIZE(mat4, Elements[0][0]));
+	PrintLine_D("mat4.Elements[0][1]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[0][1]), STRUCT_VAR_SIZE(mat4, Elements[0][1]));
+	PrintLine_D("mat4.Elements[0][2]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[0][2]), STRUCT_VAR_SIZE(mat4, Elements[0][2]));
+	PrintLine_D("mat4.Elements[0][3]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[0][3]), STRUCT_VAR_SIZE(mat4, Elements[0][3]));
+	
+	PrintLine_D("mat4.Elements[0][0]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[0][0]), STRUCT_VAR_SIZE(mat4, Elements[0][0]));
+	PrintLine_D("mat4.Elements[1][0]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[1][0]), STRUCT_VAR_SIZE(mat4, Elements[1][0]));
+	PrintLine_D("mat4.Elements[2][0]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[2][0]), STRUCT_VAR_SIZE(mat4, Elements[2][0]));
+	PrintLine_D("mat4.Elements[3][0]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[3][0]), STRUCT_VAR_SIZE(mat4, Elements[3][0]));
+	
 	v2i gradientSize = FillV2i(64);
 	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.Width * gradientSize.Height));
 	for (i32 pixelY = 0; pixelY < gradientSize.Height; pixelY++)

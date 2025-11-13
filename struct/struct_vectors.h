@@ -40,6 +40,7 @@ Description:
 //        6. Whenever possible, only use the each parameter of a macro once. Using the parameter multiple times can cause unintended multiple execution at runtime if the macro parameter contains a function call
 //        7. Macro parameters must have a different name than designated member names to avoid incorrectly generated code. Often times we will suffix the macro parameter with "Value" or the expected type of the parameter like "R32" to make the name unique
 //        8. Minimal casting inside the designated initializer to take advantage of type-checking during assignment of members. Sometimes we need to throw away a const-qualifier, this is better done with a union in the structure than a type-cast in the Make macro
+//        9. Arrays have weird quirks when initializing with designated members. We had a bug with initial implementation of MakeMat4. TODO: Need to do more research/testing to describe what shoud/shouldn't be done exactly
 
 #define MakeV2_Const(x, y)       { .X=(x), .Y=(y) }
 #define MakeV3_Const(x, y, z)    { .X=(x), .Y=(y), .Z=(z) }

@@ -1,7 +1,7 @@
 // raddbg 0.9.24 project file
 
-recent_file: path: "cross/cross_mem_arena_and_font_char_range.h"
 recent_file: path: "tests/tests_sokol.c"
+recent_file: path: "cross/cross_mem_arena_and_font_char_range.h"
 recent_file: path: "gfx/gfx_font.h"
 recent_file: path: "cross/cross_string_and_unicode.h"
 recent_file: path: "struct/struct_matrices.h"
@@ -106,5 +106,20 @@ watch_pin:
 debug_info:
 {
   path: "D:/gamedev/projects/PigCore/_build/tests.pdb"
-  timestamp: 66198310967905
+  timestamp: 66198324102212
+}
+debug_info:
+{
+  path: "D:/Programs/Gource/SDL2.dll"
+  timestamp: 66082662667000
+}
+type_view:
+{
+  type: HMM_Mat2
+  expr: "rows($, Columns[0].X, Columns[1].X, Columns[0].Y, Columns[1].Y)"
+}
+breakpoint:
+{
+  source_location: "tests/tests_sokol.c:360:1"
+  hit_count: 1
 }

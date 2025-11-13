@@ -12,6 +12,7 @@ Date:   01\15\2025
 #include "std/std_basic_math.h"
 #include "std/std_trig.h"
 
+// #define HANDMADE_MATH_NO_SSE //TODO: We could enable this and deleted Vec4Raw, since it would allow HMM_Vec4 to be 4-byte aligned rather than 16
 #define HANDMADE_MATH_USE_RADIANS
 #define HANDMADE_MATH_PROVIDE_MATH_FUNCTIONS
 #define HMM_SINF SinR32
