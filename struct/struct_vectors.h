@@ -41,6 +41,8 @@ Description:
 //        7. Macro parameters must have a different name than designated member names to avoid incorrectly generated code. Often times we will suffix the macro parameter with "Value" or the expected type of the parameter like "R32" to make the name unique
 //        8. Minimal casting inside the designated initializer to take advantage of type-checking during assignment of members. Sometimes we need to throw away a const-qualifier, this is better done with a union in the structure than a type-cast in the Make macro
 //        9. Arrays have weird quirks when initializing with designated members. We had a bug with initial implementation of MakeMat4. TODO: Need to do more research/testing to describe what shoud/shouldn't be done exactly
+//       10. Any macro arguments that are structs need to be NOT surrounded by parenthesis when inside a _Const macro. But we should surround them with parenthesis when inside a non _Const macro
+//       11. We should not mix names overlapping union members. For example we had a bug in Obb2 where we did { .Center=center, .Size=size, .Rotation=rotation } which caused Center and Size to be zeroed out because Rotation is NOT in the same struct as Center and Size so it zeroes out all other members when set
 
 #define MakeV2_Const(x, y)       { .X=(x), .Y=(y) }
 #define MakeV3_Const(x, y, z)    { .X=(x), .Y=(y), .Z=(z) }

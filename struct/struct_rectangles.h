@@ -31,7 +31,7 @@ car Rectanglef
 	plex { v2 TopLeft, Size; };
 };
 #define MakeRec_Const(x, y, width, height) { .X=(x), .Y=(y), .Width=(width), .Height=(height) }
-#define MakeRecV_Const(topLeft, size)      { .TopLeft=(topLeft),  .Size=(size) }
+#define MakeRecV_Const(topLeft, size)      { .TopLeft=topLeft,  .Size=size }
 #define MakeRec(x, y, width, height)       NEW_STRUCT(Rectanglef)MakeRec_Const((x), (y), (width), (height))
 #define MakeRecV(topLeft, size)            NEW_STRUCT(Rectanglef)MakeRecV_Const((topLeft), (size))
 
@@ -46,7 +46,7 @@ car RectangleR64
 	plex { v2d TopLeft, Size; };
 };
 #define MakeRecd_Const(x, y, width, height)  { .X=(x), .Y=(y), .Width=(width), .Height=(height) }
-#define MakeRecdV_Const(topLeft, size)       { .TopLeft=(topLeft), .Size=(size) }
+#define MakeRecdV_Const(topLeft, size)       { .TopLeft=topLeft, .Size=size }
 #define MakeRecd(x, y, width, height)        NEW_STRUCT(RectangleR64)MakeRecd_Const((x), (y), (width), (height))
 #define MakeRecdV(topLeft, size)             NEW_STRUCT(RectangleR64)MakeRecdV_Const((topLeft), (size))
 
@@ -59,7 +59,7 @@ car Rectanglei
 	plex { v2i TopLeft, Size; };
 };
 #define MakeReci_Const(x, y, width, height)  { .X=(x), .Y=(y), .Width=(width), .Height=(height) }
-#define MakeReciV_Const(topLeft, size)       { .TopLeft=(topLeft), .Size=(size) }
+#define MakeReciV_Const(topLeft, size)       { .TopLeft=topLeft, .Size=size }
 #define MakeReci(x, y, width, height)        NEW_STRUCT(reci)MakeReci_Const((x), (y), (width), (height))
 #define MakeReciV(topLeft, size)             NEW_STRUCT(reci)MakeReciV_Const((topLeft), (size))
 
@@ -72,7 +72,7 @@ car Box
 	plex { v3 BottomLeftBack, Size; };
 };
 #define MakeBox_Const(x, y, z, width, height, depth) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
-#define MakeBoxV_Const(bottomLeftBack, size)         { .BottomLeftBack=(bottomLeftBack),  .Size=(size) }
+#define MakeBoxV_Const(bottomLeftBack, size)         { .BottomLeftBack=bottomLeftBack,  .Size=size }
 #define MakeBox(x, y, z, width, height, depth)       NEW_STRUCT(Box)MakeBox_Const((x), (y), (z), (width), (height), (depth))
 #define MakeBoxV(bottomLeftBack, size)               NEW_STRUCT(Box)MakeBoxV_Const((bottomLeftBack), (size))
 
@@ -85,7 +85,7 @@ car BoxR64
 	plex { v3d BottomLeftBack, Size; };
 };
 #define MakeBoxd_Const(x, y, z, width, height, depth) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
-#define MakeBoxdV_Const(bottomLeftBack, size)         { .BottomLeftBack=(bottomLeftBack), .Size=(size) }
+#define MakeBoxdV_Const(bottomLeftBack, size)         { .BottomLeftBack=bottomLeftBack, .Size=size }
 #define MakeBoxd(x, y, z, width, height, depth)       NEW_STRUCT(BoxR64)MakeBoxd_Const((x), (y), (z), (width), (height), (depth))
 #define MakeBoxdV(bottomLeftBack, size)               NEW_STRUCT(BoxR64)MakeBoxdV_Const((bottomLeftBack), (size))
 
@@ -98,7 +98,7 @@ car Boxi
 	plex { v3i BottomLeftBack, Size; };
 };
 #define MakeBoxi_Const(x, y, z, width, height, depth) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
-#define MakeBoxiV_Const(bottomLeftBack, size)         { .BottomLeftBack=(bottomLeftBack), .Size=(size) }
+#define MakeBoxiV_Const(bottomLeftBack, size)         { .BottomLeftBack=bottomLeftBack, .Size=size }
 #define MakeBoxi(x, y, z, width, height, depth)       NEW_STRUCT(Boxi)MakeBoxi_Const((x), (y), (z), (width), (height), (depth))
 #define MakeBoxiV(bottomLeftBack, size)               NEW_STRUCT(Boxi)MakeBoxiV_Const((bottomLeftBack), (size))
 
@@ -111,7 +111,7 @@ car Obb2D
 	plex { v2 Center, Size; r32 Unused3; };
 };
 #define MakeObb2_Const(x, y, width, height, rotation) { .X=(x), .Y=(y), .Width=(width), .Height=(height), .Rotation=(rotation) }
-#define MakeObb2V_Const(center, size, rotation)       { .Center=(center),  .Size=(size),  .Rotation=(rotation) }
+#define MakeObb2V_Const(center, size, rotation)       { .Center=center,  .Size=size, .Unused3=(rotation) }
 #define MakeObb2(x, y, width, height, rotation)       NEW_STRUCT(Obb2D)MakeObb2_Const((x), (y), (width), (height), (rotation))
 #define MakeObb2V(center, size, rotation)             NEW_STRUCT(Obb2D)MakeObb2V_Const((center), (size), (rotation))
 
@@ -124,7 +124,7 @@ car Obb2DR64
 	plex { v2d Center, Size; r64 Unused3; };
 };
 #define MakeObb2d_Const(x, y, width, height, rotation) { .X=(x), .Y=(y), .Width=(width), .Height=(height), .Rotation=(rotation) }
-#define MakeObb2dV_Const(center, size, rotation)       { .Center=(center), .Size=(size), .Rotation=(rotation) }
+#define MakeObb2dV_Const(center, size, rotation)       { .Center=center, .Size=size, .Unused3=(rotation) }
 #define MakeObb2d(x, y, width, height, rotation)       NEW_STRUCT(Obb2DR64)MakeObb2d_Const((x), (y), (width), (height), (rotation))
 #define MakeObb2dV(center, size, rotation)             NEW_STRUCT(Obb2DR64)MakeObb2dV_Const((center), (size), (rotation))
 
@@ -141,8 +141,8 @@ car Obb3D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Obb3D) == sizeof(r32) * 12, "Obb3D contains padding!");
 #endif
-#define MakeObb3_Const(x, y, z, width, height, depth, rotation) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Padding1=0, .Padding2=0, .Rotation=(rotation) }
-#define MakeObb3V_Const(center, size, rotation)                 { .Center=(center),  .Size=(size), .Padding5=0.0f, Padding6=0.0f, .Unused5=(rotation) }
+#define MakeObb3_Const(x, y, z, width, height, depth, rotation) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Padding1=0, .Padding2=0, .Rotation=rotation }
+#define MakeObb3V_Const(center, size, rotation)                 { .Center=center,  .Size=size, .Padding5=0.0f, Padding6=0.0f, .Unused5=rotation }
 #define MakeObb3(x, y, z, width, height, depth, rotation)       NEW_STRUCT(Obb3D)MakeObb3_Const((x), (y), (z), (width), (height), (depth), (rotation))
 #define MakeObb3V(center, size, rotation)                       NEW_STRUCT(Obb3D)MakeObb3V_Const((center), (size), (rotation))
 
@@ -157,8 +157,8 @@ car Obb3DR64
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Obb3DR64) == sizeof(r64) * 10, "Obb3DR64 contains padding!");
 #endif
-#define MakeObb3d_Const(x, y, z, width, height, depth, rotation) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Rotation=(rotation) }
-#define MakeObb3dV_Const(center, size, rotation)                 { .Center=(center), .Size=(size), .Unused5=(rotation) }
+#define MakeObb3d_Const(x, y, z, width, height, depth, rotation) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Rotation=rotation }
+#define MakeObb3dV_Const(center, size, rotation)                 { .Center=center, .Size=size, .Unused5=rotation }
 #define MakeObb3d(x, y, z, width, height, depth, rotation)       NEW_STRUCT(Obb3DR64)MakeObb3d_Const((x), (y), (z), (width), (height), (depth), (rotation))
 #define MakeObb3dV(center, size, rotation)                       NEW_STRUCT(Obb3DR64)MakeObb3dV_Const((center), (size), (rotation))
 

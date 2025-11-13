@@ -1,5 +1,6 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "tests/tests_main.c"
 recent_file: path: "tests/tests_sokol.c"
 recent_file: path: "cross/cross_mem_arena_and_font_char_range.h"
 recent_file: path: "gfx/gfx_font.h"
@@ -12,7 +13,6 @@ recent_file: path: "misc/misc_sokol_app_helpers.c"
 recent_file: path: "third_party/sokol/sokol_gfx.h"
 recent_file: path: "third_party/freetype/src/base/ftobjs.c"
 recent_file: path: "third_party/sokol/sokol_app.h"
-recent_file: path: "tests/tests_main.c"
 recent_file: path: "mem/mem_arena.h"
 recent_file: path: "struct/struct_rich_string.h"
 recent_file: path: "base/base_debug_output_impl.h"
@@ -106,7 +106,7 @@ watch_pin:
 debug_info:
 {
   path: "D:/gamedev/projects/PigCore/_build/tests.pdb"
-  timestamp: 66198324102212
+  timestamp: 66198328044786
 }
 debug_info:
 {
@@ -120,6 +120,6 @@ type_view:
 }
 breakpoint:
 {
-  source_location: "tests/tests_sokol.c:360:1"
+  source_location: "tests/tests_main.c:533:1"
   hit_count: 1
 }

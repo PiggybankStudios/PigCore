@@ -23,7 +23,7 @@ car Circle
 	plex { v2 Center; r32 Radius; };
 };
 #define MakeCircle_Const(x, y, radius)    { .X=(x), .Y=(y), .R=(radius) }
-#define MakeCircleV_Const(center, radius) { .Center=(center), .Radius=(radius) }
+#define MakeCircleV_Const(center, radius) { .Center=center, .Radius=(radius) }
 #define MakeCircle(x, y, radius)          NEW_STRUCT(Circle)MakeCircle_Const((x), (y), (radius))
 #define MakeCircleV(center, radius)       NEW_STRUCT(Circle)MakeCircleV_Const((center), (radius))
 
@@ -35,7 +35,7 @@ car Sphere
 	plex { v3 Center; r32 Radius; };
 };
 #define MakeSphere_Const(x, y, z, radius) {.X=(x), .Y=(y), .Z=(z), .R=(radius) }
-#define MakeSphereV_Const(center, radius) {.Center=(center), .Radius=(radius) }
+#define MakeSphereV_Const(center, radius) {.Center=center, .Radius=(radius) }
 #define MakeSphere(x, y, z, radius)       NEW_STRUCT(Sphere)MakeSphere_Const((x), (y), (z), (radius))
 #define MakeSphereV(center, radius)       NEW_STRUCT(Sphere)MakeSphereV_Const((center), (radius))
 

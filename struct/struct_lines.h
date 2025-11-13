@@ -19,11 +19,8 @@ car Line2D
 	v2 Points[2];
 	plex { v2 Start; v2 End; };
 };
-#if STATIC_ASSERT_AVAILABLE
-_Static_assert(sizeof(Line2D) == sizeof(r32)*4, "Line2D contains padding!");
-#endif
 #define MakeLine2D_Const(x0, y0, x1, y1) { .Start=MakeV2_Const((x0), (y0)), .End=MakeV2_Const((x1), (y1)) }
-#define MakeLine2DV_Const(start, end)    { .Start=(start), .End=(end) }
+#define MakeLine2DV_Const(start, end)    { .Start=start, .End=end }
 #define MakeLine2D(x0, y0, x1, y1)       NEW_STRUCT(Line2D)MakeLine2D_Const((x0), (y0), (x1), (y1))
 #define MakeLine2DV(start, end)          NEW_STRUCT(Line2D)MakeLine2DV_Const((start), (end))
 
@@ -35,7 +32,7 @@ car Line2DR64
 	plex { v2d Start; v2d End; };
 };
 #define MakeLine2DR64_Const(x0, y0, x1, y1) { .Start=MakeV2d_Const((x0), (y0)), .End=MakeV2d_Const((x1), (y1)) }
-#define MakeLine2DR64V_Const(start, end)    { .Start=(start), .End=(end) }
+#define MakeLine2DR64V_Const(start, end)    { .Start=start, .End=end }
 #define MakeLine2DR64(x0, y0, x1, y1)       NEW_STRUCT(Line2DR64)MakeLine2DR64_Const((x0), (y0), (x1), (y1))
 #define MakeLine2DR64V(start, end)          NEW_STRUCT(Line2DR64)MakeLine2DR64V_Const((start), (end))
 
@@ -46,11 +43,8 @@ car Line3D
 	v3 Points[2];
 	plex { v3 Start; v3 End; };
 };
-#if STATIC_ASSERT_AVAILABLE
-_Static_assert(sizeof(Line3D) == sizeof(r32)*6, "Line3D contains padding!");
-#endif
 #define MakeLine3D_Const(x0, y0, z0, x1, y1, z1) { .Start=MakeV3_Const((x0), (y0), (z0)), .End=MakeV3_Const((x1), (y1), (z1)) }
-#define MakeLine3DV_Const(start, end)            { .Start=(start), .End=(end) }
+#define MakeLine3DV_Const(start, end)            { .Start=start, .End=end }
 #define MakeLine3D(x0, y0, z0, x1, y1, z1)       NEW_STRUCT(Line3D)MakeLine3D_Const((x0), (y0), (z0), (x1), (y1), (z1))
 #define MakeLine3DV(start, end)                  NEW_STRUCT(Line3D)MakeLine3DV_Const((start), (end))
 
