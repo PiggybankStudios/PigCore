@@ -44,7 +44,7 @@ u64 programTime = 0;
 MouseState mouse = ZEROED;
 KeyboardState keyboard = ZEROED;
 TouchscreenState touchscreen = ZEROED;
-v3 cameraPos = {.X=0.0f, .Y=1.0f, .Z=0.0f};
+v3 cameraPos = MakeV3_Const(0.0f, 1.0f, 0.0f);
 v3 cameraLookDir = V3_Zero_Const;
 v2 wrapPos = V2_Zero_Const;
 #if BUILD_WITH_CLAY
@@ -344,7 +344,7 @@ void AppInit(void)
 	
 	InitGfxSystem(stdHeap, &gfx);
 	
-	v2i gradientSize = NewV2i(64, 64);
+	v2i gradientSize = FillV2i(64);
 	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.Width * gradientSize.Height));
 	for (i32 pixelY = 0; pixelY < gradientSize.Height; pixelY++)
 	{
@@ -384,8 +384,8 @@ void AppInit(void)
 		_Empty, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, _Empty, _Empty,
 		_Empty, _Empty, _Empty, Filled, _Empty, Filled, _Empty, Filled, _Empty, _Empty, _Empty, _Empty,
 	};
-	ImageData checkerGlyph18ImageData = NewImageData(NewV2i(12, 18), &checkerGlyph18Pixels[0]);
-	CustomFontGlyph checkerGlyph18 = { .codepoint=UNICODE_UNKNOWN_CHAR_CODEPOINT, .imageData=checkerGlyph18ImageData, .sourceRec = NewReci(0, 0, 12, 18) };
+	ImageData checkerGlyph18ImageData = MakeImageData(MakeV2i(12, 18), &checkerGlyph18Pixels[0]);
+	CustomFontGlyph checkerGlyph18 = { .codepoint=UNICODE_UNKNOWN_CHAR_CODEPOINT, .imageData=checkerGlyph18ImageData, .sourceRec = MakeReci(0, 0, 12, 18) };
 	CustomFontCharRange customCharRanges[] = {
 		{ .startCodepoint=UNICODE_UNKNOWN_CHAR_CODEPOINT, .endCodepoint=UNICODE_UNKNOWN_CHAR_CODEPOINT, .glyphs=&checkerGlyph18 },
 	};
@@ -401,11 +401,11 @@ void AppInit(void)
 			// FontCharRange_LowercaseLetters,
 			// FontCharRange_UppercaseLetters,
 			// FontCharRange_LatinSupplementAccent,
-			// NewFontCharRangeSingle(UNICODE_SPACE_CODEPOINT),
-			NewFontCharRangeSingle(UNICODE_ZERO_WIDTH_SPACE_CODEPOINT),
-			NewFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
-			NewFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
-			// NewFontCharRangeSingle(UNICODE_UNKNOWN_CHAR_CODEPOINT),
+			// MakeFontCharRangeSingle(UNICODE_SPACE_CODEPOINT),
+			MakeFontCharRangeSingle(UNICODE_ZERO_WIDTH_SPACE_CODEPOINT),
+			MakeFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
+			MakeFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
+			// MakeFontCharRangeSingle(UNICODE_UNKNOWN_CHAR_CODEPOINT),
 		};
 		// FontCharRange japaneseCharRanges[] = {
 		// 	FontCharRange_Hiragana,
@@ -423,14 +423,14 @@ void AppInit(void)
 		
 		#if 0
 		FontCharRange emojiCharRanges[] = {
-			NewFontCharRange(0x1F90C, 0x1F91F),
-			NewFontCharRangeSingle(0x1F60A), //😊
-			NewFontCharRangeSingle(0x1F602), //😂
-			NewFontCharRangeSingle(0x1F923), //🤣
-			NewFontCharRangeSingle(0x1F612), //😒
-			NewFontCharRangeSingle(0x1F601), //😁
-			NewFontCharRangeSingle(0x1F60D), //😍
-			NewFontCharRangeSingle(0x1F64C), //🙌
+			MakeFontCharRange(0x1F90C, 0x1F91F),
+			MakeFontCharRangeSingle(0x1F60A), //😊
+			MakeFontCharRangeSingle(0x1F602), //😂
+			MakeFontCharRangeSingle(0x1F923), //🤣
+			MakeFontCharRangeSingle(0x1F612), //😒
+			MakeFontCharRangeSingle(0x1F601), //😁
+			MakeFontCharRangeSingle(0x1F60D), //😍
+			MakeFontCharRangeSingle(0x1F64C), //🙌
 		};
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
 		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
@@ -500,7 +500,7 @@ void AppInit(void)
 	}
 	#endif //!TARGET_IS_OSX
 	
-	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, NewBoxV(V3_Zero, V3_One), White);
+	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, MakeBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
 	for (uxx iIndex = 0; iIndex < cubeMesh.numIndices; iIndex++)
 	{
@@ -509,7 +509,7 @@ void AppInit(void)
 	cubeBuffer = InitVertBuffer3D(stdHeap, StrLit("cube"), VertBufferUsage_Static, cubeMesh.numIndices, cubeVertices, false);
 	Assert(cubeBuffer.error == Result_Success);
 	
-	GeneratedMesh sphereMesh = GenerateVertsForSphere(scratch, NewSphereV(V3_Zero, 1.0f), 12, 20, White);
+	GeneratedMesh sphereMesh = GenerateVertsForSphere(scratch, MakeSphereV(V3_Zero, 1.0f), 12, 20, White);
 	Vertex3D* sphereVertices = AllocArray(Vertex3D, scratch, sphereMesh.numIndices);
 	for (uxx iIndex = 0; iIndex < sphereMesh.numIndices; iIndex++)
 	{
@@ -554,7 +554,7 @@ void AppInit(void)
 	#endif
 	
 	UpdateScreenSafeMargins();
-	oldWindowSize = NewV2i(sapp_width(), sapp_height());
+	oldWindowSize = MakeV2i(sapp_width(), sapp_height());
 	
 	#if !TARGET_IS_OSX //TODO: Remove me once we get files working on OSX
 	mipmapTexture = LoadTexture(stdHeap, StrLit("test.png"), TextureFlag_None);
@@ -562,7 +562,7 @@ void AppInit(void)
 	#endif //!TARGET_IS_OSX
 	
 	ImageData testTextureData = ZEROED;
-	testTextureData.size = NewV2i(512, 512);
+	testTextureData.size = MakeV2i(512, 512);
 	testTextureData.numPixels = (uxx)(testTextureData.size.Width * testTextureData.size.Height);
 	testTextureData.pixels = AllocArray(u32, scratch, testTextureData.numPixels);
 	NotNull(testTextureData.pixels);
@@ -617,8 +617,8 @@ bool AppFrame(void)
 	ScratchBegin(scratch);
 	bool frameRendered = true;
 	programTime += 16; //TODO: Calculate this!
-	v2i windowSizei = NewV2i(sapp_width(), sapp_height());
-	v2 windowSize = NewV2(sapp_widthf(), sapp_heightf());
+	v2i windowSizei = MakeV2i(sapp_width(), sapp_height());
+	v2 windowSize = MakeV2(sapp_widthf(), sapp_heightf());
 	// v2 touchPos = touchscreen.mainTouch->pos;
 	#if TARGET_IS_ANDROID
 	UpdateScreenRotation();
@@ -636,14 +636,14 @@ bool AppFrame(void)
 	if (sapp_mouse_locked())
 	{
 		r32 cameraHoriRot = AtanR32(cameraLookDir.Z, cameraLookDir.X);
-		r32 cameraVertRot = AtanR32(cameraLookDir.Y, Length(NewV2(cameraLookDir.X, cameraLookDir.Z)));
+		r32 cameraVertRot = AtanR32(cameraLookDir.Y, Length(MakeV2(cameraLookDir.X, cameraLookDir.Z)));
 		cameraHoriRot = AngleFixR32(cameraHoriRot - mouse.lockedPosDelta.X / 500.0f);
 		cameraVertRot = ClampR32(cameraVertRot - mouse.lockedPosDelta.Y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
 		r32 horizontalRadius = CosR32(cameraVertRot);
-		cameraLookDir = NewV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
+		cameraLookDir = MakeV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
 		
-		v3 horizontalForwardVec = Normalize(NewV3(cameraLookDir.X, 0.0f, cameraLookDir.Z));
-		v3 horizontalRightVec = Normalize(NewV3(cameraLookDir.Z, 0.0f, -cameraLookDir.X));
+		v3 horizontalForwardVec = Normalize(MakeV3(cameraLookDir.X, 0.0f, cameraLookDir.Z));
+		v3 horizontalRightVec = Normalize(MakeV3(cameraLookDir.Z, 0.0f, -cameraLookDir.X));
 		const r32 moveSpeed = IsKeyboardKeyDown(&keyboard, Key_Shift) ? 0.08f : 0.02f;
 		if (IsKeyboardKeyDown(&keyboard, Key_W)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, moveSpeed)); }
 		if (IsKeyboardKeyDown(&keyboard, Key_A)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, -moveSpeed)); }
@@ -662,18 +662,18 @@ bool AppFrame(void)
 			{
 				v2 delta = SubV2(touch->pos, touch->prevPos);
 				r32 cameraHoriRot = AtanR32(cameraLookDir.Z, cameraLookDir.X);
-				r32 cameraVertRot = AtanR32(cameraLookDir.Y, Length(NewV2(cameraLookDir.X, cameraLookDir.Z)));
+				r32 cameraVertRot = AtanR32(cameraLookDir.Y, Length(MakeV2(cameraLookDir.X, cameraLookDir.Z)));
 				cameraHoriRot = AngleFixR32(cameraHoriRot - delta.X / 500.0f);
 				cameraVertRot = ClampR32(cameraVertRot - delta.Y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
 				r32 horizontalRadius = CosR32(cameraVertRot);
-				cameraLookDir = NewV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
+				cameraLookDir = MakeV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
 			}
 		}
 	}
 	
 	if (IsKeyboardKeyPressed(&keyboard, Key_P, true))
 	{
-		reci sourceRec = NewReci(
+		reci sourceRec = MakeReci(
 			GetRandI32Range(mainRandom, 0, testTexture.Width-1),
 			GetRandI32Range(mainRandom, 0, testTexture.Height-1),
 			0, 0
@@ -828,24 +828,24 @@ bool AppFrame(void)
 			SetViewMat(viewMat);
 			
 			BindTexture(&gfx.pixelTexture);
-			DrawBox(NewBox(3, 0.5f, 0, 1, 1, 1), MonokaiPurple);
-			DrawSphere(NewSphere(2.5f, 0, 0.8f, 1.0f), MonokaiGreen);
+			DrawBox(MakeBox(3, 0.5f, 0, 1, 1, 1), MonokaiPurple);
+			DrawSphere(MakeSphere(2.5f, 0, 0.8f, 1.0f), MonokaiGreen);
 			
 			#if BUILD_WITH_PHYSX
 			VarArrayLoop(&physWorld->bodies, bIndex)
 			{
 				VarArrayLoopGet(PhysicsBody, body, &physWorld->bodies, bIndex);
 				PhysicsBodyTransform transform = GetPhysicsBodyTransform(body);
-				v3 position = NewV3(transform.position.X, transform.position.Y, transform.position.Z);
+				v3 position = MakeV3(transform.position.X, transform.position.Y, transform.position.Z);
 				quat rotation = NewQuat(transform.rotation.X, transform.rotation.Y, transform.rotation.Z, transform.rotation.W);
 				if (body->index == physWorld->groundPlaneBodyIndex)
 				{
 					//TODO: Figure out how PhysX want's us to intepret rotation/position on a Plane when drawing it
-					DrawObb3(NewObb3V(position, NewV3(100.0f, 0.0001f, 100.0f), Quat_Identity), PalGreenDarker);
+					DrawObb3(NewObb3V(position, MakeV3(100.0f, 0.0001f, 100.0f), Quat_Identity), PalGreenDarker);
 				}
 				else
 				{
-					DrawObb3(NewObb3V(position, NewV3(1.0f, 1.0f, 1.0f), rotation), GetPredefPalColorByIndex(bIndex));
+					DrawObb3(NewObb3V(position, MakeV3(1.0f, 1.0f, 1.0f), rotation), GetPredefPalColorByIndex(bIndex));
 				}
 			}
 			#endif
@@ -897,7 +897,7 @@ bool AppFrame(void)
 			{
 				r32 fontLineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
 				r32 fontMaxAscend = GetFontMaxAscend(&testFont, 18*textScale, FontStyleFlag_None);
-				v2 textPos = NewV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + fontMaxAscend);
+				v2 textPos = MakeV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + fontMaxAscend);
 				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
 				BindFont(&debugFont);
 				DrawText(infoStr, textPos, MonokaiWhite);
@@ -920,7 +920,7 @@ bool AppFrame(void)
 					StrLit("This is 😂 \bBräcke 😂 € (\xE2\x97\x8F'\xE2\x97\xA1'\xE2\x97\x8F)\b!"), //\xE2\x97\xA1
 					StrLit("ABC[size=10]DEF[size]GHI ABCDEFGHI"),
 					StrLit("\xE3\x81\x82\xE3\x82\x8A\xE3\x81\x8C\xE3\x81\xA8\xE3\x81\x86\xE3\x81\x94\xE3\x81\x96\xE3\x81\x84\xE3\x81\xBE\xE3\x81\x97\xE3\x81\x9F"),
-					StrLit(kanjiUtf8Buffer),
+					MakeStr8Nt(kanjiUtf8Buffer),
 					StrLit("\xE4\xB8\x89\xE5\xB3\xB6\xE5\xBA\x83\xE5\xB0\x8F\xE8\xB7\xAF\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE4\xBB\x81\xE7\x94\xB0\x20\x2D\x20\xE7\x94\xB0\xE4\xBA\xAC\x20\x2D\x20\xE5\xA4\xA7\xE5\xA0\xB4\x20\x2D\x20\xE5\x8E\x9F\xE6\x9C\xA8\x20\x2D\x20\xE4\xB8\x89\xE5\xB3\xB6\xE4\xBA\x8C\xE6\x97\xA5\xE7\x94\xBA\x20\x2D\x20\xE9\x9F\xAE\xE5\xB1\xB1\x20\x2D\x20\xE4\xB8\x89\xE5\xB3\xB6\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE5\xA4\x9A\xE8\xB3\x80\x20\x2D\x20\xE5\xAE\x87\xE4\xBD\x90\xE7\xBE\x8E\x20\x2D\x20\xE7\xB6\xB2\xE4\xBB\xA3\x20\x2D\x20\xE5\xBD\xAB\xE5\x88\xBB\xE3\x81\xAE\xE6\xA3\xAE\x20\x2D\x20\xE5\xA1\x94\xE3\x83\x8E\xE6\xB2\xA2\x20\x2D\x20\xE5\x85\xA5\xE7\x94\x9F\xE7\x94\xB0\x20\x2D\x20\xE9\xA2\xA8\xE7\xA5\xAD\x20\x2D\x20\xE5\xB0\x8F\xE6\xB6\x8C\xE8\xB0\xB7\x20\x2D\x20\xE4\xBB\x99\xE4\xBA\xBA\xE5\x8F\xB0\xE4\xBF\xA1\xE5\x8F\xB7\xE5\xA0\xB4\x20\x2D\x20\xE5\xA4\xA7\xE5\xB2\xA1\x20\x2D\x20\xE8\xA3\xBE\xE9\x87\x8E\x20\x2D\x20\xE9\x95\xB7\xE6\xB3\x89\xE3\x81\xAA\xE3\x82\x81\xE3\x82\x8A\x20\x2D\x20\xE4\xB8\x8B\xE5\x9C\x9F\xE7\x8B\xA9\x20\x2D\x20\xE7\x89\x87\xE6\xB5\x9C\x20\x2D\x20\xE5\x8E\x9F\x20\x2D\x20\xE6\x9D\xB1\xE7\x94\xB0\xE5\xAD\x90\xE3\x81\xAE\xE6\xB5\xA6\x20\x2D\x20\xE6\xA0\xB9\xE5\xBA\x9C\xE5\xB7\x9D\x20\x2D\x20\xE6\xB9\xAF\xE6\xB2\xB3\xE5\x8E\x9F\x20\x2D\x20\xE5\x87\xBA\xE5\xB1\xB1\xE4\xBF\xA1\xE5\x8F\xB7\xE5\xA0\xB4\x20\x2D\x20\xE7\x86\xB1\xE6\xB5\xB7\x20\x2D\x20\xE7\x9C\x9F\xE9\xB6\xB4\x20\x2D\x20\xE4\xBC\x8A\xE8\xB1\x86\xE9\x95\xB7\xE5\xB2\xA1\x20\x2D\x20\xE5\xA4\xA7\xE5\xB9\xB3\xE5\x8F\xB0"),
 					// StrLit("\xF0\x9F\x98\x80\xF0\x9F\x98\x81\xF0\x9F\x98\x82\xF0\x9F\xA4\xA3\xF0\x9F\x98\x83\xF0\x9F\x98\xAB\xF0\x9F\x90\xB1\xE2\x8C\xA8"),
 					StrLit("😊[color=FF0000]😂[color]🤣😒😁[size=64]😍🙌"),
@@ -971,7 +971,7 @@ bool AppFrame(void)
 				// rec visualRec = gfx.prevFontFlow.visualRec;
 				// DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
 				// DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
-				DrawRectangle(NewRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
+				DrawRectangle(MakeRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
 			}
 			#endif
 			
@@ -1009,7 +1009,7 @@ bool AppFrame(void)
 						DrawLine(touch->path[pIndex-1], touch->path[pIndex], 1, MonokaiBrown);
 					}
 					bool isMainTouch = (touchscreen.mainTouchIndex == tIndex);
-					DrawCircle(NewCircleV(touch->startPos, touch->visitRadius), ColorWithAlpha(isMainTouch ? MonokaiYellow : MonokaiOrange, 0.25f));
+					DrawCircle(MakeCircleV(touch->startPos, touch->visitRadius), ColorWithAlpha(isMainTouch ? MonokaiYellow : MonokaiOrange, 0.25f));
 					DrawRectangle(touch->visitBounds, ColorWithAlpha(MonokaiGreen, 0.25f));
 					DrawRectangle(NewRecCentered(touch->startPos.X, touch->startPos.Y, 15, 15), MonokaiBlue);
 					DrawRectangle(NewRecCentered(touch->pos.X, touch->pos.Y, 15, 15), MonokaiMagenta);
@@ -1018,7 +1018,7 @@ bool AppFrame(void)
 			#endif
 			
 			#if 0
-			v2 tileSize = ToV2Fromi(gradientTexture.size); //NewV2(48, 27);
+			v2 tileSize = ToV2Fromi(gradientTexture.size); //MakeV2(48, 27);
 			i32 numColumns = FloorR32i(windowSize.Width / tileSize.Width);
 			i32 numRows = FloorR32i(windowSize.Height / tileSize.Height);
 			for (i32 yIndex = 0; yIndex < numRows; yIndex++)
@@ -1041,14 +1041,14 @@ bool AppFrame(void)
 			VarArrayLoop(&testFont.atlases, aIndex)
 			{
 				VarArrayLoopGet(FontAtlas, fontAtlas, &testFont.atlases, aIndex);
-				rec atlasRenderRec = NewRec(atlasRenderPosX, atlasRenderPosY, (r32)fontAtlas->texture.Width, (r32)fontAtlas->texture.Height);
+				rec atlasRenderRec = MakeRec(atlasRenderPosX, atlasRenderPosY, (r32)fontAtlas->texture.Width, (r32)fontAtlas->texture.Height);
 				if (fontAtlas->isActive)
 				{
 					for (i32 cellY = 0; cellY < fontAtlas->activeCellGridSize.Height; cellY++)
 					{
 						for (i32 cellX = 0; cellX < fontAtlas->activeCellGridSize.Width; cellX++)
 						{
-							rec cellRec = NewRec(
+							rec cellRec = MakeRec(
 								atlasRenderRec.X + (r32)(cellX * fontAtlas->activeCellSize.Width),
 								atlasRenderRec.Y + (r32)(cellY * fontAtlas->activeCellSize.Height),
 								(r32)fontAtlas->activeCellSize.Width,
@@ -1061,7 +1061,7 @@ bool AppFrame(void)
 				DrawTexturedRectangle(atlasRenderRec, White, &fontAtlas->texture);
 				DrawRectangleOutline(atlasRenderRec, 1, White);
 				BindFont(&debugFont);
-				v2 infoTextPos = NewV2(atlasRenderRec.X, atlasRenderRec.Y + atlasRenderRec.Height + 5 + GetMaxAscend());
+				v2 infoTextPos = MakeV2(atlasRenderRec.X, atlasRenderRec.Y + atlasRenderRec.Height + 5 + GetMaxAscend());
 				Str8 infoStr = PrintInArenaStr(scratch, "%g %dx%d%s", fontAtlas->fontSize, fontAtlas->texture.Width, fontAtlas->texture.Height, fontAtlas->isActive ? "" : " (Static)");
 				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
 				bool isBold = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Bold);
@@ -1076,7 +1076,7 @@ bool AppFrame(void)
 				VarArrayLoop(&fontAtlas->glyphs, gIndex)
 				{
 					VarArrayLoopGet(FontGlyph, glyph, &fontAtlas->glyphs, gIndex);
-					rec glyphRec = NewRec(
+					rec glyphRec = MakeRec(
 						atlasRenderRec.X + atlasRenderRec.Width * ((r32)glyph->atlasSourcePos.X / fontAtlas->texture.Width),
 						atlasRenderRec.Y + atlasRenderRec.Height * ((r32)glyph->atlasSourcePos.Y / fontAtlas->texture.Height),
 						atlasRenderRec.Width * ((r32)glyph->metrics.glyphSize.Width / fontAtlas->texture.Width),
@@ -1112,7 +1112,7 @@ bool AppFrame(void)
 				MyMemCopy(linePntr, loremIpsum.chars, loremIpsum.length);
 				linePntr[loremIpsum.length] = (lIndex < numLines-1) ? '\n' : '!';
 			}
-			v2 textPos = NewV2(5, 0 + GetMaxAscend());
+			v2 textPos = MakeV2(5, 0 + GetMaxAscend());
 			DrawText(lines, textPos, MonokaiWhite);
 			#endif
 			
@@ -1320,7 +1320,7 @@ bool AppFrame(void)
 	gfx.numPipelineChanges = 0;
 	gfx.numBindingChanges = 0;
 	gfx.numDrawCalls = 0;
-	RefreshMouseState(&mouse, sapp_mouse_locked(), NewV2(sapp_widthf()/2.0f, sapp_heightf()/2.0f));
+	RefreshMouseState(&mouse, sapp_mouse_locked(), MakeV2(sapp_widthf()/2.0f, sapp_heightf()/2.0f));
 	RefreshKeyboardState(&keyboard);
 	RefreshTouchscreenState(&touchscreen);
 	#if TARGET_IS_ANDROID
@@ -1336,7 +1336,7 @@ bool AppFrame(void)
 void AppEvent(const sapp_event* event)
 {
 	TracyCZoneN(Zone_Func, "AppEvent", true);
-	bool handledEvent = HandleSokolKeyboardMouseAndTouchEvents(event, programTime, NewV2i(sapp_width(), sapp_height()), &keyboard, &mouse, &touchscreen, sapp_mouse_locked());
+	bool handledEvent = HandleSokolKeyboardMouseAndTouchEvents(event, programTime, MakeV2i(sapp_width(), sapp_height()), &keyboard, &mouse, &touchscreen, sapp_mouse_locked());
 	
 	if (!handledEvent)
 	{

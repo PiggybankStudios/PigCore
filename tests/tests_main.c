@@ -307,7 +307,7 @@ int main(int argc, char* argv[])
 	#endif
 	WriteLine_N("Running tests...\n");
 	
-	v2 _v2_zero1 = (v2)V2_Zero_Const;
+	v2 _v2_zero1 = { .X=0, .Y=0 };
 	v2 _v2_zero2 = V2_Zero;
 	UNUSED(_v2_zero1);
 	UNUSED(_v2_zero2);
@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	#if 0
 	{
-		v2 pigV2 = NewV2(17, 31);
+		v2 pigV2 = MakeV2(17, 31);
 		oc_vec2 orcaVec2 = { .x = 7, .y = 13 };
 		v2 toPigV2 = ToV2FromOc(orcaVec2);
 		oc_vec2 toOrcaVec2 = ToOcVec2(pigV2);
@@ -528,7 +528,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	#if 0
 	{
-		v2 foobarV2 = Div(Add(V2_Half, NewV2(0, 2)), 3.0f);
+		v2 foobarV2 = Div(Add(V2_Half, MakeV2(0, 2)), 3.0f);
 		v2 fooV2 = V2_Zero_Const;
 		v3 fooV3 = V3_Zero_Const;
 		v4 fooV4 = V4_Zero_Const;
@@ -545,7 +545,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	#if 0
 	{
-		v3 pos = NewV3(1, 2, 3);
+		v3 pos = MakeV3(1, 2, 3);
 		mat2 fooMat2 = NewMat2(1, 2, 3, 4);
 		mat3 fooMat3 = MakeScaleXYZMat3(2, 4, 8); //NewMat3(1, 2, 3, 4, 5, 6, 7, 8, 9);
 		mat4 fooMat4 = MakeTranslateXYZMat4(1, 1, 1); //NewMat4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
@@ -595,7 +595,7 @@ int main(int argc, char* argv[])
 		rec rec2 = Rec_Default_Const;
 		// rec rec3 = Add(
 		// 	Mul(rec1, 0.5f),
-		// 	NewV2(Pi32, -1.5f)
+		// 	MakeV2(Pi32, -1.5f)
 		// );
 		rec rec3 = Mul(rec1, 0.5f);
 		PrintLine_D("rec1 = (%f, %f, %f, %f)", rec1.X, rec1.Y, rec1.Width, rec1.Height);
@@ -611,7 +611,7 @@ int main(int argc, char* argv[])
 		
 		box box1 = NewBox(1, 2, 3, 10, 20, 30);
 		box box2 = Box_Default_Const;
-		box box3 = Add(Mul(box1, 0.5f), NewV3(Pi32, -1.5f, 101.2f));
+		box box3 = Add(Mul(box1, 0.5f), MakeV3(Pi32, -1.5f, 101.2f));
 		PrintLine_D("box1 = (%f, %f, %f, %f, %f, %f)", box1.X, box1.Y, box1.Z, box1.Width, box1.Height, box1.Depth);
 		PrintLine_D("box2 = (%f, %f, %f, %f, %f, %f)", box2.X, box2.Y, box2.Z, box2.Width, box2.Height, box2.Depth);
 		PrintLine_D("box3 = (%f, %f, %f, %f, %f, %f)", box3.X, box3.Y, box3.Z, box3.Width, box3.Height, box3.Depth);

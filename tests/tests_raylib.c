@@ -51,7 +51,7 @@ void RunRaylibTests()
 		{
 			TracyCFrameMark;
 			TracyCZoneN(Zone_Update, "Update", true);
-			v2i windowSize = NewV2i(GetRenderWidth(), GetRenderHeight());
+			v2i windowSize = MakeV2i(GetRenderWidth(), GetRenderHeight());
 			
 			#if RAYLIB_3D
 			if (IsKeyPressed(KEY_ESCAPE)) { CloseWindow(); }

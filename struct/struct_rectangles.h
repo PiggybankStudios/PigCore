@@ -30,8 +30,10 @@ car Rectanglef
 	plex { r32 Left, Top, Unused1, Unused2; };
 	plex { v2 TopLeft, Size; };
 };
-#define MakeRec(x, y, width, height) NEW_STRUCT(Rectanglef){ .X=(x), .Y=(y), .Width=(width), .Height=(height) }
-#define MakeRecV(topLeftV2, sizeV2)  NEW_STRUCT(Rectanglef){ .TopLeft=(topLeftV2),  .Size=(sizeV2) }
+#define MakeRec_Const(x, y, width, height) { .X=(x), .Y=(y), .Width=(width), .Height=(height) }
+#define MakeRecV_Const(topLeft, size)      { .TopLeft=(topLeft),  .Size=(size) }
+#define MakeRec(x, y, width, height)       NEW_STRUCT(Rectanglef)MakeRec_Const((x), (y), (width), (height))
+#define MakeRecV(topLeft, size)            NEW_STRUCT(Rectanglef)MakeRecV_Const((topLeft), (size))
 
 typedef car RectangleR64 RectangleR64;
 car RectangleR64
@@ -43,8 +45,10 @@ car RectangleR64
 	plex { r64 Left, Top, Unused5, Unused6; };
 	plex { v2d TopLeft, Size; };
 };
-#define MakeRecd(x, y, width, height)   NEW_STRUCT(RectangleR64){ .X=(x), .Y=(y), .Width=(width), .Height=(height) }
-#define MakeRecdV(topLeftV2d, sizeV2d)  NEW_STRUCT(RectangleR64){ .TopLeft=(topLeftV2d), .Size=(sizeV2d) }
+#define MakeRecd_Const(x, y, width, height)  { .X=(x), .Y=(y), .Width=(width), .Height=(height) }
+#define MakeRecdV_Const(topLeft, size)       { .TopLeft=(topLeft), .Size=(size) }
+#define MakeRecd(x, y, width, height)        NEW_STRUCT(RectangleR64)MakeRecd_Const((x), (y), (width), (height))
+#define MakeRecdV(topLeft, size)             NEW_STRUCT(RectangleR64)MakeRecdV_Const((topLeft), (size))
 
 typedef car Rectanglei Rectanglei;
 car Rectanglei
@@ -54,8 +58,10 @@ car Rectanglei
 	plex { i32 Left, Top, Unused1, Unused2; };
 	plex { v2i TopLeft, Size; };
 };
-#define MakeReci(x, y, width, height)   NEW_STRUCT(reci){ .X=(x), .Y=(y), .Width=(width), .Height=(height) }
-#define MakeReciV(topLeftV2i, sizeV2i)  NEW_STRUCT(reci){ .TopLeft=(topLeftV2i), .Size=(sizeV2i) }
+#define MakeReci_Const(x, y, width, height)  { .X=(x), .Y=(y), .Width=(width), .Height=(height) }
+#define MakeReciV_Const(topLeft, size)       { .TopLeft=(topLeft), .Size=(size) }
+#define MakeReci(x, y, width, height)        NEW_STRUCT(reci)MakeReci_Const((x), (y), (width), (height))
+#define MakeReciV(topLeft, size)             NEW_STRUCT(reci)MakeReciV_Const((topLeft), (size))
 
 typedef car Box Box;
 car Box
@@ -65,8 +71,10 @@ car Box
 	plex { r32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
 	plex { v3 BottomLeftBack, Size; };
 };
-#define MakeBox(x, y, z, width, height, depth) NEW_STRUCT(Box){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
-#define MakeBoxV(bottomLeftBackV3, sizeV3)     NEW_STRUCT(Box){ .BottomLeftBack=(bottomLeftBackV3),  .Size=(sizeV3) }
+#define MakeBox_Const(x, y, z, width, height, depth) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
+#define MakeBoxV_Const(bottomLeftBack, size)         { .BottomLeftBack=(bottomLeftBack),  .Size=(size) }
+#define MakeBox(x, y, z, width, height, depth)       NEW_STRUCT(Box)MakeBox_Const((x), (y), (z), (width), (height), (depth))
+#define MakeBoxV(bottomLeftBack, size)               NEW_STRUCT(Box)MakeBoxV_Const((bottomLeftBack), (size))
 
 typedef car BoxR64 BoxR64;
 car BoxR64
@@ -76,8 +84,10 @@ car BoxR64
 	plex { r64 Left, Bottom, Back, Unused1, Unused2, Unused3; };
 	plex { v3d BottomLeftBack, Size; };
 };
-#define MakeBoxd(x, y, z, width, height, depth) NEW_STRUCT(BoxR64){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
-#define MakeBoxdV(bottomLeftBackV3d, sizeV3d)   NEW_STRUCT(BoxR64){ .BottomLeftBack=(bottomLeftBackV3d), .Size=(sizeV3d) }
+#define MakeBoxd_Const(x, y, z, width, height, depth) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
+#define MakeBoxdV_Const(bottomLeftBack, size)         { .BottomLeftBack=(bottomLeftBack), .Size=(size) }
+#define MakeBoxd(x, y, z, width, height, depth)       NEW_STRUCT(BoxR64)MakeBoxd_Const((x), (y), (z), (width), (height), (depth))
+#define MakeBoxdV(bottomLeftBack, size)               NEW_STRUCT(BoxR64)MakeBoxdV_Const((bottomLeftBack), (size))
 
 typedef car Boxi Boxi;
 car Boxi
@@ -87,8 +97,10 @@ car Boxi
 	plex { i32 Left, Bottom, Back, Unused1, Unused2, Unused3; };
 	plex { v3i BottomLeftBack, Size; };
 };
-#define MakeBoxi(x, y, z, width, height, depth) NEW_STRUCT(Boxi){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
-#define MakeBoxiV(bottomLeftBackV3i, sizeV3i)   NEW_STRUCT(Boxi){ .BottomLeftBack=(bottomLeftBackV3i), .Size=(sizeV3i) }
+#define MakeBoxi_Const(x, y, z, width, height, depth) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth) }
+#define MakeBoxiV_Const(bottomLeftBack, size)         { .BottomLeftBack=(bottomLeftBack), .Size=(size) }
+#define MakeBoxi(x, y, z, width, height, depth)       NEW_STRUCT(Boxi)MakeBoxi_Const((x), (y), (z), (width), (height), (depth))
+#define MakeBoxiV(bottomLeftBack, size)               NEW_STRUCT(Boxi)MakeBoxiV_Const((bottomLeftBack), (size))
 
 typedef car Obb2D Obb2D;
 car Obb2D
@@ -98,8 +110,10 @@ car Obb2D
 	plex { r32 CenterX, CenterY, Unused1, Unused2, Angle; };
 	plex { v2 Center, Size; r32 Unused3; };
 };
-#define MakeObb2(x, y, width, height, rotation)  NEW_STRUCT(Obb2D){ .X=(x), .Y=(y), .Width=(width), .Height=(height), .Rotation=(rotation) }
-#define MakeObb2V(centerV2, sizeV2, rotationR32) NEW_STRUCT(Obb2D){ .Center=(centerV2),  .Size=(sizeV2),  .Rotation=(rotationR32) }
+#define MakeObb2_Const(x, y, width, height, rotation) { .X=(x), .Y=(y), .Width=(width), .Height=(height), .Rotation=(rotation) }
+#define MakeObb2V_Const(center, size, rotation)       { .Center=(center),  .Size=(size),  .Rotation=(rotation) }
+#define MakeObb2(x, y, width, height, rotation)       NEW_STRUCT(Obb2D)MakeObb2_Const((x), (y), (width), (height), (rotation))
+#define MakeObb2V(center, size, rotation)             NEW_STRUCT(Obb2D)MakeObb2V_Const((center), (size), (rotation))
 
 typedef car Obb2DR64 Obb2DR64;
 car Obb2DR64
@@ -109,8 +123,10 @@ car Obb2DR64
 	plex { r64 CenterX, CenterY, Unused1, Unused2, Angle; };
 	plex { v2d Center, Size; r64 Unused3; };
 };
-#define MakeObb2d(x, y, width, height, rotation)    NEW_STRUCT(Obb2DR64){ .X=(x), .Y=(y), .Width=(width), .Height=(height), .Rotation=(rotation) }
-#define MakeObb2dV(centerV2d, sizeV2d, rotationR64) NEW_STRUCT(Obb2DR64){ .Center=(centerV2d), .Size=(sizeV2d), .Rotation=(rotationR64) }
+#define MakeObb2d_Const(x, y, width, height, rotation) { .X=(x), .Y=(y), .Width=(width), .Height=(height), .Rotation=(rotation) }
+#define MakeObb2dV_Const(center, size, rotation)       { .Center=(center), .Size=(size), .Rotation=(rotation) }
+#define MakeObb2d(x, y, width, height, rotation)       NEW_STRUCT(Obb2DR64)MakeObb2d_Const((x), (y), (width), (height), (rotation))
+#define MakeObb2dV(center, size, rotation)             NEW_STRUCT(Obb2DR64)MakeObb2dV_Const((center), (size), (rotation))
 
 //NOTE: quat is HMM_Vec4 which has an SSE intrinsic that forces it to be 16-byte aligned
 //      thus we need a bit of padding between center/size and rotation
@@ -125,8 +141,10 @@ car Obb3D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Obb3D) == sizeof(r32) * 12, "Obb3D contains padding!");
 #endif
-#define MakeObb3(x, y, z, width, height, depth, rotationQuat) NEW_STRUCT(Obb3D){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Padding1=0, .Padding2=0, .Rotation=(rotationQuat) }
-#define MakeObb3V(centerV3, sizeV3, rotationQuat)             NEW_STRUCT(Obb3D){ .Center=(centerV3),  .Size=(sizeV3), .Padding5=0.0f, Padding6=0.0f, .Unused5=(rotationQuat) }
+#define MakeObb3_Const(x, y, z, width, height, depth, rotation) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Padding1=0, .Padding2=0, .Rotation=(rotation) }
+#define MakeObb3V_Const(center, size, rotation)                 { .Center=(center),  .Size=(size), .Padding5=0.0f, Padding6=0.0f, .Unused5=(rotation) }
+#define MakeObb3(x, y, z, width, height, depth, rotation)       NEW_STRUCT(Obb3D)MakeObb3_Const((x), (y), (z), (width), (height), (depth), (rotation))
+#define MakeObb3V(center, size, rotation)                       NEW_STRUCT(Obb3D)MakeObb3V_Const((center), (size), (rotation))
 
 typedef car Obb3DR64 Obb3DR64;
 car Obb3DR64
@@ -139,8 +157,10 @@ car Obb3DR64
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Obb3DR64) == sizeof(r64) * 10, "Obb3DR64 contains padding!");
 #endif
-#define MakeObb3d(x, y, z, width, height, depth, rotationQuatd) NEW_STRUCT(Obb3DR64){ .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Rotation=(rotationQuatd) }
-#define MakeObb3dV(centerV3d, sizeV3d, rotationQuatd)           NEW_STRUCT(Obb3DR64){ .Center=(centerV3d), .Size=(sizeV3d), .Unused5=(rotationQuatd) }
+#define MakeObb3d_Const(x, y, z, width, height, depth, rotation) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Rotation=(rotation) }
+#define MakeObb3dV_Const(center, size, rotation)                 { .Center=(center), .Size=(size), .Unused5=(rotation) }
+#define MakeObb3d(x, y, z, width, height, depth, rotation)       NEW_STRUCT(Obb3DR64)MakeObb3d_Const((x), (y), (z), (width), (height), (depth), (rotation))
+#define MakeObb3dV(center, size, rotation)                       NEW_STRUCT(Obb3DR64)MakeObb3dV_Const((center), (size), (rotation))
 
 //NOTE: Naming Convention: The default assumption for rectangles is r32 members
 //    'i' suffix refers to "integer" members and implicitly means 32-bit (unsigned and 64-bit integers are not yet supported)
@@ -345,6 +365,17 @@ typedef Obb3DR64 obb3d;
 // +--------------------------------------------------------------+
 // |                   Simple Value Definitions                   |
 // +--------------------------------------------------------------+
+#define Rec_Zero_Const   MakeRec_Const(0.0f, 0.0f, 0.0f, 0.0f)
+#define Reci_Zero_Const  MakeReci_Const(0, 0, 0, 0)
+#define Recd_Zero_Const  MakeRecd_Const(0.0, 0.0, 0.0, 0.0)
+#define Box_Zero_Const   MakeBox_Const(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+#define Boxi_Zero_Const  MakeBoxi_Const(0, 0, 0, 0, 0, 0)
+#define Boxd_Zero_Const  MakeBoxd_Const(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+#define Obb2_Zero_Const  MakeObb2_Const(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+#define Obb2d_Zero_Const MakeObb2d_Const(0.0, 0.0, 0.0, 0.0, 0.0)
+// #define Obb3_Zero_Const  MakeObb3_Const(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, Quat_Identity)
+// #define Obb3d_Zero_Const MakeObb3d_Const(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Quatd_Identity)
+
 #define Rec_Zero     MakeRec( 0.0f,  0.0f, 0.0f, 0.0f)
 #define Rec_Default  MakeRec( 0.0f,  0.0f, 1.0f, 1.0f)
 #define Rec_UnitRec  MakeRec(-1.0f, -1.0f, 2.0f, 2.0f)
@@ -357,16 +388,16 @@ typedef Obb3DR64 obb3d;
 #define Recd_Default  MakeRecd( 0.0,  0.0, 1.0, 1.0)
 #define Recd_UnitRec  MakeRecd(-1.0, -1.0, 2.0, 2.0)
 
-#define Box_Zero     MakeBox(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
-#define Box_Default  MakeBox(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f)
+#define Box_Zero     MakeBox( 0.0f,  0.0f,  0.0f, 0.0f, 0.0f, 0.0f)
+#define Box_Default  MakeBox( 0.0f,  0.0f,  0.0f, 1.0f, 1.0f, 1.0f)
 #define Box_UnitBox  MakeBox(-1.0f, -1.0f, -1.0f, 2.0f, 2.0f, 2.0f)
 
-#define Boxi_Zero     MakeBoxi(0, 0, 0, 0, 0, 0)
-#define Boxi_Default  MakeBoxi(0, 0, 0, 1, 1, 1)
+#define Boxi_Zero     MakeBoxi( 0,  0,  0, 0, 0, 0)
+#define Boxi_Default  MakeBoxi( 0,  0,  0, 1, 1, 1)
 #define Boxi_UnitBox  MakeBoxi(-1, -1, -1, 2, 2, 2)
 
-#define Boxd_Zero     MakeBoxd(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-#define Boxd_Default  MakeBoxd(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
+#define Boxd_Zero     MakeBoxd( 0.0,  0.0,  0.0, 0.0, 0.0, 0.0)
+#define Boxd_Default  MakeBoxd( 0.0,  0.0,  0.0, 1.0, 1.0, 1.0)
 #define Boxd_UnitBox  MakeBoxd(-1.0, -1.0, -1.0, 2.0, 2.0, 2.0)
 
 #define Obb2_Zero     MakeObb2(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)

@@ -25,8 +25,10 @@ car Color32
 	plex { u8 b, g, r, a; };
 	plex { u8 blue, green, red, alpha; };
 };
-#define MakeColorU32(value)   NEW_STRUCT(Color32){ .valueU32=(value) }
-#define MakeColor(r, g, b, a) NEW_STRUCT(Color32){ .blue=(b), .green=(g), .red=(r), .alpha=(a) }
+#define MakeColorU32_Const(value)   { .valueU32=(value) }
+#define MakeColor_Const(r, g, b, a) { .blue=(b), .green=(g), .red=(r), .alpha=(a) }
+#define MakeColorU32(value)         NEW_STRUCT(Color32)MakeColorU32_Const((value))
+#define MakeColor(r, g, b, a)       NEW_STRUCT(Color32)MakeColor_Const((r), (g), (b), (a))
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -37,19 +39,26 @@ car Color32
 	PIG_CORE_INLINE Color32 ColorWithAlpha(Color32 rgbColor, r32 alpha);
 #endif //!PIG_CORE_IMPLEMENTATION
 
-#define NoColor_Value                 0x00000000UL
-#define TransparentBlack_Value        0x00000000UL
-#define TransparentWhite_Value        0x00FFFFFFUL
-#define Transparent_Value             TransparentWhite_Value
-#define Black_Value                   0xFF000000UL
-#define White_Value                   0xFFFFFFFFUL
+#define NoColor_Value          0x00000000UL
+#define TransparentBlack_Value 0x00000000UL
+#define TransparentWhite_Value 0x00FFFFFFUL
+#define Transparent_Value      TransparentWhite_Value
+#define Black_Value            0xFF000000UL
+#define White_Value            0xFFFFFFFFUL
 
-#define NoColor                 MakeColorU32(NoColor_Value)
-#define TransparentBlack        MakeColorU32(TransparentBlack_Value)
-#define TransparentWhite        MakeColorU32(TransparentWhite_Value)
-#define Transparent             TransparentWhite
-#define Black                   MakeColorU32(Black_Value)
-#define White                   MakeColorU32(White_Value)
+#define NoColor_Const          MakeColorU32_Const(NoColor_Value)
+#define TransparentBlack_Const MakeColorU32_Const(TransparentBlack_Value)
+#define TransparentWhite_Const MakeColorU32_Const(TransparentWhite_Value)
+#define Transparent_Const      TransparentWhite_Const
+#define Black_Const            MakeColorU32_Const(Black_Value)
+#define White_Const            MakeColorU32_Const(White_Value)
+
+#define NoColor          MakeColorU32(NoColor_Value)
+#define TransparentBlack MakeColorU32(TransparentBlack_Value)
+#define TransparentWhite MakeColorU32(TransparentWhite_Value)
+#define Transparent      TransparentWhite
+#define Black            MakeColorU32(Black_Value)
+#define White            MakeColorU32(White_Value)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |

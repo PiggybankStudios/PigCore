@@ -18,26 +18,36 @@ Description:
 #include "struct/struct_vectors.h"
 #include "lib/lib_handmade_math.h"
 
-#define MakeMat2(r0c0, r0c1, r1c0, r1c1) NEW_STRUCT(HMM_Mat2){ \
-	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1),                \
-	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1)                 \
+#define MakeMat2_Const(r0c0, r0c1, r1c0, r1c1) { \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1),  \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1)   \
 }
-#define MakeMat3(r0c0, r0c1, r0c2, r1c0, r1c1, r1c2, r2c0, r2c1, r2c2) NEW_STRUCT(HMM_Mat3){ \
-	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2),                        \
-	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2),                        \
-	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2)                         \
+#define MakeMat3_Const(r0c0, r0c1, r0c2, r1c0, r1c1, r1c2, r2c0, r2c1, r2c2) { \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2),          \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2),          \
+	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2)           \
 }
-#define MakeMat4(r0c0, r0c1, r0c2, r0c3, r1c0, r1c1, r1c2, r1c3, r2c0, r2c1, r2c2, r2c3, r3c0, r3c1, r3c2, r3c3) NEW_STRUCT(HMM_Mat4){ \
-	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2), .Columns[3].X=(r0c3),                                            \
-	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2), .Columns[3].Y=(r1c3),                                            \
-	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2), .Columns[3].Z=(r2c3),                                            \
-	.Columns[0].W=(r3c0), .Columns[1].W=(r3c1), .Columns[2].W=(r3c2), .Columns[3].W=(r3c3)                                             \
+#define MakeMat4_Const(r0c0, r0c1, r0c2, r0c3, r1c0, r1c1, r1c2, r1c3, r2c0, r2c1, r2c2, r2c3, r3c0, r3c1, r3c2, r3c3) { \
+	.Columns[0].X=(r0c0), .Columns[1].X=(r0c1), .Columns[2].X=(r0c2), .Columns[3].X=(r0c3),                              \
+	.Columns[0].Y=(r1c0), .Columns[1].Y=(r1c1), .Columns[2].Y=(r1c2), .Columns[3].Y=(r1c3),                              \
+	.Columns[0].Z=(r2c0), .Columns[1].Z=(r2c1), .Columns[2].Z=(r2c2), .Columns[3].Z=(r2c3),                              \
+	.Columns[0].W=(r3c0), .Columns[1].W=(r3c1), .Columns[2].W=(r3c2), .Columns[3].W=(r3c3)                               \
 }
 
+#define MakeMat2(r0c0, r0c1, r1c0, r1c1)                                                                                                                                                 NEW_STRUCT(HMM_Mat2)MakeMat2_Const((r0c0), (r0c1), (r1c0), (r1c1))
+#define MakeMat3(r0c0, r0c1, r0c2, r1c0, r1c1, r1c2, r2c0, r2c1, r2c2)                                                                                     NEW_STRUCT(HMM_Mat3)MakeMat3_Const((r0c0), (r0c1), (r0c2), (r1c0), (r1c1), (r1c2), (r2c0), (r2c1), (r2c2))
+#define MakeMat4(r0c0, r0c1, r0c2, r0c3, r1c0, r1c1, r1c2, r1c3, r2c0, r2c1, r2c2, r2c3, r3c0, r3c1, r3c2, r3c3) NEW_STRUCT(HMM_Mat4)MakeMat4_Const((r0c0), (r0c1), (r0c2), (r0c3), (r1c0), (r1c1), (r1c2), (r1c3), (r2c0), (r2c1), (r2c2), (r2c3), (r3c0), (r3c1), (r3c2), (r3c3))
+
+#define FillMat2_Const(value) MakeMat2_Const((value), (value), (value), (value))
+#define FillMat3_Const(value) MakeMat3_Const((value), (value), (value), (value), (value), (value), (value), (value), (value))
+#define FillMat4_Const(value) MakeMat4_Const((value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value))
 #define FillMat2(value) MakeMat2((value), (value), (value), (value))
 #define FillMat3(value) MakeMat3((value), (value), (value), (value), (value), (value), (value), (value), (value))
 #define FillMat4(value) MakeMat4((value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value), (value))
 
+#define FillDiagonalMat2_Const(value) MakeMat2_Const((value), 0.0f, 0.0f, (value))
+#define FillDiagonalMat3_Const(value) MakeMat3_Const((value), 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, (value))
+#define FillDiagonalMat4_Const(value) MakeMat4_Const((value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value))
 #define FillDiagonalMat2(value) MakeMat2((value), 0.0f, 0.0f, (value))
 #define FillDiagonalMat3(value) MakeMat3((value), 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, (value))
 #define FillDiagonalMat4(value) MakeMat4((value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value), 0.0f, 0.0f, 0.0f, 0.0f, (value))
@@ -67,6 +77,13 @@ typedef HMM_Mat4 mat4;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
+#define Mat2_Zero_Const     FillMat2_Const(0.0f)
+#define Mat2_Identity_Const FillDiagonalMat2_Const(1.0f)
+#define Mat3_Zero_Const     FillMat3_Const(0.0f)
+#define Mat3_Identity_Const FillDiagonalMat3_Const(1.0f)
+#define Mat4_Zero_Const     FillMat4_Const(0.0f)
+#define Mat4_Identity_Const FillDiagonalMat4_Const(1.0f)
+
 #define Mat2_Zero     FillMat2(0.0f)
 #define Mat2_Identity FillDiagonalMat2(1.0f)
 #define Mat3_Zero     FillMat3(0.0f)

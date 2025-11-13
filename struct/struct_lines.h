@@ -22,8 +22,10 @@ car Line2D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Line2D) == sizeof(r32)*4, "Line2D contains padding!");
 #endif
-#define MakeLine2D(x0, y0, x1, y1) NEW_STRUCT(Line2D){ .Start=MakeV2((x0), (y0)), .End=MakeV2((x1), (y1)) }
-#define MakeLine2DV(startV2, endV2) NEW_STRUCT(Line2D){ .Start=(startV2), .End=(endV2) }
+#define MakeLine2D_Const(x0, y0, x1, y1) { .Start=MakeV2_Const((x0), (y0)), .End=MakeV2_Const((x1), (y1)) }
+#define MakeLine2DV_Const(start, end)    { .Start=(start), .End=(end) }
+#define MakeLine2D(x0, y0, x1, y1)       NEW_STRUCT(Line2D)MakeLine2D_Const((x0), (y0), (x1), (y1))
+#define MakeLine2DV(start, end)          NEW_STRUCT(Line2D)MakeLine2DV_Const((start), (end))
 
 typedef car Line2DR64 Line2DR64;
 car Line2DR64
@@ -32,8 +34,10 @@ car Line2DR64
 	v2d Points[2];
 	plex { v2d Start; v2d End; };
 };
-#define MakeLine2DR64(x0, y0, x1, y1) NEW_STRUCT(Line2DR64){ .Start=MakeV2d((x0), (y0)), .End=MakeV2d((x1), (y1)) }
-#define MakeLine2DR64V(startV2d, endV2d) NEW_STRUCT(Line2DR64){ .Start=(startV2d), .End=(endV2d) }
+#define MakeLine2DR64_Const(x0, y0, x1, y1) { .Start=MakeV2d_Const((x0), (y0)), .End=MakeV2d_Const((x1), (y1)) }
+#define MakeLine2DR64V_Const(start, end)    { .Start=(start), .End=(end) }
+#define MakeLine2DR64(x0, y0, x1, y1)       NEW_STRUCT(Line2DR64)MakeLine2DR64_Const((x0), (y0), (x1), (y1))
+#define MakeLine2DR64V(start, end)          NEW_STRUCT(Line2DR64)MakeLine2DR64V_Const((start), (end))
 
 typedef car Line3D Line3D;
 car Line3D
@@ -45,8 +49,10 @@ car Line3D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Line3D) == sizeof(r32)*6, "Line3D contains padding!");
 #endif
-#define MakeLine3D(x0, y0, z0, x1, y1, z1) NEW_STRUCT(Line3D){ .Start=MakeV3((x0), (y0), (z0)), .End=MakeV3((x1), (y1), (z1)) }
-#define MakeLine3DV(startV3, endV3) NEW_STRUCT(Line3D){ .Start=(startV3), .End=(endV3) }
+#define MakeLine3D_Const(x0, y0, z0, x1, y1, z1) { .Start=MakeV3_Const((x0), (y0), (z0)), .End=MakeV3_Const((x1), (y1), (z1)) }
+#define MakeLine3DV_Const(start, end)            { .Start=(start), .End=(end) }
+#define MakeLine3D(x0, y0, z0, x1, y1, z1)       NEW_STRUCT(Line3D)MakeLine3D_Const((x0), (y0), (z0), (x1), (y1), (z1))
+#define MakeLine3DV(start, end)                  NEW_STRUCT(Line3D)MakeLine3DV_Const((start), (end))
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

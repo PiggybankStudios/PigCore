@@ -1,4 +1,4 @@
-// raddbg 0.9.22 project file
+// raddbg 0.9.24 project file
 
 recent_file: path: "cross/cross_mem_arena_and_font_char_range.h"
 recent_file: path: "tests/tests_sokol.c"
@@ -102,4 +102,9 @@ watch_pin:
 {
   expression: fontSize
   source_location: "tests/tests_sokol.c:489:1"
+}
+debug_info:
+{
+  path: "D:/gamedev/projects/PigCore/_build/tests.pdb"
+  timestamp: 66198310967905
 }

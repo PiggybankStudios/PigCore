@@ -61,16 +61,21 @@ plex Str8
 	uxx length;
 	car { char* chars; u8* bytes; void* pntr; const char* charsConst; const void* pntrConst; };
 };
-#define MakeStr8(lengthValue, charPntr) NEW_STRUCT(Str8){ .length=(lengthValue), .charsConst=(charPntr) }
-#define MakeStr8Nt(nullTermStr)         NEW_STRUCT(Str8){ .length=(uxx)MyStrLength(nullTermStr), .charsConst=(nullTermStr) }
-#define MakeStr8Char(charStrLit)        NEW_STRUCT(Str8){ .length=1, .charsConst=(charStrLit) }
-#define StrLit(stringLiteral)           NEW_STRUCT(Str8){ .length=ArrayCount(CheckStrLit(stringLiteral))-1, .charsConst=CheckStrLit(stringLiteral) }
+#define MakeStr8_Const(lengthValue, charPntr) { .length=(lengthValue), .charsConst=(charPntr) }
+#define MakeStr8Nt_Const(nullTermStr)         { .length=(uxx)MyStrLength(nullTermStr), .charsConst=(nullTermStr) }
+#define MakeStr8Char_Const(charStrLit)        { .length=1, .charsConst=(charStrLit) }
+#define StrLit_Const(stringLiteral)           { .length=ArrayCount(CheckStrLit(stringLiteral))-1, .charsConst=CheckStrLit(stringLiteral) }
+#define MakeStr8(length, charPntr)            NEW_STRUCT(Str8)MakeStr8_Const((length), (charPntr))
+#define MakeStr8Nt(nullTermStr)               NEW_STRUCT(Str8)MakeStr8Nt_Const(nullTermStr)
+#define MakeStr8Char(charStrLit)              NEW_STRUCT(Str8)MakeStr8Char_Const(charStrLit)
+#define StrLit(stringLiteral)                 NEW_STRUCT(Str8)StrLit_Const(stringLiteral)
 
 //NOTE: This structure is useful for all sorts of data encapsulation. "Slice" alias indicates that a piece of code isn't
 //      treating the contents of the data as a "string" in the traditional sense, but it's still operating with the same
 //      structure layout: a uxx length and void* pntr.
 typedef Str8 Slice;
-#define MakeSlice(lengthValue, voidPntr) NEW_STRUCT(Slice){ .length=(lengthValue), .pntrConst=(voidPntr) }
+#define MakeSlice_Const(lengthValue, voidPntr) { .length=(lengthValue), .pntrConst=(voidPntr) }
+#define MakeSlice(length, voidPntr)            NEW_STRUCT(Slice)MakeSlice_Const((length), (voidPntr))
 
 //NOTE: Str16 could hold UTF-16 or USC2 or any other encoding that uses 16-bit pieces
 typedef plex Str16 Str16;
@@ -79,8 +84,10 @@ plex Str16
 	uxx length;
 	car { char16_t* chars; u16* words; void* pntr; const char16_t* charsConst; };
 };
-#define MakeStr16(lengthValue, char16Pntr) NEW_STRUCT(Str16){ .length=(lengthValue), .charsConst=(char16Pntr) }
-#define MakeStr16Nt(nullTermStr)         NEW_STRUCT(Str16){ .length=(uxx)MyWideStrLength(nullTermStr), .charsConst=(nullTermStr) }
+#define MakeStr16_Const(lengthValue, char16Pntr) { .length=(lengthValue), .charsConst=(char16Pntr) }
+#define MakeStr16Nt_Const(nullTermStr)           { .length=(uxx)MyWideStrLength(nullTermStr), .charsConst=(nullTermStr) }
+#define MakeStr16(length, char16Pntr)            NEW_STRUCT(Str16)MakeStr16_Const((length), (char16Pntr))
+#define MakeStr16Nt(nullTermStr)                 NEW_STRUCT(Str16)MakeStr16Nt_Const((nullTermStr))
 //TODO: Can we do Str16Lit? What is the cross-platform syntax in C for wide string literals? Does ArrayCount return the correct value?
 
 typedef plex Str8Pair Str8Pair;
@@ -96,7 +103,8 @@ plex Str8Pair
 		};
 	};
 };
-#define MakeStr8Pair(leftStr8, rightStr8) NEW_STRUCT(Str8Pair){ .left=(leftStr8), .right=(rightStr8) }
+#define MakeStr8Pair_Const(leftStr8, rightStr8) { .left=(leftStr8), .right=(rightStr8) }
+#define MakeStr8Pair(left, right)               NEW_STRUCT(Str8Pair)MakeStr8Pair_Const((left), (right))
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -149,11 +157,16 @@ plex Str8Pair
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define Str8_Empty        MakeStr8(0, nullptr)
-#define Str8_Space        MakeStr8Char(" ")
-#define Slice_Empty       MakeSlice(0, nullptr)
-#define Str16_Empty       MakeStr16(0, nullptr)
-#define Str8Pair_Empty    MakeStr8Pair(Str8_Empty, Str8_Empty)
+#define Str8_Empty_Const     MakeStr8_Const(0, nullptr)
+#define Slice_Empty_Const    MakeSlice_Const(0, nullptr)
+#define Str16_Empty_Const    MakeStr16_Const(0, nullptr)
+#define Str8Pair_Empty_Const MakeStr8Pair_Const(Str8_Empty, Str8_Empty)
+
+#define Str8_Empty     MakeStr8(0, nullptr)
+#define Str8_Space     MakeStr8Char(" ")
+#define Slice_Empty    MakeSlice(0, nullptr)
+#define Str16_Empty    MakeStr16(0, nullptr)
+#define Str8Pair_Empty MakeStr8Pair(Str8_Empty, Str8_Empty)
 
 //NOTE: These are meant to be used when formatting Str8 using any printf like functions
 //      Use the format specifier %.*s and then this macro in the var-args

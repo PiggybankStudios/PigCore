@@ -1,36 +1,63 @@
 # Notes
 This file is a dumping ground for all kinds of textual notes that we take while we work on the project
 
-# General TODO List
-	[ ] Figure out why inline is causing problems
-	[ ] C based replacement for "extract_define.py"
-	[ ] C based replacement for "combine_files.py"
-	[ ] Implement basic piggen.exe functionality
+# TODO List
+	[!] Variant of Make macros that don't have NEW_STRUCT prefixes for use with global variable initialization
+	[ ] NewRecBetween, NewRecCentered -> MakeRecBetween, MakeRecCentered
+	[ ] Implement general purpose memory allocator in Arena
+	[ ] Work on multi-threading intrinsics
+	[ ] Finish struct_rectangles.h API
+	[ ] Route PlutoSVG standard library usage
+	[ ] String interning with piggen.exe
 	[?] Program that zips up all resources into the build folder (and then makes an object file?)
-	[?] Add support for SQLite
-	[ ] 
-
-# Font Flow TODO:
-	[ ] Add lineHeight, maxAscend/maxDescend, verticalCenterOffset? to FontAtlas
+	[ ] Modify shdc.exe to generate the format of .h/.c file we want (unity build compatible)
+	[ ] SpriteSheet implementation
+	[ ] Performance graph
+	[ ] Android app lifecycle testing and support for graphics resource recreation when needed
+	@ Font Flow
+	[ ] Fun effects for dialog-driven games. (rainbow text, jittering text, etc.)
 	[ ] Add support for horizontal alignment
-	[ ] Add support for word wrapping and character wrapping at some max width
 	[ ] Add support for sprite fonts
-	[ ] Add support for rendering selected text
 	[ ] Add support for baking a font with an outline?
 	[ ] Add rendering of strikethrough and underline
-	[ ] Add RichText which is made of some number of strings each with their own styling
-	[ ] Add support for rendering a TextLayout without needing to do flow again
 	[ ] Add support for rendering some text to a texture
 	[ ] Add support for post processing effects when rendering text to a texture (outline, drop shadow, etc.)
-	[ ] Measure performance of Baking, KerningTableGen, Flowing, Measuring, etc.
 	[ ] Add support for calculating mouse hover position over some text
+	@ Big Goals
+	[ ] Replace clay.h with our own immediate-mode UI API
+	[ ] Convert GyLib structs
+	[ ] GLFW support
+	[ ] Language parsing utilities (debug console language, function/variable binding)
+	[ ] Debug Console
+	[ ] ResourcePool implementation
+	[ ] Emscripten-based Sokol support
+	[ ] Muscl-libc-based Sokol support
+	[?] sokol_app.h gamepad support?
+	[?] sokol_app.h multi-window support?
+	[ ] Finish support for SQLite
+	[ ] HashTable/HashSet implementation? Maybe more like a framework for making multiple implementations?
+	[ ] Space partitioning acceleration structures
+	[ ] iOS support
+	[ ] Basic multiplayer support/testing
+	[ ] Change vector/quaternion/rectangle members to lowercase (.x, .y, .z, .w instead of .X, .Y, .Z, .W)
+	[ ] Flatten HandmadeMath.h
+	[ ] Work on Sublime text custom types plugin
+	[ ] 
 
-# Next Things TODO
+# Finished items
+	[X] C based replacement for "extract_define.py"
+	[X] C based replacement for "combine_files.py"
+	[X] Add lineHeight, maxAscend/maxDescend, verticalCenterOffset? to FontAtlas
+	[X] Add support for word wrapping and character wrapping at some max width
+	[X] Add support for rendering selected text
+	[X] Add RichText which is made of some number of strings each with their own styling
+	[X] Add support for rendering a TextLayout without needing to do flow again
+	[X] Measure performance of Baking, KerningTableGen, Flowing, Measuring, etc.
 	[X] Bring in more of GyLib (esp. rectangles, strings, and string_builder/buffer)
-	[ ] Add support for parsing GLTF files (maybe a third_party library?)
-	[ ] Get compiling on Android
-	[ ] Get compiling on Playdate
-	[ ] Get Sokol working in the browser (w/ Emscripten first, then custom stdlib)
+	[X] Add support for parsing GLTF files (maybe a third_party library?)
+	[X] Get compiling on Android
+	[X] Get compiling on Playdate
+	[X] Get Sokol working in the browser (w/ Emscripten first, then custom stdlib)
 
 # GyLib Conversions
 	[X] gy_string_buffer.h

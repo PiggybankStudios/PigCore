@@ -106,7 +106,8 @@ plex RichStrStyle
 	u8 fontStyle;
 	Color32 color;
 };
-#define MakeRichStrStyle(size, style, colorValue) NEW_STRUCT(RichStrStyle){ .fontSize=(size), .fontStyle=(style), .color=(colorValue) }
+#define MakeRichStrStyle_Const(size, style, colorValue) { .fontSize=(size), .fontStyle=(style), .color=(colorValue) }
+#define MakeRichStrStyle(size, style, color)            NEW_STRUCT(RichStrStyle)MakeRichStrStyle_Const((size), (style), (color))
 
 // Each piece has a set of changes to the style, not a style directly
 typedef plex RichStrStyleChange RichStrStyleChange;
@@ -127,7 +128,8 @@ plex RichStrStyleChange
 		u32 Unused1;
 	};
 };
-#define MakeRichStrStyleChangeOfType(typeValue)               NEW_STRUCT(RichStrStyleChange){ .type=(typeValue), .Unused1 = 0x00000000 }
+#define MakeRichStrStyleChangeOfType_Const(typeValue)         { .type=(typeValue), .Unused1 = 0x00000000 }
+#define MakeRichStrStyleChangeOfType(type)                    NEW_STRUCT(RichStrStyleChange)MakeRichStrStyleChangeOfType_Const(type)
 #define MakeRichStrStyleChangeSize(size)                      NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontSize, { .fontSize=(size) } }
 #define MakeRichStrStyleChangeEnableFlags(styleFlags)         NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, { .enableStyleFlags=(styleFlags), .disableStyleFlags=0, .defaultStyleFlags=0 } }
 #define MakeRichStrStyleChangeDisableFlags(styleFlags)        NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, { .enableStyleFlags=0, .disableStyleFlags=(styleFlags), .defaultStyleFlags=0 } }
@@ -136,7 +138,8 @@ plex RichStrStyleChange
 #define MakeRichStrStyleChangeAlpha(alphaValue)               NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_Alpha, { .alpha=(alphaValue) } }
 #define MakeRichStrStyleChangeAlphaU8(alphaValueU8)           NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_Alpha, { .alpha=(r32)(alphaValueU8) / 255.0f } }
 
-#define RichStrStyleChange_None MakeRichStrStyleChangeOfType(RichStrStyleChangeType_None)
+#define RichStrStyleChange_None_Const MakeRichStrStyleChangeOfType_Const(RichStrStyleChangeType_None)
+#define RichStrStyleChange_None       MakeRichStrStyleChangeOfType(RichStrStyleChangeType_None)
 
 typedef plex RichStrPiece RichStrPiece;
 plex RichStrPiece
@@ -144,7 +147,8 @@ plex RichStrPiece
 	RichStrStyleChange styleChange;
 	Str8 str;
 };
-#define MakeRichStrPiece(styleChangeValue, strValue) NEW_STRUCT(RichStrPiece){ .styleChange=(styleChangeValue), .str=(strValue) }
+#define MakeRichStrPiece_Const(styleChangeValue, strValue) { .styleChange=(styleChangeValue), .str=(strValue) }
+#define MakeRichStrPiece(styleChange, str)                 NEW_STRUCT(RichStrPiece)MakeRichStrPiece_Const((styleChange), (str))
 
 //NOTE: When a RichStr has only one piece we store it directly in RichStr structure in fullPiece,
 // otherwise the pieces are allocated separately but the str in each piece is just a slice of fullPiece.str
@@ -155,14 +159,16 @@ plex RichStr
 	uxx numPieces;
 	RichStrPiece* pieces;
 };
-#define MakeRichStr(fullPieceValue, numPiecesValue, piecesPntr) NEW_STRUCT(RichStr){ .fullPiece=(fullPieceValue), .numPieces=(numPiecesValue), .pieces=(piecesPntr) }
+#define MakeRichStr_Const(fullPieceValue, numPiecesValue, piecesPntr) { .fullPiece=(fullPieceValue), .numPieces=(numPiecesValue), .pieces=(piecesPntr) }
+#define MakeRichStr(fullPiece, numPieces, pieces)                     NEW_STRUCT(RichStr)MakeRichStr_Const((fullPiece), (numPieces), (pieces))
 //TODO: We used to set numPieces to 0 if strValue was empty. Should we do that? Is a 1 piece RichStr with an empty piece valid?
 #define ToRichStrEx(strValue, styleChange) MakeRichStr(MakeRichStrPiece((styleChange), (strValue)), 1, nullptr)
-#define ToRichStr(strValue) MakeRichStr(MakeRichStrPiece(RichStrStyleChange_None, (strValue)), 1, nullptr)
-#define MakeRichStrLit(strLit) ToRichStr(StrLit(strLit))
-#define MakeRichStrNt(nullTermStr) ToRichStr(MakeStr8Nt(nullTermStr))
+#define ToRichStr(strValue)                MakeRichStr(MakeRichStrPiece(RichStrStyleChange_None, (strValue)), 1, nullptr)
+#define MakeRichStrLit(strLit)             ToRichStr(StrLit(strLit))
+#define MakeRichStrNt(nullTermStr)         ToRichStr(MakeStr8Nt(nullTermStr))
 
-#define RichStr_Empty MakeRichStr(MakeRichStrPiece(RichStrStyleChange_None, Str8_Empty), 0, nullptr)
+#define RichStr_Empty_Const MakeRichStr_Const(MakeRichStrPiece_Const(RichStrStyleChange_None_Const, Str8_Empty_Const), 0, nullptr)
+#define RichStr_Empty       MakeRichStr(MakeRichStrPiece(RichStrStyleChange_None, Str8_Empty), 0, nullptr)
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

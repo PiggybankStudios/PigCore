@@ -2213,7 +2213,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 					const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
 					DebugAssert(customGlyphIndex < numCodepointsInCustomRanges);
 					stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphIndex];
-					reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero)
+					reci sourceRec = AreEqualReci(customGlyph->sourceRec, Reci_Zero)
 						? MakeReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
 						: customGlyph->sourceRec;
 					Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
@@ -2257,7 +2257,7 @@ PEXP Result TryBakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 sty
 				const CustomFontGlyph* customGlyph = &customRange->glyphs[gIndex];
 				DebugAssert(customGlyphCopyIndex < numCodepointsInCustomRanges);
 				stbrp_rect* customGlyphRec = &rects[numCodepointsInCharRanges + customGlyphCopyIndex];
-				reci sourceRec = AreEqual(customGlyph->sourceRec, (reci)Reci_Zero)
+				reci sourceRec = AreEqualReci(customGlyph->sourceRec, Reci_Zero)
 					? MakeReci(0, 0, customGlyph->imageData.size.Width, customGlyph->imageData.size.Height)
 					: customGlyph->sourceRec;
 				Assert(customGlyphRec->w == (int)sourceRec.Width);

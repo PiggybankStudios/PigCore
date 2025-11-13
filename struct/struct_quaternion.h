@@ -25,7 +25,8 @@ Description:
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
 // +--------------------------------------------------------------+
-#define MakeQuat(x, y, z, w) NEW_STRUCT(HMM_Quat){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeQuat_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeQuat(x, y, z, w)       NEW_STRUCT(HMM_Quat)MakeQuat_Const((x), (y), (z), (w))
 
 typedef car QuatR64 QuatR64;
 car QuatR64
@@ -41,7 +42,8 @@ car QuatR64
 		r64 W;
 	};
 };
-#define MakeQuatd(x, y, z, w) NEW_STRUCT(QuatR64){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeQuatd_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeQuatd(x, y, z, w)       NEW_STRUCT(QuatR64)MakeQuatd_Const((x), (y), (z), (w))
 
 typedef HMM_Quat quat;
 typedef QuatR64 quatd;
@@ -68,14 +70,17 @@ typedef QuatR64 quatd;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
+#define Quat_Identity_Const  MakeQuat_Const( 0.0f, 0.0f, 0.0f, 1.0f)
+#define Quatd_Identity_Const MakeQuatd_Const(0.0,  0.0,  0.0,  1.0)
+
+#define Quat_Identity        MakeQuat( 0.0f, 0.0f, 0.0f, 1.0f)
+#define Quatd_Identity       MakeQuatd(0.0,  0.0,  0.0,  1.0)
+
 #define ToQuatFromV4(vec4) HMM_QV4(vec4)
 #define ToQuatdFromV4d(vec4d) MakeQuatd((vec4d).X, (vec4d).Y, (vec4d).Z, (vec4d).W)
 #define ToV4FromQuat(quaternion) MakeV4((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
 #define ToV4dFromQuatd(quaternion) MakeV4d((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
 #define ToQuatFromAxis(axis, angle) HMM_QFromAxisAngle_LH((axis), (angle))
-
-#define Quat_Identity  MakeQuat(0.0f, 0.0f, 0.0f, 1.0f)
-#define Quatd_Identity MakeQuatd(0.0, 0.0, 0.0, 1.0)
 
 #define AddQuat(left, right) HMM_AddQ((left), (right))
 #define SubQuat(left, right) HMM_SubQ((left), (right))

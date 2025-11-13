@@ -24,12 +24,36 @@ Description:
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
 // +--------------------------------------------------------------+
-#define MakeV2(x, y)       NEW_STRUCT(HMM_Vec2){ .X=(x), .Y=(y) }
-#define MakeV3(x, y, z)    NEW_STRUCT(HMM_Vec3){ .X=(x), .Y=(y), .Z=(z) }
-#define MakeV4(x, y, z, w) NEW_STRUCT(HMM_Vec4){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define FillV2(value)      MakeV2((value), (value))
-#define FillV3(value)      MakeV3((value), (value), (value))
-#define FillV4(value)      MakeV4((value), (value), (value), (value))
+//NOTE: About curly-bracket initialization in C/C++
+//      Both C and C++ have support for curly-bracket syntax when initializing a struct to some value.
+//      However their syntax support and generated code differs wildly since C++ calls a constructor for the struct (which is really a class) and for each member
+//      We used to use NewV2, NewV3, etc. functions to avoid using curly-bracket syntax and thereby avoid the complexity of what is/isn't allowed in each language/compiler
+//      However (in non-optimized builds especially) this can be wasteful since the function call is more expensive than the code to set the members
+//      Inlining these functions helps, but only when PigCore implementation is being built directly into the program (not into and external pig_core.dll)
+//      So in Nov 2025 we made the switch from "New" functions to "Make" macros which use curly-bracket syntax.
+//      In order for this to work properly there are a bunch of things we need to be aware of and do correctly:
+//        1. Parenthesis usage around all macro parameters to handle complex parameters that are longer statments and may include syntax that changes the meaning once pasted into the curly-bracket syntax
+//        2. All members of the struct must be initialized in the order they appear in the struct
+//        3. Desginated initializer syntax (basically naming each member rather than relying on order of members)
+//        4. Different syntax for C/C++ for type prefix. In C it's (type){ .member=value } but in C++ it's type{ .member=value } (no parenthesis around type). We use the NEW_STRUCT(type) macro to do the correct thing depending on LANGUAGE_IS_C/LANGUAGE_IS_CPP
+//        5. _Const variants that don't have type prefix for use when initializing global variables to an initial value
+//        6. Whenever possible, only use the each parameter of a macro once. Using the parameter multiple times can cause unintended multiple execution at runtime if the macro parameter contains a function call
+//        7. Macro parameters must have a different name than designated member names to avoid incorrectly generated code. Often times we will suffix the macro parameter with "Value" or the expected type of the parameter like "R32" to make the name unique
+//        8. Minimal casting inside the designated initializer to take advantage of type-checking during assignment of members. Sometimes we need to throw away a const-qualifier, this is better done with a union in the structure than a type-cast in the Make macro
+
+#define MakeV2_Const(x, y)       { .X=(x), .Y=(y) }
+#define MakeV3_Const(x, y, z)    { .X=(x), .Y=(y), .Z=(z) }
+#define MakeV4_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeV2(x, y)             NEW_STRUCT(HMM_Vec2)MakeV2_Const((x), (y))
+#define MakeV3(x, y, z)          NEW_STRUCT(HMM_Vec3)MakeV3_Const((x), (y), (z))
+#define MakeV4(x, y, z, w)       NEW_STRUCT(HMM_Vec4)MakeV4_Const((x), (y), (z), (w))
+
+#define FillV2_Const(value)  MakeV2_Const((value), (value))
+#define FillV3_Const(value)  MakeV3_Const((value), (value), (value))
+#define FillV4_Const(value)  MakeV4_Const((value), (value), (value), (value))
+#define FillV2(value)        MakeV2((value), (value))
+#define FillV3(value)        MakeV3((value), (value), (value))
+#define FillV4(value)        MakeV4((value), (value), (value), (value))
 
 //NOTE: Vec4Raw is exactly the same as HMM_Vec4 but it doesn't include the SSE type __m128
 //      which means it's alignment is 4 instead of 16! HMM_Vec4 is the only HMM vector
@@ -63,8 +87,10 @@ car Vec4Raw
 	plex { r32 _Ignored4; r32 _Ignored5; HMM_Vec2 ZW; };
 
 };
-#define MakeV4r(x, y, z, w) NEW_STRUCT(Vec4Raw){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define FillV4r(value) MakeV4r((value), (value), (value), (value))
+#define MakeV4r_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeV4r(x, y, z, w)       NEW_STRUCT(Vec4Raw)MakeV4r_Const((x), (y), (z), (w))
+#define FillV4r_Const(value)      MakeV4r_Const((value), (value), (value), (value))
+#define FillV4r(value)            MakeV4r((value), (value), (value), (value))
 
 typedef car Vec2i Vec2i;
 car Vec2i
@@ -75,8 +101,10 @@ car Vec2i
 	plex { i32 Width, Height; };
 	i32 Elements[2];
 };
-#define MakeV2i(x, y) NEW_STRUCT(Vec2i){ .X=(x), .Y=(y) }
-#define FillV2i(value) MakeV2i((value), (value))
+#define MakeV2i_Const(x, y)  { .X=(x), .Y=(y) }
+#define MakeV2i(x, y)        NEW_STRUCT(Vec2i)MakeV2i_Const((x), (y))
+#define FillV2i_Const(value) MakeV2i_Const((value), (value))
+#define FillV2i(value)       MakeV2i((value), (value))
 
 typedef car Vec3i Vec3i;
 car Vec3i
@@ -90,8 +118,10 @@ car Vec3i
 	plex { i32 _Ignored3; Vec2i VW; };
 	i32 Elements[3];
 };
-#define MakeV3i(x, y, z) NEW_STRUCT(Vec3i){ .X=(x), .Y=(y), .Z=(z) }
-#define FillV3i(value) MakeV3i((value), (value), (value))
+#define MakeV3i_Const(x, y, z) { .X=(x), .Y=(y), .Z=(z) }
+#define MakeV3i(x, y, z)       NEW_STRUCT(Vec3i)MakeV3i_Const((x), (y), (z))
+#define FillV3i_Const(value)   MakeV3i_Const((value), (value), (value))
+#define FillV3i(value)         MakeV3i((value), (value), (value))
 
 typedef car Vec4i Vec4i;
 car Vec4i
@@ -119,8 +149,10 @@ car Vec4i
 	plex { i32 _Ignored4; i32 _Ignored5; Vec2i ZW; };
 	i32 Elements[4];
 };
-#define MakeV4i(x, y, z, w) NEW_STRUCT(Vec4i){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define FillV4i(value) MakeV4i((value), (value), (value), (value))
+#define MakeV4i_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeV4i(x, y, z, w)       NEW_STRUCT(Vec4i)MakeV4i_Const((x), (y), (z), (w))
+#define FillV4i_Const(value)      MakeV4i_Const((value), (value), (value), (value))
+#define FillV4i(value)            MakeV4i((value), (value), (value), (value))
 
 typedef car Vec2R64 Vec2R64;
 car Vec2R64
@@ -132,8 +164,10 @@ car Vec2R64
 	plex { r64 Lon, Lat; };
 	plex { r64 Longitude, Latitude; };
 };
-#define MakeV2d(x, y) NEW_STRUCT(Vec2R64){ .X=(x), .Y=(y) }
-#define FillV2d(value) MakeV2d((value), (value))
+#define MakeV2d_Const(x, y)  { .X=(x), .Y=(y) }
+#define MakeV2d(x, y)        NEW_STRUCT(Vec2R64)MakeV2d_Const((x), (y))
+#define FillV2d_Const(value) MakeV2d_Const((value), (value))
+#define FillV2d(value)       MakeV2d((value), (value))
 
 typedef car Vec3R64 Vec3R64;
 car Vec3R64
@@ -148,8 +182,10 @@ car Vec3R64
 	plex { r64 _Ignored4; Vec2R64 VW; };
 	plex { r64 Width, Height, Depth; };
 };
-#define MakeV3d(x, y, z) NEW_STRUCT(Vec3R64){ .X=(x), .Y=(y), .Z=(z) }
-#define FillV3d(value) MakeV3d((value), (value), (value))
+#define MakeV3d_Const(x, y, z) { .X=(x), .Y=(y), .Z=(z) }
+#define MakeV3d(x, y, z)       NEW_STRUCT(Vec3R64)MakeV3d_Const((x), (y), (z))
+#define FillV3d_Const(value)   MakeV3d_Const((value), (value), (value))
+#define FillV3d(value)         MakeV3d((value), (value), (value))
 
 typedef car Vec4R64 Vec4R64;
 car Vec4R64
@@ -177,8 +213,10 @@ car Vec4R64
 	plex { r64 _Ignored2; Vec2R64 YZ; r64 _Ignored3; };
 	plex { r64 _Ignored4; r64 _Ignored5; Vec2R64 ZW; };
 };
-#define MakeV4d(x, y, z, w) NEW_STRUCT(Vec4R64){ .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define FillV4d(value) MakeV4d((value), (value), (value), (value))
+#define MakeV4d_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
+#define MakeV4d(x, y, z, w)       NEW_STRUCT(Vec4R64)MakeV4d_Const((x), (y), (z), (w))
+#define FillV4d_Const(value)      MakeV4d_Const((value), (value), (value), (value))
+#define FillV4d(value)            MakeV4d((value), (value), (value), (value))
 
 //NOTE: The default assumption for vectors is r32 members
 //    'i' suffix refers to "integer" members and implicitly means 32-bit (unsigned and 64-bit integers are not yet supported)
@@ -546,6 +584,17 @@ plex Vec4R64Slice
 // +--------------------------------------------------------------+
 // |                   Simple Value Definitions                   |
 // +--------------------------------------------------------------+
+#define V2_Zero_Const   MakeV2_Const(0.0f, 0.0f)
+#define V2i_Zero_Const  MakeV2i_Const(0, 0)
+#define V2d_Zero_Const  MakeV2d_Const(0.0, 0.0)
+#define V3_Zero_Const   MakeV3_Const(0.0f, 0.0f, 0.0f)
+#define V3i_Zero_Const  MakeV3i_Const(0, 0, 0)
+#define V3d_Zero_Const  MakeV3d_Const(0.0, 0.0, 0.0)
+#define V4_Zero_Const   MakeV4_Const(0.0f, 0.0f, 0.0f, 0.0f)
+#define V4r_Zero_Const  MakeV4r_Const(0.0f, 0.0f, 0.0f, 0.0f)
+#define V4i_Zero_Const  MakeV4i_Const(0, 0, 0, 0)
+#define V4d_Zero_Const  MakeV4d_Const(0.0, 0.0, 0.0, 0.0)
+
 #define V2_Zero   MakeV2( 0.0f,  0.0f)
 #define V2_One    MakeV2( 1.0f,  1.0f)
 #define V2_Half   MakeV2( 0.5f,  0.5f)

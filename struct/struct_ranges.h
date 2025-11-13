@@ -27,9 +27,11 @@ car RangeUXX
 	struct { uxx start, end; };
 	struct { uxx low, high; };
 };
-#define MakeRangeUXX(minValue, maxValue) NEW_STRUCT(RangeUXX){ .min=(minValue), .max=(maxValue) }
-#define MakeRangeUXXLength(min, length) MakeRangeUXX((min), (min) + (length))
-#define FillRangeUXX(value) MakeRangeUXX((value), (value))
+#define MakeRangeUXX_Const(minValue, maxValue) { .min=(minValue), .max=(maxValue) }
+#define MakeRangeUXX(min, max)                 NEW_STRUCT(RangeUXX)MakeRangeUXX_Const((min), (max))
+#define FillRangeUXX_Const(value)              MakeRangeUXX_Const((value), (value))
+#define FillRangeUXX(value)                    MakeRangeUXX((value), (value))
+#define MakeRangeUXXLength(min, length)        MakeRangeUXX((min), (min) + (length))
 
 typedef car RangeIXX RangeIXX;
 car RangeIXX
@@ -39,9 +41,11 @@ car RangeIXX
 	struct { ixx start, end; };
 	struct { ixx low, high; };
 };
-#define MakeRangeIXX(minValue, maxValue) NEW_STRUCT(RangeIXX){ .min=(minValue), .max=(maxValue) }
-#define MakeRangeIXXLength(min, length) MakeRangeIXX((min), (min) + (length))
-#define FillRangeIXX(value) MakeRangeIXX((value), (value))
+#define MakeRangeIXX_Const(minValue, maxValue) { .min=(minValue), .max=(maxValue) }
+#define MakeRangeIXX(min, max)                 NEW_STRUCT(RangeIXX)MakeRangeIXX_Const((min), (max))
+#define FillRangeIXX_Const(value)              MakeRangeIXX_Const((value), (value))
+#define FillRangeIXX(value)                    MakeRangeIXX((value), (value))
+#define MakeRangeIXXLength(min, length)        MakeRangeIXX((min), (min) + (length))
 
 typedef car RangeR32 RangeR32;
 car RangeR32
@@ -51,9 +55,11 @@ car RangeR32
 	struct { r32 start, end; };
 	struct { r32 low, high; };
 };
-#define MakeRangeR32(minValue, maxValue) NEW_STRUCT(RangeR32){ .min=(minValue), .max=(maxValue) }
-#define MakeRangeR32Length(min, length) MakeRangeR32((min), (min) + (length))
-#define FillRangeR32(value) MakeRangeR32((value), (value))
+#define MakeRangeR32_Const(minValue, maxValue) { .min=(minValue), .max=(maxValue) }
+#define MakeRangeR32(min, max)                 NEW_STRUCT(RangeR32)MakeRangeR32_Const((min), (max))
+#define FillRangeR32_Const(value)              MakeRangeR32_Const((value), (value))
+#define FillRangeR32(value)                    MakeRangeR32((value), (value))
+#define MakeRangeR32Length(min, length)        MakeRangeR32((min), (min) + (length))
 
 typedef car RangeR64 RangeR64;
 car RangeR64
@@ -63,9 +69,11 @@ car RangeR64
 	struct { r64 start, end; };
 	struct { r64 low, high; };
 };
-#define MakeRangeR64(minValue, maxValue) NEW_STRUCT(RangeR64){ .min=(minValue), .max=(maxValue) }
-#define MakeRangeR64Length(min, length) MakeRangeR64((min), (min) + (length))
-#define FillRangeR64(value) MakeRangeR64((value), (value))
+#define MakeRangeR64_Const(minValue, maxValue) { .min=(minValue), .max=(maxValue) }
+#define MakeRangeR64(min, max)                 NEW_STRUCT(RangeR64)MakeRangeR64_Const((min), (max))
+#define FillRangeR64_Const(value)              MakeRangeR64_Const((value), (value))
+#define FillRangeR64(value)                    MakeRangeR64((value), (value))
+#define MakeRangeR64Length(min, length)        MakeRangeR64((min), (min) + (length))
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -115,6 +123,11 @@ car RangeR64
 // +--------------------------------------------------------------+
 // |                           Defines                            |
 // +--------------------------------------------------------------+
+#define RangeUXX_Zero_Const    MakeRangeUXX_Const(0U, 0U)
+#define RangeIXX_Zero_Const    MakeRangeIXX_Const(0, 0)
+#define RangeR32_Zero_Const    MakeRangeR32_Const(0.0f, 0.0f)
+#define RangeR64_Zero_Const    MakeRangeR64_Const(0.0, 0.0)
+
 #define RangeUXX_Zero    MakeRangeUXX(0U, 0U)
 #define RangeIXX_Zero    MakeRangeIXX(0, 0)
 #define RangeR32_Zero    MakeRangeR32(0.0f, 0.0f)

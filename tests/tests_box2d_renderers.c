@@ -179,15 +179,15 @@ void DebugBox2d_Sokol_DrawSolidPolygon(b2Transform transform, const b2Vec2* vert
 {
 	ScratchBegin(scratch);
 	bool isRectangle = (vertexCount == 4 && AbsR32(DotV2(
-		NewV2(vertices[1].x - vertices[0].x, vertices[1].y - vertices[0].y),
-		NewV2(vertices[3].x - vertices[0].x, vertices[3].y - vertices[0].y))) <= 0.01f);
+		MakeV2(vertices[1].x - vertices[0].x, vertices[1].y - vertices[0].y),
+		MakeV2(vertices[3].x - vertices[0].x, vertices[3].y - vertices[0].y))) <= 0.01f);
 	
 	v2* verticesV2 = AllocArray(v2, scratch, (uxx)vertexCount);
 	for (int vIndex = 0; vIndex < vertexCount; vIndex++)
 	{
 		b2Vec2 transformedVertex = b2TransformPoint(transform, vertices[vIndex]);
 		int vX, vY; GetPhysRenderPos(transformedVertex.x, transformedVertex.y, &vX, &vY);
-		verticesV2[vIndex] = NewV2((r32)vX, (r32)vY);
+		verticesV2[vIndex] = MakeV2((r32)vX, (r32)vY);
 	}
 	
 	if (isRectangle)
