@@ -52,14 +52,14 @@ plex PbBuffer
 	uxx allocLength;
 	u8* pntr; 
 };
-//TODO: Should we do the MakePbBuffer macro  instead of NewPbBuffer function?
+#define MakePbBuffer(bufferLength, bufferPntr) NEW_STRUCT(PbBuffer){ .buffer = { .append = ProtobufBuffer_Append }, .length=0, .allocLength=(bufferLength), .pntr=(bufferPntr) }
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	void ProtobufBuffer_Append(ProtobufCBuffer* bufferPntr, size_t dataLength, const u8* dataPntr);
 	PIG_CORE_INLINE ProtobufCAllocator ProtobufAllocatorFromArena(Arena* arena);
-	PIG_CORE_INLINE PbBuffer NewPbBuffer(uxx bufferLength, u8* bufferPntr);
 	PIG_CORE_INLINE void FreePbBuffer(Arena* arena, PbBuffer* buffer);
 	PIG_CORE_INLINE PbBuffer NewPbBufferInArena(Arena* arena, uxx numBytes);
 	#if DEBUG_BUILD
@@ -69,8 +69,6 @@ plex PbBuffer
 	#endif
 	PIG_CORE_INLINE void* ProtobufUnpackInArena_(const ProtobufCMessageDescriptor* descriptorPntr, Arena* arena, Slice packedSlice);
 #endif
-
-#define NewPbBuffer_Const(bufferLength, bufferPntr) { .buffer = { .append = ProtobufBuffer_Append }, .length=0, .allocLength=(bufferLength), .pntr=(bufferPntr) }
 
 #if DEBUG_BUILD
 #define ProtobufPackInArena(lowercaseType, arenaPntr, structPntr) ProtobufPackInArena_(&lowercaseType##__descriptor, (arenaPntr), &(structPntr)->base)
@@ -93,7 +91,7 @@ static void ProtobufAllocator_Free(void* contextPntr, void* pointer)
 {
 	if (CanArenaFree((Arena*)contextPntr)) { FreeMem((Arena*)contextPntr, pointer, 0); }
 }
-static void ProtobufBuffer_Append(ProtobufCBuffer* bufferPntr, size_t dataLength, const u8* dataPntr)
+PEXP void ProtobufBuffer_Append(ProtobufCBuffer* bufferPntr, size_t dataLength, const u8* dataPntr)
 {
 	Assert(dataLength <= UINTXX_MAX);
 	PbBuffer* buffer = (PbBuffer*)bufferPntr;
@@ -115,15 +113,6 @@ PEXPI ProtobufCAllocator ProtobufAllocatorFromArena(Arena* arena)
 	return result;
 }
 
-PEXPI PbBuffer NewPbBuffer(uxx bufferLength, u8* bufferPntr)
-{
-	PbBuffer result = ZEROED;
-	result.buffer.append = ProtobufBuffer_Append;
-	result.allocLength = bufferLength;
-	result.pntr = bufferPntr;
-	return result;
-}
-
 PEXPI void FreePbBuffer(Arena* arena, PbBuffer* buffer)
 {
 	NotNull(arena);
@@ -135,7 +124,7 @@ PEXPI void FreePbBuffer(Arena* arena, PbBuffer* buffer)
 PEXPI PbBuffer NewPbBufferInArena(Arena* arena, uxx numBytes)
 {
 	u8* bytesPntr = AllocArray(u8, arena, numBytes);
-	return (PbBuffer)NewPbBuffer_Const((bytesPntr != nullptr) ? numBytes : 0, bytesPntr);
+	return MakePbBuffer((bytesPntr != nullptr) ? numBytes : 0, bytesPntr);
 }
 
 #if DEBUG_BUILD
@@ -156,7 +145,7 @@ PEXPI Slice ProtobufPackInArena_(Arena* arena, const ProtobufCMessage* message)
 	size_t packResult = protobuf_c_message_pack_to_buffer(message, &buffer.buffer);
 	DebugAssert((uxx)packResult == bufferSize);
 	DebugAssert(buffer.length == buffer.allocLength);
-	return MakeStr8(bufferSize, buffer.pntr);
+	return MakeSlice(bufferSize, buffer.pntr);
 }
 
 PEXPI void* ProtobufUnpackInArena_(const ProtobufCMessageDescriptor* descriptorPntr, Arena* arena, Slice packedSlice)

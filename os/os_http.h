@@ -754,7 +754,7 @@ PEXP void OsUpdateHttpRequestManager(HttpRequestManager* manager, u64 programTim
 							WINHTTP_NO_HEADER_INDEX //lpdwIndex
 						);
 						Assert(queryResult2 == TRUE);
-						Str16 headersWideStr = NewStr16(wideHeadersByteLength/sizeof(char16_t), wideBuffer);
+						Str16 headersWideStr = MakeStr16(wideHeadersByteLength/sizeof(char16_t), wideBuffer);
 						currentRequest->responseHeadersStr = ConvertUcs2StrToUtf8(manager->arena, headersWideStr, false);
 						currentRequest->numResponseHeaders = DecodeHttpHeaders(manager->arena, currentRequest->responseHeadersStr, false, &currentRequest->responseHeaders);
 						// PrintLine_D("Headers [%llu]:\n%.*s\n\n", currentRequest->responseHeadersStr.length, StrPrint(currentRequest->responseHeadersStr));
