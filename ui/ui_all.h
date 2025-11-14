@@ -19,5 +19,6 @@ Date:   02\16\2025
 #include "ui/ui_clay_textbox.h"
 #include "ui/ui_clay_widget_context.h"
 #include "ui/ui_imgui.h"
+#include "ui/ui_performance_graph.h"
 
 #endif //  _UI_ALL_H

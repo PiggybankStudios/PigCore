@@ -13,7 +13,25 @@ Description:
 #include "base/base_compiler_check.h"
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
+#include "base/base_macros.h"
 #include "base/base_assert.h"
+
+typedef plex OsTime OsTime;
+plex OsTime
+{
+	u64 msSinceStart;
+	r32 msSinceStartRemainder;
+	
+	#if TARGET_IS_WINDOWS
+	LARGE_INTEGER largeInteger;
+	#endif
+};
+#if TARGET_IS_WINDOWS
+#define OsTime_Zero_Const { .msSinceStart=0, .msSinceStartRemainder=0.0f, .largeInteger={ .QuadPart=0 } }
+#else
+#define OsTime_Zero_Const { .msSinceStart=0, .msSinceStartRemainder=0.0f }
+#endif
+#define OsTime_Zero NEW_STRUCT(OsTime)OsTime_Zero_Const
 
 #define NUM_US_PER_MS         1000
 #define NUM_MS_PER_SECOND     1000
@@ -57,12 +75,31 @@ Description:
 #if !PIG_CORE_IMPLEMENTATION
 	u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, bool* timezoneDoesDstOut); //, Arena* timezoneNameArena, Str8* timezoneNameOut);
 	PIG_CORE_INLINE u64 OsGetCurrentTimestamp(bool offsetToLocal);
+	PIG_CORE_INLINE u64 OsTimeDiffMs(OsTime start, OsTime end, r32* remainderOut);
+	PIG_CORE_INLINE OsTime OsGetTime();
+	PIG_CORE_INLINE void OsMarkStartTime();
 #endif
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+static bool OsProgramStartTimeMarked = false;
+static OsTime OsProgramStartTime = OsTime_Zero_Const;
+
+#if TARGET_IS_WINDOWS
+static bool GotQpcFrequency = false;
+static LARGE_INTEGER QpcFrequency;
+static void GetQpcFrequencyIfNeeded()
+{
+	if (!GotQpcFrequency)
+	{
+		QueryPerformanceFrequency(&QpcFrequency);
+		GotQpcFrequency = true;
+	}
+}
+#endif
 
 //TODO: Re-add the following output but in a cross file or some kind since it relies on ConvertUcs2StrToUtf8: Arena* timezoneNameArena, Str8* timezoneNameOut
 PEXP u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, bool* timezoneDoesDstOut) 
@@ -163,6 +200,65 @@ PEXP u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, boo
 	return result;
 }
 PEXPI u64 OsGetCurrentTimestamp(bool offsetToLocal) { return OsGetCurrentTimestampEx(offsetToLocal, nullptr, nullptr); }
+
+PEXPI u64 OsTimeDiffMs(OsTime start, OsTime end, r32* remainderOut)
+{
+	u64 result = 0;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		if (end.largeInteger.QuadPart >= start.largeInteger.QuadPart)
+		{
+			i64 value = (end.largeInteger.QuadPart - start.largeInteger.QuadPart);
+			i64 numer = Billion(1);
+			GetQpcFrequencyIfNeeded();
+			i64 denom = QpcFrequency.QuadPart;
+			i64 quantity = value / denom;
+			i64 remainder = value % denom;
+			u64 now = (quantity * numer) + (remainder * numer / denom);
+			result = (u64)FloorR64i((r64)now / 1000000.0);
+			SetOptionalOutPntr(remainderOut, (r32)FractionalPartR64((r64)now / 1000000.0));
+		}
+	}
+	#else
+	AssertMsg(false, "OsTimeDiffMs does not support the current platform yet!")
+	#endif
+	
+	return result;
+}
+
+PEXPI OsTime OsGetTime()
+{
+	OsTime result = OsTime_Zero;
+	
+	#if TARGET_IS_WINDOWS
+	{
+		QueryPerformanceCounter(&result.largeInteger);
+	}
+	// #elif TARGET_IS_LINUX
+	// //TODO: Implement me!
+	// #elif TARGET_IS_OSX
+	// //TODO: Implement me!
+	// #elif TARGET_IS_WASM
+	// //TODO: Implement me!
+	// #elif TARGET_IS_PLAYDATE
+	// //TODO: Implement me!
+	#else
+	AssertMsg(false, "OsGetTime does not support the current platform yet!")
+	#endif
+	
+	if (OsProgramStartTimeMarked)
+	{
+		result.msSinceStart = OsTimeDiffMs(OsProgramStartTime, result, &result.msSinceStartRemainder);
+	}
+	return result;
+}
+
+PEXPI void OsMarkStartTime()
+{
+	OsProgramStartTime = OsGetTime();
+	OsProgramStartTimeMarked = true;
+}
 
 #endif //PIG_CORE_IMPLEMENTATION
 
