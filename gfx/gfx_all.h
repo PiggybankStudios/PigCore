@@ -12,6 +12,7 @@ Date:   01\19\2025
 #include "gfx/gfx_error.h"
 #include "gfx/gfx_font.h"
 #include "gfx/gfx_font_flow.h"
+#include "gfx/gfx_helpers.h"
 #include "gfx/gfx_image_loading.h"
 #include "gfx/gfx_mesh_generation.h"
 #include "gfx/gfx_pipeline.h"

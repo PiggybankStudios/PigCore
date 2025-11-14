@@ -75,7 +75,8 @@ plex OsTime
 #if !PIG_CORE_IMPLEMENTATION
 	u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, bool* timezoneDoesDstOut); //, Arena* timezoneNameArena, Str8* timezoneNameOut);
 	PIG_CORE_INLINE u64 OsGetCurrentTimestamp(bool offsetToLocal);
-	PIG_CORE_INLINE u64 OsTimeDiffMs(OsTime start, OsTime end, r32* remainderOut);
+	PIG_CORE_INLINE u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut);
+	PIG_CORE_INLINE r32 OsTimeDiffMsR32(OsTime start, OsTime end);
 	PIG_CORE_INLINE OsTime OsGetTime();
 	PIG_CORE_INLINE void OsMarkStartTime();
 #endif
@@ -201,7 +202,7 @@ PEXP u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, boo
 }
 PEXPI u64 OsGetCurrentTimestamp(bool offsetToLocal) { return OsGetCurrentTimestampEx(offsetToLocal, nullptr, nullptr); }
 
-PEXPI u64 OsTimeDiffMs(OsTime start, OsTime end, r32* remainderOut)
+PEXPI u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut)
 {
 	u64 result = 0;
 	
@@ -221,10 +222,16 @@ PEXPI u64 OsTimeDiffMs(OsTime start, OsTime end, r32* remainderOut)
 		}
 	}
 	#else
-	AssertMsg(false, "OsTimeDiffMs does not support the current platform yet!")
+	AssertMsg(false, "OsTimeDiffMsU64 does not support the current platform yet!")
 	#endif
 	
 	return result;
+}
+PEXPI r32 OsTimeDiffMsR32(OsTime start, OsTime end)
+{
+	r32 remainder = 0.0f;
+	u64 result = OsTimeDiffMsU64(start, end, &remainder);
+	return (r32)result + remainder;
 }
 
 PEXPI OsTime OsGetTime()
@@ -249,7 +256,7 @@ PEXPI OsTime OsGetTime()
 	
 	if (OsProgramStartTimeMarked)
 	{
-		result.msSinceStart = OsTimeDiffMs(OsProgramStartTime, result, &result.msSinceStartRemainder);
+		result.msSinceStart = OsTimeDiffMsU64(OsProgramStartTime, result, &result.msSinceStartRemainder);
 	}
 	return result;
 }

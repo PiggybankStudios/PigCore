@@ -176,3 +176,7 @@ With this file:
 #endif //BUILD_WITH_SOKOL_GFX
 
 #endif //  _GFX_SYSTEM_GLOBAL_H
+
+#if defined(_GFX_SYSTEM_GLOBAL_H) && defined(_GFX_HELPERS_H)
+#include "cross/cross_gfx_system_global_and_helpers.h"
+#endif
