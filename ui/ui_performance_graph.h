@@ -112,7 +112,7 @@ PEXP void RenderPerfGraph(PerfGraph* graph, GfxSystem* gfxSystem, PigFont* font,
 	
 	GfxSystem_DrawRectangle(gfxSystem, graphRec, ColorWithAlpha(MonokaiDarkGray, 0.5f));
 	
-	r32 targetFrameTimeHeight = (graph->targetFrameTime / graphHeightMs);
+	r32 targetFrameTimeHeight = (graph->targetFrameTime / graphHeightMs) * graphRec.Height;
 	GfxSystem_DrawLine(gfxSystem,
 		MakeV2(graphRec.X, graphRecBottom - targetFrameTimeHeight),
 		MakeV2(graphRecRight, graphRecBottom - targetFrameTimeHeight),
