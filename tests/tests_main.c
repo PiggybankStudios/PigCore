@@ -467,7 +467,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |      MakeX Macro Tests       |
 	// +==============================+
-	#if 1
+	#if 0
 	{
 		v2 vert0 = MakeV2(1, 2);
 		const v2 vert1 = MakeV2_Const(1, 2);

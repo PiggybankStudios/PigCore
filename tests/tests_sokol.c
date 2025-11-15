@@ -40,7 +40,13 @@ PigFont testFont;
 PigFont debugFont;
 VertBuffer cubeBuffer;
 VertBuffer sphereBuffer;
+OsTime prevFrameTime = OsTime_Zero_Const;
+uxx frameIndex = 0;
 u64 programTime = 0;
+r32 elapsedMs = 0.0f;
+r32 timeScale = 1.0f;
+r32 prevUpdateMs = 0.0f;
+bool showPerfGraph = false;
 MouseState mouse = ZEROED;
 KeyboardState keyboard = ZEROED;
 TouchscreenState touchscreen = ZEROED;
@@ -71,6 +77,7 @@ bool screenRotated = false;
 Texture mipmapTexture = ZEROED;
 Texture noMipmapTexture = ZEROED;
 Texture testTexture = ZEROED;
+PerfGraph perfGraph = ZEROED;
 
 //TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
 #if TARGET_IS_ANDROID
@@ -328,6 +335,18 @@ Result TryAttachLocalFontFile(PigFont* font, Str8 fileName, u8 styleFlags)
 	return result;
 }
 
+void UpdateTimingInfo()
+{
+	OsTime currentTime = OsGetTime();
+	OsTime prevTime = prevFrameTime;
+	if (frameIndex == 0) { prevTime = currentTime; } //ignore difference between 0 and first frame time
+	prevFrameTime = currentTime;
+	programTime = currentTime.msSinceStart;
+	elapsedMs = ClampR32(OsTimeDiffMsR32(prevTime, currentTime), 5.0f, 67.0f);
+	timeScale = elapsedMs / (1000.0f / 60.0f); //TODO: How do we know the target framerate?
+	if (AreSimilarR32(timeScale, 1.0f, 0.1f)) { timeScale = 1.0; }
+}
+
 // +--------------------------------------------------------------+
 // |                          Initialize                          |
 // +--------------------------------------------------------------+
@@ -518,6 +537,8 @@ void AppInit(void)
 	sphereBuffer = InitVertBuffer3D(stdHeap, StrLit("sphere"), VertBufferUsage_Static, sphereMesh.numIndices, sphereVertices, false);
 	Assert(sphereBuffer.error == Result_Success);
 	
+	InitPerfGraph(&perfGraph, 1000.0f/60.0f); //TODO: How do we know the target framerate?
+	
 	InitCompiledShader(&simpleShader, stdHeap, simple); Assert(simpleShader.error == Result_Success);
 	InitCompiledShader(&main2dShader, stdHeap, main2d); Assert(main2dShader.error == Result_Success);
 	InitCompiledShader(&main3dShader, stdHeap, main3d); Assert(main3dShader.error == Result_Success);
@@ -582,6 +603,7 @@ void AppInit(void)
 	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_HasCopy);
 	Assert(testTexture.error == Result_Success);
 	
+	OsMarkStartTime();
 	ScratchEnd(scratch);
 }
 
@@ -613,10 +635,11 @@ bool AppFrame(void)
 {
 	TracyCFrameMark;
 	TracyCZoneN(Zone_Update, "Update", true);
+	OsTime beforeUpdateTime = OsGetTime();
 	
+	UpdateTimingInfo();
 	ScratchBegin(scratch);
 	bool frameRendered = true;
-	programTime += 16; //TODO: Calculate this!
 	v2i windowSizei = MakeV2i(sapp_width(), sapp_height());
 	v2 windowSize = MakeV2(sapp_widthf(), sapp_heightf());
 	// v2 touchPos = touchscreen.mainTouch->pos;
@@ -624,6 +647,7 @@ bool AppFrame(void)
 	UpdateScreenRotation();
 	#endif
 	if (AreEqualV2i(oldWindowSize, windowSizei)) { UpdateScreenSafeMargins(); }
+	if (frameIndex > 0) { UpdatePerfGraph(&perfGraph, prevUpdateMs, (elapsedMs - prevUpdateMs)); }
 	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	FontNewFrame(&testFont, programTime);
 	#endif
@@ -669,6 +693,11 @@ bool AppFrame(void)
 				cameraLookDir = MakeV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
 			}
 		}
+	}
+	
+	if (IsKeyboardKeyPressed(&keyboard, Key_F6, false))
+	{
+		showPerfGraph = !showPerfGraph;
 	}
 	
 	if (IsKeyboardKeyPressed(&keyboard, Key_P, true))
@@ -810,9 +839,12 @@ bool AppFrame(void)
 	TracyCZoneEnd(Zone_Update);
 	
 	r32 textScale = TEXT_SCALE/sapp_dpi_scale(); UNUSED(textScale);
-	TracyCZoneN(Zone_Draw, "Draw", true);
+	OsTime afterUpdateTime = OsGetTime();
 	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
+	OsTime beforeRenderTime = OsGetTime();
 	{
+		TracyCZoneN(Zone_Draw, "Draw", true);
+		
 		// +==============================+
 		// |         3D Rendering         |
 		// +==============================+
@@ -1304,15 +1336,25 @@ bool AppFrame(void)
 			
 			GfxSystem_ImguiEndFrame(&gfx, imgui);
 			#endif
+			
+			// +==============================+
+			// |       Render Overlays        |
+			// +==============================+
+			if (showPerfGraph)
+			{
+				RenderPerfGraph(&perfGraph, &gfx, &debugFont, GetDefaultFontSize(&debugFont), GetDefaultFontStyleFlags(&debugFont), MakeRec(10, 10, 400, 100));
+			}
 		}
+		
+		TracyCZoneEnd(Zone_Draw);
 	}
-	TracyCZoneN(Zone_EndFrame, "EndFrame", true);
-	EndFrame();
-	TracyCZoneEnd(Zone_EndFrame);
-	TracyCZoneEnd(Zone_Draw);
 	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	CommitAllFontTextureUpdates(&testFont);
 	#endif
+	OsTime afterRenderTime = OsGetTime();
+	TracyCZoneN(Zone_EndFrame, "EndFrame", true);
+	EndFrame();
+	TracyCZoneEnd(Zone_EndFrame);
 	
 	// PrintLine_D("numPipelineChanges: %llu", gfx.numPipelineChanges);
 	// PrintLine_D("numBindingChanges: %llu", gfx.numBindingChanges);
@@ -1326,6 +1368,10 @@ bool AppFrame(void)
 	#if TARGET_IS_ANDROID
 	screenRotated = false;
 	#endif
+	frameIndex++;
+	prevUpdateMs =
+		OsTimeDiffMsR32(beforeUpdateTime, afterUpdateTime) +
+		OsTimeDiffMsR32(beforeRenderTime, afterRenderTime);
 	ScratchEnd(scratch);
 	return frameRendered;
 }
@@ -1368,6 +1414,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 	//NOTE: The App callbacks may happen on a different thread than this one!
 	UNUSED(argc);
 	UNUSED(argv);
+	
+	OsMarkStartTime(); //NOTE: We will reset this at the end of AppInit
 	
 	//NOTE: On some platforms (like Android) this call happens on a separate thread to AppInit, AppFrame, etc. So we shouldn't do any initialization here that is thread specific
 	argc_copy = argc;

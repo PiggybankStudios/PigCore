@@ -22,7 +22,7 @@ Description:
 // Debug builds often take less time to compile as well.
 #define DEBUG_BUILD   1
 // Enables linking with tracy.lib to enable profiling through Tracy
-#define PROFILING_ENABLED 0
+#define PROFILING_ENABLED 1
 
 // Build .exe binaries for Windows platform
 #define BUILD_WINDOWS             1
@@ -87,6 +87,8 @@ Description:
 // and tracking code-paths reached to help us search the possibility space efficiently, looking for crashes or assertions for any input
 // NOTE: tests.exe must be run inside a Visual Studio CMD instance so it can find the asan .dll
 #define RUN_FUZZER 0
+// Tells the sokol_gfx.h include to use OpenGL instead of D3D11 on Windows (NOTE: Smooth resizing only works in OpenGL mode right now!)
+#define PREFER_OPENGL_OVER_D3D11 0
 
 // +===============================+
 // | Optional Libraries/Frameworks |
