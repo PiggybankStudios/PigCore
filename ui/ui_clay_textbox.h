@@ -608,7 +608,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		
 		if (tbox->isFocused && tbox->cursorActive)
 		{
-			v2 cursorTopLeft = Add(cursorRelativePos, MakeV2(UISCALE_R32(context->uiScale, -1), fontLineMetrics.maxDescend - fontLineMetrics.lineHeight));
+			v2 cursorTopLeft = Add(cursorRelativePos, MakeV2(UISCALE_R32(context->uiScale, -1), -fontLineMetrics.centerOffset - fontLineMetrics.lineHeight/2));
 			CLAY({.id = ToClayIdPrint(context->uiArena, "%.*sCursor", StrPrint(tbox->idStr)),
 				.backgroundColor = MonokaiYellow, //TODO: Change this color
 				.layout = {
