@@ -56,7 +56,9 @@ THREAD_LOCAL bool DebugOutputLineOverflowOccurred = false;
 // void DebugOutputRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool isNotification, bool newLine, const char* message)
 PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 {
-	if (!DEBUG_OUTPUT_SHOW_NOTIFICATIONS && isNotification) { return; }
+	#if !DEBUG_OUTPUT_SHOW_NOTIFICATIONS
+	if (isNotification) { return; }
+	#endif
 	
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR) ||
@@ -197,7 +199,9 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 // void DebugPrintRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool isNotification, bool newLine, uxx printBufferLength, char* printBuffer, const char* formatString, ...)
 PEXP DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter)
 {
-	if (!DEBUG_OUTPUT_SHOW_NOTIFICATIONS && isNotification) { return; }
+	#if !DEBUG_OUTPUT_SHOW_NOTIFICATIONS
+	if (isNotification) { return; }
+	#endif
 	
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_DEBUG_OUTPUT_LEVEL_REGULAR) ||

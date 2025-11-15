@@ -164,7 +164,7 @@ static ModelDataTransform CummulativeTransformForCgltfNode(cgltf_node* node)
 		for (uxx walkIndex = 0; walkIndex < pIndex; walkIndex++) { ancestor = ancestor->parent; }
 		result.position = Add(result.position, MakeV3(ancestor->translation[0], ancestor->translation[1], ancestor->translation[2]));
 		//TODO: We should handle negative scale as reversing the indices order??
-		result.scale = Mul(result.scale, MakeV3(AbsR32(ancestor->scale[0]), AbsR32(ancestor->scale[1]), AbsR32(ancestor->scale[2])));
+		result.scale = MulV3(result.scale, MakeV3(AbsR32(ancestor->scale[0]), AbsR32(ancestor->scale[1]), AbsR32(ancestor->scale[2])));
 		result.rotation = MulQuat(result.rotation, MakeQuat(ancestor->rotation[0], ancestor->rotation[1], ancestor->rotation[2], ancestor->rotation[3]));
 	}
 	return result;
