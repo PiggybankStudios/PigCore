@@ -88,7 +88,7 @@ Description:
 // NOTE: tests.exe must be run inside a Visual Studio CMD instance so it can find the asan .dll
 #define RUN_FUZZER 0
 // Tells the sokol_gfx.h include to use OpenGL instead of D3D11 on Windows (NOTE: Smooth resizing only works in OpenGL mode right now!)
-#define PREFER_OPENGL_OVER_D3D11 0
+#define PREFER_OPENGL_OVER_D3D11 1
 
 // +===============================+
 // | Optional Libraries/Frameworks |

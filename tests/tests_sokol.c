@@ -1398,6 +1398,17 @@ void AppEvent(const sapp_event* event)
 			case SAPP_EVENTTYPE_QUIT_REQUESTED:    WriteLine_D("Event: QUIT_REQUESTED");    break;
 			case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  WriteLine_D("Event: CLIPBOARD_PASTED");  break;
 			case SAPP_EVENTTYPE_FILES_DROPPED:     WriteLine_D("Event: FILES_DROPPED");     break;
+				
+			//NOTE: We currently only get this event when using OpenGL as the rendering backend since D3D11 has weird problems when we try to resize/render inside the WM_PAINT event
+			#if TARGET_IS_WINDOWS
+			//NOTE: I added this event type in order to update/render while the app is resized on Windows
+			case SAPP_EVENTTYPE_RESIZE_RENDER:
+			{
+				AppFrame();
+				sapp_consume_event(); //This tells Sokol backend that we actually rendered and want a frame flip
+			} break;
+			#endif //TARGET_IS_WINDOWS
+			
 			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
 		}
 	}
