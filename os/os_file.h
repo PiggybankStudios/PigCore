@@ -1441,3 +1441,7 @@ PEXPI bool OsAreFileWriteTimesEqual(OsFileWriteTime left, OsFileWriteTime right)
 #if defined(_FILE_FMT_GLTF_H) && defined(_OS_FILE_H)
 #include "cross/cross_gltf_and_os_file.h"
 #endif
+
+#if defined(_OS_FILE_H) && defined(_FILE_FMT_SPRITE_SHEET_H)
+#include "cross/cross_file_and_sprite_sheet.h"
+#endif

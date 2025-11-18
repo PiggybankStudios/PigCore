@@ -1,5 +1,5 @@
 /*
-File:   misc_simple_parsers.h
+File:   parse_simple_parsers.h
 Author: Taylor Robbins
 Date:   02\01\2025
 Description:
@@ -7,8 +7,8 @@ Description:
 	** simply splits an input string into lines, handling '\r\n' and '\n' line types.
 */
 
-#ifndef _MISC_SIMPLE_PARSERS_H
-#define _MISC_SIMPLE_PARSERS_H
+#ifndef _PARSE_SIMPLE_PARSERS_H
+#define _PARSE_SIMPLE_PARSERS_H
 
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
@@ -240,4 +240,4 @@ PEXP bool TextParserGetToken(TextParser* parser, ParsingToken* tokenOut)
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //  _MISC_SIMPLE_PARSERS_H
+#endif //  _PARSE_SIMPLE_PARSERS_H

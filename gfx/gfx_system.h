@@ -32,6 +32,7 @@ Description:
 #include "gfx/gfx_font.h"
 #include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_pipeline.h"
+#include "file_fmt/file_fmt_sprite_sheet.h"
 
 #if BUILD_WITH_SOKOL_GFX
 
@@ -161,6 +162,7 @@ plex GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color);
+	PIG_CORE_INLINE void GfxSystem_DrawSheetFrame(GfxSystem* system, SpriteSheet* sheet, v2i cellPos, rec rectangle, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_DrawLine(GfxSystem* system, v2 startPos, v2 endPos, r32 thickness, Color32 color);
 	void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture);
@@ -891,6 +893,17 @@ PEXPI void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color
 PEXPI void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color)
 {
 	GfxSystem_DrawTexturedObb2Ex(system, boundingBox, color, nullptr, Rec_Zero);
+}
+
+PEXPI void GfxSystem_DrawSheetFrame(GfxSystem* system, SpriteSheet* sheet, v2i cellPos, rec rectangle, Color32 color)
+{
+	NotNull(sheet);
+	NotNull(sheet->arena);
+	Assert(sheet->error == Result_Success);
+	Assert(cellPos.X >= 0 && cellPos.X < sheet->gridWidth);
+	Assert(cellPos.Y >= 0 && cellPos.Y < sheet->gridHeight);
+	rec cellSourceRec = GetCellFrameRec(sheet, cellPos);
+	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, &sheet->texture, cellSourceRec);
 }
 
 PEXPI void GfxSystem_DrawLine(GfxSystem* system, v2 startPos, v2 endPos, r32 thickness, Color32 color)

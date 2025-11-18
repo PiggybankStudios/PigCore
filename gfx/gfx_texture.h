@@ -75,7 +75,7 @@ plex Texture
 	uxx pixelSize;
 	uxx totalSize;
 	car { void* pixelsPntr; u8* pixelsU8; u32* pixelsU32; r32 pixelsR32; };
-	Str8 name;
+	Str8 name; //TODO: Do we want this in release builds? Maybe DEBUG only?
 	#if DEBUG_BUILD
 	Str8 filePath;
 	#endif

@@ -9,5 +9,6 @@ Date:   02\14\2025
 #define _FILE_FMT_ALL_H
 
 #include "file_fmt/file_fmt_gltf.h"
+#include "file_fmt/file_fmt_sprite_sheet.h"
 
 #endif //  _FILE_FMT_ALL_H

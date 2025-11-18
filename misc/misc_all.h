@@ -19,7 +19,6 @@ Date:   01\05\2025
 #include "misc/misc_random.h"
 #include "misc/misc_regex.h"
 #include "misc/misc_result.h"
-#include "misc/misc_simple_parsers.h"
 #include "misc/misc_sorting.h"
 #include "misc/misc_standard_colors.h"
 #include "misc/misc_triangulation.h"

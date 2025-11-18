@@ -12,5 +12,6 @@ Date:   03\31\2025
 #include "parse/parse_c_tokenizer.h"
 #include "parse/parse_metadesk.h"
 #include "parse/parse_protobuf.h"
+#include "parse/parse_simple_parsers.h"
 
 #endif //  _PARSE_ALL_H
