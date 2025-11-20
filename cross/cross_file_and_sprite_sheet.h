@@ -31,7 +31,7 @@ PEXPI SpriteSheet LoadSpriteSheet(Arena* arena, Str8 debugName, Str8 filePath, b
 			Str8 fileExt = GetFileExtPart(filePath, /*includeSubExtensions*/ false, /*includeLeadingPeriod*/ true);
 			FilePath filePathWithoutExt = StrSlice(filePath, 0, filePath.length - fileExt.length);
 			FilePath metaFilePath = JoinStringsInArena(scratch, filePathWithoutExt, StrLit(".meta"), false);
-			OsReadTextFile(metaFilePath, scratch, &metaFileContents); //ignore success/failure
+			OsReadTextFile(metaFilePath, scratch, &metaFileContents); //ignore success/failure, if we don't read the file than metaFileContents will just be empty which is fine
 		}
 		
 		result = InitSpriteSheet(arena, debugName, filePath, imageFileContents, metaFileContents);

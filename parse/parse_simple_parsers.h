@@ -43,7 +43,7 @@ enum ParsingTokenType
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetParsingTokenTypeStr(ParsingTokenType enumValue);
 #else
-const char* GetParsingTokenTypeStr(ParsingTokenType enumValue)
+PEXP const char* GetParsingTokenTypeStr(ParsingTokenType enumValue)
 {
 	switch (enumValue)
 	{

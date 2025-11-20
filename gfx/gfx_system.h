@@ -162,7 +162,8 @@ plex GfxSystem
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedObb2(GfxSystem* system, obb2 boundingBox, Color32 color, Texture* texture);
 	PIG_CORE_INLINE void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color);
-	PIG_CORE_INLINE void GfxSystem_DrawSheetFrame(GfxSystem* system, SpriteSheet* sheet, v2i cellPos, rec rectangle, Color32 color);
+	PIG_CORE_INLINE void GfxSystem_DrawSheetCell(GfxSystem* system, SpriteSheet* sheet, v2i cellPos, rec rectangle, Color32 color);
+	PIG_CORE_INLINE void GfxSystem_DrawNamedSheetCell(GfxSystem* system, SpriteSheet* sheet, Str8 cellName, rec rectangle, Color32 color);
 	PIG_CORE_INLINE void GfxSystem_DrawLine(GfxSystem* system, v2 startPos, v2 endPos, r32 thickness, Color32 color);
 	void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedCirclePiece(GfxSystem* system, Circle circle, r32 angleMin, r32 angleMax, Color32 color, Texture* texture);
@@ -895,14 +896,23 @@ PEXPI void GfxSystem_DrawObb2(GfxSystem* system, obb2 boundingBox, Color32 color
 	GfxSystem_DrawTexturedObb2Ex(system, boundingBox, color, nullptr, Rec_Zero);
 }
 
-PEXPI void GfxSystem_DrawSheetFrame(GfxSystem* system, SpriteSheet* sheet, v2i cellPos, rec rectangle, Color32 color)
+PEXPI void GfxSystem_DrawSheetCell(GfxSystem* system, SpriteSheet* sheet, v2i cellPos, rec rectangle, Color32 color)
 {
 	NotNull(sheet);
 	NotNull(sheet->arena);
 	Assert(sheet->error == Result_Success);
 	Assert(cellPos.X >= 0 && cellPos.X < sheet->gridWidth);
 	Assert(cellPos.Y >= 0 && cellPos.Y < sheet->gridHeight);
-	rec cellSourceRec = GetCellFrameRec(sheet, cellPos);
+	rec cellSourceRec = GetSheetCellRec(sheet, cellPos);
+	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, &sheet->texture, cellSourceRec);
+}
+PEXPI void GfxSystem_DrawNamedSheetCell(GfxSystem* system, SpriteSheet* sheet, Str8 cellName, rec rectangle, Color32 color)
+{
+	NotNull(sheet);
+	NotNull(sheet->arena);
+	Assert(sheet->error == Result_Success);
+	rec cellSourceRec = GetNamedSheetCellRec(sheet, cellName);
+	AssertMsg(cellSourceRec.Width > 0 && cellSourceRec.Height > 0, "Failed to find spriteSheet cell by name!");
 	GfxSystem_DrawTexturedRectangleEx(system, rectangle, color, &sheet->texture, cellSourceRec);
 }
 
