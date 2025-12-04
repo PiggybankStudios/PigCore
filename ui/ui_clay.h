@@ -119,12 +119,18 @@ typedef Clay_ElementId ClayId;
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-// These macros are really shorthand for multiplying by app->uiScale and dealing with how to round or clamp to good values when uiScale is very big/small
+// These macros are really shorthand for multiplying by an "r32 uiScale" and dealing with how to round or clamp to good values when uiScale is very big/small
 #define UISCALE_R32(scale, pixels) RoundR32((r32)(pixels) * (scale))
 #define UISCALE_U16(scale, pixels) (u16)RoundR32i((r32)(pixels) * (scale))
 #define UISCALE_BORDER(scale, pixels) MaxU16(((pixels) > 0) ? (u16)1 : (u16)0, (u16)RoundR32i((r32)(pixels) * (scale)))
 
 #define CLAY_BOX(size, color) do { CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(size), .height = CLAY_SIZING_FIXED(size) } }, .backgroundColor = (color) }) {} } while(0)
+
+#define NewClayId_Const(idValue, offsetValue, baseIdValue, stringIdValue) { .id=(idValue), .offset=(offsetValue), .baseId=(baseIdValue), .stringId=(stringIdValue) }
+#define NewClayId(id, offset, baseId, stringId)                           NEW_STRUCT(ClayId)NewClayId_Const((id), (offset), (baseId), (stringId))
+
+#define ClayId_Invalid_Const NewClayId_Const(0, 0, 0, Str8_Empty_Const)
+#define ClayId_Invalid       NewClayId(0, 0, 0, Str8_Empty)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |

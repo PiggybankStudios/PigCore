@@ -17,6 +17,8 @@ Date:   02\16\2025
 #include "ui/ui_clay_notifications.h"
 #include "ui/ui_clay_resizable_split.h"
 #include "ui/ui_clay_textbox.h"
+#include "ui/ui_clay_tooltip.h"
+#include "ui/ui_clay_tooltip_registry.h"
 #include "ui/ui_clay_widget_context.h"
 #include "ui/ui_imgui.h"
 #include "ui/ui_performance_graph.h"

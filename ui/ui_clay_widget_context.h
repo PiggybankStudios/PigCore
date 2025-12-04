@@ -21,6 +21,7 @@ Description:
 #include "mem/mem_arena.h"
 #include "gfx/gfx_clay_renderer.h"
 #include "os/os_process_info.h"
+#include "ui/ui_clay_tooltip_registry.h"
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
 
@@ -36,6 +37,7 @@ plex UiWidgetContext
 	CursorShape cursorShape;
 	OsWindowHandle windowHandle;
 	u64 programTime;
+	TooltipRegistry tooltips;
 };
 #define MakeUiWidgetContext(uiArenaPntr, rendererPntr, keyboardPntr, mousePntr, uiScaleValue, focusedUiElementPntrPntr, cursorShapeValue, windowHandleValue, programTimeValue) NEW_STRUCT(UiWidgetContext) { \
 	.uiArena = (uiArenaPntr),                                                                                                                                                                                \
