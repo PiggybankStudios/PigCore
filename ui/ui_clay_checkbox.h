@@ -74,7 +74,7 @@ PEXP void DoUiCheckbox(UiWidgetContext* context, Str8 idStr, bool* isChecked, r3
 		#define LABEL_CODE() do { if (!IsEmptyStr(label))                                                   \
 		{                                                                                                   \
 			CLAY_TEXT(                                                                                      \
-				AllocStr8(context->uiArena, label),                                                                  \
+				AllocStr8(context->uiArena, label),                                                         \
 				CLAY_TEXT_CONFIG({                                                                          \
 					.fontId = fontId,                                                                       \
 					.fontSize = (u16)fontSize,                                                              \

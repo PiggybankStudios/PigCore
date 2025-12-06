@@ -45,6 +45,11 @@ plex TooltipRegistry
 	Arena* arena;
 	u64 nextTooltipId;
 	VarArray tooltips; //RegisteredTooltip
+	
+	u64 openTooltipId;
+	u64 hoverTooltipId;
+	u64 hoverTooltipChangeTime;
+	u64 lastMouseMoveTime;
 };
 
 // +--------------------------------------------------------------+
@@ -96,6 +101,7 @@ PEXPI void InitTooltipRegistry(Arena* arena, TooltipRegistry* registryOut)
 	ClearPointer(registryOut);
 	registryOut->arena = arena;
 	registryOut->nextTooltipId = 1;
+	registryOut->hoverTooltipId = TOOLTIP_ID_INVALID;
 	InitVarArray(RegisteredTooltip, &registryOut->tooltips, arena);
 }
 
