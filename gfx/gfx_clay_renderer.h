@@ -24,6 +24,8 @@ Description:
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
 
+#define CLAY_FONT_ID_INVALID UINT16_MAX
+
 typedef plex ClayUIRendererFont ClayUIRendererFont;
 plex ClayUIRendererFont
 {
@@ -138,7 +140,7 @@ PEXPI u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u
 		VarArrayLoopGet(ClayUIRendererFont, font, &renderer->fonts, fIndex);
 		if (font->pntr == fontPntr && font->styleFlags == styleFlags) { return font->id; }
 	}
-	return UINT16_MAX;
+	return CLAY_FONT_ID_INVALID;
 }
 
 PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, Clay_RenderCommandArray* commands)

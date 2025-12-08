@@ -5,6 +5,11 @@ Date:   12\04\2025
 Description:
 	** The TooltipRegistry holds a list of all potential tooltips that are currently availble for the user to hover over
 	** This file is separate from ui_clay_tooltip.h because a TooltipRegistar pointer is included in UiWidgetContext so any widget can register tooltips if it has the context
+	** Much of the logic for tooltips happens in ui_clay_tooltip.h but the state is defined here which is a little unfortunate
+	** Tooltips can be attached to a specific Clay UI element by ID or they can be attached to a rectangle on screen
+	** Tooltips show up after the mouse is hovering over the target element\rectangle and TOOLTIP_HOVER_DELAY has elapsed since the mouse moved
+	** When a tooltip opens, it needs to position itself somewhere that is not under the mouse and is entirely inside the window, so the exact location of the tooltip is somewhat hard to predict
+	** Tooltips should be displayed on top of nearly all UI elements, even things like ui_clay_notifications.h since nearly all UI can have tooltips attached and the tooltip is more closely tied to the mouse itself rather than the UI layers for any particular application
 */
 
 #ifndef _UI_CLAY_TOOLTIP_REGISTRY_H
@@ -21,9 +26,10 @@ Description:
 #include "ui/ui_clay.h"
 #include "gfx/gfx_font.h"
 
+//TODO: We maye eventually want to support tooltip behavior in applications that don't use Clay
 #if BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX
 
-#define TOOLTIP_ID_INVALID  0
+#define TOOLTIP_ID_INVALID   0
 
 typedef plex RegisteredTooltip RegisteredTooltip;
 plex RegisteredTooltip
@@ -63,6 +69,9 @@ plex TooltipRegistry
 	PIG_CORE_INLINE RegisteredTooltip* TryFindRegisteredTooltip(TooltipRegistry* registry, u64 id);
 	PIG_CORE_INLINE RegisteredTooltip* RegisterTooltipGetPntr(TooltipRegistry* registry, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
 	PIG_CORE_INLINE u64 RegisterTooltip(TooltipRegistry* registry, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
+	PIG_CORE_INLINE void UpdateTooltipActive(TooltipRegistry* registry, u64 tooltipId, bool isActive);
+	PIG_CORE_INLINE void UpdateTooltipFont(TooltipRegistry* registry, u64 tooltipId, PigFont* font, r32 fontSize, u8 fontStyle);
+	PIG_CORE_INLINE void UpdateTooltipDisplayStr(TooltipRegistry* registry, u64 tooltipId, Str8 displayStr);
 #endif
 
 // +--------------------------------------------------------------+
@@ -145,6 +154,7 @@ PEXPI RegisteredTooltip* RegisterTooltipGetPntr(TooltipRegistry* registry, Str8 
 	ClearPointer(newTooltip);
 	newTooltip->id = registry->nextTooltipId;
 	registry->nextTooltipId++;
+	newTooltip->active = true;
 	newTooltip->targetClayIdStr = IsEmptyStr(targetClayIdStr) ? targetClayIdStr : AllocStr8(registry->arena, targetClayIdStr);
 	newTooltip->targetRec = targetRec;
 	newTooltip->displayStr = AllocStr8(registry->arena, displayStr);
@@ -157,6 +167,35 @@ PEXPI u64 RegisterTooltip(TooltipRegistry* registry, Str8 targetClayIdStr, rec t
 {
 	RegisteredTooltip* tooltip = RegisterTooltipGetPntr(registry, targetClayIdStr, targetRec, displayStr, font, fontSize, fontStyle);
 	return (tooltip != nullptr) ? tooltip->id : TOOLTIP_ID_INVALID;
+}
+
+PEXPI void UpdateTooltipActive(TooltipRegistry* registry, u64 tooltipId, bool isActive)
+{
+	NotNull(registry);
+	NotNull(registry->arena);
+	RegisteredTooltip* tooltip = TryFindRegisteredTooltip(registry, tooltipId);
+	if (tooltip == nullptr) { return; }
+	tooltip->active = isActive;
+}
+PEXPI void UpdateTooltipFont(TooltipRegistry* registry, u64 tooltipId, PigFont* font, r32 fontSize, u8 fontStyle)
+{
+	NotNull(registry);
+	NotNull(registry->arena);
+	RegisteredTooltip* tooltip = TryFindRegisteredTooltip(registry, tooltipId);
+	if (tooltip == nullptr) { return; }
+	tooltip->font = font;
+	tooltip->fontSize = fontSize;
+	tooltip->fontStyle = fontStyle;
+}
+PEXPI void UpdateTooltipDisplayStr(TooltipRegistry* registry, u64 tooltipId, Str8 displayStr)
+{
+	NotNull(registry);
+	NotNull(registry->arena);
+	RegisteredTooltip* tooltip = TryFindRegisteredTooltip(registry, tooltipId);
+	if (tooltip == nullptr) { return; }
+	if (StrExactEquals(tooltip->displayStr, displayStr)) { return; }
+	FreeStr8(registry->arena, &tooltip->displayStr);
+	tooltip->displayStr = AllocStr8(registry->arena, displayStr);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
