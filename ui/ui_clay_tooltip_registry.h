@@ -52,10 +52,13 @@ plex TooltipRegistry
 	u64 nextTooltipId;
 	VarArray tooltips; //RegisteredTooltip
 	
-	u64 openTooltipId;
 	u64 hoverTooltipId;
 	u64 hoverTooltipChangeTime;
 	u64 lastMouseMoveTime;
+	
+	u64 openTooltipId;
+	v2 openTooltipTargetPos;
+	u64 openTooltipTime;
 };
 
 // +--------------------------------------------------------------+

@@ -30,17 +30,19 @@ Date:   12\04\2025
 #define TOOLTIP_TEXT_COLOR       UiBackgroundDarkGray
 
 #define TOOLTIP_HOVER_DELAY  750 //ms
+#define TOOLTIP_MAX_WIDTH    400 //px (at uiScale=1.0f)
+#define TOOLTIP_PADDING_X      6 //px (at uiScale=1.0f)
+#define TOOLTIP_PADDING_Y      8 //px (at uiScale=1.0f)
 // #define TOOLTIP_MAX_MOVE_DIST      5 //px
-// #define TOOLTIP_TEXT_MARGIN_X      8 //px (at uiScale=1.0f)
-// #define TOOLTIP_TEXT_MARGIN_Y      4 //px (at uiScale=1.0f)
-// #define TOOLTIP_MOUSE_UP_OFFSET    5 //px
-// #define TOOLTIP_MOUSE_DOWN_OFFSET  20 //px TODO: Somehow we should ask the OS how tall the cursor is and offset but that much plus a little
+#define TOOLTIP_TARGET_UP_OFFSET    5 //px
+#define TOOLTIP_TARGET_DOWN_OFFSET  25 //px TODO: Somehow we should ask the OS how tall the cursor is and offset but that much plus a little
+#define TOOLTIP_FADEIN_TIME    166 //ms
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry);
+	void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 screenSize);
 #endif
 
 // +--------------------------------------------------------------+
@@ -48,7 +50,7 @@ Date:   12\04\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry)
+PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 screenSize)
 {
 	NotNull(context);
 	NotNull(context->uiArena);
@@ -58,33 +60,41 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry)
 	
 	// Check for mouse movement to close open tooltip and reset lastMouseMoveTime
 	// TODO: We should probably add some tolerance of small movements that don't close the tooltip until you drift a certain distance away from where the mouse was when the tooltip opened
-	if (!AreEqualV2(context->mouse->position, context->mouse->prevPosition)) //TODO: Check if the mouse is not over the window as well!
+	if (context->mouse->isOverWindow)
 	{
-		if (registry->openTooltipId != TOOLTIP_ID_INVALID) { registry->openTooltipId = TOOLTIP_ID_INVALID; }
-		registry->lastMouseMoveTime = context->programTime;
+		if (!AreEqualV2(context->mouse->position, context->mouse->prevPosition) ||
+			!context->mouse->wasOverWindow ||
+			IsMouseBtnPressed(context->mouse, MouseBtn_Left) || IsMouseBtnPressed(context->mouse, MouseBtn_Right) || IsMouseBtnPressed(context->mouse, MouseBtn_Middle))
+		{
+			if (registry->openTooltipId != TOOLTIP_ID_INVALID) { registry->openTooltipId = TOOLTIP_ID_INVALID; }
+			registry->lastMouseMoveTime = context->programTime;
+		}
 	}
+	else if (registry->openTooltipId != TOOLTIP_ID_INVALID) { registry->openTooltipId = TOOLTIP_ID_INVALID; }
 	
 	// Find which tooltip is currently hovered
 	u64 newMouseHoverId = TOOLTIP_ID_INVALID;
-	VarArrayLoop(&registry->tooltips, tIndex)
+	if (context->mouse->isOverWindow)
 	{
-		VarArrayLoopGet(RegisteredTooltip, tooltip, &registry->tooltips, tIndex);
-		if (tooltip->active)
+		VarArrayLoop(&registry->tooltips, tIndex)
 		{
-			if (!IsEmptyStr(tooltip->targetClayIdStr))
+			VarArrayLoopGet(RegisteredTooltip, tooltip, &registry->tooltips, tIndex);
+			if (tooltip->active)
 			{
-				//TODO: Add support for IsMouseOverInContainer?
-				//TODO: Also check if mouse is over window!
-				if (Clay_PointerOver(ToClayId(tooltip->targetClayIdStr)))
+				if (!IsEmptyStr(tooltip->targetClayIdStr))
 				{
-					newMouseHoverId = tooltip->id;
+					//TODO: Add support for IsMouseOverInContainer?
+					if (Clay_PointerOver(ToClayId(tooltip->targetClayIdStr)))
+					{
+						newMouseHoverId = tooltip->id;
+					}
 				}
-			}
-			else
-			{
-				if (IsInsideRec(tooltip->targetRec, context->mouse->position))
+				else
 				{
-					newMouseHoverId = tooltip->id;
+					if (IsInsideRec(tooltip->targetRec, context->mouse->position))
+					{
+						newMouseHoverId = tooltip->id;
+					}
 				}
 			}
 		}
@@ -96,76 +106,91 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry)
 		if (registry->openTooltipId != TOOLTIP_ID_INVALID) { registry->openTooltipId = TOOLTIP_ID_INVALID; }
 	}
 	
+	// Open the hovered tooltip if the mouse hasn't move for long enough
 	if (registry->hoverTooltipId != TOOLTIP_ID_INVALID &&
 		TimeSinceBy(context->programTime, registry->lastMouseMoveTime) >= TOOLTIP_HOVER_DELAY &&
 		registry->hoverTooltipId != registry->openTooltipId)
 	{
+		registry->openTooltipTargetPos = context->mouse->position;
 		registry->openTooltipId = registry->hoverTooltipId;
+		registry->openTooltipTime = context->programTime;
+		RegisteredTooltip* openTooltip = TryFindRegisteredTooltip(registry, registry->openTooltipId);
+		NotNull(openTooltip);
 	}
 	
+	// Render the open tooltip
 	if (registry->openTooltipId != TOOLTIP_ID_INVALID)
 	{
-		VarArrayLoop(&registry->tooltips, tIndex)
+		RegisteredTooltip* openTooltip = TryFindRegisteredTooltip(registry, registry->openTooltipId);
+		if (openTooltip != nullptr && openTooltip->active)
 		{
-			VarArrayLoopGet(RegisteredTooltip, tooltip, &registry->tooltips, tIndex);
-			if (tooltip->active && registry->openTooltipId == tooltip->id)
+			NotNull(openTooltip->font);
+			bool attachToElement = !IsEmptyStr(openTooltip->targetClayIdStr);
+			ClayId targetId = attachToElement ? ToClayId(openTooltip->targetClayIdStr) : ClayId_Invalid;
+			Str8 tooltipIdStr = PrintInArenaStr(context->uiArena, "%.*s%sTooltip%llu", StrPrint(openTooltip->targetClayIdStr), attachToElement ? "_" : "", openTooltip->id);
+			ClayId tooltipId = ToClayId(tooltipIdStr);
+			Assert(openTooltip->font == nullptr || context->renderer != nullptr);
+			v2 attachOffset = AddV2(registry->openTooltipTargetPos, MakeV2(0, -TOOLTIP_TARGET_UP_OFFSET));
+			u64 timeSinceOpen = TimeSinceBy(context->programTime, registry->openTooltipTime);
+			r32 tooltipAlpha = (timeSinceOpen < TOOLTIP_FADEIN_TIME) ? (r32)timeSinceOpen / (r32)TOOLTIP_FADEIN_TIME : 1.0f;
+			
+			u16 fontId = GetClayUIRendererFontId(context->renderer, openTooltip->font, openTooltip->fontStyle);
+			Assert(fontId != CLAY_FONT_ID_INVALID);
+			r32 wrapWidth = UISCALE_R32(context->uiScale, MinR32(screenSize.Width, TOOLTIP_MAX_WIDTH) - (2 * TOOLTIP_PADDING_X));
+			TextMeasure displayStrMeasure = MeasureTextEx(openTooltip->font, openTooltip->fontSize, openTooltip->fontStyle, false, wrapWidth, openTooltip->displayStr);
+			v2 tooltipSize = AddV2(displayStrMeasure.logicalRec.Size, MakeV2(2 * UISCALE_R32(context->uiScale, TOOLTIP_PADDING_X), 2 * UISCALE_R32(context->uiScale, TOOLTIP_PADDING_Y)));
+			Clay_FloatingAttachPointType attachPoint = CLAY_ATTACH_POINT_CENTER_BOTTOM;
+			if (attachOffset.Y < tooltipSize.Height + 2)
 			{
-				bool attachToSpecific = !IsEmptyStr(tooltip->targetClayIdStr);
-				ClayId targetId = attachToSpecific ? ToClayId(tooltip->targetClayIdStr) : ClayId_Invalid;
-				Str8 tooltipIdStr = PrintInArenaStr(context->uiArena, "%.*s%sTooltip%llu", StrPrint(tooltip->targetClayIdStr), attachToSpecific ? "_" : "", tooltip->id);
-				ClayId tooltipId = ToClayId(tooltipIdStr);
-				Assert(tooltip->font == nullptr || context->renderer != nullptr);
-				//TODO: Really the tooltip should always be relative to the mouse position when the tooltip first opened
-				v2 attachOffset = attachToSpecific ? V2_Zero : AddV2(tooltip->targetRec.TopLeft, tooltip->targetRec.Size);
-				
-				u16 fontId = (tooltip->font != nullptr) ? GetClayUIRendererFontId(context->renderer, tooltip->font, tooltip->fontStyle) : 0;
-				
-				CLAY({ .id = tooltipId,
-					.layout = {
-						.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0) },
-						// .sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, 100)), .height = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, 100)) },
-						.padding = {
-							.left = UISCALE_U16(context->uiScale, 8),
-							.right = UISCALE_U16(context->uiScale, 8),
-							.top = UISCALE_U16(context->uiScale, 4),
-							.bottom = UISCALE_U16(context->uiScale, 4),
+				attachPoint = CLAY_ATTACH_POINT_CENTER_TOP;
+				attachOffset.Y += TOOLTIP_TARGET_UP_OFFSET + TOOLTIP_TARGET_DOWN_OFFSET;
+			}
+			if (attachOffset.X < tooltipSize.Width/2.0f)
+			{
+				attachOffset.X = tooltipSize.Width/2.0f;
+			}
+			else if (attachOffset.X > screenSize.Width - tooltipSize.Width/2.0f)
+			{
+				attachOffset.X = screenSize.Width - tooltipSize.Width/2.0f;
+			}
+			
+			CLAY({ .id = tooltipId,
+				.layout = {
+					.sizing = { .width = CLAY_SIZING_FIXED(tooltipSize.Width), .height = CLAY_SIZING_FIXED(tooltipSize.Height) },
+					.padding = {
+						.left = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_X),
+						.right = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_X),
+						.top = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_Y),
+						.bottom = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_Y),
+					},
+				},
+				.floating = {
+					.attachTo = CLAY_ATTACH_TO_PARENT,
+					.parentId = targetId.id,
+					.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+					.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = attachPoint },
+					.zIndex = 10,
+					.offset = attachOffset,
+				},
+				.backgroundColor = ColorWithAlpha(TOOLTIP_BACKGROUND_COLOR, tooltipAlpha),
+				.border = {
+					.color = ColorWithAlpha(MonokaiWhite, tooltipAlpha),
+					.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)),
+				},
+			})
+			{
+				CLAY_TEXT(
+					AllocStr8(context->uiArena, openTooltip->displayStr),
+					CLAY_TEXT_CONFIG({
+						.fontId = fontId,
+						.fontSize = (u16)openTooltip->fontSize,
+						.textColor = ColorWithAlpha(TOOLTIP_TEXT_COLOR, tooltipAlpha),
+						.wrapMode = CLAY_TEXT_WRAP_NONE,
+						.textAlignment = CLAY_TEXT_ALIGN_LEFT,
+						.userData = {
+							.wrapWidth = wrapWidth,
 						},
-						.childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER },
-					},
-					.floating = {
-						.attachTo = attachToSpecific ? CLAY_ATTACH_TO_ELEMENT_WITH_ID : CLAY_ATTACH_TO_PARENT,
-						.parentId = targetId.id,
-						.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
-						.attachPoints = {
-							.parent = attachToSpecific ? CLAY_ATTACH_POINT_RIGHT_BOTTOM : CLAY_ATTACH_POINT_LEFT_TOP,
-							.element = CLAY_ATTACH_POINT_RIGHT_TOP,
-						},
-						.zIndex = 10,
-						.offset = attachOffset,
-					},
-					.backgroundColor = TOOLTIP_BACKGROUND_COLOR,
-					.border = {
-						.color = MonokaiWhite,
-						.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)),
-					},
-				})
-				{
-					if (fontId != CLAY_FONT_ID_INVALID)
-					{
-						CLAY_TEXT(
-							AllocStr8(context->uiArena, tooltip->displayStr),
-							CLAY_TEXT_CONFIG({
-								.fontId = fontId,
-								.fontSize = (u16)tooltip->fontSize,
-								.textColor = TOOLTIP_TEXT_COLOR,
-								.wrapMode = CLAY_TEXT_WRAP_NONE,
-								.textAlignment = CLAY_TEXT_ALIGN_LEFT,
-						}));
-					}
-					//TODO: Should we render something if we couldn't find a font to render text with? Maybe we need like a "defaultFont" in the UiWidgetContext
-				}
-				
-				break;
+				}));
 			}
 		}
 	}
