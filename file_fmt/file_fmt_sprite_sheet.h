@@ -312,7 +312,6 @@ PEXP SpriteSheet InitSpriteSheetSized(Arena* arena, Str8 debugName, Str8 filePat
 				xCharIndex -= (fileName.length - sizePart.length);
 				Str8 widthStr = StrSlice(sizePart, 0, xCharIndex);
 				Str8 heightStr = StrSliceFrom(sizePart, xCharIndex+1);
-				Result parseError = Result_None;
 				v2i parsedGridSize = V2i_Zero;
 				if (TryParseI32(widthStr, &parsedGridSize.Width, nullptr) &&
 					TryParseI32(heightStr, &parsedGridSize.Height, nullptr))
