@@ -543,6 +543,17 @@ struct Clay_ScrollContainerData
 	bool found;
 };
 
+typedef struct Clay_TooltipElementConfig Clay_TooltipElementConfig;
+struct Clay_TooltipElementConfig
+{
+	Str8 text;
+	u16 fontId;
+	u16 fontSize;
+	bool inactive;
+	// This is only needed if the element is inside a scrollable container that will clip it's visibility
+	Clay_ElementId containerId;
+};
+
 // Bounding box and other data for a specific UI element.
 typedef struct Clay_ElementData Clay_ElementData;
 struct Clay_ElementData
@@ -606,6 +617,8 @@ struct Clay_ElementDeclaration
 	Clay_ScrollElementConfig scroll;
 	// Controls settings related to element borders, and will generate BORDER render commands.
 	Clay_BorderElementConfig border;
+	// Automatically calls SoftRegisterTooltip for this UI element (this doesn't technically affect the UI element directly, it gets processed inside Clay__ConfigureOpenElement)
+	Clay_TooltipElementConfig tooltip;
 	// A pointer that will be transparently passed through to resulting render commands.
 	CLAY_ELEMENT_USERDATA_TYPE userData;
 };
@@ -670,6 +683,9 @@ struct Clay_ErrorHandler
 
 #define CLAY_MEASURE_TEXT_DEF(functionName) v2 functionName(Str8 text, Clay_TextElementConfig* config, CLAY_MEASURE_USERDATA_TYPE userData)
 typedef CLAY_MEASURE_TEXT_DEF(ClayMeasureText_f);
+
+#define CLAY_REGISTER_TOOLTIP_DEF(functionName) void functionName(const Clay_ElementDeclaration* config, CLAY_TOOLTIP_USERDATA_TYPE userData)
+typedef CLAY_REGISTER_TOOLTIP_DEF(ClayRegisterTooltip_f);
 
 #define CLAY_HASH_TEXT_USERDATA_DEF(functionName) u32 functionName(u32 currentHash, Clay_TextElementConfig* config)
 typedef CLAY_HASH_TEXT_USERDATA_DEF(ClayHashTextUserData_f);
@@ -876,6 +892,7 @@ struct Clay_Context
 	u32 debugSelectedElementId;
 	u32 generation;
 	CLAY_MEASURE_USERDATA_TYPE measureTextUserData;
+	CLAY_TOOLTIP_USERDATA_TYPE registerTooltipUserData;
 	CLAY_QUERYSCROLL_USERDATA_TYPE queryScrollOffsetUserData;
 	Arena* internalArena;
 	// Layout Elements / Render Commands

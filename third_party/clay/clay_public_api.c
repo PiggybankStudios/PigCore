@@ -14,6 +14,12 @@ CLAY_DECOR void Clay_SetMeasureTextFunction(ClayMeasureText_f* measureTextFuncti
 	Clay__MeasureText = measureTextFunction;
 	context->measureTextUserData = userData;
 }
+CLAY_DECOR void Clay_SetRegisterTooltipFunction(ClayRegisterTooltip_f* registerTooltipFunction, CLAY_TOOLTIP_USERDATA_TYPE userData)
+{
+	Clay_Context* context = Clay_GetCurrentContext();
+	Clay__RegisterTooltip = registerTooltipFunction;
+	context->registerTooltipUserData = userData;
+}
 CLAY_DECOR void Clay_SetHashTextUserDataFunction(ClayHashTextUserData_f* hashTextUserDataFunction)
 {
 	Clay__HashTextUserData = hashTextUserDataFunction;

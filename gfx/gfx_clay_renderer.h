@@ -20,6 +20,7 @@ Description:
 #include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_system.h"
 #include "ui/ui_clay.h"
+#include "ui/ui_clay_tooltip_registry.h"
 #include "lib/lib_tracy.h"
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
@@ -40,6 +41,7 @@ plex ClayUIRenderer
 	Arena* arena;
 	ClayUI clay;
 	VarArray fonts; //ClayUIRendererFont
+	TooltipRegistry* tooltipRegistry;
 };
 
 // +--------------------------------------------------------------+
@@ -49,6 +51,7 @@ plex ClayUIRenderer
 	PIG_CORE_INLINE Clay_ImageElementConfig ToClayImage(Texture* texture);
 	CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText);
 	void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut);
+	PIG_CORE_INLINE void AttachTooltipRegistryToUIRenderer(ClayUIRenderer* renderer, TooltipRegistry* registry);
 	PIG_CORE_INLINE u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags);
 	PIG_CORE_INLINE u16 GetClayUIRendererFontId(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags);
 	void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, Clay_RenderCommandArray* commands);
@@ -101,6 +104,30 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	return result;
 }
 
+// +===============================+
+// | ClayUIRendererRegisterTooltip |
+// +===============================+
+// void ClayUIRendererRegisterTooltip(const Clay_ElementDeclaration* config, CLAY_TOOLTIP_USERDATA_TYPE userData)
+PEXP CLAY_REGISTER_TOOLTIP_DEF(ClayUIRendererRegisterTooltip)
+{
+	NotNull(config);
+	NotNull(userData);
+	ClayUIRenderer* renderer = (ClayUIRenderer*)userData;
+	if (renderer->tooltipRegistry != nullptr && config->tooltip.fontId < renderer->fonts.length)
+	{
+		AssertMsg(config->id.id != 0, "Cant register a tooltip to an element without an explicit ID!");
+		ClayUIRendererFont* font = VarArrayGetHard(ClayUIRendererFont, &renderer->fonts, (uxx)config->tooltip.fontId);
+		r32 fontSize = (r32)config->tooltip.fontSize;
+		if (fontSize == 0.0f) { fontSize = GetDefaultFontSize(font->pntr); }
+		RegisteredTooltip* tooltip = SoftRegisterTooltipByClayIdGetPntr(renderer->tooltipRegistry, config->id, config->tooltip.text, font->pntr, fontSize, font->styleFlags);
+		if (tooltip != nullptr)
+		{
+			tooltip->active = !config->tooltip.inactive;
+			tooltip->targetContainerClayId = config->tooltip.containerId;
+		}
+	}
+}
+
 PEXP void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut)
 {
 	NotNull(arena);
@@ -109,7 +136,14 @@ PEXP void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* render
 	ClearPointer(rendererOut);
 	rendererOut->arena = arena;
 	InitVarArray(ClayUIRendererFont, &rendererOut->fonts, arena);
-	InitClayUI(arena, windowSize, ClayUIRendererMeasureText, rendererOut, &rendererOut->clay);
+	InitClayUI(arena, windowSize, ClayUIRendererMeasureText, rendererOut, ClayUIRendererRegisterTooltip, rendererOut, &rendererOut->clay);
+}
+
+PEXPI void AttachTooltipRegistryToUIRenderer(ClayUIRenderer* renderer, TooltipRegistry* registry)
+{
+	NotNull(renderer);
+	NotNull(renderer->arena);
+	renderer->tooltipRegistry = registry;
 }
 
 PEXPI u16 AddClayUIRendererFont(ClayUIRenderer* renderer, PigFont* fontPntr, u8 styleFlags)

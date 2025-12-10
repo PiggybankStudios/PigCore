@@ -69,6 +69,9 @@ CLAY_DECOR Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId i
 // - measureTextFunction is a user provided function that adheres to the interface v2 (Str8 text, Clay_TextElementConfig* config, CLAY_MEASURE_USERDATA_TYPE userData);
 // - userData is a pointer that will be transparently passed through when the measureTextFunction is called.
 CLAY_DECOR void Clay_SetMeasureTextFunction(ClayMeasureText_f* measureTextFunction, CLAY_MEASURE_USERDATA_TYPE userData);
+// Binds a callback function to be called whenever a new UI element is registered and has a tooltip declared
+// This is called inside Clay__ConfigureOpenElement aka CLAY() macro NOT during layout or rendering of the registered element
+CLAY_DECOR void Clay_SetRegisterTooltipFunction(ClayRegisterTooltip_f* registerTooltipFunction, CLAY_TOOLTIP_USERDATA_TYPE userData);
 // NOTE: Added by Taylor
 // This callback allows the application to augment the hash given the contents of the CLAY_TEXT_USERDATA_TYPE inside the Clay_TextElementConfig
 // This hash is used to cache the MeasureText results so anything inside the userData that affects measurement should be included in the hash

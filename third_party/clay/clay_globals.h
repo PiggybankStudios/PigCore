@@ -50,10 +50,12 @@ void Clay__ErrorHandlerFunctionDefault(Clay_ErrorData errorText)
 
 #ifdef CLAY_WASM
 	__attribute__((import_module("clay"), import_name("measureTextFunction"))) ClayMeasureText_f* Clay__MeasureText;
+	__attribute__((import_module("clay"), import_name("registerTooltipFunction"))) ClayRegisterTooltip_f* Clay__RegisterTooltip;
 	__attribute__((import_module("clay"), import_name("hashTextUserData"))) ClayHashTextUserData_f* Clay__HashTextUserData;
 	__attribute__((import_module("clay"), import_name("queryScrollOffsetFunction"))) v2 Clay__QueryScrollOffset(u32 elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 #else
 	ClayMeasureText_f* Clay__MeasureText;
+	ClayRegisterTooltip_f* Clay__RegisterTooltip;
 	ClayHashTextUserData_f* Clay__HashTextUserData;
 	v2 (*Clay__QueryScrollOffset)(u32 elementId, CLAY_QUERYSCROLL_USERDATA_TYPE userData);
 #endif

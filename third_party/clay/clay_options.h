@@ -39,6 +39,9 @@ Description:
 #ifndef CLAY_MEASURE_USERDATA_TYPE
 #define CLAY_MEASURE_USERDATA_TYPE void*
 #endif
+#ifndef CLAY_TOOLTIP_USERDATA_TYPE
+#define CLAY_TOOLTIP_USERDATA_TYPE void*
+#endif
 
 #if LANGUAGE_IS_CPP
 	#define CLAY_PACKED_ENUM enum : u8

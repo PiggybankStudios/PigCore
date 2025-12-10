@@ -94,6 +94,7 @@ plex ClayUI
 {
 	Arena* arena;
 	ClayMeasureText_f* measureTextFunc;
+	ClayRegisterTooltip_f* registerTooltipFunc;
 	Clay_Context* context;
 };
 
@@ -107,7 +108,7 @@ typedef Clay_ElementId ClayId;
 	PIG_CORE_INLINE ClayId ToClayId(Str8 idStr);
 	PIG_CORE_INLINE ClayId ToClayIdNt(const char* idNullTermString);
 	void SetClayContext(ClayUI* clay);
-	void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut);
+	void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureTextFunc, void* measureUserData, ClayRegisterTooltip_f* registerTooltipFunc, void* tooltipUserData, ClayUI* clayOut);
 	PIG_CORE_INLINE bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling);
 	PIG_CORE_INLINE void BeginClayUIRender(ClayUI* clay, v2 windowSize, bool isMouseOverOther, v2 mousePos, bool isMouseDown);
 	PIG_CORE_INLINE Clay_RenderCommandArray EndClayUIRender(ClayUI* clay);
@@ -179,17 +180,19 @@ PEXPI void SetClayContext(ClayUI* clay)
 	Clay_SetCurrentContext(clay->context);
 }
 
-PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureTextFunc, void* measureUserData, ClayUI* clayOut)
+PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureTextFunc, void* measureUserData, ClayRegisterTooltip_f* registerTooltipFunc, void* tooltipUserData, ClayUI* clayOut)
 {
 	NotNull(measureTextFunc);
 	NotNull(clayOut);
 	ClearPointer(clayOut);
 	clayOut->arena = arena;
 	clayOut->measureTextFunc = measureTextFunc;
+	clayOut->registerTooltipFunc = registerTooltipFunc;
 	
 	clayOut->context = Clay_Initialize(arena, windowSize, (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
 	
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
+	Clay_SetRegisterTooltipFunction(registerTooltipFunc, tooltipUserData);
 	Clay_SetHashTextUserDataFunction(HashTextUserData);
 }
 

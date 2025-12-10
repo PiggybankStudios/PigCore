@@ -83,8 +83,8 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 			{
 				if (!IsEmptyStr(tooltip->targetClayIdStr))
 				{
-					//TODO: Add support for IsMouseOverInContainer?
-					if (Clay_PointerOver(ToClayId(tooltip->targetClayIdStr)))
+					if (Clay_PointerOver(ToClayId(tooltip->targetClayIdStr)) &&
+						(tooltip->targetContainerClayId.id == 0 || Clay_PointerOver(tooltip->targetContainerClayId)))
 					{
 						newMouseHoverId = tooltip->id;
 					}

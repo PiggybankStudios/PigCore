@@ -854,6 +854,11 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
 	{
 		Clay__AttachElementConfig(NEW_STRUCT(Clay_ElementConfigUnion) { .borderElementConfig = Clay__StoreBorderElementConfig(declaration.border) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER);
 	}
+	
+	if (declaration.tooltip.text.length > 0 && Clay__RegisterTooltip != nullptr)
+	{
+		Clay__RegisterTooltip(&declaration, context->registerTooltipUserData);
+	}
 }
 
 //TODO: We really should push all these arenas over to use a Scratch arena
