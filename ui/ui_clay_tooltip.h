@@ -130,7 +130,7 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 			Str8 tooltipIdStr = PrintInArenaStr(context->uiArena, "%.*s%sTooltip%llu", StrPrint(openTooltip->targetClayIdStr), attachToElement ? "_" : "", openTooltip->id);
 			ClayId tooltipId = ToClayId(tooltipIdStr);
 			Assert(openTooltip->font == nullptr || context->renderer != nullptr);
-			v2 attachOffset = AddV2(registry->openTooltipTargetPos, MakeV2(0, -TOOLTIP_TARGET_UP_OFFSET));
+			v2 attachOffset = AddV2(registry->openTooltipTargetPos, MakeV2(0, TOOLTIP_TARGET_DOWN_OFFSET));
 			u64 timeSinceOpen = TimeSinceBy(context->programTime, registry->openTooltipTime);
 			r32 tooltipAlpha = (timeSinceOpen < TOOLTIP_FADEIN_TIME) ? (r32)timeSinceOpen / (r32)TOOLTIP_FADEIN_TIME : 1.0f;
 			
@@ -139,11 +139,11 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 			r32 wrapWidth = UISCALE_R32(context->uiScale, MinR32(screenSize.Width, TOOLTIP_MAX_WIDTH) - (2 * TOOLTIP_PADDING_X));
 			TextMeasure displayStrMeasure = MeasureTextEx(openTooltip->font, openTooltip->fontSize, openTooltip->fontStyle, false, wrapWidth, openTooltip->displayStr);
 			v2 tooltipSize = AddV2(displayStrMeasure.logicalRec.Size, MakeV2(2 * UISCALE_R32(context->uiScale, TOOLTIP_PADDING_X), 2 * UISCALE_R32(context->uiScale, TOOLTIP_PADDING_Y)));
-			Clay_FloatingAttachPointType attachPoint = CLAY_ATTACH_POINT_CENTER_BOTTOM;
-			if (attachOffset.Y < tooltipSize.Height + 2)
+			Clay_FloatingAttachPointType attachPoint = CLAY_ATTACH_POINT_CENTER_TOP;
+			if (attachOffset.Y > screenSize.Height - tooltipSize.Height)
 			{
-				attachPoint = CLAY_ATTACH_POINT_CENTER_TOP;
-				attachOffset.Y += TOOLTIP_TARGET_UP_OFFSET + TOOLTIP_TARGET_DOWN_OFFSET;
+				attachPoint = CLAY_ATTACH_POINT_CENTER_BOTTOM;
+				attachOffset.Y -= (TOOLTIP_TARGET_DOWN_OFFSET + TOOLTIP_TARGET_UP_OFFSET);
 			}
 			if (attachOffset.X < tooltipSize.Width/2.0f)
 			{
