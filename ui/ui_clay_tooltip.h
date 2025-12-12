@@ -159,10 +159,11 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 					.sizing = { .width = CLAY_SIZING_FIXED(tooltipSize.Width), .height = CLAY_SIZING_FIXED(tooltipSize.Height) },
 					.padding = {
 						.left = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_X),
-						.right = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_X),
-						.top = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_Y),
-						.bottom = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_Y),
+						.top = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_Y*0.75f), //TODO: Get rid of this hacky way to make the text look more vertically centered
+						// .right = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_X),
+						// .bottom = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_Y),
 					},
+					// .childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER }, //TODO: Enable this once the clay renderer properly vertically aligns multi-line text
 				},
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,
