@@ -62,6 +62,7 @@ void Fill_cl_LangCFlags(CliArgList* cl_LangCFlags)
 {
 	AddArgNt(cl_LangCFlags, CL_LANG_VERSION, "clatest"); //Use latest C language spec features
 	AddArgNt(cl_LangCFlags, CL_EXPERIMENTAL, "c11atomics"); //Enables _Atomic types
+	// AddArg(cl_LangCFlags, CL_ENABLE_ADDRESS_SANATIZER);
 }
 
 // Flags that we use when compiling any C++ program using MSVC compiler

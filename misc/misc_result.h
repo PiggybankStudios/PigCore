@@ -114,6 +114,9 @@ enum Result
 	Result_FailedToEmptyClipboard,
 	Result_NoScratchAvailable,
 	Result_InitFailed,
+	Result_Unresolved,
+	Result_EmptyArgument,
+	Result_InvalidIdentifier,
 	
 	Result_Count,
 };
@@ -211,6 +214,9 @@ PEXP const char* GetResultStr(Result result)
 		case Result_FailedToEmptyClipboard: return "FailedToEmptyClipboard";
 		case Result_NoScratchAvailable: return "NoScratchAvailable";
 		case Result_InitFailed: return "InitFailed";
+		case Result_Unresolved: return "Unresolved";
+		case Result_EmptyArgument: return "EmptyArgument";
+		case Result_InvalidIdentifier: return "InvalidIdentifier";
 		default: return UNKNOWN_STR;
 	}
 }
