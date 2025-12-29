@@ -54,7 +54,7 @@ plex BktArray
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	void FreeBtkArray(BktArray* array);
+	void FreeBktArray(BktArray* array);
 	void BktArrayClear(BktArray* array, bool deallocate);
 	void InitBktArrayWithInitial_(uxx itemSize, uxx itemAlignment, BktArray* array, Arena* arena, uxx defaultBucketSize, uxx initialCountNeeded);
 	PIG_CORE_INLINE bool IsBktArrayInit(const BktArray* array);
@@ -179,7 +179,7 @@ plex BktArray
 #define BktArrayBktGetItemPntr(arrayPntr, bucketPntr, index) (((u8*)(bucketPntr)) + sizeof(BktArrayBkt) + BktArrayGetHeaderPadding((arrayPntr)->itemAlignment) + ((index) * (arrayPntr)->itemSize))
 #define BktArrayAllocSize(arrayPntr, allocLength) sizeof(BktArrayBkt) + BktArrayGetHeaderPadding((arrayPntr)->itemAlignment) + ((allocLength) * (arrayPntr)->itemSize)
 
-PEXP void FreeBtkArray(BktArray* array)
+PEXP void FreeBktArray(BktArray* array)
 {
 	NotNull(array);
 	if (array->arena != nullptr)

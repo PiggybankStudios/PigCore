@@ -27,7 +27,7 @@ Description:
 #include "base/base_unicode.h"
 #include "os/os_threading.h"
 
-// #include "base/base_debug_output_impl.h" //TODO: Re-enable me once we get this working on Playdate
+#include "base/base_debug_output_impl.h"
 #include "base/base_notifications_impl.h"
 
 #endif //  _BASE_ALL_H

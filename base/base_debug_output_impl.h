@@ -39,9 +39,19 @@ Description:
 //      like VarArray which could expose us to more re-entrancy (if VarArray does debug output) but maybe it's worth it?
 //      Or maybe we just handle the memory without a data structure?
 
+#if !PIG_CORE_IMPLEMENTATION
+	#if DEBUG_OUTPUT_CALLBACK_GLOBAL
+	PIG_CORE_INLINE void InitDebugOutputRouter(DebugOutput_f* callback);
+	#else
+	PIG_CORE_INLINE void InitDebugOutputRouter();
+	#endif
+#endif
+
 #if PIG_CORE_IMPLEMENTATION
 
+#if DEBUG_OUTPUT_CALLBACK_GLOBAL
 DebugOutput_f* DebugOutputCallback = nullptr;
+#endif
 
 THREAD_LOCAL bool DebugOutputIsOnNewLine = true;
 #if DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
@@ -49,6 +59,25 @@ THREAD_LOCAL uxx DebugOutputLineLength = 0;
 THREAD_LOCAL char DebugOutputLineBuffer[DEBUG_OUTPUT_LINE_BUFFER_SIZE] = ZEROED;
 THREAD_LOCAL bool DebugOutputLineOverflowOccurred = false;
 #endif //DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
+
+#if TARGET_HAS_THREADING
+Mutex DebugOutputLineMutex = NULL;
+#endif
+
+#if DEBUG_OUTPUT_CALLBACK_GLOBAL
+PEXPI void InitDebugOutputRouter(DebugOutput_f* callback)
+#else
+PEXPI void InitDebugOutputRouter()
+#endif
+{
+	#if DEBUG_OUTPUT_CALLBACK_GLOBAL
+	DebugOutputCallback = callback;
+	#endif
+	
+	#if TARGET_HAS_THREADING
+	InitMutex(&DebugOutputLineMutex);
+	#endif
+}
 
 // +==============================+
 // |      DebugOutputRouter       |
@@ -58,6 +87,9 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 {
 	#if !DEBUG_OUTPUT_SHOW_NOTIFICATIONS
 	if (isNotification) { return; }
+	#endif
+	#if TARGET_HAS_THREADING
+	DebugAssert(DebugOutputLineMutex != NULL);
 	#endif
 	
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||
@@ -73,40 +105,49 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		bool isLineOverflowOutput = DebugOutputLineOverflowOccurred;
 		#endif
 		
-		#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
-		if (DebugOutputIsOnNewLine)
-		{
-			MyPrintNoLine("%s%s: %s%s", isNotification ? "NOTIFICATION: " : "", GetDbgLevelStr(level), message, newLine ? "\n" : "");
-		}
-		else
-		{
-			MyPrintNoLine("%s%s%s", isNotification ? "NOTIFICATION: " : "", message, newLine ? "\n" : "");
-		}
-		#else
-		MyPrintNoLine("%s%s%s", isNotification ? "NOTIFICATION: " : "", message, newLine ? "\n" : "");
+		#if TARGET_HAS_THREADING
+		if (LockMutex(&DebugOutputLineMutex, TIMEOUT_FOREVER))
 		#endif
-		
-		#if TARGET_IS_WINDOWS
 		{
-			//NOTE: OutputDebugStringA comes from Debugapi.h which is included by Windows.h
-			//      Visual Studio and most Windows debuggers do not show things printed to stdout in
-			//      the "Output" window when debugging. Sending our debug output to OutputDebugString
-			//      ensures that our debug output can be viewed from the "Output" window in Windows debuggers.
-			if (isNotification)
-			{
-				OutputDebugStringA("NOTIFICATION: ");
-			}
 			#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
 			if (DebugOutputIsOnNewLine)
 			{
-				OutputDebugStringA(GetDbgLevelStr(level));
-				OutputDebugStringA(": ");
+				MyPrintNoLine("%s%s: %s%s", isNotification ? "NOTIFICATION: " : "", GetDbgLevelStr(level), message, newLine ? "\n" : "");
 			}
+			else
+			{
+				MyPrintNoLine("%s%s%s", isNotification ? "NOTIFICATION: " : "", message, newLine ? "\n" : "");
+			}
+			#else //!DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
+			MyPrintNoLine("%s%s%s", isNotification ? "NOTIFICATION: " : "", message, newLine ? "\n" : "");
+			#endif //DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
+			
+			#if TARGET_IS_WINDOWS
+			{
+				//NOTE: OutputDebugStringA comes from Debugapi.h which is included by Windows.h
+				//      Visual Studio and most Windows debuggers do not show things printed to stdout in
+				//      the "Output" window when debugging. Sending our debug output to OutputDebugString
+				//      ensures that our debug output can be viewed from the "Output" window in Windows debuggers.
+				if (isNotification)
+				{
+					OutputDebugStringA("NOTIFICATION: ");
+				}
+				#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
+				if (DebugOutputIsOnNewLine)
+				{
+					OutputDebugStringA(GetDbgLevelStr(level));
+					OutputDebugStringA(": ");
+				}
+				#endif
+				OutputDebugStringA(message);
+				if (newLine) { OutputDebugStringA("\n"); }
+			}
+			#endif //TARGET_IS_WINDOWS
+			
+			#if TARGET_HAS_THREADING
+			UnlockMutex(&DebugOutputLineMutex);
 			#endif
-			OutputDebugStringA(message);
-			if (newLine) { OutputDebugStringA("\n"); }
 		}
-		#endif //TARGET_IS_WINDOWS
 		
 		#if TARGET_IS_ANDROID
 		android_LogPriority androidPriority = ANDROID_LOG_VERBOSE;
@@ -121,7 +162,7 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 			case DbgLevel_Error:   androidPriority = ANDROID_LOG_ERROR; break;
 		}
 		__android_log_print(androidPriority, "pigcore", "%s", message);
-		#endif
+		#endif //TARGET_IS_ANDROID
 		
 		#if TARGET_IS_ORCA
 		{
@@ -168,11 +209,11 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 				}
 				if (message[bIndex] == '\0') { break; }
 			}
-			#else //DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
+			#else //!DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
 			DebugOutputCallback(filePath, lineNumber, funcName, level, newLine, message);
 			#endif
 		}
-		#endif
+		#endif //DEBUG_OUTPUT_CALLBACK_GLOBAL
 		
 		#if (DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE && DEBUG_OUTPUT_ERRORS_ON_LINE_OVERFLOW)
 		if (!isLineOverflowOutput && DebugOutputLineOverflowOccurred)

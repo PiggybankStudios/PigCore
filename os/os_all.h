@@ -22,6 +22,7 @@ Description:
 #include "os/os_process_info.h"
 #include "os/os_program_args.h"
 #include "os/os_threading.h"
+#include "os/os_thread_pool.h"
 #include "os/os_time.h"
 #include "os/os_virtual_mem.h"
 

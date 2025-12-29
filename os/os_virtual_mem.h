@@ -214,10 +214,14 @@ PEXP void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 	{
 		BOOL freeResult = VirtualFree(
 			memoryPntr, //lpAddress
-			reservedSize, //dwSize
+			0,          //dwSize NOTE: Must be zero when specifying MEM_RELEASE otherwise we get ERROR_INVALID_PARAMETER
 			MEM_RELEASE //dwFreeType
 		);
-		Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
+		if (freeResult == 0)
+		{
+			DWORD errorCode = GetLastError();
+			Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
+		}
 	}
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
