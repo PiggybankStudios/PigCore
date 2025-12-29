@@ -32,5 +32,6 @@ Description:
 #include "struct/struct_typed_array.h"
 #include "struct/struct_var_array.h"
 #include "struct/struct_vectors.h"
+#include "struct/struct_work_subject.h"
 
 #endif //  _STRUCT_ALL_H
