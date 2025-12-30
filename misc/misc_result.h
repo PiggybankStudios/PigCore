@@ -24,7 +24,6 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_macros.h"
 
-typedef enum Result Result;
 enum Result
 {
 	Result_None = 0,
@@ -121,6 +120,7 @@ enum Result
 	
 	Result_Count,
 };
+typedef enum Result Result;
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetResultStr(Result result);

@@ -36,7 +36,6 @@ typedef REALLOC_FUNC_DEF(ReallocFunc_f);
 #define FREE_FUNC_DEF(functionName)    void  functionName(void* allocPntr)
 typedef FREE_FUNC_DEF(FreeFunc_f);
 
-typedef enum ArenaFlag ArenaFlag;
 enum ArenaFlag
 {
 	ArenaFlag_None = 0x00,
@@ -47,8 +46,8 @@ enum ArenaFlag
 	ArenaFlag_AddPaddingForDebug   = 0x10,
 	ArenaFlag_DontPop              = 0x20,
 };
+typedef enum ArenaFlag ArenaFlag;
 
-typedef enum ArenaType ArenaType;
 enum ArenaType
 {
 	ArenaType_None = 0,
@@ -65,6 +64,7 @@ enum ArenaType
 	// ArenaType_FreeListArray, //TODO: We could have an arena that only accepts a particular size of allocations and therefore is faster at finding/freeing/verifying/etc.
 	ArenaType_Count,
 };
+typedef enum ArenaType ArenaType;
 //TODO: We should use piggen to generate this function!
 #if !PIG_CORE_IMPLEMENTATION
 PEXPI const char* GetArenaTypeStr(ArenaType arenaType);

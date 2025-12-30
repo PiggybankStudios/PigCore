@@ -72,7 +72,7 @@ PEXP void GfxSystem_RenderImDrawData(GfxSystem* system, Arena* vertBufferArena, 
 			const ImDrawList* cmdDrawList = drawData->CmdLists.Data[lIndex];
 			if (cmdDrawList->VtxBuffer.Size > 0)
 			{
-				DebugAssert(vertexOffset + cmdDrawList->VtxBuffer.Size <= drawData->TotalVtxCount);
+				DebugAssert((ixx)vertexOffset + cmdDrawList->VtxBuffer.Size <= drawData->TotalVtxCount);
 				Vertex2D* verticesPntr = &scratchVertices[vertexOffset];
 				vertexOffset += cmdDrawList->VtxBuffer.Size;
 				for (int vIndex = 0; vIndex < cmdDrawList->VtxBuffer.Size; vIndex++)
@@ -90,7 +90,7 @@ PEXP void GfxSystem_RenderImDrawData(GfxSystem* system, Arena* vertBufferArena, 
 			
 			if (cmdDrawList->IdxBuffer.Size > 0)
 			{
-				DebugAssert(indexOffset + cmdDrawList->IdxBuffer.Size <= drawData->TotalIdxCount);
+				DebugAssert((ixx)indexOffset + cmdDrawList->IdxBuffer.Size <= drawData->TotalIdxCount);
 				u16* indicesPntr = &scratchIndices[indexOffset];
 				indexOffset += cmdDrawList->IdxBuffer.Size;
 				MyMemCopy(indicesPntr, cmdDrawList->IdxBuffer.Data, sizeof(u16) * cmdDrawList->IdxBuffer.Size);
@@ -99,8 +99,8 @@ PEXP void GfxSystem_RenderImDrawData(GfxSystem* system, Arena* vertBufferArena, 
 		
 		//Resize/Create vertBuffer if needed
 		if (vertBuffer->arena == nullptr ||
-			vertBuffer->numVertices < drawData->TotalVtxCount ||
-			vertBuffer->numIndices < drawData->TotalIdxCount)
+			vertBuffer->numVertices < (uxx)drawData->TotalVtxCount ||
+			vertBuffer->numIndices < (uxx)drawData->TotalIdxCount)
 		{
 			if (vertBuffer->arena != nullptr) { FreeVertBuffer(vertBuffer); }
 			*vertBuffer = InitVertBuffer2D(vertBufferArena, StrLit("ImGuiVertBuffer"), VertBufferUsage_Streaming, drawData->TotalVtxCount, nullptr, false);

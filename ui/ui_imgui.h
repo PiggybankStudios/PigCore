@@ -60,7 +60,11 @@ plex ImguiUI
 	PIG_CORE_INLINE v4 ToV4FromImgui(ImVec4 vector);
 	PIG_CORE_INLINE ImVec4 ToImVec4(v4 vector);
 	PIG_CORE_INLINE ImVec4 ToImVec4FromColor(Color32 color);
+	#if TARGET_IS_WINDOWS
 	ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr);
+	#else
+	ImguiUI* InitImguiUI(Arena* arena);
+	#endif
 #endif
 
 //TODO: Ideally these should not just be named, but also located in the APPDATA folder, not next to the application exe
@@ -109,28 +113,30 @@ static void ImguiFreeCallback(void* allocPntr, void* userData)
 	if (allocPntr != nullptr && CanArenaFree(arena)) { FreeMem(arena, allocPntr, 0); }
 }
 
-static const char* ImguiGetClipboardTextCallback(void* userData)
+static const char* ImguiGetClipboardTextCallback(ImGuiContext* context)
 {
-	NotNull(userData);
-	ImguiUI* imgui = (ImguiUI*)userData;
-	UNUSED(imgui);
+	NotNull(context);
 	//TODO: Implement me!
+	UNUSED(context);
 	return nullptr;
 }
-static void ImguiSetClipboardTextCallback(void* userData, const char* text)
+static void ImguiSetClipboardTextCallback(ImGuiContext* context, const char* text)
 {
-	NotNull(userData);
+	NotNull(context);
 	NotNull(text);
-	ImguiUI* imgui = (ImguiUI*)userData;
-	UNUSED(imgui);
 	//TODO: Implement me!
+	UNUSED(context);
+	UNUSED(text);
 }
 
 //NOTE: arena has to have ArenaFlag_AllowFreeWithoutSize set!
+#if TARGET_IS_WINDOWS
 PEXP ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr)
+#else
+PEXP ImguiUI* InitImguiUI(Arena* arena)
+#endif
 {
 	NotNull(arena);
-	NotNull(nativeWindowPntr);
 	Assert(IsFlagSet(arena->flags, ArenaFlag_AllowFreeWithoutSize));
 	
 	imguiArena = arena;
@@ -183,7 +189,10 @@ PEXP ImguiUI* InitImguiUI(Arena* arena, const void* nativeWindowPntr)
 	
 	result->viewport = igGetMainViewport();
 	NotNull(result->viewport);
+	#if TARGET_IS_WINDOWS
+	NotNull(nativeWindowPntr);
 	result->viewport->PlatformHandleRaw = (void*)nativeWindowPntr;
+	#endif
 	
 	u8* fontAtlasPixels = nullptr;
 	int fontAtlasWidth = 0, fontAtlasHeight = 0;

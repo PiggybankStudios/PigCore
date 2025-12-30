@@ -102,9 +102,15 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 	}
 }
 
-void Fill_clang_LangCFlags(CliArgList* clang_LangCFlags)
+void Fill_clang_LangCFlags(CliArgList* clang_LangCFlags, bool BUILD_WITH_IMGUI)
 {
 	AddArgNt(clang_LangCFlags, CLANG_LANG_VERSION, "gnu2x"); //Use C20+ language spec (NOTE: We originally had -std=c2x but that didn't define MAP_ANONYMOUS and mmap was failing)
+	if (BUILD_WITH_IMGUI)
+	{
+		//TODO: Figure out why these are needed when linking with imgui.o with Clang on Linux
+		AddArg(clang_LangCFlags, "-lstdc++");
+		AddArg(clang_LangCFlags, "-fno-threadsafe-statics"); //Eliminates undefined references to stuff like "__cxa_guard_acquire"
+	}
 }
 void Fill_clang_LangCppFlags(CliArgList* clang_LangCppFlags)
 {

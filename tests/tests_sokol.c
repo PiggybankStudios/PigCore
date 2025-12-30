@@ -183,7 +183,7 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 		.cornerRadius = CLAY_CORNER_RADIUS(5),
 	});
 	CLAY_TEXT(
-		StrLit(btnText),
+		MakeStr8Nt(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = clayFont,
 			.fontSize = (u16)(18*textScale),
@@ -251,7 +251,7 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 		.cornerRadius = CLAY_CORNER_RADIUS(8),
 	});
 	CLAY_TEXT(
-		StrLit(btnText),
+		MakeStr8Nt(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = clayFont,
 			.fontSize = (u16)(18*textScale),
@@ -421,9 +421,9 @@ void AppInit(void)
 			// FontCharRange_UppercaseLetters,
 			// FontCharRange_LatinSupplementAccent,
 			// MakeFontCharRangeSingle(UNICODE_SPACE_CODEPOINT),
-			MakeFontCharRangeSingle(UNICODE_ZERO_WIDTH_SPACE_CODEPOINT),
-			MakeFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
-			MakeFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
+			// MakeFontCharRangeSingle(UNICODE_ZERO_WIDTH_SPACE_CODEPOINT),
+			// MakeFontCharRangeSingle(UNICODE_NON_BREAKING_SPACE_CODEPOINT),
+			// MakeFontCharRangeSingle(UNICODE_NON_BREAKING_HYPHEN_CODEPOINT),
 			// MakeFontCharRangeSingle(UNICODE_UNKNOWN_CHAR_CODEPOINT),
 		};
 		// FontCharRange japaneseCharRanges[] = {
@@ -555,10 +555,11 @@ void AppInit(void)
 	FlagSet(stdHeap->flags, ArenaFlag_AllowFreeWithoutSize);
 	#if TARGET_IS_WINDOWS
 	const void* nativeWindowHandle = sapp_win32_get_hwnd();
-	#else
-	#error We need to figure out how to get the name window handle from sokol_app on this TARGET!
-	#endif
 	imgui = InitImguiUI(stdHeap, nativeWindowHandle);
+	#else
+	// const void* nativeWindowHandle = sapp_x11_get_window();
+	imgui = InitImguiUI(stdHeap);
+	#endif
 	#endif
 	
 	InitMouseState(&mouse);

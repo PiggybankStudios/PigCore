@@ -27,7 +27,6 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_macros.h"
 
-typedef enum DbgLevel DbgLevel;
 enum DbgLevel
 {
 	DbgLevel_None = 0,
@@ -40,6 +39,7 @@ enum DbgLevel
 	DbgLevel_Error,
 	DbgLevel_Count,
 };
+typedef enum DbgLevel DbgLevel;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetDbgLevelStr(DbgLevel enumValue);
 #else

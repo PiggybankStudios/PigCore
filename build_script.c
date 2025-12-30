@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
 	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
-	CliArgList clang_LangCFlags                  = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags);
+	CliArgList clang_LangCFlags                  = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags, BUILD_WITH_IMGUI);
 	CliArgList clang_LangCppFlags                = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
 	CliArgList clang_LangObjectiveCFlags         = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
 	CliArgList clang_LinuxOrOsxFlags             = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD);
@@ -718,10 +718,41 @@ int main(int argc, char* argv[])
 		}
 		if (BUILD_LINUX)
 		{
-			//TODO: Implement Linux version!
+			PrintLine("[Building %s for Linux...]", FILENAME_IMGUI_O);
+			
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArg(&cmd, CLANG_COMPILE);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/ui/ui_imgui_main.cpp");
+			AddArgNt(&cmd, CLANG_INCLUDE_DIR, "[ROOT]/third_party/imgui");
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_IMGUI_O);
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCppFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			
+			#if BUILDING_ON_LINUX
+			Str8 clangExe = StrLit(EXE_CLANG);
+			#else
+			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
+			chdir(FOLDERNAME_LINUX);
+			cmd.rootDirPath = StrLit("../..");
+			#endif
+			
+			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_IMGUI_O "!"));
+			AssertFileExist(StrLit(FILENAME_IMGUI_O), true);
+			PrintLine("[Built %s for Linux!]", FILENAME_IMGUI_O);
+			
+			#if !BUILDING_ON_LINUX
+			chdir("..");
+			#endif
 		}
 	}
-	if (BUILD_WITH_IMGUI) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_IMGUI_OBJ); }
+	if (BUILD_WITH_IMGUI)
+	{
+		AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_IMGUI_OBJ);
+		AddArgNt(&clang_PigCoreLinuxLibraries, CLI_QUOTED_ARG, FILENAME_IMGUI_O);
+	}
 	
 	// +--------------------------------------------------------------+
 	// |                     Build physx_capi.obj                     |

@@ -43,7 +43,6 @@ plex OsFileIter
 	#endif
 };
 
-typedef enum OsOpenFileMode OsOpenFileMode;
 enum OsOpenFileMode
 {
 	OsOpenFileMode_None = 0,
@@ -54,6 +53,7 @@ enum OsOpenFileMode
 	//TODO: Do we want a mode where we open for appending but ONLY if the file exists?
 	OsOpenFileMode_Count,
 };
+typedef enum OsOpenFileMode OsOpenFileMode;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetOsOpenFileModeStr(OsOpenFileMode enumValue);
 #else

@@ -114,9 +114,9 @@ plex Str8Pair
 	PIG_CORE_INLINE oc_str8 ToOcStr8(Str8 str);
 	PIG_CORE_INLINE Str8 ToStr8FromOc(oc_str8 orcaStr);
 	#endif //TARGET_IS_ORCA
-	PIG_CORE_INLINE bool IsEmptyStr(Str8 string) { return (string.length == 0); };
-	PIG_CORE_INLINE bool IsNullStr(Str8 string) { return (string.length > 0 && string.pntr == nullptr); };
-	PIG_CORE_INLINE bool IsNullTerminated(Str8 string) { return (string.pntr != nullptr && string.chars[string.length] == '\0'); };
+	PIG_CORE_INLINE bool IsEmptyStr(Str8 string);
+	PIG_CORE_INLINE bool IsNullStr(Str8 string);
+	PIG_CORE_INLINE bool IsNullTerminated(Str8 string);
 	PIG_CORE_INLINE bool IsBufferNullTerminated(uxx bufferSize, const void* bufferPntr);
 	Str8 TrimLeadingWhitespaceAndNewLines(Str8 target);
 	Str8 TrimTrailingWhitespaceAndNewLines(Str8 target);

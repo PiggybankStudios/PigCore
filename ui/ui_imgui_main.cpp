@@ -71,13 +71,14 @@ ImFileHandle ImFileOpen(const char* filename, const char* mode)
 	NotNull(result);
 	ClearPointer(result);
 	result->arena = imguiArena;
-	Str8 modeStr = StrLit(mode);
+	Str8 modeStr = MakeStr8Nt(mode);
 	result->convertNewLines = !StrExactContains(modeStr, StrLit("b"));
 	OsOpenFileMode openMode = OsOpenFileMode_None;
 	if (StrExactContains(modeStr, StrLit("a"))) { openMode = OsOpenFileMode_Append; }
-	else if (StrExactContains(modeStr, StrLit("w"))) { openMode = OsOpenFileMode_Write; }
+	else if (StrExactContains(modeStr, StrLit("w"))) { openMode = OsOpenFileMode_Create; }
+	else if (StrExactContains(modeStr, StrLit("r+"))) { openMode = OsOpenFileMode_Write; }
 	else if (StrExactContains(modeStr, StrLit("r"))) { openMode = OsOpenFileMode_Read; }
-	bool openResult = OsOpenFile(imguiArena, FilePathLit(filename), openMode, (openMode != OsOpenFileMode_Write), &result->file);
+	bool openResult = OsOpenFile(imguiArena, MakeFilePathNt(filename), openMode, (openMode != OsOpenFileMode_Write), &result->file);
 	if (!openResult) { if (CanArenaFree(imguiArena)) { FreeType(ImGuiFile, imguiArena, result); } return nullptr; }
 	return result;
 }
@@ -115,6 +116,6 @@ u64 ImFileWrite(const void* data, u64 size, u64 count, ImFileHandle file)
 	NotNull(file);
 	NotNull(file->arena);
 	NotNull(file->file.arena);
-	bool writeResult = OsWriteToOpenFile(&file->file, MakeStr8((size * count), data), file->convertNewLines);
+	bool writeResult = OsWriteToOpenFile(&file->file, MakeSlice((size * count), data), file->convertNewLines);
 	return (writeResult ? (size * count) : 0);
 }

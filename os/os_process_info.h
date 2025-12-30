@@ -29,7 +29,7 @@ typedef HWND OsWindowHandle;
 #define OsWindowHandleEmpty NULL
 #elif TARGET_IS_LINUX && BUILD_WITH_SOKOL_APP
 typedef Window OsWindowHandle;
-#define OsWindowHandleEmpty nullptr //TODO: Check this
+#define OsWindowHandleEmpty 0
 #elif TARGET_IS_OSX
 typedef NSWindow* OsWindowHandle;
 #define OsWindowHandleEmpty nullptr
