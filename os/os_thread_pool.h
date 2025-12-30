@@ -27,7 +27,9 @@ Description:
 #include "base/base_debug_output.h"
 
 //TODO: Use a semaphore instead of a mutex for work claiming? Or maybe a lockless intrinsic like atomics?
+//TODO: Implement for Linux, OSX, and Android!
 //TODO: Add support for prioritizing certain work items over others (and updating those priorities actively on the main thread in a safe way)
+//TODO: Add a "dependency" system so that certain work items can wait for other items to finish before they begin (and somehow use the result of the work item?)
 
 #if TARGET_HAS_THREADING
 
@@ -292,7 +294,7 @@ void ThreadPoolThread_Main(void* contextPntr)
 	#if SCRATCH_ARENAS_THREAD_LOCAL
 	if (thread->pool->threadsHaveScratch)
 	{
-		TracyCZoneN(_scratchInitZone, "ScratchInit", true);
+		TracyCZoneN(Zone_ScratchInit, "ScratchInit", true);
 		if (thread->pool->threadScratchIsVirtual)
 		{
 			InitScratchArenasVirtual(thread->pool->threadScratchSize);
@@ -301,15 +303,15 @@ void ThreadPoolThread_Main(void* contextPntr)
 		{
 			InitScratchArenas(thread->pool->threadScratchSize, thread->pool->arena);
 		}
-		TracyCZoneEnd(_scratchInitZone);
+		TracyCZoneEnd(Zone_ScratchInit);
 	}
 	#endif
 	
-	PrintLine_N("%.*s (id=%llu) is starting!", StrPrint(thread->debugName), thread->id);
-	uxx iterIndex = 0;
+	// PrintLine_N("%.*s (id=%llu) is starting!", StrPrint(thread->debugName), thread->id);
+	uxx numSleeps = 0;
 	while (!thread->stopRequested)
 	{
-		TracyCZoneN(_awakeZone, "Awake", true);
+		TracyCZoneN(Zone_Awake, "Awake", true);
 		ThreadPoolWorkItem* claimedWorkItem = nullptr;
 		for (uxx wIndex = 0; wIndex < thread->pool->workItems.length; wIndex++)
 		{
@@ -331,34 +333,60 @@ void ThreadPoolThread_Main(void* contextPntr)
 				}
 			}
 		}
-		TracyCZoneEnd(_awakeZone);
+		TracyCZoneEnd(Zone_Awake);
 		
 		if (claimedWorkItem != nullptr)
 		{
-			TracyCZoneN(_workingZone, "Working", true);
+			TracyCZoneN(Zone_Working, "Working", true);
+			
+			#if SCRATCH_ARENAS_THREAD_LOCAL
+			Arena* scratch1 = nullptr; uxx scratch1_mark = 0;
+			Arena* scratch2 = nullptr; uxx scratch2_mark = 0;
+			Arena* scratch3 = nullptr; uxx scratch3_mark = 0;
+			if (thread->pool->threadsHaveScratch)
+			{
+				scratch1 = GetScratch(&scratch1_mark);
+				scratch2 = GetScratch1(scratch1, &scratch2_mark);
+				scratch3 = GetScratch2(scratch1, scratch2, &scratch3_mark);
+			}
+			#endif //SCRATCH_ARENAS_THREAD_LOCAL
+			
 			claimedWorkItem->result = claimedWorkItem->function(thread, claimedWorkItem);
 			claimedWorkItem->isDone = true;
 			claimedWorkItem->isWorking = false;
-			TracyCZoneEnd(_workingZone);
+			
+			#if SCRATCH_ARENAS_THREAD_LOCAL
+			if (thread->pool->threadsHaveScratch)
+			{
+				ArenaResetToMark(scratch3, scratch3_mark);
+				ArenaResetToMark(scratch2, scratch2_mark);
+				ArenaResetToMark(scratch1, scratch1_mark);
+			}
+			#endif //SCRATCH_ARENAS_THREAD_LOCAL
+			
+			TracyCZoneEnd(Zone_Working);
 		}
 		
 		if (claimedWorkItem == nullptr)
 		{
-			TracyCZoneN(_sleepZone, "Sleeping", true);
-			// if ((iterIndex % 60) == 0) { PrintLine_D("Thread[%llu] id:%llu - sleeping %llu...", thread->index, thread->id, iterIndex); }
-			iterIndex++;
+			TracyCZoneNC(Zone_Sleeping, "Sleeping", 0xFF333333UL, true);
+			
+			//TODO: Use a semaphore or atomic to help us get rid of the Sleep here!
 			#if TARGET_IS_WINDOWS
+			// if ((numSleeps % 60) == 0) { PrintLine_D("Thread[%llu] id:%llu - sleeping %llu...", thread->index, thread->id, numSleeps/60); }
 			Sleep(100);
+			numSleeps++;
 			#endif
-			TracyCZoneEnd(_sleepZone);
+			
+			TracyCZoneEnd(Zone_Sleeping);
 		}
 	}
-	PrintLine_W("%.*s (id=%llu) is end!", StrPrint(thread->debugName), thread->id);
+	// PrintLine_W("%.*s (id=%llu) is ending!", StrPrint(thread->debugName), thread->id);
 	
 	#if SCRATCH_ARENAS_THREAD_LOCAL
 	if (thread->pool->threadsHaveScratch)
 	{
-		TracyCZoneN(_scratchFreeZone, "ScratchFree", true);
+		TracyCZoneN(Zone_ScratchFree, "ScratchFree", true);
 		if (thread->pool->threadScratchIsVirtual)
 		{
 			FreeScratchArenasVirtual();
@@ -367,7 +395,7 @@ void ThreadPoolThread_Main(void* contextPntr)
 		{
 			FreeScratchArenas(thread->pool->arena);
 		}
-		TracyCZoneEnd(_scratchFreeZone);
+		TracyCZoneEnd(Zone_ScratchFree);
 	}
 	#endif
 	
