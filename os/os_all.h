@@ -21,6 +21,7 @@ Description:
 #include "os/os_path.h"
 #include "os/os_process_info.h"
 #include "os/os_program_args.h"
+#include "os/os_sleep.h"
 #include "os/os_threading.h"
 #include "os/os_thread_pool.h"
 #include "os/os_time.h"

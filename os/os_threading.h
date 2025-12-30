@@ -15,6 +15,8 @@ Description:
 #include "base/base_assert.h"
 #include "base/base_macros.h"
 #include "std/std_includes.h"
+#include "std/std_memset.h"
+#include "os/os_error.h"
 #include "lib/lib_tracy.h"
 
 #if TARGET_HAS_THREADING
@@ -51,6 +53,28 @@ typedef pthread_mutex_t Mutex;
 #error TARGET does not have an implementation for Mutex
 #endif
 
+#if TARGET_IS_WINDOWS
+#define OS_THREAD_FUNC_DEF(functionName) DWORD functionName(LPVOID contextPntr)
+#else
+#define OS_THREAD_FUNC_DEF(functionName) void functionName(void* contextPntr)
+#endif
+typedef OS_THREAD_FUNC_DEF(OsThreadFunc_f);
+
+typedef plex OsThreadHandle OsThreadHandle;
+plex OsThreadHandle
+{
+	ThreadId id;
+	#if TARGET_IS_WINDOWS
+	HANDLE handle;
+	// #elif TARGET_IS_LINUX
+	// //TODO: Implement me!
+	// #elif TARGET_IS_OSX
+	// //TODO: Implement me!
+	// #elif TARGET_IS_ANDROID
+	// //TODO: Implement me!
+	#endif
+};
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -64,6 +88,8 @@ typedef pthread_mutex_t Mutex;
 	PIG_CORE_INLINE bool LockMutexAndEndTracyZone(Mutex* mutexPntr, uxx timeoutMs, TracyCZoneCtx zone);
 	#endif
 	PIG_CORE_INLINE void UnlockMutex(Mutex* mutexPntr);
+	void OsCloseThread(OsThreadHandle* threadHandle);
+	OsThreadHandle OsCreateThread(OsThreadFunc_f* threadFunc, void* contextPntr, bool startImmediately);
 #endif
 
 // +--------------------------------------------------------------+
@@ -108,6 +134,9 @@ PEXPI ThreadId OsGetCurrentThreadId()
 
 PEXPI bool OsIsMainThread() { return (OsGetCurrentThreadId() == MainThreadId); }
 
+// +==============================+
+// |       Mutex Functions        |
+// +==============================+
 PEXPI void InitMutex(Mutex* mutexPntr)
 {
 	DebugNotNull(mutexPntr);
@@ -226,6 +255,68 @@ PEXPI void UnlockMutex(Mutex* mutexPntr)
 	#else
 	AssertMsg(false, "UnlockMutex does not support the current platform yet!");
 	#endif
+}
+
+// +==============================+
+// |       Thread Functions       |
+// +==============================+
+PEXP void OsCloseThread(OsThreadHandle* threadHandle)
+{
+	NotNull(threadHandle);
+	#if TARGET_IS_WINDOWS
+	{
+		if (threadHandle->handle != NULL)
+		{
+			//NOTE: TerminateThread is dangerous! If the thread is actively working on anything it could cause problems
+			//  For example if it's allocating memory from the std heap it could leave the heap locked and no other thread can allocate memory after that point
+			//  Generally we expect either the thread is already exited OR the thread is asleep and doing no real work
+			// https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminatethread
+			BOOL terminateResult = TerminateThread(threadHandle->handle, 1);
+			if (terminateResult == 0)
+			{
+				DWORD errorCode = GetLastError();
+				PrintLine_E("TerminateThread error: %s", Win32_GetErrorCodeStr(errorCode));
+				Assert(terminateResult != 0);
+			}
+			BOOL closeResult = CloseHandle(threadHandle->handle);
+			if (closeResult == 0)
+			{
+				DWORD errorCode = GetLastError();
+				PrintLine_E("CloseHandle error: %s", Win32_GetErrorCodeStr(errorCode));
+				Assert(closeResult != 0);
+			}
+		}
+	}
+	#else
+	AssertMsg(false, "OsCloseThread does not support the current platform yet!");
+	#endif
+	ClearPointer(threadHandle);
+}
+
+PEXP OsThreadHandle OsCreateThread(OsThreadFunc_f* threadFunc, void* contextPntr, bool startImmediately)
+{
+	OsThreadHandle result = ZEROED;
+	#if TARGET_IS_WINDOWS
+	{
+		result.handle = CreateThread(
+			nullptr,                                   //lpThreadAttributes
+			0,                                         //dwStackSize
+			threadFunc,                                //lpStartAddress (LPTHREAD_START_ROUTINE)
+			(LPVOID)contextPntr,                       //lpParameter,
+			(startImmediately ? 0 : CREATE_SUSPENDED), //dwCreationFlags (CREATE_SUSPENDED|STACK_SIZE_PARAM_IS_A_RESERVATION)
+			&result.id                                 //lpThreadId
+		);
+		if (result.handle == NULL)
+		{
+			DWORD errorCode = GetLastError();
+			PrintLine_E("CreateThread error: %s", Win32_GetErrorCodeStr(errorCode));
+			Assert(result.handle != NULL);
+		}
+	}
+	#else
+	AssertMsg(false, "OsCreateThread does not support the current platform yet!");
+	#endif
+	return result;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

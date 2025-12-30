@@ -17,6 +17,7 @@ Description:
 #include "std/std_includes.h"
 #include "std/std_memset.h"
 #include "os/os_threading.h"
+#include "os/os_sleep.h"
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
@@ -25,6 +26,7 @@ Description:
 #include "misc/misc_result.h"
 #include "lib/lib_tracy.h"
 #include "base/base_debug_output.h"
+#include "base/base_notifications.h"
 
 //TODO: Use a semaphore instead of a mutex for work claiming? Or maybe a lockless intrinsic like atomics?
 //TODO: Implement for Linux, OSX, and Android!
@@ -33,7 +35,9 @@ Description:
 
 #if TARGET_HAS_THREADING
 
-#define THREAD_POOL_ID_INVALID 0
+#define THREAD_POOL_ID_INVALID         0
+#define THREAD_POOL_MAX_STOP_WAIT_TIME 1500 //ms
+#define THREAD_POOL_SLEEP_INTERVAL     100 //ms
 
 typedef plex ThreadPoolThread ThreadPoolThread;
 plex ThreadPoolThread
@@ -43,10 +47,7 @@ plex ThreadPoolThread
 	uxx index;
 	Str8 debugName;
 	
-	ThreadId osId;
-	#if TARGET_IS_WINDOWS
-	HANDLE osHandle;
-	#endif
+	OsThreadHandle osThread;
 	
 	bool isRunning;
 	bool stopRequested;
@@ -95,6 +96,7 @@ plex ThreadPool
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void FreeThreadPoolThread(ThreadPool* pool, ThreadPoolThread* thread);
 	PIG_CORE_INLINE void FreeThreadPoolWorkItem(ThreadPool* pool, ThreadPoolWorkItem* workItem);
+	PIG_CORE_INLINE void StopAllThreadsInPool(ThreadPool* pool);
 	PIG_CORE_INLINE void FreeThreadPool(ThreadPool* pool);
 	PIG_CORE_INLINE void InitThreadPool(Arena* arena, Str8 debugName, bool threadsHaveScratch, bool threadScratchIsVirtual, uxx threadScratchSize, ThreadPool* poolOut);
 	ThreadPoolThread* AddThreadToPool(ThreadPool* pool);
@@ -107,11 +109,7 @@ plex ThreadPool
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-#if TARGET_IS_WINDOWS
-DWORD ThreadPoolThread_Main(LPVOID contextPntr);
-#else
-void ThreadPoolThread_Main(void* contextPntr);
-#endif
+OS_THREAD_FUNC_DEF(ThreadPoolThread_Main);
 
 PEXPI void FreeThreadPoolThread(ThreadPool* pool, ThreadPoolThread* thread)
 {
@@ -131,15 +129,70 @@ PEXPI void FreeThreadPoolWorkItem(ThreadPool* pool, ThreadPoolWorkItem* workItem
 	workItem->id = THREAD_POOL_ID_INVALID;
 }
 
+PEXPI void StopAllThreadsInPool(ThreadPool* pool)
+{
+	bool waitingForThreadsToStop = false;
+	for (uxx tIndex = 0; tIndex < pool->threads.length; tIndex++)
+	{
+		ThreadPoolThread* thread = BktArrayGet(ThreadPoolThread, &pool->threads, tIndex);
+		if (thread->id != THREAD_POOL_ID_INVALID && thread->isRunning)
+		{
+			thread->stopRequested = true;
+			waitingForThreadsToStop = true;
+		}
+	}
+	
+	if (waitingForThreadsToStop)
+	{
+		for (uxx tIndex = 0; tIndex < pool->threads.length; tIndex++)
+		{
+			ThreadPoolThread* thread = BktArrayGet(ThreadPoolThread, &pool->threads, tIndex);
+			if (thread->id != THREAD_POOL_ID_INVALID)
+			{
+				//TODO: How do we join the thread more gracefully?
+				bool printedToConsole = false;
+				uxx numMillisecondsWaited = 0;
+				//TODO: Can we make this a volatile read? To make sure the read happens on every iteration of the loop?
+				while (thread->isRunning && numMillisecondsWaited < THREAD_POOL_MAX_STOP_WAIT_TIME)
+				{
+					if (!printedToConsole) { Print_D("Waiting for thread %llu to stop...", thread->id); printedToConsole = true; }
+					OsSleepMs(10);
+					numMillisecondsWaited += 10;
+				}
+				
+				if (thread->isRunning && numMillisecondsWaited >= THREAD_POOL_MAX_STOP_WAIT_TIME)
+				{
+					NotifyPrint_E("Failed to stop thread %llu! (After waiting %llums) Dangerously terminating the thread!", thread->id, numMillisecondsWaited);
+					thread->isRunning = false;
+				}
+				else { PrintLine_D("Stopped thread %llu!", thread->id); }
+			}
+		}
+	}
+	
+	for (uxx tIndex = 0; tIndex < pool->threads.length; tIndex++)
+	{
+		ThreadPoolThread* thread = BktArrayGet(ThreadPoolThread, &pool->threads, tIndex);
+		if (thread->id != THREAD_POOL_ID_INVALID)
+		{
+			OsCloseThread(&thread->osThread);
+			FreeThreadPoolThread(pool, thread);
+		}
+	}
+	BktArrayClear(&pool->threads, true);
+}
+
 PEXPI void FreeThreadPool(ThreadPool* pool)
 {
 	NotNull(pool);
 	if (pool->arena != nullptr)
 	{
+		StopAllThreadsInPool(pool);
 		FreeStr8(pool->arena, &pool->debugName);
 		for (uxx tIndex = 0; tIndex < pool->threads.length; tIndex++)
 		{
 			ThreadPoolThread* thread = BktArrayGet(ThreadPoolThread, &pool->threads, tIndex);
+			Assert(!thread->isRunning);
 			FreeThreadPoolThread(pool, thread);
 		}
 		FreeBktArray(&pool->threads);
@@ -187,33 +240,7 @@ PEXP ThreadPoolThread* AddThreadToPool(ThreadPool* pool)
 	newThread->pool = pool;
 	
 	newThread->isRunning = false;
-	
-	#if TARGET_IS_WINDOWS
-	{
-		newThread->osHandle = CreateThread(
-			nullptr,               //lpThreadAttributes
-			0,                     //dwStackSize
-			ThreadPoolThread_Main, //lpStartAddress (LPTHREAD_START_ROUTINE)
-			(LPVOID)newThread,     //lpParameter,
-			0,                     //dwCreationFlags (CREATE_SUSPENDED|STACK_SIZE_PARAM_IS_A_RESERVATION)
-			&newThread->osId       //lpThreadId
-		);
-		
-		if (newThread->osHandle == NULL)
-		{
-			DWORD errorCode = GetLastError();
-			PrintLine_E("Failed to start ThreadPoolThread! CreateThread error: %s", Win32_GetErrorCodeStr(errorCode));
-			BktArrayRemoveAt(ThreadPoolThread, &pool->threads, pool->threads.length-1);
-			return nullptr;
-		}
-	}
-	// #elif TARGET_IS_LINUX
-	//TODO: Implement me!
-	// #elif TARGET_IS_OSX
-	//TODO: Implement me!
-	#else
-	AssertMsg(false, "StartThreadPoolThread does not support the current platform yet!");
-	#endif
+	newThread->osThread = OsCreateThread(ThreadPoolThread_Main, (void*)newThread, true);
 	
 	//TODO: We could wait for isRunning to become true before continuing?
 	
@@ -278,11 +305,9 @@ PEXPI ThreadPoolWorkItem* GetFinishedThreadPoolWorkItem(ThreadPool* pool)
 // +--------------------------------------------------------------+
 // |                    ThreadPoolThread_Main                     |
 // +--------------------------------------------------------------+
-#if TARGET_IS_WINDOWS
-DWORD ThreadPoolThread_Main(LPVOID contextPntr)
-#else
-void ThreadPoolThread_Main(void* contextPntr)
-#endif
+//NOTE: This is declared above as well so it can be passed to OsCreateThread in AddThreadToPool
+// DWORD ThreadPoolThread_Main(LPVOID contextPntr)
+OS_THREAD_FUNC_DEF(ThreadPoolThread_Main)
 {
 	ThreadPoolThread* thread = (ThreadPoolThread*)contextPntr;
 	thread->isRunning = true;
@@ -372,11 +397,9 @@ void ThreadPoolThread_Main(void* contextPntr)
 			TracyCZoneNC(Zone_Sleeping, "Sleeping", 0xFF333333UL, true);
 			
 			//TODO: Use a semaphore or atomic to help us get rid of the Sleep here!
-			#if TARGET_IS_WINDOWS
 			// if ((numSleeps % 60) == 0) { PrintLine_D("Thread[%llu] id:%llu - sleeping %llu...", thread->index, thread->id, numSleeps/60); }
-			Sleep(100);
+			OsSleepMs(THREAD_POOL_SLEEP_INTERVAL);
 			numSleeps++;
-			#endif
 			
 			TracyCZoneEnd(Zone_Sleeping);
 		}
