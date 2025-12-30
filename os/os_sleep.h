@@ -35,6 +35,7 @@ PEXP void OsSleepMs(uxx numMilliseconds)
 		Sleep((DWORD)numMilliseconds);
 	}
 	#else
+	UNUSED(numMilliseconds);
 	AssertMsg(false, "OsSleepMs does not support the current platform yet!");
 	#endif
 }

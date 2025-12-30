@@ -41,6 +41,7 @@ Date:   10\29\2025
 #if COMPILER_IS_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wsign-compare" //warning: comparison of integers of different signs: 'size_t' (aka 'unsigned long') and 'long'
+#pragma clang diagnostic ignored "-Wunused-parameter" //warning: unused parameter 'npoints'
 #endif
 
 #include "plutovg-surface.c"

@@ -317,6 +317,9 @@ PEXP OsThreadHandle OsCreateThread(OsThreadFunc_f* threadFunc, void* contextPntr
 		}
 	}
 	#else
+	UNUSED(threadFunc);
+	UNUSED(contextPntr);
+	UNUSED(startImmediately);
 	AssertMsg(false, "OsCreateThread does not support the current platform yet!");
 	#endif
 	return result;

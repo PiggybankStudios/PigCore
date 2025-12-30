@@ -225,6 +225,7 @@ PEXPI u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut)
 	}
 	#elif TARGET_IS_LINUX
 	{
+		SetOptionalOutPntr(remainderOut, 0.0f); //TODO: Fill remainderOut
 		if (end.timeValue.tv_sec > start.timeValue.tv_sec ||
 			(end.timeValue.tv_sec == start.timeValue.tv_sec && end.timeValue.tv_nsec >= start.timeValue.tv_nsec))
 		{
@@ -237,6 +238,9 @@ PEXPI u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut)
 	// #elif TARGET_IS_ANDROID
 	//TODO: Implement me!
 	#else
+	UNUSED(start);
+	UNUSED(end);
+	UNUSED(remainderOut);
 	AssertMsg(false, "OsTimeDiffMsU64 does not support the current platform yet!")
 	#endif
 	

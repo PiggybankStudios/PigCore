@@ -90,6 +90,9 @@ PEXP Result OsGetClipboardString(OsWindowHandle windowHandle, Arena* arena, Str8
 		}
 	}
 	#else
+	UNUSED(windowHandle);
+	UNUSED(arena);
+	UNUSED(clipboardStrOut);
 	AssertMsg(false, "OsGetClipboardString does not support the current platform yet!");
 	result = Result_NotImplemented;
 	#endif
@@ -186,6 +189,8 @@ PEXP Result OsSetClipboardString(OsWindowHandle windowHandle, Str8 clipboardStr)
 	// #elif TARGET_IS_ORCA
 	//TODO: Implement me!
 	#else
+	UNUSED(windowHandle);
+	UNUSED(clipboardStr);
 	AssertMsg(false, "OsSetClipboardString does not support the current platform yet!");
 	result = Result_NotImplemented;
 	#endif

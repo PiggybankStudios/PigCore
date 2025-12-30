@@ -12,6 +12,7 @@ Description:
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
 #pragma clang diagnostic ignored "-Wdeprecated-declarations" //warning: 'NSOpenGLView' is deprecated: first deprecated in macOS 10.14 - Please use MTKView instead.
+#pragma clang diagnostic ignored "-Wunused-variable" //warning: unused variable 'frameResult'
 #endif
 
 #include "third_party/sokol/sokol_app.h"
