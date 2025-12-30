@@ -356,6 +356,19 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		result = PrintInArenaStr(arena, "%.*s/.%.*s", StrPrint(homeDir), StrPrint(programName));
 		NotNullStr(result);
 		FixPathSlashes(result);
+		
+		if (createFolders)
+		{
+			Result createFolderResult = OsCreateFolder(result, true);
+			if (createFolderResult != Result_Success)
+			{
+				PrintLine_E("Failed to create \"%.*s\"!", StrPrint(result));
+				FreeStr8(arena, &result);
+				ScratchEnd(scratch);
+				return FilePath_Empty;
+			}
+		}
+		
 		ScratchEnd(scratch);
 	}
 	#elif TARGET_IS_ANDROID

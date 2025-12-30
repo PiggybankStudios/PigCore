@@ -28,6 +28,7 @@ Description:
 #include <stdarg.h>
 // #include <math.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 // +--------------------------------------------------------------+
 // |                           Defines                            |
@@ -848,20 +849,35 @@ static inline void MyRemoveDirectory(Str8 folderPath, bool recursive)
 	}
 }
 
-static inline void CopyFileToPath(Str8 filePath, Str8 newFilePath)
+static inline void CopyFileToPath(Str8 filePath, Str8 newFilePath, bool copyPermissions)
 {
 	Str8 fileContents = ZEROED;
 	bool readSuccess = TryReadFile(filePath, &fileContents);
 	assert(readSuccess);
 	CreateAndWriteFile(newFilePath, fileContents, false);
 	free(fileContents.chars);
+	#if BUILDING_ON_LINUX
+	if (copyPermissions)
+	{
+		Str8 filePathNt = CopyStr8(filePath, true);
+		struct stat oldFileStats = ZEROED;
+		int statResult = stat(filePathNt.chars, &oldFileStats);
+		assert(statResult == 0);
+		free(filePathNt.chars);
+		
+		Str8 newFilePathNt = CopyStr8(newFilePath, true);
+		int modResult = chmod(newFilePathNt.chars, oldFileStats.st_mode);
+		assert(modResult == 0);
+		free(newFilePathNt.chars);
+	}
+	#endif
 }
-static inline void CopyFileToFolder(Str8 filePath, Str8 folderPath)
+static inline void CopyFileToFolder(Str8 filePath, Str8 folderPath, bool copyPermissions)
 {
 	Str8 fileName = GetFileNamePart(filePath, true);
 	const char* joinStr = (folderPath.length == 0 || !IS_SLASH(folderPath.chars[folderPath.length-1])) ? "/" : "";
 	Str8 newPath = JoinStrings3(folderPath, MakeStr8Nt(joinStr), fileName, false);
-	CopyFileToPath(filePath, newPath);
+	CopyFileToPath(filePath, newPath, copyPermissions);
 	free(newPath.chars);
 }
 
