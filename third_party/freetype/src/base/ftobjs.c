@@ -2598,7 +2598,7 @@
         error = open_face( driver, &stream, &external_stream, face_index,
                            num_params, params, &face );
         if ( !error )
-          goto Success;
+          goto SuccessLabel; //NOTE: Changed from Success to SuccessLabel because X.h has a conflicting macro on Linux
       }
       else
         error = FT_THROW( Invalid_Handle );
@@ -2634,7 +2634,7 @@
           error = open_face( driver, &stream, &external_stream, face_index,
                              num_params, params, &face );
           if ( !error )
-            goto Success;
+            goto SuccessLabel; //NOTE: Changed from Success to SuccessLabel because X.h has a conflicting macro on Linux
 
 #ifdef FT_CONFIG_OPTION_MAC_FONTS
           if ( test_mac_fonts                                           &&
@@ -2703,7 +2703,7 @@
       goto Fail;
     }
 
-  Success:
+  SuccessLabel: //NOTE: Changed from Success to SuccessLabel because X.h has a conflicting macro on Linux
     FT_TRACE4(( "FT_Open_Face: New face object, adding to list\n" ));
 
     /* add the face object to its driver's list */

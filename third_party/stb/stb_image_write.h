@@ -1026,7 +1026,7 @@ static unsigned int stbiw__crc32(unsigned char *buffer, int len)
 #ifdef STBIW_CRC32
     return STBIW_CRC32(buffer, len);
 #else
-   static unsigned int crc_table[256] =
+   static unsigned int stb_crc_table[256] = //NOTE: Changed from crc_table to stb_crc_table because freetype gzip/crc32.h has a conflicting global (clang complains about shadowing)
    {
       0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
       0x0eDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988, 0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91,
@@ -1065,7 +1065,7 @@ static unsigned int stbiw__crc32(unsigned char *buffer, int len)
    unsigned int crc = ~0u;
    int i;
    for (i=0; i < len; ++i)
-      crc = (crc >> 8) ^ crc_table[buffer[i] ^ (crc & 0xff)];
+      crc = (crc >> 8) ^ stb_crc_table[buffer[i] ^ (crc & 0xff)];
    return ~crc;
 #endif
 }
