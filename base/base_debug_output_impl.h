@@ -61,7 +61,8 @@ THREAD_LOCAL bool DebugOutputLineOverflowOccurred = false;
 #endif //DEBUG_OUTPUT_CALLBACK_ONLY_ON_FINISHED_LINE
 
 #if TARGET_HAS_THREADING
-Mutex DebugOutputLineMutex = NULL;
+bool IsDebugOutputLineMutexInitialized = false;
+Mutex DebugOutputLineMutex;
 #endif
 
 #if DEBUG_OUTPUT_CALLBACK_GLOBAL
@@ -76,6 +77,7 @@ PEXPI void InitDebugOutputRouter()
 	
 	#if TARGET_HAS_THREADING
 	InitMutex(&DebugOutputLineMutex);
+	IsDebugOutputLineMutexInitialized = true;
 	#endif
 }
 
@@ -89,7 +91,7 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 	if (isNotification) { return; }
 	#endif
 	#if TARGET_HAS_THREADING
-	DebugAssert(DebugOutputLineMutex != NULL);
+	DebugAssert(IsDebugOutputLineMutexInitialized);
 	#endif
 	
 	if ((level == DbgLevel_Debug   && ENABLE_DEBUG_OUTPUT_LEVEL_DEBUG)   ||

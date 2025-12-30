@@ -678,6 +678,7 @@
 			"Mat4_Identity_Const",
 			"Mat4_Zero",
 			"Mat4_Zero_Const",
+			"Mutex_Invalid",
 			"NDEBUG",
 			"NPATCH_NINE_PATCH",
 			"NPATCH_THREE_PATCH_HORIZONTAL",

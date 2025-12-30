@@ -52,7 +52,7 @@ PEXP FilePath OsGetTemporaryFolderPath(Arena* arena)
 		char* temporaryDirTemplateString = AllocAndCopyCharsNt(scratch, "/tmp/tmpdir.XXXXXX", true);
 		char* temporaryDirString = mkdtemp(temporaryDirTemplateString);
 		NotNull(temporaryDirString);
-		result = AllocFolderPath(arena, StrLit(temporaryDirString), true);
+		result = AllocFolderPath(arena, MakeStr8Nt(temporaryDirString), true);
 		Assert(DoesPathHaveTrailingSlash(result));
 		ScratchEnd(scratch);
 	}

@@ -27,7 +27,7 @@ Description:
 #if TARGET_IS_WINDOWS
 typedef HWND OsWindowHandle;
 #define OsWindowHandleEmpty NULL
-#elif TARGET_IS_LINUX
+#elif TARGET_IS_LINUX && BUILD_WITH_SOKOL_APP
 typedef Window OsWindowHandle;
 #define OsWindowHandleEmpty nullptr //TODO: Check this
 #elif TARGET_IS_OSX

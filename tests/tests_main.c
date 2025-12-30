@@ -305,6 +305,7 @@ int main(int argc, char* argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 	#endif
+	InitDebugOutputRouter(nullptr);
 	WriteLine_N("Running tests...\n");
 	
 	v2 _v2_zero1 = { .X=0, .Y=0 };

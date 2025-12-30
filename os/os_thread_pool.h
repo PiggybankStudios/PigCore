@@ -54,15 +54,13 @@ plex ThreadPoolThread
 	Result error;
 };
 
-#define THREAD_POOL_WORK_ITEM_FUNC_DEF(functionName) Result functionName(ThreadPoolThread* thread, plex ThreadPoolWorkItem* workItem)
-typedef THREAD_POOL_WORK_ITEM_FUNC_DEF(ThreadPoolWorkItemFunc_f);
-
 typedef plex ThreadPoolWorkItem ThreadPoolWorkItem;
 plex ThreadPoolWorkItem
 {
 	uxx id;
 	
-	ThreadPoolWorkItemFunc_f* function;
+	// ThreadPoolWorkItemFunc_f* function;
+	Result (*function)(ThreadPoolThread* thread, plex ThreadPoolWorkItem* workItem);
 	WorkSubject subject;
 	
 	bool isWorking;
@@ -70,6 +68,9 @@ plex ThreadPoolWorkItem
 	uxx workerThreadId;
 	Result result;
 };
+
+#define THREAD_POOL_WORK_ITEM_FUNC_DEF(functionName) Result functionName(ThreadPoolThread* thread, ThreadPoolWorkItem* workItem)
+typedef THREAD_POOL_WORK_ITEM_FUNC_DEF(ThreadPoolWorkItemFunc_f);
 
 //NOTE: A ThreadPool should not be moved to a different location in memory because ThreadPoolThreads store a pointer back to their pool (we only get one contextPntr to pass to the thread main so we need some way to find the pool when all we have is the thread)
 typedef plex ThreadPool ThreadPool;
@@ -334,6 +335,7 @@ OS_THREAD_FUNC_DEF(ThreadPoolThread_Main)
 	
 	// PrintLine_N("%.*s (id=%llu) is starting!", StrPrint(thread->debugName), thread->id);
 	uxx numSleeps = 0;
+	UNUSED(numSleeps);
 	while (!thread->stopRequested)
 	{
 		TracyCZoneN(Zone_Awake, "Awake", true);

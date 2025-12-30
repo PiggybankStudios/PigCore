@@ -47,11 +47,14 @@ typedef pthread_t ThreadId;
 
 #if TARGET_IS_WINDOWS
 typedef HANDLE Mutex;
+#define Mutex_Invalid NULL
 #elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 typedef pthread_mutex_t Mutex;
+#define Mutex_Invalid ZEROED
 #else
 #error TARGET does not have an implementation for Mutex
 #endif
+
 
 #if TARGET_IS_WINDOWS
 #define OS_THREAD_FUNC_DEF(functionName) DWORD functionName(LPVOID contextPntr)

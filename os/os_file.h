@@ -230,7 +230,7 @@ PEXP FilePath OsGetFullPath(Arena* arena, FilePath relativePath)
 			{
 				if (arena != nullptr)
 				{
-					result = JoinStringsInArenaWithChar(arena, StrLit(realPathResult), '/', fileNamePart, true);
+					result = JoinStringsInArenaWithChar(arena, MakeStr8Nt(realPathResult), '/', fileNamePart, true);
 				}
 				else
 				{
@@ -497,7 +497,7 @@ PEXP bool OsIterFileStepEx(OsFileIter* fileIter, bool* isFolderOut, FilePath* pa
 				return false;
 			}
 			
-			Str8 fileName = StrLit(entry->d_name);
+			Str8 fileName = MakeStr8Nt(entry->d_name);
 			if (StrExactEquals(fileName, StrLit(".")) || StrExactEquals(fileName, StrLit(".."))) { continue; } //ignore current and parent folder entries
 			
 			FilePath fullPath = JoinStringsInArena(scratch, fileIter->folderPath, fileName, true);
