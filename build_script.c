@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
 	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, pigCoreThirdPartyPath, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY, BUILD_WITH_FREETYPE);
 	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
-	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
+	CliArgList clang_CommonFlags                 = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, pigCoreThirdPartyPath, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
 	CliArgList clang_LangCFlags                  = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags, BUILD_WITH_IMGUI);
 	CliArgList clang_LangCppFlags                = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
 	CliArgList clang_LangObjectiveCFlags         = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
@@ -993,8 +993,8 @@ int main(int argc, char* argv[])
 				AddStr(&javascriptFiles, StrLit("../../wasm/wasm_main.js"));
 				ConcatAllFilesIntoSingleFile(&javascriptFiles, StrLit("combined.js"));
 				
-				CopyFileToPath(StrLit("..\\..\\wasm\\wasm_app_style.css"), StrLit("main.css"));
-				CopyFileToPath(StrLit("..\\..\\wasm\\wasm_app_index.html"), StrLit("index.html"));
+				CopyFileToPath(StrLit("../../wasm/wasm_app_style.css"), StrLit("main.css"), true);
+				CopyFileToPath(StrLit("../../wasm/wasm_app_index.html"), StrLit("index.html"), true);
 			}
 			
 			chdir("..");
@@ -1123,7 +1123,7 @@ int main(int argc, char* argv[])
 					AddArg(&unpackApkCmd, "../" FILENAME_TESTS_APK);
 					RunCliProgramAndExitOnFailure(StrLit("jar"), &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
 					
-					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"));
+					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"), true);
 					
 					mkdir("lib", FOLDER_PERMISSIONS);
 					for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
@@ -1132,7 +1132,7 @@ int main(int argc, char* argv[])
 						Str8 apkFolder = JoinStrings2(StrLit("lib/"), MakeStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
 						Str8 buildFolder = JoinStrings2(StrLit("../lib/"), MakeStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
 						mkdir(apkFolder.chars, FOLDER_PERMISSIONS);
-						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder);
+						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder, true);
 					}
 					
 					CliArgList repackApkCmd = ZEROED;
@@ -1155,7 +1155,7 @@ int main(int argc, char* argv[])
 				AddArgStr(&alignApkCmd, CLI_QUOTED_ARG, tempAlignedApkName); //output
 				RunCliProgramAndExitOnFailure(zipalignExe, &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
 				AssertFileExist(tempAlignedApkName, true);
-				CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK));
+				CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK), true);
 				RemoveFile(tempAlignedApkName);
 				
 				PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, ANDROID_SIGNING_KEY_PATH.length, ANDROID_SIGNING_KEY_PATH.chars);
@@ -1231,7 +1231,7 @@ int main(int argc, char* argv[])
 			PrintLine("[Built %s for Playdate!]", FILENAME_PDEX_ELF);
 			
 			mkdir("playdate_data", FOLDER_PERMISSIONS);
-			CopyFileToFolder(StrLit(FILENAME_PDEX_ELF), StrLit("playdate_data"));
+			CopyFileToFolder(StrLit(FILENAME_PDEX_ELF), StrLit("playdate_data"), true);
 		}
 		
 		if (BUILD_PLAYDATE_SIMULATOR)
@@ -1261,12 +1261,12 @@ int main(int argc, char* argv[])
 			PrintLine("[Built %s for Playdate Simulator!]", FILENAME_PDEX_DLL);
 			
 			mkdir("playdate_data", FOLDER_PERMISSIONS);
-			CopyFileToFolder(StrLit(FILENAME_PDEX_DLL), StrLit("playdate_data"));
+			CopyFileToFolder(StrLit(FILENAME_PDEX_DLL), StrLit("playdate_data"), true);
 		}
 		
 		if (BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR)
 		{
-			CopyFileToFolder(StrLit("..\\pdxinfo"), StrLit("playdate_data"));
+			CopyFileToFolder(StrLit("../pdxinfo"), StrLit("playdate_data"), true);
 			
 			CliArgList cmd = ZEROED;
 			AddArgList(&cmd, &pdc_CommonFlags);
