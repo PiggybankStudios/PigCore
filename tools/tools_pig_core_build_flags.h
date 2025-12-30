@@ -74,7 +74,7 @@ void Fill_cl_LangCppFlags(CliArgList* cl_LangCppFlags)
 }
 
 // Flags that we use when compiling any C program using Clang
-void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool BUILD_WITH_FREETYPE)
+void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, Str8 pigCoreThirdPartyPath, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool BUILD_WITH_FREETYPE)
 {
 	AddArg(clang_CommonFlags, CLANG_FULL_FILE_PATHS); //Print absolute paths in diagnostics TODO: Figure out how to resolve these back to windows paths for Sublime error linking?
 	AddArgNt(clang_CommonFlags, CLANG_WARNING_LEVEL, "all"); //This enables all the warnings about constructions that some users consider questionable, and that are easy to avoid (or modify to prevent the warning), even in conjunction with macros
@@ -86,8 +86,10 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, bool DEBUG_BUILD, boo
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_CMD_LINE_ARG);
 	if (BUILD_WITH_FREETYPE)
 	{
-		AddArgNt(clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/freetype/include");
-		AddArgNt(clang_CommonFlags, CLANG_INCLUDE_DIR, "[ROOT]/third_party/plutosvg");
+		Str8 freetypeDir = JoinStrings2(pigCoreThirdPartyPath, StrLit("/freetype/include"), false);
+		AddArgStr(clang_CommonFlags, CLANG_INCLUDE_DIR, freetypeDir);
+		Str8 plutosvgDir = JoinStrings2(pigCoreThirdPartyPath, StrLit("/plutosvg"), false);
+		AddArgStr(clang_CommonFlags, CLANG_INCLUDE_DIR, plutosvgDir);
 	}
 	if (DEBUG_BUILD)
 	{
