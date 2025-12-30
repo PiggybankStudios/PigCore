@@ -61,6 +61,7 @@ Description:
 
 #define CLANG_WARNING_SWITCH_MISSING_CASES          "switch" //8 enumeration values not handled in switch: 'ArenaType_None', 'ArenaType_Funcs', 'ArenaType_Generic'...
 #define CLANG_WARNING_UNUSED_FUNCTION               "unused-function" //unused function 'MeowExpandSeed'
+#define CLANG_WARNING_UNUSED_CMD_LINE_ARG           "unused-command-line-argument" //argument unused during compilation: '-L../third_party/_lib_debug'
 #define CLANG_WARNING_SHADOWING                     "shadow" //Warn whenever a local variable or type declaration shadows another variable, parameter, type, class member (in C++), or instance variable (in Objective-C) or whenever a built-in function is shadowed
 #define CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH "implicit-fallthrough" //Must use [[fallthrough]] on a case label that falls through to the next case
 

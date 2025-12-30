@@ -389,6 +389,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					#if 1
 					r32 lineHeight = GetFontLineHeight(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
 					r32 predictedScale = lineHeight / fontAtlas->metrics.lineHeight;
+					UNUSED(fontCodepoint);
 					#else
 					r32 predictedScale = 1.0f;
 					if (!TryGetFontGlyphMetrics(state->font, fontCodepoint, state->currentStyle.fontSize, state->currentStyle.fontStyle, &glyphMetrics))

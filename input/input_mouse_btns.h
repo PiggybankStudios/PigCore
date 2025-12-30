@@ -17,32 +17,33 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_macros.h"
 
-typedef enum CursorShape CursorShape;
-enum CursorShape
+//NOTE: The name "CursorShape" conflicts with X11 headers
+typedef enum MouseCursorShape MouseCursorShape;
+enum MouseCursorShape
 {
-	CursorShape_Default = 0,
-	CursorShape_Point,
-	CursorShape_IBeam,
-	CursorShape_ResizeHori,
-	CursorShape_ResizeVert,
-	CursorShape_ResizeDiagNwSe, //TODO: This is the naming conventions others use, can we think of a better one? Maybe "LeanLeft" and "LeanRight"?
-	CursorShape_ResizeDiagSwNe, //TODO: This is the naming conventions others use, can we think of a better one? Maybe "LeanLeft" and "LeanRight"?
-	CursorShape_Count,
+	MouseCursorShape_Default = 0,
+	MouseCursorShape_Point,
+	MouseCursorShape_IBeam,
+	MouseCursorShape_ResizeHori,
+	MouseCursorShape_ResizeVert,
+	MouseCursorShape_ResizeDiagNwSe, //TODO: This is the naming conventions others use, can we think of a better one? Maybe "LeanLeft" and "LeanRight"?
+	MouseCursorShape_ResizeDiagSwNe, //TODO: This is the naming conventions others use, can we think of a better one? Maybe "LeanLeft" and "LeanRight"?
+	MouseCursorShape_Count,
 };
 #if !PIG_CORE_IMPLEMENTATION
-const char* GetCursorShapeStr(CursorShape enumValue);
+const char* GetMouseCursorShapeStr(MouseCursorShape enumValue);
 #else
-PEXP const char* GetCursorShapeStr(CursorShape enumValue)
+PEXP const char* GetMouseCursorShapeStr(MouseCursorShape enumValue)
 {
 	switch (enumValue)
 	{
-		case CursorShape_Default:        return "Default";
-		case CursorShape_Point:          return "Point";
-		case CursorShape_IBeam:          return "IBeam";
-		case CursorShape_ResizeHori:     return "ResizeHori";
-		case CursorShape_ResizeVert:     return "ResizeVert";
-		case CursorShape_ResizeDiagNwSe: return "ResizeDiagNwSe";
-		case CursorShape_ResizeDiagSwNe: return "ResizeDiagSwNe";
+		case MouseCursorShape_Default:        return "Default";
+		case MouseCursorShape_Point:          return "Point";
+		case MouseCursorShape_IBeam:          return "IBeam";
+		case MouseCursorShape_ResizeHori:     return "ResizeHori";
+		case MouseCursorShape_ResizeVert:     return "ResizeVert";
+		case MouseCursorShape_ResizeDiagNwSe: return "ResizeDiagNwSe";
+		case MouseCursorShape_ResizeDiagSwNe: return "ResizeDiagSwNe";
 		default: return UNKNOWN_STR;
 	}
 }

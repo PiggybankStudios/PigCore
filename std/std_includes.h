@@ -62,6 +62,7 @@ typedef uint16_t char16_t;
 	// Needed for time_t, time(), timespec, and clock_gettime()
 	#include <time.h>
 	#include <sys/syscall.h> //needed for syscall(SYS_gettid) in os_threading.h
+    // #include <poll.h>
 #endif
 #if TARGET_IS_OSX
 	#include <Cocoa/Cocoa.h>
@@ -132,6 +133,19 @@ typedef uint16_t char16_t;
 	#endif
 #endif
 
+#if TARGET_IS_LINUX && BUILD_WITH_SOKOL_APP
+	#include <X11/Xlib.h>
+    // #include <X11/Xutil.h>
+    // #include <X11/XKBlib.h>
+    // #include <X11/keysym.h>
+    // #include <X11/Xresource.h>
+    // #include <X11/Xatom.h>
+    // #include <X11/extensions/XInput2.h>
+    // #include <X11/Xcursor/Xcursor.h>
+    // #include <X11/cursorfont.h> /* XC_* font cursors */
+    // #include <X11/Xmd.h> /* CARD32 */
+#endif //TARGET_IS_LINUX && BUILD_WITH_SOKOL_APP
+
 #if TARGET_IS_ANDROID
 	#include <jni.h>
 	#include <android/log.h>
@@ -142,6 +156,6 @@ typedef uint16_t char16_t;
 	#include <GLES2/gl2.h>
 	#include <GLES2/gl2ext.h>
 	#include <EGL/egl.h>
-#endif
+#endif //TARGET_IS_ANDROID
 
 #endif //  _STD_INCLUDES_H

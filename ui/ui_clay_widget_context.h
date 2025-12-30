@@ -34,7 +34,7 @@ plex UiWidgetContext
 	MouseState* mouse;
 	r32 uiScale;
 	void** focusedUiElementPntr;
-	CursorShape cursorShape;
+	MouseCursorShape cursorShape;
 	OsWindowHandle windowHandle;
 	u64 programTime;
 	TooltipRegistry* tooltips;

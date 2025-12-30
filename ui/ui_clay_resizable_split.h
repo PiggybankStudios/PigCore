@@ -181,7 +181,7 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 			
 			if (context->mouse->isOverWindow && Clay_PointerOver(dividerId))
 			{
-				context->cursorShape = (split->horizontal ? CursorShape_ResizeHori : CursorShape_ResizeVert);
+				context->cursorShape = (split->horizontal ? MouseCursorShape_ResizeHori : MouseCursorShape_ResizeVert);
 				if (IsMouseBtnPressed(context->mouse, MouseBtn_Left))
 				{
 					split->resizing = true;
@@ -193,7 +193,7 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 			{
 				if (IsMouseBtnDown(context->mouse, MouseBtn_Left))
 				{
-					context->cursorShape = (split->horizontal ? CursorShape_ResizeHori : CursorShape_ResizeVert);
+					context->cursorShape = (split->horizontal ? MouseCursorShape_ResizeHori : MouseCursorShape_ResizeVert);
 					split->splitPercent = ClampR32(
 						split->horizontal ? (context->mouse->position.X - outerRec.X) / outerRec.Width : (context->mouse->position.Y - outerRec.Y) / outerRec.Height,
 						split->minSplitPercent, split->maxSplitPercent

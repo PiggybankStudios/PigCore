@@ -24,6 +24,8 @@ plex OsTime
 	
 	#if TARGET_IS_WINDOWS
 	LARGE_INTEGER largeInteger;
+	#elif TARGET_IS_LINUX
+	struct timespec timeValue;
 	#endif
 };
 #if TARGET_IS_WINDOWS
@@ -221,6 +223,19 @@ PEXPI u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut)
 			SetOptionalOutPntr(remainderOut, (r32)FractionalPartR64((r64)now / 1000000.0));
 		}
 	}
+	#elif TARGET_IS_LINUX
+	{
+		if (end.timeValue.tv_sec > start.timeValue.tv_sec ||
+			(end.timeValue.tv_sec == start.timeValue.tv_sec && end.timeValue.tv_nsec >= start.timeValue.tv_nsec))
+		{
+			result = (end.timeValue.tv_sec - start.timeValue.tv_sec)*NUM_MS_PER_SECOND;
+			if (end.timeValue.tv_nsec >= start.timeValue.tv_nsec) { result += (end.timeValue.tv_nsec - start.timeValue.tv_nsec)/Million(1); }
+		}
+	}
+	// #elif TARGET_IS_OSX
+	//TODO: Implement me!
+	// #elif TARGET_IS_ANDROID
+	//TODO: Implement me!
 	#else
 	AssertMsg(false, "OsTimeDiffMsU64 does not support the current platform yet!")
 	#endif
@@ -242,9 +257,14 @@ PEXPI OsTime OsGetTime()
 	{
 		QueryPerformanceCounter(&result.largeInteger);
 	}
-	// #elif TARGET_IS_LINUX
-	// //TODO: Implement me!
+	#elif TARGET_IS_LINUX
+	{
+		
+		clock_gettime(CLOCK_MONOTONIC, &result.timeValue);
+	}
 	// #elif TARGET_IS_OSX
+	// //TODO: Implement me!
+	// #elif TARGET_IS_ANDROID
 	// //TODO: Implement me!
 	// #elif TARGET_IS_WASM
 	// //TODO: Implement me!
