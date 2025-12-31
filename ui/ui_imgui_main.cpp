@@ -75,9 +75,11 @@ ImFileHandle ImFileOpen(const char* filename, const char* mode)
 	result->convertNewLines = !StrExactContains(modeStr, StrLit("b"));
 	OsOpenFileMode openMode = OsOpenFileMode_None;
 	if (StrExactContains(modeStr, StrLit("a"))) { openMode = OsOpenFileMode_Append; }
-	else if (StrExactContains(modeStr, StrLit("w"))) { openMode = OsOpenFileMode_Create; }
-	else if (StrExactContains(modeStr, StrLit("r+"))) { openMode = OsOpenFileMode_Write; }
+	else if (StrExactContains(modeStr, StrLit("w"))) { openMode = OsOpenFileMode_Write; }
 	else if (StrExactContains(modeStr, StrLit("r"))) { openMode = OsOpenFileMode_Read; }
+	//TODO: Handle "wt" mode
+	//TODO: Handle "r+" mode?
+	//TODO: Handle "w+" mode?
 	bool openResult = OsOpenFile(imguiArena, MakeFilePathNt(filename), openMode, (openMode != OsOpenFileMode_Write), &result->file);
 	if (!openResult) { if (CanArenaFree(imguiArena)) { FreeType(ImGuiFile, imguiArena, result); } return nullptr; }
 	return result;

@@ -43,6 +43,20 @@ plex OsFileIter
 	#endif
 };
 
+//TODO: We may want to split the OsOpenFileMode enum into multiple parameters and try to support every combination of these parameters:
+// What should we do if the file doesn't exist
+//  Create New File
+//  Error
+// What should we do if the file does exist
+//  Open and Start at Beginning
+//  Open and Start at End
+//  Open and Truncate
+//  Error
+// What permissions do we want on the file
+//  Read Only
+//  Read+Write
+//  Write Only (aka append)
+
 enum OsOpenFileMode
 {
 	OsOpenFileMode_None = 0,
@@ -994,16 +1008,24 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 		ScratchBegin1(scratch, arena);
 		Str8 fullPath = OsGetFullPath(scratch, path);
 		
-		DWORD desiredAccess = GENERIC_READ;
-		if (mode != OsOpenFileMode_Read) { desiredAccess |= GENERIC_WRITE; }
+		// https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
+		// OPEN_EXISTING     = Opens a file ONLY if it exists. If the file doesn't exist errorCode is set to ERROR_FILE_NOT_FOUND
+		// OPEN_ALWAYS       = Opens a file always. If the file exists it opens it, if it doesn't (and the path is valid) it creates a new file.
+		// CREATE_ALWAYS     = Creates a new file, always. If the file exists and is writable, it truncates the file (error code is set to ERROR_ALREADY_EXISTS). If file does not exist and is a valid path it creates a new file.
+		// CREATE_NEW        = Creates a new file ONLY if it does not already exist, otherwise error code is ERROR_FILE_EXISTS. If the file doesn't exist it creates a new file
+		// TRUNCATE_EXISTING = Opens a file ONLY if it exists and truncates it. If the file doesn't exist errorCode is set to ERROR_FILE_NOT_FOUND
 		
 		DWORD shareMode = 0;
-		if (mode == OsOpenFileMode_Read) { shareMode |= FILE_SHARE_READ; }
-		
+		DWORD desiredAccess = GENERIC_READ;
 		DWORD creationDisposition = OPEN_EXISTING;
-		if (mode == OsOpenFileMode_Append) { creationDisposition = OPEN_ALWAYS; }
-		else if (mode == OsOpenFileMode_Write) { creationDisposition = CREATE_ALWAYS; }
-		else if (mode == OsOpenFileMode_Create) { creationDisposition = CREATE_NEW; }
+		switch (mode)
+		{
+			case OsOpenFileMode_Read:   creationDisposition = OPEN_EXISTING; shareMode |= FILE_SHARE_READ; break;
+			case OsOpenFileMode_Create: creationDisposition = CREATE_NEW;    desiredAccess |= GENERIC_WRITE; break;
+			case OsOpenFileMode_Write:  creationDisposition = CREATE_ALWAYS; desiredAccess |= GENERIC_WRITE; break;
+			case OsOpenFileMode_Append: creationDisposition = OPEN_ALWAYS;   desiredAccess |= GENERIC_WRITE; break;
+			default: AssertMsg(false, "Unhandled mode passed to OsOpenFile"); break;
+		}
 		
 		DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
 		
@@ -1086,12 +1108,31 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 		ScratchBegin1(scratch, arena);
 		Str8 fullPath = OsGetFullPath(scratch, path);
 		
+		// NOTE: fopen doesn't have a mode that allows creation of a file ONLY if it doesn't exist,
+		//       so we check if the file exists manually beforehand
+		if (mode == OsOpenFileMode_Create)
+		{
+			if (OsDoesFileExist(path))
+			{
+				PrintLine_E("Couldn't create new file because the file already existed at \"%.*s\"", StrPrint(path));
+				return false;
+			}
+		}
+		
+		// https://man7.org/linux/man-pages/man3/fopen.3.html
+		// "r"  = O_RDONLY                 = Open a file for READING (position cursor at beginning of file)
+		// "r+" = O_RDWR                   = Open a file for READING and WRITING (position cursor at beginning of file)
+		// "w"  = O_WRONLY|O_CREAT|O_TRUNC = Open an existing file and truncate OR create a new file if it doesn't already exist
+		// "w+" = O_RDWR|O_CREAT|O_TRUNC   = Open a file for READING and WRITING. If the file exists it will open it, if it doesn't it will create it
+		// "a"  = O_WRONLY|O_CREAT|O_TRUNC = Open for appending (writing to end of file). If it doesn't exist it will create a new file (initial cursor position is implementation dependent)
+		// "a+" = O_RDWR|O_CREAT|O_APPEND  = Open for READING and APPENDING. Create a new file if it doesn't exist
+		
 		const char* openModeStr = "r";
 		switch (mode)
 		{
 			case OsOpenFileMode_Read:   openModeStr = "r"; break;
 			case OsOpenFileMode_Create: openModeStr = "w"; break;
-			case OsOpenFileMode_Write:  openModeStr = "r+"; break;
+			case OsOpenFileMode_Write:  openModeStr = "w"; break;
 			case OsOpenFileMode_Append: openModeStr = "a"; break;
 			default: AssertMsg(false, "Unhandled mode passed to OsOpenFile"); break;
 		}

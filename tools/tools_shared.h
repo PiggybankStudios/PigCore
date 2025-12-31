@@ -702,7 +702,13 @@ static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool conve
 			FILE_ATTRIBUTE_NORMAL, //Default file attributes
 			0                      //No Template File
 		);
-		assert(fileHandle != INVALID_HANDLE_VALUE);
+		if (fileHandle == INVALID_HANDLE_VALUE)
+		{
+			DWORD errorCode = GetLastError();
+			PrintLine_D("CreateFileA error: %d", errorCode);
+			assert(fileHandle != INVALID_HANDLE_VALUE);
+		}
+		
 		DWORD moveResult = SetFilePointer(
 			fileHandle, //hFile
 			0, //lDistanceToMove,

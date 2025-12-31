@@ -219,7 +219,7 @@ PEXP void OsFreeReservedMemory(void* memoryPntr, uxx reservedSize)
 		);
 		if (freeResult == 0)
 		{
-			DWORD errorCode = GetLastError();
+			DWORD errorCode = GetLastError(); UNUSED(errorCode);
 			Assert(freeResult != 0); //TODO: Handle errors, call GetLastError and return an OsError_t
 		}
 	}
