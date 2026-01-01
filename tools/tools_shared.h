@@ -705,7 +705,7 @@ static inline void AppendToFile(Str8 filePath, Str8 contentsToAppend, bool conve
 		if (fileHandle == INVALID_HANDLE_VALUE)
 		{
 			DWORD errorCode = GetLastError();
-			PrintLine_D("CreateFileA error: %d", errorCode);
+			PrintLine("CreateFileA error: %d", errorCode);
 			assert(fileHandle != INVALID_HANDLE_VALUE);
 		}
 		
