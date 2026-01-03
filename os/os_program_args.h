@@ -15,6 +15,7 @@ Date:   02\25\2025
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
 #include "misc/misc_parsing.h"
+#include "misc/misc_escaping.h"
 
 typedef plex ProgramArg ProgramArg;
 plex ProgramArg
@@ -89,8 +90,15 @@ PEXP void ParseProgramArgStr(Arena* arena, Str8 rawString, ProgramArg* argOut)
 			if (StrExactStartsWith(valuePart, StrLit("\"")) && StrExactEndsWith(valuePart, StrLit("\"")))
 			{
 				valuePart = StrSlice(valuePart, 1, valuePart.length-1);
-				//TODO: We need to remove escape sequences and replace them with their literal character values!
-				argOut->value = AllocStr8(arena, valuePart);
+				if (StrExactStartsWith(valuePart, StrLit("\"")) && StrExactEndsWith(valuePart, StrLit("\"")))
+				{
+					valuePart = StrSlice(valuePart, 1, valuePart.length-1);
+					argOut->value = UnescapeStringEx(arena, valuePart, EscapeSequence_All, false);
+				}
+				else
+				{
+					argOut->value = AllocStr8(arena, valuePart);
+				}
 			}
 			else
 			{
@@ -107,8 +115,7 @@ PEXP void ParseProgramArgStr(Arena* arena, Str8 rawString, ProgramArg* argOut)
 		if (StrExactStartsWith(rawString, StrLit("\"")) && StrExactEndsWith(rawString, StrLit("\"")))
 		{
 			rawString = StrSlice(rawString, 1, rawString.length-1);
-			//TODO: We need to remove escape sequences and replace them with their literal character values!
-			argOut->value = AllocStr8(arena, rawString);
+			argOut->value = UnescapeStringEx(arena, rawString, EscapeSequence_All, false);
 		}
 		else
 		{
