@@ -38,6 +38,7 @@ plex RegisteredTooltip
 	u64 id;
 	bool active;
 	Str8 targetClayIdStr;
+	uxx targetClayIdIndex;
 	ClayId targetContainerClayId;
 	rec targetRec; //only used if targetClayIdStr is empty
 	bool autoUnregister;
@@ -76,13 +77,13 @@ plex TooltipRegistry
 	PIG_CORE_INLINE void UnregisterTooltip(TooltipRegistry* registry, u64 id);
 	PIG_CORE_INLINE RegisteredTooltip* TryFindRegisteredTooltip(TooltipRegistry* registry, u64 id);
 	PIG_CORE_INLINE RegisteredTooltip* TryFindRegisteredTooltipByClayId(TooltipRegistry* registry, ClayId targetClayId);
-	PIG_CORE_INLINE RegisteredTooltip* RegisterTooltipGetPntr(TooltipRegistry* registry, bool autoUnregister, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
-	PIG_CORE_INLINE u64 RegisterTooltip(TooltipRegistry* registry, bool autoUnregister, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
+	PIG_CORE_INLINE RegisteredTooltip* RegisterTooltipGetPntr(TooltipRegistry* registry, bool autoUnregister, Str8 targetClayIdStr, uxx targetClayIdIndex, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
+	PIG_CORE_INLINE u64 RegisterTooltip(TooltipRegistry* registry, bool autoUnregister, Str8 targetClayIdStr, uxx targetClayIdIndex, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
 	PIG_CORE_INLINE void UpdateTooltipActive(TooltipRegistry* registry, u64 tooltipId, bool isActive);
 	PIG_CORE_INLINE void UpdateTooltipFont(TooltipRegistry* registry, u64 tooltipId, PigFont* font, r32 fontSize, u8 fontStyle);
 	PIG_CORE_INLINE void UpdateTooltipDisplayStr(TooltipRegistry* registry, u64 tooltipId, Str8 displayStr);
-	PIG_CORE_INLINE RegisteredTooltip* SoftRegisterTooltipGetPntr(TooltipRegistry* registry, u64 existingTooltipId, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
-	PIG_CORE_INLINE u64 SoftRegisterTooltip(TooltipRegistry* registry, u64 existingTooltipId, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
+	PIG_CORE_INLINE RegisteredTooltip* SoftRegisterTooltipGetPntr(TooltipRegistry* registry, u64 existingTooltipId, Str8 targetClayIdStr, uxx targetClayIdIndex, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
+	PIG_CORE_INLINE u64 SoftRegisterTooltip(TooltipRegistry* registry, u64 existingTooltipId, Str8 targetClayIdStr, uxx targetClayIdIndex, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
 	PIG_CORE_INLINE RegisteredTooltip* SoftRegisterTooltipByClayIdGetPntr(TooltipRegistry* registry, ClayId clayId, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
 	PIG_CORE_INLINE u64 SoftRegisterTooltipByClayId(TooltipRegistry* registry, ClayId clayId, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle);
 #endif
@@ -168,7 +169,7 @@ PEXPI RegisteredTooltip* TryFindRegisteredTooltipByClayId(TooltipRegistry* regis
 		VarArrayLoopGet(RegisteredTooltip, tooltip, &registry->tooltips, tIndex);
 		if (!IsEmptyStr(tooltip->targetClayIdStr))
 		{
-			ClayId tooltipTargetClayId = ToClayId(tooltip->targetClayIdStr);
+			ClayId tooltipTargetClayId = ToClayIdEx(tooltip->targetClayIdStr, tooltip->targetClayIdIndex);
 			if (tooltipTargetClayId.id == targetClayId.id) { return tooltip; }
 		}
 	}
@@ -192,7 +193,7 @@ PEXPI void UnregisterTooltip(TooltipRegistry* registry, u64 id)
 	}
 }
 
-PEXPI RegisteredTooltip* RegisterTooltipGetPntr(TooltipRegistry* registry, bool autoUnregister, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
+PEXPI RegisteredTooltip* RegisterTooltipGetPntr(TooltipRegistry* registry, bool autoUnregister, Str8 targetClayIdStr, uxx targetClayIdIndex, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
 {
 	NotNull(registry);
 	NotNull(registry->arena);
@@ -205,6 +206,7 @@ PEXPI RegisteredTooltip* RegisterTooltipGetPntr(TooltipRegistry* registry, bool 
 	newTooltip->active = true;
 	newTooltip->autoUnregister = autoUnregister;
 	newTooltip->targetClayIdStr = IsEmptyStr(targetClayIdStr) ? targetClayIdStr : AllocStr8(registry->arena, targetClayIdStr);
+	newTooltip->targetClayIdIndex = targetClayIdIndex;
 	newTooltip->targetRec = targetRec;
 	newTooltip->displayStr = AllocStr8(registry->arena, displayStr);
 	newTooltip->font = font;
@@ -213,9 +215,9 @@ PEXPI RegisteredTooltip* RegisterTooltipGetPntr(TooltipRegistry* registry, bool 
 	newTooltip->registeredThisFrame = true;
 	return newTooltip;
 }
-PEXPI u64 RegisterTooltip(TooltipRegistry* registry, bool autoUnregister, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
+PEXPI u64 RegisterTooltip(TooltipRegistry* registry, bool autoUnregister, Str8 targetClayIdStr, uxx targetClayIdIndex, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
 {
-	RegisteredTooltip* tooltip = RegisterTooltipGetPntr(registry, autoUnregister, targetClayIdStr, targetRec, displayStr, font, fontSize, fontStyle);
+	RegisteredTooltip* tooltip = RegisterTooltipGetPntr(registry, autoUnregister, targetClayIdStr, targetClayIdIndex, targetRec, displayStr, font, fontSize, fontStyle);
 	return (tooltip != nullptr) ? tooltip->id : TOOLTIP_ID_INVALID;
 }
 
@@ -249,7 +251,7 @@ PEXPI void UpdateTooltipDisplayStr(TooltipRegistry* registry, u64 tooltipId, Str
 }
 
 // "Soft" means that if the tooltip was already registered then just update any fields that have changed. This implies autoUnregister so there is no need to call UnregisterTooltip with Soft registration
-PEXPI RegisteredTooltip* SoftRegisterTooltipGetPntr(TooltipRegistry* registry, u64 existingTooltipId, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
+PEXPI RegisteredTooltip* SoftRegisterTooltipGetPntr(TooltipRegistry* registry, u64 existingTooltipId, Str8 targetClayIdStr, uxx targetClayIdIndex, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
 {
 	RegisteredTooltip* existingTooltip = TryFindRegisteredTooltip(registry, existingTooltipId);
 	if (existingTooltip != nullptr)
@@ -274,12 +276,12 @@ PEXPI RegisteredTooltip* SoftRegisterTooltipGetPntr(TooltipRegistry* registry, u
 	}
 	else
 	{
-		return RegisterTooltipGetPntr(registry, true, targetClayIdStr, targetRec, displayStr, font, fontSize, fontStyle);
+		return RegisterTooltipGetPntr(registry, true, targetClayIdStr, targetClayIdIndex, targetRec, displayStr, font, fontSize, fontStyle);
 	}
 }
-PEXPI u64 SoftRegisterTooltip(TooltipRegistry* registry, u64 existingTooltipId, Str8 targetClayIdStr, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
+PEXPI u64 SoftRegisterTooltip(TooltipRegistry* registry, u64 existingTooltipId, Str8 targetClayIdStr, uxx targetClayIdIndex, rec targetRec, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
 {
-	RegisteredTooltip* tooltip = SoftRegisterTooltipGetPntr(registry, existingTooltipId, targetClayIdStr, targetRec, displayStr, font, fontSize, fontStyle);
+	RegisteredTooltip* tooltip = SoftRegisterTooltipGetPntr(registry, existingTooltipId, targetClayIdStr, targetClayIdIndex, targetRec, displayStr, font, fontSize, fontStyle);
 	return (tooltip != nullptr) ? tooltip->id : TOOLTIP_ID_INVALID;
 }
 
@@ -288,8 +290,7 @@ PEXPI RegisteredTooltip* SoftRegisterTooltipByClayIdGetPntr(TooltipRegistry* reg
 {
 	RegisteredTooltip* existingTooltip = TryFindRegisteredTooltipByClayId(registry, clayId);
 	u64 existingTooltipId = (existingTooltip != nullptr) ? existingTooltip->id : TOOLTIP_ID_INVALID;
-	Str8 targetClayIdStr = clayId.stringId;
-	return SoftRegisterTooltipGetPntr(registry, existingTooltipId, targetClayIdStr, Rec_Zero, displayStr, font, fontSize, fontStyle);
+	return SoftRegisterTooltipGetPntr(registry, existingTooltipId, clayId.stringId, clayId.offset, Rec_Zero, displayStr, font, fontSize, fontStyle);
 }
 PEXPI u64 SoftRegisterTooltipByClayId(TooltipRegistry* registry, ClayId clayId, Str8 displayStr, PigFont* font, r32 fontSize, u8 fontStyle)
 {
