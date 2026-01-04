@@ -147,13 +147,17 @@ void Fill_clang_CommonLibraries(CliArgList* clang_CommonLibraries)
 	AddArgNt(clang_CommonLibraries, CLANG_SYSTEM_LIBRARY, "dl"); //Needed for dlopen and similar functions
 }
 
-void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, bool BUILD_WITH_SOKOL_APP)
+void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, bool BUILD_WITH_SOKOL_APP, bool BUILD_WITH_GTK)
 {
 	if (BUILD_WITH_SOKOL_APP)
 	{
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "X11");
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "Xi");
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "Xcursor");
+	}
+	if (BUILD_WITH_GTK)
+	{
+		
 	}
 }
 void Fill_clang_OsxCommonLibraries(CliArgList* clang_OsxCommonLibraries, bool BUILD_WITH_SOKOL_APP)

@@ -158,4 +158,8 @@ typedef uint16_t char16_t;
 	#include <EGL/egl.h>
 #endif //TARGET_IS_ANDROID
 
+#if BUILD_WITH_GTK
+	#include <gtk/gtk.h>
+#endif
+
 #endif //  _STD_INCLUDES_H

@@ -135,6 +135,10 @@ Description:
 #define BUILD_WITH_FREETYPE 0
 #endif
 
+#ifndef BUILD_WITH_GTK
+#define BUILD_WITH_GTK 0
+#endif
+
 // +--------------------------------------------------------------+
 // |                       Check Conflicts                        |
 // +--------------------------------------------------------------+
