@@ -64,6 +64,7 @@ plex StringBuffer
 	uxx ReplaceInStrBuffStr(StringBuffer* buffer, Str8 target, Str8 replacement);
 	PIG_CORE_INLINE uxx RemoveFromStrBuffStr(StringBuffer* buffer, Str8 target);
 	PIG_CORE_INLINE void InsertIntoStrBuffStr(StringBuffer* buffer, uxx index, Str8 insertStr);
+	PIG_CORE_INLINE bool IsStrBuffFull(const StringBuffer* buffer);
 #endif
 
 #define NewStrBuffEx(variableName, bufferSize) u8 variableName##_buffer[bufferSize]; StringBuffer variableName; do \
@@ -279,6 +280,11 @@ PEXPI void InsertIntoStrBuffStr(StringBuffer* buffer, uxx index, Str8 insertStr)
 	}
 	
 	buffer->chars[buffer->length] = '\0';
+}
+
+PEXPI bool IsStrBuffFull(const StringBuffer* buffer)
+{
+	return (buffer->maxLength == 0 || buffer->length >= buffer->maxLength-1);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

@@ -117,6 +117,7 @@ enum Result
 	Result_EmptyArgument,
 	Result_InvalidIdentifier,
 	Result_Stopped,
+	Result_MissingDependency,
 	
 	Result_Count,
 };
@@ -219,6 +220,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_EmptyArgument: return "EmptyArgument";
 		case Result_InvalidIdentifier: return "InvalidIdentifier";
 		case Result_Stopped: return "Stopped";
+		case Result_MissingDependency: return "MissingDependency";
 		default: return UNKNOWN_STR;
 	}
 }

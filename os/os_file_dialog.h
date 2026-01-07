@@ -19,6 +19,7 @@ Description:
 #include "misc/misc_result.h"
 #include "os/os_path.h"
 #include "os/os_file.h"
+#include "struct/struct_string_buffer.h"
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -49,6 +50,8 @@ static void OsDoOpenFileDialogCallback(GObject* source, GAsyncResult* result, gp
 }
 #endif
 
+//TODO: We should add a way for the application to define file filters and a starting directory
+//TODO: Make a version of this function that allows opening multiple files at once
 PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 {
 	Assert(arena != nullptr || pathOut == nullptr);
@@ -137,9 +140,72 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 		}
 		#endif
 	}
-	// #elif TARGET_IS_LINUX
-	// {
-	// }
+	#elif TARGET_IS_LINUX
+	{
+		ScratchBegin1(scratch, arena);
+		
+		//File selection options: (from running `zenity --help-file-selection`)
+		//	--file-selection                                  Display file selection dialog
+		//	--filename=FILENAME                               Set the filename
+		//	--multiple                                        Allow multiple files to be selected
+		//	--directory                                       Activate directory-only selection
+		//	--save                                            Activate save mode
+		//	--separator=SEPARATOR                             Set output separator character
+		//	--file-filter=NAME | PATTERN1 PATTERN2 ...        Set a filename filter
+		//	--confirm-overwrite                               DEPRECATED; does nothing
+		FILE* zenityOutputStream = popen("zenity --file-selection", "r");
+		
+		int zenityExitCode = 0;
+		Str8 chosenFilePath = Str8_Empty;
+		if (zenityOutputStream != nullptr)
+		{
+			//TODO: Can we use something like MAX_PATH instead of hard-coded 2048?
+			StringBuffer buffer = NewStrBuffFromArena(scratch, 2048);
+			while (!IsStrBuffFull(&buffer) && fgets(&buffer.chars[buffer.length], (buffer.maxLength-1) - buffer.length, zenityOutputStream) != NULL)
+			{
+				uxx numChars = (uxx)MyStrLength(&buffer.chars[buffer.length]);
+				Assert(buffer.length + numChars < buffer.maxLength);
+				buffer.length += numChars;
+			}
+			chosenFilePath = buffer.str;
+			zenityExitCode = pclose(zenityOutputStream);
+		}
+		
+		if (zenityExitCode == 0 && chosenFilePath.length > 0)
+		{
+			chosenFilePath = TrimWhitespaceAndNewLines(chosenFilePath);
+			//TODO: Should we validate the path seems valid? If there is anything else that comes out the stdout when the exitCode is 0 then we may confuse output with a file path and return something weird to the application
+			
+			if (pathOut != nullptr)
+			{
+				*pathOut = AllocStr8(arena, chosenFilePath);
+				NotNullStr(*pathOut);
+				FixPathSlashes(*pathOut);
+			}
+			result = Result_Success;
+		}
+		else if (zenityExitCode == 127 || zenityExitCode == 127*256) //127 is standard "command not found" result for most shells. Then we multiply by 256 to account for how `wait` reports exit codes
+		{
+			Notify_W("Zenity is not installed! We can't open a file dialog without it! Please install it through your distro's package manager");
+			result = Result_MissingDependency;
+		}
+		else if (zenityExitCode == 256) //256 means that the user selected "Cancel" in the dialog
+		{
+			result = Result_Canceled;
+		}
+		else if (zenityExitCode != 0)
+		{
+			NotifyPrint_W("Zenity-based dialog exited with code: %d", zenityExitCode);
+			result = Result_Failure;
+		}
+		else
+		{
+			Notify_W("Zenity-based dialog returned an empty file path!");
+			result = Result_EmptyPath;
+		}
+		
+		ScratchEnd(scratch);
+	}
 	#else
 	UNUSED(arena);
 	UNUSED(pathOut);
