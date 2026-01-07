@@ -121,6 +121,7 @@ Arena* stdHeap = nullptr;
 #include "tests/tests_playdate.c"
 #include "tests/tests_sqlite.c"
 #include "tests/tests_android.c"
+#include "tests/tests_gtk.c"
 
 // +--------------------------------------------------------------+
 // |                           Helpers                            |
@@ -296,6 +297,7 @@ int main(int argc, char* argv[])
 #endif
 {
 	TracyCZoneN(Zone_Func, "main", true);
+	int exitCode = 0;
 	#if (BUILD_WITH_SDL && TARGET_IS_WINDOWS)
 	UNUSED(hInstance);
 	UNUSED(hPrevInstance);
@@ -1329,6 +1331,15 @@ int main(int argc, char* argv[])
 	}
 	#endif
 	
+	// +==============================+
+	// |          GTK Tests           |
+	// +==============================+
+	#if (TARGET_IS_LINUX && BUILD_WITH_GTK && !BUILD_WITH_SOKOL_APP)
+	{
+		exitCode = RunGtkTests();
+	}
+	#endif
+	
 	#if BUILD_WITH_OPENVR
 	while (!WindowShouldClose())
 	{
@@ -1406,9 +1417,10 @@ int main(int argc, char* argv[])
 	}
 	#endif
 	
-	WriteLine_I("All tests completed successfully!");
+	if (exitCode == 0) { WriteLine_I("All tests completed successfully!"); }
+	else { PrintLine_E("Tests completed. Exit code: %d", exitCode); }
 	TracyCZoneEnd(Zone_Func);
-	return 0;
+	return exitCode;
 }
 #endif //!RUN_FUZZER
 

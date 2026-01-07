@@ -184,17 +184,17 @@ void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, boo
 	{
 		//Output from `pkg-config --libs gtk4`
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gtk-4");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "pangocairo-1.0");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "pango-1.0");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "harfbuzz");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gdk_pixbuf-2.0");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "cairo-gobject");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "cairo");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "vulkan");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "graphene-1.0");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gio-2.0");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gobject-2.0");
-		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "glib-2.0");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "pangocairo-1.0");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "pango-1.0");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "harfbuzz");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gdk_pixbuf-2.0");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "cairo-gobject");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "cairo");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "vulkan");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "graphene-1.0");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gio-2.0");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gobject-2.0");
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "glib-2.0");
 	}
 }
 void Fill_clang_OsxCommonLibraries(CliArgList* clang_OsxCommonLibraries, bool BUILD_WITH_SOKOL_APP)

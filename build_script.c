@@ -133,6 +133,7 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_HTTP          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
 	bool BUILD_WITH_PROTOBUF      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PROTOBUF"));
 	bool BUILD_WITH_FREETYPE      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"));
+	bool BUILD_WITH_GTK           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_GTK"));
 	
 	Str8 ANDROID_SIGNING_KEY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")), false);
 	Str8 ANDROID_SIGNING_PASSWORD = ZEROED;
@@ -215,10 +216,10 @@ int main(int argc, char* argv[])
 	CliArgList clang_LangCFlags                  = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags, BUILD_WITH_IMGUI);
 	CliArgList clang_LangCppFlags                = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
 	CliArgList clang_LangObjectiveCFlags         = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
-	CliArgList clang_LinuxOrOsxFlags             = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD);
+	CliArgList clang_LinuxOrOsxFlags             = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD, BUILD_WITH_GTK);
 	CliArgList cl_CommonLinkerFlags              = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
 	CliArgList clang_CommonLibraries             = ZEROED; Fill_clang_CommonLibraries(&clang_CommonLibraries);
-	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
+	CliArgList clang_LinuxCommonLibraries        = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP, BUILD_WITH_GTK);
 	CliArgList clang_OsxCommonLibraries          = ZEROED; Fill_clang_OsxCommonLibraries(&clang_OsxCommonLibraries, BUILD_WITH_SOKOL_APP);
 	CliArgList cl_PigCoreLibraries               = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
 	CliArgList clang_PigCoreLinuxLibraries       = ZEROED; Fill_clang_PigCoreLinuxLibraries(&clang_PigCoreLinuxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);

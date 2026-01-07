@@ -120,7 +120,9 @@ Description:
 // Enables support for encoding/decoding Googles's protocol buffers using protobuf-c library
 #define BUILD_WITH_PROTOBUF  0
 // Enables building with the FreeType library which provides better font rasterizing support than stb_truetype.h (the default dependency)
-#define BUILD_WITH_FREETYPE  1
+#define BUILD_WITH_FREETYPE  0
+// Enables linking with libgtk-4.so on Linux and enables some GTK-specific features on Linux (like OsDoOpenFileDialog)
+#define BUILD_WITH_GTK       1
 
 // +==============================+
 // |        String Defines        |
