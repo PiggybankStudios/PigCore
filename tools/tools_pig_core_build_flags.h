@@ -132,6 +132,7 @@ void Fill_clang_LinuxOrOsxFlags(CliArgList* clang_LinuxOrOsxFlags, bool DEBUG_BU
 	AddArgStr(clang_LinuxOrOsxFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "ssse3"); //For MeowHash to work we need sse3 support
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "aes"); //For MeowHash to work we need aes support
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/dbus-1.0");
 	if (DEBUG_BUILD) { AddArgNt(clang_LinuxOrOsxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
 	if (BUILD_WITH_GTK)
 	{

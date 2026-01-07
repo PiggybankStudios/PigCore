@@ -186,6 +186,17 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 		}
 		else if (zenityExitCode == 127 || zenityExitCode == 127*256) //127 is standard "command not found" result for most shells. Then we multiply by 256 to account for how `wait` reports exit codes
 		{
+			DBusMessage* msg = dbus_message_new_method_call(
+				"org.freedesktop.portal.Desktop", //destination
+				"/org/freedesktop/portal/desktop", //path
+				"org.freedesktop.portal.FileChooser", //interface
+				"OpenFile" //method
+			);
+			if (msg != nullptr)
+			{
+				
+			}
+			
 			Notify_W("Zenity is not installed! We can't open a file dialog without it! Please install it through your distro's package manager");
 			result = Result_MissingDependency;
 		}

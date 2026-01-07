@@ -63,6 +63,7 @@ typedef uint16_t char16_t;
 	#include <time.h>
 	#include <sys/syscall.h> //needed for syscall(SYS_gettid) in os_threading.h
     // #include <poll.h>
+    #include <dbus/dbus.h> //you may need to install `libdbus-1-dev` on your OS
 #endif
 #if TARGET_IS_OSX
 	#include <Cocoa/Cocoa.h>
