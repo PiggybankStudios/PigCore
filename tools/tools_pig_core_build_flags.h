@@ -125,14 +125,39 @@ void Fill_clang_LangObjectiveCFlags(CliArgList* clang_LangObjectiveCFlags)
 }
 
 // Flags for when we are compiling the linux version of a program using Clang
-void Fill_clang_LinuxOrOsxFlags(CliArgList* clang_LinuxOrOsxFlags, bool DEBUG_BUILD)
+void Fill_clang_LinuxOrOsxFlags(CliArgList* clang_LinuxOrOsxFlags, bool DEBUG_BUILD, bool BUILD_WITH_GTK)
 {
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_OPTIMIZATION_LEVEL, DEBUG_BUILD ? "0" : "2");
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "[ROOT]");
 	AddArgStr(clang_LinuxOrOsxFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
-	AddArg(clang_LinuxOrOsxFlags, "-mssse3"); //For MeowHash to work we need sse3 support
-	AddArg(clang_LinuxOrOsxFlags, "-maes"); //For MeowHash to work we need aes support
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "ssse3"); //For MeowHash to work we need sse3 support
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "aes"); //For MeowHash to work we need aes support
 	if (DEBUG_BUILD) { AddArgNt(clang_LinuxOrOsxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
+	if (BUILD_WITH_GTK)
+	{
+		// Output from `pkg-config --cflags gtk4`
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "fpmath=sse");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "sse");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "sse2");
+		AddArg(clang_LinuxOrOsxFlags, "-pthread");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/gtk-4.0");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/glib-2.0");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/lib/x86_64-linux-gnu/glib-2.0/include");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/x86_64-linux-gnu");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/cairo");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/pango-1.0");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/harfbuzz");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/freetype2");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/libpng16");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/libmount");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/blkid");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/fribidi");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/pixman-1");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/gdk-pixbuf-2.0");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/webp");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/graphene-1.0");
+		AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/lib/x86_64-linux-gnu/graphene-1.0/include");
+	}
 }
 
 void Fill_cl_CommonLinkerFlags(CliArgList* cl_CommonLinkerFlags, bool DEBUG_BUILD)
@@ -157,7 +182,19 @@ void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, boo
 	}
 	if (BUILD_WITH_GTK)
 	{
-		
+		//Output from `pkg-config --libs gtk4`
+		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gtk-4");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "pangocairo-1.0");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "pango-1.0");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "harfbuzz");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gdk_pixbuf-2.0");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "cairo-gobject");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "cairo");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "vulkan");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "graphene-1.0");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gio-2.0");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gobject-2.0");
+		// AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "glib-2.0");
 	}
 }
 void Fill_clang_OsxCommonLibraries(CliArgList* clang_OsxCommonLibraries, bool BUILD_WITH_SOKOL_APP)

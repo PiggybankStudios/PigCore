@@ -38,6 +38,17 @@ Description:
 static bool Win32_HasCoInitialized = false;
 #endif
 
+#if TARGET_IS_LINUX && BUILD_WITH_GTK
+static void OsDoOpenFileDialogCallback(GObject* source, GAsyncResult* result, gpointer user_data)
+{
+	WriteLine_I("Got OpenFileDialog callback!");
+	GError* error = nullptr;
+	GFile* file = gtk_file_dialog_open_finish((GtkFileDialog*)source, result, &error);
+	UNUSED(file);
+	UNUSED(error);
+}
+#endif
+
 PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 {
 	Result result = Result_None;
@@ -80,6 +91,11 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 		shellItem->lpVtbl->Release(shellItem);
 		dialogPntr->lpVtbl->Release(dialogPntr);
 		result = Result_Success;
+	}
+	#elif (TARGET_IS_LINUX && BUILD_WITH_GTK)
+	{
+		GtkFileDialog* dialog = gtk_file_dialog_new();
+		gtk_file_dialog_open(dialog, NULL, NULL, OsDoOpenFileDialogCallback, nullptr);
 	}
 	#else
 	UNUSED(arena);
