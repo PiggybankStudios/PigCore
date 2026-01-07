@@ -398,6 +398,10 @@ int main(int argc, char* argv[])
 	mainRandom = &mainRandomStruct;
 	#endif
 	
+	#if (TARGET_IS_LINUX && BUILD_WITH_GTK)
+	gtk_init();
+	#endif
+	
 	#if SQLITE_ENABLED
 	TestSqlite();
 	#endif

@@ -1232,6 +1232,20 @@ bool AppFrame(void)
 									//TODO: Implement me!
 								} Clay__CloseElement();
 								
+								if (ClayBtn("Open...", Transparent, MonokaiWhite))
+								{
+									FilePath chosenPath = FilePath_Empty;
+									Result dialogResult = OsDoOpenFileDialog(scratch, &chosenPath);
+									if (dialogResult == Result_Success)
+									{
+										PrintLine_I("Chose file: \"%.*s\"", StrPrint(chosenPath));
+									}
+									else
+									{
+										PrintLine_E("Dialog error: %s", GetResultStr(dialogResult));
+									}
+								} Clay__CloseElement();
+								
 								if (ClayBtn("Close Program", Transparent, MonokaiWhite))
 								{
 									sapp_request_quit();

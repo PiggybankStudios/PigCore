@@ -1852,6 +1852,8 @@
 			"Result GfxSystem_DrawWrappedRichTextWithFont(GfxSystem* system, PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, v2 position, r32 wrapWidth, Color32 color)",
 			"Result GfxSystem_DrawWrappedText(GfxSystem* system, Str8 text, v2 position. r32 wrapWidth, Color32 color)",
 			"Result OsCreateFolder(FilePath path, bool createParentFoldersIfNeeded)",
+			"Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)",
+			"Result OsDoSaveFileDialog(uxx numExtensions, Str8Pair* extensions, uxx defaultExtensionIndex, Arena* arena, FilePath* pathOut)",
 			"Result OsGetClipboardString(OsWindowHandle windowHandle, Arena* arena, Str8* clipboardStrOut)",
 			"Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)",
 			"Result OsReadFromOpenBinFile(OsFile* file, uxx numBytes, void* bufferOut, uxx* numBytesReadOut)",

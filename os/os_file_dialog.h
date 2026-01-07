@@ -51,6 +51,7 @@ static void OsDoOpenFileDialogCallback(GObject* source, GAsyncResult* result, gp
 
 PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 {
+	Assert(arena != nullptr || pathOut == nullptr);
 	Result result = Result_None;
 	
 	#if TARGET_IS_WINDOWS
@@ -96,7 +97,49 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 	{
 		GtkFileDialog* dialog = gtk_file_dialog_new();
 		gtk_file_dialog_open(dialog, NULL, NULL, OsDoOpenFileDialogCallback, nullptr);
+		//TODO: This implementation is incomplete AND only works in a full GTK application. In a non-GTK application, the Callback is never called (can't seem to find how I give GTK an opportunity to update and do callbacks)
+		result = Result_Failure;
+		
+		#if 0
+		//NOTE: This code was a suggestion, but gtk_file_chooser_dialog_new is deprecated in GTK 4.10+ and gtk_dialog_run is gone entirely
+		{
+			#if COMPILER_IS_CLANG
+			#pragma clang diagnostic push
+			#pragma clang diagnostic ignored "-Wdeprecated-declarations" //warning: 'gtk_file_chooser_dialog_new' is deprecated
+			#endif
+			GtkWidget* dialogWidget = gtk_file_chooser_dialog_new(
+				"Open file", NULL,
+				GTK_FILE_CHOOSER_ACTION_OPEN,
+				"Cancel", GTK_RESPONSE_CANCEL,
+				"Open", GTK_RESPONSE_OK,
+				NULL
+			);
+			if (gtk_dialog_run(GTK_DIALOG(dialogWidget)) == GTK_RESPONSE_OK)
+			{
+				char* chosenFilePathNt = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialogWidget));
+				NotNul(chosenFilePathNt);
+				if (pathOut != nullptr)
+				{
+					*pathOut = AllocStr8Nt(arena, chosenFilePathNt);
+					NotNullStr(*pathOut);
+					FixPathSlashes(*pathOut);
+				}
+				result = Result_Success;
+			}
+			else
+			{
+				result = Result_Failure; //TODO: Better result code!
+			}
+			g_object_unref(dialogWidget);
+			#if COMPILER_IS_CLANG
+			#pragma clang diagnostic pop
+			#endif
+		}
+		#endif
 	}
+	// #elif TARGET_IS_LINUX
+	// {
+	// }
 	#else
 	UNUSED(arena);
 	UNUSED(pathOut);
