@@ -1336,7 +1336,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	#if (TARGET_IS_LINUX && BUILD_WITH_GTK && !BUILD_WITH_SOKOL_APP)
 	{
-		exitCode = RunGtkTests();
+		exitCode = RunGtkTests(argc, &argv[0]);
 	}
 	#endif
 	

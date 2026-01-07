@@ -8,6 +8,7 @@ Description:
 
 #if (TARGET_IS_LINUX && BUILD_WITH_GTK)
 
+#if 0
 typedef GtkApplication DemoApplication;
 typedef GtkApplicationClass DemoApplicationClass;
 
@@ -88,17 +89,47 @@ static void demo_application_window_class_init(DemoApplicationWindowClass* class
 	// gtk_widget_class_bind_template_callback (widget_class, update_statusbar);
 	// gtk_widget_class_bind_template_callback (widget_class, mark_set_callback);
 }
+#endif
 
-int RunGtkTests()
+static void GtkApp_PrintHello(GtkWidget* widget, gpointer userData)
 {
-	GtkApplication* app = GTK_APPLICATION(g_object_new(
-		demo_application_get_type(),
-		"application-id", "org.gtk.Demo4.App",
-		"flags", G_APPLICATION_HANDLES_OPEN,
-		"register-session", TRUE,
-		NULL
-	));
-	return g_application_run(G_APPLICATION(app), 0, NULL);
+	g_print("Hello Linux!\n");
+}
+
+static void GtkApp_Activate(GtkApplication* app, gpointer userData)
+{
+	GtkWidget* window = gtk_application_window_new(app);
+	gtk_window_set_title(GTK_WINDOW(window), "GTK Window");
+	gtk_window_set_default_size(GTK_WINDOW(window), 200, 200);
+	
+	GtkWidget* button = gtk_button_new_with_label("Hello World");
+	gtk_widget_set_halign(button, GTK_ALIGN_CENTER);
+	gtk_widget_set_valign(button, GTK_ALIGN_CENTER);
+	g_signal_connect(button, "clicked", G_CALLBACK(GtkApp_PrintHello), nullptr);
+	gtk_window_set_child(GTK_WINDOW(window), button);
+	
+	gtk_window_present(GTK_WINDOW(window));
+}
+
+int RunGtkTests(int argc, char** argv)
+{
+	#if 0
+	// GtkApplication* app = GTK_APPLICATION(g_object_new(
+	// 	demo_application_get_type(),
+	// 	"application-id", "org.gtk.Demo4.App",
+	// 	"flags", G_APPLICATION_HANDLES_OPEN,
+	// 	"register-session", TRUE,
+	// 	NULL
+	// ));
+	#else
+	GtkApplication* app = gtk_application_new("org.gtk.example", G_APPLICATION_DEFAULT_FLAGS);
+	g_signal_connect(app, "activate", G_CALLBACK(GtkApp_Activate), nullptr);
+	#endif
+	
+	int exitCode = g_application_run(G_APPLICATION(app), argc, argv);
+	
+	g_object_unref(app);
+	return exitCode;
 }
 
 #endif //(TARGET_IS_LINUX && BUILD_WITH_GTK)
