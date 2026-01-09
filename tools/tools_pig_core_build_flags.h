@@ -132,11 +132,13 @@ void Fill_clang_LinuxOrOsxFlags(CliArgList* clang_LinuxOrOsxFlags, bool DEBUG_BU
 	AddArgStr(clang_LinuxOrOsxFlags, CLANG_LIBRARY_DIR, DEBUG_BUILD ? StrLit("[ROOT]/third_party/_lib_debug") : StrLit("[ROOT]/third_party/_lib_release"));
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "ssse3"); //For MeowHash to work we need sse3 support
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "aes"); //For MeowHash to work we need aes support
+	//TODO: Really we should do `pkg-config dbus-1 --cflags`
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/dbus-1.0");
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/lib/x86_64-linux-gnu/dbus-1.0/include");
 	if (DEBUG_BUILD) { AddArgNt(clang_LinuxOrOsxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
 	if (BUILD_WITH_GTK)
 	{
-		// Output from `pkg-config --cflags gtk4`
+		//TODO: Really we should do `pkg-config --cflags gtk4`
 		AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "fpmath=sse");
 		AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "sse");
 		AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "sse2");
@@ -175,6 +177,8 @@ void Fill_clang_CommonLibraries(CliArgList* clang_CommonLibraries)
 
 void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, bool BUILD_WITH_SOKOL_APP, bool BUILD_WITH_GTK)
 {
+	//TODO: Really we should do `pkg-config dbus-1 --libs`
+	AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "dbus-1");
 	if (BUILD_WITH_SOKOL_APP)
 	{
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "X11");
@@ -183,7 +187,7 @@ void Fill_clang_LinuxCommonLibraries(CliArgList* clang_LinuxCommonLibraries, boo
 	}
 	if (BUILD_WITH_GTK)
 	{
-		//Output from `pkg-config --libs gtk4`
+		//TODO: Really we should do `pkg-config --libs gtk4`
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "gtk-4");
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "pangocairo-1.0");
 		AddArgNt(clang_LinuxCommonLibraries, CLANG_SYSTEM_LIBRARY, "pango-1.0");

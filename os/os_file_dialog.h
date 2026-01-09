@@ -186,19 +186,125 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 		}
 		else if (zenityExitCode == 127 || zenityExitCode == 127*256) //127 is standard "command not found" result for most shells. Then we multiply by 256 to account for how `wait` reports exit codes
 		{
-			DBusMessage* msg = dbus_message_new_method_call(
-				"org.freedesktop.portal.Desktop", //destination
-				"/org/freedesktop/portal/desktop", //path
-				"org.freedesktop.portal.FileChooser", //interface
-				"OpenFile" //method
-			);
-			if (msg != nullptr)
+			//https://wiki.archlinux.org/title/XDG_Desktop_Portal
+			PrintLine_D("Zenity was not available, trying D-Bus connection to XGD desktop portal...");
+			
+			DBusError dbusError;
+			dbus_error_init(&dbusError);
+			DBusConnection* dbusConnection = dbus_bus_get_private(DBUS_BUS_SESSION, &dbusError);
+			if (dbus_error_is_set(&dbusError))
 			{
+				PrintLine_E("DBUS Connection Error: %s", dbusError.message);
+				result = Result_Unknown; //TODO: Better error code
+			}
+			else if (dbusConnection == nullptr)
+			{
+				WriteLine_E("DBUS Connection Failed!");
+				result = Result_Unknown; //TODO: Better error code
+			}
+			else
+			{
+				dbus_bus_register(dbusConnection, &dbusError);
+				if (dbus_error_is_set(&dbusError)) { dbus_error_free(&dbusError); }
 				
+				// https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileChooser.html
+				// OpenFile(IN parent_window s, IN title s, IN options a{sv}, OUT handle o)
+				DBusMessage* requestMsg = dbus_message_new_method_call(
+					"org.freedesktop.portal.Desktop", //destination
+					"/org/freedesktop/portal/desktop", //path
+					"org.freedesktop.portal.FileChooser", //interface
+					"OpenFile" //method
+				);
+				if (requestMsg != nullptr)
+				{
+					DBusMessageIter requestArgs;
+					DBusMessageIter requestOpts;
+					dbus_message_iter_init_append(requestMsg, &requestArgs);
+					const char* parentWindow = "";
+					const char* windowTitle = "All Files";
+					dbus_message_iter_append_basic(&requestArgs, DBUS_TYPE_STRING, &parentWindow);
+					dbus_message_iter_append_basic(&requestArgs, DBUS_TYPE_STRING, &windowTitle);
+					dbus_message_iter_open_container(&requestArgs, DBUS_TYPE_ARRAY, "{sv}", &requestOpts);
+					//TODO: Fill in any of the options in this array: handle_token, accept_label, modal, multiple, directory, filters, current_filter, choices, current_folder
+					dbus_message_iter_close_container(&requestArgs, &requestOpts);
+					
+					dbus_bus_add_match(
+						dbusConnection,
+						"type='signal'"
+						",interface='org.freedesktop.portal.Request'"
+						",member='Response'",
+						&dbusError
+					);
+					
+					DBusPendingCall* pendingCall;
+					dbus_bool_t sendResult = dbus_connection_send_with_reply(dbusConnection, requestMsg, &pendingCall, DBUS_TIMEOUT_INFINITE); //DBUS_TIMEOUT_USE_DEFAULT
+					dbus_message_unref(requestMsg);
+					
+					if (sendResult == true && pendingCall != nullptr)
+					{
+						dbus_connection_flush(dbusConnection);
+						WriteLine_D("Waiting for pending call...");
+						dbus_pending_call_block(pendingCall); //TODO: This doesn't seem to be working!
+						WriteLine_D("Pending call is done!");
+						DBusMessage* responseMsg = dbus_pending_call_steal_reply(pendingCall);
+						NotNull(responseMsg);
+						dbus_pending_call_unref(pendingCall);
+						
+						DBusMessageIter responseArgs;
+						dbus_bool_t initResult = dbus_message_iter_init(responseMsg, &responseArgs);
+						Assert(initResult == true);
+						// DBUS_TYPE_INVALID     '\0'
+						// DBUS_TYPE_ARRAY       'a' 97
+						// DBUS_TYPE_BOOLEAN     'b' 98
+						// DBUS_TYPE_BYTE        'y' 121
+						// DBUS_TYPE_DICT_ENTRY  'e' 101
+						// DBUS_TYPE_DOUBLE      'd' 100
+						// DBUS_TYPE_INT16       'n' 110
+						// DBUS_TYPE_INT32       'i' 105
+						// DBUS_TYPE_INT64       'x' 120
+						// DBUS_TYPE_OBJECT_PATH 'o' 111
+						// DBUS_TYPE_SIGNATURE   'g' 103
+						// DBUS_TYPE_STRING      's' 115
+						// DBUS_TYPE_STRUCT      'r' 114
+						// DBUS_TYPE_UINT16      'q' 113
+						// DBUS_TYPE_UINT32      'u' 117
+						// DBUS_TYPE_UINT64      't' 116
+						// DBUS_TYPE_UNIX_FD     'h' 104
+						// DBUS_TYPE_VARIANT     'v' 118
+						int argType = dbus_message_iter_get_arg_type(&responseArgs);
+						Assert(argType != DBUS_TYPE_INVALID);
+						PrintLine_D("response arg type: %d", argType);
+						
+						char* responsePath = nullptr;
+						dbus_message_iter_get_basic(&responseArgs, &responsePath);
+						NotNull(responsePath);
+						
+						if (pathOut != nullptr)
+						{
+							*pathOut = AllocStr8Nt(arena, responsePath);
+							NotNullStr(*pathOut);
+							FixPathSlashes(*pathOut);
+						}
+						result = Result_Success;
+						
+						dbus_message_unref(responseMsg);
+					}
+					else
+					{
+						WriteLine_E("dbus_connection_send_with_reply failed!");
+						result = Result_Unknown;
+					}
+				}
+				
+				if (dbus_error_is_set(&dbusError)) { dbus_error_free(&dbusError); }
+				dbus_connection_close(dbusConnection);
 			}
 			
-			Notify_W("Zenity is not installed! We can't open a file dialog without it! Please install it through your distro's package manager");
-			result = Result_MissingDependency;
+			if (result == Result_None)
+			{
+				Notify_W("Zenity is not installed and desktop portal was not available through DBUS! We can't open a file dialog without those! Please install one through your distro's package manager");
+				result = Result_MissingDependency;
+			}
 		}
 		else if (zenityExitCode == 256) //256 means that the user selected "Cancel" in the dialog
 		{
