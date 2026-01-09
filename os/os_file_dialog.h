@@ -189,6 +189,7 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 			//https://wiki.archlinux.org/title/XDG_Desktop_Portal
 			PrintLine_D("Zenity was not available, trying D-Bus connection to XGD desktop portal...");
 			
+			WriteLine_D("Initializing D-Bus...");
 			DBusError dbusError;
 			dbus_error_init(&dbusError);
 			DBusConnection* dbusConnection = dbus_bus_get_private(DBUS_BUS_SESSION, &dbusError);
@@ -204,11 +205,13 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 			}
 			else
 			{
+				WriteLine_D("Registering D-Bus connection...");
 				dbus_bus_register(dbusConnection, &dbusError);
-				if (dbus_error_is_set(&dbusError)) { dbus_error_free(&dbusError); }
+				if (dbus_error_is_set(&dbusError)) { PrintLine_E("D-Bus error: %s", dbusError.message); dbus_error_free(&dbusError); }
 				
 				// https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileChooser.html
 				// OpenFile(IN parent_window s, IN title s, IN options a{sv}, OUT handle o)
+				WriteLine_D("Finding FileChooser.OpenFile...");
 				DBusMessage* requestMsg = dbus_message_new_method_call(
 					"org.freedesktop.portal.Desktop", //destination
 					"/org/freedesktop/portal/desktop", //path
@@ -217,6 +220,7 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 				);
 				if (requestMsg != nullptr)
 				{
+					WriteLine_D("Preparing OpenFile args...");
 					DBusMessageIter requestArgs;
 					DBusMessageIter requestOpts;
 					dbus_message_iter_init_append(requestMsg, &requestArgs);
@@ -228,6 +232,7 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 					//TODO: Fill in any of the options in this array: handle_token, accept_label, modal, multiple, directory, filters, current_filter, choices, current_folder
 					dbus_message_iter_close_container(&requestArgs, &requestOpts);
 					
+					WriteLine_D("Registering response listener...");
 					dbus_bus_add_match(
 						dbusConnection,
 						"type='signal'"
@@ -235,21 +240,35 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 						",member='Response'",
 						&dbusError
 					);
+					if (dbus_error_is_set(&dbusError)) { PrintLine_E("D-Bus error: %s", dbusError.message); dbus_error_free(&dbusError); }
 					
-					DBusPendingCall* pendingCall;
-					dbus_bool_t sendResult = dbus_connection_send_with_reply(dbusConnection, requestMsg, &pendingCall, DBUS_TIMEOUT_INFINITE); //DBUS_TIMEOUT_USE_DEFAULT
+					WriteLine_D("Starting call...");
+					// DBusPendingCall* pendingCall;
+					DBusMessage* responseMsg = dbus_connection_send_with_reply_and_block(dbusConnection, requestMsg, DBUS_TIMEOUT_USE_DEFAULT, &dbusError); //DBUS_TIMEOUT_INFINITE
 					dbus_message_unref(requestMsg);
 					
-					if (sendResult == true && pendingCall != nullptr)
+					if (dbus_error_is_set(&dbusError))
 					{
-						dbus_connection_flush(dbusConnection);
-						WriteLine_D("Waiting for pending call...");
-						dbus_pending_call_block(pendingCall); //TODO: This doesn't seem to be working!
-						WriteLine_D("Pending call is done!");
-						DBusMessage* responseMsg = dbus_pending_call_steal_reply(pendingCall);
-						NotNull(responseMsg);
-						dbus_pending_call_unref(pendingCall);
+						PrintLine_E("D-Bus error: %s", dbusError.message);
+						dbus_error_free(&dbusError);
+						result = Result_Unknown;
+					}
+					else if (responseMsg == nullptr)
+					{
+						WriteLine_E("D-Bus failed to connect/send!");
+						result = Result_Unknown;
+					}
+					else
+					{
+						// dbus_connection_flush(dbusConnection);
+						// WriteLine_D("Waiting for pending call...");
+						// dbus_pending_call_block(pendingCall); //TODO: This doesn't seem to be working!
+						// WriteLine_D("Pending call is done!");
+						// DBusMessage* responseMsg = dbus_pending_call_steal_reply(pendingCall);
+						// NotNull(responseMsg);
+						// dbus_pending_call_unref(pendingCall);
 						
+						WriteLine_D("Reading response!");
 						DBusMessageIter responseArgs;
 						dbus_bool_t initResult = dbus_message_iter_init(responseMsg, &responseArgs);
 						Assert(initResult == true);
@@ -288,11 +307,6 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 						result = Result_Success;
 						
 						dbus_message_unref(responseMsg);
-					}
-					else
-					{
-						WriteLine_E("dbus_connection_send_with_reply failed!");
-						result = Result_Unknown;
 					}
 				}
 				

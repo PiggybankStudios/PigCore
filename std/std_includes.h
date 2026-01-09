@@ -69,7 +69,7 @@ typedef uint16_t char16_t;
 	#include <Cocoa/Cocoa.h>
 #endif
 #if TARGET_IS_LINUX && !BUILD_FOR_PIGGEN
-	#include <fontconfig/fontconfig.h>
+	#include <fontconfig/fontconfig.h> //You may need to install libfontconfig-dev on your OS
 #endif
 #if COMPILER_IS_MSVC && LANGUAGE_IS_C
 	#pragma warning(push)
