@@ -21,6 +21,7 @@ Description:
 #include "std/std_memset.h"
 #include "std/std_printf.h"
 #include "misc/misc_printing.h"
+#include "misc/misc_standard_names.h"
 #include "os/os_threading.h"
 
 //TODO: Check if the scratch arenas have been initialized on the current thread before using them for print formatting. Maybe use a small thread_local buffer instead when that happens?
@@ -111,18 +112,22 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		if (LockMutex(&DebugOutputLineMutex, TIMEOUT_FOREVER))
 		#endif
 		{
-			#if DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
-			if (DebugOutputIsOnNewLine)
-			{
-				MyPrintNoLine("%s%s: %s%s", isNotification ? "NOTIFICATION: " : "", GetDbgLevelStr(level), message, newLine ? "\n" : "");
-			}
-			else
-			{
-				MyPrintNoLine("%s%s%s", isNotification ? "NOTIFICATION: " : "", message, newLine ? "\n" : "");
-			}
-			#else //!DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
-			MyPrintNoLine("%s%s%s", isNotification ? "NOTIFICATION: " : "", message, newLine ? "\n" : "");
-			#endif //DEBUG_OUTPUT_PRINT_LEVEL_PREFIX
+			ThreadId threadId;
+			Str8 threadName = Str8_Empty;
+			#if DEBUG_OUTPUT_PRINT_THREAD_PREFIX
+			threadId = OsGetCurrentThreadId();
+			threadName = GetStandardPeopleFirstName(threadId);
+			#endif
+			Str8 threadNameIfNewLine = (DebugOutputIsOnNewLine ? threadName : Str8_Empty);
+			MyPrintNoLine("%.*s%s%s%s%s%s%s",
+				StrPrint(threadNameIfNewLine),
+				(DebugOutputIsOnNewLine && DEBUG_OUTPUT_PRINT_THREAD_PREFIX) ? ": " : "",
+				isNotification ? "NOTIFICATION: " : "",
+				(DebugOutputIsOnNewLine && DEBUG_OUTPUT_PRINT_LEVEL_PREFIX) ? GetDbgLevelStr(level) : "",
+				(DebugOutputIsOnNewLine && DEBUG_OUTPUT_PRINT_LEVEL_PREFIX) ? ": " : "",
+				message,
+				newLine ? "\n" : ""
+			);
 			
 			#if TARGET_IS_WINDOWS
 			{

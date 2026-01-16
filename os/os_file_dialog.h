@@ -21,11 +21,36 @@ Description:
 #include "os/os_file.h"
 #include "struct/struct_string_buffer.h"
 
+typedef plex OsOpenFileDialogHandle OsOpenFileDialogHandle;
+plex OsOpenFileDialogHandle
+{
+	Arena* arena;
+	
+	// If OsIsOpenFileDialogDone returns true than this is filled with a value OR error is set to something besides Result_Success
+	FilePath chosenFilePath;
+	Result error;
+	
+	#if TARGET_IS_LINUX
+	int zenityExitCode;
+	#endif
+	
+	#if TARGET_IS_LINUX
+	DBusError dbusError;
+	DBusConnection* dbusConnection;
+	Str8 dbusRequestPath; //null-terminated
+	#endif
+};
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut);
+	Result OsDoOpenFileDialogBlocking(Arena* arena, FilePath* pathOut);
+	PIG_CORE_INLINE void OsFreeOpenFileDialogAsyncHandle(OsOpenFileDialogHandle* handle);
+	Result OsDoOpenFileDialogAsync(Arena* arena, bool allowBlocking, OsOpenFileDialogHandle* handleOut);
+	Result OsCheckOpenFileDialogAsyncHandle(OsOpenFileDialogHandle* handle);
+	bool OsIsOpenFileDialogDone(OsOpenFileDialogHandle* handle);
+	void OsFreeOpenFileDialogHandle(OsOpenFileDialogHandle* handle);
 	Result OsDoSaveFileDialog(uxx numExtensions, Str8Pair* extensions, uxx defaultExtensionIndex, Arena* arena, FilePath* pathOut);
 #endif
 
@@ -52,7 +77,7 @@ static void OsDoOpenFileDialogCallback(GObject* source, GAsyncResult* result, gp
 
 //TODO: We should add a way for the application to define file filters and a starting directory
 //TODO: Make a version of this function that allows opening multiple files at once
-PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
+PEXP Result OsDoOpenFileDialogBlocking(Arena* arena, FilePath* pathOut)
 {
 	Assert(arena != nullptr || pathOut == nullptr);
 	Result result = Result_None;
@@ -186,139 +211,8 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 		}
 		else if (zenityExitCode == 127 || zenityExitCode == 127*256) //127 is standard "command not found" result for most shells. Then we multiply by 256 to account for how `wait` reports exit codes
 		{
-			//https://wiki.archlinux.org/title/XDG_Desktop_Portal
-			PrintLine_D("Zenity was not available, trying D-Bus connection to XGD desktop portal...");
-			
-			WriteLine_D("Initializing D-Bus...");
-			DBusError dbusError;
-			dbus_error_init(&dbusError);
-			DBusConnection* dbusConnection = dbus_bus_get_private(DBUS_BUS_SESSION, &dbusError);
-			if (dbus_error_is_set(&dbusError))
-			{
-				PrintLine_E("DBUS Connection Error: %s", dbusError.message);
-				result = Result_Unknown; //TODO: Better error code
-			}
-			else if (dbusConnection == nullptr)
-			{
-				WriteLine_E("DBUS Connection Failed!");
-				result = Result_Unknown; //TODO: Better error code
-			}
-			else
-			{
-				WriteLine_D("Registering D-Bus connection...");
-				dbus_bus_register(dbusConnection, &dbusError);
-				if (dbus_error_is_set(&dbusError)) { PrintLine_E("D-Bus error: %s", dbusError.message); dbus_error_free(&dbusError); }
-				
-				// https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileChooser.html
-				// OpenFile(IN parent_window s, IN title s, IN options a{sv}, OUT handle o)
-				WriteLine_D("Finding FileChooser.OpenFile...");
-				DBusMessage* requestMsg = dbus_message_new_method_call(
-					"org.freedesktop.portal.Desktop", //destination
-					"/org/freedesktop/portal/desktop", //path
-					"org.freedesktop.portal.FileChooser", //interface
-					"OpenFile" //method
-				);
-				if (requestMsg != nullptr)
-				{
-					WriteLine_D("Preparing OpenFile args...");
-					DBusMessageIter requestArgs;
-					DBusMessageIter requestOpts;
-					dbus_message_iter_init_append(requestMsg, &requestArgs);
-					const char* parentWindow = "";
-					const char* windowTitle = "All Files";
-					dbus_message_iter_append_basic(&requestArgs, DBUS_TYPE_STRING, &parentWindow);
-					dbus_message_iter_append_basic(&requestArgs, DBUS_TYPE_STRING, &windowTitle);
-					dbus_message_iter_open_container(&requestArgs, DBUS_TYPE_ARRAY, "{sv}", &requestOpts);
-					//TODO: Fill in any of the options in this array: handle_token, accept_label, modal, multiple, directory, filters, current_filter, choices, current_folder
-					dbus_message_iter_close_container(&requestArgs, &requestOpts);
-					
-					WriteLine_D("Registering response listener...");
-					dbus_bus_add_match(
-						dbusConnection,
-						"type='signal'"
-						",interface='org.freedesktop.portal.Request'"
-						",member='Response'",
-						&dbusError
-					);
-					if (dbus_error_is_set(&dbusError)) { PrintLine_E("D-Bus error: %s", dbusError.message); dbus_error_free(&dbusError); }
-					
-					WriteLine_D("Starting call...");
-					// DBusPendingCall* pendingCall;
-					DBusMessage* responseMsg = dbus_connection_send_with_reply_and_block(dbusConnection, requestMsg, DBUS_TIMEOUT_USE_DEFAULT, &dbusError); //DBUS_TIMEOUT_INFINITE
-					dbus_message_unref(requestMsg);
-					
-					if (dbus_error_is_set(&dbusError))
-					{
-						PrintLine_E("D-Bus error: %s", dbusError.message);
-						dbus_error_free(&dbusError);
-						result = Result_Unknown;
-					}
-					else if (responseMsg == nullptr)
-					{
-						WriteLine_E("D-Bus failed to connect/send!");
-						result = Result_Unknown;
-					}
-					else
-					{
-						// dbus_connection_flush(dbusConnection);
-						// WriteLine_D("Waiting for pending call...");
-						// dbus_pending_call_block(pendingCall); //TODO: This doesn't seem to be working!
-						// WriteLine_D("Pending call is done!");
-						// DBusMessage* responseMsg = dbus_pending_call_steal_reply(pendingCall);
-						// NotNull(responseMsg);
-						// dbus_pending_call_unref(pendingCall);
-						
-						WriteLine_D("Reading response!");
-						DBusMessageIter responseArgs;
-						dbus_bool_t initResult = dbus_message_iter_init(responseMsg, &responseArgs);
-						Assert(initResult == true);
-						// DBUS_TYPE_INVALID     '\0'
-						// DBUS_TYPE_ARRAY       'a' 97
-						// DBUS_TYPE_BOOLEAN     'b' 98
-						// DBUS_TYPE_BYTE        'y' 121
-						// DBUS_TYPE_DICT_ENTRY  'e' 101
-						// DBUS_TYPE_DOUBLE      'd' 100
-						// DBUS_TYPE_INT16       'n' 110
-						// DBUS_TYPE_INT32       'i' 105
-						// DBUS_TYPE_INT64       'x' 120
-						// DBUS_TYPE_OBJECT_PATH 'o' 111
-						// DBUS_TYPE_SIGNATURE   'g' 103
-						// DBUS_TYPE_STRING      's' 115
-						// DBUS_TYPE_STRUCT      'r' 114
-						// DBUS_TYPE_UINT16      'q' 113
-						// DBUS_TYPE_UINT32      'u' 117
-						// DBUS_TYPE_UINT64      't' 116
-						// DBUS_TYPE_UNIX_FD     'h' 104
-						// DBUS_TYPE_VARIANT     'v' 118
-						int argType = dbus_message_iter_get_arg_type(&responseArgs);
-						Assert(argType != DBUS_TYPE_INVALID);
-						PrintLine_D("response arg type: %d", argType);
-						
-						char* responsePath = nullptr;
-						dbus_message_iter_get_basic(&responseArgs, &responsePath);
-						NotNull(responsePath);
-						
-						if (pathOut != nullptr)
-						{
-							*pathOut = AllocStr8Nt(arena, responsePath);
-							NotNullStr(*pathOut);
-							FixPathSlashes(*pathOut);
-						}
-						result = Result_Success;
-						
-						dbus_message_unref(responseMsg);
-					}
-				}
-				
-				if (dbus_error_is_set(&dbusError)) { dbus_error_free(&dbusError); }
-				dbus_connection_close(dbusConnection);
-			}
-			
-			if (result == Result_None)
-			{
-				Notify_W("Zenity is not installed and desktop portal was not available through DBUS! We can't open a file dialog without those! Please install one through your distro's package manager");
-				result = Result_MissingDependency;
-			}
+			Notify_W("Zenity is not installed! We can't open a file dialog without it! Please install it through your distro's package manager");
+			result = Result_MissingDependency;
 		}
 		else if (zenityExitCode == 256) //256 means that the user selected "Cancel" in the dialog
 		{
@@ -340,11 +234,397 @@ PEXP Result OsDoOpenFileDialog(Arena* arena, FilePath* pathOut)
 	#else
 	UNUSED(arena);
 	UNUSED(pathOut);
-	AssertMsg(false, "OsDoOpenFileDialog does not support the current platform yet!");
+	AssertMsg(false, "OsDoOpenFileDialogBlocking does not support the current platform yet!");
 	result = Result_UnsupportedPlatform;
 	#endif
 	
 	return result;
+}
+
+#if TARGET_IS_LINUX
+// DBusHandleMessageFunction = https://dbus.freedesktop.org/doc/api/html/group__DBusConnection.html#ga5d7721ab952bd87d9a84f26d61709ad6
+static DBusHandlerResult OsOpenFileDialogSignalHandler(DBusConnection* connection, DBusMessage* message, void* userData)
+{
+	NotNull(userData);
+	OsOpenFileDialogHandle* handle = (OsOpenFileDialogHandle*)userData;
+	PrintLine_D("Got D-Bus signal on connection %p message %p with data %p", connection, message, userData);
+	//DBusMessage = https://dbus.freedesktop.org/doc/api/html/group__DBusMessage.html
+	if (dbus_message_is_signal(message, "org.freedesktop.portal.Request", "Response"))
+	{
+		WriteLine_D("Signal is a Request Response!");
+		const char* responsePathNt = dbus_message_get_path(message);
+		NotNull(responsePathNt);
+		Str8 responsePath = MakeStr8Nt(responsePathNt);
+		if (StrExactEquals(responsePath, handle->dbusRequestPath))
+		{
+			PrintLine_D("Response has matching path for our request! \"%s\"", responsePathNt);
+			do
+			{
+				DBusMessageIter messageArgs;
+				dbus_bool_t iterInitResult = dbus_message_iter_init(message, &messageArgs);
+				if (!iterInitResult) { WriteLine_E("Failed to initialize message iterator!"); break; }
+				
+				int firstArgType = dbus_message_iter_get_arg_type(&messageArgs);
+				if (firstArgType != DBUS_TYPE_UINT32) { PrintLine_E("Unexpected arg type %d. Expected UINT32(%d)", firstArgType, (int)DBUS_TYPE_UINT32); break; }
+				u32 responseCode = 0;
+				dbus_message_iter_get_basic(&messageArgs, &responseCode);
+				PrintLine_I("Response Code: %u (0x%08X)", responseCode, responseCode);
+				
+				if (responseCode == 1) //user cancelled
+				{
+					handle->error = Result_Canceled;
+					break;
+				}
+				else if (responseCode != 0)
+				{
+					PrintLine_W("Unknown open file dialog response code %u. Expected 0 or 1 for success or cancelled", responseCode);
+					handle->error = Result_Unknown;
+					break;
+				}
+				
+				dbus_bool_t nextResult = dbus_message_iter_next(&messageArgs);
+				if (!nextResult) { WriteLine_E("Failed to iterate to second argument!"); break; }
+				
+				int secondArgType = dbus_message_iter_get_arg_type(&messageArgs);
+				if (secondArgType != DBUS_TYPE_ARRAY) { PrintLine_E("Unexpected arg type %d. Expected ARRAY(%d)", secondArgType, (int)DBUS_TYPE_ARRAY); break; }
+				
+				DBusMessageIter arrayIter;
+				dbus_message_iter_recurse(&messageArgs, &arrayIter);
+				while (dbus_message_iter_get_arg_type(&arrayIter) == DBUS_TYPE_DICT_ENTRY)
+				{
+					DBusMessageIter entryIter;
+					dbus_message_iter_recurse(&arrayIter, &entryIter);
+					const char* entryKeyNt = nullptr;
+					dbus_message_iter_get_basic(&entryIter, &entryKeyNt);
+					Str8 entryKey = MakeStr8Nt(entryKeyNt);
+					if (StrExactEquals(entryKey, StrLit("uris")))
+					{
+						dbus_message_iter_next(&entryIter);
+						DBusMessageIter valueIter;
+						dbus_message_iter_recurse(&entryIter, &valueIter);
+						int valueType = dbus_message_iter_get_arg_type(&valueIter);
+						if (valueType == DBUS_TYPE_ARRAY)
+						{
+							DBusMessageIter uriArrayIter;
+							dbus_message_iter_recurse(&valueIter, &uriArrayIter);
+							while (dbus_message_iter_get_arg_type(&uriArrayIter) == DBUS_TYPE_STRING)
+							{
+								const char* chosenFilePathNt = nullptr;
+								dbus_message_iter_get_basic(&uriArrayIter, &chosenFilePathNt);
+								
+								if (chosenFilePathNt != nullptr && chosenFilePathNt[0] != '\0')
+								{
+									handle->chosenFilePath = MakeStr8Nt(chosenFilePathNt);
+									if (StrAnyCaseStartsWith(handle->chosenFilePath, StrLit("file://")))
+									{
+										handle->chosenFilePath = StrSliceFrom(handle->chosenFilePath, 7);
+									}
+									handle->chosenFilePath = AllocStr8(handle->arena, handle->chosenFilePath);
+									NotNullStr(handle->chosenFilePath);
+									FixPathSlashes(handle->chosenFilePath);
+									handle->error = Result_Success;
+									break;
+								}
+								
+								if (!dbus_message_iter_next(&arrayIter)) { break; }
+							}
+							if (handle->error == Result_Success) { break; }
+						}
+					}
+					else
+					{
+						PrintLine_D("Unhandled dictionary entry \"%.*s\"", StrPrint(entryKey));
+					}
+					
+					if (!dbus_message_iter_next(&arrayIter)) { break; }
+				}
+				
+				if (handle->error != Result_Success)
+				{
+					WriteLine_E("Failed to find the selected file path in the response argument dictionary");
+					handle->error = Result_Unknown; //TODO: Better error code
+				}
+			} while(0);
+			
+			dbus_connection_close(handle->dbusConnection);
+			dbus_connection_unref(handle->dbusConnection);
+			handle->dbusConnection = nullptr;
+			if (handle->error == Result_None || handle->error == Result_Ongoing) { handle->error = Result_Unknown; }
+			return DBUS_HANDLER_RESULT_HANDLED;
+		}
+		else
+		{
+			PrintLine_W("Response has incorrect path \"%s\". We expect \"%.*s\"", responsePathNt, StrPrint(handle->dbusRequestPath));
+		}
+	}
+	else
+	{
+		const char* interfaceName = dbus_message_get_interface(message);
+		const char* memberName = dbus_message_get_member(message);
+		PrintLine_D("Got signal for interface \"%s\" function \"%s\"", interfaceName, memberName);
+	}
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+#endif //TARGET_IS_LINUX
+
+PEXPI void OsFreeOpenFileDialogAsyncHandle(OsOpenFileDialogHandle* handle)
+{
+	NotNull(handle);
+	if (handle->arena != nullptr)
+	{
+		if (handle->chosenFilePath.chars != nullptr) { FreeStr8(handle->arena, &handle->chosenFilePath); }
+		
+		#if TARGET_IS_LINUX
+		if (dbus_error_is_set(&handle->dbusError)) { dbus_error_free(&handle->dbusError); }
+		// if (handle->pendingCall != nullptr) { dbus_pending_call_unref(handle->pendingCall); }
+		if (handle->dbusConnection != nullptr)
+		{
+			dbus_connection_remove_filter(handle->dbusConnection, OsOpenFileDialogSignalHandler, (void*)handle);
+			dbus_connection_close(handle->dbusConnection);
+		}
+		if (handle->dbusRequestPath.chars != nullptr) { FreeStr8WithNt(handle->arena, &handle->dbusRequestPath); }
+		#endif //TARGET_IS_LINUX
+	}
+	ClearPointer(handle);
+}
+
+PEXP Result OsDoOpenFileDialogAsync(Arena* arena, bool allowBlocking, OsOpenFileDialogHandle* handleOut)
+{
+	NotNull(arena);
+	NotNull(handleOut);
+	ClearPointer(handleOut);
+	
+	#if TARGET_IS_LINUX
+	do
+	{
+		handleOut->arena = arena;
+		
+		WriteLine_D("Initializing D-Bus...");
+		dbus_error_init(&handleOut->dbusError);
+		handleOut->dbusConnection = dbus_bus_get_private(DBUS_BUS_SESSION, &handleOut->dbusError);
+		if (dbus_error_is_set(&handleOut->dbusError))
+		{
+			PrintLine_E("DBUS Connection Error: %s", handleOut->dbusError.message);
+			handleOut->error = Result_DBusError;
+			break;
+		}
+		if (handleOut->dbusConnection == nullptr)
+		{
+			WriteLine_E("DBUS Connection Failed!");
+			handleOut->error = Result_Unknown; //TODO: Better error code
+			break;
+		}
+		
+		PrintLine_D("Registering D-Bus connection %p...", handleOut->dbusConnection);
+		dbus_bus_register(handleOut->dbusConnection, &handleOut->dbusError);
+		if (dbus_error_is_set(&handleOut->dbusError))
+		{
+			PrintLine_E("D-Bus Register error: %s", handleOut->dbusError.message);
+			handleOut->error = Result_DBusError;
+			break;
+		}
+		
+		//Register a signal "filter" which will catch the response that contains the file the user chose
+		PrintLine_D("Registering D-Bus signal handler with userData %p...", handleOut);
+		dbus_bool_t addFilterResult = dbus_connection_add_filter(handleOut->dbusConnection, OsOpenFileDialogSignalHandler, (void*)handleOut, nullptr);
+		Assert(addFilterResult == TRUE);
+		
+		// https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileChooser.html
+		// OpenFile(IN parent_window s, IN title s, IN options a{sv}, OUT handle o)
+		WriteLine_D("Finding FileChooser.OpenFile...");
+		DBusMessage* requestMsg = dbus_message_new_method_call(
+			"org.freedesktop.portal.Desktop", //destination
+			"/org/freedesktop/portal/desktop", //path
+			"org.freedesktop.portal.FileChooser", //interface
+			"OpenFile" //method
+		);
+		if (requestMsg == nullptr)
+		{
+			WriteLine_E("Failed to create D-Bus request message!");
+			handleOut->error = Result_Unknown; //TODO: Better error code
+			break;
+		}
+		
+		WriteLine_D("Preparing OpenFile args...");
+		DBusMessageIter requestArgs;
+		DBusMessageIter requestOpts;
+		dbus_message_iter_init_append(requestMsg, &requestArgs);
+		const char* parentWindow = "";
+		const char* windowTitle = "All Files";
+		dbus_bool_t appendResult1 = dbus_message_iter_append_basic(&requestArgs, DBUS_TYPE_STRING, &parentWindow); Assert(appendResult1 == TRUE);
+		dbus_bool_t appendResult2 = dbus_message_iter_append_basic(&requestArgs, DBUS_TYPE_STRING, &windowTitle); Assert(appendResult2 == TRUE);
+		dbus_bool_t openResult = dbus_message_iter_open_container(&requestArgs, DBUS_TYPE_ARRAY, "{sv}", &requestOpts); Assert(openResult == TRUE);
+		//TODO: Fill in any of the options in this array: handle_token, accept_label, modal, multiple, directory, filters, current_filter, choices, current_folder
+		dbus_bool_t closeResult = dbus_message_iter_close_container(&requestArgs, &requestOpts); Assert(closeResult == TRUE);
+		
+		WriteLine_D("Registering response listener...");
+		dbus_bus_add_match(
+			handleOut->dbusConnection,
+			"type='signal'"
+			",interface='org.freedesktop.portal.Request'"
+			",member='Response'",
+			&handleOut->dbusError
+		);
+		if (dbus_error_is_set(&handleOut->dbusError))
+		{
+			PrintLine_E("D-Bus error: %s", handleOut->dbusError.message);
+			handleOut->error = Result_DBusError;
+			break;
+		}
+		
+		// The dialog process is asynchronous but this call returns immediately with a "path" that we can use to identify the final Response later (in the signal filter callback)
+		// Thus "blocking" here doesn't mean blocking for the duration of the dialog being open, only for the duration of the D-Bus message and reply for the initial request
+		// (we're gonna call this initial reply an acknowledgement or "ack")
+		WriteLine_D("Starting call...");
+		DBusMessage* dbusAck = dbus_connection_send_with_reply_and_block(handleOut->dbusConnection, requestMsg, DBUS_TIMEOUT_USE_DEFAULT, &handleOut->dbusError);
+		dbus_message_unref(requestMsg);
+		if (dbus_error_is_set(&handleOut->dbusError))
+		{
+			PrintLine_E("D-Bus Send error: %s", handleOut->dbusError.message);
+			handleOut->error = Result_DBusError;
+			break;
+		}
+		if (dbusAck == nullptr)
+		{
+			handleOut->error = Result_Unknown;
+			break;
+		}
+		
+		DBusMessageIter dbusAckArgs;
+		dbus_bool_t initResult = dbus_message_iter_init(dbusAck, &dbusAckArgs);
+		if (!initResult)
+		{
+			WriteLine_E("Failed to initialize DBusMessageIter on ack from OpenFile call");
+			dbus_message_unref(dbusAck);
+			handleOut->error = Result_Unknown;
+			break;
+		}
+		int dbusAckArgType = dbus_message_iter_get_arg_type(&dbusAckArgs);
+		if (dbusAckArgType != DBUS_TYPE_OBJECT_PATH)
+		{
+			PrintLine_E("Ack for DBus OpenFile request did not contain an object path like we expected. Type: %d", dbusAckArgType);
+			dbus_message_unref(dbusAck);
+			handleOut->error = Result_Unknown;
+			break;
+		}
+		
+		const char* dbusRequestPathNt = nullptr;
+		dbus_message_iter_get_basic(&dbusAckArgs, &dbusRequestPathNt);
+		NotNull(dbusRequestPathNt);
+		handleOut->dbusRequestPath = AllocStr8Nt(arena, dbusRequestPathNt);
+		PrintLine_D("D-Bus request path: \"%.*s\"", StrPrint(handleOut->dbusRequestPath));
+		
+		// dbus_connection_flush(handleOut->dbusConnection);
+		WriteLine_D("Waiting for response...");
+		handleOut->error = Result_Ongoing;
+	} while(0);
+	#else
+	if (allowBlocking)
+	{
+		handleOut->arena = arena;
+		handleOut->error = OsDoOpenFileDialogBlocking(arena, &handleOut->chosenFilePath);
+	}
+	else
+	{
+		AssertMsg(false, "OsDoOpenFileDialogAsync does not support the current platform yet!");
+		handleOut->error = Result_UnsupportedPlatform;
+	}
+	#endif
+	
+	if (handleOut->error != Result_Success && handleOut->error != Result_Ongoing)
+	{
+		Result error = handleOut->error;
+		OsFreeOpenFileDialogAsyncHandle(handleOut);
+		handleOut->error = error;
+	}
+	return handleOut->error;
+}
+
+PEXP Result OsCheckOpenFileDialogAsyncHandle(OsOpenFileDialogHandle* handle)
+{
+	NotNull(handle);
+	if (handle->error != Result_Ongoing && handle->error != Result_None) { return handle->error; }
+	if (handle->arena == nullptr) { handle->error = Result_Uninitialized; return handle->error; }
+	
+	#if TARGET_IS_LINUX
+	{
+		dbus_bool_t connectionStillAlive = dbus_connection_read_write_dispatch(handle->dbusConnection, 0);
+		if (!connectionStillAlive)
+		{
+			if (handle->dbusConnection != nullptr && (handle->error == Result_None || handle->error == Result_Ongoing))
+			{
+				WriteLine_E("D-Bus Connection closed without signal handler collecting a result!");
+				handle->error = Result_Disconnected;
+				dbus_connection_close(handle->dbusConnection); //TODO: Do we need to do this?
+				dbus_connection_unref(handle->dbusConnection); //TODO: Do we need to do this?
+				handle->dbusConnection = nullptr;
+			}
+			else
+			{
+				WriteLine_D("D-Bus Connection closed!");
+				//TODO: Handle success?
+			}
+		}
+		#if 0
+		dbus_bool_t isCompleted = dbus_pending_call_get_completed(handle->pendingCall);
+		if (!isCompleted)
+		{
+			handle->error = Result_Ongoing;
+		}
+		else
+		{
+			DBusMessage* responseMsg = dbus_pending_call_steal_reply(handle->pendingCall);
+			NotNull(responseMsg);
+			dbus_pending_call_unref(handle->pendingCall);
+			handle->pendingCall = nullptr;
+			
+			WriteLine_D("Reading response!");
+			DBusMessageIter responseArgs;
+			dbus_bool_t initResult = dbus_message_iter_init(responseMsg, &responseArgs);
+			Assert(initResult == true);
+			// DBUS_TYPE_INVALID     '\0'
+			// DBUS_TYPE_ARRAY       'a' 97
+			// DBUS_TYPE_BOOLEAN     'b' 98
+			// DBUS_TYPE_BYTE        'y' 121
+			// DBUS_TYPE_DICT_ENTRY  'e' 101
+			// DBUS_TYPE_DOUBLE      'd' 100
+			// DBUS_TYPE_INT16       'n' 110
+			// DBUS_TYPE_INT32       'i' 105
+			// DBUS_TYPE_INT64       'x' 120
+			// DBUS_TYPE_OBJECT_PATH 'o' 111
+			// DBUS_TYPE_SIGNATURE   'g' 103
+			// DBUS_TYPE_STRING      's' 115
+			// DBUS_TYPE_STRUCT      'r' 114
+			// DBUS_TYPE_UINT16      'q' 113
+			// DBUS_TYPE_UINT32      'u' 117
+			// DBUS_TYPE_UINT64      't' 116
+			// DBUS_TYPE_UNIX_FD     'h' 104
+			// DBUS_TYPE_VARIANT     'v' 118
+			int argType = dbus_message_iter_get_arg_type(&responseArgs);
+			Assert(argType != DBUS_TYPE_INVALID);
+			PrintLine_D("response arg type: %d", argType);
+			
+			char* responsePath = nullptr;
+			dbus_message_iter_get_basic(&responseArgs, &responsePath);
+			NotNull(responsePath);
+			
+			handle->chosenFilePath = AllocStr8Nt(handle->arena, responsePath);
+			NotNullStr(handle->chosenFilePath);
+			FixPathSlashes(handle->chosenFilePath);
+			handle->error = Result_Success;
+			
+			dbus_message_unref(responseMsg);
+			dbus_connection_close(handle->dbusConnection);
+			handle->dbusConnection = nullptr;
+		}
+		#endif
+	}
+	#else
+	AssertMsg(false, "OsCheckOpenFileDialogAsyncHandle does not support the current platform yet!");
+	handle->error = Result_UnsupportedPlatform;
+	#endif
+	
+	return handle->error;
 }
 
 PEXP Result OsDoSaveFileDialog(uxx numExtensions, Str8Pair* extensions, uxx defaultExtensionIndex, Arena* arena, FilePath* pathOut)

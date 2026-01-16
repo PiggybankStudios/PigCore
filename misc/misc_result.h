@@ -32,6 +32,7 @@ enum Result
 	Result_Unknown, //TODO: This name conflicts with UNKNOWN_STR macro thats returned from the GetResultStr function!
 	Result_Finished,
 	Result_Canceled,
+	Result_Ongoing,
 	
 	Result_NotImplemented,
 	Result_InvalidCharacter,
@@ -118,6 +119,9 @@ enum Result
 	Result_InvalidIdentifier,
 	Result_Stopped,
 	Result_MissingDependency,
+	Result_DBusError,
+	Result_Disconnected,
+	Result_Uninitialized,
 	
 	Result_Count,
 };
@@ -136,6 +140,7 @@ PEXP const char* GetResultStr(Result result)
 		case Result_Unknown: return "Unknown";
 		case Result_Finished: return "Finished";
 		case Result_Canceled: return "Canceled";
+		case Result_Ongoing: return "Ongoing";
 		case Result_NotImplemented: return "NotImplemented";
 		case Result_InvalidCharacter: return "InvalidCharacter";
 		case Result_InvalidUtf8: return "InvalidUtf8";
@@ -221,6 +226,9 @@ PEXP const char* GetResultStr(Result result)
 		case Result_InvalidIdentifier: return "InvalidIdentifier";
 		case Result_Stopped: return "Stopped";
 		case Result_MissingDependency: return "MissingDependency";
+		case Result_DBusError: return "DBusError";
+		case Result_Disconnected: return "Disconnected";
+		case Result_Uninitialized: return "Uninitialized";
 		default: return UNKNOWN_STR;
 	}
 }
