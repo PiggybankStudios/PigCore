@@ -377,7 +377,6 @@ PEXPI void OsFreeOpenFileDialogAsyncHandle(OsOpenFileDialogHandle* handle)
 		
 		#if TARGET_IS_LINUX
 		if (dbus_error_is_set(&handle->dbusError)) { dbus_error_free(&handle->dbusError); }
-		// if (handle->pendingCall != nullptr) { dbus_pending_call_unref(handle->pendingCall); }
 		if (handle->dbusConnection != nullptr)
 		{
 			dbus_connection_remove_filter(handle->dbusConnection, OsOpenFileDialogSignalHandler, (void*)handle);
@@ -565,65 +564,7 @@ PEXP Result OsCheckOpenFileDialogAsyncHandle(OsOpenFileDialogHandle* handle)
 				dbus_connection_unref(handle->dbusConnection); //TODO: Do we need to do this?
 				handle->dbusConnection = nullptr;
 			}
-			else
-			{
-				WriteLine_D("D-Bus Connection closed!");
-				//TODO: Handle success?
-			}
 		}
-		#if 0
-		dbus_bool_t isCompleted = dbus_pending_call_get_completed(handle->pendingCall);
-		if (!isCompleted)
-		{
-			handle->error = Result_Ongoing;
-		}
-		else
-		{
-			DBusMessage* responseMsg = dbus_pending_call_steal_reply(handle->pendingCall);
-			NotNull(responseMsg);
-			dbus_pending_call_unref(handle->pendingCall);
-			handle->pendingCall = nullptr;
-			
-			WriteLine_D("Reading response!");
-			DBusMessageIter responseArgs;
-			dbus_bool_t initResult = dbus_message_iter_init(responseMsg, &responseArgs);
-			Assert(initResult == true);
-			// DBUS_TYPE_INVALID     '\0'
-			// DBUS_TYPE_ARRAY       'a' 97
-			// DBUS_TYPE_BOOLEAN     'b' 98
-			// DBUS_TYPE_BYTE        'y' 121
-			// DBUS_TYPE_DICT_ENTRY  'e' 101
-			// DBUS_TYPE_DOUBLE      'd' 100
-			// DBUS_TYPE_INT16       'n' 110
-			// DBUS_TYPE_INT32       'i' 105
-			// DBUS_TYPE_INT64       'x' 120
-			// DBUS_TYPE_OBJECT_PATH 'o' 111
-			// DBUS_TYPE_SIGNATURE   'g' 103
-			// DBUS_TYPE_STRING      's' 115
-			// DBUS_TYPE_STRUCT      'r' 114
-			// DBUS_TYPE_UINT16      'q' 113
-			// DBUS_TYPE_UINT32      'u' 117
-			// DBUS_TYPE_UINT64      't' 116
-			// DBUS_TYPE_UNIX_FD     'h' 104
-			// DBUS_TYPE_VARIANT     'v' 118
-			int argType = dbus_message_iter_get_arg_type(&responseArgs);
-			Assert(argType != DBUS_TYPE_INVALID);
-			PrintLine_D("response arg type: %d", argType);
-			
-			char* responsePath = nullptr;
-			dbus_message_iter_get_basic(&responseArgs, &responsePath);
-			NotNull(responsePath);
-			
-			handle->chosenFilePath = AllocStr8Nt(handle->arena, responsePath);
-			NotNullStr(handle->chosenFilePath);
-			FixPathSlashes(handle->chosenFilePath);
-			handle->error = Result_Success;
-			
-			dbus_message_unref(responseMsg);
-			dbus_connection_close(handle->dbusConnection);
-			handle->dbusConnection = nullptr;
-		}
-		#endif
 	}
 	#else
 	AssertMsg(false, "OsCheckOpenFileDialogAsyncHandle does not support the current platform yet!");

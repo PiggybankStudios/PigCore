@@ -268,6 +268,24 @@ This folder contains (or needs to be made to contain) copies of all third party 
 
 ---
 
+## Tracy v0.12.2
+**URL(s):** [https://github.com/wolfpld/tracy](https://github.com/wolfpld/tracy) [v0.12.2](https://github.com/wolfpld/tracy/releases/tag/v0.12.1)
+
+**Folder Name:** `tracy`
+
+**Download Required:** All necassary files for compilation are included in the repository. For analyzing generated profiling information either downloaded the Windows binary from the release page, or compile the Tracy Profiler using the instructions in the `tracy.pdf` - **First Steps** > **Building the server**
+
+**Current Version:** Version 0.12.2 from Jun 25th 2025
+
+**Fixup Required:** TODO: Fill out this section
+
+**Required For:**
+
+* `lib_tracy.h` always includes the `TracyC.h` header, but only actually does anything if `PROFILING_ENABLED` is enabled
+* A `tracy.dll/lib/so` can be built from `TracyClient.cpp` and is required for `PROFILING_ENABLED` builds to work
+
+---
+
 ## PhysX v5.5.0.e41b928f
 **URL(s):** [https://github.com/NVIDIA-Omniverse/PhysX](https://github.com/NVIDIA-Omniverse/PhysX) [v5.5.0](https://github.com/NVIDIA-Omniverse/PhysX/releases/tag/106.4-physx-5.5.0)
 
