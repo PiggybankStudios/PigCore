@@ -259,6 +259,14 @@ Description:
 #define DeferIfBlockCondEndEx(uniqueName, startCodeAndCondition, endCode) for (int uniqueName = 1 * !(startCodeAndCondition); uniqueName == 0; (uniqueName = 1, (endCode)))
 #define DeferIfBlockCondEnd(startCodeAndCondition, endCode)               DeferIfBlockCondEndEx(DeferBlockIter, (startCodeAndCondition), (endCode))
 
+// Sometimes we use loops as a way to jump forward (often when a chunk of code has many failure points, and we want to skip the following steps if any step fails)
+// BeginBreakableBlock/EndBreakableBlock simply define a loop that runs once, inside that loop's block you can use BreakBlock (which is just a break statement) to jump to the end of the block
+#define BeginBreakableBlock(optionalName) do
+#define EndBreakableBlock(optionalName) while(0)
+// BreakBlock is a convenience macro, meant to be used for clarity, making it clear that we intend to break out of the BreakableBlock, not some other normal loop or switch statement
+// WARNING: The name provided has no effect! It's simply there to help connect Begin/EndBreakableBlock(name) and BreakBlock(name) statements clearly
+#define BreakBlock(optionalName) break
+
 // +--------------------------------------------------------------+
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
