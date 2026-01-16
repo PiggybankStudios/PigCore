@@ -110,13 +110,14 @@ void Fill_clang_LangCFlags(CliArgList* clang_LangCFlags, bool BUILD_WITH_IMGUI)
 	if (BUILD_WITH_IMGUI)
 	{
 		//TODO: Figure out why these are needed when linking with imgui.o with Clang on Linux
-		AddArg(clang_LangCFlags, "-lstdc++");
+		// AddArg(clang_LangCFlags, "-lstdc++"); //TODO: Since this is being added to clang_LangCppFlags flags now (was needed for tracy.so as well as imgui.so) we probably don't need to add it here
 		AddArg(clang_LangCFlags, "-fno-threadsafe-statics"); //Eliminates undefined references to stuff like "__cxa_guard_acquire"
 	}
 }
 void Fill_clang_LangCppFlags(CliArgList* clang_LangCppFlags)
 {
-	AddArgNt(clang_LangCppFlags, CLANG_LANG_VERSION, "c++20");//TODO: What option should we actually choose here?
+	AddArgNt(clang_LangCppFlags, CLANG_LANG_VERSION, "c++20"); // TODO: What option should we actually choose here?
+	AddArgNt(clang_LangCppFlags, CLANG_SYSTEM_LIBRARY, "stdc++"); // Fixes tracy.so link-time errors regarding stuff like `operator delete(void*, unsigned long)`
 }
 void Fill_clang_LangObjectiveCFlags(CliArgList* clang_LangObjectiveCFlags)
 {
