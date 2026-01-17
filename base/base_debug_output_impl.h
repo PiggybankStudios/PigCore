@@ -119,13 +119,34 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 			threadName = GetStandardPeopleFirstName(threadId);
 			#endif
 			Str8 threadNameIfNewLine = (DebugOutputIsOnNewLine ? threadName : Str8_Empty);
-			MyPrintNoLine("%.*s%s%s%s%s%s%s",
+			Str8 beginColorStr = Str8_Empty;
+			Str8 endColorStr = Str8_Empty;
+			#if DEBUG_OUTPUT_PRINT_COLOR_PREFIX
+			if (DebugOutputIsOnNewLine)
+			{
+				//ANSI Escape Code Sequences Github Gist - https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
+				switch (level)
+				{
+					case DbgLevel_Debug: beginColorStr = StrLit("\x1B[2;37m"); endColorStr = StrLit("\x1B[0;0m"); break; //Dim White
+					case DbgLevel_Regular: beginColorStr = StrLit("\x1B[0m"); break; //Default
+					case DbgLevel_Info: beginColorStr = StrLit("\x1B[92m"); break; //Bright Green
+					case DbgLevel_Notify: beginColorStr = StrLit("\x1B[95m"); break; //Bright Magenta
+					case DbgLevel_Other: beginColorStr = StrLit("\x1B[94m"); break; //Bright Blue
+					case DbgLevel_Warning: beginColorStr = StrLit("\x1B[93m"); break; //Bright Yellow
+					case DbgLevel_Error: beginColorStr = StrLit("\x1B[91m"); break; //Bright Red
+					default: beginColorStr = StrLit("\x1B[0m"); break; //Default
+				}
+			}
+			#endif
+			MyPrintNoLine("%.*s%.*s%s%s%s%s%s%.*s%s",
+				StrPrint(beginColorStr),
 				StrPrint(threadNameIfNewLine),
 				(DebugOutputIsOnNewLine && DEBUG_OUTPUT_PRINT_THREAD_PREFIX) ? ": " : "",
 				isNotification ? "NOTIFICATION: " : "",
 				(DebugOutputIsOnNewLine && DEBUG_OUTPUT_PRINT_LEVEL_PREFIX) ? GetDbgLevelStr(level) : "",
 				(DebugOutputIsOnNewLine && DEBUG_OUTPUT_PRINT_LEVEL_PREFIX) ? ": " : "",
 				message,
+				StrPrint(endColorStr),
 				newLine ? "\n" : ""
 			);
 			
