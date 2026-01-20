@@ -24,7 +24,8 @@ Description:
 #define MyBreakMsg(message) __debugbreak()
 #define MyBreak()           MyBreakMsg("")
 #elif (TARGET_IS_OSX || TARGET_IS_LINUX)
-#define MyBreakMsg(message) do { fprintf(stderr, "%s\n", ((message) != nullptr) ? (message) : "MyBreak Hit!"); raise(SIGTRAP); } while(0)
+// ANSI Escape sequences make the output red and invertedto make it very visible
+#define MyBreakMsg(message) do { fprintf(stderr, "\x1B[7m\x1B[91m%s\x1B[00m\n", (message)); raise(SIGTRAP); } while(0)
 #define MyBreak()           MyBreakMsg(nullptr)
 #elif TARGET_IS_ORCA
 #define MyBreakMsg(message) oc_abort_ext(__FILE__, __FUNCTION__, __LINE__, message)
@@ -44,14 +45,14 @@ Description:
 #if USING_CUSTOM_STDLIB
 #define AssertMsg(condition, message) if (!(condition)) { MyBreak(); assert_msg(condition, (message)); }
 #elif COMPILER_IS_MSVC
-#define AssertMsg(condition, message) if (!(condition)) { MyBreakMsg(message); assert(condition); }
+#define AssertMsg(condition, message) if (!(condition)) { MyBreakMsg(message); assert(condition); } //TODO: Can we just use the default one below that displays file+line number? Maybe we don't need to if assert implementation does that for us on Windows?
 #elif TARGET_IS_PLAYDATE_DEVICE
 #define AssertMsg(condition, message) if (!(condition)) { MyBreakMsg(message); }
 #else
-#define AssertMsg(condition, message) if (!(condition)) { MyBreakMsg(message); assert(condition); }
+#define AssertMsg(condition, message) if (!(condition)) { MyBreakMsg("Assertion Failed! " __FILE__ ":" STRINGIFY_DEFINE(__LINE__) " - " message); assert(condition); }
 #endif
 
-#define Assert(condition) AssertMsg(condition, "")
+#define Assert(condition) AssertMsg((condition), "(" #condition ") is not true!")
 
 #define NotNull(variable) Assert(variable != nullptr)
 
