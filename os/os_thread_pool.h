@@ -254,7 +254,7 @@ PEXP ThreadPoolWorkItem* AddWorkItemToThreadPool(ThreadPool* pool, ThreadPoolWor
 	NotNull(pool->arena);
 	NotNull(workItemFunc);
 	ThreadPoolWorkItem* result = nullptr;
-	LockMutex(&pool->workItemsMutex, TIMEOUT_FOREVER);
+	LockMutexBlock(&pool->workItemsMutex, TIMEOUT_FOREVER)
 	{
 		ThreadPoolWorkItem* openWorkItemSlot = nullptr;
 		for (uxx wIndex = 0; wIndex < pool->workItems.length; wIndex++)
@@ -283,7 +283,6 @@ PEXP ThreadPoolWorkItem* AddWorkItemToThreadPool(ThreadPool* pool, ThreadPoolWor
 		result->workerThreadId = THREAD_POOL_ID_INVALID;
 		result->result = Result_None;
 	}
-	UnlockMutex(&pool->workItemsMutex);
 	return result;
 }
 
@@ -432,9 +431,7 @@ OS_THREAD_FUNC_DEF(ThreadPoolThread_Main)
 	
 	thread->isRunning = false;
 	
-	#if TARGET_IS_WINDOWS
-	return 0;
-	#endif
+	OsThreadReturn(0, nullptr);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

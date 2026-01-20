@@ -47,6 +47,8 @@ typedef uint16_t char16_t;
 	#include <signal.h>
 	// Gives us getpagesize and sleep and access
 	#include <unistd.h>
+	pid_t gettid(void);
+	int pthread_setname_np(pthread_t thread, const char *name);
 	// Gives us DIR and dirent types
 	#include <dirent.h>
 	// Gives us mmap

@@ -251,7 +251,7 @@ Description:
 #define DeferBlock(endCode)                                               DeferBlockEx(DeferBlockIter, (endCode))
 //startCode runs at beginning of block
 #define DeferBlockWithStartEx(uniqueName, startCode, endCode)             for (int uniqueName = ((startCode), 0); uniqueName == 0; (uniqueName = 1, (endCode)))
-#define DeferBlockWithStart(startCode, endCode)                           DeferBlockEx(DeferBlockIter, (startCode), (endCode))
+#define DeferBlockWithStart(startCode, endCode)                           DeferBlockWithStartEx(DeferBlockIter, (startCode), (endCode))
 //startCode returns bool to determine if block should run, endCode always runs
 #define DeferIfBlockEx(uniqueName, startCodeAndCondition, endCode)        for (int uniqueName = 2 * !(startCodeAndCondition); (uniqueName == 2) ? ((endCode), false) : (uniqueName == 0); (uniqueName = 1, (endCode)))
 #define DeferIfBlock(startCodeAndCondition, endCode)                      DeferIfBlockEx(DeferBlockIter, (startCodeAndCondition), (endCode))

@@ -17,6 +17,7 @@ Description:
 #include "std/std_includes.h"
 #include "std/std_memset.h"
 #include "os/os_error.h"
+#include "struct/struct_string.h"
 #include "lib/lib_tracy.h"
 
 #if TARGET_HAS_THREADING
@@ -58,19 +59,30 @@ typedef pthread_mutex_t Mutex;
 
 #if TARGET_IS_WINDOWS
 #define OS_THREAD_FUNC_DEF(functionName) DWORD functionName(LPVOID contextPntr)
+#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+#define OS_THREAD_FUNC_DEF(functionName) void* functionName(void* contextPntr)
 #else
 #define OS_THREAD_FUNC_DEF(functionName) void functionName(void* contextPntr)
 #endif
 typedef OS_THREAD_FUNC_DEF(OsThreadFunc_f);
 
+#if TARGET_IS_WINDOWS
+#define OsThreadReturn(windowsDword, linuxPntr) return windowsDword
+#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+#define OsThreadReturn(windowsDword, linuxPntr) return linuxPntr
+#else
+#define OsThreadReturn(windowsDword, linuxPntr) do {} while(0)//nothing
+#endif
+
 typedef plex OsThreadHandle OsThreadHandle;
 plex OsThreadHandle
 {
+	bool isFilled;
 	ThreadId id;
 	#if TARGET_IS_WINDOWS
 	HANDLE handle;
-	// #elif TARGET_IS_LINUX
-	// //TODO: Implement me!
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	pthread_t handle;
 	// #elif TARGET_IS_OSX
 	// //TODO: Implement me!
 	// #elif TARGET_IS_ANDROID
@@ -117,17 +129,13 @@ PEXPI ThreadId OsGetCurrentThreadId()
 	{
 		result = GetCurrentThreadId();
 	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	{
+		result = gettid(); //TODO: Does this work on OSX?
+	}
 	#elif TARGET_IS_OSX
 	{
 		result = pthread_self();
-	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
-	{
-		result = syscall(SYS_gettid); //TODO: This is technically pid_t which may not be pthread_t?
-		//TODO: Should we do either of these instead?
-		// result = pthread_self();
-		// int returnCode = pthread_threadid_np(pthread_self(), &result);
-		// Assert(returnCode == 0);
 	}
 	#else
 	AssertMsg(false, "OsGetCurrentThreadId does not support the current platform yet!");
@@ -155,7 +163,7 @@ PEXPI void InitMutex(Mutex* mutexPntr)
 	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		//TODO: Test this code
-		int initResult = pthread_mutex_init(mutexPntr, NULL);
+		int initResult = pthread_mutex_init(mutexPntr, nullptr); //nullptr = default mutex attributes
 		DebugAssert(initResult == 0);
 	}
 	#else
@@ -268,7 +276,7 @@ PEXP void OsCloseThread(OsThreadHandle* threadHandle)
 	NotNull(threadHandle);
 	#if TARGET_IS_WINDOWS
 	{
-		if (threadHandle->handle != NULL)
+		if (threadHandle->isFilled)
 		{
 			//NOTE: TerminateThread is dangerous! If the thread is actively working on anything it could cause problems
 			//  For example if it's allocating memory from the std heap it could leave the heap locked and no other thread can allocate memory after that point
@@ -290,11 +298,27 @@ PEXP void OsCloseThread(OsThreadHandle* threadHandle)
 			}
 		}
 	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	{
+		if (threadHandle->isFilled)
+		{
+			int cancelResult = pthread_cancel(threadHandle->handle);
+			Assert(cancelResult == 0);
+			int joinResult = pthread_join(threadHandle->handle, nullptr); //no need to grab the return value
+			if (joinResult != 0)
+			{
+				PrintLine_E("Failed to join thread in OsCloseThread. Error: %s (%d)", GetErrnoStr(joinResult), joinResult);
+				Assert(joinResult == 0);
+			}
+		}
+	}
 	#else
 	AssertMsg(false, "OsCloseThread does not support the current platform yet!");
 	#endif
 	ClearPointer(threadHandle);
 }
+
+//TODO: Do we want an OsJoinThread function?
 
 PEXP OsThreadHandle OsCreateThread(OsThreadFunc_f* threadFunc, void* contextPntr, bool startImmediately)
 {
@@ -309,11 +333,36 @@ PEXP OsThreadHandle OsCreateThread(OsThreadFunc_f* threadFunc, void* contextPntr
 			(startImmediately ? 0 : CREATE_SUSPENDED), //dwCreationFlags (CREATE_SUSPENDED|STACK_SIZE_PARAM_IS_A_RESERVATION)
 			&result.id                                 //lpThreadId
 		);
-		if (result.handle == NULL)
+		if (result.handle != NULL)
+		{
+			//TODO: Fill result.id!
+			result.isFilled = true;
+		}
+		else
 		{
 			DWORD errorCode = GetLastError();
 			PrintLine_E("CreateThread error: %s", Win32_GetErrorCodeStr(errorCode));
 			Assert(result.handle != NULL);
+		}
+	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	{
+		AssertMsg(startImmediately == true, "pthread implementation does not currently support delayed thread starting!");
+		int createThreadResult = pthread_create(
+			&result.handle, //thread
+			nullptr, //attr (default thread attributes)
+			threadFunc, //start_routine
+			contextPntr //arg
+		);
+		if (createThreadResult == 0)
+		{
+			result.id = result.handle;
+			result.isFilled = true;
+		}
+		else
+		{
+			PrintLine_E("Failed to create pthread: %s (%d)", GetErrnoStr(createThreadResult), createThreadResult);
+			Assert(createThreadResult == 0);
 		}
 	}
 	#else
@@ -330,3 +379,7 @@ PEXP OsThreadHandle OsCreateThread(OsThreadFunc_f* threadFunc, void* contextPntr
 #endif //TARGET_HAS_THREADING
 
 #endif //  _OS_THREADING_H
+
+#if defined(_OS_THREADING_H) && defined(_MEM_ARENA_H)
+#include "cross/cross_threading_and_mem_arena.h"
+#endif

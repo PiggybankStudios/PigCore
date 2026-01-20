@@ -109,13 +109,12 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		#endif
 		
 		#if TARGET_HAS_THREADING
-		if (LockMutex(&DebugOutputLineMutex, TIMEOUT_FOREVER))
+		LockMutexBlock(&DebugOutputLineMutex, TIMEOUT_FOREVER)
 		#endif
 		{
-			ThreadId threadId;
 			Str8 threadName = Str8_Empty;
 			#if DEBUG_OUTPUT_PRINT_THREAD_PREFIX
-			threadId = OsGetCurrentThreadId();
+			ThreadId threadId = OsGetCurrentThreadId();
 			threadName = GetStandardPeopleFirstName(threadId);
 			#endif
 			Str8 threadNameIfNewLine = (DebugOutputIsOnNewLine ? threadName : Str8_Empty);
@@ -171,10 +170,6 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 				if (newLine) { OutputDebugStringA("\n"); }
 			}
 			#endif //TARGET_IS_WINDOWS
-			
-			#if TARGET_HAS_THREADING
-			UnlockMutex(&DebugOutputLineMutex);
-			#endif
 		}
 		
 		#if TARGET_IS_ANDROID

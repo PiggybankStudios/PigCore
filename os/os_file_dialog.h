@@ -245,6 +245,7 @@ PEXP Result OsDoOpenFileDialogBlocking(Arena* arena, FilePath* pathOut)
 // DBusHandleMessageFunction = https://dbus.freedesktop.org/doc/api/html/group__DBusConnection.html#ga5d7721ab952bd87d9a84f26d61709ad6
 static DBusHandlerResult OsOpenFileDialogSignalHandler(DBusConnection* connection, DBusMessage* message, void* userData)
 {
+	UNUSED(connection);
 	NotNull(userData);
 	OsOpenFileDialogHandle* handle = (OsOpenFileDialogHandle*)userData;
 	// PrintLine_D("Got D-Bus signal on connection %p message %p with data %p", connection, message, userData);
@@ -360,8 +361,8 @@ static DBusHandlerResult OsOpenFileDialogSignalHandler(DBusConnection* connectio
 	}
 	else
 	{
-		const char* interfaceName = dbus_message_get_interface(message);
-		const char* memberName = dbus_message_get_member(message);
+		// const char* interfaceName = dbus_message_get_interface(message);
+		// const char* memberName = dbus_message_get_member(message);
 		// PrintLine_D("Got signal for interface \"%s\" function \"%s\"", interfaceName, memberName);
 	}
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -395,6 +396,7 @@ PEXP Result OsDoOpenFileDialogAsync(Arena* arena, bool allowBlocking, OsOpenFile
 	ClearPointer(handleOut);
 	
 	#if TARGET_IS_LINUX
+	UNUSED(allowBlocking);
 	BeginBreakableBlock(errorBlock)
 	{
 		handleOut->arena = arena;

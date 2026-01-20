@@ -84,6 +84,7 @@ void Fill_clang_CommonFlags(CliArgList* clang_CommonFlags, Str8 pigCoreThirdPart
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_SWITCH_MISSING_CASES);
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_FUNCTION);
 	AddArgNt(clang_CommonFlags, CLANG_DISABLE_WARNING, CLANG_WARNING_UNUSED_CMD_LINE_ARG);
+	// AddArgNt(clang_CommonFlags, CLANG_DEFINE, "_GNU_SOURCE"); //TODO: Maybe we need this for some GNU standard library features?
 	if (BUILD_WITH_FREETYPE)
 	{
 		Str8 freetypeDir = JoinStrings2(pigCoreThirdPartyPath, StrLit("/freetype/include"), false);

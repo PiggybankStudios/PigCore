@@ -34,6 +34,10 @@ PEXP void OsSleepMs(uxx numMilliseconds)
 	{
 		Sleep((DWORD)numMilliseconds);
 	}
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
+	{
+		usleep(numMilliseconds * 1000);
+	}
 	#else
 	UNUSED(numMilliseconds);
 	AssertMsg(false, "OsSleepMs does not support the current platform yet!");

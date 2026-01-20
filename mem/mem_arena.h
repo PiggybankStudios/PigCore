@@ -1308,6 +1308,10 @@ PEXPI bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr
 #include "cross/cross_mem_arena_and_string.h"
 #endif
 
+#if defined(_OS_THREADING_H) && defined(_MEM_ARENA_H)
+#include "cross/cross_threading_and_mem_arena.h"
+#endif
+
 #if defined(_MEM_ARENA_H) && defined(_STRUCT_STRING_BUFFER_H)
 #include "cross/cross_mem_arena_and_string_buffer.h"
 #endif
