@@ -342,18 +342,26 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 	{
 		Assert(!IsEmptyStr(companyName) || !IsEmptyStr(programName));
 		ScratchBegin1(scratch, arena);
-		plex passwd* passwordEntry = getpwuid(getuid());
-		const char* homeDirNt = passwordEntry->pw_dir;
-		FilePath homeDir = AllocStr8Nt(scratch, homeDirNt);
-		NotNullStr(homeDir);
-		if (homeDir.length == 0)
+		
+		// This should return something line ~/.config, inside that folder we should create our own folder
+		// The user could change where this points to if they want though, so we aren't guaranteed anything about where this folder might be
+		// See https://wiki.archlinux.org/title/XDG_Base_Directory
+		// TODO: getenv is technically not thread safe. Maybe we should do this once, on a single thread, and then cache it for all threads?
+		char* configFolderPathNt = getenv("XDG_CONFIG_HOME");
+		if (configFolderPathNt == nullptr || configFolderPathNt[0] == '\0')
 		{
-			Notify_E("Failed to get home directory for current user!");
-			ScratchEnd(scratch);
-			return FilePath_Empty;
+			WriteLine_W("$XDG_CONFIG_HOME environment var is not set! Falling back to $HOME!");
+			configFolderPathNt = getenv("HOME");
+			if (configFolderPathNt == nullptr || configFolderPathNt[0] == '\0')
+			{
+				AssertMsg(configFolderPathNt != nullptr && configFolderPathNt[0] != '\0', "$XDG_CONFIG_HOME and $HOME environment vars are both not set! We don't know where to save our settings and other persistent info");
+				return FilePath_Empty;
+			}
 		}
-		if (DoesPathHaveTrailingSlash(homeDir)) { homeDir.length--; }
-		result = PrintInArenaStr(arena, "%.*s/.%.*s", StrPrint(homeDir), StrPrint(programName));
+		Str8 configFolderPath = MakeStr8Nt(configFolderPathNt);
+		
+		if (DoesPathHaveTrailingSlash(configFolderPath)) { configFolderPath.length--; }
+		result = PrintInArenaStr(arena, "%.*s/%.*s", StrPrint(configFolderPath), StrPrint(programName));
 		NotNullStr(result);
 		FixPathSlashes(result);
 		
