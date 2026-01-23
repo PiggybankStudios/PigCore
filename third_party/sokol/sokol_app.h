@@ -1781,6 +1781,8 @@ typedef struct sapp_desc {
 
     int width;                          // the preferred width of the window / canvas
     int height;                         // the preferred height of the window / canvas
+    int min_width;                      // NOTE: Added by Taylor
+    int min_height;                     // NOTE: Added by Taylor
     int sample_count;                   // MSAA sample count
     int swap_interval;                  // the preferred swap interval (ignored on some platforms)
     bool high_dpi;                      // whether the rendering canvas is full-resolution on HighDPI displays
@@ -10882,6 +10884,8 @@ _SOKOL_PRIVATE void _sapp_x11_create_window(Visual* visual, int depth) {
     hints->win_gravity = StaticGravity;
     hints->x = window_xpos;
     hints->y = window_ypos;
+    if (_sapp.desc.min_width != 0) { hints->min_width = _sapp.desc.min_width; } //NOTE: Added by Taylor
+    if (_sapp.desc.min_height != 0) { hints->min_height = _sapp.desc.min_height; } //NOTE: Added by Taylor
     hints->width = window_width;
     hints->height = window_height;
     XSetWMNormalHints(_sapp.x11.display, _sapp.x11.window, hints);
