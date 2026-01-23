@@ -165,6 +165,12 @@ Description:
 #define TARGET_HAS_THREADING 0
 #endif
 
+#if (defined(__STC_NO_ATOMICS__) || !TARGET_HAS_THREADING || LANGUAGE_IS_CPP)
+#define TARGET_HAS_ATOMICS 0
+#else 
+#define TARGET_HAS_ATOMICS 1
+#endif
+
 #if (TARGET_IS_WEB && !COMPILER_IS_EMSCRIPTEN)
 #define USING_CUSTOM_STDLIB 1
 #else

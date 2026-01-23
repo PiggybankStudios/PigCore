@@ -29,15 +29,15 @@ THREAD_LOCAL Str8 CurrentThreadName = Str8_Empty;
 
 PEXPI void OsSetThreadName(Arena* arena, Str8 name)
 {
-	NotNull(arena);
-	if (CurrentThreadName.chars != nullptr && CanArenaFree(arena))
+	if (arena != nullptr && CurrentThreadName.chars != nullptr && CanArenaFree(arena))
 	{
 		FreeStr8WithNt(arena, &CurrentThreadName);
 	}
 	
 	if (!IsEmptyStr(name))
 	{
-		CurrentThreadName = AllocStrAndCopy(arena, name.length, name.chars, true);
+		Assert(arena != nullptr || name.chars[name.length] == '\0'); //Ensure it's null-terminated if it's not gonna get allocated by this function
+		CurrentThreadName = (arena != nullptr) ? AllocStrAndCopy(arena, name.length, name.chars, true) : name;
 		NotNull(CurrentThreadName.chars);
 		
 		#if TARGET_IS_LINUX

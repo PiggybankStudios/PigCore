@@ -123,10 +123,11 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 			#if DEBUG_OUTPUT_PRINT_COLOR_PREFIX
 			if (DebugOutputIsOnNewLine)
 			{
+				endColorStr = (newLine ? StrLit("\x1B[0;0m") : Str8_Empty);
 				//ANSI Escape Code Sequences Github Gist - https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
 				switch (level)
 				{
-					case DbgLevel_Debug: beginColorStr = StrLit("\x1B[2;37m"); endColorStr = StrLit("\x1B[0;0m"); break; //Dim White
+					case DbgLevel_Debug: beginColorStr = StrLit("\x1B[2;37m"); break; //Dim White
 					case DbgLevel_Regular: beginColorStr = StrLit("\x1B[0m"); break; //Default
 					case DbgLevel_Info: beginColorStr = StrLit("\x1B[92m"); break; //Bright Green
 					case DbgLevel_Notify: beginColorStr = StrLit("\x1B[95m"); break; //Bright Magenta

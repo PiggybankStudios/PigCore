@@ -9,6 +9,7 @@ Description:
 #ifndef _OS_ALL_H
 #define _OS_ALL_H
 
+#include "os/os_atomics.h"
 #include "os/os_clipboard.h"
 #include "os/os_dll.h"
 #include "os/os_error.h"

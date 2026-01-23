@@ -29,7 +29,6 @@ Description:
 #include "base/base_notifications.h"
 
 //TODO: Use a semaphore instead of a mutex for work claiming? Or maybe a lockless intrinsic like atomics?
-//TODO: Implement for Linux, OSX, and Android!
 //TODO: Add support for prioritizing certain work items over others (and updating those priorities actively on the main thread in a safe way)
 //TODO: Add a "dependency" system so that certain work items can wait for other items to finish before they begin (and somehow use the result of the work item?)
 
@@ -312,9 +311,7 @@ OS_THREAD_FUNC_DEF(ThreadPoolThread_Main)
 	ThreadPoolThread* thread = (ThreadPoolThread*)contextPntr;
 	thread->isRunning = true;
 	
-	#if PROFILING_ENABLED
-	TracyCSetThreadName(thread->debugName.chars);
-	#endif
+	OsSetThreadName(nullptr, thread->debugName);
 	
 	#if SCRATCH_ARENAS_THREAD_LOCAL
 	if (thread->pool->threadsHaveScratch)

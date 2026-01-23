@@ -73,12 +73,16 @@ typedef uint16_t char16_t;
 #if TARGET_IS_LINUX && !BUILD_FOR_PIGGEN
 	#include <fontconfig/fontconfig.h> //You may need to install libfontconfig-dev on your OS
 #endif
-#if COMPILER_IS_MSVC && LANGUAGE_IS_C
+#if TARGET_HAS_ATOMICS
+	#if COMPILER_IS_MSVC
 	#pragma warning(push)
 	#pragma warning(disable: 5262) //error C5262: implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
-	// Gives us things like atomic_int type
+	#endif
+	// Gives us things like atomic_int type and _Atomic qualifier
 	#include <stdatomic.h>
+	#if COMPILER_IS_MSVC
 	#pragma warning(pop)
+	#endif
 #endif
 #if LANGUAGE_IS_CPP
 	#include <type_traits> //needed for stuff like std::alignment_of<T>()
