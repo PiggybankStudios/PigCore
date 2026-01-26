@@ -22,12 +22,12 @@ Description:
 // Debug builds often take less time to compile as well.
 #define DEBUG_BUILD   1
 // Enables linking with tracy.lib to enable profiling through Tracy
-#define PROFILING_ENABLED 1
+#define PROFILING_ENABLED 0
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             1
+#define BUILD_WINDOWS             0
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX               0
+#define BUILD_LINUX               1
 // Build binaries for OSX platform
 #define BUILD_OSX                 0
 // Build the WASM binary for operating as a webpage
@@ -122,7 +122,7 @@ Description:
 // Enables building with the FreeType library which provides better font rasterizing support than stb_truetype.h (the default dependency)
 #define BUILD_WITH_FREETYPE  0
 // Enables linking with libgtk-4.so on Linux and enables some GTK-specific features on Linux (like OsDoOpenFileDialog)
-#define BUILD_WITH_GTK       1
+#define BUILD_WITH_GTK       0
 
 // +==============================+
 // |        String Defines        |

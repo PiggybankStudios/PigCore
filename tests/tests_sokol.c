@@ -24,6 +24,7 @@ Description:
 #include "tests/main2d_shader.glsl.h"
 #include "tests/main3d_shader.glsl.h"
 
+static void EarlyInit();
 int MyMain(int argc, char* argv[]);
 
 // +--------------------------------------------------------------+
@@ -1155,6 +1156,9 @@ bool AppFrame(void)
 			RenderBox2DTest();
 			#endif
 			
+			// +==============================+
+			// |         Clay UI Test         |
+			// +==============================+
 			#if BUILD_WITH_CLAY
 			UpdateClayScrolling(&clay.clay, 16.6f, false, mouse.scrollDelta, TARGET_IS_ANDROID);
 			v2 uiMousePosition = (TARGET_IS_ANDROID ? touchscreen.mainTouch->pos : mouse.position);
@@ -1278,6 +1282,9 @@ bool AppFrame(void)
 			RenderClayCommandArray(&clay, &gfx, &clayRenderCommands);
 			#endif //BUILD_WITH_CLAY
 			
+			// +==============================+
+			// |      Dear Imgui UI Test      |
+			// +==============================+
 			#if BUILD_WITH_IMGUI
 			GfxSystem_ImguiBeginFrame(&gfx, imgui);
 			if (igBeginMainMenuBar())
@@ -1443,7 +1450,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 	
-	OsMarkStartTime(); //NOTE: We will reset this at the end of AppInit
+	EarlyInit();
 	
 	//NOTE: On some platforms (like Android) this call happens on a separate thread to AppInit, AppFrame, etc. So we shouldn't do any initialization here that is thread specific
 	argc_copy = argc;

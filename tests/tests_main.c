@@ -103,7 +103,9 @@ Description:
 // +--------------------------------------------------------------+
 RandomSeries mainRandomStruct = ZEROED;
 RandomSeries* mainRandom = nullptr;
-#if !USING_CUSTOM_STDLIB
+#if USING_CUSTOM_STDLIB
+Arena wasmMemory = ZEROED;
+#else
 Arena stdHeapStruct = ZEROED;
 Arena* stdHeap = nullptr;
 #endif
@@ -284,6 +286,55 @@ static void PrintRichStr(RichStr richStr)
 	}
 }
 
+static void EarlyInit()
+{
+	static bool isEarlyInitialized = false;
+	if (!isEarlyInitialized)
+	{
+		#if PROFILING_ENABLED
+		Str8 projectName = StrLit("PigCore Tests");
+		TracyCAppInfo(projectName.chars, projectName.length);
+		#endif
+		TracyCZoneN(Zone_EarlyInit, "EarlyInit", true);
+		
+		#if TARGET_HAS_THREADING
+		//TODO: On Android this is actually a different thread than the one we will normally be updating/rendering in. We should probably track the other thread ID as the "main thread"
+		MainThreadId = OsGetCurrentThreadId();
+		OsSetThreadName(nullptr, StrLit("Main"));
+		#endif
+		
+		OsMarkStartTime(); //NOTE: For Sokol applications, this gets reset at the end of AppInit
+		
+		InitDebugOutputRouter(nullptr);
+		
+		// Initialize stdHeap (or wasmMemory)
+		#if USING_CUSTOM_STDLIB
+		InitArenaStackWasm(&wasmMemory);
+		FlagSet(wasmMemory.flags, ArenaFlag_AssertOnFailedAlloc);
+		#else
+		InitArenaStdHeap(&stdHeapStruct);
+		stdHeap = &stdHeapStruct;
+		Arena stdAlias = ZEROED;
+		InitArenaAlias(&stdAlias, stdHeap);
+		#endif
+		
+		// Initialize scratch arenas
+		#if TARGET_IS_PLAYDATE
+		InitScratchArenas(Megabytes(1), stdHeap);
+		#elif USING_CUSTOM_STDLIB
+		InitScratchArenas(Megabytes(256), &wasmMemory);
+		#elif TARGET_IS_WASM
+		InitScratchArenas(Megabytes(256), stdHeap);
+		#else
+		InitScratchArenasVirtual(Gigabytes(4));
+		#endif
+		PrintLine_I("Initialized scratch arenas to %llu bytes%s", scratchArenasArray[0].size, (scratchArenasArray[0].type == ArenaType_StackVirtual) ? " (Virtual)" : "");
+		
+		isEarlyInitialized = true;
+		TracyCZoneEnd(Zone_EarlyInit);
+	}
+}
+
 // +--------------------------------------------------------------+
 // |                             Main                             |
 // +--------------------------------------------------------------+
@@ -307,7 +358,7 @@ int main(int argc, char* argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 	#endif
-	InitDebugOutputRouter(nullptr);
+	EarlyInit();
 	WriteLine_N("Running tests...\n");
 	
 	v2 _v2_zero1 = { .X=0, .Y=0 };
@@ -357,37 +408,6 @@ int main(int argc, char* argv[])
 	#endif
 	
 	// +==============================+
-	// |         Basic Arenas         |
-	// +==============================+
-	#if USING_CUSTOM_STDLIB
-	Arena wasmMemory = ZEROED;
-	InitArenaStackWasm(&wasmMemory);
-	FlagSet(wasmMemory.flags, ArenaFlag_AssertOnFailedAlloc);
-	#else
-	InitArenaStdHeap(&stdHeapStruct);
-	stdHeap = &stdHeapStruct;
-	Arena stdAlias = ZEROED;
-	InitArenaAlias(&stdAlias, stdHeap);
-	#endif
-	u8 arenaBuffer1[256] = ZEROED;
-	Arena bufferArena = ZEROED;
-	InitArenaBuffer(&bufferArena, arenaBuffer1, ArrayCount(arenaBuffer1));
-	
-	// +==============================+
-	// |     Scratch Arena Tests      |
-	// +==============================+
-	#if TARGET_IS_PLAYDATE
-	InitScratchArenas(Megabytes(1), stdHeap);
-	#elif USING_CUSTOM_STDLIB
-	InitScratchArenas(Megabytes(256), &wasmMemory);
-	#elif TARGET_IS_WASM
-	InitScratchArenas(Megabytes(256), stdHeap);
-	#else
-	InitScratchArenasVirtual(Gigabytes(4));
-	#endif
-	PrintLine_I("Initialized scratch arenas to %llu bytes", scratchArenasArray[0].size);
-	
-	// +==============================+
 	// |      RandomSeries Tests      |
 	// +==============================+
 	#if 1
@@ -425,6 +445,10 @@ int main(int argc, char* argv[])
 	// +==============================+
 	#if 0
 	{
+		u8 arenaBuffer1[256] = ZEROED;
+		Arena bufferArena = ZEROED;
+		InitArenaBuffer(&bufferArena, arenaBuffer1, ArrayCount(arenaBuffer1));
+		
 		#if !TARGET_IS_WASM
 		u32* allocatedInt1 = AllocMem(stdHeap, sizeof(u32));
 		PrintLine_D("allocatedInt1: %p", allocatedInt1);

@@ -67,9 +67,9 @@ enum ArenaType
 typedef enum ArenaType ArenaType;
 //TODO: We should use piggen to generate this function!
 #if !PIG_CORE_IMPLEMENTATION
-PEXPI const char* GetArenaTypeStr(ArenaType arenaType);
+PIG_CORE_INLINE const char* GetArenaTypeStr(ArenaType arenaType);
 #else
-PIG_CORE_INLINE const char* GetArenaTypeStr(ArenaType arenaType)
+PEXPI const char* GetArenaTypeStr(ArenaType arenaType)
 {
 	switch (arenaType)
 	{
