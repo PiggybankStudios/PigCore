@@ -306,7 +306,7 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 	bool readFileResult = OsReadBinFile(path, scratch, &fileContents);
 	if (!readFileResult)
 	{
-		DebugAssert(readFileResult == true);
+		DebugAssertMsg(readFileResult == true, "Failed to find texture file!");
 		result.error = Result_FailedToReadFile;
 		ScratchEnd(scratch);
 		return result;
@@ -315,7 +315,7 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 	Result parseResult = TryParseImageFile(fileContents, arena, &imageData);
 	if (parseResult != Result_Success)
 	{
-		DebugAssert(parseResult == Result_Success);
+		DebugAssertMsg(parseResult == Result_Success, "Failed to parse texture file!");
 		result.error = parseResult;
 		ScratchEnd(scratch);
 		return result;
@@ -582,8 +582,15 @@ void AppInit(void)
 	oldWindowSize = MakeV2i(sapp_width(), sapp_height());
 	
 	#if !TARGET_IS_OSX //TODO: Remove me once we get files working on OSX
-	mipmapTexture = LoadTexture(stdHeap, StrLit("test.png"), TextureFlag_None);
-	noMipmapTexture = LoadTexture(stdHeap, StrLit("test.png"), TextureFlag_NoMipmaps);
+	#if TARGET_IS_WINDOWS
+	FilePath testImagePath = FilePathLit("Q:/test.png");
+	#elif TARGET_IS_LINUX
+	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
+	#else
+	FilePath testImagePath = FilePathLit("test.png");
+	#endif
+	mipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_None);
+	noMipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_NoMipmaps);
 	#endif //!TARGET_IS_OSX
 	
 	ImageData testTextureData = ZEROED;
@@ -918,9 +925,9 @@ bool AppFrame(void)
 			}
 			#endif
 			
-			#if 0
+			#if 1
 			Texture* mipTextureToUse = (IsKeyboardKeyDown(&keyboard, Key_Shift) ? &noMipmapTexture : &mipmapTexture);
-			rec mipmapTextureRec = NewRec(windowSize.Width/2, windowSize.Height/2, 0, 0);
+			rec mipmapTextureRec = MakeRec(windowSize.Width/2, windowSize.Height/2, 0, 0);
 			mipmapTextureRec.Width = mouse.position.X - mipmapTextureRec.X;
 			mipmapTextureRec.Height = mouse.position.Y - mipmapTextureRec.Y;
 			DrawTexturedRectangle(mipmapTextureRec, White, mipTextureToUse);
@@ -1403,26 +1410,62 @@ bool AppFrame(void)
 // +--------------------------------------------------------------+
 // |                            Event                             |
 // +--------------------------------------------------------------+
+const char* Get_SAPP_EVENTTYPE_Str(sapp_event_type eventType)
+{
+	switch (eventType)
+	{
+		case SAPP_EVENTTYPE_INVALID:           return "INVALID";
+		case SAPP_EVENTTYPE_KEY_DOWN:          return "KEY_DOWN";
+		case SAPP_EVENTTYPE_KEY_UP:            return "KEY_UP";
+		case SAPP_EVENTTYPE_CHAR:              return "CHAR";
+		case SAPP_EVENTTYPE_MOUSE_DOWN:        return "MOUSE_DOWN";
+		case SAPP_EVENTTYPE_MOUSE_UP:          return "MOUSE_UP";
+		case SAPP_EVENTTYPE_MOUSE_SCROLL:      return "MOUSE_SCROLL";
+		case SAPP_EVENTTYPE_MOUSE_MOVE:        return "MOUSE_MOVE";
+		case SAPP_EVENTTYPE_MOUSE_ENTER:       return "MOUSE_ENTER";
+		case SAPP_EVENTTYPE_MOUSE_LEAVE:       return "MOUSE_LEAVE";
+		case SAPP_EVENTTYPE_TOUCHES_BEGAN:     return "TOUCHES_BEGAN";
+		case SAPP_EVENTTYPE_TOUCHES_MOVED:     return "TOUCHES_MOVED";
+		case SAPP_EVENTTYPE_TOUCHES_ENDED:     return "TOUCHES_ENDED";
+		case SAPP_EVENTTYPE_TOUCHES_CANCELLED: return "TOUCHES_CANCELLED";
+		case SAPP_EVENTTYPE_RESIZED:           return "RESIZED";
+		case SAPP_EVENTTYPE_ICONIFIED:         return "ICONIFIED";
+		case SAPP_EVENTTYPE_RESTORED:          return "RESTORED";
+		case SAPP_EVENTTYPE_FOCUSED:           return "FOCUSED";
+		case SAPP_EVENTTYPE_UNFOCUSED:         return "UNFOCUSED";
+		case SAPP_EVENTTYPE_SUSPENDED:         return "SUSPENDED";
+		case SAPP_EVENTTYPE_RESUMED:           return "RESUMED";
+		case SAPP_EVENTTYPE_QUIT_REQUESTED:    return "QUIT_REQUESTED";
+		case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  return "CLIPBOARD_PASTED";
+		case SAPP_EVENTTYPE_FILES_DROPPED:     return "FILES_DROPPED";
+		case SAPP_EVENTTYPE_RESIZE_RENDER:     return "RESIZE_RENDER";
+		default: return UNKNOWN_STR;
+	}
+}
 void AppEvent(const sapp_event* event)
 {
 	TracyCZoneN(Zone_Func, "AppEvent", true);
 	bool handledEvent = HandleSokolKeyboardMouseAndTouchEvents(event, programTime, MakeV2i(sapp_width(), sapp_height()), &keyboard, &mouse, &touchscreen, sapp_mouse_locked());
+	if (event->type != SAPP_EVENTTYPE_MOUSE_MOVE)
+	{
+		PrintLine_D("SokolEvent: SAPP_EVENTTYPE_%s%s", Get_SAPP_EVENTTYPE_Str(event->type), handledEvent ? " (Handled)" : "");
+	}
 	
 	if (!handledEvent)
 	{
 		switch (event->type)
 		{
-			case SAPP_EVENTTYPE_RESIZED:           PrintLine_D("Event: RESIZED %dx%d / %dx%d", event->window_width, event->window_height, event->framebuffer_width, event->framebuffer_height); break;
-			case SAPP_EVENTTYPE_ICONIFIED:         WriteLine_D("Event: ICONIFIED");         break;
-			case SAPP_EVENTTYPE_RESTORED:          WriteLine_D("Event: RESTORED");          break;
-			case SAPP_EVENTTYPE_FOCUSED:           WriteLine_D("Event: FOCUSED");           break;
-			case SAPP_EVENTTYPE_UNFOCUSED:         WriteLine_D("Event: UNFOCUSED");         break;
-			case SAPP_EVENTTYPE_SUSPENDED:         WriteLine_D("Event: SUSPENDED");         break;
-			case SAPP_EVENTTYPE_RESUMED:           WriteLine_D("Event: RESUMED");           break;
-			case SAPP_EVENTTYPE_QUIT_REQUESTED:    WriteLine_D("Event: QUIT_REQUESTED");    break;
-			case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  WriteLine_D("Event: CLIPBOARD_PASTED");  break;
-			case SAPP_EVENTTYPE_FILES_DROPPED:     WriteLine_D("Event: FILES_DROPPED");     break;
-				
+			case SAPP_EVENTTYPE_RESIZED:           PrintLine_D("Size: Window=%dx%d Framebuffer=%dx%d", event->window_width, event->window_height, event->framebuffer_width, event->framebuffer_height); break;
+			// case SAPP_EVENTTYPE_ICONIFIED:         break;
+			// case SAPP_EVENTTYPE_RESTORED:          break;
+			// case SAPP_EVENTTYPE_FOCUSED:           break;
+			// case SAPP_EVENTTYPE_UNFOCUSED:         break;
+			// case SAPP_EVENTTYPE_SUSPENDED:         break;
+			// case SAPP_EVENTTYPE_RESUMED:           break;
+			// case SAPP_EVENTTYPE_QUIT_REQUESTED:    break;
+			// case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  break;
+			// case SAPP_EVENTTYPE_FILES_DROPPED:     break;
+			
 			//NOTE: We currently only get this event when using OpenGL as the rendering backend since D3D11 has weird problems when we try to resize/render inside the WM_PAINT event
 			#if TARGET_IS_WINDOWS
 			//NOTE: I added this event type in order to update/render while the app is resized on Windows
@@ -1433,7 +1476,7 @@ void AppEvent(const sapp_event* event)
 			} break;
 			#endif //TARGET_IS_WINDOWS
 			
-			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
+			// default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
 		}
 	}
 	
