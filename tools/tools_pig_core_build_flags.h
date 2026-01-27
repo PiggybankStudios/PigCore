@@ -8,6 +8,8 @@ Description:
 	** can use these functions as a starting point for their own build scripts.
 */
 
+//test
+
 #ifndef _TOOLS_PIG_CORE_BUILD_FLAGS_H
 #define _TOOLS_PIG_CORE_BUILD_FLAGS_H
 
