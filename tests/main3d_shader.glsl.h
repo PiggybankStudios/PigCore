@@ -880,17 +880,17 @@ const sg_shader_desc* main3d_shader_desc(sg_backend backend) {
 #ifndef NO_ENTRIES_STR
 #define NO_ENTRIES_STR "no_entries"
 #endif
-#define main3d_SHADER_FILE_PATH "/home/robbitay/MyStuff/projects/pig_core/tests/main3d_shader.glsl"
+#define main3d_SHADER_FILE_PATH "/home/robbitay/my_stuff/projects/pig_core/tests/main3d_shader.glsl"
 #define main3d_SHADER_ATTR_COUNT 3
 #define main3d_SHADER_ATTR_DEFS { \
 	{ .name="position", .index=ATTR_main3d_position }, \
 	{ .name="texCoord0", .index=ATTR_main3d_texCoord0 }, \
 	{ .name="color0", .index=ATTR_main3d_color0 }, \
 } // These should match ShaderAttributeDef plex found in gfx_shader.h
-#define main3d_SHADER_IMAGE_COUNT 0
-#define main3d_SHADER_IMAGE_DEFS { \
-	{ .name=NO_ENTRIES_STR, .index=0 } \
-} // These should match ShaderImageDef plex found in gfx_shader.h
+#define main3d_SHADER_VIEW_COUNT 1
+#define main3d_SHADER_VIEW_DEFS { \
+	{ .name="main3d_texture0", .index=VIEW_main3d_texture0 }, \
+} // These should match ShaderViewDef plex found in gfx_shader.h
 #define main3d_SHADER_SAMPLER_COUNT 1
 #define main3d_SHADER_SAMPLER_DEFS { \
 	{ .name="main3d_sampler0", .index=SMP_main3d_sampler0 }, \

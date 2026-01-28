@@ -351,14 +351,16 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	Str8 viewNameNt = JoinStringsInArena(scratch, name, StrLit("_view"), true); NotNull(viewNameNt.chars);
     viewDesc.label = viewNameNt.chars;
     viewDesc.texture.image = result.image;
-    // viewDesc.texture.mip_levels = NEW_STRUCT(sg_texture_view_range){ .base=0, .count=imageDesc.num_mipmaps };
+    viewDesc.texture.mip_levels = NEW_STRUCT(sg_texture_view_range){ .base=0, .count=imageDesc.num_mipmaps };
     // viewDesc.storage_buffer = ?; //sg_buffer_view_desc
     // viewDesc.storage_image = ?; //sg_image_view_desc
     // viewDesc.color_attachment = ?; //sg_image_view_desc
     // viewDesc.resolve_attachment = ?; //sg_image_view_desc
     // viewDesc.depth_stencil_attachment = ?; //sg_image_view_desc
     
+	TracyCZoneN(_MakeView, "sg_make_view", true);
 	result.view = sg_make_view(&viewDesc);
+	TracyCZoneEnd(_MakeView);
 	if (result.view.id == SG_INVALID_ID)
 	{
 		sg_destroy_sampler(result.sampler);
@@ -370,7 +372,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		TracyCZoneEnd(funcZone);
 		return result;
 	}
-	PrintLine_D("View ID: %d", result.view.id);
+	PrintLine_D("Texture \"%.*s\" View ID: %d", StrPrint(name), result.view.id);
 	
 	ScratchEnd(scratch);
 	result.error = Result_Success;
@@ -450,7 +452,6 @@ PEXPI void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex
 	NotNull(texture);
 	Assert(texture->view.id != SG_INVALID_ID);
 	Assert(texture->sampler.id != SG_INVALID_ID);
-	PrintLine_D("Binding view %d", texture->view.id);
 	bindings->views[textureIndex] = texture->view;
 	bindings->samplers[textureIndex] = texture->sampler;
 }

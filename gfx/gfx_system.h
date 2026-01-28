@@ -54,7 +54,7 @@ plex GfxSystemState
 	Color32 textBackgroundColor; //only used when drawing highlighted text
 	
 	Shader* shader;
-	Texture* textures[MAX_NUM_SHADER_IMAGES];
+	Texture* textures[MAX_NUM_SHADER_VIEWS];
 	VertBuffer* vertBuffer;
 	uxx vertexOffset;
 	
@@ -401,7 +401,7 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 	
 	system->state.shader = nullptr;
 	system->state.vertBuffer = nullptr;
-	for (uxx tIndex = 0; tIndex < MAX_NUM_SHADER_IMAGES; tIndex++) { system->state.textures[tIndex] = nullptr; }
+	for (uxx tIndex = 0; tIndex < MAX_NUM_SHADER_VIEWS; tIndex++) { system->state.textures[tIndex] = nullptr; }
 	system->state.font = nullptr;
 	system->state.pipeline = nullptr;
 	system->bindingsChanged = true;
@@ -465,11 +465,11 @@ PEXPI void GfxSystem_BindShader(GfxSystem* system, Shader* shader)
 			SetShaderWorldMat(shader, system->state.worldMat);
 			SetShaderTintColorRaw(shader, system->state.tintColor);
 			SetShaderSourceRecRaw(shader, system->state.sourceRec);
-			for (uxx tIndex = 0; tIndex < MAX_NUM_SHADER_IMAGES; tIndex++)
+			for (uxx tIndex = 0; tIndex < MAX_NUM_SHADER_VIEWS; tIndex++)
 			{
 				if (system->state.textures[tIndex] != nullptr)
 				{
-					BindTextureAtIndex(&system->bindings, shader, system->state.textures[tIndex], tIndex, tIndex);
+					BindTextureInShaderAtIndex(&system->bindings, shader, system->state.textures[tIndex], tIndex, tIndex);
 				}
 			}
 			for (uxx bIndex = 0; bIndex < MAX_NUM_SHADER_UNIFORM_BLOCKS; bIndex++)
@@ -518,12 +518,12 @@ PEXPI void GfxSystem_SetVertexOffset(GfxSystem* system, uxx vertexOffset)
 PEXPI void GfxSystem_BindTextureAtIndex(GfxSystem* system, Texture* texture, uxx textureIndex)
 {
 	NotNull(system);
-	Assert(textureIndex < MAX_NUM_SHADER_IMAGES);
+	Assert(textureIndex < MAX_NUM_SHADER_VIEWS);
 	if (system->state.textures[textureIndex] != texture)
 	{
 		if (system->state.shader != nullptr)
 		{
-			if (texture != nullptr) { BindTextureAtIndex(&system->bindings, system->state.shader, texture, textureIndex, textureIndex); }
+			if (texture != nullptr) { BindTextureInShaderAtIndex(&system->bindings, system->state.shader, texture, textureIndex, textureIndex); }
 			else { system->bindings.views[textureIndex].id = SG_INVALID_ID; system->bindings.samplers[textureIndex].id = SG_INVALID_ID; }
 			system->bindingsChanged = true;
 		}

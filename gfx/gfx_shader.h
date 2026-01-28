@@ -28,7 +28,7 @@ Description:
 #error Somehow sokol_gfx.h was not included properly before gfx_shader.h!
 #endif
 
-#define MAX_NUM_SHADER_IMAGES          8
+#define MAX_NUM_SHADER_VIEWS           8
 #define MAX_NUM_SHADER_SAMPLERS        8
 #define MAX_NUM_SHADER_UNIFORMS        32
 #define MAX_NUM_SHADER_UNIFORM_BLOCKS  2 //NOTE: We currently only have 2 uniform blocks, one for the vertex shader and one for the fragment shader, so 2 is enough
@@ -36,8 +36,8 @@ Description:
 //NOTE: These types are used in the generated shader header files and are passed to
 //      the InitShader function, inside we unpack these Def types and fill out the
 //      real types that will live inside the Shader struct at runtime.
-typedef plex ShaderImageDef ShaderImageDef;
-plex ShaderImageDef { const char* name; uxx index; };
+typedef plex ShaderViewDef ShaderViewDef;
+plex ShaderViewDef { const char* name; uxx index; };
 typedef plex ShaderSamplerDef ShaderSamplerDef;
 plex ShaderSamplerDef { const char* name; uxx index; };
 typedef plex ShaderAttributeDef ShaderAttributeDef;
@@ -48,8 +48,8 @@ plex ShaderUniformDef { const char* name; u8 blockIndex; uxx offset; uxx size; }
 typedef plex ShaderMetadata ShaderMetadata;
 plex ShaderMetadata
 {
-	uxx numImages;
-	const ShaderImageDef* imageDefs;
+	uxx numViews;
+	const ShaderViewDef* viewDefs;
 	uxx numSamplers;
 	const ShaderSamplerDef* samplerDefs;
 	uxx numUniforms;
@@ -58,8 +58,8 @@ plex ShaderMetadata
 	const ShaderAttributeDef* attributeDefs;
 };
 
-typedef plex ShaderImage ShaderImage;
-plex ShaderImage
+typedef plex ShaderView ShaderView;
+plex ShaderView
 {
 	Str8 name;
 	uxx index;
@@ -97,7 +97,7 @@ const char* GetShaderUniformTypeStr(ShaderUniformType enumValue);
 const char* GetShaderUniformMatchStr(ShaderUniformType enumValue);
 uxx GetShaderUniformMatchSize(ShaderUniformType enumValue);
 #else
-const char* GetShaderUniformTypeStr(ShaderUniformType enumValue)
+PEXP const char* GetShaderUniformTypeStr(ShaderUniformType enumValue)
 {
 	switch (enumValue)
 	{
@@ -110,7 +110,7 @@ const char* GetShaderUniformTypeStr(ShaderUniformType enumValue)
 		default: return UNKNOWN_STR;
 	}
 }
-const char* GetShaderUniformMatchStr(ShaderUniformType enumValue)
+PEXP const char* GetShaderUniformMatchStr(ShaderUniformType enumValue)
 {
 	switch (enumValue)
 	{
@@ -122,7 +122,7 @@ const char* GetShaderUniformMatchStr(ShaderUniformType enumValue)
 		default: return UNKNOWN_STR;
 	}
 }
-uxx GetShaderUniformMatchSize(ShaderUniformType enumValue)
+PEXP uxx GetShaderUniformMatchSize(ShaderUniformType enumValue)
 {
 	switch (enumValue)
 	{
@@ -164,8 +164,8 @@ plex Shader
 	#if DEBUG_BUILD
 	Str8 filePath;
 	#endif
-	uxx numImages;
-	ShaderImage images[MAX_NUM_SHADER_IMAGES];
+	uxx numViews;
+	ShaderView views[MAX_NUM_SHADER_VIEWS];
 	uxx numSamplers;
 	ShaderSampler samplers[MAX_NUM_SHADER_SAMPLERS];
 	uxx numUniforms;
@@ -203,13 +203,13 @@ plex Shader
 
 #define InitCompiledShader_Internal(outputShaderPntr, arenaPntr, shaderName) do                                  \
 {                                                                                                                \
-	ShaderImageDef imageDefs[] = shaderName##_SHADER_IMAGE_DEFS;                                                 \
+	ShaderViewDef viewDefs[] = shaderName##_SHADER_VIEW_DEFS;                                                    \
 	ShaderSamplerDef samplerDefs[] = shaderName##_SHADER_SAMPLER_DEFS;                                           \
 	ShaderUniformDef uniformDefs[] = shaderName##_SHADER_UNIFORM_DEFS;                                           \
 	ShaderAttributeDef attributeDefs[] = shaderName##_SHADER_ATTR_DEFS;                                          \
 	ShaderMetadata shaderMetadata = ZEROED;                                                                      \
-	shaderMetadata.numImages = shaderName##_SHADER_IMAGE_COUNT;                                                  \
-	shaderMetadata.imageDefs = &imageDefs[0];                                                                    \
+	shaderMetadata.numViews = shaderName##_SHADER_VIEW_COUNT;                                                    \
+	shaderMetadata.viewDefs = &viewDefs[0];                                                                      \
 	shaderMetadata.numSamplers = shaderName##_SHADER_SAMPLER_COUNT;                                              \
 	shaderMetadata.samplerDefs = &samplerDefs[0];                                                                \
 	shaderMetadata.numUniforms = shaderName##_SHADER_UNIFORM_COUNT;                                              \
@@ -269,11 +269,11 @@ PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const Sha
 	NotNull(arena);
 	NotNull(shaderDesc);
 	NotNull(shaderMetadata);
-	Assert(shaderMetadata->numImages <= MAX_NUM_SHADER_IMAGES);
+	Assert(shaderMetadata->numViews <= MAX_NUM_SHADER_VIEWS);
 	Assert(shaderMetadata->numSamplers <= MAX_NUM_SHADER_SAMPLERS);
 	Assert(shaderMetadata->numUniforms <= MAX_NUM_SHADER_UNIFORMS);
 	Assert(shaderMetadata->numAttributes > 0 && shaderMetadata->numAttributes <= MAX_NUM_VERT_ATTRIBUTES);
-	Assert(shaderMetadata->numImages == 0 || shaderMetadata->imageDefs != nullptr);
+	Assert(shaderMetadata->numViews == 0 || shaderMetadata->viewDefs != nullptr);
 	Assert(shaderMetadata->numSamplers == 0 || shaderMetadata->samplerDefs != nullptr);
 	Assert(shaderMetadata->numUniforms == 0 || shaderMetadata->uniformDefs != nullptr);
 	NotNull(shaderMetadata->attributeDefs);
@@ -290,22 +290,22 @@ PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const Sha
 	}
 	result.name = AllocStr8(arena, MakeStr8Nt(shaderDesc->label));
 	NotNull(result.name.chars);
-	result.numImages = shaderMetadata->numImages;
+	result.numViews = shaderMetadata->numViews;
 	result.numSamplers = shaderMetadata->numSamplers;
 	result.numUniforms = shaderMetadata->numUniforms;
 	result.numAttributes = shaderMetadata->numAttributes;
 	
 	// +==============================+
-	// |        Handle Images         |
+	// |         Handle Views         |
 	// +==============================+
-	for (uxx iIndex = 0; iIndex < shaderMetadata->numImages; iIndex++)
+	for (uxx vIndex = 0; vIndex < shaderMetadata->numViews; vIndex++)
 	{
-		const ShaderImageDef* imageDef = &shaderMetadata->imageDefs[iIndex];
-		ShaderImage* image = &result.images[iIndex];
-		NotNull(imageDef->name);
-		image->name = AllocStr8Nt(arena, imageDef->name);
-		NotNull(image->name.chars);
-		image->index = imageDef->index;
+		const ShaderViewDef* viewDef = &shaderMetadata->viewDefs[vIndex];
+		ShaderView* view = &result.views[vIndex];
+		NotNull(viewDef->name);
+		view->name = AllocStr8Nt(arena, viewDef->name);
+		NotNull(view->name.chars);
+		view->index = viewDef->index;
 	}
 	
 	// +==============================+
@@ -368,20 +368,20 @@ PEXP Shader InitShader(Arena* arena, const sg_shader_desc* shaderDesc, const Sha
 		}
 	}
 	
-	//Look for a uniform with the same name as each image but with "_size" suffix
-	for (uxx iIndex = 0; iIndex < result.numImages; iIndex++)
+	//Look for a uniform with the same name as each view but with "_size" suffix
+	for (uxx vIndex = 0; vIndex < result.numViews; vIndex++)
 	{
-		ShaderImage* image = &result.images[iIndex];
-		image->sizeUniformIndex = result.numUniforms;
-		if (!IsEmptyStr(image->name))
+		ShaderView* view = &result.views[vIndex];
+		view->sizeUniformIndex = result.numUniforms;
+		if (!IsEmptyStr(view->name))
 		{
-			Str8 sizeUniformName = JoinStringsInArena(scratch, image->name, StrLit("_size"), false);
+			Str8 sizeUniformName = JoinStringsInArena(scratch, view->name, StrLit("_size"), false);
 			for (uxx uIndex = 0; uIndex < result.numUniforms; uIndex++)
 			{
 				ShaderUniform* uniform = &result.uniforms[uIndex];
 				if (StrExactEquals(uniform->name, sizeUniformName))
 				{
-					image->sizeUniformIndex = uIndex;
+					view->sizeUniformIndex = uIndex;
 					break;
 				}
 			}

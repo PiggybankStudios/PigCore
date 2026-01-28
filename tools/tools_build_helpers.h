@@ -304,12 +304,12 @@ static inline bool IsShaderHeaderLine_Attribute(Str8 shaderName, Str8 line, Str8
 	return true;
 }
 
-static inline bool IsShaderHeaderLine_Image(Str8 shaderName, Str8 line, Str8* nameOut)
+static inline bool IsShaderHeaderLine_View(Str8 shaderName, Str8 line, Str8* nameOut)
 {
 	//Matches something like:
 	//	#define IMG_main2d_texture0 (0)
 	CONSUME_WHITESPACE(&line);
-	CONSUME_NT_STR(&line, "#define IMG_");
+	CONSUME_NT_STR(&line, "#define VIEW_");
 	CONSUME_STR(&line, shaderName);
 	CONSUME_NT_STR(&line, "_");
 	Str8 nameStr = line;
@@ -418,7 +418,7 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 	
 	Str8 shaderName = ZEROED;
 	StrArray shaderAttributes = ZEROED;
-	StrArray shaderImages = ZEROED;
+	StrArray shaderViews = ZEROED;
 	StrArray shaderSamplers = ZEROED;
 	StrArray shaderUniformBlocks = ZEROED;
 	StrArray shaderUniforms = ZEROED;
@@ -461,10 +461,10 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 				// PrintLine("Found attribute \"%.*s\"", name.length, name.chars);
 				AddStr(&shaderAttributes, name);
 			}
-			else if (IsShaderHeaderLine_Image(shaderName, line, &name))
+			else if (IsShaderHeaderLine_View(shaderName, line, &name))
 			{
-				// PrintLine("Found image \"%.*s\"", name.length, name.chars);
-				AddStr(&shaderImages, name);
+				// PrintLine("Found view \"%.*s\"", name.length, name.chars);
+				AddStr(&shaderViews, name);
 			}
 			else if (IsShaderHeaderLine_Sampler(shaderName, line, &name))
 			{
@@ -523,28 +523,28 @@ void ScrapeShaderHeaderFileAndAddExtraInfo(Str8 headerPath, Str8 shaderPath)
 		AppendToFile(headerPath, StrLit("} // These should match ShaderAttributeDef plex found in gfx_shader.h\n"), true);
 	}
 	
-	//Images
+	//Views
 	{
 		AppendPrintToFile(headerPath,
-			"#define %.*s_SHADER_IMAGE_COUNT %u\n"
-			"#define %.*s_SHADER_IMAGE_DEFS { \\\n",
+			"#define %.*s_SHADER_VIEW_COUNT %u\n"
+			"#define %.*s_SHADER_VIEW_DEFS { \\\n",
 			shaderName.length, shaderName.chars,
-			shaderImages.length,
+			shaderViews.length,
 			shaderName.length, shaderName.chars
 		);
-		for (uxx imageIndex = 0; imageIndex < shaderImages.length; imageIndex++)
+		for (uxx viewIndex = 0; viewIndex < shaderViews.length; viewIndex++)
 		{
-			Str8 imageName = shaderImages.strings[imageIndex];
+			Str8 viewName = shaderViews.strings[viewIndex];
 			AppendPrintToFile(headerPath,
-				"\t{ .name=\"%.*s_%.*s\", .index=IMG_%.*s_%.*s }, \\\n",
+				"\t{ .name=\"%.*s_%.*s\", .index=VIEW_%.*s_%.*s }, \\\n",
 				shaderName.length, shaderName.chars,
-				imageName.length, imageName.chars,
+				viewName.length, viewName.chars,
 				shaderName.length, shaderName.chars,
-				imageName.length, imageName.chars
+				viewName.length, viewName.chars
 			);
 		}
-		if (shaderImages.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
-		AppendToFile(headerPath, StrLit("} // These should match ShaderImageDef plex found in gfx_shader.h\n"), true);
+		if (shaderViews.length == 0) { AppendToFile(headerPath, StrLit("\t{ .name=NO_ENTRIES_STR, .index=0 } \\\n"), true); }
+		AppendToFile(headerPath, StrLit("} // These should match ShaderViewDef plex found in gfx_shader.h\n"), true);
 	}
 	
 	//Samplers

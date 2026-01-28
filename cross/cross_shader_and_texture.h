@@ -10,36 +10,37 @@ Date:   01\30\2025
 #if BUILD_WITH_SOKOL_GFX
 
 #if !PIG_CORE_IMPLEMENTATION
-	bool BindTextureAtIndex(sg_bindings* bindings, Shader* shader, Texture* texture, uxx imageIndex, uxx samplerIndex);
-	PIG_CORE_INLINE bool BindTextureByName(sg_bindings* bindings, Shader* shader, Texture* texture, Str8 shaderImageName, Str8 shaderSamplerName);
+	bool BindTextureInShaderAtIndex(sg_bindings* bindings, Shader* shader, Texture* texture, uxx viewIndex, uxx samplerIndex);
+	PIG_CORE_INLINE bool BindTextureInShaderByName(sg_bindings* bindings, Shader* shader, Texture* texture, Str8 shaderViewName, Str8 shaderSamplerName);
 #endif
 
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP bool BindTextureAtIndex(sg_bindings* bindings, Shader* shader, Texture* texture, uxx imageIndex, uxx samplerIndex)
+PEXP bool BindTextureInShaderAtIndex(sg_bindings* bindings, Shader* shader, Texture* texture, uxx viewIndex, uxx samplerIndex)
 {
 	NotNull(bindings);
 	NotNull(shader);
 	NotNull(texture);
-	Assert(imageIndex < SG_MAX_VIEW_BINDSLOTS);
+	Assert(viewIndex < SG_MAX_VIEW_BINDSLOTS);
 	Assert(samplerIndex < SG_MAX_SAMPLER_BINDSLOTS);
 	bool result = false;
-	for (uxx iIndex = 0; iIndex < shader->numImages; iIndex++)
+	for (uxx vIndex = 0; vIndex < shader->numViews; vIndex++)
 	{
-		ShaderImage* image = &shader->images[iIndex];
-		if (image->index == imageIndex)
+		ShaderView* view = &shader->views[vIndex];
+		if (view->index == viewIndex)
 		{
-			bindings->views[image->index] = texture->view;
-			if (image->sizeUniformIndex < shader->numUniforms)
+			// PrintLine_D("Binding View %d at index %llu", texture->view.id, view->index);
+			bindings->views[view->index] = texture->view;
+			if (view->sizeUniformIndex < shader->numUniforms)
 			{
-				ShaderUniform* sizeUniform = &shader->uniforms[image->sizeUniformIndex];
+				ShaderUniform* sizeUniform = &shader->uniforms[view->sizeUniformIndex];
 				Assert(sizeUniform->size == sizeof(v2));
 				Assert(sizeUniform->blockIndex < MAX_NUM_SHADER_UNIFORM_BLOCKS);
 				ShaderUniformBlock* uniformBlock = &shader->uniformBlocks[sizeUniform->blockIndex];
 				NotNull(uniformBlock->value.bytes);
 				Assert(sizeUniform->offset + sizeUniform->size <= uniformBlock->value.length);
-				v2 imageSize = ToV2Fromi(texture->size);
-				MyMemCopy(&uniformBlock->value.bytes[sizeUniform->offset], &imageSize, sizeof(v2));
+				v2 textureSizef = ToV2Fromi(texture->size);
+				MyMemCopy(&uniformBlock->value.bytes[sizeUniform->offset], &textureSizef, sizeof(v2));
 				uniformBlock->valueChanged = true;
 			}
 			result = true;
@@ -50,7 +51,7 @@ PEXP bool BindTextureAtIndex(sg_bindings* bindings, Shader* shader, Texture* tex
 		ShaderSampler* sampler = &shader->samplers[sIndex];
 		if (sampler->index == samplerIndex)
 		{
-			bindings->views[sampler->index] = texture->view;
+			// PrintLine_D("Binding Sampler %d at index %llu", texture->sampler.id, sampler->index);
 			bindings->samplers[sampler->index] = texture->sampler;
 			result = true;
 		}
@@ -58,19 +59,19 @@ PEXP bool BindTextureAtIndex(sg_bindings* bindings, Shader* shader, Texture* tex
 	return result;
 }
 
-PEXPI bool BindTextureByName(sg_bindings* bindings, Shader* shader, Texture* texture, Str8 shaderImageName, Str8 shaderSamplerName)
+PEXPI bool BindTextureInShaderByName(sg_bindings* bindings, Shader* shader, Texture* texture, Str8 shaderViewName, Str8 shaderSamplerName)
 {
-	uxx imageIndex = shader->numImages;
+	uxx viewIndex = shader->numViews;
 	uxx samplerIndex = shader->numSamplers;
-	for (uxx iIndex = 0; iIndex < shader->numImages; iIndex++)
+	for (uxx vIndex = 0; vIndex < shader->numViews; vIndex++)
 	{
-		if (StrExactEquals(shader->images[iIndex].name, shaderImageName)) { imageIndex = shader->images[iIndex].index; break; }
+		if (StrExactEquals(shader->views[vIndex].name, shaderViewName)) { viewIndex = shader->views[vIndex].index; break; }
 	}
-	for (uxx sIndex = 0; sIndex < shader->numImages; sIndex++)
+	for (uxx sIndex = 0; sIndex < shader->numSamplers; sIndex++)
 	{
 		if (StrExactEquals(shader->samplers[sIndex].name, shaderSamplerName)) { samplerIndex = shader->samplers[sIndex].index; break; }
 	}
-	return BindTextureAtIndex(bindings, shader, texture, imageIndex, samplerIndex);
+	return BindTextureInShaderAtIndex(bindings, shader, texture, viewIndex, samplerIndex);
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

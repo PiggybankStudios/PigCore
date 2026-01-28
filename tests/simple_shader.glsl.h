@@ -432,16 +432,16 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
 #ifndef NO_ENTRIES_STR
 #define NO_ENTRIES_STR "no_entries"
 #endif
-#define simple_SHADER_FILE_PATH "/home/robbitay/MyStuff/projects/pig_core/tests/simple_shader.glsl"
+#define simple_SHADER_FILE_PATH "/home/robbitay/my_stuff/projects/pig_core/tests/simple_shader.glsl"
 #define simple_SHADER_ATTR_COUNT 2
 #define simple_SHADER_ATTR_DEFS { \
 	{ .name="position", .index=ATTR_simple_position }, \
 	{ .name="color0", .index=ATTR_simple_color0 }, \
 } // These should match ShaderAttributeDef plex found in gfx_shader.h
-#define simple_SHADER_IMAGE_COUNT 0
-#define simple_SHADER_IMAGE_DEFS { \
+#define simple_SHADER_VIEW_COUNT 0
+#define simple_SHADER_VIEW_DEFS { \
 	{ .name=NO_ENTRIES_STR, .index=0 } \
-} // These should match ShaderImageDef plex found in gfx_shader.h
+} // These should match ShaderViewDef plex found in gfx_shader.h
 #define simple_SHADER_SAMPLER_COUNT 0
 #define simple_SHADER_SAMPLER_DEFS { \
 	{ .name=NO_ENTRIES_STR, .index=0 } \
