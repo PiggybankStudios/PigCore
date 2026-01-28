@@ -2039,8 +2039,6 @@ typedef struct sapp_desc {
 
     int width;                          // the preferred width of the window / canvas
     int height;                         // the preferred height of the window / canvas
-    int min_width;                      // NOTE: Added by Taylor
-    int min_height;                     // NOTE: Added by Taylor
     int sample_count;                   // MSAA sample count
     int swap_interval;                  // the preferred swap interval (ignored on some platforms)
     bool high_dpi;                      // whether the rendering canvas is full-resolution on HighDPI displays
@@ -2200,6 +2198,8 @@ SOKOL_APP_API_DECL void sapp_set_icon(const sapp_icon_desc* icon_desc);
 SOKOL_APP_API_DECL int sapp_get_num_dropped_files(void);
 /* gets the dropped file paths */
 SOKOL_APP_API_DECL const char* sapp_get_dropped_file_path(int index);
+/* Requests that the window stay on top of other windows (NOTE: Added by Taylor) */
+SOKOL_APP_API_DECL void sapp_set_topmost(bool topmost);
 
 /* special run-function for SOKOL_NO_ENTRY (in standard mode this is an empty stub) */
 SOKOL_APP_API_DECL void sapp_run(const sapp_desc* desc);
@@ -3189,6 +3189,7 @@ typedef struct {
     Atom NET_WM_ICON;
     Atom NET_WM_STATE;
     Atom NET_WM_STATE_FULLSCREEN;
+    Atom NET_WM_STATE_ABOVE; //NOTE: Added by Taylor
     _sapp_xi_t xi;
     _sapp_xdnd_t xdnd;
     // XLib manual says keycodes are in the range [8, 255] inclusive.
@@ -9883,6 +9884,11 @@ _SOKOL_PRIVATE void _sapp_win32_set_icon(const sapp_icon_desc* icon_desc, int nu
     }
 }
 
+//NOTE: Added by Taylor
+_SOKOL_PRIVATE void _sapp_win32_set_topmost(bool topmost) {
+	SOKOL_ASSERT(false && "TODO: Implement _sapp_win32_set_topmost!")
+}
+
 /* don't laugh, but this seems to be the easiest and most robust
    way to check if we're running on Win10
 
@@ -11595,6 +11601,7 @@ _SOKOL_PRIVATE void _sapp_x11_init_extensions(void) {
     _sapp.x11.NET_WM_ICON             = XInternAtom(_sapp.x11.display, "_NET_WM_ICON", False);
     _sapp.x11.NET_WM_STATE            = XInternAtom(_sapp.x11.display, "_NET_WM_STATE", False);
     _sapp.x11.NET_WM_STATE_FULLSCREEN = XInternAtom(_sapp.x11.display, "_NET_WM_STATE_FULLSCREEN", False);
+    _sapp.x11.NET_WM_STATE_ABOVE      = XInternAtom(_sapp.x11.display, "_NET_WM_STATE_ABOVE", False); //NOTE: Added by Taylor
     _sapp.x11.CLIPBOARD = XInternAtom(_sapp.x11.display, "CLIPBOARD", False);
     _sapp.x11.TARGETS   = XInternAtom(_sapp.x11.display, "TARGETS", False);
     if (_sapp.drop.enabled) {
@@ -12619,6 +12626,26 @@ _SOKOL_PRIVATE void _sapp_x11_set_icon(const sapp_icon_desc* icon_desc, int num_
         (unsigned char*)icon_data,
         long_count);
     _sapp_free(icon_data);
+    XFlush(_sapp.x11.display);
+}
+
+//NOTE: Added by Taylor
+_SOKOL_PRIVATE void _sapp_x11_set_topmost(bool topmost) {
+	_SAPP_STRUCT(XEvent, event);
+    event.type = ClientMessage;
+    event.xclient.window = _sapp.x11.window;
+    event.xclient.message_type = _sapp.x11.NET_WM_STATE;
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = (topmost ? 1 : 0);
+    event.xclient.data.l[1] = _sapp.x11.NET_WM_STATE_ABOVE;
+    event.xclient.data.l[2] = 0;
+    event.xclient.data.l[3] = 1;
+    event.xclient.data.l[4] = 0;
+    
+    XSendEvent(_sapp.x11.display, _sapp.x11.root,
+               False,
+               SubstructureNotifyMask | SubstructureRedirectMask,
+               &event);
     XFlush(_sapp.x11.display);
 }
 
@@ -14007,6 +14034,18 @@ SOKOL_API_IMPL const char* sapp_get_dropped_file_path(int index) {
         return "";
     }
     return (const char*) _sapp_dropped_file_path_ptr(index);
+}
+
+//NOTE: Added by Taylor
+SOKOL_API_IMPL void sapp_set_topmost(bool topmost) {
+	
+    #if defined(_SAPP_WIN32)
+        _sapp_win32_set_topmost(topmost);
+    #elif defined(_SAPP_LINUX)
+        _sapp_x11_set_topmost(topmost);
+    #else
+        SOKOL_ASSERT(false && "sapp_set_topmost is not implemented for the current OS!");
+    #endif
 }
 
 SOKOL_API_IMPL uint32_t sapp_html5_get_dropped_file_size(int index) {
