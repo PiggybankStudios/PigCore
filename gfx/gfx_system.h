@@ -524,7 +524,7 @@ PEXPI void GfxSystem_BindTextureAtIndex(GfxSystem* system, Texture* texture, uxx
 		if (system->state.shader != nullptr)
 		{
 			if (texture != nullptr) { BindTextureAtIndex(&system->bindings, system->state.shader, texture, textureIndex, textureIndex); }
-			else { system->bindings.images[textureIndex].id = SG_INVALID_ID; system->bindings.samplers[textureIndex].id = SG_INVALID_ID; }
+			else { system->bindings.views[textureIndex].id = SG_INVALID_ID; system->bindings.samplers[textureIndex].id = SG_INVALID_ID; }
 			system->bindingsChanged = true;
 		}
 		system->state.textures[textureIndex] = texture;

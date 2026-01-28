@@ -57,19 +57,24 @@ This folder contains (or needs to be made to contain) copies of all third party 
 ---
 
 ## Sokol
-**URL(s):** [github.com/floooh/sokol](https://github.com/floooh/sokol)
+**URL(s):** [github.com/floooh/sokol](https://github.com/floooh/sokol) [Commit 53b78dd](https://github.com/floooh/sokol/commit/53b78dd7e85c8c62622e2f7adfb63fc32814dfc4)
 
 **Folder Name:** `sokol`
 
 **Download Required:** No, all necassary files are included in the repository
 
-**Current Version:** Commit `c1cc713a48669fb78c8fadc1a3cb9dd6c3bb97d3` from Dec 29 2024
+**Current Version:** Commit `53b78dd7e85c8c62622e2f7adfb63fc32814dfc4` from Jan 26 2026
 
-**Fixup Required:** Delete all non-essential files after cloning (everything  that's not soko_*.h)
+**Fixup Required:**
+	* Delete all non-essential files after cloning (everything that's not `sokol_*.h` and `CHANGELOG.md` and `LICENSE`).
+	* Add support for rendering while resizing on Windows using new `SAPP_EVENTTYPE_RESIZE_RENDER` and a `main_thread_id` in `_sapp_win32_t` to prevent rendering on other threads when responding to `WM_PAINT` events.
+	* Add a bool return from `_sapp_frame()` that tells sokol whether to frame flip or not (for CPU usage reduction while idle)
+	* Add `min_width` and `min_height` options to `sapp_desc` that enforce a minimum window size
+	* Add support for touch input event routing on Windows by handling `WM_TOUCH`. Add an `enable_touch_input` option in `sapp_desc` and call `RegisterTouchWindow` in `_sapp_win32_create_window`
 
 **Required For:**
 
-* Building tests.exe into a little graphical window application (only if `BUILD_WITH_SOKOL` is enabled in `build_config.h`)
+* Building graphical applications that spawn a window in a cross-platform way (`sokol_app.h`) and that render using graphics APIs like OpenGL and DirectX (`sokol_gfx.h`). These dependencies are enabled with `BUILD_WITH_SOKOL_APP` and `BUILD_WITH_SOKOL_GFX` #defines.
 
 ---
 

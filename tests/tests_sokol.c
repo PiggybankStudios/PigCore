@@ -357,9 +357,9 @@ void AppInit(void)
 	
 	ScratchBegin(scratch);
 	InitSokolGraphics((sg_desc){
-		.environment = CreateSokolAppEnvironment(),
+		.environment = GetSokolGfxEnvironment(),
 		.logger.func = SokolLogCallback,
-		.mtl_use_command_buffer_with_retained_references = true,
+		.metal.use_command_buffer_with_retained_references = true,
 	});
 	
 	InitGfxSystem(stdHeap, &gfx);
@@ -851,7 +851,7 @@ bool AppFrame(void)
 	
 	r32 textScale = TEXT_SCALE/sapp_dpi_scale(); UNUSED(textScale);
 	OsTime afterUpdateTime = OsGetTime();
-	BeginFrame(GetSokolAppSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
+	BeginFrame(GetSokolGfxSwapchain(), windowSizei, MonokaiDarkGray, 1.0f);
 	OsTime beforeRenderTime = OsGetTime();
 	{
 		TracyCZoneN(Zone_Draw, "Draw", true);

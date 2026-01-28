@@ -362,7 +362,9 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
             desc.vertex_func.entry = "main";
             desc.fragment_func.source = (const char*)fragment_shader_source_glsl430;
             desc.fragment_func.entry = "main";
+            desc.attrs[0].base_type = SG_SHADERATTRBASETYPE_FLOAT;
             desc.attrs[0].glsl_name = "position";
+            desc.attrs[1].base_type = SG_SHADERATTRBASETYPE_FLOAT;
             desc.attrs[1].glsl_name = "color0";
             desc.label = "simple_shader";
         }
@@ -377,7 +379,9 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
             desc.vertex_func.entry = "main";
             desc.fragment_func.source = (const char*)fragment_shader_source_glsl300es;
             desc.fragment_func.entry = "main";
+            desc.attrs[0].base_type = SG_SHADERATTRBASETYPE_FLOAT;
             desc.attrs[0].glsl_name = "position";
+            desc.attrs[1].base_type = SG_SHADERATTRBASETYPE_FLOAT;
             desc.attrs[1].glsl_name = "color0";
             desc.label = "simple_shader";
         }
@@ -394,8 +398,10 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
             desc.fragment_func.source = (const char*)fragment_shader_source_hlsl5;
             desc.fragment_func.d3d11_target = "ps_5_0";
             desc.fragment_func.entry = "main";
+            desc.attrs[0].base_type = SG_SHADERATTRBASETYPE_FLOAT;
             desc.attrs[0].hlsl_sem_name = "TEXCOORD";
             desc.attrs[0].hlsl_sem_index = 0;
+            desc.attrs[1].base_type = SG_SHADERATTRBASETYPE_FLOAT;
             desc.attrs[1].hlsl_sem_name = "TEXCOORD";
             desc.attrs[1].hlsl_sem_index = 1;
             desc.label = "simple_shader";
@@ -411,6 +417,8 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
             desc.vertex_func.entry = "main0";
             desc.fragment_func.source = (const char*)fragment_shader_source_metal_macos;
             desc.fragment_func.entry = "main0";
+            desc.attrs[0].base_type = SG_SHADERATTRBASETYPE_FLOAT;
+            desc.attrs[1].base_type = SG_SHADERATTRBASETYPE_FLOAT;
             desc.label = "simple_shader";
         }
         return &desc;
@@ -424,7 +432,7 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
 #ifndef NO_ENTRIES_STR
 #define NO_ENTRIES_STR "no_entries"
 #endif
-#define simple_SHADER_FILE_PATH "/home/robbitay/MyStuff/projects/PigCore/tests/simple_shader.glsl"
+#define simple_SHADER_FILE_PATH "/home/robbitay/MyStuff/projects/pig_core/tests/simple_shader.glsl"
 #define simple_SHADER_ATTR_COUNT 2
 #define simple_SHADER_ATTR_DEFS { \
 	{ .name="position", .index=ATTR_simple_position }, \

@@ -39,39 +39,54 @@ void SokolLogCallback(const char* tag, u32 logLevel, u32 logId, const char* mess
 		default: dbgLevel = DbgLevel_None; break;
 	}
 	DebugOutputRouter(filePath, lineNum, __func__, dbgLevel, false, true, message);
-	if (logLevel == 0) { Assert(false); }
+	if (logLevel == 0) { AssertMsg(false, "Sokol Panic!"); }
 }
 
-sg_environment CreateSokolAppEnvironment()
+sg_environment GetSokolGfxEnvironment()
 {
 	sg_environment result = ZEROED;
-	result.defaults.color_format = (sg_pixel_format)sapp_color_format();
-	result.defaults.depth_format = (sg_pixel_format)sapp_depth_format();
-	result.defaults.sample_count = sapp_sample_count();
-	result.metal.device = sapp_metal_get_device();
-	result.d3d11.device = sapp_d3d11_get_device();
-	result.d3d11.device_context = sapp_d3d11_get_device_context();
-	result.wgpu.device = sapp_wgpu_get_device();
+	sapp_environment appEnvironment = sapp_get_environment();
+	result.defaults.color_format     = (sg_pixel_format)appEnvironment.defaults.color_format;
+	result.defaults.depth_format     = (sg_pixel_format)appEnvironment.defaults.depth_format;
+	result.defaults.sample_count     = appEnvironment.defaults.sample_count;
+	result.metal.device              = appEnvironment.metal.device;
+	result.d3d11.device              = appEnvironment.d3d11.device;
+	result.d3d11.device_context      = appEnvironment.d3d11.device_context;
+	result.wgpu.device               = appEnvironment.wgpu.device;
+	result.vulkan.instance           = appEnvironment.vulkan.instance;
+	result.vulkan.physical_device    = appEnvironment.vulkan.physical_device;
+	result.vulkan.device             = appEnvironment.vulkan.device;
+	result.vulkan.queue              = appEnvironment.vulkan.queue;
+	result.vulkan.queue_family_index = appEnvironment.vulkan.queue_family_index;
 	return result;
 }
 
-sg_swapchain GetSokolAppSwapchain()
+sg_swapchain GetSokolGfxSwapchain()
 {
 	sg_swapchain result = ZEROED;
-	result.width = sapp_width();
-	result.height = sapp_height();
-	result.sample_count = sapp_sample_count();
-	result.color_format = (sg_pixel_format)sapp_color_format();
-	result.depth_format = (sg_pixel_format)sapp_depth_format();
-	result.metal.current_drawable = sapp_metal_get_current_drawable();
-	result.metal.depth_stencil_texture = sapp_metal_get_depth_stencil_texture();
-	result.metal.msaa_color_texture = sapp_metal_get_msaa_color_texture();
-	result.d3d11.render_view = sapp_d3d11_get_render_view();
-	result.d3d11.resolve_view = sapp_d3d11_get_resolve_view();
-	result.d3d11.depth_stencil_view = sapp_d3d11_get_depth_stencil_view();
-	result.wgpu.render_view = sapp_wgpu_get_render_view();
-	result.wgpu.resolve_view = sapp_wgpu_get_resolve_view();
-	result.wgpu.depth_stencil_view = sapp_wgpu_get_depth_stencil_view();
-	result.gl.framebuffer = sapp_gl_get_framebuffer();
+	sapp_swapchain appSwapchain = sapp_get_swapchain();
+	result.width = appSwapchain.width;
+	result.height = appSwapchain.height;
+	result.sample_count = appSwapchain.sample_count;
+	result.color_format = (sg_pixel_format)appSwapchain.color_format;
+	result.depth_format = (sg_pixel_format)appSwapchain.depth_format;
+	result.metal.current_drawable = appSwapchain.metal.current_drawable;
+	result.metal.depth_stencil_texture = appSwapchain.metal.depth_stencil_texture;
+	result.metal.msaa_color_texture = appSwapchain.metal.msaa_color_texture;
+	result.d3d11.render_view = appSwapchain.d3d11.render_view;
+	result.d3d11.resolve_view = appSwapchain.d3d11.resolve_view;
+	result.d3d11.depth_stencil_view = appSwapchain.d3d11.depth_stencil_view;
+	result.wgpu.render_view = appSwapchain.wgpu.render_view;
+	result.wgpu.resolve_view = appSwapchain.wgpu.resolve_view;
+	result.wgpu.depth_stencil_view = appSwapchain.wgpu.depth_stencil_view;
+	result.vulkan.render_image = appSwapchain.vulkan.render_image;
+	result.vulkan.render_view = appSwapchain.vulkan.render_view;
+	result.vulkan.resolve_image = appSwapchain.vulkan.resolve_image;
+	result.vulkan.resolve_view = appSwapchain.vulkan.resolve_view;
+	result.vulkan.depth_stencil_image = appSwapchain.vulkan.depth_stencil_image;
+	result.vulkan.depth_stencil_view = appSwapchain.vulkan.depth_stencil_view;
+	result.vulkan.render_finished_semaphore = appSwapchain.vulkan.render_finished_semaphore;
+	result.vulkan.present_complete_semaphore = appSwapchain.vulkan.present_complete_semaphore;
+	result.gl.framebuffer = appSwapchain.gl.framebuffer;
 	return result;
 }

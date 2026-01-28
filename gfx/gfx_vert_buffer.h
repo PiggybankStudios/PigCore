@@ -130,23 +130,22 @@ PEXP VertBuffer InitVertBufferEx(Arena* arena, Str8 name, VertBufferUsage usage,
 	Assert(verticesSize > 0);
 	VertBuffer result = ZEROED;
 	result.arena = arena;
+	result.usage = usage;
+	
 	result.name = AllocStrAndCopy(arena, name.length, name.chars, true);
 	NotNull(result.name.chars);
-	result.usage = usage;
-	sg_usage sokolUsage = SG_USAGE_IMMUTABLE;
-	switch (usage)
-	{
-		case VertBufferUsage_Static: sokolUsage = SG_USAGE_IMMUTABLE; break;
-		case VertBufferUsage_Dynamic: sokolUsage = SG_USAGE_DYNAMIC; break;
-		case VertBufferUsage_Streaming: sokolUsage = SG_USAGE_STREAM; break;
-	}
-	sg_buffer_desc bufferDesc = {
-		.type = SG_BUFFERTYPE_VERTEXBUFFER,
-		.usage = sokolUsage,
-		.label = result.name.chars,
-	};
-	if (verticesPntr != nullptr) { bufferDesc.data = (sg_range){verticesPntr, verticesSize}; }
+	
+	sg_buffer_desc bufferDesc = ZEROED;
+	bufferDesc.label = result.name.chars;
+	bufferDesc.usage.vertex_buffer  = true;
+	bufferDesc.usage.index_buffer   = false;
+	bufferDesc.usage.storage_buffer = false;
+	bufferDesc.usage.immutable = (usage == VertBufferUsage_Static);
+	bufferDesc.usage.dynamic_update = (usage == VertBufferUsage_Dynamic);
+	bufferDesc.usage.stream_update = (usage == VertBufferUsage_Streaming);
+	if (verticesPntr != nullptr) { bufferDesc.data = NEW_STRUCT(sg_range){ .ptr = verticesPntr, .size = verticesSize }; }
 	else { bufferDesc.size = verticesSize; }
+	
 	result.handle = sg_make_buffer(&bufferDesc);
 	if (result.handle.id == SG_INVALID_ID)
 	{
@@ -215,23 +214,21 @@ PEXP void AddIndicesToVertBufferEx(VertBuffer* buffer, uxx indexSize, uxx numInd
 	Assert(buffer->hasIndices == false);
 	if (numIndices > 0)
 	{
-		sg_usage sokolUsage = SG_USAGE_IMMUTABLE;
-		switch (buffer->usage)
-		{
-			case VertBufferUsage_Static: sokolUsage = SG_USAGE_IMMUTABLE; break;
-			case VertBufferUsage_Dynamic: sokolUsage = SG_USAGE_DYNAMIC; break;
-			case VertBufferUsage_Streaming: sokolUsage = SG_USAGE_STREAM; break;
-		}
 		buffer->hasIndices = true;
 		buffer->indexSize = indexSize;
 		buffer->numIndices = numIndices;
-		sg_buffer_desc bufferDesc = {
-			.type = SG_BUFFERTYPE_INDEXBUFFER,
-			.usage = sokolUsage,
-			.label = buffer->name.chars, //TODO: Should we append like "_indices" or something to the name?
-		};
-		if (indicesPntr != nullptr) { bufferDesc.data = (sg_range){indicesPntr, (indexSize * numIndices)}; }
+		
+		sg_buffer_desc bufferDesc = ZEROED;
+		bufferDesc.label = buffer->name.chars; //TODO: Should we append like "_indices" or something to the name?
+		bufferDesc.usage.vertex_buffer  = false;
+		bufferDesc.usage.index_buffer   = true;
+		bufferDesc.usage.storage_buffer = false;
+		bufferDesc.usage.immutable      = (buffer->usage == VertBufferUsage_Static);
+		bufferDesc.usage.dynamic_update = (buffer->usage == VertBufferUsage_Dynamic);
+		bufferDesc.usage.stream_update  = (buffer->usage == VertBufferUsage_Streaming);
+		if (indicesPntr != nullptr) { bufferDesc.data = NEW_STRUCT(sg_range){ .ptr = indicesPntr, .size = (indexSize * numIndices) }; }
 		else { bufferDesc.size = (indexSize * numIndices); }
+		
 		buffer->indicesHandle = sg_make_buffer(&bufferDesc);
 		if (makeCopy)
 		{

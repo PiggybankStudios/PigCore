@@ -2435,6 +2435,8 @@
 			"reci ShrinkReci(reci rectangle, i32 divisor)",
 			"reci SubReci(reci rectangle, v2i offset)",
 			"reci ToReciFromf(rec rectangle)",
+			"sg_environment GetSokolGfxEnvironment()",
+			"sg_swapchain GetSokolGfxSwapchain()",
 			"static inline v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation)",
 			"static inline v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut)",
 			"u32 CharToU32(char c)",

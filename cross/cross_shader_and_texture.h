@@ -21,7 +21,7 @@ PEXP bool BindTextureAtIndex(sg_bindings* bindings, Shader* shader, Texture* tex
 	NotNull(bindings);
 	NotNull(shader);
 	NotNull(texture);
-	Assert(imageIndex < SG_MAX_IMAGE_BINDSLOTS);
+	Assert(imageIndex < SG_MAX_VIEW_BINDSLOTS);
 	Assert(samplerIndex < SG_MAX_SAMPLER_BINDSLOTS);
 	bool result = false;
 	for (uxx iIndex = 0; iIndex < shader->numImages; iIndex++)
@@ -29,7 +29,7 @@ PEXP bool BindTextureAtIndex(sg_bindings* bindings, Shader* shader, Texture* tex
 		ShaderImage* image = &shader->images[iIndex];
 		if (image->index == imageIndex)
 		{
-			bindings->images[image->index] = texture->image;
+			bindings->views[image->index] = texture->view;
 			if (image->sizeUniformIndex < shader->numUniforms)
 			{
 				ShaderUniform* sizeUniform = &shader->uniforms[image->sizeUniformIndex];
@@ -50,6 +50,7 @@ PEXP bool BindTextureAtIndex(sg_bindings* bindings, Shader* shader, Texture* tex
 		ShaderSampler* sampler = &shader->samplers[sIndex];
 		if (sampler->index == samplerIndex)
 		{
+			bindings->views[sampler->index] = texture->view;
 			bindings->samplers[sampler->index] = texture->sampler;
 			result = true;
 		}

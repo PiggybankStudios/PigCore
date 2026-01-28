@@ -64,6 +64,7 @@ plex Texture
 	Arena* arena;
 	Result error;
 	sg_image image;
+	sg_view view;
 	sg_sampler sampler;
 	u8 flags;
 	car
@@ -105,8 +106,9 @@ PEXP void FreeTexture(Texture* texture)
 	if (texture->arena != nullptr)
 	{
 		TracyCZoneN(funcZone, "FreeTexture", true);
-		sg_destroy_image(texture->image);
+		sg_destroy_view(texture->view);
 		sg_destroy_sampler(texture->sampler);
+		sg_destroy_image(texture->image);
 		FreeStr8(texture->arena, &texture->name);
 		#if DEBUG_BUILD
 		FreeStr8(texture->arena, &texture->filePath);
@@ -273,7 +275,13 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	
 	sg_image_desc imageDesc = ZEROED;
 	imageDesc.type = SG_IMAGETYPE_2D;
-	imageDesc.usage = IsFlagSet(flags, TextureFlag_Mutable) ? SG_USAGE_DYNAMIC : SG_USAGE_IMMUTABLE;
+	imageDesc.usage.storage_image = false; //TODO: For compute shaders?
+    imageDesc.usage.color_attachment = false; //TODO: For rendering into?
+    imageDesc.usage.resolve_attachment = false; //TODO: For rendering into, with MSAA?
+    imageDesc.usage.depth_stencil_attachment = false; //TODO: For rendering into?
+    imageDesc.usage.immutable = !IsFlagSet(flags, TextureFlag_Mutable);
+    imageDesc.usage.dynamic_update = IsFlagSet(flags, TextureFlag_Mutable);
+    imageDesc.usage.stream_update = false; //TODO: If we are going to update the texture every frame
 	imageDesc.width = size.Width;
 	imageDesc.height = size.Height;
 	imageDesc.num_mipmaps = (int)(1 + numMipLevels);
@@ -282,10 +290,10 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		: (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R8 : SG_PIXELFORMAT_RGBA8);
 	if (!IsFlagSet(flags, TextureFlag_Mutable))
 	{
-		imageDesc.data.subimage[0][0] = pixelsRange;
+		imageDesc.data.mip_levels[0] = pixelsRange;
 		if (!IsFlagSet(flags, TextureFlag_NoMipmaps) && numMipLevels > 0)
 		{
-			for (uxx mIndex = 0; mIndex < numMipLevels; mIndex++) { imageDesc.data.subimage[0][1+mIndex] = mipmapRanges[mIndex]; }
+			for (uxx mIndex = 0; mIndex < numMipLevels; mIndex++) { imageDesc.data.mip_levels[1+mIndex] = mipmapRanges[mIndex]; }
 		}
 	}
 	Str8 nameNt = AllocStrAndCopy(scratch, name.length, name.chars, true); NotNull(nameNt.chars); //allocate to ensure null-term char
@@ -307,10 +315,10 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	if (IsFlagSet(flags, TextureFlag_Mutable))
 	{
 		sg_image_data imageData = ZEROED;
-		imageData.subimage[0][0] = pixelsRange;
+		imageData.mip_levels[0] = pixelsRange;
 		if (!IsFlagSet(flags, TextureFlag_NoMipmaps) && numMipLevels > 0)
 		{
-			for (uxx mIndex = 0; mIndex < numMipLevels; mIndex++) { imageData.subimage[0][1+mIndex] = mipmapRanges[mIndex]; }
+			for (uxx mIndex = 0; mIndex < numMipLevels; mIndex++) { imageData.mip_levels[1+mIndex] = mipmapRanges[mIndex]; }
 		}
 		sg_update_image(result.image, &imageData);
 	}
@@ -338,6 +346,31 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		TracyCZoneEnd(funcZone);
 		return result;
 	}
+	
+	sg_view_desc viewDesc = ZEROED;
+	Str8 viewNameNt = JoinStringsInArena(scratch, name, StrLit("_view"), true); NotNull(viewNameNt.chars);
+    viewDesc.label = viewNameNt.chars;
+    viewDesc.texture.image = result.image;
+    // viewDesc.texture.mip_levels = NEW_STRUCT(sg_texture_view_range){ .base=0, .count=imageDesc.num_mipmaps };
+    // viewDesc.storage_buffer = ?; //sg_buffer_view_desc
+    // viewDesc.storage_image = ?; //sg_image_view_desc
+    // viewDesc.color_attachment = ?; //sg_image_view_desc
+    // viewDesc.resolve_attachment = ?; //sg_image_view_desc
+    // viewDesc.depth_stencil_attachment = ?; //sg_image_view_desc
+    
+	result.view = sg_make_view(&viewDesc);
+	if (result.view.id == SG_INVALID_ID)
+	{
+		sg_destroy_sampler(result.sampler);
+		sg_destroy_image(result.image);
+		FreeStr8(arena, &result.name);
+		if (result.pixelsPntr != nullptr) { FreeMem(arena, result.pixelsPntr, result.totalSize); }
+		result.error = Result_SokolError;
+		ScratchEnd(scratch);
+		TracyCZoneEnd(funcZone);
+		return result;
+	}
+	PrintLine_D("View ID: %d", result.view.id);
 	
 	ScratchEnd(scratch);
 	result.error = Result_Success;
@@ -395,7 +428,7 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 	{
 		Assert(IsFlagSet(texture->flags, TextureFlag_NoMipmaps));
 		sg_image_data sokolImageData = ZEROED;
-		sokolImageData.subimage[0][0] = (sg_range){ texture->pixelsPntr, texture->totalSize };
+		sokolImageData.mip_levels[0] = (sg_range){ texture->pixelsPntr, texture->totalSize };
 		sg_update_image(texture->image, &sokolImageData);
 	}
 	else
@@ -415,9 +448,10 @@ PEXPI void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex
 {
 	NotNull(bindings);
 	NotNull(texture);
-	Assert(texture->image.id != SG_INVALID_ID);
+	Assert(texture->view.id != SG_INVALID_ID);
 	Assert(texture->sampler.id != SG_INVALID_ID);
-	bindings->images[textureIndex] = texture->image;
+	PrintLine_D("Binding view %d", texture->view.id);
+	bindings->views[textureIndex] = texture->view;
 	bindings->samplers[textureIndex] = texture->sampler;
 }
 
