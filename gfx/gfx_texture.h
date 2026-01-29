@@ -372,7 +372,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		TracyCZoneEnd(funcZone);
 		return result;
 	}
-	PrintLine_D("Texture \"%.*s\" View ID: %d", StrPrint(name), result.view.id);
+	// PrintLine_D("Texture \"%.*s\" View ID: %d", StrPrint(name), result.view.id);
 	
 	ScratchEnd(scratch);
 	result.error = Result_Success;
