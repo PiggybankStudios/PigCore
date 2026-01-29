@@ -9886,7 +9886,17 @@ _SOKOL_PRIVATE void _sapp_win32_set_icon(const sapp_icon_desc* icon_desc, int nu
 
 //NOTE: Added by Taylor
 _SOKOL_PRIVATE void _sapp_win32_set_topmost(bool topmost) {
-	SOKOL_ASSERT(false && "TODO: Implement _sapp_win32_set_topmost!")
+	//TODO: Taylor: Test this on Windows!
+	BOOL setWindowPosResult = SetWindowPos(
+		_sapp.win32.hwnd, //hWnd
+		topmost ? HWND_TOPMOST : HWND_NOTOPMOST, //hWndInsertAfter
+		0, //X,
+		0, //Y,
+		0, //cx,
+		0, //cy,
+		SWP_NOMOVE | SWP_NOSIZE //uFlags
+	);
+	SOKOL_ASSERT(setWindowPosResult != 0);
 }
 
 /* don't laugh, but this seems to be the easiest and most robust
