@@ -9,6 +9,8 @@ Description:
 
 //TODO: Notifications with '\n' character cause incorrect behavior because clay is handling them even when wrapMode=CLAY_TEXT_WRAP_NONE on the text element
 
+//TODO: The way these notifications stack vertically is quite buggy. We should redo the logic for vertical placement
+
 #ifndef _UI_CLAY_NOTIFICATIONS_H
 #define _UI_CLAY_NOTIFICATIONS_H
 
@@ -83,6 +85,7 @@ plex NotificationQueue
 	u64 nextId;
 	VarArray notifications; //Notification
 	v2i prevScreenSize;
+	bool notificationDisappeared;
 	u64 currentProgramTime;
 	NotificationIcon icons[DbgLevel_Count];
 };
@@ -194,6 +197,7 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 	NotNull(queue->arena);
 	NotNull(font);
 	queue->currentProgramTime = context->programTime;
+	queue->notificationDisappeared = false;
 	
 	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
 	bool screenSizeChanged = (!AreEqualV2i(queue->prevScreenSize, screenSize));
@@ -220,6 +224,7 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 			// PrintLine_D("Dismissing notification (timeout) \"%.*s\"", StrPrint(notification->messageStr));
 			FreeNotification(notification);
 			VarArrayRemoveAt(Notification, &queue->notifications, nIndex);
+			queue->notificationDisappeared = true;
 			nIndex--;
 			continue;
 		}
@@ -242,7 +247,7 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		rec notificationDrawRec = GetClayElementDrawRec(notificationId);
 		bool isSizeKnown = (notificationDrawRec.Width > 0);
 		
-		if (!screenSizeChanged && prevNotificationDrawRec.Width > 0 && prevNotificationDrawRec.Height > 0)
+		if (!screenSizeChanged && !queue->notificationDisappeared && prevNotificationDrawRec.Width > 0 && prevNotificationDrawRec.Height > 0)
 		{
 			notification->gotoOffsetY = ((r32)screenSize.Height - UISCALE_R32(context->uiScale, NOTIFICATION_SCREEN_MARGIN_BOTTOM)) - (prevNotificationDrawRec.Y - UISCALE_R32(context->uiScale, NOTIFICATION_BETWEEN_MARGIN));
 		}

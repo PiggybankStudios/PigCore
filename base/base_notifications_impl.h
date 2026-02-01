@@ -30,6 +30,7 @@ Date:   11\10\2025
 	PIG_CORE_INLINE void SetGlobalNotificationQueue(NotificationQueue* queue);
 	#endif //NOTIFICATION_QUEUE_AVAILABLE
 	//NOTE: NotificationRouter and NotificationRouterPrint are pre-declared in base_notifications.h
+	bool DismissNotification(NotificationQueue* queue, u64 programTime, bool dismissAll);
 #endif
 
 // +--------------------------------------------------------------+
@@ -135,6 +136,25 @@ PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const ch
 			ScratchEnd(scratch);
 		}
 	}
+}
+
+PEXP bool DismissNotification(NotificationQueue* queue, u64 programTime, bool dismissAll)
+{
+	NotNull(queue);
+	bool closedNotification = false;
+	VarArrayLoop(&queue->notifications, nIndex)
+	{
+		VarArrayLoopGet(Notification, notification, &queue->notifications, nIndex);
+		u64 spawnAnimTime = TimeSinceBy(programTime, notification->spawnTime);
+		if (spawnAnimTime < notification->duration - NOTIFICATION_DISAPPEAR_ANIM_TIME)
+		{
+			// PrintLine_D("Dismissing notification[%llu] %llu", nIndex, notification->id);
+			notification->duration = (spawnAnimTime + NOTIFICATION_DISAPPEAR_ANIM_TIME);
+			closedNotification = true;
+			if (!dismissAll) { break; }
+		}
+	}
+	return closedNotification;
 }
 
 #endif //PIG_CORE_IMPLEMENTATION

@@ -357,6 +357,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 		case SAPP_EVENTTYPE_MOUSE_ENTER: [[fallthrough]];
 		case SAPP_EVENTTYPE_MOUSE_LEAVE:
 		{
+			// PrintLine_D("MOUSE_%s", (event->type == SAPP_EVENTTYPE_MOUSE_ENTER) ? "ENTER" : "LEAVE");
 			UpdateMouseOverWindow(mouse, currentTime, (event->type == SAPP_EVENTTYPE_MOUSE_ENTER));
 			handled = true;
 		} break;
