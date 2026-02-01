@@ -27,6 +27,7 @@ plex BtnState
 	u8 transitionCount;
 	u8 repeatCount;
 	u64 lastTransitionTime;
+	u8 modifierKeys; //NOTE: This is only stored for the most recent downward transition (or OS-level key repeat)
 };
 
 // +--------------------------------------------------------------+
@@ -35,7 +36,7 @@ plex BtnState
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void InitBtnState(BtnState* state, bool startedDown);
 	PIG_CORE_INLINE void RefreshBtnState(BtnState* state);
-	PIG_CORE_INLINE bool UpdateBtnState(BtnState* state, u64 currentTime, bool isDown, bool isRepeated);
+	PIG_CORE_INLINE bool UpdateBtnState(BtnState* state, u64 currentTime, bool isDown, bool isRepeated, u8 modifierKeys);
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -62,27 +63,35 @@ PEXPI void RefreshBtnState(BtnState* state)
 	state->wasRepeated = false;
 }
 
-PEXPI bool UpdateBtnState(BtnState* state, u64 currentTime, bool isDown, bool isRepeated)
+PEXPI bool UpdateBtnState(BtnState* state, u64 currentTime, bool isDown, bool isRepeated, u8 modifierKeys)
 {
 	NotNull(state);
 	Assert(!(isRepeated && !isDown));
 	if (state->isDown != isDown || isRepeated)
 	{
-		if (!isRepeated || !state->isDown)
+		if (isRepeated)
+		{
+			IncrementU8(state->repeatCount);
+			state->wasRepeated = true;
+			state->modifierKeys = modifierKeys;
+		}
+		else
 		{
 			IncrementU8(state->transitionCount);
 			state->lastTransitionTime = currentTime;
 		}
-		else
-		{
-			IncrementU8(state->repeatCount);
-			state->wasRepeated = true;
-		}
 		if (state->isDown != isDown)
 		{
 			state->isDown = isDown;
-			if (isDown) { state->wasPressed = true; }
-			else { state->wasReleased = true; }
+			if (isDown)
+			{
+				state->wasPressed = true;
+				state->modifierKeys = modifierKeys;
+			}
+			else
+			{
+				state->wasReleased = true;
+			}
 		}
 		return true;
 	}

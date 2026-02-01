@@ -269,9 +269,18 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			_Static_assert(MAX_ALT_KEY_MAPPINGS == 2);
 			#endif
 			bool isKeyDown = (event->type == SAPP_EVENTTYPE_KEY_DOWN);
+			//TODO: Add support for SAPP_MODIFIER_SUPER
+			//TODO: Add support for SAPP_MODIFIER_LMB/SAPP_MODIFIER_RMB/SAPP_MODIFIER_MMB?
+			u8 modifierKeys = 
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SHIFT) ? ModifierKey_Shift   : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL)  ? ModifierKey_Control : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT)   ? ModifierKey_Alt     : 0);
 			Key primaryKey = GetKeyFromSokolKeycodeEx(event->key_code, 0);
 			Key altKey = GetKeyFromSokolKeycodeEx(event->key_code, 1);
-			if (primaryKey != Key_None) { UpdateKeyboardKey(keyboard, currentTime, primaryKey, isKeyDown, event->key_repeat); }
+			if (primaryKey != Key_None)
+			{
+				UpdateKeyboardKey(keyboard, currentTime, primaryKey, isKeyDown, event->key_repeat, modifierKeys);
+			}
 			if (altKey != Key_None)
 			{
 				// When two keycodes are mapped to one Key, we have to avoid producing an early release event if both keys were
@@ -282,7 +291,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 				if (otherPrimaryKey == primaryKey) { otherPrimaryKey = GetNonAltKeyForKey(altKey, 1); }
 				bool isOtherPrimaryKeyDown = false;
 				if (otherPrimaryKey != Key_None) { isOtherPrimaryKeyDown = keyboard->keys[otherPrimaryKey].isDown; }
-				UpdateKeyboardKey(keyboard, currentTime, altKey, isKeyDown || isOtherPrimaryKeyDown, event->key_repeat);
+				UpdateKeyboardKey(keyboard, currentTime, altKey, isKeyDown || isOtherPrimaryKeyDown, event->key_repeat, modifierKeys);
 			}
 			handled = true;
 		} break;
@@ -294,7 +303,14 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 		case SAPP_EVENTTYPE_MOUSE_UP:
 		{
 			MouseBtn mouseBtn = GetMouseBtnFromSokolMouseButton(event->mouse_button);
-			if (mouseBtn != MouseBtn_None) { UpdateMouseBtn(mouse, currentTime, mouseBtn, (event->type == SAPP_EVENTTYPE_MOUSE_DOWN)); }
+			u8 modifierKeys = 
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SHIFT) ? ModifierKey_Shift   : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL)  ? ModifierKey_Control : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT)   ? ModifierKey_Alt     : 0);
+			if (mouseBtn != MouseBtn_None)
+			{
+				UpdateMouseBtn(mouse, currentTime, mouseBtn, (event->type == SAPP_EVENTTYPE_MOUSE_DOWN), modifierKeys);
+			}
 			handled = true;
 		} break;
 		

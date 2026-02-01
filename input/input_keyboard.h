@@ -57,11 +57,12 @@ plex KeyboardStateHandling
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void InitKeyboardState(KeyboardState* keyboard);
 	PIG_CORE_INLINE void RefreshKeyboardState(KeyboardState* keyboard);
-	PIG_CORE_INLINE void UpdateKeyboardKey(KeyboardState* keyboard, u64 currentTime, Key key, bool pressed, bool isRepeat);
+	PIG_CORE_INLINE void UpdateKeyboardKey(KeyboardState* keyboard, u64 currentTime, Key key, bool pressed, bool isRepeat, u8 modifierKeys);
 	PIG_CORE_INLINE void AddKeyboardCharInput(KeyboardState* keyboard, u32 codepoint, u8 modifierKeys);
 	PIG_CORE_INLINE void RefreshKeyboardStateHandling(const KeyboardState* keyboard, KeyboardStateHandling* handling);
 	PIG_CORE_INLINE bool IsKeyboardKeyDown(KeyboardState* keyboard, KeyboardStateHandling* handling, Key key);
 	PIG_CORE_INLINE bool IsKeyboardKeyUp(KeyboardState* keyboard, KeyboardStateHandling* handling, Key key);
+	PIG_CORE_INLINE bool IsKeyboardKeyPressedWithModifiers(KeyboardState* keyboard, KeyboardStateHandling* handling, u8 modifierKeys, Key key, bool followOsRepeatedEvent);
 	PIG_CORE_INLINE bool IsKeyboardKeyPressed(KeyboardState* keyboard, KeyboardStateHandling* handling, Key key, bool followOsRepeatedEvent);
 	PIG_CORE_INLINE bool IsKeyboardKeyReleased(KeyboardState* keyboard, KeyboardStateHandling* handling, Key key);
 	PIG_CORE_INLINE bool IsKeyboardKeyPressedRepeating(KeyboardState* keyboard, KeyboardStateHandling* handling, u64 prevTime, u64 currentTime, Key key, u64 repeatDelay, u64 repeatPeriod);
@@ -93,11 +94,11 @@ PEXPI void RefreshKeyboardState(KeyboardState* keyboard)
 	keyboard->numCharInputs = 0;
 }
 
-PEXPI void UpdateKeyboardKey(KeyboardState* keyboard, u64 currentTime, Key key, bool pressed, bool isRepeat)
+PEXPI void UpdateKeyboardKey(KeyboardState* keyboard, u64 currentTime, Key key, bool pressed, bool isRepeat, u8 modifierKeys)
 {
 	NotNull(keyboard);
 	Assert(key < Key_Count);
-	UpdateBtnState(&keyboard->keys[key], currentTime, pressed, isRepeat);
+	UpdateBtnState(&keyboard->keys[key], currentTime, pressed, isRepeat, modifierKeys);
 }
 
 PEXPI void AddKeyboardCharInput(KeyboardState* keyboard, u32 codepoint, u8 modifierKeys)
@@ -148,14 +149,19 @@ PEXPI bool IsKeyboardKeyUp(KeyboardState* keyboard, KeyboardStateHandling* handl
 	if (result && handling != nullptr) { handling->keyHandled[key] = true; }
 	return result;
 }
-PEXPI bool IsKeyboardKeyPressed(KeyboardState* keyboard, KeyboardStateHandling* handling, Key key, bool followOsRepeatedEvent)
+PEXPI bool IsKeyboardKeyPressedWithModifiers(KeyboardState* keyboard, KeyboardStateHandling* handling, u8 modifierKeys, Key key, bool followOsRepeatedEvent)
 {
 	NotNull(keyboard);
 	Assert(key < Key_Count);
 	if (handling != nullptr && handling->keyHandled[key]) { return false; }
-	bool result = keyboard->keys[key].wasPressed || (followOsRepeatedEvent && keyboard->keys[key].wasRepeated);
+	if (modifierKeys != ModifierKey_Any && keyboard->keys[key].modifierKeys != modifierKeys) { return false; }
+	bool result = (keyboard->keys[key].wasPressed || (followOsRepeatedEvent && keyboard->keys[key].wasRepeated));
 	if (result && handling != nullptr) { handling->keyHandled[key] = true; }
 	return result;
+}
+PEXPI bool IsKeyboardKeyPressed(KeyboardState* keyboard, KeyboardStateHandling* handling, Key key, bool followOsRepeatedEvent)
+{
+	return IsKeyboardKeyPressedWithModifiers(keyboard, handling, ModifierKey_Any, key, followOsRepeatedEvent);
 }
 PEXPI bool IsKeyboardKeyReleased(KeyboardState* keyboard, KeyboardStateHandling* handling, Key key)
 {

@@ -35,6 +35,7 @@ enum ModifierKey
 	ModifierKey_Control = 0x02,
 	ModifierKey_Alt     = 0x04,
 	ModifierKey_All     = 0x07,
+	ModifierKey_Any     = 0x10,
 };
 
 #if !PIG_CORE_IMPLEMENTATION

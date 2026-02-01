@@ -59,7 +59,7 @@ plex MouseStateHandling
 	PIG_CORE_INLINE void UpdateMouseLockedDelta(MouseState* mouse, u64 currentTime, v2 lockedPosDelta);
 	PIG_CORE_INLINE void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta);
 	PIG_CORE_INLINE void UpdateMouseOverWindow(MouseState* mouse, u64 currentTime, bool isOverWindow);
-	PIG_CORE_INLINE void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool pressed);
+	PIG_CORE_INLINE void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool pressed, u8 modifierKeys);
 	PIG_CORE_INLINE void RefreshMouseStateHandling(const MouseState* state, MouseStateHandling* handling);
 	PIG_CORE_INLINE bool IsMouseBtnDown(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn);
 	PIG_CORE_INLINE bool IsMouseBtnUp(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn);
@@ -139,11 +139,11 @@ PEXPI void UpdateMouseOverWindow(MouseState* mouse, u64 currentTime, bool isOver
 	}
 }
 
-PEXPI void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool pressed)
+PEXPI void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool pressed, u8 modifierKeys)
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
-	if (UpdateBtnState(&mouse->btns[btn], currentTime, pressed, false))
+	if (UpdateBtnState(&mouse->btns[btn], currentTime, pressed, false, modifierKeys))
 	{
 		mouse->clickStartPositions[btn] = mouse->position;
 	}
