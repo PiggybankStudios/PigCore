@@ -26,7 +26,7 @@ Description:
 #elif (TARGET_IS_OSX || TARGET_IS_LINUX)
 // ANSI Escape sequences make the output red and invertedto make it very visible
 #define MyBreakMsg(message) do { fprintf(stderr, "\x1B[7m\x1B[91m%s\x1B[00m\n", (message)); raise(SIGTRAP); } while(0)
-#define MyBreak()           MyBreakMsg(nullptr)
+#define MyBreak()           MyBreakMsg("")
 #elif TARGET_IS_ORCA
 #define MyBreakMsg(message) oc_abort_ext(__FILE__, __FUNCTION__, __LINE__, message)
 #define MyBreak()           MyBreakMsg("MyBreak()")

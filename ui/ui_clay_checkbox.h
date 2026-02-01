@@ -57,7 +57,7 @@ PEXP void DoUiCheckbox(UiWidgetContext* context, Str8 idStr, bool* isChecked, r3
 	Color32 greenColor = MakeColor(44, 91, 54, 255); //FF2C5B36
 	Color32 borderColor = ColorLerpSimple((*isChecked) ? greenColor : MonokaiDarkGray, MonokaiWhite, isHovered ? 0.7f : 0.2f);
 	
-	if (isHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left))
+	if (isHovered && IsMouseBtnPressed(context->mouse, context->mouseHandling, MouseBtn_Left))
 	{
 		*isChecked = !(*isChecked);
 	}

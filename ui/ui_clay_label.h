@@ -52,7 +52,7 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 		bool isContainerHovered = (context->mouse->isOverWindow && Clay_PointerOver(containerId));
 		bool isBtnHovered = (context->mouse->isOverWindow && Clay_PointerOver(buttonId));
 		
-		if (hasCopyButton && isBtnHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left) && context->windowHandle != OsWindowHandleEmpty)
+		if (hasCopyButton && isBtnHovered && IsMouseBtnPressed(context->mouse, context->mouseHandling, MouseBtn_Left) && context->windowHandle != OsWindowHandleEmpty)
 		{
 			Result copyResult = OsSetClipboardString(context->windowHandle, label);
 			if (copyResult != Result_Success) { NotifyPrint_E("Failed to copy label: %s", GetResultStr(copyResult)); }

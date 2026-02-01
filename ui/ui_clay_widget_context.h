@@ -31,7 +31,9 @@ plex UiWidgetContext
 	Arena* uiArena;
 	ClayUIRenderer* renderer;
 	KeyboardState* keyboard;
+	KeyboardStateHandling* keyboardHandling;
 	MouseState* mouse;
+	MouseStateHandling* mouseHandling;
 	r32 uiScale;
 	void** focusedUiElementPntr;
 	MouseCursorShape cursorShape;
@@ -39,17 +41,19 @@ plex UiWidgetContext
 	u64 programTime;
 	TooltipRegistry* tooltips;
 };
-#define MakeUiWidgetContext(uiArenaPntr, rendererPntr, keyboardPntr, mousePntr, uiScaleValue, focusedUiElementPntrPntr, cursorShapeValue, windowHandleValue, programTimeValue, tooltipsPntr) NEW_STRUCT(UiWidgetContext) { \
-	.uiArena = (uiArenaPntr),                                                                                                                                                                                              \
-	.renderer = (rendererPntr),                                                                                                                                                                                            \
-	.keyboard = (keyboardPntr),                                                                                                                                                                                            \
-	.mouse = (mousePntr),                                                                                                                                                                                                  \
-	.uiScale = (uiScaleValue),                                                                                                                                                                                             \
-	.focusedUiElementPntr = (focusedUiElementPntrPntr),                                                                                                                                                                    \
-	.cursorShape = (cursorShapeValue),                                                                                                                                                                                     \
-	.windowHandle = (windowHandleValue),                                                                                                                                                                                   \
-	.programTime = (programTimeValue),                                                                                                                                                                                     \
-	.tooltips = (tooltipsPntr),                                                                                                                                                                                            \
+#define MakeUiWidgetContext(uiArenaPntr, rendererPntr, keyboardPntr, keyboardHandlingPntr, mousePntr, mouseHandlingPntr, uiScaleValue, focusedUiElementPntrPntr, cursorShapeValue, windowHandleValue, programTimeValue, tooltipsPntr) NEW_STRUCT(UiWidgetContext) { \
+	.uiArena = (uiArenaPntr),                                                                                                                                                                                                                                       \
+	.renderer = (rendererPntr),                                                                                                                                                                                                                                     \
+	.keyboard = (keyboardPntr),                                                                                                                                                                                                                                     \
+	.keyboardHandling = (keyboardHandlingPntr),                                                                                                                                                                                                                     \
+	.mouse = (mousePntr),                                                                                                                                                                                                                                           \
+	.mouseHandling = (mouseHandlingPntr),                                                                                                                                                                                                                           \
+	.uiScale = (uiScaleValue),                                                                                                                                                                                                                                      \
+	.focusedUiElementPntr = (focusedUiElementPntrPntr),                                                                                                                                                                                                             \
+	.cursorShape = (cursorShapeValue),                                                                                                                                                                                                                              \
+	.windowHandle = (windowHandleValue),                                                                                                                                                                                                                            \
+	.programTime = (programTimeValue),                                                                                                                                                                                                                              \
+	.tooltips = (tooltipsPntr),                                                                                                                                                                                                                                     \
 }
 
 #endif //BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY

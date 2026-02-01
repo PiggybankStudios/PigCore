@@ -64,7 +64,7 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 	{
 		if (!AreEqualV2(context->mouse->position, context->mouse->prevPosition) ||
 			!context->mouse->wasOverWindow ||
-			IsMouseBtnPressed(context->mouse, MouseBtn_Left) || IsMouseBtnPressed(context->mouse, MouseBtn_Right) || IsMouseBtnPressed(context->mouse, MouseBtn_Middle))
+			IsMouseBtnPressed(context->mouse, nullptr, MouseBtn_Left) || IsMouseBtnPressed(context->mouse, nullptr, MouseBtn_Right) || IsMouseBtnPressed(context->mouse, nullptr, MouseBtn_Middle))
 		{
 			if (registry->openTooltipId != TOOLTIP_ID_INVALID) { registry->openTooltipId = TOOLTIP_ID_INVALID; }
 			registry->lastMouseMoveTime = context->programTime;

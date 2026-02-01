@@ -23,6 +23,17 @@ plex MouseState
 	v2 clickStartPositions[MouseBtn_Count];
 };
 
+typedef plex MouseStateHandling MouseStateHandling;
+plex MouseStateHandling
+{
+	bool moveHandled;
+	bool isOverWindowChangedHandled;
+	bool scrollXHandled;
+	bool scrollYHandled;
+	bool btnHandled[MouseBtn_Count];
+	bool btnHandledUntilReleased[MouseBtn_Count];
+};
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -34,11 +45,12 @@ plex MouseState
 	PIG_CORE_INLINE void UpdateMouseScroll(MouseState* mouse, u64 currentTime, v2 scrollDelta);
 	PIG_CORE_INLINE void UpdateMouseOverWindow(MouseState* mouse, u64 currentTime, bool isOverWindow);
 	PIG_CORE_INLINE void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool pressed);
-	PIG_CORE_INLINE bool IsMouseBtnDown(MouseState* mouse, MouseBtn btn);
-	PIG_CORE_INLINE bool IsMouseBtnUp(MouseState* mouse, MouseBtn btn);
-	PIG_CORE_INLINE bool IsMouseBtnPressed(MouseState* mouse, MouseBtn btn);
-	PIG_CORE_INLINE bool IsMouseBtnReleased(MouseState* mouse, MouseBtn btn);
-	PIG_CORE_INLINE bool IsMouseBtnPressedRepeating(MouseState* mouse, u64 prevTime, u64 currentTime, MouseBtn btn, u64 repeatDelay, u64 repeatPeriod);
+	PIG_CORE_INLINE void RefreshMouseStateHandling(const MouseState* state, MouseStateHandling* handling);
+	PIG_CORE_INLINE bool IsMouseBtnDown(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn);
+	PIG_CORE_INLINE bool IsMouseBtnUp(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn);
+	PIG_CORE_INLINE bool IsMouseBtnPressed(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn);
+	PIG_CORE_INLINE bool IsMouseBtnReleased(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn);
+	PIG_CORE_INLINE bool IsMouseBtnPressedRepeating(MouseState* mouse, MouseStateHandling* handling, u64 prevTime, u64 currentTime, MouseBtn btn, u64 repeatDelay, u64 repeatPeriod);
 #endif
 
 // +--------------------------------------------------------------+
@@ -122,42 +134,79 @@ PEXPI void UpdateMouseBtn(MouseState* mouse, u64 currentTime, MouseBtn btn, bool
 	}
 }
 
-PEXPI bool IsMouseBtnDown(MouseState* mouse, MouseBtn btn)
+PEXPI void RefreshMouseStateHandling(const MouseState* state, MouseStateHandling* handling)
 {
-	NotNull(mouse);
-	Assert(btn < MouseBtn_Count);
-	return mouse->btns[btn].isDown;
+	NotNull(state);
+	NotNull(handling);
+	for (uxx btnIndex = 0; btnIndex < MouseBtn_Count; btnIndex++)
+	{
+		handling->btnHandled[btnIndex] = false;
+		if (handling->btnHandledUntilReleased[btnIndex])
+		{
+			if (state->btns[btnIndex].isDown || state->btns[btnIndex].wasReleased) { handling->btnHandled[btnIndex] = true; }
+			if (!state->btns[btnIndex].isDown) { handling->btnHandledUntilReleased[btnIndex] = false; }
+		}
+	}
 }
-PEXPI bool IsMouseBtnUp(MouseState* mouse, MouseBtn btn)
+
+PEXPI bool IsMouseBtnDown(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn)
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
-	return !mouse->btns[btn].isDown;
+	if (handling != nullptr && handling->btnHandled[btn]) { return false; }
+	bool result = mouse->btns[btn].isDown;
+	if (result && handling != nullptr) { handling->btnHandled[btn] = true; }
+	return result;
 }
-PEXPI bool IsMouseBtnPressed(MouseState* mouse, MouseBtn btn)
+PEXPI bool IsMouseBtnUp(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn)
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
-	return mouse->btns[btn].wasPressed;
+	if (handling != nullptr && handling->btnHandled[btn]) { return false; }
+	bool result = !mouse->btns[btn].isDown;
+	if (result && handling != nullptr) { handling->btnHandled[btn] = true; }
+	return result;
 }
-PEXPI bool IsMouseBtnReleased(MouseState* mouse, MouseBtn btn)
+PEXPI bool IsMouseBtnPressed(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn)
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
-	return mouse->btns[btn].wasReleased;
+	if (handling != nullptr && handling->btnHandled[btn]) { return false; }
+	bool result = mouse->btns[btn].wasPressed;
+	if (result && handling != nullptr) { handling->btnHandled[btn] = true; }
+	return result;
 }
-PEXPI bool IsMouseBtnPressedRepeating(MouseState* mouse, u64 prevTime, u64 currentTime, MouseBtn btn, u64 repeatDelay, u64 repeatPeriod)
+PEXPI bool IsMouseBtnReleased(MouseState* mouse, MouseStateHandling* handling, MouseBtn btn)
 {
 	NotNull(mouse);
 	Assert(btn < MouseBtn_Count);
+	if (handling != nullptr && handling->btnHandled[btn]) { return false; }
+	bool result = mouse->btns[btn].wasReleased;
+	if (result && handling != nullptr) { handling->btnHandled[btn] = true; }
+	return result;
+}
+PEXPI bool IsMouseBtnPressedRepeating(MouseState* mouse, MouseStateHandling* handling, u64 prevTime, u64 currentTime, MouseBtn btn, u64 repeatDelay, u64 repeatPeriod)
+{
+	NotNull(mouse);
+	Assert(btn < MouseBtn_Count);
+	if (handling != nullptr && handling->btnHandled[btn]) { return false; }
 	if (mouse->btns[btn].isDown)
 	{
 		u64 prevTimeHeld = TimeSinceBy(prevTime, mouse->btns[btn].lastTransitionTime);
 		u64 currentTimeHeld = TimeSinceBy(currentTime, mouse->btns[btn].lastTransitionTime);
 		if (currentTimeHeld >= repeatDelay)
 		{
-			if (prevTimeHeld < repeatDelay) { return true; }
-			else { return (((prevTimeHeld - repeatDelay) / repeatPeriod) != ((currentTimeHeld - repeatDelay) / repeatPeriod)); }
+			if (prevTimeHeld < repeatDelay)
+			{
+				if (handling != nullptr) { handling->btnHandled[btn] = true; }
+				return true;
+			}
+			else
+			{
+				bool isRepeating = (((prevTimeHeld - repeatDelay) / repeatPeriod) != ((currentTimeHeld - repeatDelay) / repeatPeriod));
+				if (isRepeating && handling != nullptr) { handling->btnHandled[btn] = true; }
+				return isRepeating;
+			}
 		}
 	}
 	return false;

@@ -117,7 +117,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 	bool isScrollbarHovered = (context->mouse->isOverWindow && Clay_PointerOver(scrollbarId));
 	bool clickedInScrollArea = false;
 	
-	if (IsMouseBtnPressed(context->mouse, MouseBtn_Left) && context->mouse->isOverWindow && !list->draggingScrollbar)
+	if (IsMouseBtnPressed(context->mouse, context->mouseHandling, MouseBtn_Left) && context->mouse->isOverWindow && !list->draggingScrollbar)
 	{
 		if (isScrollbarHovered)
 		{
@@ -138,7 +138,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 	if (list->draggingScrollbar)
 	{
 		if (scrollData.found && scrollData.contentDimensions.Height <= scrollData.scrollContainerDimensions.Height) { list->draggingScrollbar = false; }
-		else if (!IsMouseBtnDown(context->mouse, MouseBtn_Left)) { list->draggingScrollbar = false; }
+		else if (!IsMouseBtnDown(context->mouse, context->mouseHandling, MouseBtn_Left)) { list->draggingScrollbar = false; }
 		else
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
@@ -192,7 +192,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 				}
 				bool isHovered = (context->mouse->isOverWindow && Clay_PointerOver(list->id) && Clay_PointerOver(fullId));
 				
-				if (isHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea)
+				if (isHovered && IsMouseBtnPressed(context->mouse, context->mouseHandling, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea)
 				{
 					clickedOnItem = true;
 					if (!list->selectionActive || !StrExactEquals(list->selectedIdStr, itemIdStr))
@@ -249,7 +249,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 			CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(emptyRowHeight) } } }) {}
 			
 			bool isListHovered = (context->mouse->isOverWindow && Clay_PointerOver(list->id));
-			if (isListHovered && IsMouseBtnPressed(context->mouse, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea && list->selectionActive)
+			if (isListHovered && IsMouseBtnPressed(context->mouse, context->mouseHandling, MouseBtn_Left) && !clickedOnItem && !clickedInScrollArea && list->selectionActive)
 			{
 				FreeStr8(list->arena, &list->selectedIdStr);
 				list->selectedIdStr = Str8_Empty;

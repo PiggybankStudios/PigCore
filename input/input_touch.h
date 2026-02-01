@@ -60,6 +60,13 @@ plex TouchscreenState
 	TouchState* mainTouch;
 };
 
+typedef plex TouchscreenStateHandling TouchscreenStateHandling;
+plex TouchscreenStateHandling
+{
+	bool touchHandled[MAX_TOUCH_INPUTS];
+	bool touchHandledUntilReleased[MAX_TOUCH_INPUTS];
+};
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
@@ -69,6 +76,7 @@ plex TouchscreenState
 	TouchState* StartNewTouch(TouchscreenState* touchscreen, uxx id, v2 startPos, u64 currentTime);
 	void UpdateTouchStatePosition(TouchState* touch, v2 position, u64 currentTime);
 	PIG_CORE_INLINE void RefreshTouchscreenState(TouchscreenState* touchscreen);
+	PIG_CORE_INLINE void RefreshTouchscreenStateHandling(const TouchscreenState* touchscreen, TouchscreenStateHandling* handling);
 #endif
 
 // +--------------------------------------------------------------+
@@ -185,6 +193,28 @@ PEXPI void RefreshTouchscreenState(TouchscreenState* touchscreen)
 				}
 			}
 			touch->stopped = false;
+		}
+	}
+}
+
+PEXPI void RefreshTouchscreenStateHandling(const TouchscreenState* touchscreen, TouchscreenStateHandling* handling)
+{
+	NotNull(touchscreen);
+	NotNull(handling);
+	for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
+	{
+		handling->touchHandled[tIndex] = false;
+		if (touchscreen->touches[tIndex].id != TOUCH_ID_INVALID)
+		{
+			if (handling->touchHandledUntilReleased[tIndex])
+			{
+				handling->touchHandled[tIndex] = true;
+				if (touchscreen->touches[tIndex].stopped) { handling->touchHandledUntilReleased[tIndex] = false; }
+			}
+		}
+		else
+		{
+			handling->touchHandledUntilReleased[tIndex] = false;
 		}
 	}
 }

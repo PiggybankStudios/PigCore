@@ -194,7 +194,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 	bool isVertScrollbarHovered = (context->mouse->isOverWindow && Clay_PointerOver(vertScrollbarId));
 	u16 fontId = (font != nullptr) ? GetClayUIRendererFontId(context->renderer, font, fontStyle) : 0;
 	
-	if (IsMouseBtnPressed(context->mouse, MouseBtn_Left) && context->mouse->isOverWindow)
+	if (IsMouseBtnPressed(context->mouse, context->mouseHandling, MouseBtn_Left) && context->mouse->isOverWindow)
 	{
 		if (!tview->draggingHoriScrollbar)
 		{
@@ -231,7 +231,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 	if (tview->draggingHoriScrollbar)
 	{
 		if (scrollData.found && scrollData.contentDimensions.Width <= scrollData.scrollContainerDimensions.Width) { tview->draggingHoriScrollbar = false; }
-		else if (!IsMouseBtnDown(context->mouse, MouseBtn_Left)) { tview->draggingHoriScrollbar = false; }
+		else if (!IsMouseBtnDown(context->mouse, context->mouseHandling, MouseBtn_Left)) { tview->draggingHoriScrollbar = false; }
 		else
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(horiGutterId);
@@ -250,7 +250,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 	if (tview->draggingVertScrollbar)
 	{
 		if (scrollData.found && scrollData.contentDimensions.Height <= scrollData.scrollContainerDimensions.Height) { tview->draggingVertScrollbar = false; }
-		else if (!IsMouseBtnDown(context->mouse, MouseBtn_Left)) { tview->draggingVertScrollbar = false; }
+		else if (!IsMouseBtnDown(context->mouse, context->mouseHandling, MouseBtn_Left)) { tview->draggingVertScrollbar = false; }
 		else
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(vertGutterId);
