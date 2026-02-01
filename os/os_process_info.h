@@ -350,13 +350,23 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		char* configFolderPathNt = getenv("XDG_CONFIG_HOME");
 		if (configFolderPathNt == nullptr || configFolderPathNt[0] == '\0')
 		{
-			WriteLine_W("$XDG_CONFIG_HOME environment var is not set! Falling back to $HOME!");
-			configFolderPathNt = getenv("HOME");
-			if (configFolderPathNt == nullptr || configFolderPathNt[0] == '\0')
+			// WriteLine_W("$XDG_CONFIG_HOME environment var is not set! Falling back to $HOME!");
+			char* homePathNt = getenv("HOME");
+			if (homePathNt == nullptr || homePathNt[0] == '\0')
 			{
-				AssertMsg(configFolderPathNt != nullptr && configFolderPathNt[0] != '\0', "$XDG_CONFIG_HOME and $HOME environment vars are both not set! We don't know where to save our settings and other persistent info");
+				AssertMsg(homePathNt != nullptr && homePathNt[0] != '\0', "Neither $XDG_CONFIG_HOME or $HOME environment vars are set! We don't know where to save our settings and other persistent info");
 				return FilePath_Empty;
 			}
+			Str8 homePathStr = MakeStr8Nt(homePathNt);
+			bool needTrailingSlash = DoesPathHaveTrailingSlash(homePathStr);
+			Str8 homeAndConfigFolderPath = JoinStringsInArena3(scratch,
+				homePathStr,
+				needTrailingSlash ? Str8_Empty : StrLit("/"),
+				StrLit(".config"),
+				true //addNullTerm
+			);
+			NotNull(homeAndConfigFolderPath.chars);
+			configFolderPathNt = homeAndConfigFolderPath.chars;
 		}
 		Str8 configFolderPath = MakeStr8Nt(configFolderPathNt);
 		

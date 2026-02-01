@@ -48,6 +48,7 @@ plex ClayUIRenderer
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE Clay_ImageElementConfig ToClayImageEx(Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE Clay_ImageElementConfig ToClayImage(Texture* texture);
 	CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText);
 	void InitClayUIRenderer(Arena* arena, v2 windowSize, ClayUIRenderer* rendererOut);
@@ -62,6 +63,13 @@ plex ClayUIRenderer
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
+PEXPI Clay_ImageElementConfig ToClayImageEx(Texture* texture, rec sourceRec)
+{
+	Clay_ImageElementConfig result = ZEROED;
+	result.imageData = texture;
+	result.sourceDimensions = sourceRec.Size;
+	return result;
+}
 PEXPI Clay_ImageElementConfig ToClayImage(Texture* texture)
 {
 	Clay_ImageElementConfig result = ZEROED;
