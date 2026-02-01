@@ -1,15 +1,30 @@
 /*
-File:   cross_keys_and_btn_state.h
+File:   input_keyboard.h
 Author: Taylor Robbins
-Date:   02\03\2025
-NOTE: "Handling" is a simple system for reducing binding conflicts.
-      If two bits of code rely on the same input key (Escape for example) then the first bit of code
-      will run and set the input as "handled" which will prevent the second bit of code from running.
-      This is a simple system, there are no priority options, it's just whoever handles the input first.
+Date:   01\31\2026
+Description:
+	** Holds they KeyboardState structure which has information about the keys
+	** being pressed\released that is accumulated together as we receive input
+	** events and then fed into the application and then "Refreshed" so the next
+	** set of changes can be accumulated for the next frame.
+	** KeyboardState also holds charInputs which contain information about typed
+	** characters (translated from a key code to a unicode codepoint, based on caps-lock, shift, and character input methods)
+	
+	** NOTE: "Handling" is a simple system for reducing binding conflicts.
+    **       If two bits of code rely on the same input key (Escape for example) then the first bit of code
+    **       will run and set the input as "handled" which will prevent the second bit of code from running.
+    **       This is a simple system, there are no priority options, it's just whoever handles the input first.
 */
 
-#ifndef _CROSS_KEYS_AND_BTN_STATE_H
-#define _CROSS_KEYS_AND_BTN_STATE_H
+#ifndef _INPUT_KEYBOARD_H
+#define _INPUT_KEYBOARD_H
+
+#include "base/base_defines_check.h"
+#include "base/base_typedefs.h"
+#include "base/base_macros.h"
+#include "base/base_assert.h"
+#include "input/input_keys.h"
+#include "input/input_btn_state.h"
 
 #define KEYBOARD_MAX_CHAR_INPUTS_PER_FRAME 256
 
@@ -180,4 +195,4 @@ PEXPI bool IsKeyboardKeyPressedRepeating(KeyboardState* keyboard, KeyboardStateH
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //  _CROSS_KEYS_AND_BTN_STATE_H
+#endif //  _INPUT_KEYBOARD_H

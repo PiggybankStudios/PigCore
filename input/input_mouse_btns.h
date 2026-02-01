@@ -86,7 +86,3 @@ PEXP const char* GetMouseBtnStr(MouseBtn enumValue)
 #endif
 
 #endif //  _INPUT_MOUSE_BTNS_H
-
-#if defined(_INPUT_BTN_STATE_H) && defined(_INPUT_MOUSE_BTNS_H) && defined(_STRUCT_VECTORS_H)
-#include "cross/cross_mouse_btns_btn_state_and_vectors.h"
-#endif

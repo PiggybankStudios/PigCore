@@ -1,11 +1,26 @@
 /*
-File:   cross_mouse_btns_btn_state_and_vectors.h
+File:   input_mouse.h
 Author: Taylor Robbins
-Date:   02\03\2025
+Date:   01\31\2026
+Description:
+	** Holds they MouseState structure which has information about mouse movement and the
+	** buttons being pressed\released that is accumulated together as we receive input
+	** events and then fed into the application and then "Refreshed" so the next
+	** set of changes can be accumulated for the next frame.
+	
+	** NOTE: See input_keyboard.h for description of "Handling"
 */
 
-#ifndef _CROSS_MOUSE_BTNS_BTN_STATE_AND_VECTORS_H
-#define _CROSS_MOUSE_BTNS_BTN_STATE_AND_VECTORS_H
+#ifndef _INPUT_MOUSE_H
+#define _INPUT_MOUSE_H
+
+#include "base/base_defines_check.h"
+#include "base/base_typedefs.h"
+#include "base/base_macros.h"
+#include "base/base_assert.h"
+#include "input/input_mouse_btns.h"
+#include "input/input_btn_state.h"
+#include "struct/struct_vectors.h"
 
 typedef plex MouseState MouseState;
 plex MouseState
@@ -214,4 +229,4 @@ PEXPI bool IsMouseBtnPressedRepeating(MouseState* mouse, MouseStateHandling* han
 
 #endif //PIG_CORE_IMPLEMENTATION
 
-#endif //  _CROSS_MOUSE_BTNS_BTN_STATE_AND_VECTORS_H
+#endif //  _INPUT_MOUSE_H
