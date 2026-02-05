@@ -138,7 +138,8 @@ void Fill_clang_LinuxOrOsxFlags(CliArgList* clang_LinuxOrOsxFlags, bool DEBUG_BU
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_M_FLAG, "aes"); //For MeowHash to work we need aes support
 	//TODO: Really we should do `pkg-config dbus-1 --cflags`
 	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/include/dbus-1.0");
-	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/lib/x86_64-linux-gnu/dbus-1.0/include");
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/lib/x86_64-linux-gnu/dbus-1.0/include"); //This was the path on Lubuntu
+	AddArgNt(clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "/usr/lib64/dbus-1.0/include"); //This is the path on Fedora Workstation
 	if (DEBUG_BUILD) { AddArgNt(clang_LinuxOrOsxFlags, CLANG_DEBUG_INFO, "dwarf-4"); }
 	if (BUILD_WITH_GTK)
 	{
