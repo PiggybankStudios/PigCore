@@ -663,11 +663,11 @@ bool AppFrame(void)
 	FontNewFrame(&testFont, programTime);
 	#endif
 	
-	if (IsMouseBtnDown(&mouse, MouseBtn_Left)) { wrapPos = mouse.position; }
+	if (IsMouseBtnDown(&mouse, nullptr, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
 	
-	if (IsKeyboardKeyPressed(&keyboard, Key_F, false)) { sapp_lock_mouse(!sapp_mouse_locked()); }
-	if (IsKeyboardKeyPressed(&keyboard, Key_Escape, false) && sapp_mouse_locked()) { sapp_lock_mouse(false); }
+	if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_F, false)) { sapp_lock_mouse(!sapp_mouse_locked()); }
+	if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_Escape, false) && sapp_mouse_locked()) { sapp_lock_mouse(false); }
 	if (sapp_mouse_locked())
 	{
 		r32 cameraHoriRot = AtanR32(cameraLookDir.Z, cameraLookDir.X);
@@ -679,13 +679,13 @@ bool AppFrame(void)
 		
 		v3 horizontalForwardVec = Normalize(MakeV3(cameraLookDir.X, 0.0f, cameraLookDir.Z));
 		v3 horizontalRightVec = Normalize(MakeV3(cameraLookDir.Z, 0.0f, -cameraLookDir.X));
-		const r32 moveSpeed = IsKeyboardKeyDown(&keyboard, Key_Shift) ? 0.08f : 0.02f;
-		if (IsKeyboardKeyDown(&keyboard, Key_W)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, Key_A)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, -moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, Key_S)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, -moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, Key_D)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, Key_E)) { cameraPos = Add(cameraPos, Mul(V3_Up, moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, Key_Q)) { cameraPos = Add(cameraPos, Mul(V3_Down, moveSpeed)); }
+		const r32 moveSpeed = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? 0.08f : 0.02f;
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_W)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_A)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, -moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_S)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, -moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_D)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_E)) { cameraPos = Add(cameraPos, Mul(V3_Up, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_Q)) { cameraPos = Add(cameraPos, Mul(V3_Down, moveSpeed)); }
 	}
 	
 	for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
@@ -706,12 +706,12 @@ bool AppFrame(void)
 		}
 	}
 	
-	if (IsKeyboardKeyPressed(&keyboard, Key_F6, false))
+	if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_F6, false))
 	{
 		showPerfGraph = !showPerfGraph;
 	}
 	
-	if (IsKeyboardKeyPressed(&keyboard, Key_P, true))
+	if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_P, true))
 	{
 		reci sourceRec = MakeReci(
 			GetRandI32Range(mainRandom, 0, testTexture.Width-1),
@@ -734,7 +734,7 @@ bool AppFrame(void)
 	}
 	
 	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
-	if (IsKeyboardKeyPressed(&keyboard, Key_G, false))
+	if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_G, false))
 	{
 		PrintLine_D("testFont has %llu atlas%s:", testFont.atlases.length, PluralEx(testFont.atlases.length, "", "es"));
 		VarArrayLoop(&testFont.atlases, aIndex)
@@ -826,7 +826,7 @@ bool AppFrame(void)
 	
 	#if BUILD_WITH_PHYSX
 	UpdatePhysicsWorld(physWorld, 16.6f);
-	if (IsKeyboardKeyDown(&keyboard, Key_R)) { CreatePhysicsTest(physWorld); }
+	if (IsKeyboardKeyDown(&keyboard, nullptr, Key_R)) { CreatePhysicsTest(physWorld); }
 	#endif
 	
 	#if BUILD_WITH_IMGUI
@@ -926,7 +926,7 @@ bool AppFrame(void)
 			#endif
 			
 			#if 1
-			Texture* mipTextureToUse = (IsKeyboardKeyDown(&keyboard, Key_Shift) ? &noMipmapTexture : &mipmapTexture);
+			Texture* mipTextureToUse = (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? &noMipmapTexture : &mipmapTexture);
 			rec mipmapTextureRec = MakeRec(windowSize.Width/2, windowSize.Height/2, 0, 0);
 			mipmapTextureRec.Width = mouse.position.X - mipmapTextureRec.X;
 			mipmapTextureRec.Height = mouse.position.Y - mipmapTextureRec.Y;
@@ -970,7 +970,7 @@ bool AppFrame(void)
 					StrLit("Non" UNICODE_NON_BREAKING_HYPHEN_STR "breaking" UNICODE_NON_BREAKING_SPACE_STR "string Another" UNICODE_NON_BREAKING_SPACE_STR "non" UNICODE_NON_BREAKING_HYPHEN_STR "breaking" UNICODE_NON_BREAKING_SPACE_STR "string String" UNICODE_ZERO_WIDTH_SPACE_STR "With" UNICODE_ZERO_WIDTH_SPACE_STR "Zero" UNICODE_ZERO_WIDTH_SPACE_STR "Width" UNICODE_ZERO_WIDTH_SPACE_STR "Spaces"),
 					StrLit("This is [highlight]a string\nwith new-line    \ncharacters[highlight] in it!\r\nHello!"),
 				};
-				if (IsKeyboardKeyPressed(&keyboard, Key_Plus, true)) { displayStrIndex = ((displayStrIndex+1) % ArrayCount(displayStrs)); typeAnimCodepointIndex = 0; }
+				if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_Plus, true)) { displayStrIndex = ((displayStrIndex+1) % ArrayCount(displayStrs)); typeAnimCodepointIndex = 0; }
 				IncrementUXX(typeAnimCodepointIndex);
 				Str8 displayStr = displayStrs[displayStrIndex];
 				RichStr displayStrRich = DecodeStrToRichStr(scratch, displayStr);
@@ -991,7 +991,7 @@ bool AppFrame(void)
 					}
 				}
 				BindFont(&testFont);
-				if (IsKeyboardKeyDown(&keyboard, Key_Shift))
+				if (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift))
 				{
 					DrawRichTextWithFont(
 						&testFont, 18*textScale, FontStyleFlag_ColoredGlyphs,
@@ -1317,7 +1317,7 @@ bool AppFrame(void)
 			// +==============================+
 			if (isCTokenizerWindowOpen)
 			{
-				if (IsKeyboardKeyPressed(&keyboard, Key_R, false) && tokenizer.arena != nullptr)
+				if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_R, false) && tokenizer.arena != nullptr)
 				{
 					FreeStr8(stdHeap, &tokenizer.inputStr);
 					FreeCTokenizer(&tokenizer);

@@ -30,7 +30,9 @@ Date:   11\10\2025
 	PIG_CORE_INLINE void SetGlobalNotificationQueue(NotificationQueue* queue);
 	#endif //NOTIFICATION_QUEUE_AVAILABLE
 	//NOTE: NotificationRouter and NotificationRouterPrint are pre-declared in base_notifications.h
+	#if NOTIFICATION_QUEUE_AVAILABLE
 	bool DismissNotification(NotificationQueue* queue, u64 programTime, bool dismissAll);
+	#endif
 #endif
 
 // +--------------------------------------------------------------+
@@ -138,6 +140,7 @@ PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const ch
 	}
 }
 
+#if NOTIFICATION_QUEUE_AVAILABLE
 PEXP bool DismissNotification(NotificationQueue* queue, u64 programTime, bool dismissAll)
 {
 	NotNull(queue);
@@ -156,6 +159,7 @@ PEXP bool DismissNotification(NotificationQueue* queue, u64 programTime, bool di
 	}
 	return closedNotification;
 }
+#endif //NOTIFICATION_QUEUE_AVAILABLE
 
 #endif //PIG_CORE_IMPLEMENTATION
 
