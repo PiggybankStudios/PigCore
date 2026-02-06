@@ -109,6 +109,8 @@ Description:
 #define BUILD_WITH_OPENVR    0
 // Enables tests.exe using clay.h to render UI elements
 #define BUILD_WITH_CLAY      0
+// Enables tests.exe using our own Immediate Mode style UI system
+#define BUILD_WITH_PIG_UI    1
 // Enables tests.exe and pig_core.dll being linked with imgui.obj
 #define BUILD_WITH_IMGUI     0
 // Enables tests.exe and pig_core.dll being linked with phsyx_capi.obj and PhysX_static_64.lib

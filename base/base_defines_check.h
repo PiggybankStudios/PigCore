@@ -139,6 +139,10 @@ Description:
 #define BUILD_WITH_GTK 0
 #endif
 
+#ifndef BUILD_WITH_PIG_UI
+#define BUILD_WITH_PIG_UI 0
+#endif
+
 // +--------------------------------------------------------------+
 // |                       Check Conflicts                        |
 // +--------------------------------------------------------------+
@@ -153,6 +157,9 @@ Description:
 #endif
 #if BUILD_WITH_PHYSX && BUILD_WITH_ODE
 #error PhysX and ODE are not meant to be used together!
+#endif
+#if BUILD_WITH_PIG_UI && (!BUILD_WITH_SOKOL_APP || !BUILD_WITH_SOKOL_GFX)
+#error BUILD_WITH_PIG_UI can only be used with sokol_gfx.h + sokol_app.h right now!
 #endif
 
 #endif //  _BASE_DEFINES_CHECK_H
