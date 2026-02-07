@@ -231,6 +231,7 @@ PEXPI u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut)
 		{
 			result = (end.timeValue.tv_sec - start.timeValue.tv_sec)*NUM_MS_PER_SECOND;
 			if (end.timeValue.tv_nsec >= start.timeValue.tv_nsec) { result += (end.timeValue.tv_nsec - start.timeValue.tv_nsec)/Million(1); }
+			else { result -= (start.timeValue.tv_nsec - end.timeValue.tv_nsec)/Million(1); }
 		}
 	}
 	// #elif TARGET_IS_OSX
