@@ -932,7 +932,7 @@ bool AppFrame(void)
 			}
 			#endif
 			
-			#if 1
+			#if 0
 			Texture* mipTextureToUse = (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? &noMipmapTexture : &mipmapTexture);
 			rec mipmapTextureRec = MakeRec(windowSize.Width/2, windowSize.Height/2, 0, 0);
 			mipmapTextureRec.Width = mouse.position.X - mipmapTextureRec.X;
@@ -1301,23 +1301,43 @@ bool AppFrame(void)
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
 			StartUiFrame(&uiContext, windowSize, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
-			UIELEM({ .id = UiIdLit("Root") })
+			UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Root"), .direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiElemDirection_BottomUp : UiElemDirection_TopDown, .color=MonokaiRed }))
 			{
-				UIELEM({ .id = UiIdLit("First") }) { }
-				UIELEM({ .id = UiIdLit("Second") })
+				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("First"), .direction = UiElemDirection_LeftToRight, .color=MonokaiOrange })) { }
+				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Second"), .direction = UiElemDirection_RightToLeft, .color=MonokaiBack }))
 				{
-					UIELEM({ .id = UiIdLit("Foo") }) { }
-					UIELEM({ .id = UiIdLit("Bar") }) { }
-					UIELEM({ .id = UiIdLit("Baz") }) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdPrint("Foo%llu", programTime), .color=MonokaiGreen })) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Bar"), .color=MonokaiBlue })) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Bar"), .color=MonokaiPurple })) { }
 				}
-				UIELEM({ .id = UiIdLit("Third") }) { }
-				UIELEM({ .id = UiIdLit("Fourth") })
+				UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Third"),*/ .direction = UiElemDirection_LeftToRight, .color=MonokaiYellow })) { }
+				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Fourth"), .direction = UiElemDirection_LeftToRight, .color=MonokaiDarkGray }))
 				{
-					UIELEM({ .id = UiIdLit("Bar") }) { }
-					UIELEM({ .id = UiIdLit("Foo") }) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Bar"),*/ .color=MonokaiDarkGreen })) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Foo"),*/ .color=MonokaiLightPurple })) { }
 				}
 			}
 			UiRenderList* uiRenderList = GetUiRenderList();
+			VarArrayLoop(&uiRenderList->commands, cIndex)
+			{
+				VarArrayLoopGet(UiRenderCmd, cmd, &uiRenderList->commands, cIndex);
+				switch (cmd->type)
+				{
+					case UiRenderCmdType_Rectangle:
+					{
+						DrawRectangle(cmd->rectangle.rectangle, cmd->rectangle.color);
+						if (cmd->rectangle.borderThickness.X > 0.0f)
+						{
+							DrawRectangleOutlineSidesEx(
+								cmd->rectangle.rectangle,
+								cmd->rectangle.borderThickness.X, cmd->rectangle.borderThickness.Y, cmd->rectangle.borderThickness.Z, cmd->rectangle.borderThickness.W,
+								cmd->rectangle.borderColor,
+								false
+							);
+						}
+					} break;
+				}
+			}
 			//TODO: Send this off to some Ui Renderer implementation
 			EndUiFrame();
 			#endif //BUILD_WITH_PIG_UI
@@ -1479,10 +1499,10 @@ void AppEvent(const sapp_event* event)
 {
 	TracyCZoneN(Zone_Func, "AppEvent", true);
 	bool handledEvent = HandleSokolKeyboardMouseAndTouchEvents(event, programTime, MakeV2i(sapp_width(), sapp_height()), &keyboard, &mouse, &touchscreen, sapp_mouse_locked());
-	if (event->type != SAPP_EVENTTYPE_MOUSE_MOVE)
-	{
-		PrintLine_D("SokolEvent: SAPP_EVENTTYPE_%s%s", Get_SAPP_EVENTTYPE_Str(event->type), handledEvent ? " (Handled)" : "");
-	}
+	// if (event->type != SAPP_EVENTTYPE_MOUSE_MOVE)
+	// {
+	// 	PrintLine_D("SokolEvent: SAPP_EVENTTYPE_%s%s", Get_SAPP_EVENTTYPE_Str(event->type), handledEvent ? " (Handled)" : "");
+	// }
 	
 	if (!handledEvent)
 	{
