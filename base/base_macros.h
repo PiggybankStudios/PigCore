@@ -169,6 +169,11 @@ Description:
 #define STRINGIFY(text)          #text
 #endif
 
+//TODO: we should do a proper explanation of what's happening here
+// Preprocessor macros are a bit finicky and we need the 2 layer deep macro thing to concat 2 things when one or both of the parts are preprocessor macros we want to expand before doing the concat
+#define PIG_CONCAT_INNER(leftPart, rightPart) leftPart ## rightPart
+#define PIG_CONCAT(leftPart, rightPart)       PIG_CONCAT_INNER(leftPart, rightPart)
+
 //This is used to make sure a macro parameters is a string literal, not just a pointer, by checking to see if it implicitly concatenates with empty strings
 #define CheckStrLit(stringLiteral) ("" stringLiteral "")
 
@@ -246,18 +251,19 @@ Description:
 
 #define SwapVariables(varType, var1, var2) do { varType tempVarWithLongNameThatWontConflict = (var2); (var2) = (var1); (var1) = tempVarWithLongNameThatWontConflict; } while(0)
 
+//TODO: With PIG_CONCAT_INNER we can probably get rid of the Ex variants
 //Use a for loop to execute code at the end of a block (warning: if a break is hit inside the block then the endCode will NOT run!)
 #define DeferBlockEx(uniqueName, endCode)                                 for (int uniqueName = 0; uniqueName == 0; (uniqueName = 1, (endCode)))
-#define DeferBlock(endCode)                                               DeferBlockEx(DeferBlockIter, (endCode))
+#define DeferBlock(endCode)                                               DeferBlockEx(PIG_CONCAT(DeferBlockIter, __LINE__), (endCode))
 //startCode runs at beginning of block
 #define DeferBlockWithStartEx(uniqueName, startCode, endCode)             for (int uniqueName = ((startCode), 0); uniqueName == 0; (uniqueName = 1, (endCode)))
-#define DeferBlockWithStart(startCode, endCode)                           DeferBlockWithStartEx(DeferBlockIter, (startCode), (endCode))
+#define DeferBlockWithStart(startCode, endCode)                           DeferBlockWithStartEx(PIG_CONCAT(DeferBlockIter, __LINE__), (startCode), (endCode))
 //startCode returns bool to determine if block should run, endCode always runs
 #define DeferIfBlockEx(uniqueName, startCodeAndCondition, endCode)        for (int uniqueName = 2 * !(startCodeAndCondition); (uniqueName == 2) ? ((endCode), false) : (uniqueName == 0); (uniqueName = 1, (endCode)))
-#define DeferIfBlock(startCodeAndCondition, endCode)                      DeferIfBlockEx(DeferBlockIter, (startCodeAndCondition), (endCode))
+#define DeferIfBlock(startCodeAndCondition, endCode)                      DeferIfBlockEx(PIG_CONCAT(DeferBlockIter, __LINE__), (startCodeAndCondition), (endCode))
 //startCode returns bool to determine block should run, endCode only runs if startCode returns true
 #define DeferIfBlockCondEndEx(uniqueName, startCodeAndCondition, endCode) for (int uniqueName = 1 * !(startCodeAndCondition); uniqueName == 0; (uniqueName = 1, (endCode)))
-#define DeferIfBlockCondEnd(startCodeAndCondition, endCode)               DeferIfBlockCondEndEx(DeferBlockIter, (startCodeAndCondition), (endCode))
+#define DeferIfBlockCondEnd(startCodeAndCondition, endCode)               DeferIfBlockCondEndEx(PIG_CONCAT(DeferBlockIter, __LINE__), (startCodeAndCondition), (endCode))
 
 // Sometimes we use loops as a way to jump forward (often when a chunk of code has many failure points, and we want to skip the following steps if any step fails)
 // BeginBreakableBlock/EndBreakableBlock simply define a loop that runs once, inside that loop's block you can use BreakBlock (which is just a break statement) to jump to the end of the block

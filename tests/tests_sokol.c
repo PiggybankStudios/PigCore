@@ -79,6 +79,9 @@ Texture mipmapTexture = ZEROED;
 Texture noMipmapTexture = ZEROED;
 Texture testTexture = ZEROED;
 PerfGraph perfGraph = ZEROED;
+#if BUILD_WITH_PIG_UI
+UiContext uiContext = ZEROED;
+#endif
 
 //TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
 #if TARGET_IS_ANDROID
@@ -550,6 +553,10 @@ void AppInit(void)
 	AssertMsg(testFont.atlases.length > 0, "Clay rendering requires that at least one atlas in the testFont was baked correctly!");
 	InitClayUIRenderer(stdHeap, V2_Zero, &clay);
 	clayFont = AddClayUIRendererFont(&clay, &testFont, GetDefaultFontStyleFlags(&testFont));
+	#endif
+	
+	#if BUILD_WITH_PIG_UI
+	InitUiContext(stdHeap, &uiContext);
 	#endif
 	
 	#if BUILD_WITH_IMGUI
@@ -1288,6 +1295,32 @@ bool AppFrame(void)
 			Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&clay.clay);
 			RenderClayCommandArray(&clay, &gfx, &clayRenderCommands);
 			#endif //BUILD_WITH_CLAY
+			
+			// +==============================+
+			// |      Pig UI System Test      |
+			// +==============================+
+			#if BUILD_WITH_PIG_UI
+			StartUiFrame(&uiContext, windowSize, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
+			UIELEM({ .id = UiIdLit("Root") })
+			{
+				UIELEM({ .id = UiIdLit("First") }) { }
+				UIELEM({ .id = UiIdLit("Second") })
+				{
+					UIELEM({ .id = UiIdLit("Foo") }) { }
+					UIELEM({ .id = UiIdLit("Bar") }) { }
+					UIELEM({ .id = UiIdLit("Baz") }) { }
+				}
+				UIELEM({ .id = UiIdLit("Third") }) { }
+				UIELEM({ .id = UiIdLit("Fourth") })
+				{
+					UIELEM({ .id = UiIdLit("Bar") }) { }
+					UIELEM({ .id = UiIdLit("Foo") }) { }
+				}
+			}
+			UiRenderList* uiRenderList = GetUiRenderList();
+			//TODO: Send this off to some Ui Renderer implementation
+			EndUiFrame();
+			#endif //BUILD_WITH_PIG_UI
 			
 			// +==============================+
 			// |      Dear Imgui UI Test      |
