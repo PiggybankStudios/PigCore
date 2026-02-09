@@ -59,14 +59,17 @@ plex UiId
 typedef enum UiElemDirection UiElemDirection;
 enum UiElemDirection
 {
-	UiElemDirection_Default = 0, //TopDown
 	UiElemDirection_TopDown = 0,
 	UiElemDirection_BottomUp,
 	UiElemDirection_LeftToRight,
 	UiElemDirection_RightToLeft,
 	UiElemDirection_Count,
+	UiElemDirection_Default = UiElemDirection_TopDown,
 };
-const char* GetUiElemDirectionStr(UiElemDirection enumValue)
+#if !PIG_CORE_IMPLEMENTATION
+PIG_CORE_INLINE const char* GetUiElemDirectionStr(UiElemDirection enumValue);
+#else
+PEXPI const char* GetUiElemDirectionStr(UiElemDirection enumValue)
 {
 	switch (enumValue)
 	{
@@ -77,17 +80,64 @@ const char* GetUiElemDirectionStr(UiElemDirection enumValue)
 		default: return UNKNOWN_STR;
 	}
 }
+#endif
 
+typedef enum UiSizingType UiSizingType;
+enum UiSizingType
+{
+	UiSizingType_Expand = 0,
+	UiSizingType_FixedPx,
+	UiSizingType_FixedPercent,
+	UiSizingType_Fit,
+	UiSizingType_Count,
+	UiSizingType_Default = UiSizingType_Expand,
+};
+#if !PIG_CORE_IMPLEMENTATION
+PIG_CORE_INLINE const char* GetUiSizingTypeStr(UiSizingType enumValue);
+#else
+PEXPI const char* GetUiSizingTypeStr(UiSizingType enumValue)
+{
+	switch (enumValue)
+	{
+		case UiSizingType_Expand:       return "Expand(Default)";
+		case UiSizingType_FixedPx:      return "FixedPx";
+		case UiSizingType_FixedPercent: return "FixedPercent";
+		case UiSizingType_Fit:          return "Fit";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
+typedef plex UiSizingAxis UiSizingAxis;
+plex UiSizingAxis
+{
+	UiSizingType type;
+	r32 value;
+};
+
+typedef car UiSizing UiSizing;
+car UiSizing
+{
+	UiSizingAxis axis[2];
+	plex { UiSizingAxis x, y; };
+	plex { UiSizingAxis horiztonal, vertical; };
+};
+
+// +==============================+
+// |        Element Config        |
+// +==============================+
 typedef plex UiElemConfig UiElemConfig;
 plex UiElemConfig
 {
 	UiId id;
 	bool globalId;
 	UiElemDirection direction;
+	UiSizing sizing;
 	Color32 color;
-	v4 borderThickness;
+	v4r margins; //space between our bounds and our childrens' bounds
+	v4r padding; //space between allocated area and our bounds
+	v4r borderThickness;
 	Color32 borderColor;
-	//TODO: Bunch of other layout parameters!
 };
 
 typedef plex UiElement UiElement;
@@ -147,8 +197,8 @@ plex UiRenderCmd
 		{
 			rec rectangle;
 			Color32 color;
-			v4 cornerRadius;
-			v4 borderThickness;
+			v4r cornerRadius;
+			v4r borderThickness;
 			Color32 borderColor;
 			Texture* texture;
 		} rectangle;
@@ -263,6 +313,15 @@ plex UiContext
 
 //TODO: Write a description of this macro and it's need
 #define UIELEM(config) DeferIfBlock(OpenUiElementConditional(/*NEW_STRUCT(UiElemConfig)*/config), CloseUiElement())
+
+#define UI_FIXED(numPx)                 { .type=UiSizingType_FixedPx,      .value=(numPx)   }
+#define UI_PERCENT(percent)             { .type=UiSizingType_FixedPercent, .value=(percent) }
+#define UI_FIT()                        { .type=UiSizingType_Fit,          .value=0         }
+#define UI_EXPAND()                     { .type=UiSizingType_Expand,       .value=0         }
+#define UI_FIXED2(numPxX, numPxY)       { .x=UI_FIXED(numPxX),     .y=UI_FIXED(numPxY)     }
+#define UI_PERCENT2(percentX, percentY) { .x=UI_PERCENT(percentX), .y=UI_PERCENT(percentY) }
+#define UI_FIT2()                       { .x=UI_FIT(),             .y=UI_FIT()             }
+#define UI_EXPAND2()                    { .x=UI_EXPAND(),          .y=UI_EXPAND()          }
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -519,6 +578,8 @@ PEXP UiRenderList* GetUiRenderList()
 		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
 		UiElement* parent = VarArrayGetSoft(UiElement, &UiCtx->elements, element->parentIndex);
 		rec parentRec = (parent != nullptr) ? parent->layoutRec : MakeRecV(V2_Zero, UiCtx->screenSize);
+		v4r parentMargins = (parent != nullptr) ? parent->config.margins : V4r_Zero;
+		parentRec = InflateRecEx(parentRec, -parentMargins.Left, -parentMargins.Right, -parentMargins.Top, -parentMargins.Bottom);//TODO: Change this to "DelateRecEx" once we make that alias
 		UiElemDirection direction = (parent != nullptr) ? parent->config.direction : UiElemDirection_Default;
 		uxx parentChildCount = (parent != nullptr) ? parent->numChildren : UiCtx->numTopLevelElements;
 		if (direction == UiElemDirection_TopDown || direction == UiElemDirection_BottomUp)
@@ -587,6 +648,14 @@ PEXP UiRenderList* GetUiRenderList()
 			DebugAssertMsg(false, "Invalid direction in UI element config!");
 			element->layoutRec = parentRec;
 		}
+		
+		// Deflate layoutRec by padding TODO: Turn this sort of "safe" deflation into a function!
+		if (element->config.padding.Left + element->config.padding.Right < element->layoutRec.Width) { element->layoutRec.X += element->config.padding.Left; }
+		else { element->layoutRec.X = element->layoutRec.X + (element->layoutRec.Width * (element->config.padding.Left / (element->config.padding.Left + element->config.padding.Right))); }
+		if (element->config.padding.Top + element->config.padding.Bottom < element->layoutRec.Height) { element->layoutRec.Y += element->config.padding.Top; }
+		else { element->layoutRec.Y = element->layoutRec.Y + (element->layoutRec.Height * (element->config.padding.Top / (element->config.padding.Top + element->config.padding.Bottom))); }
+		element->layoutRec.Width = MaxR32(0, element->layoutRec.Width - element->config.padding.Left - element->config.padding.Right);
+		element->layoutRec.Height = MaxR32(0, element->layoutRec.Height - element->config.padding.Left - element->config.padding.Right);
 	}
 	
 	// +==============================+
@@ -599,7 +668,7 @@ PEXP UiRenderList* GetUiRenderList()
 	{
 		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
 		if (element->config.color.a != 0 ||
-			(element->config.borderColor.a != 0 && (element->config.borderThickness.X != 0 || element->config.borderThickness.Y != 0 || element->config.borderThickness.Z != 0 || element->config.borderThickness.W != 0)))
+			(element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0)))
 		{
 			UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
 			DebugNotNull(newCmd);
@@ -609,7 +678,7 @@ PEXP UiRenderList* GetUiRenderList()
 			newCmd->rectangle.color = element->config.color;
 			newCmd->rectangle.borderThickness = element->config.borderThickness;
 			newCmd->rectangle.borderColor = element->config.borderColor;
-			newCmd->rectangle.cornerRadius = V4_Zero; //TODO: Implement this!
+			newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
 			newCmd->rectangle.texture = nullptr; //TODO: Implement this!
 		}
 	}
