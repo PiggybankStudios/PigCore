@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mkdir -p _build
-pushd _build > /dev/null
+mkdir -p build
+pushd build > /dev/null
 root=".."
 build_config_path="$root/build_config.h"
 

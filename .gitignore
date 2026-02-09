@@ -1,5 +1,6 @@
 .cache/
 _build/
+build/
 third_party/bullet/
 third_party/ode/
 third_party/_lib_debug/old

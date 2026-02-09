@@ -4,8 +4,8 @@ REM By default blocks like IF and FOR in batch are treated as a single command a
 REM Enabling "delayed expansion" allows us to use !variable! syntax inside blocks to get the value of variables on that line (and at each iteration in the case of loops)
 setlocal enabledelayedexpansion
 
-if not exist _build mkdir _build
-pushd _build
+if not exist build mkdir build
+pushd build
 set root=..
 set build_config_path=%root%\build_config.h
 set initialized_msvc_compiler=0
