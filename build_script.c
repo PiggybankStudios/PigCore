@@ -57,6 +57,8 @@ Description:
 #define FILENAME_TESTS_SO              "libtests.so"
 #define FILENAME_TESTS_OBJ             "tests.obj"
 #define FILENAME_ANDROID_RESOURCES_ZIP "resources.zip"
+#define FILENAME_DUMMY                 "dummy"
+#define FILENAME_DUMMY_EXE             "dummy.exe"
 #define FILENAME_DUMMY_JAVA            "Dummy.java"
 #define FILENAME_DUMMY_CLASS           "Dummy.class"
 #define FILENAME_CLASSES_DEX           "classes.dex"
@@ -121,6 +123,7 @@ int main(int argc, char* argv[])
 	bool BUILD_ORCA               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
 	bool BUILD_PLAYDATE_DEVICE    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
 	bool BUILD_PLAYDATE_SIMULATOR = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
+	bool BUILD_CLANGD_DUMMY       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_CLANGD_DUMMY"));
 	bool BUILD_WITH_RAYLIB        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_RAYLIB"));
 	bool BUILD_WITH_BOX2D         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_BOX2D"));
 	bool BUILD_WITH_SOKOL_GFX     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_GFX"));
@@ -1317,6 +1320,50 @@ int main(int argc, char* argv[])
 			RunCliProgramAndExitOnFailure(StrLit("pdc"), &cmd, StrLit("Failed to package " FILENAME_TESTS_PDX "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_PDX), true); //TODO: Is this going to work on a folder?
 			PrintLine("[Packaged %s for Playdate!]", FILENAME_TESTS_PDX);
+		}
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                    Build ClangD dummy.exe                    |
+	// +--------------------------------------------------------------+
+	if (BUILD_CLANGD_DUMMY)
+	{
+		//TODO: Implement for Windows!
+		
+		if (BUILD_LINUX)
+		{
+			PrintLine("\n[Building %s for Linux...]", FILENAME_DUMMY);
+			
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_clangd_main.c");
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_DUMMY);
+			AddArgNt(&cmd, CLANG_DEFINE, "COMPILER_IS_LSP=1");
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
+			AddArgList(&cmd, &clang_CommonLibraries);
+			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
+			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_LinuxShaderObjects); }
+			
+			#if BUILDING_ON_LINUX
+			Str8 clangExe = StrLit(EXE_CLANG);
+			#else
+			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
+			chdir(FOLDERNAME_LINUX);
+			cmd.rootDirPath = StrLit("../..");
+			#endif
+			
+			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_DUMMY "!"));
+			AssertFileExist(StrLit(FILENAME_DUMMY), true);
+			PrintLine("[Built %s for Linux!]", FILENAME_DUMMY);
+			
+			#if !BUILDING_ON_LINUX
+			chdir("..");
+			#endif
 		}
 	}
 	

@@ -89,6 +89,8 @@ Description:
 #define RUN_FUZZER 0
 // Tells the sokol_gfx.h include to use OpenGL instead of D3D11 on Windows (NOTE: Smooth resizing only works in OpenGL mode right now!)
 #define PREFER_OPENGL_OVER_D3D11 1
+// Builds the tests/tests_clangd_main.c into dummy.exe. This exectuable does nothing but it's useful to build in order to debug errors/warnings that clangd is generating
+#define BUILD_CLANGD_DUMMY 1
 
 // +===============================+
 // | Optional Libraries/Frameworks |

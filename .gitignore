@@ -1,3 +1,4 @@
+.cache/
 _build/
 third_party/bullet/
 third_party/ode/

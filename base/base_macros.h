@@ -62,7 +62,7 @@ Description:
 #endif
 
 //TODO: Confirm that this works on Windows, OSX, and Linux with Clang, GCC, and MSVC compilers
-#if !TARGET_HAS_THREADING
+#if (!TARGET_HAS_THREADING || COMPILER_IS_LSP)
 #define THREAD_LOCAL //nothing
 #elif TARGET_IS_OSX
 #define THREAD_LOCAL __thread

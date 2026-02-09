@@ -13,7 +13,7 @@ Description:
 #include "base/base_defines_check.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
-#include "std/std_basic_math.h"
+#include "base/base_math.h"
 
 //NOTE: The name "Color" conflicts with a definition in <windows.h>
 //NOTE: This is BGRA order in memory, or in hex that's 0xAARRGGBB

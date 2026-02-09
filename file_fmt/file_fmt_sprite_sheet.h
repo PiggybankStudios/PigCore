@@ -43,6 +43,7 @@ Description:
 #include "parse/parse_simple_parsers.h"
 #include "gfx/gfx_texture.h"
 #include "gfx/gfx_image_loading.h"
+#include "misc/misc_parsing.h"
 
 #if BUILD_WITH_SOKOL_GFX
 

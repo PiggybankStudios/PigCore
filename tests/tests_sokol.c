@@ -1301,20 +1301,23 @@ bool AppFrame(void)
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
 			StartUiFrame(&uiContext, windowSize, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
-			UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Root"), .direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiElemDirection_BottomUp : UiElemDirection_TopDown, .color=MonokaiRed }))
+			Color32 halfBlack = ColorWithAlpha(Black, 0.5f);
+			v4r margins = FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0));
+			v4r padding = FillV4r(OscillateBy(programTime, 0.0f, 8.0f, 2713, 0));
+			UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Root"), .margins=margins, .padding=padding, .direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiElemDirection_BottomUp : UiElemDirection_TopDown, .color=MonokaiRed, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack }))
 			{
-				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("First"), .direction = UiElemDirection_LeftToRight, .color=MonokaiOrange })) { }
-				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Second"), .direction = UiElemDirection_RightToLeft, .color=MonokaiBack }))
+				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("First"), .margins=margins, .padding=padding, .direction = UiElemDirection_LeftToRight, .color=MonokaiOrange, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack })) { }
+				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Second"), .margins=margins, .padding=padding, .direction = UiElemDirection_RightToLeft, .color=MonokaiBack, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack }))
 				{
-					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdPrint("Foo%llu", programTime), .color=MonokaiGreen })) { }
-					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Bar"), .color=MonokaiBlue })) { }
-					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Bar"), .color=MonokaiPurple })) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdPrint("Foo%llu", programTime), .margins=margins, .padding=padding, .color=MonokaiGreen, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack })) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Bar"), .margins=margins, .padding=padding, .color=MonokaiBlue, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack })) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Bar"), .margins=margins, .padding=padding, .color=MonokaiPurple, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack })) { }
 				}
-				UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Third"),*/ .direction = UiElemDirection_LeftToRight, .color=MonokaiYellow })) { }
-				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Fourth"), .direction = UiElemDirection_LeftToRight, .color=MonokaiDarkGray }))
+				UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Third"),*/ .margins=margins, .padding=padding, .direction = UiElemDirection_LeftToRight, .color=MonokaiYellow, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack })) { }
+				UIELEM((NEW_STRUCT(UiElemConfig){ .id = UiIdLit("Fourth"), .margins=margins, .padding=padding, .direction = UiElemDirection_LeftToRight, .color=MonokaiDarkGray, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack }))
 				{
-					UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Bar"),*/ .color=MonokaiDarkGreen })) { }
-					UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Foo"),*/ .color=MonokaiLightPurple })) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Bar"),*/ .margins=margins, .padding=padding, .color=MonokaiDarkGreen, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack, .sizing=UI_FIXED2(100, 200) })) { }
+					UIELEM((NEW_STRUCT(UiElemConfig){ /*.id = UiIdLit("Foo"),*/ .margins=margins, .padding=padding, .color=MonokaiLightPurple, .borderThickness=FillV4r(2.0f), .borderColor=halfBlack, .sizing=UI_FIXED2(300, 150) })) { }
 				}
 			}
 			UiRenderList* uiRenderList = GetUiRenderList();
@@ -1330,7 +1333,7 @@ bool AppFrame(void)
 						{
 							DrawRectangleOutlineSidesEx(
 								cmd->rectangle.rectangle,
-								cmd->rectangle.borderThickness.X, cmd->rectangle.borderThickness.Y, cmd->rectangle.borderThickness.Z, cmd->rectangle.borderThickness.W,
+								cmd->rectangle.borderThickness.Left, cmd->rectangle.borderThickness.Right, cmd->rectangle.borderThickness.Top, cmd->rectangle.borderThickness.Bottom,
 								cmd->rectangle.borderColor,
 								false
 							);

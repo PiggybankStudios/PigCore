@@ -47,10 +47,6 @@ Description:
 #include "phys/phys_all.h"
 #include "parse/parse_all.h"
 
-#if !TARGET_IS_PLAYDATE
-#include "base/base_debug_output_impl.h" //TODO: Get rid of this once the debug output implementation is working on Playdate
-#endif
-
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/raylib.h"
 #include "cross/cross_vectors_and_raylib.h"

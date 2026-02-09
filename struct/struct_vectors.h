@@ -88,7 +88,9 @@ car Vec4Raw
 	plex { HMM_Vec2 XY; r32 _Ignored0; r32 _Ignored1; };
 	plex { r32 _Ignored2; HMM_Vec2 YZ; r32 _Ignored3; };
 	plex { r32 _Ignored4; r32 _Ignored5; HMM_Vec2 ZW; };
-
+	
+	plex { r32 Left, Top, Right, Bottom; }; //NOTE: These aliases are mostly used for UI side parameters (like borderThickness and margins)
+	plex { r32 TopLeft, TopRight, BottomRight, BottomLeft; }; //NOTE: These aliases are mostly used for UI cornerRadius
 };
 #define MakeV4r_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
 #define MakeV4r(x, y, z, w)       NEW_STRUCT(Vec4Raw)MakeV4r_Const((x), (y), (z), (w))

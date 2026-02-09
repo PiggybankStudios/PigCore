@@ -39,6 +39,11 @@ Description:
 #define BUILD_FOR_PIGGEN 0
 #endif
 
+// This is not ever set for a real compilation, but is set by compile_commands.json so that the LSP (like clangd) will have this define set when it does it's parsing/indexing of the codebase
+#ifndef COMPILER_IS_LSP
+#define COMPILER_IS_LSP 0
+#endif
+
 //NOTE: PEXP stands for "PigCore Export", PEXPI stands for PEXP + PIG_CORE_INLINE
 #if PIG_CORE_BUILDING_AS_DLL
 	#if COMPILER_IS_MSVC
