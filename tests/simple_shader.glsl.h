@@ -432,7 +432,7 @@ const sg_shader_desc* simple_shader_desc(sg_backend backend) {
 #ifndef NO_ENTRIES_STR
 #define NO_ENTRIES_STR "no_entries"
 #endif
-#define simple_SHADER_FILE_PATH "/home/robbitay/my_stuff/projects/pig_core/tests/simple_shader.glsl"
+#define simple_SHADER_FILE_PATH "/home/robbitay/my/dev/pig_core/tests/simple_shader.glsl"
 #define simple_SHADER_ATTR_COUNT 2
 #define simple_SHADER_ATTR_DEFS { \
 	{ .name="position", .index=ATTR_simple_position }, \

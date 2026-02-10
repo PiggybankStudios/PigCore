@@ -56,27 +56,27 @@ plex UiId
 	uxx index;
 };
 
-typedef enum UiElemDirection UiElemDirection;
-enum UiElemDirection
+typedef enum UiLayoutDir UiLayoutDir;
+enum UiLayoutDir
 {
-	UiElemDirection_TopDown = 0,
-	UiElemDirection_BottomUp,
-	UiElemDirection_LeftToRight,
-	UiElemDirection_RightToLeft,
-	UiElemDirection_Count,
-	UiElemDirection_Default = UiElemDirection_TopDown,
+	UiLayoutDir_TopDown = 0,
+	UiLayoutDir_BottomUp,
+	UiLayoutDir_LeftToRight,
+	UiLayoutDir_RightToLeft,
+	UiLayoutDir_Count,
+	UiLayoutDir_Default = UiLayoutDir_TopDown,
 };
 #if !PIG_CORE_IMPLEMENTATION
-PIG_CORE_INLINE const char* GetUiElemDirectionStr(UiElemDirection enumValue);
+PIG_CORE_INLINE const char* GetUiLayoutDirStr(UiLayoutDir enumValue);
 #else
-PEXPI const char* GetUiElemDirectionStr(UiElemDirection enumValue)
+PEXPI const char* GetUiLayoutDirStr(UiLayoutDir enumValue)
 {
 	switch (enumValue)
 	{
-		case UiElemDirection_TopDown:     return "TopDown(Default)";
-		case UiElemDirection_BottomUp:    return "BottomUp";
-		case UiElemDirection_LeftToRight: return "LeftToRight";
-		case UiElemDirection_RightToLeft: return "RightToLeft";
+		case UiLayoutDir_TopDown:     return "TopDown(Default)";
+		case UiLayoutDir_BottomUp:    return "BottomUp";
+		case UiLayoutDir_LeftToRight: return "LeftToRight";
+		case UiLayoutDir_RightToLeft: return "RightToLeft";
 		default: return UNKNOWN_STR;
 	}
 }
@@ -131,11 +131,12 @@ plex UiElemConfig
 {
 	UiId id;
 	bool globalId;
-	UiElemDirection direction;
+	UiLayoutDir direction;
 	UiSizing sizing;
 	Color32 color;
 	v4r margins; //space between our bounds and our childrens' bounds
 	v4r padding; //space between allocated area and our bounds
+	r32 childPadding; //space in-between each child, along the layout direction
 	v4r borderThickness;
 	Color32 borderColor;
 };
@@ -156,6 +157,8 @@ plex UiElement
 	uxx numChildren; //How many direct children does this element have
 	uxx numDescendents; //How many elements after this one are a descendent of this element (children, grandchildren, etc. Useful for knowing how many elements to skip over if we don't want to walk the tree of elements below this one)
 	
+	v2 minimumSize;
+	v2 preferredSize;
 	rec layoutRec;
 };
 
@@ -311,17 +314,29 @@ plex UiContext
 #define UiIdPrint(formatString, ...)              PrintUiId(UiId_None, PIG_UI_ID_INDEX_NONE, (formatString),     ##__VA_ARGS__)
 #define UiIdPrintIndex(index, formatString, ...)  PrintUiId(UiId_None, (index),              (formatString),     ##__VA_ARGS__)
 
+//NOTE: In order to get the UIELEM macro to work properly, we need to surround the __VA_ARGS__ in an extra set of curly brackets
+//      We can make this valid by defining a Wrapper struct that the curly brackets construct and then just access the config element inside
+typedef plex UiElemConfigWrapper UiElemConfigWrapper;
+plex UiElemConfigWrapper { UiElemConfig config; };
+
 //TODO: Write a description of this macro and it's need
-#define UIELEM(config) DeferIfBlock(OpenUiElementConditional(/*NEW_STRUCT(UiElemConfig)*/config), CloseUiElement())
+//NOTE: The preprocessor is going to treat the commas inside the designated initializer list as argument separators.
+//      For this reasons we do a variadic argument macro and use __VA_ARGS__ as a way to pass all of the designated initializer through
+#define UIELEM(...) DeferIfBlock(OpenUiElementConditional(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config), CloseUiElement())
 
 #define UI_FIXED(numPx)                 { .type=UiSizingType_FixedPx,      .value=(numPx)   }
 #define UI_PERCENT(percent)             { .type=UiSizingType_FixedPercent, .value=(percent) }
 #define UI_FIT()                        { .type=UiSizingType_Fit,          .value=0         }
 #define UI_EXPAND()                     { .type=UiSizingType_Expand,       .value=0         }
+#define UI_EXPAND_MIN(minPx)            { .type=UiSizingType_Expand,       .value=(minPx)   }
 #define UI_FIXED2(numPxX, numPxY)       { .x=UI_FIXED(numPxX),     .y=UI_FIXED(numPxY)     }
 #define UI_PERCENT2(percentX, percentY) { .x=UI_PERCENT(percentX), .y=UI_PERCENT(percentY) }
 #define UI_FIT2()                       { .x=UI_FIT(),             .y=UI_FIT()             }
 #define UI_EXPAND2()                    { .x=UI_EXPAND(),          .y=UI_EXPAND()          }
+#define UI_EXPAND_MIN2(minPxX, minPxY)  { .x=UI_EXPAND(minPxX),    .y=UI_EXPAND(minPxY)    }
+
+#define IsUiDirHorizontal(direction) ( (direction) == UiLayoutDir_RightToLeft || (direction) == UiLayoutDir_LeftToRight )
+#define IsUiDirVertical(direction)   ( (direction) == UiLayoutDir_TopDown     || (direction) == UiLayoutDir_BottomUp    )
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -471,7 +486,7 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 	ClearPointer(newElement);
 	newElement->elementIndex = (UiCtx->elements.length - 1);
 	newElement->parentIndex = UiCtx->currentElementIndex;
-	UiElement* parentElement = GetUiElementParent(newElement, 0); //VarArrayGetSoft(UiElement, &UiCtx->elements, UiCtx->currentElementIndex);
+	UiElement* parentElement = GetUiElementParent(newElement, 0);
 	if (parentElement != nullptr)
 	{
 		DebugAssert(parentElement->isOpen);
@@ -507,6 +522,62 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 }
 PEXPI bool OpenUiElementConditional(UiElemConfig config) { return OpenUiElement(config)->runChildCode; }
 
+static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* parent, bool xAxis)
+{
+	//TODO: Change this to use the parent and not walk the children!
+	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
+	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.childPadding) : 0.0f;
+	r32 elemMargins = (xAxis ? (element->config.margins.Left + element->config.margins.Right) : (element->config.margins.Top + element->config.margins.Bottom));
+	
+	r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
+	r32* preferredSizePntr = (xAxis ? &element->preferredSize.Width : &element->preferredSize.Height);
+	
+	UiSizingType sizingType = (xAxis ? element->config.sizing.x.type : element->config.sizing.y.type);
+	r32 sizingValue = (xAxis ? element->config.sizing.x.value : element->config.sizing.y.value);
+	if (sizingType == UiSizingType_FixedPx)
+	{
+		*preferredSizePntr = sizingValue;
+		*minimumSizePntr = sizingValue;
+	}
+	//TODO: Handle UiSizingType_FixedPercent
+	else if (sizingType == UiSizingType_Fit)
+	{
+		*minimumSizePntr = elemMargins + layoutAxisChildPadding;
+		*preferredSizePntr = elemMargins + layoutAxisChildPadding;
+		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		{
+			UiElement* child = GetUiElementChild(element, cIndex);
+			r32 childPadding = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+			r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+			if (!IsInfiniteOrNanR32(*preferredSizePntr))
+			{
+				if (IsInfiniteOrNanR32(childPreferredSize)) { *preferredSizePntr = INFINITY; }
+				else
+				{
+					if (isLayoutDir) { *preferredSizePntr += (childPreferredSize + childPadding); }
+					else { *preferredSizePntr = MaxR32(*preferredSizePntr, (childPreferredSize + childPadding)); }
+				}
+			}
+			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+			if (isLayoutDir) { *minimumSizePntr += (childMinimumSize + childPadding); }
+			else { *minimumSizePntr = MaxR32(*minimumSizePntr, (childMinimumSize + childPadding)); }
+		}
+	}
+	else if (sizingType == UiSizingType_Expand)
+	{
+		*preferredSizePntr = INFINITY;
+		*minimumSizePntr = sizingValue + elemMargins + layoutAxisChildPadding;
+		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		{
+			UiElement* child = GetUiElementChild(element, cIndex);
+			r32 childPadding = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+			if (isLayoutDir) { *minimumSizePntr += (childMinimumSize + childPadding); }
+			else { *minimumSizePntr = MaxR32(*minimumSizePntr, (childMinimumSize + childPadding)); }
+		}
+	}
+}
+
 PEXPI void CloseUiElement()
 {
 	NotNull(UiCtx);
@@ -517,6 +588,11 @@ PEXPI void CloseUiElement()
 	DebugAssert(element->isOpen);
 	element->isOpen = false;
 	UiCtx->currentElementIndex = element->parentIndex;
+	
+	// We take the opportunity in CloseUiElement (which is a Reverse Breadth-First Visit on the tree) to do some basic sizing calculations
+	UiElement* parent = GetUiElementParent(element, 0);
+	CalculateUiElemSizeOnAxisOnClose(element, parent, true);
+	CalculateUiElemSizeOnAxisOnClose(element, parent, false);
 }
 
 PEXPI Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element)
@@ -553,7 +629,7 @@ PEXP UiRenderList* GetUiRenderList()
 		{
 			VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
 			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
-			PrintLine_D("0x%016llX %.*s: element=%llu depth=%llu sibling=%llu parent=%llu children=%llu descendents=%llu",
+			PrintLine_D("0x%016llX %.*s: element=%llu depth=%llu sibling=%llu parent=%llu children=%llu descendents=%llu minimum(%g,%g) preferred(%g,%g)",
 				element->id.id,
 				StrPrint(fullName),
 				element->elementIndex,
@@ -561,11 +637,15 @@ PEXP UiRenderList* GetUiRenderList()
 				element->siblingIndex,
 				element->parentIndex,
 				element->numChildren,
-				element->numDescendents
+				element->numDescendents,
+				element->minimumSize.Width, element->minimumSize.Height,
+				element->preferredSize.Width, element->preferredSize.Height
 			);
 		}
 	}
 	#endif //DEBUG_BUILD
+	
+	
 	
 	// +==============================+
 	// |          UI Layout           |
@@ -580,18 +660,18 @@ PEXP UiRenderList* GetUiRenderList()
 		rec parentRec = (parent != nullptr) ? parent->layoutRec : MakeRecV(V2_Zero, UiCtx->screenSize);
 		v4r parentMargins = (parent != nullptr) ? parent->config.margins : V4r_Zero;
 		parentRec = InflateRecEx(parentRec, -parentMargins.Left, -parentMargins.Right, -parentMargins.Top, -parentMargins.Bottom);//TODO: Change this to "DelateRecEx" once we make that alias
-		UiElemDirection direction = (parent != nullptr) ? parent->config.direction : UiElemDirection_Default;
+		UiLayoutDir direction = (parent != nullptr) ? parent->config.direction : UiLayoutDir_Default;
 		uxx parentChildCount = (parent != nullptr) ? parent->numChildren : UiCtx->numTopLevelElements;
-		if (direction == UiElemDirection_TopDown || direction == UiElemDirection_BottomUp)
+		if (direction == UiLayoutDir_TopDown || direction == UiLayoutDir_BottomUp)
 		{
 			element->layoutRec.X = parentRec.X;
 			element->layoutRec.Width = parentRec.Width;
 			element->layoutRec.Height = parentRec.Height / (r32)parentChildCount;
-			if (direction == UiElemDirection_TopDown)
+			if (direction == UiLayoutDir_TopDown)
 			{
 				element->layoutRec.Y = parentRec.Y + (element->layoutRec.Height * (r32)element->siblingIndex);
 			}
-			else //(direction == UiElemDirection_BottomUp)
+			else //(direction == UiLayoutDir_BottomUp)
 			{
 				 element->layoutRec.Y = parentRec.Y + parentRec.Height - (element->layoutRec.Height * (r32)(element->siblingIndex+1));
 			}
@@ -612,16 +692,16 @@ PEXP UiRenderList* GetUiRenderList()
 			}
 			#endif
 		}
-		else if (direction == UiElemDirection_LeftToRight || direction == UiElemDirection_RightToLeft)
+		else if (direction == UiLayoutDir_LeftToRight || direction == UiLayoutDir_RightToLeft)
 		{
 			element->layoutRec.Y = parentRec.Y;
 			element->layoutRec.Height = parentRec.Height;
 			element->layoutRec.Width = parentRec.Width / (r32)parentChildCount;
-			if (direction == UiElemDirection_LeftToRight)
+			if (direction == UiLayoutDir_LeftToRight)
 			{
 				element->layoutRec.X = parentRec.X + (element->layoutRec.Width * (r32)element->siblingIndex);
 			}
-			else //(direction == UiElemDirection_RightToLeft)
+			else //(direction == UiLayoutDir_RightToLeft)
 			{
 				 element->layoutRec.X = parentRec.X + parentRec.Width - (element->layoutRec.Width * (r32)(element->siblingIndex+1));
 			}

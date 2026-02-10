@@ -880,7 +880,7 @@ const sg_shader_desc* main3d_shader_desc(sg_backend backend) {
 #ifndef NO_ENTRIES_STR
 #define NO_ENTRIES_STR "no_entries"
 #endif
-#define main3d_SHADER_FILE_PATH "/home/robbitay/my_stuff/projects/pig_core/tests/main3d_shader.glsl"
+#define main3d_SHADER_FILE_PATH "/home/robbitay/my/dev/pig_core/tests/main3d_shader.glsl"
 #define main3d_SHADER_ATTR_COUNT 3
 #define main3d_SHADER_ATTR_DEFS { \
 	{ .name="position", .index=ATTR_main3d_position }, \
