@@ -15,7 +15,7 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
 
-#define BUILD_PIG_BUILD 1
+#define BUILD_PIG_BUILD 0
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -44,7 +44,9 @@ Description:
 #define BUILD_PLAYDATE_SIMULATOR  0
 
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 1
+#define BUILD_SHADERS 0
+// Generates a compile_commands.json into the build folder so an language server can be run on the project - NOTE: In order for this to work you need a number of things installed: `python3`, and `python3-pip` (any maybe `python3-full` for `python3-venv`)
+#define GENERATE_COMPILE_COMMANDS_FOR_LSP 0
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
@@ -89,8 +91,6 @@ Description:
 #define RUN_FUZZER 0
 // Tells the sokol_gfx.h include to use OpenGL instead of D3D11 on Windows (NOTE: Smooth resizing only works in OpenGL mode right now!)
 #define PREFER_OPENGL_OVER_D3D11 1
-// Builds the tests/tests_clangd_main.c into dummy.exe. This exectuable does nothing but it's useful to build in order to debug errors/warnings that clangd is generating
-#define BUILD_CLANGD_DUMMY 0
 
 // +===============================+
 // | Optional Libraries/Frameworks |

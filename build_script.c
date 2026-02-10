@@ -57,8 +57,8 @@ Description:
 #define FILENAME_TESTS_SO              "libtests.so"
 #define FILENAME_TESTS_OBJ             "tests.obj"
 #define FILENAME_ANDROID_RESOURCES_ZIP "resources.zip"
-#define FILENAME_DUMMY                 "dummy"
-#define FILENAME_DUMMY_EXE             "dummy.exe"
+// #define FILENAME_DUMMY                 "dummy"
+// #define FILENAME_DUMMY_EXE             "dummy.exe"
 #define FILENAME_DUMMY_JAVA            "Dummy.java"
 #define FILENAME_DUMMY_CLASS           "Dummy.class"
 #define FILENAME_CLASSES_DEX           "classes.dex"
@@ -95,48 +95,48 @@ int main(int argc, char* argv[])
 	// +==============================+
 	Str8 buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
-	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
-	bool PROFILING_ENABLED        = ExtractBoolDefine(buildConfigContents, StrLit("PROFILING_ENABLED"));
-	bool BUILD_PIGGEN             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
-	bool BUILD_SHADERS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
-	bool RUN_PIGGEN               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
-	bool BUILD_TRACY_DLL          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TRACY_DLL"));
-	bool BUILD_IMGUI_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_IMGUI_OBJ"));
-	bool BUILD_PHYSX_OBJ          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PHYSX_OBJ"));
-	bool BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
-	bool BUILD_TESTS              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
-	bool RUN_TESTS                = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
-	bool INSTALL_TESTS_APK        = ExtractBoolDefine(buildConfigContents, StrLit("INSTALL_TESTS_APK"));
-	bool GENERATE_PROTOBUF        = ExtractBoolDefine(buildConfigContents, StrLit("GENERATE_PROTOBUF"));
-	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
-	bool DUMP_ASSEMBLY            = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
-	bool CONVERT_WASM_TO_WAT      = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
-	bool USE_EMSCRIPTEN           = ExtractBoolDefine(buildConfigContents, StrLit("USE_EMSCRIPTEN"));
-	// bool ENABLE_AUTO_PROFILE      = ExtractBoolDefine(buildConfigContents, StrLit("ENABLE_AUTO_PROFILE"));
-	// bool RUN_FUZZER               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_FUZZER"));
-	bool BUILD_WINDOWS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WINDOWS"));
-	bool BUILD_LINUX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
-	bool BUILD_OSX                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_OSX"));
-	bool BUILD_WEB                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
-	bool BUILD_ANDROID            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID"));
-	bool BUILD_ANDROID_APK        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID_APK"));
-	bool BUILD_ORCA               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
-	bool BUILD_PLAYDATE_DEVICE    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
-	bool BUILD_PLAYDATE_SIMULATOR = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
-	bool BUILD_CLANGD_DUMMY       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_CLANGD_DUMMY"));
-	bool BUILD_WITH_RAYLIB        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_RAYLIB"));
-	bool BUILD_WITH_BOX2D         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_BOX2D"));
-	bool BUILD_WITH_SOKOL_GFX     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_GFX"));
-	bool BUILD_WITH_SOKOL_APP     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_APP"));
-	bool BUILD_WITH_SDL           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SDL"));
-	bool BUILD_WITH_OPENVR        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_OPENVR"));
-	// bool BUILD_WITH_CLAY          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
-	bool BUILD_WITH_IMGUI         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
-	bool BUILD_WITH_PHYSX         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
-	bool BUILD_WITH_HTTP          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
-	bool BUILD_WITH_PROTOBUF      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PROTOBUF"));
-	bool BUILD_WITH_FREETYPE      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"));
-	bool BUILD_WITH_GTK           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_GTK"));
+	bool DEBUG_BUILD                       = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
+	bool PROFILING_ENABLED                 = ExtractBoolDefine(buildConfigContents, StrLit("PROFILING_ENABLED"));
+	bool BUILD_PIGGEN                      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
+	bool BUILD_SHADERS                     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
+	bool GENERATE_COMPILE_COMMANDS_FOR_LSP = ExtractBoolDefine(buildConfigContents, StrLit("GENERATE_COMPILE_COMMANDS_FOR_LSP"));
+	bool RUN_PIGGEN                        = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
+	bool BUILD_TRACY_DLL                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TRACY_DLL"));
+	bool BUILD_IMGUI_OBJ                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_IMGUI_OBJ"));
+	bool BUILD_PHYSX_OBJ                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PHYSX_OBJ"));
+	bool BUILD_PIG_CORE_DLL                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
+	bool BUILD_TESTS                       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
+	bool RUN_TESTS                         = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
+	bool INSTALL_TESTS_APK                 = ExtractBoolDefine(buildConfigContents, StrLit("INSTALL_TESTS_APK"));
+	bool GENERATE_PROTOBUF                 = ExtractBoolDefine(buildConfigContents, StrLit("GENERATE_PROTOBUF"));
+	bool DUMP_PREPROCESSOR                 = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
+	bool DUMP_ASSEMBLY                     = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
+	bool CONVERT_WASM_TO_WAT               = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
+	bool USE_EMSCRIPTEN                    = ExtractBoolDefine(buildConfigContents, StrLit("USE_EMSCRIPTEN"));
+	// bool ENABLE_AUTO_PROFILE               = ExtractBoolDefine(buildConfigContents, StrLit("ENABLE_AUTO_PROFILE"));
+	// bool RUN_FUZZER                        = ExtractBoolDefine(buildConfigContents, StrLit("RUN_FUZZER"));
+	bool BUILD_WINDOWS                     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WINDOWS"));
+	bool BUILD_LINUX                       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
+	bool BUILD_OSX                         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_OSX"));
+	bool BUILD_WEB                         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
+	bool BUILD_ANDROID                     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID"));
+	bool BUILD_ANDROID_APK                 = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID_APK"));
+	bool BUILD_ORCA                        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
+	bool BUILD_PLAYDATE_DEVICE             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
+	bool BUILD_PLAYDATE_SIMULATOR          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
+	bool BUILD_WITH_RAYLIB                 = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_RAYLIB"));
+	bool BUILD_WITH_BOX2D                  = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_BOX2D"));
+	bool BUILD_WITH_SOKOL_GFX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_GFX"));
+	bool BUILD_WITH_SOKOL_APP              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_APP"));
+	bool BUILD_WITH_SDL                    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SDL"));
+	bool BUILD_WITH_OPENVR                 = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_OPENVR"));
+	// bool BUILD_WITH_CLAY                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
+	bool BUILD_WITH_IMGUI                  = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
+	bool BUILD_WITH_PHYSX                  = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
+	bool BUILD_WITH_HTTP                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
+	bool BUILD_WITH_PROTOBUF               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PROTOBUF"));
+	bool BUILD_WITH_FREETYPE               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"));
+	bool BUILD_WITH_GTK                    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_GTK"));
 	
 	Str8 ANDROID_SIGNING_KEY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")), false);
 	Str8 ANDROID_SIGNING_PASSWORD = ZEROED;
@@ -1324,47 +1324,17 @@ int main(int argc, char* argv[])
 	}
 	
 	// +--------------------------------------------------------------+
-	// |                    Build ClangD dummy.exe                    |
+	// |                Generate compile_commands.json                |
 	// +--------------------------------------------------------------+
-	if (BUILD_CLANGD_DUMMY)
+	if (GENERATE_COMPILE_COMMANDS_FOR_LSP)
 	{
-		//TODO: Implement for Windows!
-		
-		if (BUILD_LINUX)
-		{
-			PrintLine("\n[Building %s for Linux...]", FILENAME_DUMMY);
-			
-			CliArgList cmd = ZEROED;
-			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_clangd_main.c");
-			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_DUMMY);
-			AddArgNt(&cmd, CLANG_DEFINE, "COMPILER_IS_LSP=1");
-			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LangCFlags);
-			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
-			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
-			AddArgList(&cmd, &clang_CommonLibraries);
-			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
-			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_LinuxShaderObjects); }
-			
-			#if BUILDING_ON_LINUX
-			Str8 clangExe = StrLit(EXE_CLANG);
-			#else
-			Str8 clangExe = StrLit(EXE_WSL_CLANG);
-			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
-			chdir(FOLDERNAME_LINUX);
-			cmd.rootDirPath = StrLit("../..");
-			#endif
-			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_DUMMY "!"));
-			AssertFileExist(StrLit(FILENAME_DUMMY), true);
-			PrintLine("[Built %s for Linux!]", FILENAME_DUMMY);
-			
-			#if !BUILDING_ON_LINUX
-			chdir("..");
-			#endif
-		}
+		//TODO: Fill out a compile_commands.json file with all the arguments that we pass to clang to compile tests
+		//Either:
+		//		TODO: Create a python virtual environment in build/venv if it doesn't already exist. Install compdb inside that environment with `./venv/bin/pip install compdb`
+		//		TODO: Run ./venv/bin/compdb -p . list > full_compile_commands.json
+		//		TODO: Rename compile_commands.json to base_compile_commands.json and rename full_compile_commands.json to compile_commands.json
+		//Or:
+		//		TODO: Fill out a complete compile_commands.json that has info for every single header file so that clangd can provide us completions in header files properly
 	}
 	
 	// +--------------------------------------------------------------+

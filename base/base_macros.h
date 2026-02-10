@@ -62,6 +62,7 @@ Description:
 #endif
 
 //TODO: Confirm that this works on Windows, OSX, and Linux with Clang, GCC, and MSVC compilers
+//NOTE: clangd doesn't seem to like thread_local so we disable it when it's indexing the codebase
 #if (!TARGET_HAS_THREADING || COMPILER_IS_LSP)
 #define THREAD_LOCAL //nothing
 #elif TARGET_IS_OSX

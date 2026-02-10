@@ -40,6 +40,7 @@ Description:
 #endif
 
 // This is not ever set for a real compilation, but is set by compile_commands.json so that the LSP (like clangd) will have this define set when it does it's parsing/indexing of the codebase
+// There are some language features or includes that we want to suppress because clangd doesn't like or understand them. Thus we put them inside a #if !COMPILER_IS_LSP section
 #ifndef COMPILER_IS_LSP
 #define COMPILER_IS_LSP 0
 #endif
