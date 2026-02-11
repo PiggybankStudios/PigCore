@@ -246,7 +246,7 @@ plex UiContext
 	#if (TARGET_HAS_THREADING && DEBUG_BUILD)
 	ThreadId threadId;
 	#endif
-	v2 screenSize;
+	v2 screenSize; //TODO: Remove me
 	r32 scale;
 	u64 programTime;
 	KeyboardState* keyboard;
@@ -254,7 +254,7 @@ plex UiContext
 	TouchscreenState* touchscreen;
 	
 	uxx currentElementIndex;
-	uxx numTopLevelElements;
+	uxx numTopLevelElements; //TODO: Remove me
 	VarArray elements; //UiElement
 	
 	UiRenderList renderList; //allocated from frameArena
@@ -285,10 +285,10 @@ plex UiContext
 	void InitUiContext(Arena* arena, UiContext* contextOut);
 	PIG_CORE_INLINE UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementChild(UiElement* element, uxx childIndex);
-	void StartUiFrame(UiContext* context, v2 screenSize, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
-	PIG_CORE_INLINE void CloseUiElement();
+	void StartUiFrame(UiContext* context, v2 screenSize, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
+	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element);
 	UiRenderList* GetUiRenderList();
 	void EndUiFrame();
@@ -441,40 +441,6 @@ PEXPI UiElement* GetUiElementChild(UiElement* element, uxx childIndex)
 	return result;
 }
 
-PEXP void StartUiFrame(UiContext* context, v2 screenSize, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
-{
-	DebugNotNull(context);
-	DebugNotNull(context->arena);
-	// NOTE: Normally scratch arenas are reset to their previous location when ScratchEnd is called.
-	//       However, since we are sneakily using one of these arenas to guarantee allocations live
-	//       until the end of the UI render we need to prevent this resetting behavior.
-	//       In order to not cause too much memory bloat we use the last scratch arena, which often
-	//       doesn't get used much anyways
-	context->frameArena = &scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD-1];
-	DebugAssert(context->frameArena->type == ArenaType_StackVirtual || context->frameArena->type == ArenaType_StackPaged);
-	DebugAssert(context->arena != context->frameArena);
-	FlagSet(context->frameArena->flags, ArenaFlag_DontPop);
-	context->frameArenaMark = ArenaGetMark(context->frameArena);
-	
-	#if (TARGET_HAS_THREADING && DEBUG_BUILD)
-	context->threadId = OsGetCurrentThreadId();
-	#endif
-	
-	context->screenSize = screenSize;
-	context->scale = scale;
-	context->programTime = programTime;
-	context->keyboard = keyboard;
-	context->mouse = mouse;
-	context->touchscreen = touchscreen;
-	context->currentElementIndex = PIG_UI_INDEX_INVALID;
-	context->numTopLevelElements = 0;
-	
-	//TODO: Reset the elements array? Copy the array from last frame somewhere?
-	
-	Assert(UiCtx == nullptr);
-	UiCtx = context;
-}
-
 //NOTE: This pointer becomes potentially invalid once OpenUiElement is called again, VarArrayAdd semantics
 PEXPI UiElement* OpenUiElement(UiElemConfig config)
 {
@@ -522,11 +488,54 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 }
 PEXPI bool OpenUiElementConditional(UiElemConfig config) { return OpenUiElement(config)->runChildCode; }
 
+PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
+{
+	DebugNotNull(context);
+	DebugNotNull(context->arena);
+	// NOTE: Normally scratch arenas are reset to their previous location when ScratchEnd is called.
+	//       However, since we are sneakily using one of these arenas to guarantee allocations live
+	//       until the end of the UI render we need to prevent this resetting behavior.
+	//       In order to not cause too much memory bloat we use the last scratch arena, which often
+	//       doesn't get used much anyways
+	context->frameArena = &scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD-1];
+	DebugAssert(context->frameArena->type == ArenaType_StackVirtual || context->frameArena->type == ArenaType_StackPaged);
+	DebugAssert(context->arena != context->frameArena);
+	FlagSet(context->frameArena->flags, ArenaFlag_DontPop);
+	context->frameArenaMark = ArenaGetMark(context->frameArena);
+	
+	#if (TARGET_HAS_THREADING && DEBUG_BUILD)
+	context->threadId = OsGetCurrentThreadId();
+	#endif
+	
+	context->screenSize = screenSize;
+	context->scale = scale;
+	context->programTime = programTime;
+	context->keyboard = keyboard;
+	context->mouse = mouse;
+	context->touchscreen = touchscreen;
+	
+	//TODO: Copy the array from last frame somewhere?
+	VarArrayClear(&context->elements);
+	context->numTopLevelElements = 0;
+	context->currentElementIndex = PIG_UI_INDEX_INVALID;
+	
+	Assert(UiCtx == nullptr);
+	UiCtx = context;
+	
+	UiElement* rootElement = OpenUiElement(NEW_STRUCT(UiElemConfig){
+		.id = UiIdLit("root"),
+		.sizing = UI_FIXED2(screenSize.Width, screenSize.Height),
+		.color = backgroundColor,
+	});
+	UNUSED(rootElement);
+}
+
 static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* parent, bool xAxis)
 {
-	//TODO: Change this to use the parent and not walk the children!
-	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
-	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.childPadding) : 0.0f;
+	DebugNotNull(element);
+	DebugAssert(parent != nullptr || element->elementIndex == 0); //parent can be null, only for the root element
+	bool isThisLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
+	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.childPadding) : 0.0f;
 	r32 elemMargins = (xAxis ? (element->config.margins.Left + element->config.margins.Right) : (element->config.margins.Top + element->config.margins.Bottom));
 	
 	r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
@@ -536,54 +545,47 @@ static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* pare
 	r32 sizingValue = (xAxis ? element->config.sizing.x.value : element->config.sizing.y.value);
 	if (sizingType == UiSizingType_FixedPx)
 	{
-		*preferredSizePntr = sizingValue;
 		*minimumSizePntr = sizingValue;
+		*preferredSizePntr = sizingValue;
 	}
 	//TODO: Handle UiSizingType_FixedPercent
 	else if (sizingType == UiSizingType_Fit)
 	{
-		*minimumSizePntr = elemMargins + layoutAxisChildPadding;
-		*preferredSizePntr = elemMargins + layoutAxisChildPadding;
-		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
-		{
-			UiElement* child = GetUiElementChild(element, cIndex);
-			r32 childPadding = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
-			r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-			if (!IsInfiniteOrNanR32(*preferredSizePntr))
-			{
-				if (IsInfiniteOrNanR32(childPreferredSize)) { *preferredSizePntr = INFINITY; }
-				else
-				{
-					if (isLayoutDir) { *preferredSizePntr += (childPreferredSize + childPadding); }
-					else { *preferredSizePntr = MaxR32(*preferredSizePntr, (childPreferredSize + childPadding)); }
-				}
-			}
-			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-			if (isLayoutDir) { *minimumSizePntr += (childMinimumSize + childPadding); }
-			else { *minimumSizePntr = MaxR32(*minimumSizePntr, (childMinimumSize + childPadding)); }
-		}
+		*minimumSizePntr += elemMargins + layoutAxisChildPadding;
+		if (!IsInfiniteOrNanR32(*preferredSizePntr)) { *preferredSizePntr += elemMargins + layoutAxisChildPadding; }
 	}
 	else if (sizingType == UiSizingType_Expand)
 	{
+		*minimumSizePntr += sizingValue + elemMargins + layoutAxisChildPadding;
 		*preferredSizePntr = INFINITY;
-		*minimumSizePntr = sizingValue + elemMargins + layoutAxisChildPadding;
-		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+	}
+	else { DebugAssert(false); }
+	
+	if (parent != nullptr)
+	{
+		bool isParentLayoutDir = (IsUiDirHorizontal(parent->config.direction) == xAxis);
+		r32 paddingLrOrTb = (xAxis ? (element->config.padding.Left + element->config.padding.Right) : (element->config.padding.Top + element->config.padding.Bottom));
+		r32* parentMinimumSizePntr = (xAxis ? &parent->minimumSize.Width : &parent->minimumSize.Height);
+		r32* parentPreferredSizePntr = (xAxis ? &parent->preferredSize.Width : &parent->preferredSize.Height);
+		
+		if (isParentLayoutDir) { *parentMinimumSizePntr += *minimumSizePntr + paddingLrOrTb; }
+		else { *parentMinimumSizePntr = MaxR32(*parentMinimumSizePntr, *minimumSizePntr + paddingLrOrTb); }
+		
+		if (!IsInfiniteOrNanR32(*parentPreferredSizePntr))
 		{
-			UiElement* child = GetUiElementChild(element, cIndex);
-			r32 childPadding = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
-			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-			if (isLayoutDir) { *minimumSizePntr += (childMinimumSize + childPadding); }
-			else { *minimumSizePntr = MaxR32(*minimumSizePntr, (childMinimumSize + childPadding)); }
+			if (IsInfiniteOrNanR32(*preferredSizePntr)) { *parentPreferredSizePntr = INFINITY; }
+			else if (isParentLayoutDir) { *parentPreferredSizePntr += *preferredSizePntr + paddingLrOrTb; }
+			else { *parentPreferredSizePntr = MaxR32(*parentPreferredSizePntr, *preferredSizePntr + paddingLrOrTb); }
 		}
 	}
 }
 
-PEXPI void CloseUiElement()
+PEXPI UiElement* CloseUiElement()
 {
 	NotNull(UiCtx);
 	AssertUiThreadIsSame();
 	DebugAssertMsg(UiCtx->currentElementIndex < UiCtx->elements.length, "Tried to close UI element when none was open! UI hierarchy is potentially invalid!");
-	if (UiCtx->currentElementIndex >= UiCtx->elements.length) { return; }
+	if (UiCtx->currentElementIndex >= UiCtx->elements.length) { return nullptr; }
 	UiElement* element = VarArrayGetHard(UiElement, &UiCtx->elements, UiCtx->currentElementIndex);
 	DebugAssert(element->isOpen);
 	element->isOpen = false;
@@ -593,6 +595,8 @@ PEXPI void CloseUiElement()
 	UiElement* parent = GetUiElementParent(element, 0);
 	CalculateUiElemSizeOnAxisOnClose(element, parent, true);
 	CalculateUiElemSizeOnAxisOnClose(element, parent, false);
+	
+	return element;
 }
 
 PEXPI Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element)
@@ -615,12 +619,75 @@ PEXPI Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element)
 	return result.str;
 }
 
-PEXP UiRenderList* GetUiRenderList()
+static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis, bool printDebug)
 {
-	NotNull(UiCtx);
-	AssertUiThreadIsSame();
-	DebugAssertMsg(UiCtx->currentElementIndex >= UiCtx->elements.length, "Not all UI elements had a CloseUiElement call! UI hierarchy is potentially invalid!");
+	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
+	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.childPadding) : 0.0f;
+	r32 elemMargins = (xAxis ? (element->config.margins.Left + element->config.margins.Right) : (element->config.margins.Top + element->config.margins.Bottom));
 	
+	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
+	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
+	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
+	r32 innerSize = *sizePntr - elemMargins;
+	
+	// Copy children's minimumSize into layoutRec.Size and track how many want to be bigger and what their total minimum size is
+	uxx numGrowableChildren = 0;
+	r32 childrenMinimumTotal = (xAxis ? (element->config.padding.Left + element->config.padding.Right) : (element->config.padding.Top + element->config.padding.Bottom));
+	for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+	{
+		UiElement* child = GetUiElementChild(element, cIndex);
+		r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+		r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+		r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+		r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+		if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize) { numGrowableChildren++; }
+		*childSizePntr = childMinimumSize;
+		childrenMinimumTotal += childMinimumSize + childPaddingLrOrTb + ((cIndex > 0) ? element->config.childPadding : 0.0f);
+	}
+	
+	//TODO: We should probably be rounding to whole pixel values, and figuring out how to distribute remainders amongst n children
+	r32 spaceToDistribute = (*sizePntr - childrenMinimumTotal);
+	if (printDebug)
+	{
+		Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
+		PrintLine_D("%.*s has %gpx along %s to %s %llu/%llu growable child%s",
+			StrPrint(fullName),
+			spaceToDistribute,
+			xAxis ? "X" : "Y",
+			isLayoutDir ? "distribute amongst" : "give to",
+			numGrowableChildren, element->numChildren, PluralEx(numGrowableChildren, "", "ren")
+		);
+	}
+	if (spaceToDistribute > 0)
+	{
+		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		{
+			UiElement* child = GetUiElementChild(element, cIndex);
+			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+			r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+			r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+			r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+			if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize)
+			{
+				if (isLayoutDir)
+				{
+					*childSizePntr += (spaceToDistribute / (r32)numGrowableChildren);
+				}
+				else
+				{
+					*childSizePntr = MinR32(innerSize - childPaddingLrOrTb, childPreferredSize);
+				}
+			}
+		}
+	}
+	else if (spaceToDistribute < 0)
+	{
+		//TODO: Implement me!
+	}
+}
+
+static void UiSystemDoLayout()
+{
 	#if DEBUG_BUILD
 	bool printDebug = IsKeyboardKeyPressed(UiCtx->keyboard, nullptr, Key_T, false);
 	if (printDebug)
@@ -629,7 +696,7 @@ PEXP UiRenderList* GetUiRenderList()
 		{
 			VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
 			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
-			PrintLine_D("0x%016llX %.*s: element=%llu depth=%llu sibling=%llu parent=%llu children=%llu descendents=%llu minimum(%g,%g) preferred(%g,%g)",
+			PrintLine_D("0x%016llX %.*s: element=%llu depth=%llu sibling=%llu parent=%llu children=%llu descendents=%llu - sizing[X=%s, Y=%s] minimum(%g,%g) preferred(%g,%g)",
 				element->id.id,
 				StrPrint(fullName),
 				element->elementIndex,
@@ -638,6 +705,7 @@ PEXP UiRenderList* GetUiRenderList()
 				element->parentIndex,
 				element->numChildren,
 				element->numDescendents,
+				GetUiSizingTypeStr(element->config.sizing.x.type), GetUiSizingTypeStr(element->config.sizing.y.type),
 				element->minimumSize.Width, element->minimumSize.Height,
 				element->preferredSize.Width, element->preferredSize.Height
 			);
@@ -645,8 +713,108 @@ PEXP UiRenderList* GetUiRenderList()
 	}
 	#endif //DEBUG_BUILD
 	
+	// The root element is the only element that decides it's own final position/size
+	// Otherwise we decide the size of children elements when visiting the parent
+	UiElement* rootElement = VarArrayGetFirst(UiElement, &UiCtx->elements);
+	rootElement->layoutRec.TopLeft = V2_Zero;
+	rootElement->layoutRec.Size = rootElement->preferredSize;
 	
+	// +======================================+
+	// | Distribute Sizes to Children via BFS |
+	// +======================================+
+	VarArray bfsIndices; //bfs = Breadth-First Search
+	InitVarArrayWithInitial(uxx, &bfsIndices, UiCtx->frameArena, UiCtx->elements.length); //TODO: This is a hard upper bound, and quite an overestimate in most cases
+	VarArrayAddValue(uxx, &bfsIndices, 0); //Add the root element, always at index 0
+	while (bfsIndices.length > 0)
+	{
+		uxx eIndex = VarArrayGetFirstValue(uxx, &bfsIndices);
+		VarArrayRemoveFirst(uxx, &bfsIndices);
+		UiElement* element = VarArrayGetHard(UiElement, &UiCtx->elements, eIndex);
+		
+		if (printDebug)
+		{
+			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
+			PrintLine_D("0x%016llX %.*s Sizing %llu child%s",
+				element->id.id,
+				StrPrint(fullName),
+				element->numChildren, PluralEx(element->numChildren, "", "ren")
+			);
+		}
+		DistributeSpaceToUiElemChildrenOnAxis(element, true, printDebug);
+		DistributeSpaceToUiElemChildrenOnAxis(element, false, printDebug);
+		
+		//Add all children to bfsIndices
+		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		{
+			UiElement* child = GetUiElementChild(element, cIndex);
+			if (child->numChildren > 0)
+			{
+				VarArrayAddValue(uxx, &bfsIndices, child->elementIndex);
+			}
+		}
+		// uxx childIndex = eIndex+1;
+		// UiElement* child = element+1;
+		// for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		// {
+		// 	if (child->numChildren > 0) { VarArrayAddValue(uxx, &bfsIndices, childIndex); }
+		// 	childIndex += 1 + child->numDescendents;
+		// }
+	}
 	
+	// +============================================+
+	// | Position Children According to UiLayoutDir |
+	// +============================================+
+	VarArrayLoop(&UiCtx->elements, eIndex)
+	{
+		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+		
+		v2 layoutPos = V2_Zero_Const;
+		if (element->config.direction == UiLayoutDir_LeftToRight || element->config.direction == UiLayoutDir_TopDown)
+		{
+			layoutPos = AddV2(element->layoutRec.TopLeft, element->config.margins.XY); //XY is alias for (Left,Top)
+		}
+		else if (element->config.direction == UiLayoutDir_RightToLeft)
+		{
+			layoutPos = AddV2(element->layoutRec.TopLeft, MakeV2(element->layoutRec.Width - element->config.margins.Right, element->config.margins.Top));
+		}
+		else if (element->config.direction == UiLayoutDir_BottomUp)
+		{
+			layoutPos = AddV2(element->layoutRec.TopLeft, MakeV2(element->config.margins.Left, element->layoutRec.Height - element->config.margins.Bottom));
+		}
+		else { DebugAssert(false); }
+		
+		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		{
+			UiElement* child = GetUiElementChild(element, cIndex);
+			r32 childPadding = ((cIndex > 0) ? element->config.childPadding : 0.0f);
+			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->config.padding.Left; }
+			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->config.padding.Top; }
+			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->layoutRec.Width + childPadding + child->config.padding.Right; }
+			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->layoutRec.Height + childPadding + child->config.padding.Bottom; }
+			
+			child->layoutRec.TopLeft = layoutPos;
+			if (IsUiDirHorizontal(element->config.direction)) { child->layoutRec.Y += child->config.padding.Top; }
+			else { child->layoutRec.X += child->config.padding.Left; }
+			
+			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->layoutRec.Width + childPadding + child->config.padding.Right; }
+			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + childPadding + child->config.padding.Bottom; }
+			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.Left; }
+			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.Top; }
+			
+			if (printDebug)
+			{
+				Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, child);
+				PrintLine_D("0x%016llX %.*s size=(%g,%g) layoutRec=(%g,%g,%g,%g)",
+					child->id.id,
+					StrPrint(fullName),
+					child->layoutRec.Width, child->layoutRec.Height,
+					child->layoutRec.X, child->layoutRec.Y, child->layoutRec.X + child->layoutRec.Width, child->layoutRec.Y + child->layoutRec.Height
+				);
+			}
+		}
+	}
+	
+	#if 0
 	// +==============================+
 	// |          UI Layout           |
 	// +==============================+
@@ -737,6 +905,21 @@ PEXP UiRenderList* GetUiRenderList()
 		element->layoutRec.Width = MaxR32(0, element->layoutRec.Width - element->config.padding.Left - element->config.padding.Right);
 		element->layoutRec.Height = MaxR32(0, element->layoutRec.Height - element->config.padding.Left - element->config.padding.Right);
 	}
+	#endif
+}
+
+PEXP UiRenderList* GetUiRenderList()
+{
+	NotNull(UiCtx);
+	AssertUiThreadIsSame();
+	
+	// Close the root element if it's still open. This also acts as a way for us to know if GetUiRenderList has been called yet this frame
+	if (UiCtx->currentElementIndex < UiCtx->elements.length)
+	{
+		DebugAssertMsg(UiCtx->currentElementIndex == 0, "Not all UI elements had a CloseUiElement call! UI hierarchy is potentially invalid!");
+		CloseUiElement();
+		UiSystemDoLayout();
+	}
 	
 	// +==============================+
 	// |          UI Render           |
@@ -780,8 +963,6 @@ PEXP void EndUiFrame()
 	UiCtx->keyboard = nullptr;
 	UiCtx->mouse = nullptr;
 	UiCtx->touchscreen = nullptr;
-	
-	VarArrayClear(&UiCtx->elements);
 	
 	UiCtx = nullptr;
 }

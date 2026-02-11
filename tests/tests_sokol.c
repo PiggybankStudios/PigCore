@@ -195,7 +195,7 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 		})
 	);
 	bool isHovered = (Clay_PointerOver(btnId) || Clay_PointerOver(menuId));
-	if (Clay_PointerOver(btnId) && (IsMouseBtnPressed(&mouse, MouseBtn_Left) || touchscreen.mainTouch->started))
+	if (Clay_PointerOver(btnId) && (IsMouseBtnPressed(&mouse, nullptr, MouseBtn_Left) || touchscreen.mainTouch->started))
 	{
 		*isOpenPntr = !*isOpenPntr;
 	}
@@ -243,7 +243,7 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_Btn", btnText);
 	Clay_ElementId btnId = ToClayId(btnIdStr);
 	bool isHovered = Clay_PointerOver(btnId);
-	bool isPressed = (isHovered && (IsMouseBtnDown(&mouse, MouseBtn_Left) || (touchscreen.mainTouch->id != TOUCH_ID_INVALID && !touchscreen.mainTouch->stopped)));
+	bool isPressed = (isHovered && (IsMouseBtnDown(&mouse, nullptr, MouseBtn_Left) || (touchscreen.mainTouch->id != TOUCH_ID_INVALID && !touchscreen.mainTouch->stopped)));
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
@@ -264,7 +264,7 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 		})
 	);
 	ScratchEnd(scratch);
-	return (isHovered && (IsMouseBtnPressed(&mouse, MouseBtn_Left) || touchscreen.mainTouch->started));
+	return (isHovered && (IsMouseBtnPressed(&mouse, nullptr, MouseBtn_Left) || touchscreen.mainTouch->started));
 }
 #endif //BUILD_WITH_CLAY
 
@@ -822,7 +822,7 @@ bool AppFrame(void)
 	#endif //!TARGET_IS_OSX
 	
 	#if BUILD_WITH_BOX2D
-	if (IsMouseBtnPressed(&mouse, MouseBtn_Left))
+	if (IsMouseBtnPressed(&mouse, nullptr, MouseBtn_Left))
 	{
 		r32 physMouseX, physMouseY;
 		GetPhysPosFromRenderPos((i32)mouse.position.X, (i32)mouse.position.Y, &physMouseX, &physMouseY);
@@ -1176,7 +1176,7 @@ bool AppFrame(void)
 			#if BUILD_WITH_CLAY
 			UpdateClayScrolling(&clay.clay, 16.6f, false, mouse.scrollDelta, TARGET_IS_ANDROID);
 			v2 uiMousePosition = (TARGET_IS_ANDROID ? touchscreen.mainTouch->pos : mouse.position);
-			bool uiMouseDown = (TARGET_IS_ANDROID ? (touchscreen.mainTouch->id != TOUCH_ID_INVALID && !touchscreen.mainTouch->stopped) : IsMouseBtnDown(&mouse, MouseBtn_Left));
+			bool uiMouseDown = (TARGET_IS_ANDROID ? (touchscreen.mainTouch->id != TOUCH_ID_INVALID && !touchscreen.mainTouch->stopped) : IsMouseBtnDown(&mouse, nullptr, MouseBtn_Left));
 			BeginClayUIRender(&clay.clay, windowSize, false, uiMousePosition, uiMouseDown);
 			{
 				CLAY({ .id = CLAY_ID("FullscreenContainer"),
@@ -1253,7 +1253,7 @@ bool AppFrame(void)
 								if (ClayBtn("Open...", Transparent, MonokaiWhite))
 								{
 									FilePath chosenPath = FilePath_Empty;
-									Result dialogResult = OsDoOpenFileDialog(scratch, &chosenPath);
+									Result dialogResult = OsDoOpenFileDialogBlocking(scratch, &chosenPath);
 									if (dialogResult == Result_Success)
 									{
 										PrintLine_I("Chose file: \"%.*s\"", StrPrint(chosenPath));
@@ -1300,20 +1300,20 @@ bool AppFrame(void)
 			// |      Pig UI System Test      |
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
-			StartUiFrame(&uiContext, windowSize, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
+			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
 			Color32 halfBlack = ColorWithAlpha(Black, 0.5f);
 			v4r margins = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0));
 			v4r padding = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 8.0f, 2713, 0));
-			UIELEM({ .id = UiIdLit("Root"),
+			UIELEM({ .id = UiIdLit("DarkGray"),
 				.margins=margins,
 				.padding=padding,
 				.direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown,
-				.color=MonokaiRed,
+				.color=MonokaiDarkGray,
 				.borderThickness=FillV4r(2.0f),
 				.borderColor=halfBlack
 			})
 			{
-				UIELEM({ .id = UiIdLit("First"),
+				UIELEM({ .id = UiIdLit("Orange"),
 					.margins=margins,
 					.padding=padding,
 					.direction = UiLayoutDir_LeftToRight,
@@ -1322,7 +1322,7 @@ bool AppFrame(void)
 					.borderColor=halfBlack
 				}) { }
 				
-				UIELEM({ .id = UiIdLit("Second"),
+				UIELEM({ .id = UiIdLit("Back"),
 					.margins=margins,
 					.padding=padding,
 					.direction = UiLayoutDir_RightToLeft,
@@ -1331,21 +1331,21 @@ bool AppFrame(void)
 					.borderColor=halfBlack
 				})
 				{
-					UIELEM({ .id = UiIdPrint("Foo%llu", programTime),
+					UIELEM({ .id = UiIdLit("Green"),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiGreen,
 						.borderThickness=FillV4r(2.0f),
 						.borderColor=halfBlack
 					}) { }
-					UIELEM({ .id = UiIdLit("Bar"),
+					UIELEM({ .id = UiIdLit("Blue"),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiBlue,
 						.borderThickness=FillV4r(2.0f),
 						.borderColor=halfBlack
 					}) { }
-					UIELEM({ .id = UiIdLit("Bar"),
+					UIELEM({ .id = UiIdLit("Purple"),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiPurple,
@@ -1354,7 +1354,7 @@ bool AppFrame(void)
 					}) { }
 				}
 				
-				UIELEM({ /*.id = UiIdLit("Third"),*/
+				UIELEM({ .id = UiIdLit("Yellow"),
 					.margins=margins,
 					.padding=padding,
 					.direction = UiLayoutDir_LeftToRight,
@@ -1363,16 +1363,16 @@ bool AppFrame(void)
 					.borderColor=halfBlack
 				}) { }
 				
-				UIELEM({ .id = UiIdLit("Fourth"),
+				UIELEM({ .id = UiIdLit("Red"),
 					.margins=margins,
 					.padding=padding,
 					.direction = UiLayoutDir_LeftToRight,
-					.color=MonokaiDarkGray,
+					.color=MonokaiRed,
 					.borderThickness=FillV4r(2.0f),
 					.borderColor=halfBlack
 				})
 				{
-					UIELEM({ /*.id = UiIdLit("Bar"),*/
+					UIELEM({ .id = UiIdLit("DarkGreen"),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiDarkGreen,
@@ -1380,7 +1380,7 @@ bool AppFrame(void)
 						.borderColor=halfBlack,
 						.sizing=UI_FIXED2(100, 200)
 					}) { }
-					UIELEM({ /*.id = UiIdLit("Foo"),*/
+					UIELEM({ .id = UiIdLit("LightPurple"),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiLightPurple,
