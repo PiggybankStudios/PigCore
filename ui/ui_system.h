@@ -628,38 +628,93 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
 	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
 	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
-	r32 innerSize = *sizePntr - elemMargins;
 	
-	// Copy children's minimumSize into layoutRec.Size and track how many want to be bigger and what their total minimum size is
-	uxx numGrowableChildren = 0;
-	r32 childrenMinimumTotal = (xAxis ? (element->config.padding.Left + element->config.padding.Right) : (element->config.padding.Top + element->config.padding.Bottom));
-	for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+	if (isLayoutDir)
 	{
-		UiElement* child = GetUiElementChild(element, cIndex);
-		r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-		r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-		r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
-		r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
-		if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize) { numGrowableChildren++; }
-		*childSizePntr = childMinimumSize;
-		childrenMinimumTotal += childMinimumSize + childPaddingLrOrTb + ((cIndex > 0) ? element->config.childPadding : 0.0f);
+		// Copy children's minimumSize into layoutRec.Size and track how many want to be bigger and what their total minimum size is
+		uxx numGrowableChildren = 0;
+		r32 childrenMinimumTotal = (xAxis ? (element->config.padding.Left + element->config.padding.Right) : (element->config.padding.Top + element->config.padding.Bottom));
+		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		{
+			UiElement* child = GetUiElementChild(element, cIndex);
+			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+			r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+			r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+			r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+			if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize) { numGrowableChildren++; }
+			*childSizePntr = childMinimumSize;
+			childrenMinimumTotal += childMinimumSize + childPaddingLrOrTb + ((cIndex > 0) ? element->config.childPadding : 0.0f);
+		}
+		
+		//TODO: We should probably be rounding to whole pixel values, and figuring out how to distribute remainders amongst n children
+		r32 spaceToDistribute = (*sizePntr - childrenMinimumTotal);
+		if (printDebug)
+		{
+			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
+			PrintLine_D("%.*s has %gpx along %s to distribute amongst %llu/%llu growable child%s",
+				StrPrint(fullName),
+				spaceToDistribute,
+				xAxis ? "X" : "Y",
+				numGrowableChildren, element->numChildren, PluralEx(numGrowableChildren, "", "ren")
+			);
+		}
+		
+		while (AreSimilarOrGreaterR32(spaceToDistribute, 0.0f, DEFAULT_R32_TOLERANCE))
+		{
+			r32 smallestChildSize = INFINITY;
+			uxx smallestChildCount = 0;
+			r32 secondSmallestChildSize = INFINITY;
+			for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+			{
+				UiElement* child = GetUiElementChild(element, cIndex);
+				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+				r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
+				if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
+				{
+					if (IsInfiniteOrNanR32(smallestChildSize) || childSize < smallestChildSize)
+					{
+						if (!IsInfiniteOrNanR32(smallestChildSize)) { secondSmallestChildSize = smallestChildSize; }
+						if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
+						smallestChildSize = childSize;
+						smallestChildCount = 1;
+					}
+					else if (AreSimilarR32(smallestChildSize, childSize, DEFAULT_R32_TOLERANCE))
+					{
+						if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
+						smallestChildCount++;
+					}
+				}
+			}
+			if (smallestChildCount == 0) { break; }
+			
+			r32 smallestToNextSmallestDiff = (!IsInfiniteOrNanR32(secondSmallestChildSize) && smallestChildCount > 0)
+				? (secondSmallestChildSize - smallestChildSize) / (r32)smallestChildCount
+				: INFINITY;
+			r32 spaceToDistributeThisRound = MinR32(spaceToDistribute, smallestToNextSmallestDiff * (r32)smallestChildCount);
+			if (spaceToDistributeThisRound == 0.0f) { break; }
+			spaceToDistribute -= spaceToDistributeThisRound;
+			for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+			{
+				UiElement* child = GetUiElementChild(element, cIndex);
+				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+				r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+				r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+				if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize)
+				{
+					*childSizePntr += (spaceToDistributeThisRound / (r32)smallestChildCount);
+				}
+			}
+		}
+		// else if (spaceToDistribute < 0)
+		// {
+		// 	//TODO: Implement me!
+		// }
 	}
-	
-	//TODO: We should probably be rounding to whole pixel values, and figuring out how to distribute remainders amongst n children
-	r32 spaceToDistribute = (*sizePntr - childrenMinimumTotal);
-	if (printDebug)
+	else
 	{
-		Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
-		PrintLine_D("%.*s has %gpx along %s to %s %llu/%llu growable child%s",
-			StrPrint(fullName),
-			spaceToDistribute,
-			xAxis ? "X" : "Y",
-			isLayoutDir ? "distribute amongst" : "give to",
-			numGrowableChildren, element->numChildren, PluralEx(numGrowableChildren, "", "ren")
-		);
-	}
-	if (spaceToDistribute > 0)
-	{
+		r32 innerSize = *sizePntr - elemMargins;
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
@@ -669,20 +724,13 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
 			if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize)
 			{
-				if (isLayoutDir)
-				{
-					*childSizePntr += (spaceToDistribute / (r32)numGrowableChildren);
-				}
-				else
-				{
-					*childSizePntr = MinR32(innerSize - childPaddingLrOrTb, childPreferredSize);
-				}
+				*childSizePntr = MinR32(innerSize - childPaddingLrOrTb, childPreferredSize);
+			}
+			else
+			{
+				*childSizePntr = childMinimumSize;
 			}
 		}
-	}
-	else if (spaceToDistribute < 0)
-	{
-		//TODO: Implement me!
 	}
 }
 
