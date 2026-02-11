@@ -45,6 +45,9 @@ Description:
 #define PIG_UI_ID_INDEX_NONE UINTXX_MAX
 #define PIG_UI_DEFAULT_ID_STR "elem"
 
+#define PigUiDefaultColor_Value TransparentBlack_Value
+#define PigUiDefaultColor       TransparentBlack
+
 typedef plex UiId UiId;
 plex UiId
 {
@@ -134,6 +137,7 @@ plex UiElemConfig
 	UiLayoutDir direction;
 	UiSizing sizing;
 	Color32 color;
+	Texture* texture;
 	v4r margins; //space between our bounds and our childrens' bounds
 	v4r padding; //space between allocated area and our bounds
 	r32 childPadding; //space in-between each child, along the layout direction
@@ -338,6 +342,9 @@ plex UiElemConfigWrapper { UiElemConfig config; };
 #define IsUiDirHorizontal(direction) ( (direction) == UiLayoutDir_RightToLeft || (direction) == UiLayoutDir_LeftToRight )
 #define IsUiDirVertical(direction)   ( (direction) == UiLayoutDir_TopDown     || (direction) == UiLayoutDir_BottomUp    )
 
+//When configuring an element we often use the 0 value as a "default". So a color of "transparent black" actually means the default color, which is fully opaque white
+#define UiConfigColorToActualColor(color) (((color).valueU32 != PigUiDefaultColor_Value) ? (color) : White)
+
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
@@ -354,36 +361,7 @@ PEXPI UiId CalcUiId(UiId baseId, Str8 idString, uxx index)
 	UiId result = ZEROED;
 	#if TARGET_IS_64BIT
 	result.id = FnvHashU64Ex(idString.chars, idString.length, baseId.id);
-	if (index != PIG_UI_ID_INDEX_NONE)
-	{
-		result.id = FnvHashU64Ex(&index, sizeof(index), result.id);
-		// PrintLine_D("FNV(\"%.*s\"[%llu]) = 0x%02X%02X%02X%02X%02X%02X%02X%02X",
-		// 	StrPrint(idString),
-		// 	index,
-		// 	((u8*)&result.id)[0],
-		// 	((u8*)&result.id)[1],
-		// 	((u8*)&result.id)[2],
-		// 	((u8*)&result.id)[3],
-		// 	((u8*)&result.id)[4],
-		// 	((u8*)&result.id)[5],
-		// 	((u8*)&result.id)[6],
-		// 	((u8*)&result.id)[7]
-		// );
-	}
-	else
-	{
-		// PrintLine_D("FNV(\"%.*s\") = 0x%02X%02X%02X%02X%02X%02X%02X%02X",
-		// 	StrPrint(idString),
-		// 	((u8*)&result.id)[0],
-		// 	((u8*)&result.id)[1],
-		// 	((u8*)&result.id)[2],
-		// 	((u8*)&result.id)[3],
-		// 	((u8*)&result.id)[4],
-		// 	((u8*)&result.id)[5],
-		// 	((u8*)&result.id)[6],
-		// 	((u8*)&result.id)[7]
-		// );
-	}
+	if (index != PIG_UI_ID_INDEX_NONE) { result.id = FnvHashU64Ex(&index, sizeof(index), result.id); }
 	#else //TARGET_IS_32BIT
 	result.id = FnvHashU32Ex(idString.chars, idString.length, baseId.id);
 	if (index != PIG_UI_ID_INDEX_NONE) { result.id = FnvHashU32Ex(&index, sizeof(index), result.id); }
@@ -475,6 +453,11 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		newElement->depth = 0;
 		newElement->siblingIndex = UiCtx->numTopLevelElements;
 		UiCtx->numTopLevelElements++;
+	}
+	if (config.texture != nullptr && config.sizing.x.type == UiSizingType_Default && config.sizing.y.type == UiSizingType_Default && config.sizing.x.value == 0.0f && config.sizing.y.value == 0.0f)
+	{
+		// If you have default sizing parameters and you attached a texture then we copy in the texture dimensions as UiSizingType_Fit
+		config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(config.texture->Width, config.texture->Height);
 	}
 	UiCtx->currentElementIndex = newElement->elementIndex;
 	MyMemCopy(&newElement->config, &config, sizeof(UiElemConfig));
@@ -626,6 +609,9 @@ PEXPI Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element)
 
 static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis, bool printDebug)
 {
+	#if !DEBUG_BUILD
+	UNUSED(printDebug);
+	#endif
 	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
 	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.childPadding) : 0.0f;
 	r32 elemMargins = (xAxis ? (element->config.margins.Left + element->config.margins.Right) : (element->config.margins.Top + element->config.margins.Bottom));
@@ -669,6 +655,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 		
 		//TODO: We should probably be rounding to whole pixel values, and figuring out how to distribute remainders amongst n children
 		r32 spaceToDistribute = (*sizePntr - childrenMinimumTotal);
+		#if DEBUG_BUILD
 		if (printDebug)
 		{
 			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
@@ -679,6 +666,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 				numGrowableChildren, element->numChildren, PluralEx(numGrowableChildren, "", "ren")
 			);
 		}
+		#endif //DEBUG_BUILD
 		
 		while (AreSimilarOrGreaterR32(spaceToDistribute, 0.0f, DEFAULT_R32_TOLERANCE))
 		{
@@ -756,8 +744,8 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 
 static void UiSystemDoLayout()
 {
-	#if DEBUG_BUILD
 	bool printDebug = IsKeyboardKeyPressed(UiCtx->keyboard, nullptr, Key_T, false);
+	#if DEBUG_BUILD
 	if (printDebug)
 	{
 		VarArrayLoop(&UiCtx->elements, eIndex)
@@ -799,6 +787,7 @@ static void UiSystemDoLayout()
 		VarArrayRemoveFirst(uxx, &bfsIndices);
 		UiElement* element = VarArrayGetHard(UiElement, &UiCtx->elements, eIndex);
 		
+		#if DEBUG_BUILD
 		if (printDebug)
 		{
 			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
@@ -808,6 +797,8 @@ static void UiSystemDoLayout()
 				element->numChildren, PluralEx(element->numChildren, "", "ren")
 			);
 		}
+		#endif //DEBUG_BUILD
+		
 		DistributeSpaceToUiElemChildrenOnAxis(element, true, printDebug);
 		DistributeSpaceToUiElemChildrenOnAxis(element, false, printDebug);
 		
@@ -859,6 +850,7 @@ static void UiSystemDoLayout()
 			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.Left; }
 			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.Top; }
 			
+			#if DEBUG_BUILD
 			if (printDebug)
 			{
 				Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, child);
@@ -869,6 +861,7 @@ static void UiSystemDoLayout()
 					child->layoutRec.X, child->layoutRec.Y, child->layoutRec.X + child->layoutRec.Width, child->layoutRec.Y + child->layoutRec.Height
 				);
 			}
+			#endif
 		}
 	}
 }
@@ -903,11 +896,11 @@ PEXP UiRenderList* GetUiRenderList()
 			ClearPointer(newCmd);
 			newCmd->type = UiRenderCmdType_Rectangle;
 			newCmd->rectangle.rectangle = element->layoutRec;
-			newCmd->rectangle.color = element->config.color;
+			newCmd->rectangle.color = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
+			newCmd->rectangle.texture = element->config.texture;
 			newCmd->rectangle.borderThickness = element->config.borderThickness;
-			newCmd->rectangle.borderColor = element->config.borderColor;
+			newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
 			newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
-			newCmd->rectangle.texture = nullptr; //TODO: Implement this!
 		}
 	}
 	

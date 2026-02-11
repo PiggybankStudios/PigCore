@@ -940,9 +940,6 @@ bool AppFrame(void)
 			DrawTexturedRectangle(mipmapTextureRec, White, mipTextureToUse);
 			#endif
 			
-			// rec testTextureRec = NewRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
-			// DrawTexturedRectangle(testTextureRec, White, &testTexture);
-			
 			#if 1
 			{
 				r32 fontLineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
@@ -1332,7 +1329,7 @@ bool AppFrame(void)
 				})
 				{
 					UIELEM({ .id = UiIdLit("Green"),
-						.sizing = UI_PERCENT2(0.20f, 1.0f),
+						.sizing = { .x=UI_PERCENT(0.20f) },
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiGreen,
@@ -1340,7 +1337,7 @@ bool AppFrame(void)
 						.borderColor=halfBlack
 					}) { }
 					UIELEM({ .id = UiIdLit("Blue"),
-						.sizing = UI_PERCENT2(0.10f, 1.0f),
+						.sizing = { .x=UI_PERCENT(0.10f) },
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiBlue,
@@ -1348,7 +1345,7 @@ bool AppFrame(void)
 						.borderColor=halfBlack
 					}) { }
 					UIELEM({ .id = UiIdLit("Purple"),
-						.sizing = UI_PERCENT2(0.70f, 1.0f),
+						.sizing = { .x=UI_PERCENT(0.60f) },
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiPurple,
@@ -1383,14 +1380,20 @@ bool AppFrame(void)
 						.borderColor=halfBlack,
 						.sizing=UI_FIXED2(100, 200)
 					}) { }
-					UIELEM({ .id = UiIdLit("LightPurple"),
-						.margins=margins,
-						.padding=padding,
-						.color=MonokaiLightPurple,
-						.borderThickness=FillV4r(2.0f),
-						.borderColor=halfBlack,
-						.sizing=UI_FIXED2(300, 150)
-					}) { }
+					
+					for (uxx tIndex = 0; tIndex < 4; tIndex++)
+					{
+						Texture* texture = ((tIndex%2) == 0) ? &mipmapTexture : &noMipmapTexture;
+						UIELEM({ .id = UiIdLitIndex("Texture", tIndex),
+							.margins=margins,
+							.padding=padding,
+							.color=ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
+							.texture = texture,
+							.borderThickness=FillV4r(2.0f),
+							.borderColor=halfBlack,
+							.sizing = UI_FIXED2(texture->Width*0.3f, texture->Height*0.3f),
+						}) { }
+					}
 				}
 			}
 			UiRenderList* uiRenderList = GetUiRenderList();
@@ -1401,7 +1404,16 @@ bool AppFrame(void)
 				{
 					case UiRenderCmdType_Rectangle:
 					{
-						DrawRectangle(cmd->rectangle.rectangle, cmd->rectangle.color);
+						Color32 color = cmd->rectangle.color;
+						if (color.valueU32 == PigUiDefaultColor_Value) { color = White; }
+						if (cmd->rectangle.texture != nullptr)
+						{
+							DrawTexturedRectangle(cmd->rectangle.rectangle, color, cmd->rectangle.texture);
+						}
+						else
+						{
+							DrawRectangle(cmd->rectangle.rectangle, color);
+						}
 						if (cmd->rectangle.borderThickness.X > 0.0f)
 						{
 							DrawRectangleOutlineSidesEx(
@@ -1496,6 +1508,9 @@ bool AppFrame(void)
 			
 			GfxSystem_ImguiEndFrame(&gfx, imgui);
 			#endif
+			
+			// rec testTextureRec = MakeRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
+			// DrawTexturedRectangle(testTextureRec, White, &testTexture);
 			
 			// +==============================+
 			// |       Render Overlays        |
