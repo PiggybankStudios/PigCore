@@ -1332,6 +1332,7 @@ bool AppFrame(void)
 				})
 				{
 					UIELEM({ .id = UiIdLit("Green"),
+						.sizing = UI_PERCENT2(0.20f, 1.0f),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiGreen,
@@ -1339,6 +1340,7 @@ bool AppFrame(void)
 						.borderColor=halfBlack
 					}) { }
 					UIELEM({ .id = UiIdLit("Blue"),
+						.sizing = UI_PERCENT2(0.10f, 1.0f),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiBlue,
@@ -1346,6 +1348,7 @@ bool AppFrame(void)
 						.borderColor=halfBlack
 					}) { }
 					UIELEM({ .id = UiIdLit("Purple"),
+						.sizing = UI_PERCENT2(0.70f, 1.0f),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiPurple,

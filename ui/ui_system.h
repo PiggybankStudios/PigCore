@@ -548,7 +548,12 @@ static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* pare
 		*minimumSizePntr = sizingValue;
 		*preferredSizePntr = sizingValue;
 	}
-	//TODO: Handle UiSizingType_FixedPercent
+	else if (sizingType == UiSizingType_FixedPercent)
+	{
+		// NOTE: Nothing special happens here for percentage sizing. We handle this primarily in DistributeSpaceToUiElemChildrenOnAxis
+		*minimumSizePntr = elemMargins + layoutAxisChildPadding;
+		*preferredSizePntr = elemMargins + layoutAxisChildPadding;
+	}
 	else if (sizingType == UiSizingType_Fit)
 	{
 		*minimumSizePntr += elemMargins + layoutAxisChildPadding;
@@ -628,6 +633,22 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
 	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
 	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
+	r32 innerSize = *sizePntr - elemMargins;
+	
+	// Visit all percentage-based children and size them according to our decided size
+	for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+	{
+		UiElement* child = GetUiElementChild(element, cIndex);
+		UiSizingType childSizingType = (xAxis ? child->config.sizing.x.type : child->config.sizing.y.type);
+		if (childSizingType == UiSizingType_FixedPercent)
+		{
+			r32 childSizingValue = (xAxis ? child->config.sizing.x.value : child->config.sizing.y.value);
+			r32* childMinimumSizePntr = (xAxis ? &child->minimumSize.Width : &child->minimumSize.Height);
+			r32* childPreferredSizePntr = (xAxis ? &child->preferredSize.Width : &child->preferredSize.Height);
+			*childMinimumSizePntr = innerSize * childSizingValue;
+			*childPreferredSizePntr = *childMinimumSizePntr;
+		}
+	}
 	
 	if (isLayoutDir)
 	{
@@ -714,7 +735,6 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	}
 	else
 	{
-		r32 innerSize = *sizePntr - elemMargins;
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
@@ -791,22 +811,12 @@ static void UiSystemDoLayout()
 		DistributeSpaceToUiElemChildrenOnAxis(element, true, printDebug);
 		DistributeSpaceToUiElemChildrenOnAxis(element, false, printDebug);
 		
-		//Add all children to bfsIndices
+		//Add all children who have children to bfsIndices
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
-			if (child->numChildren > 0)
-			{
-				VarArrayAddValue(uxx, &bfsIndices, child->elementIndex);
-			}
+			if (child->numChildren > 0) { VarArrayAddValue(uxx, &bfsIndices, child->elementIndex); }
 		}
-		// uxx childIndex = eIndex+1;
-		// UiElement* child = element+1;
-		// for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
-		// {
-		// 	if (child->numChildren > 0) { VarArrayAddValue(uxx, &bfsIndices, childIndex); }
-		// 	childIndex += 1 + child->numDescendents;
-		// }
 	}
 	
 	// +============================================+
@@ -861,99 +871,6 @@ static void UiSystemDoLayout()
 			}
 		}
 	}
-	
-	#if 0
-	// +==============================+
-	// |          UI Layout           |
-	// +==============================+
-	#if DEBUG_BUILD
-	if (printDebug) { PrintLine_N("LAYOUT TIME! %gx%g", UiCtx->screenSize.Width, UiCtx->screenSize.Height); }
-	#endif
-	VarArrayLoop(&UiCtx->elements, eIndex)
-	{
-		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
-		UiElement* parent = VarArrayGetSoft(UiElement, &UiCtx->elements, element->parentIndex);
-		rec parentRec = (parent != nullptr) ? parent->layoutRec : MakeRecV(V2_Zero, UiCtx->screenSize);
-		v4r parentMargins = (parent != nullptr) ? parent->config.margins : V4r_Zero;
-		parentRec = InflateRecEx(parentRec, -parentMargins.Left, -parentMargins.Right, -parentMargins.Top, -parentMargins.Bottom);//TODO: Change this to "DelateRecEx" once we make that alias
-		UiLayoutDir direction = (parent != nullptr) ? parent->config.direction : UiLayoutDir_Default;
-		uxx parentChildCount = (parent != nullptr) ? parent->numChildren : UiCtx->numTopLevelElements;
-		if (direction == UiLayoutDir_TopDown || direction == UiLayoutDir_BottomUp)
-		{
-			element->layoutRec.X = parentRec.X;
-			element->layoutRec.Width = parentRec.Width;
-			element->layoutRec.Height = parentRec.Height / (r32)parentChildCount;
-			if (direction == UiLayoutDir_TopDown)
-			{
-				element->layoutRec.Y = parentRec.Y + (element->layoutRec.Height * (r32)element->siblingIndex);
-			}
-			else //(direction == UiLayoutDir_BottomUp)
-			{
-				 element->layoutRec.Y = parentRec.Y + parentRec.Height - (element->layoutRec.Height * (r32)(element->siblingIndex+1));
-			}
-			#if DEBUG_BUILD
-			if (printDebug)
-			{
-				Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
-				PrintLine_D("%.*s: vertical, sibling=%llu/%llu, Height=%g/%g Y=%g/[%g,%g]",
-					StrPrint(fullName),
-					element->siblingIndex+1,
-					parentChildCount,
-					element->layoutRec.Height,
-					parentRec.Height,
-					element->layoutRec.Y,
-					parentRec.Y,
-					parentRec.Y + parentRec.Height
-				);
-			}
-			#endif
-		}
-		else if (direction == UiLayoutDir_LeftToRight || direction == UiLayoutDir_RightToLeft)
-		{
-			element->layoutRec.Y = parentRec.Y;
-			element->layoutRec.Height = parentRec.Height;
-			element->layoutRec.Width = parentRec.Width / (r32)parentChildCount;
-			if (direction == UiLayoutDir_LeftToRight)
-			{
-				element->layoutRec.X = parentRec.X + (element->layoutRec.Width * (r32)element->siblingIndex);
-			}
-			else //(direction == UiLayoutDir_RightToLeft)
-			{
-				 element->layoutRec.X = parentRec.X + parentRec.Width - (element->layoutRec.Width * (r32)(element->siblingIndex+1));
-			}
-			#if DEBUG_BUILD
-			if (printDebug)
-			{
-				Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
-				PrintLine_D("%.*s: horizontal, sibling=%llu/%llu, Width=%g/%g X=%g/[%g,%g]",
-					StrPrint(fullName),
-					element->siblingIndex+1,
-					parentChildCount,
-					element->layoutRec.Width,
-					parentRec.Width,
-					element->layoutRec.X,
-					parentRec.X,
-					parentRec.X + parentRec.Width
-				);
-			}
-			#endif
-		}
-		else
-		{
-			PrintLine_E("Invalid direction %llu in UI element \"%.*s\"", (uxx)direction, StrPrint(element->config.id.str)); //TODO: Change this debug output once we have things more solidified. Printing out the config.id.str is probably not enough!
-			DebugAssertMsg(false, "Invalid direction in UI element config!");
-			element->layoutRec = parentRec;
-		}
-		
-		// Deflate layoutRec by padding TODO: Turn this sort of "safe" deflation into a function!
-		if (element->config.padding.Left + element->config.padding.Right < element->layoutRec.Width) { element->layoutRec.X += element->config.padding.Left; }
-		else { element->layoutRec.X = element->layoutRec.X + (element->layoutRec.Width * (element->config.padding.Left / (element->config.padding.Left + element->config.padding.Right))); }
-		if (element->config.padding.Top + element->config.padding.Bottom < element->layoutRec.Height) { element->layoutRec.Y += element->config.padding.Top; }
-		else { element->layoutRec.Y = element->layoutRec.Y + (element->layoutRec.Height * (element->config.padding.Top / (element->config.padding.Top + element->config.padding.Bottom))); }
-		element->layoutRec.Width = MaxR32(0, element->layoutRec.Width - element->config.padding.Left - element->config.padding.Right);
-		element->layoutRec.Height = MaxR32(0, element->layoutRec.Height - element->config.padding.Left - element->config.padding.Right);
-	}
-	#endif
 }
 
 PEXP UiRenderList* GetUiRenderList()
