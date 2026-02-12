@@ -44,16 +44,26 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[?] Investigate Qt support?
 	[ ] Some way to automatically update an application
 	[ ] Can we make a Windows installer? Maybe copy File Pilot's design?
+	
 	@ UI System
+	[X] UIELEM_LEAF macro
+	[X] Handle globalId in UiElemConfig
+	[X] Convenient Push/Pop of basic Themers
+	( ) Test padding and margins more. The bottom margin of the red row isn't forcing the red row to be taller
+	[!] Floating elements
+	[?] Border on top of children option?
+	[ ] UI Scaling
+	( ) Test a Themer returning false! We probably are calling CloseUiElement when we shouldn't be!
 	[ ] Make sure childGap works
-	[ ] Floating elements
-	[ ] Convenient Push/Pop of Themers
 	[ ] Get current element
 	[ ] Get an elements layout last frame
+	[ ] Depth (and depth sorted rendering)
+	[ ] Figure out what element the mouse is hovering over (including depth and occlussion+clipping of elements)
+	[ ] Discard offscreen render commands (transparent render commands?)
 	[ ] Run child scope if clicked or other input events
-	[ ] Some idea of focused element
+	[ ] Some idea of focused element, keyboard/gamepad-driven interaction of most UI
 	[ ] Text elements
-	[ ] Graceful word-wrapping support
+	[ ] Complex word-wrapping support
 	[ ] RichStr8 support
 	[ ] Aspect ratio restricted grow elements (for textures elements mostly)
 	[ ] HashMap of ID->element
@@ -64,14 +74,59 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Cubic decay scrolling
 	[ ] Touch input scrolling
 	[?] Uneven distribution of available space based on some sort of priority?
-	[ ] Depth (and depth sorted rendering)
 	[?] Transparency and Color that affects child elements?
 	[ ] SpriteSheet support
 	[ ] Debug panel. Inspect specific elements and trace logic through entire layout process
 		[?] Duplicate and visualize stages of the layout?
+		[ ] Inspect elements under mouse
 	[?] Widgets? Scrollbar, Topbar, EditText, Button, etc.
 	[ ] Border thickness for between elements
 	[ ] Render offset (maybe render offset affects children too?)
+	[?] How do we want to support animations? Can we ask the system whether anything is moving currently so we can properly do "sleeping" behavior like we do in CSwitch?
+	[?] Serialization of UiRenderCmd? Remote connection to UI server?
+		[ ] Recording and playback of render commands
+		[ ] Delta-encoding render commands from frame-to-frame
+	[?] Vector art support?
+	[?] We we construct UiElemConfig elements into the local scope (outside UIELEM macro). Can we limit the visiblity of that config after it's been sent to UIELEM or UIELEM_LEAF?
+	[ ] Make the UiCtx global thread_local
+
+# Things we do differently than Clay
+	[ ] UIELEM_LEAF variant
+	[ ] Support for compiling in C++ mode? (Does Clay handle this?)
+	[ ] Tightly integrated system means:
+		[ ] Texture, Shader, Font, Color fields are all native types
+		[ ] v2, rec, Dir2, etc. are all native types
+		[ ] Str8 and RichStr8 is supported directly
+		[ ] We can use VarArray
+		[ ] We can use Arena for allocations (and concept of scratch arenas)
+		[ ] Mouse, Keyboard, Touchscreen input native types and APIs
+		[ ] Font style support, rather than separate Font IDs for each style
+	[ ] UiLayoutDir_RightToLeft and UiLayoutDir_BottomUp
+	[ ] Ui "Themers"
+	[?] ID system is composite (parent IDs affect child IDs)
+	[ ] Copy ID source string into frameArena
+	[ ] No fixed limit on elements, arbitrary arena allocation is supported
+	[ ] Complex text flowing is supported. Full measurement of text is not assumed to be sum of word sizes and space. Wrapping causes height of element to grow. Clipping of text (or elliding with ellipses) is possible
+	[ ] UiRendererParams and UiThemerParams, conigurable sections of the UiElemConfig
+	[ ] RenderOffset option
+	[ ] Alpha, Visible, Color and RenderOffset propagate to children
+	[ ] Element scopes can be conditional, based on input or other state, configurable inside the UiElemConfig
+	[ ] Access to current element, parent elements, etc. is much easier (not restricted by private parts of the API)
+	[ ] No text measurement cache, and no fixed limits on number of words on screen
+	[ ] Smooth scrolling on Desktop, cubic decay scrolling, and better touch scrolling support
+	[?] Support for interaction on the same frame before rendering, by accessing finished layout and performing work before rendering UI list (TODO: Do we want to do like a second pass over the UI logic to update some things in-place, like colors, borders, etc.)
+	[?] Animations
+	[ ] We have proper support for putting a program to sleep when nothing is moving in the UI
+	[ ] "Rendering" the UI on a separate thread and passing the results back to the main thread. Or having multiple UiContexts overlap
+	[ ] 32-bit or 64-bit integers based on target platform (ixx and uxx instead of i32 and u32)
+	[?] Better debugging support?
+	[ ] Input "handling" and Touchscreen support
+	[ ] Input "focus", which allows gamepad input and keyboard only input (no mouse)
+	[?] Built-in widgets
+	[ ] Built-in UI Scaling
+	[ ] Vector art support?
+	[ ] Better support for mouse hit testing (clipping in scrollable containers, occlussion of elements (including depth consideration))
+	[ ] No (or very little) prefixing on types, functions, etc. We can use "Ui" prefix where needed
 	[ ] 
 
 # Finished items

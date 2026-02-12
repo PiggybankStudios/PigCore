@@ -38,16 +38,44 @@ Description:
 	//FreeUiThemerRegistry pre-declared in ui_system_core.h
 	//InitUiThemerRegistry pre-declared in ui_system_core.h
 	PIG_CORE_INLINE UiThemer* TryGetUiThemerById(UiThemerRegistry* registry, uxx themerId);
-	PIG_CORE_INLINE uxx RegisterUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callback, void* contextPntr);
+	PIG_CORE_INLINE void PopUiThemer(UiThemerRegistry* registry, uxx themerId);
+	PIG_CORE_INLINE uxx PushUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callback, void* userPntr);
+	PIG_CORE_INLINE uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u32 fields, UiElemConfig config);
+	PIG_CORE_INLINE uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig config);
 	PIG_CORE_INLINE void SetUiThemerActive(UiThemerRegistry* registry, uxx themerId, bool active);
+	PIG_CORE_INLINE void EnableUiThemer(UiThemerRegistry* registry, uxx themerId);
+	PIG_CORE_INLINE void DisableUiThemer(UiThemerRegistry* registry, uxx themerId);
 	//UiThemerRegistryStartFrame pre-declared in ui_system_core.h
 	//RunUiThemerCallbacks pre-declared in ui_system_core.h
 #endif
 
 // +--------------------------------------------------------------+
+// |                            Macros                            |
+// +--------------------------------------------------------------+
+// This macro is very powerful, it allows you to set a specific UiElemConfig field for all elements in the tree while the themer is active by doing something like:
+//     uxx redSetterId = PushUiFields(UICONFIG({ .color = MonokaiRed }));
+//     ...
+//     PopUiFields(redSetterId);
+#define PushUiFields(...) PushBasicUiThemerConfig(((UiCtx != nullptr) ? &UiCtx->themers : nullptr), NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config)
+#define PopUiFields(themerId) PopUiThemer(((UiCtx != nullptr) ? &UiCtx->themers : nullptr), (themerId))
+
+// +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
+
+// +==============================+
+// |    BasicUiThemerCallback     |
+// +==============================+
+// bool UI_THEMER_CALLBACK_DEF(plex UiContext* context, UiElement* element, void* userPntr)
+static UI_THEMER_CALLBACK_DEF(BasicUiThemerCallback)
+{
+	UNUSED(context);
+	NotNull(userPntr);
+	BasicUiThemerOptions* options = (BasicUiThemerOptions*)userPntr;
+	SetUiElemConfigFieldsIfDefault(&element->config, &options->config, options->fields);
+	return true;
+}
 
 PEXPI void FreeUiThemerRegistry(UiThemerRegistry* registry)
 {
@@ -55,6 +83,7 @@ PEXPI void FreeUiThemerRegistry(UiThemerRegistry* registry)
 	if (registry->arena != nullptr)
 	{
 		FreeVarArray(&registry->themers);
+		FreeVarArray(&registry->basicOptions);
 	}
 	ClearPointer(registry);
 }
@@ -67,6 +96,7 @@ PEXP void InitUiThemerRegistry(Arena* arena, UiThemerRegistry* registryOut)
 	registryOut->arena = arena;
 	registryOut->nextThemerId = 1;
 	InitVarArray(UiThemer, &registryOut->themers, arena);
+	InitVarArray(BasicUiThemerOptions, &registryOut->basicOptions, arena);
 }
 
 PEXPI UiThemer* TryGetUiThemerById(UiThemerRegistry* registry, uxx themerId)
@@ -82,7 +112,24 @@ PEXPI UiThemer* TryGetUiThemerById(UiThemerRegistry* registry, uxx themerId)
 	return nullptr;
 }
 
-PEXPI uxx RegisterUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callback, void* contextPntr)
+PEXPI void PopUiThemer(UiThemerRegistry* registry, uxx themerId)
+{
+	NotNull(registry);
+	NotNull(registry->arena);
+	Assert(themerId != UiThemerId_Invalid);
+	VarArrayLoop(&registry->themers, tIndex)
+	{
+		VarArrayLoopGet(UiThemer, themer, &registry->themers, tIndex);
+		if (themer->id == themerId)
+		{
+			VarArrayRemoveAt(UiThemer, &registry->themers, tIndex);
+			return;
+		}
+	}
+	AssertMsg(false, "Couldn't find themer by ID to pop!");
+}
+
+PEXPI uxx PushUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callback, void* userPntr)
 {
 	NotNull(registry);
 	NotNull(registry->arena);
@@ -92,9 +139,31 @@ PEXPI uxx RegisterUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callb
 	newThemer->id = registry->nextThemerId;
 	registry->nextThemerId++;
 	newThemer->callback = callback;
-	newThemer->contextPntr = contextPntr;
+	newThemer->userPntr = userPntr;
 	newThemer->isActive = true;
 	return newThemer->id;
+}
+
+PEXPI uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u32 fields, UiElemConfig config)
+{
+	NotNull(registry);
+	NotNull(registry->arena);
+	BasicUiThemerOptions* options = VarArrayAdd(BasicUiThemerOptions, &registry->basicOptions);
+	NotNull(options);
+	ClearPointer(options);
+	options->fields = fields;
+	MyMemCopy(&options->config, &config, sizeof(UiElemConfig));
+	return PushUiThemer(registry, BasicUiThemerCallback, options);
+}
+PEXPI uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig config)
+{
+	u32 fields = UiElemConfigField_None;
+	for (uxx bIndex = 0; bIndex < UiElemConfigField_Count; bIndex++)
+	{
+		UiElemConfigField fieldBit = (UiElemConfigField)(1ull << bIndex);
+		if (!IsUiElemConfigFieldDefault(&config, fieldBit)) { FlagSet(fields, fieldBit); }
+	}
+	return PushBasicUiThemerFields(registry, fields, config);
 }
 
 PEXPI void SetUiThemerActive(UiThemerRegistry* registry, uxx themerId, bool active)
@@ -103,12 +172,15 @@ PEXPI void SetUiThemerActive(UiThemerRegistry* registry, uxx themerId, bool acti
 	NotNull(themer);
 	themer->isActive = active;
 }
+PEXPI void EnableUiThemer(UiThemerRegistry* registry, uxx themerId) { SetUiThemerActive(registry, themerId, true); }
+PEXPI void DisableUiThemer(UiThemerRegistry* registry, uxx themerId) { SetUiThemerActive(registry, themerId, false); }
 
 PEXP void UiThemerRegistryStartFrame(UiThemerRegistry* registry)
 {
 	NotNull(registry);
 	NotNull(registry->arena);
 	VarArrayClear(&registry->themers);
+	VarArrayClear(&registry->basicOptions);
 	registry->nextThemerId = 1;
 }
 
@@ -122,7 +194,7 @@ PEXP bool RunUiThemerCallbacks(UiThemerRegistry* registry, UiContext* context, U
 		VarArrayLoopGet(UiThemer, themer, &registry->themers, tIndex);
 		if (themer->isActive)
 		{
-			bool callbackResult = themer->callback(context, element, themer->contextPntr);
+			bool callbackResult = themer->callback(context, element, themer->userPntr);
 			if (!callbackResult) { allThemersAcceptedElement = false; break; }
 		}
 	}

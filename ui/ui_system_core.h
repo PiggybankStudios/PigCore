@@ -19,6 +19,7 @@ Description:
 #include "struct/struct_vectors.h"
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
+#include "struct/struct_directions.h"
 #include "os/os_threading.h"
 #include "input/input_keyboard.h"
 #include "input/input_mouse.h"
@@ -159,14 +160,51 @@ car UiSizing
 #define UI_EXPAND2()                    { .x=UI_EXPAND(),          .y=UI_EXPAND()          }
 #define UI_EXPAND_MIN2(minPxX, minPxY)  { .x=UI_EXPAND(minPxX),    .y=UI_EXPAND(minPxY)    }
 
+typedef enum UiFloatingType UiFloatingType;
+enum UiFloatingType
+{
+	UiFloatingType_None = 0,
+	UiFloatingType_Root,
+	UiFloatingType_Parent,
+	UiFloatingType_Id,
+	UiFloatingType_Count,
+	UiFloatingType_Default = UiFloatingType_None,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetUiFloatingTypeStr(UiFloatingType enumValue);
+#else
+PEXP const char* GetUiFloatingTypeStr(UiFloatingType enumValue)
+{
+	switch (enumValue)
+	{
+		case UiFloatingType_None:   return "None";
+		case UiFloatingType_Root:   return "Root";
+		case UiFloatingType_Parent: return "Parent";
+		case UiFloatingType_Id:     return "Id";
+		case UiFloatingType_Count:  return "Count";
+		default: return "Unknown";
+	}
+}
+#endif
+
+typedef plex UiFloatingConfig UiFloatingConfig;
+plex UiFloatingConfig
+{
+	UiFloatingType type;
+	v2 offset;
+	Dir2Ex parentAttach;
+	Dir2Ex elemAttach;
+};
+
 // +==============================+
 // |        Element Config        |
 // +==============================+
+//NOTE: Changes to this structure should be reflect in the UiElemConfigField enum
 typedef plex UiElemConfig UiElemConfig;
 plex UiElemConfig
 {
 	UiId id;
-	bool globalId;
+	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
 	UiLayoutDir direction;
 	UiSizing sizing;
 	Color32 color;
@@ -177,6 +215,7 @@ plex UiElemConfig
 	r32 childPadding; //space in-between each child, along the layout direction
 	v4r borderThickness;
 	Color32 borderColor;
+	UiFloatingConfig floating;
 	
 	//These types can contain different things for each application, see the description near the top of the file
 	UiRendererParameters renderer;
@@ -185,6 +224,102 @@ plex UiElemConfig
 
 //When configuring an element we often use the 0 value as a "default". So a color of "transparent black" actually means the default color, which is fully opaque white
 #define UiConfigColorToActualColor(color) (((color).valueU32 != PigUiDefaultColor_Value) ? (color) : White)
+
+// This is a bitwise enum where each bit represents a single "field" in the UiElemConfig structure above
+// Some values are aliases for combinations of other values, like Margins is MarginLeft|MarginTop|MarginRight|MarginBottom
+// This is useful when we want to explicitly list which fields are overridden, esp. for things like UiThemers
+// NOTE: This is currently a 32-bit bitfield, but it may grow soon since 29/32 bits are used.
+typedef enum UiElemConfigField UiElemConfigField;
+enum UiElemConfigField
+{
+	UiElemConfigField_None                  = 0x00000000ull,
+	UiElemConfigField_Id                    = ((1ull) << 0),
+	UiElemConfigField_GlobalId              = ((1ull) << 1),
+	UiElemConfigField_Direction             = ((1ull) << 2),
+	UiElemConfigField_SizingTypeX           = ((1ull) << 3),
+	UiElemConfigField_SizingValueX          = ((1ull) << 4),
+	UiElemConfigField_SizingTypeY           = ((1ull) << 5),
+	UiElemConfigField_SizingValueY          = ((1ull) << 6),
+	UiElemConfigField_Color                 = ((1ull) << 7),
+	UiElemConfigField_Texture               = ((1ull) << 8),
+	UiElemConfigField_DontSizeToTexture     = ((1ull) << 9),
+	UiElemConfigField_MarginLeft            = ((1ull) << 10),
+	UiElemConfigField_MarginTop             = ((1ull) << 11),
+	UiElemConfigField_MarginRight           = ((1ull) << 12),
+	UiElemConfigField_MarginBottom          = ((1ull) << 13),
+	UiElemConfigField_PaddingLeft           = ((1ull) << 14),
+	UiElemConfigField_PaddingTop            = ((1ull) << 15),
+	UiElemConfigField_PaddingRight          = ((1ull) << 16),
+	UiElemConfigField_PaddingBottom         = ((1ull) << 17),
+	UiElemConfigField_ChildPadding          = ((1ull) << 18),
+	UiElemConfigField_BorderThicknessLeft   = ((1ull) << 19),
+	UiElemConfigField_BorderThicknessTop    = ((1ull) << 20),
+	UiElemConfigField_BorderThicknessRight  = ((1ull) << 21),
+	UiElemConfigField_BorderThicknessBottom = ((1ull) << 22),
+	UiElemConfigField_BorderColor           = ((1ull) << 23),
+	UiElemConfigField_FloatingType          = ((1ull) << 24),
+	UiElemConfigField_FloatingOffsetX       = ((1ull) << 25),
+	UiElemConfigField_FloatingOffsetY       = ((1ull) << 26),
+	UiElemConfigField_FloatingParentAttach  = ((1ull) << 27),
+	UiElemConfigField_FloatingElemAttach    = ((1ull) << 28),
+	UiElemConfigField_RendererParams        = ((1ull) << 29), // NOTE: Fields inside UiRendererParameters struct are not represented individually
+	UiElemConfigField_ThemerParams          = ((1ull) << 30), // NOTE: Fields inside UiThemerParameters struct are not represented individually
+	UiElemConfigField_Count                 = 31,
+	UiElemConfigField_All                   = (((1ull) << UiElemConfigField_Count)-1),
+	UiElemConfigField_Sizing                = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueX|UiElemConfigField_SizingValueY),
+	UiElemConfigField_SizingX               = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingValueX),
+	UiElemConfigField_SizingY               = (UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueY),
+	UiElemConfigField_Margins               = (UiElemConfigField_MarginLeft|UiElemConfigField_MarginTop|UiElemConfigField_MarginRight|UiElemConfigField_MarginBottom),
+	UiElemConfigField_Padding               = (UiElemConfigField_PaddingLeft|UiElemConfigField_PaddingTop|UiElemConfigField_PaddingRight|UiElemConfigField_PaddingBottom),
+	UiElemConfigField_BorderThickness       = (UiElemConfigField_BorderThicknessLeft|UiElemConfigField_BorderThicknessTop|UiElemConfigField_BorderThicknessRight|UiElemConfigField_BorderThicknessBottom),
+	UiElemConfigField_Floating              = (UiElemConfigField_FloatingType|UiElemConfigField_FloatingOffsetX|UiElemConfigField_FloatingOffsetY|UiElemConfigField_FloatingParentAttach|UiElemConfigField_FloatingElemAttach),
+	UiElemConfigField_FloatingOffset        = (UiElemConfigField_FloatingOffsetX|UiElemConfigField_FloatingOffsetY),
+};
+
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue);
+#else 
+PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
+{
+	switch (enumValue)
+	{
+		case UiElemConfigField_None:                  return "None";
+		case UiElemConfigField_Id:                    return "Id";
+		case UiElemConfigField_GlobalId:              return "GlobalId";
+		case UiElemConfigField_Direction:             return "Direction";
+		case UiElemConfigField_SizingTypeX:           return "SizingTypeX";
+		case UiElemConfigField_SizingTypeY:           return "SizingTypeY";
+		case UiElemConfigField_SizingValueX:          return "SizingValueX";
+		case UiElemConfigField_SizingValueY:          return "SizingValueY";
+		case UiElemConfigField_Color:                 return "Color";
+		case UiElemConfigField_Texture:               return "Texture";
+		case UiElemConfigField_DontSizeToTexture:     return "DontSizeToTexture";
+		case UiElemConfigField_MarginLeft:            return "MarginLeft";
+		case UiElemConfigField_MarginTop:             return "MarginTop";
+		case UiElemConfigField_MarginRight:           return "MarginRight";
+		case UiElemConfigField_MarginBottom:          return "MarginBottom";
+		case UiElemConfigField_PaddingLeft:           return "PaddingLeft";
+		case UiElemConfigField_PaddingTop:            return "PaddingTop";
+		case UiElemConfigField_PaddingRight:          return "PaddingRight";
+		case UiElemConfigField_PaddingBottom:         return "PaddingBottom";
+		case UiElemConfigField_ChildPadding:          return "ChildPadding";
+		case UiElemConfigField_BorderThicknessLeft:   return "BorderThicknessLeft";
+		case UiElemConfigField_BorderThicknessTop:    return "BorderThicknessTop";
+		case UiElemConfigField_BorderThicknessRight:  return "BorderThicknessRight";
+		case UiElemConfigField_BorderThicknessBottom: return "BorderThicknessBottom";
+		case UiElemConfigField_BorderColor:           return "BorderColor";
+		case UiElemConfigField_FloatingType:          return "FloatingType";
+		case UiElemConfigField_FloatingOffsetX:       return "FloatingOffsetX";
+		case UiElemConfigField_FloatingOffsetY:       return "FloatingOffsetY";
+		case UiElemConfigField_FloatingParentAttach:  return "FloatingParentAttach";
+		case UiElemConfigField_FloatingElemAttach:    return "FloatingElemAttach";
+		case UiElemConfigField_RendererParams:        return "RendererParams";
+		case UiElemConfigField_ThemerParams:          return "ThemerParams";
+		case UiElemConfigField_All:                   return "All";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
 
 typedef plex UiElement UiElement;
 plex UiElement
@@ -208,7 +343,7 @@ plex UiElement
 };
 
 //NOTE: Returning false makes the element disappear and it's child scope not run
-#define UI_THEMER_CALLBACK_DEF(functionName) bool functionName(struct UiContext* context, UiElement* element, void* contextPntr)
+#define UI_THEMER_CALLBACK_DEF(functionName) bool functionName(struct UiContext* context, UiElement* element, void* userPntr)
 typedef UI_THEMER_CALLBACK_DEF(UiThemerCallback_f);
 
 typedef plex UiThemer UiThemer;
@@ -216,8 +351,15 @@ plex UiThemer
 {
 	uxx id;
 	bool isActive;
-	void* contextPntr;
+	void* userPntr;
 	UiThemerCallback_f* callback;
+};
+
+typedef plex BasicUiThemerOptions BasicUiThemerOptions;
+plex BasicUiThemerOptions
+{
+	u32 fields;
+	UiElemConfig config;
 };
 
 typedef plex UiThemerRegistry UiThemerRegistry;
@@ -226,6 +368,7 @@ plex UiThemerRegistry
 	Arena* arena;
 	uxx nextThemerId;
 	VarArray themers;
+	VarArray basicOptions; //BasicUiThemerOptions
 };
 
 typedef enum UiRenderCmdType UiRenderCmdType;
@@ -318,7 +461,7 @@ plex UiContext
 	KeyboardState* keyboard;
 	MouseState* mouse;
 	TouchscreenState* touchscreen;
-	UiThemerRegistry themerRegistry;
+	UiThemerRegistry themers;
 	
 	uxx currentElementIndex;
 	uxx numTopLevelElements; //TODO: Remove me

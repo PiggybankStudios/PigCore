@@ -67,6 +67,10 @@ Description:
 #if !PIG_CORE_IMPLEMENTATION
 	//CalcUiId pre-declared in ui_system_core.h
 	//PrintUiId pre-declared in ui_system_core.h
+	bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfigField field);
+	void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, UiElemConfigField field);
+	void SetUiElemConfigFields(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u32 fieldBits);
+	void SetUiElemConfigFieldsIfDefault(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u32 fieldBits);
 	void InitUiContext(Arena* arena, UiContext* contextOut);
 	PIG_CORE_INLINE UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementChild(UiElement* element, uxx childIndex);
@@ -87,10 +91,13 @@ Description:
 typedef plex UiElemConfigWrapper UiElemConfigWrapper;
 plex UiElemConfigWrapper { UiElemConfig config; };
 
-//TODO: Write a description of this macro and it's need
+//TODO: Write a description of these macros and their need
 //NOTE: The preprocessor is going to treat the commas inside the designated initializer list as argument separators.
 //      For this reasons we do a variadic argument macro and use __VA_ARGS__ as a way to pass all of the designated initializer through
+#define UICONFIG(...) (NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config)
 #define UIELEM(...) DeferIfBlock(OpenUiElementConditional(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config), CloseUiElement())
+// A "leaf" element has no child elements, and therefore doesn't need a scope following the macro
+#define UIELEM_LEAF(...) do { OpenUiElement(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config); CloseUiElement(); } while(0)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -133,6 +140,105 @@ PEXPI UiId PrintUiId(UiId baseId, uxx index, const char* formatString, ...)
 	return result;
 }
 
+PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfigField field)
+{
+	switch (field)
+	{
+		case UiElemConfigField_Id: return (configPntr->id.id == 0);
+		case UiElemConfigField_GlobalId:              return (configPntr->globalId == false);
+		case UiElemConfigField_Direction:             return (configPntr->direction == UiLayoutDir_Default);
+		case UiElemConfigField_SizingTypeX:           return (configPntr->sizing.x.type == UiSizingType_Default);
+		case UiElemConfigField_SizingValueX:          return (configPntr->sizing.x.value == 0.0f);
+		case UiElemConfigField_SizingTypeY:           return (configPntr->sizing.y.type == UiSizingType_Default);
+		case UiElemConfigField_SizingValueY:          return (configPntr->sizing.y.value == 0.0f);
+		case UiElemConfigField_Color:                 return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_Texture:               return (configPntr->texture == nullptr);
+		case UiElemConfigField_DontSizeToTexture:     return (configPntr->dontSizeToTexture == false);
+		case UiElemConfigField_MarginLeft:            return (configPntr->margins.Left   == 0.0f);
+		case UiElemConfigField_MarginTop:             return (configPntr->margins.Top    == 0.0f);
+		case UiElemConfigField_MarginRight:           return (configPntr->margins.Right  == 0.0f);
+		case UiElemConfigField_MarginBottom:          return (configPntr->margins.Bottom == 0.0f);
+		case UiElemConfigField_PaddingLeft:           return (configPntr->padding.Left   == 0.0f);
+		case UiElemConfigField_PaddingTop:            return (configPntr->padding.Top    == 0.0f);
+		case UiElemConfigField_PaddingRight:          return (configPntr->padding.Right  == 0.0f);
+		case UiElemConfigField_PaddingBottom:         return (configPntr->padding.Bottom == 0.0f);
+		case UiElemConfigField_ChildPadding:          return (configPntr->childPadding == 0.0f);
+		case UiElemConfigField_BorderThicknessLeft:   return (configPntr->borderThickness.Left   == 0.0f);
+		case UiElemConfigField_BorderThicknessTop:    return (configPntr->borderThickness.Top    == 0.0f);
+		case UiElemConfigField_BorderThicknessRight:  return (configPntr->borderThickness.Right  == 0.0f);
+		case UiElemConfigField_BorderThicknessBottom: return (configPntr->borderThickness.Bottom == 0.0f);
+		case UiElemConfigField_BorderColor:           return (configPntr->borderColor.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_FloatingType:          return (configPntr->floating.type == UiFloatingType_Default);
+		case UiElemConfigField_FloatingOffsetX:       return (configPntr->floating.offset.X == 0.0f);
+		case UiElemConfigField_FloatingOffsetY:       return (configPntr->floating.offset.Y == 0.0f);
+		case UiElemConfigField_FloatingParentAttach:  return (configPntr->floating.parentAttach == Dir2Ex_None);
+		case UiElemConfigField_FloatingElemAttach:    return (configPntr->floating.elemAttach == Dir2Ex_None);
+		case UiElemConfigField_RendererParams:        return true; //TODO: What do we want to do for these?
+		case UiElemConfigField_ThemerParams:          return true; //TODO: What do we want to do for these?
+		default: DebugAssert(false); return true;
+	}
+}
+PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, UiElemConfigField field)
+{
+	switch (field)
+	{
+		case UiElemConfigField_Id:                    configToPntr->id = configFromPntr->id; break;
+		case UiElemConfigField_GlobalId:              configToPntr->globalId = configFromPntr->globalId; break;
+		case UiElemConfigField_Direction:             configToPntr->direction = configFromPntr->direction; break;
+		case UiElemConfigField_SizingTypeX:           configToPntr->sizing.x.type = configFromPntr->sizing.x.type; break;
+		case UiElemConfigField_SizingValueX:          configToPntr->sizing.x.value = configFromPntr->sizing.x.value; break;
+		case UiElemConfigField_SizingTypeY:           configToPntr->sizing.y.type = configFromPntr->sizing.y.type; break;
+		case UiElemConfigField_SizingValueY:          configToPntr->sizing.y.value = configFromPntr->sizing.y.value; break;
+		case UiElemConfigField_Color:                 configToPntr->color = configFromPntr->color; break;
+		case UiElemConfigField_Texture:               configToPntr->texture = configFromPntr->texture; break;
+		case UiElemConfigField_DontSizeToTexture:     configToPntr->dontSizeToTexture = configFromPntr->dontSizeToTexture; break;
+		case UiElemConfigField_MarginLeft:            configToPntr->margins.Left   = configFromPntr->margins.Left; break;
+		case UiElemConfigField_MarginTop:             configToPntr->margins.Top    = configFromPntr->margins.Top; break;
+		case UiElemConfigField_MarginRight:           configToPntr->margins.Right  = configFromPntr->margins.Right; break;
+		case UiElemConfigField_MarginBottom:          configToPntr->margins.Bottom = configFromPntr->margins.Bottom; break;
+		case UiElemConfigField_PaddingLeft:           configToPntr->padding.Left   = configFromPntr->padding.Left; break;
+		case UiElemConfigField_PaddingTop:            configToPntr->padding.Top    = configFromPntr->padding.Top; break;
+		case UiElemConfigField_PaddingRight:          configToPntr->padding.Right  = configFromPntr->padding.Right; break;
+		case UiElemConfigField_PaddingBottom:         configToPntr->padding.Bottom = configFromPntr->padding.Bottom; break;
+		case UiElemConfigField_ChildPadding:          configToPntr->childPadding = configFromPntr->childPadding; break;
+		case UiElemConfigField_BorderThicknessLeft:   configToPntr->borderThickness.Left   = configFromPntr->borderThickness.Left; break;
+		case UiElemConfigField_BorderThicknessTop:    configToPntr->borderThickness.Top    = configFromPntr->borderThickness.Top; break;
+		case UiElemConfigField_BorderThicknessRight:  configToPntr->borderThickness.Right  = configFromPntr->borderThickness.Right; break;
+		case UiElemConfigField_BorderThicknessBottom: configToPntr->borderThickness.Bottom = configFromPntr->borderThickness.Bottom; break;
+		case UiElemConfigField_BorderColor:           configToPntr->borderColor = configFromPntr->borderColor; break;
+		case UiElemConfigField_FloatingType:          configToPntr->floating.type = configFromPntr->floating.type; break;
+		case UiElemConfigField_FloatingOffsetX:       configToPntr->floating.offset.X = configFromPntr->floating.offset.X; break;
+		case UiElemConfigField_FloatingOffsetY:       configToPntr->floating.offset.Y = configFromPntr->floating.offset.Y; break;
+		case UiElemConfigField_FloatingParentAttach:  configToPntr->floating.parentAttach = configFromPntr->floating.parentAttach; break;
+		case UiElemConfigField_FloatingElemAttach:    configToPntr->floating.elemAttach = configFromPntr->floating.elemAttach; break;
+		case UiElemConfigField_RendererParams:        MyMemCopy(&configToPntr->renderer, &configFromPntr->renderer, sizeof(UiRendererParameters)); break;
+		case UiElemConfigField_ThemerParams:          MyMemCopy(&configToPntr->themer, &configFromPntr->themer, sizeof(UiThemerParameters)); break;
+		default: DebugAssert(false); break;
+	}
+}
+PEXPI void SetUiElemConfigFields(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u32 fieldBits)
+{
+	for (uxx fIndex = 0; fIndex < UiElemConfigField_Count; fIndex++)
+	{
+		UiElemConfigField fieldBit = (UiElemConfigField)(1ull << fIndex);
+		if (IsFlagSet(fieldBits, fieldBit))
+		{
+			SetUiElemConfigField(configToPntr, configFromPntr, fieldBit);
+		}
+	}
+}
+PEXPI void SetUiElemConfigFieldsIfDefault(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u32 fieldBits)
+{
+	for (uxx fIndex = 0; fIndex < UiElemConfigField_Count; fIndex++)
+	{
+		UiElemConfigField fieldBit = (UiElemConfigField)(1ull << fIndex);
+		if (IsFlagSet(fieldBits, fieldBit))
+		{
+			if (IsUiElemConfigFieldDefault(configToPntr, fieldBit)) { SetUiElemConfigField(configToPntr, configFromPntr, fieldBit); }
+		}
+	}
+}
+
 //TODO: Add FreeUiContext? We don't usually need it
 
 PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
@@ -142,7 +248,7 @@ PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
 	ClearPointer(contextOut);
 	contextOut->arena = arena;
 	InitVarArray(UiElement, &contextOut->elements, arena);
-	InitUiThemerRegistry(arena, &contextOut->themerRegistry);
+	InitUiThemerRegistry(arena, &contextOut->themers);
 }
 
 PEXPI UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex)
@@ -188,7 +294,8 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 	{
 		DebugAssert(parentElement->isOpen);
 		if (IsEmptyStr(newElement->config.id.str)) { newElement->config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, parentElement->numChildren); }
-		newElement->id = CalcUiId(parentElement->id, newElement->config.id.str, newElement->config.id.index);
+		if (newElement->config.globalId) { newElement->id = newElement->config.id; }
+		else { newElement->id = CalcUiId(parentElement->id, newElement->config.id.str, newElement->config.id.index); }
 		newElement->parentId = parentElement->config.id;
 		newElement->depth = (parentElement->depth + 1);
 		newElement->siblingIndex = parentElement->numChildren;
@@ -212,7 +319,7 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 	UiCtx->currentElementIndex = newElement->elementIndex;
 	newElement->isOpen = true;
 	
-	bool allThemersAcceptedElement = RunUiThemerCallbacks(&UiCtx->themerRegistry, UiCtx, newElement);
+	bool allThemersAcceptedElement = RunUiThemerCallbacks(&UiCtx->themers, UiCtx, newElement);
 	if (!allThemersAcceptedElement)
 	{
 		parentElement = GetUiElementParent(newElement, 0);
@@ -281,7 +388,7 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	context->numTopLevelElements = 0;
 	context->currentElementIndex = PIG_UI_INDEX_INVALID;
 	
-	UiThemerRegistryStartFrame(&context->themerRegistry);
+	UiThemerRegistryStartFrame(&context->themers);
 	
 	Assert(UiCtx == nullptr);
 	UiCtx = context;

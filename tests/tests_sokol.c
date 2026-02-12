@@ -270,9 +270,22 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 
 #if BUILD_WITH_PIG_UI
 // +==============================+
+// | TestsGlobalUiThemerCallback  |
+// +==============================+
+// bool TestsGlobalUiThemerCallback(plex UiContext* context, UiElement* element, void* userPntr)
+UI_THEMER_CALLBACK_DEF(TestsGlobalUiThemerCallback)
+{
+	if (AreEqualV4r(element->config.borderThickness, V4r_Zero) && element->config.borderColor.valueU32 == PigUiDefaultColor_Value)
+	{
+		element->config.borderThickness = FillV4r(2.0f);
+		element->config.borderColor = ColorWithAlpha(Black, 0.5f);
+	}
+	return true;
+}
+// +==============================+
 // |    TestsUiThemerCallback     |
 // +==============================+
-// bool TestsUiThemerCallback(plex UiContext* context, UiElement* element, void* contextPntr)
+// bool TestsUiThemerCallback(plex UiContext* context, UiElement* element, void* userPntr)
 UI_THEMER_CALLBACK_DEF(TestsUiThemerCallback)
 {
 	if (!element->config.themer.isButton && element->config.texture == nullptr)
@@ -1314,103 +1327,86 @@ bool AppFrame(void)
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
-			Color32 halfBlack = ColorWithAlpha(Black, 0.5f);
 			v4r margins = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0));
 			v4r padding = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 8.0f, 2713, 0));
 			
-			RegisterUiThemer(&uiContext.themerRegistry, TestsUiThemerCallback, nullptr);
+			// PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
+			PushUiFields({ .color = MonokaiDarkGray });
+			PushUiFields({ .margins = FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)) });
+			PushUiFields({ .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(Black, 0.5f) });
 			
-			UiElemConfig rootElem = { .id = UiIdLit("DarkGray"), .color = MonokaiDarkGray };
+			UiElemConfig rootElem = { .id = UiIdLit("Root") };
 			rootElem.margins = margins;
 			rootElem.padding = padding;
 			rootElem.direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown;
-			rootElem.borderThickness = FillV4r(2.0f);
-			rootElem.borderColor = halfBlack;
 			UIELEM(rootElem)
 			{
-				UIELEM({ .id = UiIdLit("Orange"),
-					.margins=margins,
-					.padding=padding,
-					.direction = UiLayoutDir_LeftToRight,
-					.color=MonokaiOrange,
-					.borderThickness=FillV4r(2.0f),
-					.borderColor=halfBlack
-				}) { }
+				UiElemConfig orangeElem = { .id = UiIdLit("Orange"), .color=MonokaiOrange };
+				orangeElem.margins = margins;
+				orangeElem.padding = padding;
+				orangeElem.direction   = UiLayoutDir_LeftToRight;
+				UIELEM_LEAF(orangeElem);
 				
-				UIELEM({ .id = UiIdLit("Back"),
-					.margins=margins,
-					.padding=padding,
-					.direction = UiLayoutDir_RightToLeft,
-					.color=MonokaiBack,
-					.borderThickness=FillV4r(2.0f),
-					.borderColor=halfBlack
-				})
+				UiElemConfig backElem = { .id = UiIdLit("PercentageRow") };
+				backElem.margins = margins;
+				backElem.padding = padding;
+				backElem.direction = UiLayoutDir_RightToLeft;
+				UIELEM(backElem)
 				{
-					UIELEM({ .id = UiIdLit("Green"),
-						.sizing = { .x=UI_PERCENT(0.20f) },
-						.margins=margins,
-						.padding=padding,
-						.color=MonokaiGreen,
-						.borderThickness=FillV4r(2.0f),
-						.borderColor=halfBlack
-					}) { }
-					UIELEM({ .id = UiIdLit("Blue"),
-						.sizing = { .x=UI_PERCENT(0.10f) },
-						.margins=margins,
-						.padding=padding,
-						.color=MonokaiBlue,
-						.borderThickness=FillV4r(2.0f),
-						.borderColor=halfBlack
-					}) { }
-					UIELEM({ .id = UiIdLit("Purple"),
-						.sizing = { .x=UI_PERCENT(0.60f) },
-						.margins=margins,
-						.padding=padding,
-						.color=MonokaiPurple,
-						.borderThickness=FillV4r(2.0f),
-						.borderColor=halfBlack
-					}) { }
+					uxx testThemerId = PushUiThemer(&uiContext.themers, TestsUiThemerCallback, nullptr);
+					
+					UiElemConfig greenElem = { .id = UiIdLit("Green"), .color=MonokaiGreen };
+					greenElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.20f);
+					greenElem.margins = margins;
+					greenElem.padding = padding;
+					UIELEM_LEAF(greenElem);
+					
+					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
+					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
+					blueElem.margins = margins;
+					blueElem.padding = padding;
+					UIELEM_LEAF(blueElem);
+					
+					UiElemConfig purpleElem = { .id = UiIdLit("Purple"), .color=MonokaiPurple };
+					purpleElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.60f);
+					purpleElem.margins = margins;
+					purpleElem.padding = padding;
+					UIELEM_LEAF(purpleElem);
+					
+					PopUiThemer(&uiContext.themers, testThemerId);
 				}
 				
-				UIELEM({ .id = UiIdLit("Yellow"),
+				UIELEM_LEAF({ .id = UiIdLit("Yellow"),
 					.margins=margins,
 					.padding=padding,
 					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiYellow,
-					.borderThickness=FillV4r(2.0f),
-					.borderColor=halfBlack
-				}) { }
+				});
 				
 				UIELEM({ .id = UiIdLit("Red"),
 					.margins=margins,
 					.padding=padding,
 					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiRed,
-					.borderThickness=FillV4r(2.0f),
-					.borderColor=halfBlack
 				})
 				{
-					UIELEM({ .id = UiIdLit("DarkGreen"),
+					UIELEM_LEAF({ .id = UiIdLit("DarkGreen"),
 						.margins=margins,
 						.padding=padding,
 						.color=MonokaiDarkGreen,
-						.borderThickness=FillV4r(2.0f),
-						.borderColor=halfBlack,
 						.sizing=UI_FIXED2(100, 200)
-					}) { }
+					});
 					
 					for (uxx tIndex = 0; tIndex < 4; tIndex++)
 					{
 						Texture* texture = ((tIndex%2) == 0) ? &mipmapTexture : &noMipmapTexture;
-						UIELEM({ .id = UiIdLitIndex("Texture", tIndex),
+						UIELEM_LEAF({ .id = UiIdLitIndex("Texture", tIndex),
 							.margins=margins,
 							.padding=padding,
 							.color=ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
 							.texture = texture,
-							.borderThickness=FillV4r(2.0f),
-							.borderColor=halfBlack,
 							.sizing = UI_FIXED2(texture->Width*0.3f, texture->Height*0.3f),
-						}) { }
+						});
 					}
 				}
 			}
