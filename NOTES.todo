@@ -44,6 +44,35 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[?] Investigate Qt support?
 	[ ] Some way to automatically update an application
 	[ ] Can we make a Windows installer? Maybe copy File Pilot's design?
+	@ UI System
+	[ ] Make sure childGap works
+	[ ] Floating elements
+	[ ] Convenient Push/Pop of Themers
+	[ ] Get current element
+	[ ] Get an elements layout last frame
+	[ ] Run child scope if clicked or other input events
+	[ ] Some idea of focused element
+	[ ] Text elements
+	[ ] Graceful word-wrapping support
+	[ ] RichStr8 support
+	[ ] Aspect ratio restricted grow elements (for textures elements mostly)
+	[ ] HashMap of ID->element
+	[ ] Better support for UiRendererParams and UiThemerParams
+	[ ] Default UI Renderer implementation
+	[ ] Child clipping
+	[ ] Scrollable elements
+	[ ] Cubic decay scrolling
+	[ ] Touch input scrolling
+	[?] Uneven distribution of available space based on some sort of priority?
+	[ ] Depth (and depth sorted rendering)
+	[?] Transparency and Color that affects child elements?
+	[ ] SpriteSheet support
+	[ ] Debug panel. Inspect specific elements and trace logic through entire layout process
+		[?] Duplicate and visualize stages of the layout?
+	[?] Widgets? Scrollbar, Topbar, EditText, Button, etc.
+	[ ] Border thickness for between elements
+	[ ] Render offset (maybe render offset affects children too?)
+	[ ] 
 
 # Finished items
 	[X] Variant of Make macros that don't have NEW_STRUCT prefixes for use with global variable initialization

@@ -1314,18 +1314,19 @@ bool AppFrame(void)
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
-			RegisterUiThemer(&uiContext.themerRegistry, TestsUiThemerCallback, nullptr);
 			Color32 halfBlack = ColorWithAlpha(Black, 0.5f);
 			v4r margins = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0));
 			v4r padding = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 8.0f, 2713, 0));
-			UIELEM({ .id = UiIdLit("DarkGray"),
-				.margins=margins,
-				.padding=padding,
-				.direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown,
-				.color=MonokaiDarkGray,
-				.borderThickness=FillV4r(2.0f),
-				.borderColor=halfBlack
-			})
+			
+			RegisterUiThemer(&uiContext.themerRegistry, TestsUiThemerCallback, nullptr);
+			
+			UiElemConfig rootElem = { .id = UiIdLit("DarkGray"), .color = MonokaiDarkGray };
+			rootElem.margins = margins;
+			rootElem.padding = padding;
+			rootElem.direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown;
+			rootElem.borderThickness = FillV4r(2.0f);
+			rootElem.borderColor = halfBlack;
+			UIELEM(rootElem)
 			{
 				UIELEM({ .id = UiIdLit("Orange"),
 					.margins=margins,
