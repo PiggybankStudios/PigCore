@@ -38,232 +38,13 @@ Description:
 #include "gfx/gfx_texture.h"
 #include "gfx/gfx_font.h"
 #include "misc/misc_hash.h"
+#include "ui/ui_system_core.h"
 
 #if BUILD_WITH_PIG_UI
 
-#define PIG_UI_INDEX_INVALID UINTXX_MAX
-#define PIG_UI_ID_INDEX_NONE UINTXX_MAX
-#define PIG_UI_DEFAULT_ID_STR "elem"
-
-#define PigUiDefaultColor_Value TransparentBlack_Value
-#define PigUiDefaultColor       TransparentBlack
-
-typedef plex UiId UiId;
-plex UiId
-{
-	uxx id;
-	//We copy the string/index the Id was sourced from for 2 reasons
-	// 1. In OpenUiElement we need to calculate the "real" ID which is a mix of parent element's ID and the new element's string+index
-	// 2. For debug purposes we copy this into the frameArena and keep it in the config for the element so we can print out or display the ID's
-	Str8 str;
-	uxx index;
-};
-
-typedef enum UiLayoutDir UiLayoutDir;
-enum UiLayoutDir
-{
-	UiLayoutDir_TopDown = 0,
-	UiLayoutDir_BottomUp,
-	UiLayoutDir_LeftToRight,
-	UiLayoutDir_RightToLeft,
-	UiLayoutDir_Count,
-	UiLayoutDir_Default = UiLayoutDir_TopDown,
-};
-#if !PIG_CORE_IMPLEMENTATION
-PIG_CORE_INLINE const char* GetUiLayoutDirStr(UiLayoutDir enumValue);
-#else
-PEXPI const char* GetUiLayoutDirStr(UiLayoutDir enumValue)
-{
-	switch (enumValue)
-	{
-		case UiLayoutDir_TopDown:     return "TopDown(Default)";
-		case UiLayoutDir_BottomUp:    return "BottomUp";
-		case UiLayoutDir_LeftToRight: return "LeftToRight";
-		case UiLayoutDir_RightToLeft: return "RightToLeft";
-		default: return UNKNOWN_STR;
-	}
-}
-#endif
-
-typedef enum UiSizingType UiSizingType;
-enum UiSizingType
-{
-	UiSizingType_Expand = 0,
-	UiSizingType_FixedPx,
-	UiSizingType_FixedPercent,
-	UiSizingType_Fit,
-	UiSizingType_Count,
-	UiSizingType_Default = UiSizingType_Expand,
-};
-#if !PIG_CORE_IMPLEMENTATION
-PIG_CORE_INLINE const char* GetUiSizingTypeStr(UiSizingType enumValue);
-#else
-PEXPI const char* GetUiSizingTypeStr(UiSizingType enumValue)
-{
-	switch (enumValue)
-	{
-		case UiSizingType_Expand:       return "Expand(Default)";
-		case UiSizingType_FixedPx:      return "FixedPx";
-		case UiSizingType_FixedPercent: return "FixedPercent";
-		case UiSizingType_Fit:          return "Fit";
-		default: return UNKNOWN_STR;
-	}
-}
-#endif
-
-typedef plex UiSizingAxis UiSizingAxis;
-plex UiSizingAxis
-{
-	UiSizingType type;
-	r32 value;
-};
-
-typedef car UiSizing UiSizing;
-car UiSizing
-{
-	UiSizingAxis axis[2];
-	plex { UiSizingAxis x, y; };
-	plex { UiSizingAxis horiztonal, vertical; };
-};
-
-// +==============================+
-// |        Element Config        |
-// +==============================+
-typedef plex UiElemConfig UiElemConfig;
-plex UiElemConfig
-{
-	UiId id;
-	bool globalId;
-	UiLayoutDir direction;
-	UiSizing sizing;
-	Color32 color;
-	Texture* texture;
-	v4r margins; //space between our bounds and our childrens' bounds
-	v4r padding; //space between allocated area and our bounds
-	r32 childPadding; //space in-between each child, along the layout direction
-	v4r borderThickness;
-	Color32 borderColor;
-};
-
-typedef plex UiElement UiElement;
-plex UiElement
-{
-	UiElemConfig config;
-	UiId id; //This is the "real" ID, the one in config actually gets recalculated in OpenUiElement based on the parent element's ID
-	
-	uxx depth; //How many parents this element has
-	uxx elementIndex; //What's this element's index in the UiContext->elements VarArray
-	uxx siblingIndex; //which index child is this element amongst it's siblings
-	uxx parentIndex; //What is the index of the parent element in the UiContext>elements VarArray
-	UiId parentId;
-	bool isOpen; //are we currently adding children to this element
-	bool runChildCode;
-	uxx numChildren; //How many direct children does this element have
-	uxx numDescendents; //How many elements after this one are a descendent of this element (children, grandchildren, etc. Useful for knowing how many elements to skip over if we don't want to walk the tree of elements below this one)
-	
-	v2 minimumSize;
-	v2 preferredSize;
-	rec layoutRec;
-};
-
-typedef enum UiRenderCmdType UiRenderCmdType;
-enum UiRenderCmdType
-{
-	UiRenderCmdType_None = 0,
-	UiRenderCmdType_Rectangle,
-	UiRenderCmdType_Text,
-	UiRenderCmdType_Scissor,
-	UiRenderCmdType_Count,
-};
-#if !PIG_CORE_IMPLEMENTATION
-PIG_CORE_INLINE const char* GetUiRenderCmdTypeStr(UiRenderCmdType enumValue);
-#else
-PEXPI const char* GetUiRenderCmdTypeStr(UiRenderCmdType enumValue)
-{
-	switch (enumValue)
-	{
-		case UiRenderCmdType_None:      return "None";
-		case UiRenderCmdType_Rectangle: return "Rectangle";
-		case UiRenderCmdType_Text:      return "Text";
-		case UiRenderCmdType_Scissor:   return "Scissor";
-		default: return UNKNOWN_STR;
-	}
-}
-#endif
-
-typedef plex UiRenderCmd UiRenderCmd;
-plex UiRenderCmd
-{
-	UiRenderCmdType type;
-	car
-	{
-		// +==============================+
-		// |  UiRenderCmdType_Rectangle   |
-		// +==============================+
-		plex
-		{
-			rec rectangle;
-			Color32 color;
-			v4r cornerRadius;
-			v4r borderThickness;
-			Color32 borderColor;
-			Texture* texture;
-		} rectangle;
-		
-		// +==============================+
-		// |     UiRenderCmdType_Text     |
-		// +==============================+
-		plex
-		{
-			v2 position;
-			PigFont* font;
-			Str8 text;
-			Color32 color;
-		} text;
-		
-		// +==============================+
-		// |   UiRenderCmdType_Scissor    |
-		// +==============================+
-		plex
-		{
-			bool start;
-			rec rectangle;
-		} scissor;
-	};
-};
-
-typedef plex UiRenderList UiRenderList;
-plex UiRenderList
-{
-	Arena* arena;
-	plex UiContext* context;
-	VarArray commands; //UiRenderCmd
-};
-
-typedef plex UiContext UiContext;
-plex UiContext
-{
-	Arena* arena;
-	
-	Arena* frameArena;
-	uxx frameArenaMark;
-	#if (TARGET_HAS_THREADING && DEBUG_BUILD)
-	ThreadId threadId;
-	#endif
-	v2 screenSize; //TODO: Remove me
-	r32 scale;
-	u64 programTime;
-	KeyboardState* keyboard;
-	MouseState* mouse;
-	TouchscreenState* touchscreen;
-	
-	uxx currentElementIndex;
-	uxx numTopLevelElements; //TODO: Remove me
-	VarArray elements; //UiElement
-	
-	UiRenderList renderList; //allocated from frameArena
-};
-
+// +--------------------------------------------------------------+
+// |                           Globals                            |
+// +--------------------------------------------------------------+
 //TODO: Change __declspec stuff to work when compiling with Clang!
 //TODO: Should this be thread local?
 #if TARGET_IS_WINDOWS
@@ -284,8 +65,8 @@ plex UiContext
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	PIG_CORE_INLINE UiId CalcUiId(UiId baseId, Str8 idString, uxx index);
-	PIG_CORE_INLINE UiId PrintUiId(UiId baseId, uxx index, const char* formatString, ...);
+	//CalcUiId pre-declared in ui_system_core.h
+	//PrintUiId pre-declared in ui_system_core.h
 	void InitUiContext(Arena* arena, UiContext* contextOut);
 	PIG_CORE_INLINE UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementChild(UiElement* element, uxx childIndex);
@@ -301,23 +82,6 @@ plex UiContext
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define MakeUiId_Const(idValue, strValue, indexValue) { .id=(idValue), .str=(strValue), .index=(indexValue) }
-#define MakeUiId(id, str, index)                      NEW_STRUCT(UiId)MakeUiId_Const((id), (str), (index))
-
-#define UiId_None       MakeUiId(0, Str8_Empty, 0)
-#define UiId_None_Const MakeUiId_Const(0, Str8_Empty_Const, 0)
-
-//This is the most convenient way to give a UiId from a string literal, like UiIdNt("Element1")
-#define UiIdLit(idStrLit)             CalcUiId(UiId_None, StrLit(idStrLit),    PIG_UI_ID_INDEX_NONE)
-#define UiIdNt(idStrNt)               CalcUiId(UiId_None, MakeStr8Nt(idStrNt), PIG_UI_ID_INDEX_NONE)
-#define UiIdStr(idStr)                CalcUiId(UiId_None, (idStr),             PIG_UI_ID_INDEX_NONE)
-#define UiIdLitIndex(idStrLit, index) CalcUiId(UiId_None, StrLit(idStrLit),    (index))
-#define UiIdNtIndex(idStrNt, index)   CalcUiId(UiId_None, MakeStr8Nt(idStrNt), (index))
-#define UiIdStrIndex(idStr, index)    CalcUiId(UiId_None, (idStr),             (index))
-
-#define UiIdPrint(formatString, ...)              PrintUiId(UiId_None, PIG_UI_ID_INDEX_NONE, (formatString),     ##__VA_ARGS__)
-#define UiIdPrintIndex(index, formatString, ...)  PrintUiId(UiId_None, (index),              (formatString),     ##__VA_ARGS__)
-
 //NOTE: In order to get the UIELEM macro to work properly, we need to surround the __VA_ARGS__ in an extra set of curly brackets
 //      We can make this valid by defining a Wrapper struct that the curly brackets construct and then just access the config element inside
 typedef plex UiElemConfigWrapper UiElemConfigWrapper;
@@ -327,23 +91,6 @@ plex UiElemConfigWrapper { UiElemConfig config; };
 //NOTE: The preprocessor is going to treat the commas inside the designated initializer list as argument separators.
 //      For this reasons we do a variadic argument macro and use __VA_ARGS__ as a way to pass all of the designated initializer through
 #define UIELEM(...) DeferIfBlock(OpenUiElementConditional(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config), CloseUiElement())
-
-#define UI_FIXED(numPx)                 { .type=UiSizingType_FixedPx,      .value=(numPx)   }
-#define UI_PERCENT(percent)             { .type=UiSizingType_FixedPercent, .value=(percent) }
-#define UI_FIT()                        { .type=UiSizingType_Fit,          .value=0         }
-#define UI_EXPAND()                     { .type=UiSizingType_Expand,       .value=0         }
-#define UI_EXPAND_MIN(minPx)            { .type=UiSizingType_Expand,       .value=(minPx)   }
-#define UI_FIXED2(numPxX, numPxY)       { .x=UI_FIXED(numPxX),     .y=UI_FIXED(numPxY)     }
-#define UI_PERCENT2(percentX, percentY) { .x=UI_PERCENT(percentX), .y=UI_PERCENT(percentY) }
-#define UI_FIT2()                       { .x=UI_FIT(),             .y=UI_FIT()             }
-#define UI_EXPAND2()                    { .x=UI_EXPAND(),          .y=UI_EXPAND()          }
-#define UI_EXPAND_MIN2(minPxX, minPxY)  { .x=UI_EXPAND(minPxX),    .y=UI_EXPAND(minPxY)    }
-
-#define IsUiDirHorizontal(direction) ( (direction) == UiLayoutDir_RightToLeft || (direction) == UiLayoutDir_LeftToRight )
-#define IsUiDirVertical(direction)   ( (direction) == UiLayoutDir_TopDown     || (direction) == UiLayoutDir_BottomUp    )
-
-//When configuring an element we often use the 0 value as a "default". So a color of "transparent black" actually means the default color, which is fully opaque white
-#define UiConfigColorToActualColor(color) (((color).valueU32 != PigUiDefaultColor_Value) ? (color) : White)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -386,6 +133,8 @@ PEXPI UiId PrintUiId(UiId baseId, uxx index, const char* formatString, ...)
 	return result;
 }
 
+//TODO: Add FreeUiContext? We don't usually need it
+
 PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
 {
 	NotNull(arena);
@@ -393,6 +142,7 @@ PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
 	ClearPointer(contextOut);
 	contextOut->arena = arena;
 	InitVarArray(UiElement, &contextOut->elements, arena);
+	InitUiThemerRegistry(arena, &contextOut->themerRegistry);
 }
 
 PEXPI UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex)
@@ -425,17 +175,20 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 	NotNull(UiCtx);
 	AssertUiThreadIsSame();
 	
+	//NOTE: Everything that happens in the first part of this function must be reversable if !allThemersAcceptedElement
+	
 	UiElement* newElement = VarArrayAdd(UiElement, &UiCtx->elements);
 	NotNull(newElement);
 	ClearPointer(newElement);
 	newElement->elementIndex = (UiCtx->elements.length - 1);
 	newElement->parentIndex = UiCtx->currentElementIndex;
+	MyMemCopy(&newElement->config, &config, sizeof(UiElemConfig));
 	UiElement* parentElement = GetUiElementParent(newElement, 0);
 	if (parentElement != nullptr)
 	{
 		DebugAssert(parentElement->isOpen);
-		if (IsEmptyStr(config.id.str)) { config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, parentElement->numChildren); }
-		newElement->id = CalcUiId(parentElement->id, config.id.str, config.id.index);
+		if (IsEmptyStr(newElement->config.id.str)) { newElement->config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, parentElement->numChildren); }
+		newElement->id = CalcUiId(parentElement->id, newElement->config.id.str, newElement->config.id.index);
 		newElement->parentId = parentElement->config.id;
 		newElement->depth = (parentElement->depth + 1);
 		newElement->siblingIndex = parentElement->numChildren;
@@ -448,28 +201,54 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 	}
 	else
 	{
-		if (IsEmptyStr(config.id.str)) { config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, UiCtx->numTopLevelElements); }
-		newElement->id = config.id; //Top-level IDs are not modified by any base ID
+		if (IsEmptyStr(newElement->config.id.str)) { newElement->config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, UiCtx->numTopLevelElements); }
+		newElement->id = newElement->config.id; //Top-level IDs are not modified by any base ID
 		newElement->depth = 0;
 		newElement->siblingIndex = UiCtx->numTopLevelElements;
 		UiCtx->numTopLevelElements++;
 	}
-	if (config.texture != nullptr && config.sizing.x.type == UiSizingType_Default && config.sizing.y.type == UiSizingType_Default && config.sizing.x.value == 0.0f && config.sizing.y.value == 0.0f)
-	{
-		// If you have default sizing parameters and you attached a texture then we copy in the texture dimensions as UiSizingType_Fit
-		config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(config.texture->Width, config.texture->Height);
-	}
+	
+	uxx oldCurrentElementIndex = UiCtx->currentElementIndex;
 	UiCtx->currentElementIndex = newElement->elementIndex;
-	MyMemCopy(&newElement->config, &config, sizeof(UiElemConfig));
 	newElement->isOpen = true;
 	
-	//TODO: How do we decie runChildCode for things like buttons?
+	bool allThemersAcceptedElement = RunUiThemerCallbacks(&UiCtx->themerRegistry, UiCtx, newElement);
+	if (!allThemersAcceptedElement)
+	{
+		parentElement = GetUiElementParent(newElement, 0);
+		if (parentElement != nullptr)
+		{
+			parentElement->numChildren--;
+			while (parentElement != nullptr)
+			{
+				parentElement->numDescendents--;
+				parentElement = VarArrayGetSoft(UiElement, &UiCtx->elements, parentElement->parentIndex);
+			}
+		}
+		else { UiCtx->numTopLevelElements--; }
+		VarArrayRemoveLast(UiElement, &UiCtx->elements);
+		return nullptr;
+	}
+	
+	// If you have default sizing parameters and you attached a texture then we copy in the texture dimensions as UiSizingType_Fit
+	if (newElement->config.texture != nullptr && !newElement->config.dontSizeToTexture &&
+		newElement->config.sizing.x.type == UiSizingType_Default && newElement->config.sizing.y.type == UiSizingType_Default &&
+		newElement->config.sizing.x.value == 0.0f && newElement->config.sizing.y.value == 0.0f)
+	{
+		newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(newElement->config.texture->Width, newElement->config.texture->Height);
+	}
+	
+	//TODO: How do we decide runChildCode for things like buttons?
 	newElement->runChildCode = true;
 	
 	// if (newElement->parentIndex == 0) { MyBreak(); }
 	return newElement;
 }
-PEXPI bool OpenUiElementConditional(UiElemConfig config) { return OpenUiElement(config)->runChildCode; }
+PEXPI bool OpenUiElementConditional(UiElemConfig config)
+{
+	UiElement* elementPntr = OpenUiElement(config);
+	return (elementPntr != nullptr && elementPntr->runChildCode);
+}
 
 PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
 {
@@ -501,6 +280,8 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	VarArrayClear(&context->elements);
 	context->numTopLevelElements = 0;
 	context->currentElementIndex = PIG_UI_INDEX_INVALID;
+	
+	UiThemerRegistryStartFrame(&context->themerRegistry);
 	
 	Assert(UiCtx == nullptr);
 	UiCtx = context;
@@ -544,7 +325,8 @@ static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* pare
 	}
 	else if (sizingType == UiSizingType_Expand)
 	{
-		*minimumSizePntr += sizingValue + elemMargins + layoutAxisChildPadding;
+		*minimumSizePntr += elemMargins + layoutAxisChildPadding;
+		if (*minimumSizePntr < sizingValue) { *minimumSizePntr = sizingValue; }
 		*preferredSizePntr = INFINITY;
 	}
 	else { DebugAssert(false); }
@@ -668,7 +450,8 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 		}
 		#endif //DEBUG_BUILD
 		
-		while (AreSimilarOrGreaterR32(spaceToDistribute, 0.0f, DEFAULT_R32_TOLERANCE))
+		uxx distRoundIndex = 0;
+		while (spaceToDistribute > 0.0f + DEFAULT_R32_TOLERANCE && distRoundIndex < element->numChildren)
 		{
 			r32 smallestChildSize = INFINITY;
 			uxx smallestChildCount = 0;
@@ -679,10 +462,16 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
 				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
 				r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
+				// #if DEBUG_BUILD
+				// if (printDebug) { PrintLine_D("\t-> Child[%llu] is %g, [%g,%g]", cIndex, childSize, childMinimumSize, childPreferredSize); }
+				// #endif
 				if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
 				{
 					if (IsInfiniteOrNanR32(smallestChildSize) || childSize < smallestChildSize)
 					{
+						// #if DEBUG_BUILD
+						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new smallest!", cIndex); }
+						// #endif
 						if (!IsInfiniteOrNanR32(smallestChildSize)) { secondSmallestChildSize = smallestChildSize; }
 						if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
 						smallestChildSize = childSize;
@@ -690,18 +479,34 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 					}
 					else if (AreSimilarR32(smallestChildSize, childSize, DEFAULT_R32_TOLERANCE))
 					{
+						// #if DEBUG_BUILD
+						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is same as smallest!", cIndex); }
+						// #endif
 						if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
 						smallestChildCount++;
 					}
+					else if (childSize < secondSmallestChildSize)
+					{
+						// #if DEBUG_BUILD
+						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new second smallest!", cIndex); }
+						// #endif
+						secondSmallestChildSize = childSize;
+					}
 				}
+				// #if DEBUG_BUILD
+				// if (printDebug) { PrintLine_D("\t-> After Child[%llu]: %llux %g (%g)", cIndex, smallestChildCount, smallestChildSize, secondSmallestChildSize); }
+				// #endif
 			}
 			if (smallestChildCount == 0) { break; }
 			
 			r32 smallestToNextSmallestDiff = (!IsInfiniteOrNanR32(secondSmallestChildSize) && smallestChildCount > 0)
-				? (secondSmallestChildSize - smallestChildSize) / (r32)smallestChildCount
+				? (secondSmallestChildSize - smallestChildSize)
 				: INFINITY;
 			r32 spaceToDistributeThisRound = MinR32(spaceToDistribute, smallestToNextSmallestDiff * (r32)smallestChildCount);
-			if (spaceToDistributeThisRound == 0.0f) { break; }
+			// #if DEBUG_BUILD
+			// if (printDebug) { PrintLine_D("\t[%llu] There are %llu children at %g that can expand to %g. Distributing %g (%g left)...", distRoundIndex, smallestChildCount, smallestChildSize, secondSmallestChildSize, spaceToDistributeThisRound, spaceToDistribute - spaceToDistributeThisRound); }
+			// #endif
+			if (spaceToDistributeThisRound <= 0.0f) { break; }
 			spaceToDistribute -= spaceToDistributeThisRound;
 			for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 			{
@@ -710,11 +515,13 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
 				r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
 				r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
-				if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize)
+				if (AreSimilarR32(*childSizePntr, smallestChildSize, DEFAULT_R32_TOLERANCE) &&
+					(IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize))
 				{
 					*childSizePntr += (spaceToDistributeThisRound / (r32)smallestChildCount);
 				}
 			}
+			distRoundIndex++;
 		}
 		// else if (spaceToDistribute < 0)
 		// {

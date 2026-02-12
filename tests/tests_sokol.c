@@ -268,6 +268,22 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 }
 #endif //BUILD_WITH_CLAY
 
+#if BUILD_WITH_PIG_UI
+// +==============================+
+// |    TestsUiThemerCallback     |
+// +==============================+
+// bool TestsUiThemerCallback(plex UiContext* context, UiElement* element, void* contextPntr)
+UI_THEMER_CALLBACK_DEF(TestsUiThemerCallback)
+{
+	if (!element->config.themer.isButton && element->config.texture == nullptr)
+	{
+		element->config.texture = &testTexture;
+		element->config.dontSizeToTexture = true;
+	}
+	return true;
+}
+#endif //BUILD_WITH_PIG_UI
+
 void DrawBox(box boundingBox, Color32 color)
 {
 	mat4 worldMat = Mat4_Identity;
@@ -1298,6 +1314,7 @@ bool AppFrame(void)
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
+			RegisterUiThemer(&uiContext.themerRegistry, TestsUiThemerCallback, nullptr);
 			Color32 halfBlack = ColorWithAlpha(Black, 0.5f);
 			v4r margins = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0));
 			v4r padding = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 8.0f, 2713, 0));
