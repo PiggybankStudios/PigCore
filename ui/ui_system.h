@@ -154,15 +154,15 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_Color:                 return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
 		case UiElemConfigField_Texture:               return (configPntr->texture == nullptr);
 		case UiElemConfigField_DontSizeToTexture:     return (configPntr->dontSizeToTexture == false);
-		case UiElemConfigField_MarginLeft:            return (configPntr->margins.Left   == 0.0f);
-		case UiElemConfigField_MarginTop:             return (configPntr->margins.Top    == 0.0f);
-		case UiElemConfigField_MarginRight:           return (configPntr->margins.Right  == 0.0f);
-		case UiElemConfigField_MarginBottom:          return (configPntr->margins.Bottom == 0.0f);
-		case UiElemConfigField_PaddingLeft:           return (configPntr->padding.Left   == 0.0f);
-		case UiElemConfigField_PaddingTop:            return (configPntr->padding.Top    == 0.0f);
-		case UiElemConfigField_PaddingRight:          return (configPntr->padding.Right  == 0.0f);
-		case UiElemConfigField_PaddingBottom:         return (configPntr->padding.Bottom == 0.0f);
-		case UiElemConfigField_ChildPadding:          return (configPntr->childPadding == 0.0f);
+		case UiElemConfigField_MarginLeft:            return (configPntr->padding.inner.Left   == 0.0f);
+		case UiElemConfigField_MarginTop:             return (configPntr->padding.inner.Top    == 0.0f);
+		case UiElemConfigField_MarginRight:           return (configPntr->padding.inner.Right  == 0.0f);
+		case UiElemConfigField_MarginBottom:          return (configPntr->padding.inner.Bottom == 0.0f);
+		case UiElemConfigField_PaddingLeft:           return (configPntr->padding.outer.Left   == 0.0f);
+		case UiElemConfigField_PaddingTop:            return (configPntr->padding.outer.Top    == 0.0f);
+		case UiElemConfigField_PaddingRight:          return (configPntr->padding.outer.Right  == 0.0f);
+		case UiElemConfigField_PaddingBottom:         return (configPntr->padding.outer.Bottom == 0.0f);
+		case UiElemConfigField_ChildPadding:          return (configPntr->padding.child == 0.0f);
 		case UiElemConfigField_BorderThicknessLeft:   return (configPntr->borderThickness.Left   == 0.0f);
 		case UiElemConfigField_BorderThicknessTop:    return (configPntr->borderThickness.Top    == 0.0f);
 		case UiElemConfigField_BorderThicknessRight:  return (configPntr->borderThickness.Right  == 0.0f);
@@ -192,15 +192,15 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_Color:                 configToPntr->color = configFromPntr->color; break;
 		case UiElemConfigField_Texture:               configToPntr->texture = configFromPntr->texture; break;
 		case UiElemConfigField_DontSizeToTexture:     configToPntr->dontSizeToTexture = configFromPntr->dontSizeToTexture; break;
-		case UiElemConfigField_MarginLeft:            configToPntr->margins.Left   = configFromPntr->margins.Left; break;
-		case UiElemConfigField_MarginTop:             configToPntr->margins.Top    = configFromPntr->margins.Top; break;
-		case UiElemConfigField_MarginRight:           configToPntr->margins.Right  = configFromPntr->margins.Right; break;
-		case UiElemConfigField_MarginBottom:          configToPntr->margins.Bottom = configFromPntr->margins.Bottom; break;
-		case UiElemConfigField_PaddingLeft:           configToPntr->padding.Left   = configFromPntr->padding.Left; break;
-		case UiElemConfigField_PaddingTop:            configToPntr->padding.Top    = configFromPntr->padding.Top; break;
-		case UiElemConfigField_PaddingRight:          configToPntr->padding.Right  = configFromPntr->padding.Right; break;
-		case UiElemConfigField_PaddingBottom:         configToPntr->padding.Bottom = configFromPntr->padding.Bottom; break;
-		case UiElemConfigField_ChildPadding:          configToPntr->childPadding = configFromPntr->childPadding; break;
+		case UiElemConfigField_MarginLeft:            configToPntr->padding.inner.Left   = configFromPntr->padding.inner.Left; break;
+		case UiElemConfigField_MarginTop:             configToPntr->padding.inner.Top    = configFromPntr->padding.inner.Top; break;
+		case UiElemConfigField_MarginRight:           configToPntr->padding.inner.Right  = configFromPntr->padding.inner.Right; break;
+		case UiElemConfigField_MarginBottom:          configToPntr->padding.inner.Bottom = configFromPntr->padding.inner.Bottom; break;
+		case UiElemConfigField_PaddingLeft:           configToPntr->padding.outer.Left   = configFromPntr->padding.outer.Left; break;
+		case UiElemConfigField_PaddingTop:            configToPntr->padding.outer.Top    = configFromPntr->padding.outer.Top; break;
+		case UiElemConfigField_PaddingRight:          configToPntr->padding.outer.Right  = configFromPntr->padding.outer.Right; break;
+		case UiElemConfigField_PaddingBottom:         configToPntr->padding.outer.Bottom = configFromPntr->padding.outer.Bottom; break;
+		case UiElemConfigField_ChildPadding:          configToPntr->padding.child = configFromPntr->padding.child; break;
 		case UiElemConfigField_BorderThicknessLeft:   configToPntr->borderThickness.Left   = configFromPntr->borderThickness.Left; break;
 		case UiElemConfigField_BorderThicknessTop:    configToPntr->borderThickness.Top    = configFromPntr->borderThickness.Top; break;
 		case UiElemConfigField_BorderThicknessRight:  configToPntr->borderThickness.Right  = configFromPntr->borderThickness.Right; break;
@@ -406,8 +406,8 @@ static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* pare
 	DebugNotNull(element);
 	DebugAssert(parent != nullptr || element->elementIndex == 0); //parent can be null, only for the root element
 	bool isThisLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
-	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.childPadding) : 0.0f;
-	r32 elemMargins = (xAxis ? (element->config.margins.Left + element->config.margins.Right) : (element->config.margins.Top + element->config.margins.Bottom));
+	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.padding.child) : 0.0f;
+	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
 	
 	r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
 	r32* preferredSizePntr = (xAxis ? &element->preferredSize.Width : &element->preferredSize.Height);
@@ -422,17 +422,17 @@ static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* pare
 	else if (sizingType == UiSizingType_FixedPercent)
 	{
 		// NOTE: Nothing special happens here for percentage sizing. We handle this primarily in DistributeSpaceToUiElemChildrenOnAxis
-		*minimumSizePntr = elemMargins + layoutAxisChildPadding;
-		*preferredSizePntr = elemMargins + layoutAxisChildPadding;
+		*minimumSizePntr = elemInnerPaddingLrOrTb + layoutAxisChildPadding;
+		*preferredSizePntr = elemInnerPaddingLrOrTb + layoutAxisChildPadding;
 	}
 	else if (sizingType == UiSizingType_Fit)
 	{
-		*minimumSizePntr += elemMargins + layoutAxisChildPadding;
-		if (!IsInfiniteOrNanR32(*preferredSizePntr)) { *preferredSizePntr += elemMargins + layoutAxisChildPadding; }
+		*minimumSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding;
+		if (!IsInfiniteOrNanR32(*preferredSizePntr)) { *preferredSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding; }
 	}
 	else if (sizingType == UiSizingType_Expand)
 	{
-		*minimumSizePntr += elemMargins + layoutAxisChildPadding;
+		*minimumSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding;
 		if (*minimumSizePntr < sizingValue) { *minimumSizePntr = sizingValue; }
 		*preferredSizePntr = INFINITY;
 	}
@@ -441,18 +441,18 @@ static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* pare
 	if (parent != nullptr)
 	{
 		bool isParentLayoutDir = (IsUiDirHorizontal(parent->config.direction) == xAxis);
-		r32 paddingLrOrTb = (xAxis ? (element->config.padding.Left + element->config.padding.Right) : (element->config.padding.Top + element->config.padding.Bottom));
+		r32 outerPaddingLrOrTb = (xAxis ? (element->config.padding.outer.Left + element->config.padding.outer.Right) : (element->config.padding.outer.Top + element->config.padding.outer.Bottom));
 		r32* parentMinimumSizePntr = (xAxis ? &parent->minimumSize.Width : &parent->minimumSize.Height);
 		r32* parentPreferredSizePntr = (xAxis ? &parent->preferredSize.Width : &parent->preferredSize.Height);
 		
-		if (isParentLayoutDir) { *parentMinimumSizePntr += *minimumSizePntr + paddingLrOrTb; }
-		else { *parentMinimumSizePntr = MaxR32(*parentMinimumSizePntr, *minimumSizePntr + paddingLrOrTb); }
+		if (isParentLayoutDir) { *parentMinimumSizePntr += *minimumSizePntr + outerPaddingLrOrTb; }
+		else { *parentMinimumSizePntr = MaxR32(*parentMinimumSizePntr, *minimumSizePntr + outerPaddingLrOrTb); }
 		
 		if (!IsInfiniteOrNanR32(*parentPreferredSizePntr))
 		{
 			if (IsInfiniteOrNanR32(*preferredSizePntr)) { *parentPreferredSizePntr = INFINITY; }
-			else if (isParentLayoutDir) { *parentPreferredSizePntr += *preferredSizePntr + paddingLrOrTb; }
-			else { *parentPreferredSizePntr = MaxR32(*parentPreferredSizePntr, *preferredSizePntr + paddingLrOrTb); }
+			else if (isParentLayoutDir) { *parentPreferredSizePntr += *preferredSizePntr + outerPaddingLrOrTb; }
+			else { *parentPreferredSizePntr = MaxR32(*parentPreferredSizePntr, *preferredSizePntr + outerPaddingLrOrTb); }
 		}
 	}
 }
@@ -502,13 +502,13 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	UNUSED(printDebug);
 	#endif
 	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
-	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.childPadding) : 0.0f;
-	r32 elemMargins = (xAxis ? (element->config.margins.Left + element->config.margins.Right) : (element->config.margins.Top + element->config.margins.Bottom));
+	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.padding.child) : 0.0f;
+	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
 	
 	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
 	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
 	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
-	r32 innerSize = *sizePntr - elemMargins;
+	r32 innerSize = *sizePntr - elemInnerPaddingLrOrTb;
 	
 	// Visit all percentage-based children and size them according to our decided size
 	for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
@@ -529,17 +529,17 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	{
 		// Copy children's minimumSize into layoutRec.Size and track how many want to be bigger and what their total minimum size is
 		uxx numGrowableChildren = 0;
-		r32 childrenMinimumTotal = elemMargins;
+		r32 childrenMinimumTotal = elemInnerPaddingLrOrTb;
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
 			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
 			r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-			r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+			r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
 			r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
 			if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize) { numGrowableChildren++; }
 			*childSizePntr = childMinimumSize;
-			childrenMinimumTotal += childMinimumSize + childPaddingLrOrTb + ((cIndex > 0) ? element->config.childPadding : 0.0f);
+			childrenMinimumTotal += childMinimumSize + childOuterPaddingLrOrTb + ((cIndex > 0) ? element->config.padding.child : 0.0f);
 		}
 		
 		//TODO: We should probably be rounding to whole pixel values, and figuring out how to distribute remainders amongst n children
@@ -620,7 +620,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 				UiElement* child = GetUiElementChild(element, cIndex);
 				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
 				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-				r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+				// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
 				r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
 				if (AreSimilarR32(*childSizePntr, smallestChildSize, DEFAULT_R32_TOLERANCE) &&
 					(IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize))
@@ -642,11 +642,11 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			UiElement* child = GetUiElementChild(element, cIndex);
 			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
 			r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-			r32 childPaddingLrOrTb = (xAxis ? (child->config.padding.Left + child->config.padding.Right) : (child->config.padding.Top + child->config.padding.Bottom));
+			r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
 			r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
 			if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize)
 			{
-				*childSizePntr = MinR32(innerSize - childPaddingLrOrTb, childPreferredSize);
+				*childSizePntr = MinR32(innerSize - childOuterPaddingLrOrTb, childPreferredSize);
 			}
 			else
 			{
@@ -734,35 +734,35 @@ static void UiSystemDoLayout()
 		v2 layoutPos = V2_Zero_Const;
 		if (element->config.direction == UiLayoutDir_LeftToRight || element->config.direction == UiLayoutDir_TopDown)
 		{
-			layoutPos = AddV2(element->layoutRec.TopLeft, element->config.margins.XY); //XY is alias for (Left,Top)
+			layoutPos = AddV2(element->layoutRec.TopLeft, element->config.padding.inner.XY); //XY is alias for (Left,Top)
 		}
 		else if (element->config.direction == UiLayoutDir_RightToLeft)
 		{
-			layoutPos = AddV2(element->layoutRec.TopLeft, MakeV2(element->layoutRec.Width - element->config.margins.Right, element->config.margins.Top));
+			layoutPos = AddV2(element->layoutRec.TopLeft, MakeV2(element->layoutRec.Width - element->config.padding.inner.Right, element->config.padding.inner.Top));
 		}
 		else if (element->config.direction == UiLayoutDir_BottomUp)
 		{
-			layoutPos = AddV2(element->layoutRec.TopLeft, MakeV2(element->config.margins.Left, element->layoutRec.Height - element->config.margins.Bottom));
+			layoutPos = AddV2(element->layoutRec.TopLeft, MakeV2(element->config.padding.inner.Left, element->layoutRec.Height - element->config.padding.inner.Bottom));
 		}
 		else { DebugAssert(false); }
 		
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
-			r32 childPadding = ((cIndex > 0) ? element->config.childPadding : 0.0f);
-			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += childPadding + child->config.padding.Left; }
-			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += childPadding + child->config.padding.Top; }
-			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->layoutRec.Width + childPadding + child->config.padding.Right; }
-			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->layoutRec.Height + childPadding + child->config.padding.Bottom; }
+			r32 childPadding = ((cIndex > 0) ? element->config.padding.child : 0.0f);
+			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += childPadding + child->config.padding.outer.Left; }
+			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += childPadding + child->config.padding.outer.Top; }
+			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->layoutRec.Width + childPadding + child->config.padding.outer.Right; }
+			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->layoutRec.Height + childPadding + child->config.padding.outer.Bottom; }
 			
 			child->layoutRec.TopLeft = layoutPos;
-			if (IsUiDirHorizontal(element->config.direction)) { child->layoutRec.Y += child->config.padding.Top; }
-			else { child->layoutRec.X += child->config.padding.Left; }
+			if (IsUiDirHorizontal(element->config.direction)) { child->layoutRec.Y += child->config.padding.outer.Top; }
+			else { child->layoutRec.X += child->config.padding.outer.Left; }
 			
-			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->layoutRec.Width + child->config.padding.Right; }
-			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + child->config.padding.Bottom; }
-			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.Left; }
-			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.Top; }
+			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->layoutRec.Width + child->config.padding.outer.Right; }
+			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + child->config.padding.outer.Bottom; }
+			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.outer.Left; }
+			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.outer.Top; }
 			
 			#if DEBUG_BUILD
 			if (printDebug)

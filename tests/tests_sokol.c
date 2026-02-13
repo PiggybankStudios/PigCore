@@ -1330,10 +1330,10 @@ bool AppFrame(void)
 			
 			// PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
 			PushUiFields({ .color = MonokaiDarkGray });
-			PushUiFields({
-				.margins = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
-				.childPadding = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
-			});
+			PushUiFields({ .padding = {
+				.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
+				.child = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
+			}});
 			PushUiFields({ .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
 			
 			UiElemConfig rootElem = { .id = UiIdLit("Root") };

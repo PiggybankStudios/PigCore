@@ -196,6 +196,14 @@ plex UiFloatingConfig
 	Dir2Ex elemAttach;
 };
 
+typedef plex UiPadding UiPadding;
+plex UiPadding
+{
+	v4r inner; //space between our bounds and our childrens' bounds
+	v4r outer; //space between allocated area and our bounds
+	r32 child; //space in-between each child, along the layout direction
+};
+
 // +==============================+
 // |        Element Config        |
 // +==============================+
@@ -210,9 +218,7 @@ plex UiElemConfig
 	Color32 color;
 	Texture* texture;
 	bool dontSizeToTexture;
-	v4r margins; //space between our bounds and our childrens' bounds
-	v4r padding; //space between allocated area and our bounds
-	r32 childPadding; //space in-between each child, along the layout direction
+	UiPadding padding;
 	v4r borderThickness;
 	Color32 borderColor;
 	UiFloatingConfig floating;

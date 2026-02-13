@@ -3549,6 +3549,7 @@
 			"UiFloatingType",
 			"UiId",
 			"UiLayoutDir",
+			"UiPadding",
 			"UiRenderCmd",
 			"UiRenderCmdType",
 			"UiRenderList",
