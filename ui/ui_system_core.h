@@ -215,12 +215,14 @@ plex UiElemConfig
 	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
 	UiLayoutDir direction;
 	UiSizing sizing;
+	r32 depth;
 	Color32 color;
 	Texture* texture;
 	bool dontSizeToTexture;
 	UiPadding padding;
 	v4r borderThickness;
 	Color32 borderColor;
+	r32 borderDepth; //0.0f will result in borderDepth inheriting value of depth
 	UiFloatingConfig floating;
 	
 	//These types can contain different things for each application, see the description near the top of the file
@@ -249,14 +251,14 @@ enum UiElemConfigField
 	UiElemConfigField_Color                 = ((1ull) << 7),
 	UiElemConfigField_Texture               = ((1ull) << 8),
 	UiElemConfigField_DontSizeToTexture     = ((1ull) << 9),
-	UiElemConfigField_MarginLeft            = ((1ull) << 10),
-	UiElemConfigField_MarginTop             = ((1ull) << 11),
-	UiElemConfigField_MarginRight           = ((1ull) << 12),
-	UiElemConfigField_MarginBottom          = ((1ull) << 13),
-	UiElemConfigField_PaddingLeft           = ((1ull) << 14),
-	UiElemConfigField_PaddingTop            = ((1ull) << 15),
-	UiElemConfigField_PaddingRight          = ((1ull) << 16),
-	UiElemConfigField_PaddingBottom         = ((1ull) << 17),
+	UiElemConfigField_InnerPaddingLeft      = ((1ull) << 10),
+	UiElemConfigField_InnerPaddingTop       = ((1ull) << 11),
+	UiElemConfigField_InnerPaddingRight     = ((1ull) << 12),
+	UiElemConfigField_InnerPaddingBottom    = ((1ull) << 13),
+	UiElemConfigField_OuterPaddingLeft      = ((1ull) << 14),
+	UiElemConfigField_OuterPaddingTop       = ((1ull) << 15),
+	UiElemConfigField_OuterPaddingRight     = ((1ull) << 16),
+	UiElemConfigField_OuterPaddingBottom    = ((1ull) << 17),
 	UiElemConfigField_ChildPadding          = ((1ull) << 18),
 	UiElemConfigField_BorderThicknessLeft   = ((1ull) << 19),
 	UiElemConfigField_BorderThicknessTop    = ((1ull) << 20),
@@ -275,8 +277,9 @@ enum UiElemConfigField
 	UiElemConfigField_Sizing                = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueX|UiElemConfigField_SizingValueY),
 	UiElemConfigField_SizingX               = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingValueX),
 	UiElemConfigField_SizingY               = (UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueY),
-	UiElemConfigField_Margins               = (UiElemConfigField_MarginLeft|UiElemConfigField_MarginTop|UiElemConfigField_MarginRight|UiElemConfigField_MarginBottom),
-	UiElemConfigField_Padding               = (UiElemConfigField_PaddingLeft|UiElemConfigField_PaddingTop|UiElemConfigField_PaddingRight|UiElemConfigField_PaddingBottom),
+	UiElemConfigField_InnerPadding          = (UiElemConfigField_InnerPaddingLeft|UiElemConfigField_InnerPaddingTop|UiElemConfigField_InnerPaddingRight|UiElemConfigField_InnerPaddingBottom),
+	UiElemConfigField_OuterPadding          = (UiElemConfigField_OuterPaddingLeft|UiElemConfigField_OuterPaddingTop|UiElemConfigField_OuterPaddingRight|UiElemConfigField_OuterPaddingBottom),
+	UiElemConfigField_Padding               = (UiElemConfigField_InnerPadding|UiElemConfigField_OuterPadding|UiElemConfigField_ChildPadding),
 	UiElemConfigField_BorderThickness       = (UiElemConfigField_BorderThicknessLeft|UiElemConfigField_BorderThicknessTop|UiElemConfigField_BorderThicknessRight|UiElemConfigField_BorderThicknessBottom),
 	UiElemConfigField_Floating              = (UiElemConfigField_FloatingType|UiElemConfigField_FloatingOffsetX|UiElemConfigField_FloatingOffsetY|UiElemConfigField_FloatingParentAttach|UiElemConfigField_FloatingElemAttach),
 	UiElemConfigField_FloatingOffset        = (UiElemConfigField_FloatingOffsetX|UiElemConfigField_FloatingOffsetY),
@@ -300,14 +303,14 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_Color:                 return "Color";
 		case UiElemConfigField_Texture:               return "Texture";
 		case UiElemConfigField_DontSizeToTexture:     return "DontSizeToTexture";
-		case UiElemConfigField_MarginLeft:            return "MarginLeft";
-		case UiElemConfigField_MarginTop:             return "MarginTop";
-		case UiElemConfigField_MarginRight:           return "MarginRight";
-		case UiElemConfigField_MarginBottom:          return "MarginBottom";
-		case UiElemConfigField_PaddingLeft:           return "PaddingLeft";
-		case UiElemConfigField_PaddingTop:            return "PaddingTop";
-		case UiElemConfigField_PaddingRight:          return "PaddingRight";
-		case UiElemConfigField_PaddingBottom:         return "PaddingBottom";
+		case UiElemConfigField_InnerPaddingLeft:      return "InnerPaddingLeft";
+		case UiElemConfigField_InnerPaddingTop:       return "InnerPaddingTop";
+		case UiElemConfigField_InnerPaddingRight:     return "InnerPaddingRight";
+		case UiElemConfigField_InnerPaddingBottom:    return "InnerPaddingBottom";
+		case UiElemConfigField_OuterPaddingLeft:      return "OuterPaddingLeft";
+		case UiElemConfigField_OuterPaddingTop:       return "OuterPaddingTop";
+		case UiElemConfigField_OuterPaddingRight:     return "OuterPaddingRight";
+		case UiElemConfigField_OuterPaddingBottom:    return "OuterPaddingBottom";
 		case UiElemConfigField_ChildPadding:          return "ChildPadding";
 		case UiElemConfigField_BorderThicknessLeft:   return "BorderThicknessLeft";
 		case UiElemConfigField_BorderThicknessTop:    return "BorderThicknessTop";
