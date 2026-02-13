@@ -1327,29 +1327,24 @@ bool AppFrame(void)
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
-			v4r margins = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0));
-			v4r padding = V4r_Zero; //FillV4r(OscillateBy(programTime, 0.0f, 8.0f, 2713, 0));
 			
 			// PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
 			PushUiFields({ .color = MonokaiDarkGray });
-			PushUiFields({ .margins = FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)) });
-			PushUiFields({ .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(Black, 0.5f) });
+			PushUiFields({
+				.margins = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
+				.childPadding = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
+			});
+			PushUiFields({ .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
 			
 			UiElemConfig rootElem = { .id = UiIdLit("Root") };
-			rootElem.margins = margins;
-			rootElem.padding = padding;
 			rootElem.direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown;
 			UIELEM(rootElem)
 			{
 				UiElemConfig orangeElem = { .id = UiIdLit("Orange"), .color=MonokaiOrange };
-				orangeElem.margins = margins;
-				orangeElem.padding = padding;
 				orangeElem.direction   = UiLayoutDir_LeftToRight;
 				UIELEM_LEAF(orangeElem);
 				
 				UiElemConfig backElem = { .id = UiIdLit("PercentageRow") };
-				backElem.margins = margins;
-				backElem.padding = padding;
 				backElem.direction = UiLayoutDir_RightToLeft;
 				UIELEM(backElem)
 				{
@@ -1357,42 +1352,31 @@ bool AppFrame(void)
 					
 					UiElemConfig greenElem = { .id = UiIdLit("Green"), .color=MonokaiGreen };
 					greenElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.20f);
-					greenElem.margins = margins;
-					greenElem.padding = padding;
 					UIELEM_LEAF(greenElem);
 					
 					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
 					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
-					blueElem.margins = margins;
-					blueElem.padding = padding;
 					UIELEM_LEAF(blueElem);
 					
 					UiElemConfig purpleElem = { .id = UiIdLit("Purple"), .color=MonokaiPurple };
 					purpleElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.60f);
-					purpleElem.margins = margins;
-					purpleElem.padding = padding;
 					UIELEM_LEAF(purpleElem);
 					
 					PopUiThemer(&uiContext.themers, testThemerId);
 				}
 				
 				UIELEM_LEAF({ .id = UiIdLit("Yellow"),
-					.margins=margins,
-					.padding=padding,
 					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiYellow,
 				});
 				
 				UIELEM({ .id = UiIdLit("Red"),
-					.margins=margins,
-					.padding=padding,
+					.sizing = { .x=UI_FIT(), .y=UI_EXPAND() },
 					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiRed,
 				})
 				{
 					UIELEM_LEAF({ .id = UiIdLit("DarkGreen"),
-						.margins=margins,
-						.padding=padding,
 						.color=MonokaiDarkGreen,
 						.sizing=UI_FIXED2(100, 200)
 					});
@@ -1401,11 +1385,9 @@ bool AppFrame(void)
 					{
 						Texture* texture = ((tIndex%2) == 0) ? &mipmapTexture : &noMipmapTexture;
 						UIELEM_LEAF({ .id = UiIdLitIndex("Texture", tIndex),
-							.margins=margins,
-							.padding=padding,
+							.sizing = UI_FIXED2(texture->Width*0.3f, texture->Height*0.3f),
 							.color=ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
 							.texture = texture,
-							.sizing = UI_FIXED2(texture->Width*0.3f, texture->Height*0.3f),
 						});
 					}
 				}
@@ -1663,7 +1645,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.cleanup_cb = AppCleanup,
 		.event_cb = AppEvent,
 		.width = 1100,
-		.height = 600,
+		.height = 630,
 		.high_dpi = true,
 		.window_title = "Simple Sokol App!",
 		.icon.sokol_default = true,

@@ -529,7 +529,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	{
 		// Copy children's minimumSize into layoutRec.Size and track how many want to be bigger and what their total minimum size is
 		uxx numGrowableChildren = 0;
-		r32 childrenMinimumTotal = (xAxis ? (element->config.padding.Left + element->config.padding.Right) : (element->config.padding.Top + element->config.padding.Bottom));
+		r32 childrenMinimumTotal = elemMargins;
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
@@ -750,8 +750,8 @@ static void UiSystemDoLayout()
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
 			r32 childPadding = ((cIndex > 0) ? element->config.childPadding : 0.0f);
-			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->config.padding.Left; }
-			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->config.padding.Top; }
+			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += childPadding + child->config.padding.Left; }
+			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += childPadding + child->config.padding.Top; }
 			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->layoutRec.Width + childPadding + child->config.padding.Right; }
 			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->layoutRec.Height + childPadding + child->config.padding.Bottom; }
 			
@@ -759,8 +759,8 @@ static void UiSystemDoLayout()
 			if (IsUiDirHorizontal(element->config.direction)) { child->layoutRec.Y += child->config.padding.Top; }
 			else { child->layoutRec.X += child->config.padding.Left; }
 			
-			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->layoutRec.Width + childPadding + child->config.padding.Right; }
-			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + childPadding + child->config.padding.Bottom; }
+			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->layoutRec.Width + child->config.padding.Right; }
+			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + child->config.padding.Bottom; }
 			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.Left; }
 			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.Top; }
 			

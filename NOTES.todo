@@ -49,7 +49,8 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] UIELEM_LEAF macro
 	[X] Handle globalId in UiElemConfig
 	[X] Convenient Push/Pop of basic Themers
-	( ) Test padding and margins more. The bottom margin of the red row isn't forcing the red row to be taller
+	(X) Test padding and margins more. The bottom margin of the red row isn't forcing the red row to be taller. childPadding isn't working between DarkGreen element and first pig
+	[ ] Rename margins/padding to innerMargin and outMargins. Maybe childPadding to childGap?
 	[!] Floating elements
 	[?] Border on top of children option?
 	[ ] UI Scaling
@@ -89,6 +90,8 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[?] Vector art support?
 	[?] We we construct UiElemConfig elements into the local scope (outside UIELEM macro). Can we limit the visiblity of that config after it's been sent to UIELEM or UIELEM_LEAF?
 	[ ] Make the UiCtx global thread_local
+	[ ] borderThickness is margin and border renders outside UI element options
+	[ ] 
 
 # Things we do differently than Clay
 	[ ] UIELEM_LEAF variant
