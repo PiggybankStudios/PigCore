@@ -1330,10 +1330,10 @@ bool AppFrame(void)
 			
 			// PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
 			PushUiFields({ .color = MonokaiDarkGray });
-			PushUiFields({ .padding = {
-				.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
-				.child = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
-			}});
+			// PushUiFields({ .padding = {
+			// 	.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
+			// 	.child = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
+			// }});
 			PushUiFields({ .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
 			
 			UiElemConfig rootElem = { .id = UiIdLit("Root") };
@@ -1344,9 +1344,12 @@ bool AppFrame(void)
 				orangeElem.direction   = UiLayoutDir_LeftToRight;
 				UIELEM_LEAF(orangeElem);
 				
-				UiElemConfig backElem = { .id = UiIdLit("PercentageRow") };
-				backElem.direction = UiLayoutDir_RightToLeft;
-				UIELEM(backElem)
+				UiElemConfig percentageRowElem = { .id = UiIdLit("PercentageRow") };
+				percentageRowElem.direction = UiLayoutDir_RightToLeft;
+				percentageRowElem.borderThickness = FillV4r(30.0f);
+				percentageRowElem.borderColor = MonokaiPurple;
+				percentageRowElem.borderDepth = -1.0f;
+				UIELEM(percentageRowElem)
 				{
 					uxx testThemerId = PushUiThemer(&uiContext.themers, TestsUiThemerCallback, nullptr);
 					
@@ -1400,7 +1403,7 @@ bool AppFrame(void)
 				{
 					case UiRenderCmdType_Rectangle:
 					{
-						Color32 color = cmd->rectangle.color;
+						Color32 color = cmd->color;
 						if (color.valueU32 == PigUiDefaultColor_Value) { color = White; }
 						if (cmd->rectangle.texture != nullptr)
 						{

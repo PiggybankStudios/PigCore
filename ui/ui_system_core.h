@@ -236,7 +236,6 @@ plex UiElemConfig
 // This is a bitwise enum where each bit represents a single "field" in the UiElemConfig structure above
 // Some values are aliases for combinations of other values, like Margins is MarginLeft|MarginTop|MarginRight|MarginBottom
 // This is useful when we want to explicitly list which fields are overridden, esp. for things like UiThemers
-// NOTE: This is currently a 32-bit bitfield, but it may grow soon since 29/32 bits are used.
 typedef enum UiElemConfigField UiElemConfigField;
 enum UiElemConfigField
 {
@@ -248,31 +247,33 @@ enum UiElemConfigField
 	UiElemConfigField_SizingValueX          = ((1ull) << 4),
 	UiElemConfigField_SizingTypeY           = ((1ull) << 5),
 	UiElemConfigField_SizingValueY          = ((1ull) << 6),
-	UiElemConfigField_Color                 = ((1ull) << 7),
-	UiElemConfigField_Texture               = ((1ull) << 8),
-	UiElemConfigField_DontSizeToTexture     = ((1ull) << 9),
-	UiElemConfigField_InnerPaddingLeft      = ((1ull) << 10),
-	UiElemConfigField_InnerPaddingTop       = ((1ull) << 11),
-	UiElemConfigField_InnerPaddingRight     = ((1ull) << 12),
-	UiElemConfigField_InnerPaddingBottom    = ((1ull) << 13),
-	UiElemConfigField_OuterPaddingLeft      = ((1ull) << 14),
-	UiElemConfigField_OuterPaddingTop       = ((1ull) << 15),
-	UiElemConfigField_OuterPaddingRight     = ((1ull) << 16),
-	UiElemConfigField_OuterPaddingBottom    = ((1ull) << 17),
-	UiElemConfigField_ChildPadding          = ((1ull) << 18),
-	UiElemConfigField_BorderThicknessLeft   = ((1ull) << 19),
-	UiElemConfigField_BorderThicknessTop    = ((1ull) << 20),
-	UiElemConfigField_BorderThicknessRight  = ((1ull) << 21),
-	UiElemConfigField_BorderThicknessBottom = ((1ull) << 22),
-	UiElemConfigField_BorderColor           = ((1ull) << 23),
-	UiElemConfigField_FloatingType          = ((1ull) << 24),
-	UiElemConfigField_FloatingOffsetX       = ((1ull) << 25),
-	UiElemConfigField_FloatingOffsetY       = ((1ull) << 26),
-	UiElemConfigField_FloatingParentAttach  = ((1ull) << 27),
-	UiElemConfigField_FloatingElemAttach    = ((1ull) << 28),
-	UiElemConfigField_RendererParams        = ((1ull) << 29), // NOTE: Fields inside UiRendererParameters struct are not represented individually
-	UiElemConfigField_ThemerParams          = ((1ull) << 30), // NOTE: Fields inside UiThemerParameters struct are not represented individually
-	UiElemConfigField_Count                 = 31,
+	UiElemConfigField_Depth                 = ((1ull) << 7),
+	UiElemConfigField_Color                 = ((1ull) << 8),
+	UiElemConfigField_Texture               = ((1ull) << 9),
+	UiElemConfigField_DontSizeToTexture     = ((1ull) << 10),
+	UiElemConfigField_InnerPaddingLeft      = ((1ull) << 11),
+	UiElemConfigField_InnerPaddingTop       = ((1ull) << 12),
+	UiElemConfigField_InnerPaddingRight     = ((1ull) << 13),
+	UiElemConfigField_InnerPaddingBottom    = ((1ull) << 14),
+	UiElemConfigField_OuterPaddingLeft      = ((1ull) << 15),
+	UiElemConfigField_OuterPaddingTop       = ((1ull) << 16),
+	UiElemConfigField_OuterPaddingRight     = ((1ull) << 17),
+	UiElemConfigField_OuterPaddingBottom    = ((1ull) << 18),
+	UiElemConfigField_ChildPadding          = ((1ull) << 19),
+	UiElemConfigField_BorderThicknessLeft   = ((1ull) << 20),
+	UiElemConfigField_BorderThicknessTop    = ((1ull) << 21),
+	UiElemConfigField_BorderThicknessRight  = ((1ull) << 22),
+	UiElemConfigField_BorderThicknessBottom = ((1ull) << 23),
+	UiElemConfigField_BorderColor           = ((1ull) << 24),
+	UiElemConfigField_BorderDepth           = ((1ull) << 25),
+	UiElemConfigField_FloatingType          = ((1ull) << 26),
+	UiElemConfigField_FloatingOffsetX       = ((1ull) << 27),
+	UiElemConfigField_FloatingOffsetY       = ((1ull) << 28),
+	UiElemConfigField_FloatingParentAttach  = ((1ull) << 29),
+	UiElemConfigField_FloatingElemAttach    = ((1ull) << 30),
+	UiElemConfigField_RendererParams        = ((1ull) << 31), // NOTE: Fields inside UiRendererParameters struct are not represented individually
+	UiElemConfigField_ThemerParams          = ((1ull) << 32), // NOTE: Fields inside UiThemerParameters struct are not represented individually
+	UiElemConfigField_Count                 = 33,
 	UiElemConfigField_All                   = (((1ull) << UiElemConfigField_Count)-1),
 	UiElemConfigField_Sizing                = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueX|UiElemConfigField_SizingValueY),
 	UiElemConfigField_SizingX               = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingValueX),
@@ -300,6 +301,7 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_SizingTypeY:           return "SizingTypeY";
 		case UiElemConfigField_SizingValueX:          return "SizingValueX";
 		case UiElemConfigField_SizingValueY:          return "SizingValueY";
+		case UiElemConfigField_Depth:                 return "Depth";
 		case UiElemConfigField_Color:                 return "Color";
 		case UiElemConfigField_Texture:               return "Texture";
 		case UiElemConfigField_DontSizeToTexture:     return "DontSizeToTexture";
@@ -317,6 +319,7 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_BorderThicknessRight:  return "BorderThicknessRight";
 		case UiElemConfigField_BorderThicknessBottom: return "BorderThicknessBottom";
 		case UiElemConfigField_BorderColor:           return "BorderColor";
+		case UiElemConfigField_BorderDepth:           return "BorderDepth";
 		case UiElemConfigField_FloatingType:          return "FloatingType";
 		case UiElemConfigField_FloatingOffsetX:       return "FloatingOffsetX";
 		case UiElemConfigField_FloatingOffsetY:       return "FloatingOffsetY";
@@ -409,6 +412,8 @@ typedef plex UiRenderCmd UiRenderCmd;
 plex UiRenderCmd
 {
 	UiRenderCmdType type;
+	r32 depth;
+	Color32 color;
 	car
 	{
 		// +==============================+
@@ -417,7 +422,6 @@ plex UiRenderCmd
 		plex
 		{
 			rec rectangle;
-			Color32 color;
 			v4r cornerRadius;
 			v4r borderThickness;
 			Color32 borderColor;
@@ -432,7 +436,6 @@ plex UiRenderCmd
 			v2 position;
 			PigFont* font;
 			Str8 text;
-			Color32 color;
 		} text;
 		
 		// +==============================+

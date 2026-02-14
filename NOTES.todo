@@ -51,16 +51,17 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Convenient Push/Pop of basic Themers
 	(X) Test padding and margins more. The bottom margin of the red row isn't forcing the red row to be taller. childPadding isn't working between DarkGreen element and first pig
 	[X] Rename margins/padding to innerMargin and outMargins. Maybe childPadding to childGap?
-	[!] Floating elements
-	[?] Border on top of children option?
-	[ ] UI Scaling
+	[X] Depth (and depth sorted rendering)
+	[!] Discard offscreen render commands (transparent render commands?)
+	[!] UI Scaling
+	[ ] Floating elements
+		[ ] Option for what bounds it's restricted to (clipped to is separate? Only for EXPAND?)
+	[X] Border on top of children option?
 	( ) Test a Themer returning false! We probably are calling CloseUiElement when we shouldn't be!
-	[ ] Make sure childGap works
+	[X] Make sure childGap works
 	[ ] Get current element
 	[ ] Get an elements layout last frame
-	[ ] Depth (and depth sorted rendering)
 	[ ] Figure out what element the mouse is hovering over (including depth and occlussion+clipping of elements)
-	[ ] Discard offscreen render commands (transparent render commands?)
 	[ ] Run child scope if clicked or other input events
 	[ ] Some idea of focused element, keyboard/gamepad-driven interaction of most UI
 	[ ] Text elements

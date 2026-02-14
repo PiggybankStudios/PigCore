@@ -38,6 +38,7 @@ Description:
 #include "gfx/gfx_texture.h"
 #include "gfx/gfx_font.h"
 #include "misc/misc_hash.h"
+#include "misc/misc_sorting.h"
 #include "ui/ui_system_core.h"
 
 #if BUILD_WITH_PIG_UI
@@ -151,6 +152,7 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_SizingValueX:          return (configPntr->sizing.x.value == 0.0f);
 		case UiElemConfigField_SizingTypeY:           return (configPntr->sizing.y.type == UiSizingType_Default);
 		case UiElemConfigField_SizingValueY:          return (configPntr->sizing.y.value == 0.0f);
+		case UiElemConfigField_Depth:                 return (configPntr->depth == 0.0f);
 		case UiElemConfigField_Color:                 return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
 		case UiElemConfigField_Texture:               return (configPntr->texture == nullptr);
 		case UiElemConfigField_DontSizeToTexture:     return (configPntr->dontSizeToTexture == false);
@@ -168,6 +170,7 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_BorderThicknessRight:  return (configPntr->borderThickness.Right  == 0.0f);
 		case UiElemConfigField_BorderThicknessBottom: return (configPntr->borderThickness.Bottom == 0.0f);
 		case UiElemConfigField_BorderColor:           return (configPntr->borderColor.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_BorderDepth:           return (configPntr->borderDepth == 0.0f);
 		case UiElemConfigField_FloatingType:          return (configPntr->floating.type == UiFloatingType_Default);
 		case UiElemConfigField_FloatingOffsetX:       return (configPntr->floating.offset.X == 0.0f);
 		case UiElemConfigField_FloatingOffsetY:       return (configPntr->floating.offset.Y == 0.0f);
@@ -189,6 +192,7 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_SizingValueX:          configToPntr->sizing.x.value = configFromPntr->sizing.x.value; break;
 		case UiElemConfigField_SizingTypeY:           configToPntr->sizing.y.type = configFromPntr->sizing.y.type; break;
 		case UiElemConfigField_SizingValueY:          configToPntr->sizing.y.value = configFromPntr->sizing.y.value; break;
+		case UiElemConfigField_Depth:                 configToPntr->depth = configFromPntr->depth; break;
 		case UiElemConfigField_Color:                 configToPntr->color = configFromPntr->color; break;
 		case UiElemConfigField_Texture:               configToPntr->texture = configFromPntr->texture; break;
 		case UiElemConfigField_DontSizeToTexture:     configToPntr->dontSizeToTexture = configFromPntr->dontSizeToTexture; break;
@@ -206,6 +210,7 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_BorderThicknessRight:  configToPntr->borderThickness.Right  = configFromPntr->borderThickness.Right; break;
 		case UiElemConfigField_BorderThicknessBottom: configToPntr->borderThickness.Bottom = configFromPntr->borderThickness.Bottom; break;
 		case UiElemConfigField_BorderColor:           configToPntr->borderColor = configFromPntr->borderColor; break;
+		case UiElemConfigField_BorderDepth:           configToPntr->borderDepth = configFromPntr->borderDepth; break;
 		case UiElemConfigField_FloatingType:          configToPntr->floating.type = configFromPntr->floating.type; break;
 		case UiElemConfigField_FloatingOffsetX:       configToPntr->floating.offset.X = configFromPntr->floating.offset.X; break;
 		case UiElemConfigField_FloatingOffsetY:       configToPntr->floating.offset.Y = configFromPntr->floating.offset.Y; break;
@@ -279,6 +284,7 @@ PEXPI UiElement* GetUiElementChild(UiElement* element, uxx childIndex)
 PEXPI UiElement* OpenUiElement(UiElemConfig config)
 {
 	NotNull(UiCtx);
+	// DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);//TODO: Enable this once we figure out how to allow this ONLY when the root element is getting opened in StartUiFrame
 	AssertUiThreadIsSame();
 	
 	//NOTE: Everything that happens in the first part of this function must be reversable if !allThemersAcceptedElement
@@ -802,21 +808,41 @@ PEXP UiRenderList* GetUiRenderList()
 	VarArrayLoop(&UiCtx->elements, eIndex)
 	{
 		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
-		if (element->config.color.a != 0 ||
-			(element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0)))
+		bool isBorderSameDepth = (AreSimilarR32(element->config.borderDepth, element->config.depth, DEFAULT_R32_TOLERANCE) || element->config.borderDepth == 0.0f);
+		bool borderHasAlpha = (element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0));
+		if (element->config.color.a != 0 || (borderHasAlpha && isBorderSameDepth))
 		{
 			UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
 			DebugNotNull(newCmd);
 			ClearPointer(newCmd);
 			newCmd->type = UiRenderCmdType_Rectangle;
+			newCmd->depth = element->config.depth;
+			newCmd->color = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
 			newCmd->rectangle.rectangle = element->layoutRec;
-			newCmd->rectangle.color = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
 			newCmd->rectangle.texture = element->config.texture;
+			if (isBorderSameDepth)
+			{
+				newCmd->rectangle.borderThickness = element->config.borderThickness;
+				newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
+				newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
+			}
+		}
+		if (!isBorderSameDepth && borderHasAlpha)
+		{
+			UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
+			DebugNotNull(newCmd);
+			ClearPointer(newCmd);
+			newCmd->type = UiRenderCmdType_Rectangle;
+			newCmd->depth = element->config.borderDepth;
+			newCmd->color = Transparent;
+			newCmd->rectangle.rectangle = element->layoutRec;
 			newCmd->rectangle.borderThickness = element->config.borderThickness;
 			newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
 			newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
 		}
 	}
+	
+	QuickSortVarArrayFloatMemberReversed(UiRenderCmd, depth, &UiCtx->renderList.commands);
 	
 	return &UiCtx->renderList;
 }
@@ -844,3 +870,4 @@ PEXP void EndUiFrame()
 #endif //BUILD_WITH_PIG_UI
 
 #endif //  _UI_SYSTEM_H
+ 
