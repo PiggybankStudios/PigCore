@@ -301,6 +301,12 @@ typedef Obb3DR64 obb3d;
 	PIG_CORE_INLINE bool AreEqualObb2d(obb2d left, obb2d right);
 	PIG_CORE_INLINE bool AreEqualObb3(obb3 left, obb3 right);
 	PIG_CORE_INLINE bool AreEqualObb3d(obb3d left, obb3d right);
+	PIG_CORE_INLINE bool DoesOverlapRec(rec rectangle1, rec rectangle2, bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlapReci(reci rectangle1, reci rectangle2, bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlapRecd(recd rectangle1, recd rectangle2, bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlapBox(box rectangle1, box rectangle2, bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlapBoxi(boxi rectangle1, boxi rectangle2, bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlapBoxd(boxd rectangle1, boxd rectangle2, bool inclusive);
 	PIG_CORE_INLINE rec InflateRecEx(rec rectangle, r32 leftAmount, r32 rightAmount, r32 topAmount, r32 bottomAmount);
 	PIG_CORE_INLINE rec InflateRec(rec rectangle, r32 amount);
 	PIG_CORE_INLINE rec InflateRecX(rec rectangle, r32 amount);
@@ -767,6 +773,103 @@ PEXPI bool AreEqualObb3d(obb3d left, obb3d right) { return (left.X == right.X &&
 //TODO: LerpRec?
 //TODO: RotateObb2Clockwise(uxx numQuarterTurns)/RotateObb2CounterClockwise(uxx numQuarterTurns)
 
+PEXPI bool DoesOverlapRec(rec rectangle1, rec rectangle2, bool inclusive)
+{
+	return inclusive ? (
+		rectangle1.X <= (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y <= (rectangle2.Y + rectangle2.Height) &&
+		rectangle2.X <= (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y <= (rectangle1.Y + rectangle1.Height)
+	) : (
+		rectangle1.X < (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y < (rectangle2.Y + rectangle2.Height) &&
+		rectangle2.X < (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y < (rectangle1.Y + rectangle1.Height)
+	);
+}
+PEXPI bool DoesOverlapReci(reci rectangle1, reci rectangle2, bool inclusive)
+{
+	return inclusive ? (
+		rectangle1.X <= (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y <= (rectangle2.Y + rectangle2.Height) &&
+		rectangle2.X <= (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y <= (rectangle1.Y + rectangle1.Height)
+	) : (
+		rectangle1.X < (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y < (rectangle2.Y + rectangle2.Height) &&
+		rectangle2.X < (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y < (rectangle1.Y + rectangle1.Height)
+	);
+}
+PEXPI bool DoesOverlapRecd(recd rectangle1, recd rectangle2, bool inclusive)
+{
+	return inclusive ? (
+		rectangle1.X <= (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y <= (rectangle2.Y + rectangle2.Height) &&
+		rectangle2.X <= (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y <= (rectangle1.Y + rectangle1.Height)
+	) : (
+		rectangle1.X < (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y < (rectangle2.Y + rectangle2.Height) &&
+		rectangle2.X < (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y < (rectangle1.Y + rectangle1.Height)
+	);
+}
+PEXPI bool DoesOverlapBox(box rectangle1, box rectangle2, bool inclusive)
+{
+	return inclusive ? (
+		rectangle1.X <= (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y <= (rectangle2.Y + rectangle2.Height) &&
+		rectangle1.Z <= (rectangle2.Z + rectangle2.Depth)  &&
+		rectangle2.X <= (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y <= (rectangle1.Y + rectangle1.Height) &&
+		rectangle2.Z <= (rectangle1.Z + rectangle1.Depth)
+	) : (
+		rectangle1.X < (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y < (rectangle2.Y + rectangle2.Height) &&
+		rectangle1.Z < (rectangle2.Z + rectangle2.Depth)  &&
+		rectangle2.X < (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y < (rectangle1.Y + rectangle1.Height) &&
+		rectangle2.Z < (rectangle1.Z + rectangle1.Depth)
+	);
+}
+PEXPI bool DoesOverlapBoxi(boxi rectangle1, boxi rectangle2, bool inclusive)
+{
+	return inclusive ? (
+		rectangle1.X <= (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y <= (rectangle2.Y + rectangle2.Height) &&
+		rectangle1.Z <= (rectangle2.Z + rectangle2.Depth)  &&
+		rectangle2.X <= (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y <= (rectangle1.Y + rectangle1.Height) &&
+		rectangle2.Z <= (rectangle1.Z + rectangle1.Depth)
+	) : (
+		rectangle1.X < (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y < (rectangle2.Y + rectangle2.Height) &&
+		rectangle1.Z < (rectangle2.Z + rectangle2.Depth)  &&
+		rectangle2.X < (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y < (rectangle1.Y + rectangle1.Height) &&
+		rectangle2.Z < (rectangle1.Z + rectangle1.Depth)
+	);
+}
+PEXPI bool DoesOverlapBoxd(boxd rectangle1, boxd rectangle2, bool inclusive)
+{
+	return inclusive ? (
+		rectangle1.X <= (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y <= (rectangle2.Y + rectangle2.Height) &&
+		rectangle1.Z <= (rectangle2.Z + rectangle2.Depth)  &&
+		rectangle2.X <= (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y <= (rectangle1.Y + rectangle1.Height) &&
+		rectangle2.Z <= (rectangle1.Z + rectangle1.Depth)
+	) : (
+		rectangle1.X < (rectangle2.X + rectangle2.Width)  &&
+		rectangle1.Y < (rectangle2.Y + rectangle2.Height) &&
+		rectangle1.Z < (rectangle2.Z + rectangle2.Depth)  &&
+		rectangle2.X < (rectangle1.X + rectangle1.Width)  &&
+		rectangle2.Y < (rectangle1.Y + rectangle1.Height) &&
+		rectangle2.Z < (rectangle1.Z + rectangle1.Depth)
+	);
+}
+
 PEXPI rec InflateRecEx(rec rectangle, r32 leftAmount, r32 rightAmount, r32 topAmount, r32 bottomAmount) { return MakeRec(rectangle.X - leftAmount, rectangle.Y - topAmount, rectangle.Width + leftAmount + rightAmount, rectangle.Height + topAmount + bottomAmount); }
 PEXPI rec InflateRec(rec rectangle, r32 amount) { return InflateRecEx(rectangle, amount, amount, amount, amount); }
 PEXPI rec InflateRecX(rec rectangle, r32 amount) { return InflateRecEx(rectangle, amount, amount, 0.0f, 0.0f); }
@@ -909,7 +1012,7 @@ PEXPI void AlignBoxd(boxd* boundingBoxOut) { AlignBoxdToV3d(boundingBoxOut, V3d_
 
 //TODO: ExpandRecToV2/ExpandReciToV2i?
 //TODO: IsInsideBox/IsInsideObb2/IsRecInsideRec?
-//TODO: DoesOverlapRec?
+//TODO: ?
 //TODO: GetObb2AlignedBounds?
 //TODO: AlignRec/AlignRecTopLeft/AlignRecSize?
 //TODO: MakeObb2Line(v2 start, v2 end, r32 thickness)

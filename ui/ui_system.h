@@ -802,43 +802,47 @@ PEXP UiRenderList* GetUiRenderList()
 	// +==============================+
 	// |          UI Render           |
 	// +==============================+
+	rec screenRec = MakeRecV(V2_Zero, UiCtx->screenSize);
 	UiCtx->renderList.context = UiCtx;
 	UiCtx->renderList.arena = UiCtx->frameArena;
 	InitVarArrayWithInitial(UiRenderCmd, &UiCtx->renderList.commands, UiCtx->frameArena, UiCtx->elements.length); //Lower estimate (TODO: Should we decide on a better upper estimate?)
 	VarArrayLoop(&UiCtx->elements, eIndex)
 	{
 		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
-		bool isBorderSameDepth = (AreSimilarR32(element->config.borderDepth, element->config.depth, DEFAULT_R32_TOLERANCE) || element->config.borderDepth == 0.0f);
-		bool borderHasAlpha = (element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0));
-		if (element->config.color.a != 0 || (borderHasAlpha && isBorderSameDepth))
+		if (DoesOverlapRec(element->layoutRec, screenRec, true))
 		{
-			UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
-			DebugNotNull(newCmd);
-			ClearPointer(newCmd);
-			newCmd->type = UiRenderCmdType_Rectangle;
-			newCmd->depth = element->config.depth;
-			newCmd->color = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
-			newCmd->rectangle.rectangle = element->layoutRec;
-			newCmd->rectangle.texture = element->config.texture;
-			if (isBorderSameDepth)
+			bool isBorderSameDepth = (AreSimilarR32(element->config.borderDepth, element->config.depth, DEFAULT_R32_TOLERANCE) || element->config.borderDepth == 0.0f);
+			bool borderHasAlpha = (element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0));
+			if (element->config.color.a != 0 || (borderHasAlpha && isBorderSameDepth))
 			{
+				UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
+				DebugNotNull(newCmd);
+				ClearPointer(newCmd);
+				newCmd->type = UiRenderCmdType_Rectangle;
+				newCmd->depth = element->config.depth;
+				newCmd->color = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
+				newCmd->rectangle.rectangle = element->layoutRec;
+				newCmd->rectangle.texture = element->config.texture;
+				if (isBorderSameDepth)
+				{
+					newCmd->rectangle.borderThickness = element->config.borderThickness;
+					newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
+					newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
+				}
+			}
+			if (!isBorderSameDepth && borderHasAlpha)
+			{
+				UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
+				DebugNotNull(newCmd);
+				ClearPointer(newCmd);
+				newCmd->type = UiRenderCmdType_Rectangle;
+				newCmd->depth = element->config.borderDepth;
+				newCmd->color = Transparent;
+				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.borderThickness = element->config.borderThickness;
 				newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
 				newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
 			}
-		}
-		if (!isBorderSameDepth && borderHasAlpha)
-		{
-			UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
-			DebugNotNull(newCmd);
-			ClearPointer(newCmd);
-			newCmd->type = UiRenderCmdType_Rectangle;
-			newCmd->depth = element->config.borderDepth;
-			newCmd->color = Transparent;
-			newCmd->rectangle.rectangle = element->layoutRec;
-			newCmd->rectangle.borderThickness = element->config.borderThickness;
-			newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
-			newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
 		}
 	}
 	
