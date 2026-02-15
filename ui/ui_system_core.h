@@ -33,6 +33,13 @@ Description:
 #define PIG_UI_ID_INDEX_NONE UINTXX_MAX
 #define PIG_UI_DEFAULT_ID_STR "elem"
 
+#define PIG_UI_DEFAULT_FLOATING_ELEM_DEPTH_OFFSET -0.0001f
+#define PIG_UI_ROOT_ID_STR "root"
+#define PIG_UI_ROOT_DEPTH 1.0f
+
+#define UI_DEPTH_DEFAULT  0.0f
+#define UI_DEPTH_ZERO     0.0001f
+
 #define PigUiDefaultColor_Value TransparentBlack_Value
 #define PigUiDefaultColor       TransparentBlack
 
@@ -68,6 +75,9 @@ plex UiId
 #define MakeUiId(id, str, index)                      NEW_STRUCT(UiId)MakeUiId_Const((id), (str), (index))
 #define UiId_None       MakeUiId(0, Str8_Empty, 0)
 #define UiId_None_Const MakeUiId_Const(0, Str8_Empty_Const, 0)
+#define UiId_Root_U64   0x6D216EB70FEE0D58ull
+#define UiId_Root       MakeUiId(UiId_Root_U64, StrLit(PIG_UI_ROOT_ID_STR), 0)
+#define UiId_Root_Const MakeUiId_Const(UiId_Root_U64, StrLit_Const(PIG_UI_ROOT_ID_STR), 0)
 
 //This is the most convenient way to give a UiId from a string literal, like UiIdNt("Element1")
 #define UiIdLit(idStrLit)             CalcUiId(UiId_None, StrLit(idStrLit),    PIG_UI_ID_INDEX_NONE)
@@ -191,6 +201,7 @@ plex UiFloatingConfig
 {
 	UiFloatingType type;
 	v2 offset;
+	UiId attachId;
 	Dir2Ex parentAttach;
 	Dir2Ex elemAttach;
 };
@@ -338,7 +349,7 @@ plex UiElement
 	UiElemConfig config;
 	UiId id; //This is the "real" ID, the one in config actually gets recalculated in OpenUiElement based on the parent element's ID
 	
-	uxx depth; //How many parents this element has
+	uxx treeDepth; //How many parents this element has
 	uxx elementIndex; //What's this element's index in the UiContext->elements VarArray
 	uxx siblingIndex; //which index child is this element amongst it's siblings
 	uxx parentIndex; //What is the index of the parent element in the UiContext>elements VarArray
@@ -411,6 +422,7 @@ typedef plex UiRenderCmd UiRenderCmd;
 plex UiRenderCmd
 {
 	UiRenderCmdType type;
+	uxx srcElementIndex;
 	r32 depth;
 	Color32 color;
 	car

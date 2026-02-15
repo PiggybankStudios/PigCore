@@ -55,10 +55,12 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Discard offscreen render commands (transparent render commands?)
 	[X] UI Scaling
 	(X) Test a Themer returning false! We probably are calling CloseUiElement when we shouldn't be!
+	[X] Inherit parent's depth value?
 	[ ] Floating elements
 		[ ] Option for what bounds it's restricted to (clipped to is separate? Only for EXPAND?)
 	[X] Border on top of children option?
 	[X] Make sure childGap works
+	[ ] Add support for shrinking elements if they are too big at their preferred size
 	[ ] Get current element
 	[ ] Get an elements layout last frame
 	[ ] Figure out what element the mouse is hovering over (including depth and occlussion+clipping of elements)
@@ -92,6 +94,8 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[?] We we construct UiElemConfig elements into the local scope (outside UIELEM macro). Can we limit the visiblity of that config after it's been sent to UIELEM or UIELEM_LEAF?
 	[ ] Make the UiCtx global thread_local
 	[ ] borderThickness is margin and border renders outside UI element options
+	[ ] Add tooltip registration through UiElemConfig
+	[?] Repeating textures?
 	[ ] 
 
 # Things we do differently than Clay

@@ -75,10 +75,10 @@ Description:
 	void InitUiContext(Arena* arena, UiContext* contextOut);
 	PIG_CORE_INLINE UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementChild(UiElement* element, uxx childIndex);
+	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
 	void StartUiFrame(UiContext* context, v2 screenSize, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
-	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element);
 	UiRenderList* GetUiRenderList();
 	void EndUiFrame();
@@ -152,7 +152,7 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_SizingValueX:          return (configPntr->sizing.x.value == 0.0f);
 		case UiElemConfigField_SizingTypeY:           return (configPntr->sizing.y.type == UiSizingType_Default);
 		case UiElemConfigField_SizingValueY:          return (configPntr->sizing.y.value == 0.0f);
-		case UiElemConfigField_Depth:                 return (configPntr->depth == 0.0f);
+		case UiElemConfigField_Depth:                 return (configPntr->depth == UI_DEPTH_DEFAULT);
 		case UiElemConfigField_Color:                 return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
 		case UiElemConfigField_Texture:               return (configPntr->texture == nullptr);
 		case UiElemConfigField_DontSizeToTexture:     return (configPntr->dontSizeToTexture == false);
@@ -400,20 +400,21 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		if (newElement->config.globalId) { newElement->id = newElement->config.id; }
 		else { newElement->id = CalcUiId(parentElement->id, newElement->config.id.str, newElement->config.id.index); }
 		newElement->parentId = parentElement->config.id;
-		newElement->depth = (parentElement->depth + 1);
+		newElement->treeDepth = (parentElement->treeDepth + 1);
 		newElement->siblingIndex = parentElement->numChildren;
 		parentElement->numChildren++;
-		while (parentElement != nullptr)
+		UiElement* ancestor = parentElement;
+		while (ancestor != nullptr)
 		{
-			parentElement->numDescendents++;
-			parentElement = VarArrayGetSoft(UiElement, &UiCtx->elements, parentElement->parentIndex);
+			ancestor->numDescendents++;
+			ancestor = VarArrayGetSoft(UiElement, &UiCtx->elements, ancestor->parentIndex);
 		}
 	}
 	else
 	{
 		if (IsEmptyStr(newElement->config.id.str)) { newElement->config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, UiCtx->numTopLevelElements); }
 		newElement->id = newElement->config.id; //Top-level IDs are not modified by any base ID
-		newElement->depth = 0;
+		newElement->treeDepth = 0;
 		newElement->siblingIndex = UiCtx->numTopLevelElements;
 		UiCtx->numTopLevelElements++;
 	}
@@ -425,14 +426,14 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 	bool allThemersAcceptedElement = RunUiThemerCallbacks(&UiCtx->themers, UiCtx, newElement);
 	if (!allThemersAcceptedElement)
 	{
-		parentElement = GetUiElementParent(newElement, 0);
 		if (parentElement != nullptr)
 		{
 			parentElement->numChildren--;
-			while (parentElement != nullptr)
+			UiElement* ancestor = parentElement;
+			while (ancestor != nullptr)
 			{
-				parentElement->numDescendents--;
-				parentElement = VarArrayGetSoft(UiElement, &UiCtx->elements, parentElement->parentIndex);
+				ancestor->numDescendents--;
+				ancestor = VarArrayGetSoft(UiElement, &UiCtx->elements, ancestor->parentIndex);
 			}
 		}
 		else { UiCtx->numTopLevelElements--; }
@@ -441,6 +442,12 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		return nullptr;
 	}
 	
+	// If you don't specify depth then we inherit depth from the parent
+	if (newElement->config.depth == UI_DEPTH_DEFAULT && parentElement != nullptr)
+	{
+		newElement->config.depth = parentElement->config.depth;
+		if (newElement->config.floating.type != UiFloatingType_None) { newElement->config.depth += PIG_UI_DEFAULT_FLOATING_ELEM_DEPTH_OFFSET; }
+	}
 	// If you have default sizing parameters and you attached a texture then we copy in the texture dimensions as UiSizingType_Fit
 	if (newElement->config.texture != nullptr && !newElement->config.dontSizeToTexture &&
 		newElement->config.sizing.x.type == UiSizingType_Default && newElement->config.sizing.y.type == UiSizingType_Default &&
@@ -498,9 +505,10 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	UiCtx = context;
 	
 	UiElement* rootElement = OpenUiElement(NEW_STRUCT(UiElemConfig){
-		.id = UiIdLit("root"),
+		.id = UiId_Root,
 		.sizing = UI_FIXED2(screenSize.Width / context->scale, screenSize.Height / context->scale),
 		.color = backgroundColor,
+		.depth = PIG_UI_ROOT_DEPTH,
 	});
 	UNUSED(rootElement);
 }
@@ -510,9 +518,9 @@ PEXPI Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element)
 	DebugNotNull(element);
 	TwoPassStr8Loop(result, arena, false)
 	{
-		for (uxx depth = 0; depth < element->depth; depth++)
+		for (uxx depth = 0; depth < element->treeDepth; depth++)
 		{
-			UiElement* parent = GetUiElementParent(element, (element->depth-1) - depth);
+			UiElement* parent = GetUiElementParent(element, (element->treeDepth-1) - depth);
 			DebugNotNull(parent);
 			TwoPassStr(&result, parent->config.id.str);
 			if (parent->config.id.index != PIG_UI_ID_INDEX_NONE) { TwoPassPrint(&result, "[%llu]", parent->config.id.index); }
@@ -695,18 +703,19 @@ static void UiSystemDoLayout()
 		{
 			VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
 			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
-			PrintLine_D("0x%016llX %.*s: element=%llu depth=%llu sibling=%llu parent=%llu children=%llu descendents=%llu - sizing[X=%s, Y=%s] minimum(%g,%g) preferred(%g,%g)",
+			PrintLine_D("0x%016llX %.*s: element=%llu treeDepth=%llu sibling=%llu parent=%llu children=%llu descendents=%llu - sizing[X=%s, Y=%s] minimum(%g,%g) preferred(%g,%g) depth=%g",
 				element->id.id,
 				StrPrint(fullName),
 				element->elementIndex,
-				element->depth,
+				element->treeDepth,
 				element->siblingIndex,
 				element->parentIndex,
 				element->numChildren,
 				element->numDescendents,
 				GetUiSizingTypeStr(element->config.sizing.x.type), GetUiSizingTypeStr(element->config.sizing.y.type),
 				element->minimumSize.Width, element->minimumSize.Height,
-				element->preferredSize.Width, element->preferredSize.Height
+				element->preferredSize.Width, element->preferredSize.Height,
+				element->config.depth
 			);
 		}
 	}
@@ -809,6 +818,27 @@ static void UiSystemDoLayout()
 	}
 }
 
+// +==========================================+
+// | UiRenderCmd_DepthAndHierarchySortCompare |
+// +==========================================+
+// i32 UiRenderCmd_DepthAndHierarchySortCompare(const void* left, const void* right, void* contextPntr)
+static COMPARE_FUNC_DEF(UiRenderCmd_DepthAndHierarchySortCompare)
+{
+	DebugNotNull(left);
+	DebugNotNull(right);
+	UiRenderCmd* leftCmd = (UiRenderCmd*)left;
+	UiRenderCmd* rightCmd = (UiRenderCmd*)right;
+	if (leftCmd->depth < rightCmd->depth) { return 1; }
+	else if (leftCmd->depth > rightCmd->depth) { return -1; }
+	else
+	{
+		// return 0;
+		if (leftCmd->srcElementIndex < rightCmd->srcElementIndex) { return -1; }
+		else if (leftCmd->srcElementIndex > rightCmd->srcElementIndex) { return 1; }
+		else { return 0; }
+	}
+}
+
 PEXP UiRenderList* GetUiRenderList()
 {
 	NotNull(UiCtx);
@@ -843,6 +873,7 @@ PEXP UiRenderList* GetUiRenderList()
 				ClearPointer(newCmd);
 				newCmd->type = UiRenderCmdType_Rectangle;
 				newCmd->depth = element->config.depth;
+				newCmd->srcElementIndex = element->elementIndex;
 				newCmd->color = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.texture = element->config.texture;
@@ -860,6 +891,7 @@ PEXP UiRenderList* GetUiRenderList()
 				ClearPointer(newCmd);
 				newCmd->type = UiRenderCmdType_Rectangle;
 				newCmd->depth = element->config.borderDepth;
+				newCmd->srcElementIndex = element->elementIndex;
 				newCmd->color = Transparent;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.borderThickness = element->config.borderThickness;
@@ -869,7 +901,8 @@ PEXP UiRenderList* GetUiRenderList()
 		}
 	}
 	
-	QuickSortVarArrayFloatMemberReversed(UiRenderCmd, depth, &UiCtx->renderList.commands);
+	//NOTE: We used to sort but depth only, but we actually want to maintain ordering amongst same-depth elements so we sort by cmd->elementIndex secondarily
+	QuickSortVarArray(UiRenderCmd, &UiCtx->renderList.commands, UiRenderCmd_DepthAndHierarchySortCompare, nullptr);
 	
 	return &UiCtx->renderList;
 }

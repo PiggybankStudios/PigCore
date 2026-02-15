@@ -281,7 +281,10 @@ UI_THEMER_CALLBACK_DEF(TestsGlobalUiThemerCallback)
 	// 	element->config.borderThickness = FillV4r(2.0f);
 	// 	element->config.borderColor = ColorWithAlpha(Black, 0.5f);
 	// }
-	if (element->depth >= (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? 4 : 3)) { return false; }
+	// if (element->depth >= (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? 4 : 3)) { return false; }
+	u8 borderAlpha = element->config.borderColor.a;
+	element->config.borderColor = ColorLerpSimple(GetPredefPalColorByIndex(element->id.id), White, 0.5f);
+	element->config.borderColor.a = borderAlpha;
 	return true;
 }
 // +==============================+
@@ -1337,13 +1340,13 @@ bool AppFrame(void)
 			
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, &keyboard, &mouse, &touchscreen);
 			
-			PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
 			PushUiFields({ .color = MonokaiDarkGray });
 			// PushUiFields({ .padding = {
 			// 	.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
 			// 	.child = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
 			// }});
 			PushUiFields({ .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
+			PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
 			
 			UiElemConfig rootElem = { .id = UiIdLit("Root") };
 			rootElem.direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown;
@@ -1357,7 +1360,7 @@ bool AppFrame(void)
 				percentageRowElem.direction = UiLayoutDir_RightToLeft;
 				percentageRowElem.borderThickness = FillV4r(30.0f);
 				percentageRowElem.borderColor = MonokaiPurple;
-				percentageRowElem.borderDepth = -1.0f;
+				percentageRowElem.borderDepth = UI_DEPTH_ZERO;
 				UIELEM(percentageRowElem)
 				{
 					uxx testThemerId = PushUiThemer(&uiContext.themers, TestsUiThemerCallback, nullptr);
@@ -1368,6 +1371,7 @@ bool AppFrame(void)
 					
 					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
 					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
+					if (!IsKeyboardKeyDown(&keyboard, nullptr, Key_Control)) { blueElem.depth = -1; }
 					UIELEM_LEAF(blueElem);
 					
 					UiElemConfig purpleElem = { .id = UiIdLit("Purple"), .color=MonokaiPurple };
