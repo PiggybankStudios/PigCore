@@ -70,8 +70,8 @@ Description:
 	//PrintUiId pre-declared in ui_system_core.h
 	bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfigField field);
 	void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, UiElemConfigField field);
-	void SetUiElemConfigFields(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u32 fieldBits);
-	void SetUiElemConfigFieldsIfDefault(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u32 fieldBits);
+	PIG_CORE_INLINE void SetUiElemConfigFields(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u64 fieldBits);
+	PIG_CORE_INLINE void SetUiElemConfigFieldsIfDefault(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u64 fieldBits);
 	void InitUiContext(Arena* arena, UiContext* contextOut);
 	PIG_CORE_INLINE UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementChild(UiElement* element, uxx childIndex);
@@ -221,7 +221,7 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		default: DebugAssert(false); break;
 	}
 }
-PEXPI void SetUiElemConfigFields(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u32 fieldBits)
+PEXPI void SetUiElemConfigFields(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u64 fieldBits)
 {
 	for (uxx fIndex = 0; fIndex < UiElemConfigField_Count; fIndex++)
 	{
@@ -232,7 +232,7 @@ PEXPI void SetUiElemConfigFields(UiElemConfig* configToPntr, const UiElemConfig*
 		}
 	}
 }
-PEXPI void SetUiElemConfigFieldsIfDefault(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u32 fieldBits)
+PEXPI void SetUiElemConfigFieldsIfDefault(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u64 fieldBits)
 {
 	for (uxx fIndex = 0; fIndex < UiElemConfigField_Count; fIndex++)
 	{
@@ -383,7 +383,7 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	#endif
 	
 	context->screenSize = screenSize;
-	context->scale = scale;
+	context->scale = (scale != 0.0f) ? scale : 1.0f;
 	context->programTime = programTime;
 	context->keyboard = keyboard;
 	context->mouse = mouse;
@@ -401,7 +401,7 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	
 	UiElement* rootElement = OpenUiElement(NEW_STRUCT(UiElemConfig){
 		.id = UiIdLit("root"),
-		.sizing = UI_FIXED2(screenSize.Width, screenSize.Height),
+		.sizing = UI_FIXED2(screenSize.Width / context->scale, screenSize.Height / context->scale),
 		.color = backgroundColor,
 	});
 	UNUSED(rootElement);
@@ -474,6 +474,28 @@ PEXPI UiElement* CloseUiElement()
 	element->isOpen = false;
 	UiCtx->currentElementIndex = element->parentIndex;
 	
+	if (element->config.sizing.x.type == UiSizingType_FixedPx || element->config.sizing.x.type == UiSizingType_Expand)
+	{
+		element->config.sizing.x.value *= UiCtx->scale;
+	}
+	if (element->config.sizing.y.type == UiSizingType_FixedPx || element->config.sizing.y.type == UiSizingType_Expand)
+	{
+		element->config.sizing.y.value *= UiCtx->scale;
+	}
+	element->config.padding.inner.Left     *= UiCtx->scale;
+	element->config.padding.inner.Top      *= UiCtx->scale;
+	element->config.padding.inner.Right    *= UiCtx->scale;
+	element->config.padding.inner.Bottom   *= UiCtx->scale;
+	element->config.padding.outer.Left     *= UiCtx->scale;
+	element->config.padding.outer.Top      *= UiCtx->scale;
+	element->config.padding.outer.Right    *= UiCtx->scale;
+	element->config.padding.outer.Bottom   *= UiCtx->scale;
+	element->config.padding.child          *= UiCtx->scale;
+	element->config.borderThickness.Left   *= UiCtx->scale; if (element->config.borderThickness.Left   > 0.0f && element->config.borderThickness.Left   < 1.0f) { element->config.borderThickness.Left   = 1.0f; }
+	element->config.borderThickness.Top    *= UiCtx->scale; if (element->config.borderThickness.Top    > 0.0f && element->config.borderThickness.Top    < 1.0f) { element->config.borderThickness.Top    = 1.0f; }
+	element->config.borderThickness.Right  *= UiCtx->scale; if (element->config.borderThickness.Right  > 0.0f && element->config.borderThickness.Right  < 1.0f) { element->config.borderThickness.Right  = 1.0f; }
+	element->config.borderThickness.Bottom *= UiCtx->scale; if (element->config.borderThickness.Bottom > 0.0f && element->config.borderThickness.Bottom < 1.0f) { element->config.borderThickness.Bottom = 1.0f; }
+	
 	// We take the opportunity in CloseUiElement (which is a Reverse Breadth-First Visit on the tree) to do some basic sizing calculations
 	UiElement* parent = GetUiElementParent(element, 0);
 	CalculateUiElemSizeOnAxisOnClose(element, parent, true);
@@ -535,7 +557,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	{
 		// Copy children's minimumSize into layoutRec.Size and track how many want to be bigger and what their total minimum size is
 		uxx numGrowableChildren = 0;
-		r32 childrenMinimumTotal = elemInnerPaddingLrOrTb;
+		r32 childrenMinimumTotal = elemInnerPaddingLrOrTb + (element->config.padding.child * (element->numChildren-1));
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
@@ -545,7 +567,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
 			if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize) { numGrowableChildren++; }
 			*childSizePntr = childMinimumSize;
-			childrenMinimumTotal += childMinimumSize + childOuterPaddingLrOrTb + ((cIndex > 0) ? element->config.padding.child : 0.0f);
+			childrenMinimumTotal += childMinimumSize + childOuterPaddingLrOrTb;
 		}
 		
 		//TODO: We should probably be rounding to whole pixel values, and figuring out how to distribute remainders amongst n children
@@ -641,7 +663,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 		// 	//TODO: Implement me!
 		// }
 	}
-	else
+	else //sizing in the non-layout direction
 	{
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{

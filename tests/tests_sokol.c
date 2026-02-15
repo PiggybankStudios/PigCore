@@ -81,6 +81,7 @@ Texture testTexture = ZEROED;
 PerfGraph perfGraph = ZEROED;
 #if BUILD_WITH_PIG_UI
 UiContext uiContext = ZEROED;
+r32 uiScale = 1.0f;
 #endif
 
 //TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
@@ -1326,7 +1327,14 @@ bool AppFrame(void)
 			// |      Pig UI System Test      |
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
-			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, 1.0f, programTime, &keyboard, &mouse, &touchscreen);
+			if (mouse.scrollDelta.Y != 0.0f)
+			{
+				uiScale *= 1.0f + (0.1f * (mouse.scrollDelta.Y > 0 ? 1.0f : -1.0f));
+				uiScale = RoundR32(uiScale * 100.0f) / 100.0f;
+				uiScale = ClampR32(uiScale, 0.1f, 10.0f);
+			}
+			
+			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, &keyboard, &mouse, &touchscreen);
 			
 			// PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
 			PushUiFields({ .color = MonokaiDarkGray });
@@ -1395,7 +1403,9 @@ bool AppFrame(void)
 					}
 				}
 			}
+			
 			UiRenderList* uiRenderList = GetUiRenderList();
+			//TODO: Send this off to some Ui Renderer implementation
 			VarArrayLoop(&uiRenderList->commands, cIndex)
 			{
 				VarArrayLoopGet(UiRenderCmd, cmd, &uiRenderList->commands, cIndex);
@@ -1425,8 +1435,11 @@ bool AppFrame(void)
 					} break;
 				}
 			}
-			//TODO: Send this off to some Ui Renderer implementation
+			
 			EndUiFrame();
+			
+			BindFont(&debugFont);
+			DrawText(PrintInArenaStr(scratch, "%.2fx", uiScale), MakeV2(10, 30), Black);
 			#endif //BUILD_WITH_PIG_UI
 			
 			// +==============================+

@@ -40,7 +40,7 @@ Description:
 	PIG_CORE_INLINE UiThemer* TryGetUiThemerById(UiThemerRegistry* registry, uxx themerId);
 	PIG_CORE_INLINE void PopUiThemer(UiThemerRegistry* registry, uxx themerId);
 	PIG_CORE_INLINE uxx PushUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callback, void* userPntr);
-	PIG_CORE_INLINE uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u32 fields, UiElemConfig config);
+	PIG_CORE_INLINE uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u64 fields, UiElemConfig config);
 	PIG_CORE_INLINE uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig config);
 	PIG_CORE_INLINE void SetUiThemerActive(UiThemerRegistry* registry, uxx themerId, bool active);
 	PIG_CORE_INLINE void EnableUiThemer(UiThemerRegistry* registry, uxx themerId);
@@ -144,7 +144,7 @@ PEXPI uxx PushUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callback,
 	return newThemer->id;
 }
 
-PEXPI uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u32 fields, UiElemConfig config)
+PEXPI uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u64 fields, UiElemConfig config)
 {
 	NotNull(registry);
 	NotNull(registry->arena);
@@ -157,7 +157,7 @@ PEXPI uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u32 fields, UiElem
 }
 PEXPI uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig config)
 {
-	u32 fields = UiElemConfigField_None;
+	u64 fields = UiElemConfigField_None;
 	for (uxx bIndex = 0; bIndex < UiElemConfigField_Count; bIndex++)
 	{
 		UiElemConfigField fieldBit = (UiElemConfigField)(1ull << bIndex);
