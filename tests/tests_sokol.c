@@ -276,11 +276,12 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 // bool TestsGlobalUiThemerCallback(plex UiContext* context, UiElement* element, void* userPntr)
 UI_THEMER_CALLBACK_DEF(TestsGlobalUiThemerCallback)
 {
-	if (AreEqualV4r(element->config.borderThickness, V4r_Zero) && element->config.borderColor.valueU32 == PigUiDefaultColor_Value)
-	{
-		element->config.borderThickness = FillV4r(2.0f);
-		element->config.borderColor = ColorWithAlpha(Black, 0.5f);
-	}
+	// if (AreEqualV4r(element->config.borderThickness, V4r_Zero) && element->config.borderColor.valueU32 == PigUiDefaultColor_Value)
+	// {
+	// 	element->config.borderThickness = FillV4r(2.0f);
+	// 	element->config.borderColor = ColorWithAlpha(Black, 0.5f);
+	// }
+	if (element->depth >= (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? 4 : 3)) { return false; }
 	return true;
 }
 // +==============================+
@@ -1336,7 +1337,7 @@ bool AppFrame(void)
 			
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, &keyboard, &mouse, &touchscreen);
 			
-			// PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
+			PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
 			PushUiFields({ .color = MonokaiDarkGray });
 			// PushUiFields({ .padding = {
 			// 	.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),

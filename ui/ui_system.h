@@ -96,9 +96,9 @@ plex UiElemConfigWrapper { UiElemConfig config; };
 //NOTE: The preprocessor is going to treat the commas inside the designated initializer list as argument separators.
 //      For this reasons we do a variadic argument macro and use __VA_ARGS__ as a way to pass all of the designated initializer through
 #define UICONFIG(...) (NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config)
-#define UIELEM(...) DeferIfBlock(OpenUiElementConditional(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config), CloseUiElement())
+#define UIELEM(...) DeferIfBlockCondEnd(OpenUiElementConditional(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config), CloseUiElement())
 // A "leaf" element has no child elements, and therefore doesn't need a scope following the macro
-#define UIELEM_LEAF(...) do { OpenUiElement(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config); CloseUiElement(); } while(0)
+#define UIELEM_LEAF(...) do { if (OpenUiElementConditional(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config)) { CloseUiElement(); } } while(0)
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -280,133 +280,6 @@ PEXPI UiElement* GetUiElementChild(UiElement* element, uxx childIndex)
 	return result;
 }
 
-//NOTE: This pointer becomes potentially invalid once OpenUiElement is called again, VarArrayAdd semantics
-PEXPI UiElement* OpenUiElement(UiElemConfig config)
-{
-	NotNull(UiCtx);
-	// DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);//TODO: Enable this once we figure out how to allow this ONLY when the root element is getting opened in StartUiFrame
-	AssertUiThreadIsSame();
-	
-	//NOTE: Everything that happens in the first part of this function must be reversable if !allThemersAcceptedElement
-	
-	UiElement* newElement = VarArrayAdd(UiElement, &UiCtx->elements);
-	NotNull(newElement);
-	ClearPointer(newElement);
-	newElement->elementIndex = (UiCtx->elements.length - 1);
-	newElement->parentIndex = UiCtx->currentElementIndex;
-	MyMemCopy(&newElement->config, &config, sizeof(UiElemConfig));
-	UiElement* parentElement = GetUiElementParent(newElement, 0);
-	if (parentElement != nullptr)
-	{
-		DebugAssert(parentElement->isOpen);
-		if (IsEmptyStr(newElement->config.id.str)) { newElement->config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, parentElement->numChildren); }
-		if (newElement->config.globalId) { newElement->id = newElement->config.id; }
-		else { newElement->id = CalcUiId(parentElement->id, newElement->config.id.str, newElement->config.id.index); }
-		newElement->parentId = parentElement->config.id;
-		newElement->depth = (parentElement->depth + 1);
-		newElement->siblingIndex = parentElement->numChildren;
-		parentElement->numChildren++;
-		while (parentElement != nullptr)
-		{
-			parentElement->numDescendents++;
-			parentElement = VarArrayGetSoft(UiElement, &UiCtx->elements, parentElement->parentIndex);
-		}
-	}
-	else
-	{
-		if (IsEmptyStr(newElement->config.id.str)) { newElement->config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, UiCtx->numTopLevelElements); }
-		newElement->id = newElement->config.id; //Top-level IDs are not modified by any base ID
-		newElement->depth = 0;
-		newElement->siblingIndex = UiCtx->numTopLevelElements;
-		UiCtx->numTopLevelElements++;
-	}
-	
-	uxx oldCurrentElementIndex = UiCtx->currentElementIndex;
-	UiCtx->currentElementIndex = newElement->elementIndex;
-	newElement->isOpen = true;
-	
-	bool allThemersAcceptedElement = RunUiThemerCallbacks(&UiCtx->themers, UiCtx, newElement);
-	if (!allThemersAcceptedElement)
-	{
-		parentElement = GetUiElementParent(newElement, 0);
-		if (parentElement != nullptr)
-		{
-			parentElement->numChildren--;
-			while (parentElement != nullptr)
-			{
-				parentElement->numDescendents--;
-				parentElement = VarArrayGetSoft(UiElement, &UiCtx->elements, parentElement->parentIndex);
-			}
-		}
-		else { UiCtx->numTopLevelElements--; }
-		VarArrayRemoveLast(UiElement, &UiCtx->elements);
-		return nullptr;
-	}
-	
-	// If you have default sizing parameters and you attached a texture then we copy in the texture dimensions as UiSizingType_Fit
-	if (newElement->config.texture != nullptr && !newElement->config.dontSizeToTexture &&
-		newElement->config.sizing.x.type == UiSizingType_Default && newElement->config.sizing.y.type == UiSizingType_Default &&
-		newElement->config.sizing.x.value == 0.0f && newElement->config.sizing.y.value == 0.0f)
-	{
-		newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(newElement->config.texture->Width, newElement->config.texture->Height);
-	}
-	
-	//TODO: How do we decide runChildCode for things like buttons?
-	newElement->runChildCode = true;
-	
-	// if (newElement->parentIndex == 0) { MyBreak(); }
-	return newElement;
-}
-PEXPI bool OpenUiElementConditional(UiElemConfig config)
-{
-	UiElement* elementPntr = OpenUiElement(config);
-	return (elementPntr != nullptr && elementPntr->runChildCode);
-}
-
-PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
-{
-	DebugNotNull(context);
-	DebugNotNull(context->arena);
-	// NOTE: Normally scratch arenas are reset to their previous location when ScratchEnd is called.
-	//       However, since we are sneakily using one of these arenas to guarantee allocations live
-	//       until the end of the UI render we need to prevent this resetting behavior.
-	//       In order to not cause too much memory bloat we use the last scratch arena, which often
-	//       doesn't get used much anyways
-	context->frameArena = &scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD-1];
-	DebugAssert(context->frameArena->type == ArenaType_StackVirtual || context->frameArena->type == ArenaType_StackPaged);
-	DebugAssert(context->arena != context->frameArena);
-	FlagSet(context->frameArena->flags, ArenaFlag_DontPop);
-	context->frameArenaMark = ArenaGetMark(context->frameArena);
-	
-	#if (TARGET_HAS_THREADING && DEBUG_BUILD)
-	context->threadId = OsGetCurrentThreadId();
-	#endif
-	
-	context->screenSize = screenSize;
-	context->scale = (scale != 0.0f) ? scale : 1.0f;
-	context->programTime = programTime;
-	context->keyboard = keyboard;
-	context->mouse = mouse;
-	context->touchscreen = touchscreen;
-	
-	//TODO: Copy the array from last frame somewhere?
-	VarArrayClear(&context->elements);
-	context->numTopLevelElements = 0;
-	context->currentElementIndex = PIG_UI_INDEX_INVALID;
-	
-	UiThemerRegistryStartFrame(&context->themers);
-	
-	Assert(UiCtx == nullptr);
-	UiCtx = context;
-	
-	UiElement* rootElement = OpenUiElement(NEW_STRUCT(UiElemConfig){
-		.id = UiIdLit("root"),
-		.sizing = UI_FIXED2(screenSize.Width / context->scale, screenSize.Height / context->scale),
-		.color = backgroundColor,
-	});
-	UNUSED(rootElement);
-}
-
 static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* parent, bool xAxis)
 {
 	DebugNotNull(element);
@@ -502,6 +375,134 @@ PEXPI UiElement* CloseUiElement()
 	CalculateUiElemSizeOnAxisOnClose(element, parent, false);
 	
 	return element;
+}
+
+//NOTE: This pointer becomes potentially invalid once OpenUiElement is called again, VarArrayAdd semantics
+PEXPI UiElement* OpenUiElement(UiElemConfig config)
+{
+	NotNull(UiCtx);
+	// DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);//TODO: Enable this once we figure out how to allow this ONLY when the root element is getting opened in StartUiFrame
+	AssertUiThreadIsSame();
+	
+	//NOTE: Everything that happens in the first part of this function must be reversable if !allThemersAcceptedElement
+	
+	UiElement* newElement = VarArrayAdd(UiElement, &UiCtx->elements);
+	NotNull(newElement);
+	ClearPointer(newElement);
+	newElement->elementIndex = (UiCtx->elements.length - 1);
+	newElement->parentIndex = UiCtx->currentElementIndex;
+	MyMemCopy(&newElement->config, &config, sizeof(UiElemConfig));
+	UiElement* parentElement = GetUiElementParent(newElement, 0);
+	if (parentElement != nullptr)
+	{
+		DebugAssert(parentElement->isOpen);
+		if (IsEmptyStr(newElement->config.id.str)) { newElement->config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, parentElement->numChildren); }
+		if (newElement->config.globalId) { newElement->id = newElement->config.id; }
+		else { newElement->id = CalcUiId(parentElement->id, newElement->config.id.str, newElement->config.id.index); }
+		newElement->parentId = parentElement->config.id;
+		newElement->depth = (parentElement->depth + 1);
+		newElement->siblingIndex = parentElement->numChildren;
+		parentElement->numChildren++;
+		while (parentElement != nullptr)
+		{
+			parentElement->numDescendents++;
+			parentElement = VarArrayGetSoft(UiElement, &UiCtx->elements, parentElement->parentIndex);
+		}
+	}
+	else
+	{
+		if (IsEmptyStr(newElement->config.id.str)) { newElement->config.id = UiIdLitIndex(PIG_UI_DEFAULT_ID_STR, UiCtx->numTopLevelElements); }
+		newElement->id = newElement->config.id; //Top-level IDs are not modified by any base ID
+		newElement->depth = 0;
+		newElement->siblingIndex = UiCtx->numTopLevelElements;
+		UiCtx->numTopLevelElements++;
+	}
+	
+	uxx oldCurrentElementIndex = UiCtx->currentElementIndex;
+	UiCtx->currentElementIndex = newElement->elementIndex;
+	newElement->isOpen = true;
+	
+	bool allThemersAcceptedElement = RunUiThemerCallbacks(&UiCtx->themers, UiCtx, newElement);
+	if (!allThemersAcceptedElement)
+	{
+		parentElement = GetUiElementParent(newElement, 0);
+		if (parentElement != nullptr)
+		{
+			parentElement->numChildren--;
+			while (parentElement != nullptr)
+			{
+				parentElement->numDescendents--;
+				parentElement = VarArrayGetSoft(UiElement, &UiCtx->elements, parentElement->parentIndex);
+			}
+		}
+		else { UiCtx->numTopLevelElements--; }
+		VarArrayRemoveLast(UiElement, &UiCtx->elements);
+		UiCtx->currentElementIndex = oldCurrentElementIndex;
+		return nullptr;
+	}
+	
+	// If you have default sizing parameters and you attached a texture then we copy in the texture dimensions as UiSizingType_Fit
+	if (newElement->config.texture != nullptr && !newElement->config.dontSizeToTexture &&
+		newElement->config.sizing.x.type == UiSizingType_Default && newElement->config.sizing.y.type == UiSizingType_Default &&
+		newElement->config.sizing.x.value == 0.0f && newElement->config.sizing.y.value == 0.0f)
+	{
+		newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(newElement->config.texture->Width, newElement->config.texture->Height);
+	}
+	
+	//TODO: How do we decide runChildCode for things like buttons?
+	newElement->runChildCode = true;
+	
+	if (!newElement->runChildCode) { CloseUiElement(); }
+	return newElement;
+}
+PEXPI bool OpenUiElementConditional(UiElemConfig config)
+{
+	UiElement* elementPntr = OpenUiElement(config);
+	return (elementPntr != nullptr && elementPntr->runChildCode && elementPntr->isOpen);
+}
+
+PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
+{
+	DebugNotNull(context);
+	DebugNotNull(context->arena);
+	// NOTE: Normally scratch arenas are reset to their previous location when ScratchEnd is called.
+	//       However, since we are sneakily using one of these arenas to guarantee allocations live
+	//       until the end of the UI render we need to prevent this resetting behavior.
+	//       In order to not cause too much memory bloat we use the last scratch arena, which often
+	//       doesn't get used much anyways
+	context->frameArena = &scratchArenasArray[NUM_SCRATCH_ARENAS_PER_THREAD-1];
+	DebugAssert(context->frameArena->type == ArenaType_StackVirtual || context->frameArena->type == ArenaType_StackPaged);
+	DebugAssert(context->arena != context->frameArena);
+	FlagSet(context->frameArena->flags, ArenaFlag_DontPop);
+	context->frameArenaMark = ArenaGetMark(context->frameArena);
+	
+	#if (TARGET_HAS_THREADING && DEBUG_BUILD)
+	context->threadId = OsGetCurrentThreadId();
+	#endif
+	
+	context->screenSize = screenSize;
+	context->scale = (scale != 0.0f) ? scale : 1.0f;
+	context->programTime = programTime;
+	context->keyboard = keyboard;
+	context->mouse = mouse;
+	context->touchscreen = touchscreen;
+	
+	//TODO: Copy the array from last frame somewhere?
+	VarArrayClear(&context->elements);
+	context->numTopLevelElements = 0;
+	context->currentElementIndex = PIG_UI_INDEX_INVALID;
+	
+	UiThemerRegistryStartFrame(&context->themers);
+	
+	Assert(UiCtx == nullptr);
+	UiCtx = context;
+	
+	UiElement* rootElement = OpenUiElement(NEW_STRUCT(UiElemConfig){
+		.id = UiIdLit("root"),
+		.sizing = UI_FIXED2(screenSize.Width / context->scale, screenSize.Height / context->scale),
+		.color = backgroundColor,
+	});
+	UNUSED(rootElement);
 }
 
 PEXPI Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element)

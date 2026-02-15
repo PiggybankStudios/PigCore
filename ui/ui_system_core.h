@@ -181,8 +181,7 @@ PEXP const char* GetUiFloatingTypeStr(UiFloatingType enumValue)
 		case UiFloatingType_Root:   return "Root";
 		case UiFloatingType_Parent: return "Parent";
 		case UiFloatingType_Id:     return "Id";
-		case UiFloatingType_Count:  return "Count";
-		default: return "Unknown";
+		default: return UNKNOWN_STR;
 	}
 }
 #endif
