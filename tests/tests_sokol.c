@@ -1347,6 +1347,7 @@ bool AppFrame(void)
 			// }});
 			PushUiFields({ .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
 			PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
+			#define SIMPLETEXTELEM(strLit) UIELEM_LEAF({ .sizing = UI_TEXT_FULL(), .text = StrLit(strLit), .font = &testFont, .textColor = MonokaiWhite });
 			
 			UiElemConfig rootElem = { .id = UiIdLit("Root") };
 			rootElem.direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown;
@@ -1354,7 +1355,7 @@ bool AppFrame(void)
 			{
 				UiElemConfig orangeElem = { .id = UiIdLit("Orange"), .color=MonokaiOrange };
 				orangeElem.direction   = UiLayoutDir_LeftToRight;
-				UIELEM_LEAF(orangeElem);
+				UIELEM(orangeElem) { SIMPLETEXTELEM("Orange"); }
 				
 				UiElemConfig percentageRowElem = { .id = UiIdLit("PercentageRow") };
 				percentageRowElem.direction = UiLayoutDir_RightToLeft;
@@ -1368,7 +1369,7 @@ bool AppFrame(void)
 					
 					UiElemConfig greenElem = { .id = UiIdLit("Green"), .color=MonokaiGreen };
 					greenElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.20f);
-					UIELEM_LEAF(greenElem);
+					UIELEM(greenElem) { SIMPLETEXTELEM("Green"); }
 					
 					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
 					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
@@ -1381,7 +1382,7 @@ bool AppFrame(void)
 					
 					UiElemConfig purpleElem = { .id = UiIdLit("Purple"), .color=MonokaiPurple };
 					purpleElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.60f);
-					UIELEM_LEAF(purpleElem);
+					UIELEM(purpleElem) { SIMPLETEXTELEM("Purple"); }
 					
 					PopUiThemer(&uiContext.themers, testThemerId);
 				}
@@ -1409,9 +1410,9 @@ bool AppFrame(void)
 						},
 					})
 					{
-						UIELEM_LEAF({.sizing = UI_FIXED2(300, 32), .color = MonokaiRed });
-						UIELEM_LEAF({.sizing = UI_FIXED2(300, 32), .color = MonokaiPurple });
-						UIELEM_LEAF({.sizing = UI_FIXED2(300, 32), .color = MonokaiOrange });
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiRed    }) { SIMPLETEXTELEM("Red"); }
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiPurple }) { SIMPLETEXTELEM("Purple"); }
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiOrange }) { SIMPLETEXTELEM("Orange"); }
 					}
 				}
 				
@@ -1425,10 +1426,13 @@ bool AppFrame(void)
 					.color=MonokaiRed,
 				})
 				{
-					UIELEM_LEAF({ .id = UiIdLit("DarkGreen"),
+					UIELEM({ .id = UiIdLit("DarkGreen"),
 						.color=MonokaiDarkGreen,
-						.sizing=UI_FIXED2(100, 200)
-					});
+						.sizing=UI_FIXED2(100, 200),
+					})
+					{
+						SIMPLETEXTELEM("Green");
+					}
 					
 					UIELEM_LEAF({ .id = UiIdLit("LoremIpsum"),
 						.sizing = UI_TEXT_WRAP(30.0f),

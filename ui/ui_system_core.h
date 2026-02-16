@@ -171,7 +171,7 @@ car UiSizing
 {
 	UiSizingAxis axis[2];
 	plex { UiSizingAxis x, y; };
-	plex { UiSizingAxis horiztonal, vertical; };
+	plex { UiSizingAxis horizontal, vertical; };
 };
 #define UI_FIXED(numPx)                 { .type=UiSizingType_FixedPx,      .value=(numPx)   }
 #define UI_PERCENT(percent)             { .type=UiSizingType_FixedPercent, .value=(percent) }
@@ -186,6 +186,40 @@ car UiSizing
 #define UI_TEXT_WRAP(minWidth)          { .x={.type=UiSizingType_TextWrap, .value=(minWidth)}, .y={.type=UiSizingType_TextWrap} }
 #define UI_TEXT_CLIP(minWidth)          { .x={.type=UiSizingType_TextClip, .value=(minWidth)}, .y={.type=UiSizingType_TextClip} }
 #define UI_TEXT_FULL()                  UI_TEXT_CLIP(-1.0f)
+
+typedef enum UiAlignmentType UiAlignmentType;
+enum UiAlignmentType
+{
+	UiAlignmentType_Center = 0,
+	UiAlignmentType_Left,
+	UiAlignmentType_Right,
+	UiAlignmentType_Count,
+	UiAlignmentType_Default = UiAlignmentType_Center,
+	UiAlignmentType_Top = UiAlignmentType_Left,
+	UiAlignmentType_Bottom = UiAlignmentType_Right,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetUiAlignmentTypeStr(UiAlignmentType enumValue);
+#else
+PEXP const char* GetUiAlignmentTypeStr(UiAlignmentType enumValue)
+{
+	switch (enumValue)
+	{
+		case UiAlignmentType_Center: return "Center(Default)";
+		case UiAlignmentType_Left:   return "Left(Top)";
+		case UiAlignmentType_Right:  return "Right(Bottom)";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
+typedef car UiAlignment UiAlignment;
+car UiAlignment
+{
+	UiAlignmentType axis[2];
+	plex { UiAlignmentType x, y; };
+	plex { UiAlignmentType horizontal, vertical; };
+};
 
 typedef enum UiFloatingType UiFloatingType;
 enum UiFloatingType
@@ -276,6 +310,7 @@ plex UiElemConfig
 	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
 	UiLayoutDir direction;
 	UiSizing sizing;
+	UiAlignment alignment; //TODO: Add UiElemConfigField entry for this
 	r32 depth;
 	Color32 color;
 	Texture* texture;

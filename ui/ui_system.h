@@ -665,7 +665,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 	DebugNotNull(element);
 	DebugAssert(parent != nullptr || element->elementIndex == 0); //parent can be null, only for the root element
 	bool isThisLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
-	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.padding.child) : 0.0f;
+	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
 	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
 	
 	r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
@@ -777,7 +777,7 @@ static void CalculateSizeForFloatingUiElementOnAxis(UiElement* element, bool xAx
 		}
 		
 		r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
-		*sizePntr = *minimumSizePntr;
+		*sizePntr = IsInfiniteOrNanR32(*preferredSizePntr) ? *minimumSizePntr : *preferredSizePntr;
 	}
 }
 
@@ -1179,18 +1179,63 @@ static void UiSystemDoLayout()
 	{
 		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
 		
+		v2 childrenTotalSize = V2_Zero;
+		uxx nonFloatingChildIndex = 0;
+		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		{
+			UiElement* child = GetUiElementChild(element, cIndex);
+			if (child->config.floating.type == UiFloatingType_None)
+			{
+				v2 childSizeAndPadding = AddV2(child->layoutRec.Size, MakeV2(
+					child->config.padding.outer.Left + child->config.padding.outer.Right,
+					child->config.padding.outer.Top + child->config.padding.outer.Bottom
+				));
+				if (IsUiDirHorizontal(element->config.direction))
+				{
+					if (nonFloatingChildIndex > 0) { childrenTotalSize.Width += element->config.padding.child; }
+					childrenTotalSize.Width += childSizeAndPadding.Width;
+					childrenTotalSize.Height = MaxR32(childrenTotalSize.Height, childSizeAndPadding.Height);
+				}
+				else
+				{
+					if (nonFloatingChildIndex > 0) { childrenTotalSize.Height += element->config.padding.child; }
+					childrenTotalSize.Width = MaxR32(childrenTotalSize.Width, childSizeAndPadding.Width);
+					childrenTotalSize.Height += childSizeAndPadding.Height;
+				}
+				nonFloatingChildIndex++;
+			}
+		}
+		v2 innerSize = SubV2(element->layoutRec.Size, MakeV2(
+			element->config.padding.inner.Left + element->config.padding.inner.Right,
+			element->config.padding.inner.Top + element->config.padding.inner.Bottom
+		));
+		v2 emptySpaceForAlignment = MakeV2(
+			MaxR32(0.0f, innerSize.Width - childrenTotalSize.Width),
+			MaxR32(0.0f, innerSize.Height - childrenTotalSize.Height)
+		);
+		v2 alignmentOffset = V2_Zero;
+		if (element->config.alignment.x == UiAlignmentType_Left)   { alignmentOffset.X = emptySpaceForAlignment.X * 0.0f; }
+		if (element->config.alignment.x == UiAlignmentType_Center) { alignmentOffset.X = emptySpaceForAlignment.X * 0.5f; }
+		if (element->config.alignment.x == UiAlignmentType_Right)  { alignmentOffset.X = emptySpaceForAlignment.X * 1.0f; }
+		if (element->config.alignment.y == UiAlignmentType_Top)    { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.0f; }
+		if (element->config.alignment.y == UiAlignmentType_Center) { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.5f; }
+		if (element->config.alignment.y == UiAlignmentType_Bottom) { alignmentOffset.Y = emptySpaceForAlignment.Y * 1.0f; }
+		
 		v2 layoutPos = V2_Zero_Const;
 		if (element->config.direction == UiLayoutDir_LeftToRight || element->config.direction == UiLayoutDir_TopDown)
 		{
 			layoutPos = AddV2(element->layoutRec.TopLeft, element->config.padding.inner.XY); //XY is alias for (Left,Top)
+			layoutPos = AddV2(layoutPos, alignmentOffset);
 		}
 		else if (element->config.direction == UiLayoutDir_RightToLeft)
 		{
 			layoutPos = AddV2(element->layoutRec.TopLeft, MakeV2(element->layoutRec.Width - element->config.padding.inner.Right, element->config.padding.inner.Top));
+			//TODO: How do we take alignmentOffset into account?
 		}
 		else if (element->config.direction == UiLayoutDir_BottomUp)
 		{
 			layoutPos = AddV2(element->layoutRec.TopLeft, MakeV2(element->config.padding.inner.Left, element->layoutRec.Height - element->config.padding.inner.Bottom));
+			//TODO: How do we take alignmentOffset into account?
 		}
 		else { DebugAssert(false); }
 		
