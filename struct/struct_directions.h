@@ -189,7 +189,7 @@ enum Axis
 	// PIG_CORE_INLINE v2 ToVec2(Dir2 dir2);
 	// PIG_CORE_INLINE v2 ToVec2(Dir2Ex dir2ex);
 	// PIG_CORE_INLINE v2i ToVec2i(Dir2 dir2);
-	// PIG_CORE_INLINE v2i ToVec2i(Dir2Ex dir2ex);
+	PIG_CORE_INLINE v2i V2iFromDir2Ex(Dir2Ex dir2Ex);
 	// PIG_CORE_INLINE v3 ToVec3(Dir3 dir3);
 	// PIG_CORE_INLINE v3i ToVec3i(Dir3 dir3);
 	// PIG_CORE_INLINE v3 ToVec3(Dir3Ex_t dir3ex);
@@ -296,20 +296,22 @@ PEXPI v2i ToVec2i(Dir2 dir2)
 	if (IsFlagSet(dir2, Dir2_Up))    { result.y -= 1; }
 	return result;
 }
-PEXPI v2i ToVec2i(Dir2Ex dir2ex)
+#endif
+PEXPI v2i V2iFromDir2Ex(Dir2Ex dir2Ex)
 {
-	v2i result = {};
-	if (IsFlagSet(dir2ex, Dir2Ex_Right)) { result.x += 1; }
-	if (IsFlagSet(dir2ex, Dir2Ex_Left))  { result.x -= 1; }
-	if (IsFlagSet(dir2ex, Dir2Ex_Down))  { result.y += 1; }
-	if (IsFlagSet(dir2ex, Dir2Ex_Up))    { result.y -= 1; }
-	if (IsFlagSet(dir2ex, Dir2Ex_TopLeft))     { result.x -= 1; result.y -= 1; }
-	if (IsFlagSet(dir2ex, Dir2Ex_TopRight))    { result.x += 1; result.y -= 1; }
-	if (IsFlagSet(dir2ex, Dir2Ex_BottomRight)) { result.x += 1; result.y += 1; }
-	if (IsFlagSet(dir2ex, Dir2Ex_BottomLeft))  { result.x -= 1; result.y += 1; }
+	v2i result = ZEROED;
+	if (IsFlagSet(dir2Ex, Dir2Ex_Right)) { result.X += 1; }
+	if (IsFlagSet(dir2Ex, Dir2Ex_Left))  { result.X -= 1; }
+	if (IsFlagSet(dir2Ex, Dir2Ex_Down))  { result.Y += 1; }
+	if (IsFlagSet(dir2Ex, Dir2Ex_Up))    { result.Y -= 1; }
+	if (IsFlagSet(dir2Ex, Dir2Ex_TopLeft))     { result.X -= 1; result.Y -= 1; }
+	if (IsFlagSet(dir2Ex, Dir2Ex_TopRight))    { result.X += 1; result.Y -= 1; }
+	if (IsFlagSet(dir2Ex, Dir2Ex_BottomRight)) { result.X += 1; result.Y += 1; }
+	if (IsFlagSet(dir2Ex, Dir2Ex_BottomLeft))  { result.X -= 1; result.Y += 1; }
 	return result;
 }
 
+#if 0
 PEXPI v3 ToVec3(Dir3 dir3)
 {
 	v3 result = {};

@@ -73,8 +73,11 @@ Description:
 	PIG_CORE_INLINE void SetUiElemConfigFields(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u64 fieldBits);
 	PIG_CORE_INLINE void SetUiElemConfigFieldsIfDefault(UiElemConfig* configToPntr, const UiElemConfig* configFromPntr, u64 fieldBits);
 	void InitUiContext(Arena* arena, UiContext* contextOut);
+	PIG_CORE_INLINE UiElement* GetCurrentUiElement();
 	PIG_CORE_INLINE UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementChild(UiElement* element, uxx childIndex);
+	PIG_CORE_INLINE UiElement* GetUiElementByIdInArray(VarArray* arrayPntr, UiId id, bool matchLocalIds);
+	PIG_CORE_INLINE UiElement* GetUiElementById(UiId id, bool matchLocalIds);
 	PIG_CORE_INLINE UiElement* GetUiElementAttachParent(UiElement* element);
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
@@ -175,8 +178,9 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_FloatingType:          return (configPntr->floating.type == UiFloatingType_Default);
 		case UiElemConfigField_FloatingOffsetX:       return (configPntr->floating.offset.X == 0.0f);
 		case UiElemConfigField_FloatingOffsetY:       return (configPntr->floating.offset.Y == 0.0f);
-		case UiElemConfigField_FloatingParentAttach:  return (configPntr->floating.parentAttach == Dir2Ex_None);
-		case UiElemConfigField_FloatingElemAttach:    return (configPntr->floating.elemAttach == Dir2Ex_None);
+		case UiElemConfigField_FloatingAttachId:      return (configPntr->floating.attachId.id == 0);
+		case UiElemConfigField_FloatingParentSide:    return (configPntr->floating.parentSide == Dir2Ex_None);
+		case UiElemConfigField_FloatingElemSide:      return (configPntr->floating.elemSide == Dir2Ex_None);
 		case UiElemConfigField_RendererParams:        return true; //TODO: What do we want to do for these?
 		case UiElemConfigField_ThemerParams:          return true; //TODO: What do we want to do for these?
 		default: DebugAssert(false); return true;
@@ -215,8 +219,9 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_FloatingType:          configToPntr->floating.type = configFromPntr->floating.type; break;
 		case UiElemConfigField_FloatingOffsetX:       configToPntr->floating.offset.X = configFromPntr->floating.offset.X; break;
 		case UiElemConfigField_FloatingOffsetY:       configToPntr->floating.offset.Y = configFromPntr->floating.offset.Y; break;
-		case UiElemConfigField_FloatingParentAttach:  configToPntr->floating.parentAttach = configFromPntr->floating.parentAttach; break;
-		case UiElemConfigField_FloatingElemAttach:    configToPntr->floating.elemAttach = configFromPntr->floating.elemAttach; break;
+		case UiElemConfigField_FloatingAttachId:      configToPntr->floating.attachId = configFromPntr->floating.attachId; break;
+		case UiElemConfigField_FloatingParentSide:    configToPntr->floating.parentSide = configFromPntr->floating.parentSide; break;
+		case UiElemConfigField_FloatingElemSide:      configToPntr->floating.elemSide = configFromPntr->floating.elemSide; break;
 		case UiElemConfigField_RendererParams:        MyMemCopy(&configToPntr->renderer, &configFromPntr->renderer, sizeof(UiRendererParameters)); break;
 		case UiElemConfigField_ThemerParams:          MyMemCopy(&configToPntr->themer, &configFromPntr->themer, sizeof(UiThemerParameters)); break;
 		default: DebugAssert(false); break;
@@ -257,6 +262,13 @@ PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
 	InitUiThemerRegistry(arena, &contextOut->themers);
 }
 
+PEXPI UiElement* GetCurrentUiElement()
+{
+	DebugAssert(UiCtx != nullptr);
+	DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);
+	return VarArrayGetHard(UiElement, &UiCtx->elements, UiCtx->currentElementIndex);
+}
+
 PEXPI UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex)
 {
 	DebugNotNull(element);
@@ -281,14 +293,27 @@ PEXPI UiElement* GetUiElementChild(UiElement* element, uxx childIndex)
 	return result;
 }
 
+PEXPI UiElement* GetUiElementByIdInArray(VarArray* arrayPntr, UiId id, bool matchLocalIds)
+{
+	VarArrayLoop(arrayPntr, eIndex)
+	{
+		VarArrayLoopGet(UiElement, element, arrayPntr, eIndex);
+		if (element->id.id == id.id) { return element; }
+		else if (matchLocalIds && element->config.id.id == id.id) { return element; }
+	}
+	return nullptr;
+}
+PEXPI UiElement* GetUiElementById(UiId id, bool matchLocalIds) { NotNull(UiCtx); return GetUiElementByIdInArray(&UiCtx->elements, id, matchLocalIds); }
+
 PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
 {
 	if (element->config.floating.type == UiFloatingType_Parent) { return GetUiElementParent(element, 0); }
 	else if (element->config.floating.type == UiFloatingType_Root) { return VarArrayGetFirst(UiElement, &UiCtx->elements); }
 	else if (element->config.floating.type == UiFloatingType_Id)
 	{
-		AssertMsg(false, "Need to implement lookup by ID!"); //TODO: Implement me!
-		return nullptr;
+		UiElement* result = GetUiElementById(element->config.floating.attachId, true);
+		AssertMsg(result != nullptr, "Floating element tried to attach to a UI Element that doesn't exist yet. Floating elements must be declared AFTER the element they are attaching to");
+		return result;
 	}
 	else { DebugAssert(false); return nullptr; }
 }
@@ -881,7 +906,16 @@ static void UiSystemDoLayout()
 			{
 				UiElement* attachParent = GetUiElementAttachParent(child);
 				DebugNotNull(attachParent);
-				child->layoutRec.TopLeft = AddV2(attachParent->layoutRec.TopLeft, child->config.floating.offset);
+				v2 parentHalfSize = ScaleV2(attachParent->layoutRec.Size, 0.5f);
+				v2 childHalfSize = ScaleV2(child->layoutRec.Size, 0.5f);
+				v2 parentAttachPos = AddV2(attachParent->layoutRec.TopLeft, parentHalfSize);
+				v2 parentDirMult = ToV2Fromi(V2iFromDir2Ex(child->config.floating.parentSide));
+				v2 childDirMult = ToV2Fromi(V2iFromDir2Ex(child->config.floating.elemSide));
+				parentAttachPos = AddV2(parentAttachPos, MulV2(parentHalfSize, parentDirMult));
+				parentAttachPos = SubV2(parentAttachPos, childHalfSize);
+				parentAttachPos = SubV2(parentAttachPos, MulV2(childHalfSize, childDirMult));
+				parentAttachPos = AddV2(parentAttachPos, child->config.floating.offset);
+				child->layoutRec.TopLeft = parentAttachPos;
 				#if DEBUG_BUILD
 				if (printDebug)
 				{

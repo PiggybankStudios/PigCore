@@ -1387,18 +1387,20 @@ bool AppFrame(void)
 				})
 				{
 					UIELEM({ .id = UiIdLit("FloatingGreen"),
-						// .sizing = UI_FIT2(),
-						.sizing = UI_PERCENT2(0.8f, 0.5f),
+						.sizing = UI_FIT2(),
+						// .sizing = UI_PERCENT2(0.8f, 0.5f),
 						// .sizing = UI_EXPAND2(),
 						.direction = UiLayoutDir_TopDown,
 						.padding = { .child = 5, .inner = FillV4r(10) },
 						.color=MonokaiGreen,
 						.depth = -1.0f,
 						.floating = {
-							.type = UiFloatingType_Parent,
+							// .type = UiFloatingType_Parent,
+							.type = UiFloatingType_Id,
+							.attachId = UiIdLit("Blue"),
 							.offset = mouse.position, //MakeV2(15, 45),
-							.parentAttach = Dir2Ex_Up,
-							.elemAttach = Dir2Ex_BottomRight,
+							.parentSide = UiSide_Center,
+							.elemSide = UiSide_BottomCenter,
 						},
 					})
 					{

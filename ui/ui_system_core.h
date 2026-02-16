@@ -43,6 +43,16 @@ Description:
 #define PigUiDefaultColor_Value TransparentBlack_Value
 #define PigUiDefaultColor       TransparentBlack
 
+#define UiSide_TopLeft      Dir2Ex_TopLeft
+#define UiSide_TopCenter    Dir2Ex_Up
+#define UiSide_TopRight     Dir2Ex_TopRight
+#define UiSide_CenterLeft   Dir2Ex_Left
+#define UiSide_Center       Dir2Ex_None
+#define UiSide_CenterRight  Dir2Ex_Right
+#define UiSide_BottomLeft   Dir2Ex_BottomLeft
+#define UiSide_BottomCenter Dir2Ex_Down
+#define UiSide_BottomRight  Dir2Ex_BottomRight
+
 // Application Defined Types
 //NOTE: These #defines can be set to change the UiElemConfig structure to the applications needs.
 //      If an application-specific renderer, themer, etc. needs more parameters for each element
@@ -202,8 +212,8 @@ plex UiFloatingConfig
 	UiFloatingType type;
 	v2 offset; // This is not multiplied by UI scale (unlike other UiElemConfig sizing/padding members)
 	UiId attachId;
-	Dir2Ex parentAttach;
-	Dir2Ex elemAttach;
+	Dir2Ex parentSide;
+	Dir2Ex elemSide;
 };
 
 typedef plex UiPadding UiPadding;
@@ -279,11 +289,12 @@ enum UiElemConfigField
 	UiElemConfigField_FloatingType          = ((1ull) << 26),
 	UiElemConfigField_FloatingOffsetX       = ((1ull) << 27),
 	UiElemConfigField_FloatingOffsetY       = ((1ull) << 28),
-	UiElemConfigField_FloatingParentAttach  = ((1ull) << 29),
-	UiElemConfigField_FloatingElemAttach    = ((1ull) << 30),
-	UiElemConfigField_RendererParams        = ((1ull) << 31), // NOTE: Fields inside UiRendererParameters struct are not represented individually
-	UiElemConfigField_ThemerParams          = ((1ull) << 32), // NOTE: Fields inside UiThemerParameters struct are not represented individually
-	UiElemConfigField_Count                 = 33,
+	UiElemConfigField_FloatingAttachId      = ((1ull) << 29),
+	UiElemConfigField_FloatingParentSide    = ((1ull) << 30),
+	UiElemConfigField_FloatingElemSide      = ((1ull) << 31),
+	UiElemConfigField_RendererParams        = ((1ull) << 32), // NOTE: Fields inside UiRendererParameters struct are not represented individually
+	UiElemConfigField_ThemerParams          = ((1ull) << 33), // NOTE: Fields inside UiThemerParameters struct are not represented individually
+	UiElemConfigField_Count                 = 34,
 	UiElemConfigField_All                   = (((1ull) << UiElemConfigField_Count)-1),
 	UiElemConfigField_Sizing                = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueX|UiElemConfigField_SizingValueY),
 	UiElemConfigField_SizingX               = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingValueX),
@@ -292,7 +303,7 @@ enum UiElemConfigField
 	UiElemConfigField_OuterPadding          = (UiElemConfigField_OuterPaddingLeft|UiElemConfigField_OuterPaddingTop|UiElemConfigField_OuterPaddingRight|UiElemConfigField_OuterPaddingBottom),
 	UiElemConfigField_Padding               = (UiElemConfigField_InnerPadding|UiElemConfigField_OuterPadding|UiElemConfigField_ChildPadding),
 	UiElemConfigField_BorderThickness       = (UiElemConfigField_BorderThicknessLeft|UiElemConfigField_BorderThicknessTop|UiElemConfigField_BorderThicknessRight|UiElemConfigField_BorderThicknessBottom),
-	UiElemConfigField_Floating              = (UiElemConfigField_FloatingType|UiElemConfigField_FloatingOffsetX|UiElemConfigField_FloatingOffsetY|UiElemConfigField_FloatingParentAttach|UiElemConfigField_FloatingElemAttach),
+	UiElemConfigField_Floating              = (UiElemConfigField_FloatingType|UiElemConfigField_FloatingOffsetX|UiElemConfigField_FloatingOffsetY|UiElemConfigField_FloatingAttachId|UiElemConfigField_FloatingParentSide|UiElemConfigField_FloatingElemSide),
 	UiElemConfigField_FloatingOffset        = (UiElemConfigField_FloatingOffsetX|UiElemConfigField_FloatingOffsetY),
 };
 
@@ -333,8 +344,9 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_FloatingType:          return "FloatingType";
 		case UiElemConfigField_FloatingOffsetX:       return "FloatingOffsetX";
 		case UiElemConfigField_FloatingOffsetY:       return "FloatingOffsetY";
-		case UiElemConfigField_FloatingParentAttach:  return "FloatingParentAttach";
-		case UiElemConfigField_FloatingElemAttach:    return "FloatingElemAttach";
+		case UiElemConfigField_FloatingAttachId:      return "FloatingAttachId";
+		case UiElemConfigField_FloatingParentSide:    return "FloatingParentSide";
+		case UiElemConfigField_FloatingElemSide:      return "FloatingElemSide";
 		case UiElemConfigField_RendererParams:        return "RendererParams";
 		case UiElemConfigField_ThemerParams:          return "ThemerParams";
 		case UiElemConfigField_All:                   return "All";
