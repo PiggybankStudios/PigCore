@@ -77,8 +77,14 @@ Description:
 	PIG_CORE_INLINE UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementChild(UiElement* element, uxx childIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementByIdInArray(VarArray* arrayPntr, UiId id, bool matchLocalIds);
+	PIG_CORE_INLINE UiElement* GetUiElementByIdInPrevFrame(UiId id, bool matchLocalIds);
 	PIG_CORE_INLINE UiElement* GetUiElementById(UiId id, bool matchLocalIds);
 	PIG_CORE_INLINE UiElement* GetUiElementAttachParent(UiElement* element);
+	PIG_CORE_INLINE bool IsUiElementHoveredStrict(UiId id);
+	PIG_CORE_INLINE bool IsUiElementHovered(UiId id);
+	PIG_CORE_INLINE bool IsUiCurrentElementHoveredStrict();
+	PIG_CORE_INLINE bool IsUiCurrentElementHovered();
+	PIG_CORE_INLINE bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn);
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
@@ -181,6 +187,9 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_FloatingAttachId:      return (configPntr->floating.attachId.id == 0);
 		case UiElemConfigField_FloatingParentSide:    return (configPntr->floating.parentSide == Dir2Ex_None);
 		case UiElemConfigField_FloatingElemSide:      return (configPntr->floating.elemSide == Dir2Ex_None);
+		case UiElemConfigField_Condition:             return (configPntr->condition == UiConditionType_None);
+		case UiElemConfigField_MousePassthrough:      return (configPntr->mousePassthrough == false);
+		case UiElemConfigField_StrictHover:           return (configPntr->strictHover == false);
 		case UiElemConfigField_RendererParams:        return true; //TODO: What do we want to do for these?
 		case UiElemConfigField_ThemerParams:          return true; //TODO: What do we want to do for these?
 		default: DebugAssert(false); return true;
@@ -222,6 +231,9 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_FloatingAttachId:      configToPntr->floating.attachId = configFromPntr->floating.attachId; break;
 		case UiElemConfigField_FloatingParentSide:    configToPntr->floating.parentSide = configFromPntr->floating.parentSide; break;
 		case UiElemConfigField_FloatingElemSide:      configToPntr->floating.elemSide = configFromPntr->floating.elemSide; break;
+		case UiElemConfigField_Condition:             configToPntr->condition = configFromPntr->condition; break;
+		case UiElemConfigField_MousePassthrough:      configToPntr->mousePassthrough = configFromPntr->mousePassthrough; break;
+		case UiElemConfigField_StrictHover:           configToPntr->strictHover = configFromPntr->strictHover; break;
 		case UiElemConfigField_RendererParams:        MyMemCopy(&configToPntr->renderer, &configFromPntr->renderer, sizeof(UiRendererParameters)); break;
 		case UiElemConfigField_ThemerParams:          MyMemCopy(&configToPntr->themer, &configFromPntr->themer, sizeof(UiThemerParameters)); break;
 		default: DebugAssert(false); break;
@@ -259,6 +271,7 @@ PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
 	ClearPointer(contextOut);
 	contextOut->arena = arena;
 	InitVarArray(UiElement, &contextOut->elements, arena);
+	InitVarArray(UiElement, &contextOut->prevElements, arena);
 	InitUiThemerRegistry(arena, &contextOut->themers);
 }
 
@@ -303,6 +316,7 @@ PEXPI UiElement* GetUiElementByIdInArray(VarArray* arrayPntr, UiId id, bool matc
 	}
 	return nullptr;
 }
+PEXPI UiElement* GetUiElementByIdInPrevFrame(UiId id, bool matchLocalIds) { NotNull(UiCtx); return GetUiElementByIdInArray(&UiCtx->prevElements, id, matchLocalIds); }
 PEXPI UiElement* GetUiElementById(UiId id, bool matchLocalIds) { NotNull(UiCtx); return GetUiElementByIdInArray(&UiCtx->elements, id, matchLocalIds); }
 
 PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
@@ -316,6 +330,65 @@ PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
 		return result;
 	}
 	else { DebugAssert(false); return nullptr; }
+}
+
+PEXPI bool IsUiElementHoveredStrict(UiId id) { NotNull(UiCtx); return (UiCtx->mouseHoveredId.id == id.id || UiCtx->mouseHoveredLocalId.id == id.id); }
+PEXPI bool IsUiElementHovered(UiId id)
+{
+	NotNull(UiCtx);
+	if (UiCtx->mouseHoveredId.id == id.id) { return true; }
+	if (UiCtx->mouseHoveredLocalId.id == id.id) { return true; }
+	if (UiCtx->mouseHoveredId.id != 0)
+	{
+		UiElement* hoveredElement = GetUiElementByIdInPrevFrame(UiCtx->mouseHoveredId, false);
+		if (hoveredElement != nullptr && hoveredElement->config.floating.type == UiFloatingType_None)
+		{
+			UiElement* parent = GetUiElementParent(hoveredElement, 0);
+			while (parent != nullptr)
+			{
+				if (parent->id.id == id.id || parent->config.id.id == id.id) { return true; }
+				if (parent->config.floating.type != UiFloatingType_None) { break; }
+				parent = GetUiElementParent(parent, 0);
+			}
+		}
+		else { WriteLine_W("Couldn't find hovered element in prev frame hierarchy!"); }
+	}
+	return false;
+}
+PEXPI bool IsUiCurrentElementHoveredStrict()
+{
+	UiElement* currentUiElement = GetCurrentUiElement();
+	NotNull(currentUiElement);
+	return IsUiElementHoveredStrict(currentUiElement->id);
+}
+PEXPI bool IsUiCurrentElementHovered()
+{
+	UiElement* currentUiElement = GetCurrentUiElement();
+	NotNull(currentUiElement);
+	return IsUiElementHovered(currentUiElement->id);
+}
+
+PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
+{
+	NotNull(UiCtx);
+	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
+	if (UiCtx->mouse == nullptr) { return false; }
+	if (!IsMouseBtnDown(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
+	if (UiCtx->clickStartHoveredId[mouseBtn].id == 0) { return false; }
+	if (UiCtx->clickStartHoveredId[mouseBtn].id == id.id) { return true; }
+	if (UiCtx->clickStartHoveredLocalId[mouseBtn].id == id.id) { return true; }
+	UiElement* clickedElement = GetUiElementByIdInPrevFrame(UiCtx->clickStartHoveredId[mouseBtn], false);
+	if (clickedElement != nullptr && clickedElement->config.floating.type == UiFloatingType_None)
+	{
+		UiElement* parent = GetUiElementParent(clickedElement, 0);
+		while (parent != nullptr)
+		{
+			if (parent->id.id == id.id || parent->config.id.id == id.id) { return true; }
+			if (parent->config.floating.type != UiFloatingType_None) { break; }
+			parent = GetUiElementParent(parent, 0);
+		}
+	}
+	return false;
 }
 
 static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* parent, bool xAxis)
@@ -500,8 +573,68 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		parentElement->numNonFloatingChildren++;
 	}
 	
-	//TODO: How do we decide runChildCode for things like buttons?
 	newElement->runChildCode = true;
+	if (newElement->config.condition != UiConditionType_None)
+	{
+		newElement->runChildCode = false;
+		UiElement* prevFrameElement = GetUiElementByIdInPrevFrame(newElement->id, false);
+		if (prevFrameElement != nullptr)
+		{
+			bool isHovered = (newElement->config.strictHover ? IsUiElementHoveredStrict(newElement->id) : IsUiElementHovered(newElement->id));
+			
+			switch (newElement->config.condition)
+			{
+				case UiConditionType_MouseHover:
+				{
+					newElement->runChildCode = isHovered;
+				} break;
+				case UiConditionType_MouseLeftClicked:
+				{
+					if (UiCtx->mouse != nullptr && isHovered)
+					{
+						newElement->runChildCode = IsMouseBtnReleased(UiCtx->mouse, nullptr, MouseBtn_Left);
+					}
+				} break;
+				case UiConditionType_MouseLeftClickStart:
+				{
+					if (UiCtx->mouse != nullptr && isHovered)
+					{
+						newElement->runChildCode = IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Left);
+					}
+				} break;
+				case UiConditionType_MouseRightClicked:
+				{
+					if (UiCtx->mouse != nullptr && isHovered)
+					{
+						newElement->runChildCode = IsMouseBtnReleased(UiCtx->mouse, nullptr, MouseBtn_Right);
+					}
+				} break;
+				case UiConditionType_MouseRightClickStart:
+				{
+					if (UiCtx->mouse != nullptr && isHovered)
+					{
+						newElement->runChildCode = IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Right);
+					}
+				} break;
+				case UiConditionType_MouseMiddleClicked:
+				{
+					if (UiCtx->mouse != nullptr && isHovered)
+					{
+						newElement->runChildCode = IsMouseBtnReleased(UiCtx->mouse, nullptr, MouseBtn_Middle);
+					}
+				} break;
+				case UiConditionType_MouseMiddleClickStart:
+				{
+					if (UiCtx->mouse != nullptr && isHovered)
+					{
+						newElement->runChildCode = IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Middle);
+					}
+				} break;
+				
+				default: DebugAssertMsg(false, "Unimplemented condition!"); break;
+			};
+		}
+	}
 	
 	if (!newElement->runChildCode) { CloseUiElement(); }
 	return newElement;
@@ -538,7 +671,14 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	context->mouse = mouse;
 	context->touchscreen = touchscreen;
 	
-	//TODO: Copy the array from last frame somewhere?
+	if (context->hasDoneOneLayout)
+	{
+		VarArrayExpand(&context->prevElements, context->elements.length);
+		VarArrayClear(&context->prevElements);
+		UiElement* prevElemsRange = VarArrayAddMulti(UiElement, &context->prevElements, context->elements.length);
+		UiElement* elemsRange = VarArrayGetFirst(UiElement, &context->elements);
+		MyMemCopy(prevElemsRange, elemsRange, sizeof(UiElement) * context->elements.length);
+	}
 	VarArrayClear(&context->elements);
 	context->numTopLevelElements = 0;
 	context->currentElementIndex = PIG_UI_INDEX_INVALID;
@@ -787,6 +927,50 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	}
 }
 
+static void TrackMouseInteractionAfterUiLayout()
+{
+	UiElement* hoveredElement = nullptr;
+	if (UiCtx->mouse != nullptr)
+	{
+		VarArrayLoop(&UiCtx->elements, eIndex)
+		{
+			VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+			if (!element->config.mousePassthrough && IsInsideRec(element->layoutRec, UiCtx->mouse->position))
+			{
+				if (hoveredElement == nullptr ||
+					element->config.depth < hoveredElement->config.depth ||
+					(element->config.depth == hoveredElement->config.depth && element->elementIndex >= hoveredElement->elementIndex))
+				{
+					hoveredElement = element;
+				}
+			}
+		}
+	}
+	UiCtx->mouseHoveredId = (hoveredElement != nullptr) ? hoveredElement->id : UiId_None;
+	UiCtx->mouseHoveredLocalId = (hoveredElement != nullptr) ? hoveredElement->config.id : UiId_None;
+	// PrintLine_D("Hovering over \"%.*s\"", StrPrint(UiCtx->mouseHoveredId.str));
+
+	for (uxx bIndex = 1; bIndex < MouseBtn_Count; bIndex++)
+	{
+		MouseBtn mouseBtn = (MouseBtn)bIndex;
+		if (UiCtx->clickStartHoveredId[mouseBtn].id != 0 && UiCtx->mouseHoveredId.id != UiCtx->clickStartHoveredId[mouseBtn].id)
+		{
+			UiCtx->clickStartHoveredId[mouseBtn] = UiId_None;
+			UiCtx->clickStartHoveredLocalId[mouseBtn] = UiId_None;
+		}
+		if (!IsMouseBtnDown(UiCtx->mouse, nullptr, mouseBtn) && !IsMouseBtnReleased(UiCtx->mouse, nullptr, mouseBtn))
+		{
+			UiCtx->clickStartHoveredId[mouseBtn] = UiId_None;
+			UiCtx->clickStartHoveredLocalId[mouseBtn] = UiId_None;
+		}
+		else if (IsMouseBtnPressed(UiCtx->mouse, nullptr, mouseBtn))
+		{
+			UiCtx->clickStartHoveredId[mouseBtn] = UiCtx->mouseHoveredId;
+			UiCtx->clickStartHoveredLocalId[mouseBtn] = UiCtx->mouseHoveredLocalId;
+		}
+	}
+}
+
 static void UiSystemDoLayout()
 {
 	bool printDebug = IsKeyboardKeyPressed(UiCtx->keyboard, nullptr, Key_T, false);
@@ -944,6 +1128,9 @@ static void UiSystemDoLayout()
 			#endif
 		}
 	}
+	
+	TrackMouseInteractionAfterUiLayout();
+	UiCtx->hasDoneOneLayout = true;
 }
 
 // +==========================================+

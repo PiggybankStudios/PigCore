@@ -224,6 +224,40 @@ plex UiPadding
 	r32 child; //space in-between each child, along the layout direction
 };
 
+typedef enum UiConditionType UiConditionType;
+enum UiConditionType
+{
+	UiConditionType_None = 0,
+	UiConditionType_MouseHover,
+	UiConditionType_MouseLeftClicked,
+	UiConditionType_MouseLeftClickStart,
+	UiConditionType_MouseRightClicked,
+	UiConditionType_MouseRightClickStart,
+	UiConditionType_MouseMiddleClicked,
+	UiConditionType_MouseMiddleClickStart,
+	UiConditionType_Count,
+	UiConditionType_Default = UiConditionType_None,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetUiConditionTypeStr(UiConditionType enumValue);
+#else
+PEXP const char* GetUiConditionTypeStr(UiConditionType enumValue)
+{
+	switch (enumValue)
+	{
+		case UiConditionType_None:                  return "None(Default)";
+		case UiConditionType_MouseHover:            return "MouseHover";
+		case UiConditionType_MouseLeftClicked:      return "MouseLeftClicked";
+		case UiConditionType_MouseLeftClickStart:   return "MouseLeftClickStart";
+		case UiConditionType_MouseRightClicked:     return "MouseRightClicked";
+		case UiConditionType_MouseRightClickStart:  return "MouseRightClickStart";
+		case UiConditionType_MouseMiddleClicked:    return "MouseMiddleClicked";
+		case UiConditionType_MouseMiddleClickStart: return "MouseMiddleClickStart";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
 // +==============================+
 // |        Element Config        |
 // +==============================+
@@ -244,6 +278,9 @@ plex UiElemConfig
 	Color32 borderColor;
 	r32 borderDepth; //0.0f will result in borderDepth inheriting value of depth
 	UiFloatingConfig floating;
+	UiConditionType condition;
+	bool mousePassthrough;
+	bool strictHover; //this element is not considered hovered if any of it's child elements is hovered over
 	
 	//These types can contain different things for each application, see the description near the top of the file
 	UiRendererParameters renderer;
@@ -292,9 +329,12 @@ enum UiElemConfigField
 	UiElemConfigField_FloatingAttachId      = ((1ull) << 29),
 	UiElemConfigField_FloatingParentSide    = ((1ull) << 30),
 	UiElemConfigField_FloatingElemSide      = ((1ull) << 31),
-	UiElemConfigField_RendererParams        = ((1ull) << 32), // NOTE: Fields inside UiRendererParameters struct are not represented individually
-	UiElemConfigField_ThemerParams          = ((1ull) << 33), // NOTE: Fields inside UiThemerParameters struct are not represented individually
-	UiElemConfigField_Count                 = 34,
+	UiElemConfigField_Condition             = ((1ull) << 32),
+	UiElemConfigField_MousePassthrough      = ((1ull) << 33),
+	UiElemConfigField_StrictHover           = ((1ull) << 34),
+	UiElemConfigField_RendererParams        = ((1ull) << 35), // NOTE: Fields inside UiRendererParameters struct are not represented individually
+	UiElemConfigField_ThemerParams          = ((1ull) << 36), // NOTE: Fields inside UiThemerParameters struct are not represented individually
+	UiElemConfigField_Count                 = 37,
 	UiElemConfigField_All                   = (((1ull) << UiElemConfigField_Count)-1),
 	UiElemConfigField_Sizing                = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueX|UiElemConfigField_SizingValueY),
 	UiElemConfigField_SizingX               = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingValueX),
@@ -347,6 +387,9 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_FloatingAttachId:      return "FloatingAttachId";
 		case UiElemConfigField_FloatingParentSide:    return "FloatingParentSide";
 		case UiElemConfigField_FloatingElemSide:      return "FloatingElemSide";
+		case UiElemConfigField_Condition:             return "Condition";
+		case UiElemConfigField_MousePassthrough:      return "MousePassthrough";
+		case UiElemConfigField_StrictHover:           return "StrictHover";
 		case UiElemConfigField_RendererParams:        return "RendererParams";
 		case UiElemConfigField_ThemerParams:          return "ThemerParams";
 		case UiElemConfigField_All:                   return "All";
@@ -503,6 +546,13 @@ plex UiContext
 	uxx numTopLevelElements; //TODO: Remove me
 	VarArray elements; //UiElement
 	
+	VarArray prevElements; //UiElement
+	UiId mouseHoveredId;
+	UiId mouseHoveredLocalId;
+	UiId clickStartHoveredId[MouseBtn_Count];
+	UiId clickStartHoveredLocalId[MouseBtn_Count];
+	
+	bool hasDoneOneLayout;
 	UiRenderList renderList; //allocated from frameArena
 };
 

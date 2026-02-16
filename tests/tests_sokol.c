@@ -1358,9 +1358,10 @@ bool AppFrame(void)
 				
 				UiElemConfig percentageRowElem = { .id = UiIdLit("PercentageRow") };
 				percentageRowElem.direction = UiLayoutDir_RightToLeft;
-				percentageRowElem.borderThickness = FillV4r(30.0f);
+				percentageRowElem.borderThickness = FillV4r(IsUiElementBeingClicked(percentageRowElem.id, MouseBtn_Left) ? 30.0f : 0.0f);
 				percentageRowElem.borderColor = MonokaiPurple;
 				percentageRowElem.borderDepth = UI_DEPTH_ZERO;
+				percentageRowElem.condition = UiConditionType_MouseHover;
 				UIELEM(percentageRowElem)
 				{
 					uxx testThemerId = PushUiThemer(&uiContext.themers, TestsUiThemerCallback, nullptr);
@@ -1371,8 +1372,12 @@ bool AppFrame(void)
 					
 					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
 					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
+					blueElem.condition = UiConditionType_MouseLeftClicked;
 					if (!IsKeyboardKeyDown(&keyboard, nullptr, Key_Control)) { blueElem.depth = -1; }
-					UIELEM_LEAF(blueElem);
+					UIELEM(blueElem)
+					{
+						WriteLine_D("You click on the blue element!");
+					}
 					
 					UiElemConfig purpleElem = { .id = UiIdLit("Purple"), .color=MonokaiPurple };
 					purpleElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.60f);
@@ -1395,10 +1400,10 @@ bool AppFrame(void)
 						.color=MonokaiGreen,
 						.depth = -1.0f,
 						.floating = {
-							// .type = UiFloatingType_Parent,
-							.type = UiFloatingType_Id,
-							.attachId = UiIdLit("Blue"),
-							.offset = mouse.position, //MakeV2(15, 45),
+							.type = UiFloatingType_Parent,
+							// .type = UiFloatingType_Id,
+							// .attachId = UiIdLit("Blue"),
+							.offset = SubV2(mouse.position, ScaleV2(windowSize, 0.25f)), //MakeV2(15, 45),
 							.parentSide = UiSide_Center,
 							.elemSide = UiSide_BottomCenter,
 						},
@@ -1412,6 +1417,10 @@ bool AppFrame(void)
 				
 				UIELEM({ .id = UiIdLit("Red"),
 					.sizing = { .x=UI_FIT(), .y=UI_EXPAND() },
+					.padding = {
+						// .inner = { .Right = 15 },
+						.child = 15,
+					},
 					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiRed,
 				})
