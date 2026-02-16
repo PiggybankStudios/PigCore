@@ -40,8 +40,8 @@ Description:
 	PIG_CORE_INLINE UiThemer* TryGetUiThemerById(UiThemerRegistry* registry, uxx themerId);
 	PIG_CORE_INLINE void PopUiThemer(UiThemerRegistry* registry, uxx themerId);
 	PIG_CORE_INLINE uxx PushUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callback, void* userPntr);
-	PIG_CORE_INLINE uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u64 fields, UiElemConfig config);
-	PIG_CORE_INLINE uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig config);
+	PIG_CORE_INLINE uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u64 fields, UiElemConfig config, bool applyToNonText, bool applyToText);
+	PIG_CORE_INLINE uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig config, bool applyToNonText, bool applyToText);
 	PIG_CORE_INLINE void SetUiThemerActive(UiThemerRegistry* registry, uxx themerId, bool active);
 	PIG_CORE_INLINE void EnableUiThemer(UiThemerRegistry* registry, uxx themerId);
 	PIG_CORE_INLINE void DisableUiThemer(UiThemerRegistry* registry, uxx themerId);
@@ -56,7 +56,9 @@ Description:
 //     uxx redSetterId = PushUiFields(UICONFIG({ .color = MonokaiRed }));
 //     ...
 //     PopUiFields(redSetterId);
-#define PushUiFields(...) PushBasicUiThemerConfig(((UiCtx != nullptr) ? &UiCtx->themers : nullptr), NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config)
+#define PushUiFields(...)     PushBasicUiThemerConfig(((UiCtx != nullptr) ? &UiCtx->themers : nullptr), NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config, true,  false)
+#define PushUiFieldsText(...) PushBasicUiThemerConfig(((UiCtx != nullptr) ? &UiCtx->themers : nullptr), NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config, false, true)
+#define PushUiFieldsAll(...)  PushBasicUiThemerConfig(((UiCtx != nullptr) ? &UiCtx->themers : nullptr), NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config, true,  true)
 #define PopUiFields(themerId) PopUiThemer(((UiCtx != nullptr) ? &UiCtx->themers : nullptr), (themerId))
 
 // +--------------------------------------------------------------+
@@ -73,7 +75,11 @@ static UI_THEMER_CALLBACK_DEF(BasicUiThemerCallback)
 	UNUSED(context);
 	NotNull(userPntr);
 	BasicUiThemerOptions* options = (BasicUiThemerOptions*)userPntr;
-	SetUiElemConfigFieldsIfDefault(&element->config, &options->config, options->fields);
+	bool isText = (!IsEmptyStr(element->config.text) || !IsEmptyRichStr(element->config.richText));
+	if ((!isText && options->applyToNonText) || (isText && options->applyToText))
+	{
+		SetUiElemConfigFieldsIfDefault(&element->config, &options->config, options->fields);
+	}
 	return true;
 }
 
@@ -144,18 +150,20 @@ PEXPI uxx PushUiThemer(UiThemerRegistry* registry, UiThemerCallback_f* callback,
 	return newThemer->id;
 }
 
-PEXPI uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u64 fields, UiElemConfig config)
+PEXPI uxx PushBasicUiThemerFields(UiThemerRegistry* registry, u64 fields, UiElemConfig config, bool applyToNonText, bool applyToText)
 {
 	NotNull(registry);
 	NotNull(registry->arena);
 	BasicUiThemerOptions* options = VarArrayAdd(BasicUiThemerOptions, &registry->basicOptions);
 	NotNull(options);
 	ClearPointer(options);
+	options->applyToNonText = applyToNonText;
+	options->applyToText = applyToText;
 	options->fields = fields;
 	MyMemCopy(&options->config, &config, sizeof(UiElemConfig));
 	return PushUiThemer(registry, BasicUiThemerCallback, options);
 }
-PEXPI uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig config)
+PEXPI uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig config, bool applyToNonText, bool applyToText)
 {
 	u64 fields = UiElemConfigField_None;
 	for (uxx bIndex = 0; bIndex < UiElemConfigField_Count; bIndex++)
@@ -163,7 +171,7 @@ PEXPI uxx PushBasicUiThemerConfig(UiThemerRegistry* registry, UiElemConfig confi
 		UiElemConfigField fieldBit = (UiElemConfigField)(1ull << bIndex);
 		if (!IsUiElemConfigFieldDefault(&config, fieldBit)) { FlagSet(fields, fieldBit); }
 	}
-	return PushBasicUiThemerFields(registry, fields, config);
+	return PushBasicUiThemerFields(registry, fields, config, applyToNonText, applyToText);
 }
 
 PEXPI void SetUiThemerActive(UiThemerRegistry* registry, uxx themerId, bool active)

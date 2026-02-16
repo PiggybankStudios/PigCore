@@ -61,9 +61,10 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Make sure childGap works
 	( ) We are a little too strict with the mouse starting hover ID tracking. When the mouse hovers a different UI element in the middle of a click we should attempt to find a common ancestor that isn't passthrough and track that as the element that was clicked on
 	[ ] Option for what bounds a floating element is restricted to (clipped to is separate? Only for EXPAND?)
+	[X] PushUiFields non-text? Or maybe it's non-text by default?
 	[ ] Add support for shrinking elements if they are too big at their preferred size
 	[X] Get current element
-	[ ] Get an elements layout last frame
+	[X] Get an elements layout last frame
 	[X] Figure out what element the mouse is hovering over (including depth and occlussion+clipping of elements)
 	[ ] Child clipping
 	[ ] Mouse hovering needs to take into account clipping of child elements to their parent
@@ -72,9 +73,9 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Touch input scrolling
 	[X] Run child scope if clicked or other input events
 	[ ] Some idea of focused element, keyboard/gamepad-driven interaction of most UI
-	[ ] Text elements
-	[ ] Complex word-wrapping support
-	[ ] RichStr8 support
+	[X] Text elements
+	[X] Complex word-wrapping support
+	[X] RichStr support
 	[ ] Aspect ratio restricted grow elements (for textures elements mostly)
 	[ ] HashMap of ID->element
 	[ ] Better support for UiRendererParams and UiThemerParams
@@ -98,6 +99,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] borderThickness is margin and border renders outside UI element options
 	[ ] Add tooltip registration through UiElemConfig
 	[?] Repeating textures?
+	[ ] Measure MeasureText performance impact. Set up measure caching if needed
 	[ ] 
 
 # Things we do differently than Clay

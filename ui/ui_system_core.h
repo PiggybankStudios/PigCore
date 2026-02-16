@@ -136,6 +136,8 @@ enum UiSizingType
 	UiSizingType_FixedPx,
 	UiSizingType_FixedPercent,
 	UiSizingType_Fit,
+	UiSizingType_TextClip,
+	UiSizingType_TextWrap,
 	UiSizingType_Count,
 	UiSizingType_Default = UiSizingType_Expand,
 };
@@ -150,6 +152,8 @@ PEXPI const char* GetUiSizingTypeStr(UiSizingType enumValue)
 		case UiSizingType_FixedPx:      return "FixedPx";
 		case UiSizingType_FixedPercent: return "FixedPercent";
 		case UiSizingType_Fit:          return "Fit";
+		case UiSizingType_TextClip:     return "TextClip";
+		case UiSizingType_TextWrap:     return "TextWrap";
 		default: return UNKNOWN_STR;
 	}
 }
@@ -179,6 +183,9 @@ car UiSizing
 #define UI_FIT2()                       { .x=UI_FIT(),             .y=UI_FIT()             }
 #define UI_EXPAND2()                    { .x=UI_EXPAND(),          .y=UI_EXPAND()          }
 #define UI_EXPAND_MIN2(minPxX, minPxY)  { .x=UI_EXPAND(minPxX),    .y=UI_EXPAND(minPxY)    }
+#define UI_TEXT_WRAP(minWidth)          { .x={.type=UiSizingType_TextWrap, .value=(minWidth)}, .y={.type=UiSizingType_TextWrap} }
+#define UI_TEXT_CLIP(minWidth)          { .x={.type=UiSizingType_TextClip, .value=(minWidth)}, .y={.type=UiSizingType_TextClip} }
+#define UI_TEXT_FULL()                  UI_TEXT_CLIP(-1.0f)
 
 typedef enum UiFloatingType UiFloatingType;
 enum UiFloatingType
@@ -281,6 +288,13 @@ plex UiElemConfig
 	UiConditionType condition;
 	bool mousePassthrough;
 	bool strictHover; //this element is not considered hovered if any of it's child elements is hovered over
+	Str8 text; //TODO: Add UiElemConfigField entry for this
+	RichStr richText; //TODO: Add UiElemConfigField entry for this
+	Color32 textColor; //TODO: Add UiElemConfigField entry for this
+	r32 textWrapWidth; //TODO: Add UiElemConfigField entry for this
+	PigFont* font; //TODO: Add UiElemConfigField entry for this
+	r32 fontSize; //TODO: Add UiElemConfigField entry for this
+	u8 fontStyle; //TODO: Add UiElemConfigField entry for this
 	
 	//These types can contain different things for each application, see the description near the top of the file
 	UiRendererParameters renderer;
@@ -289,6 +303,7 @@ plex UiElemConfig
 
 //When configuring an element we often use the 0 value as a "default". So a color of "transparent black" actually means the default color, which is fully opaque white
 #define UiConfigColorToActualColor(color) (((color).valueU32 != PigUiDefaultColor_Value) ? (color) : White)
+#define UiConfigTextColorToActualColor(color) (((color).valueU32 != PigUiDefaultColor_Value) ? (color) : Black)
 
 // This is a bitwise enum where each bit represents a single "field" in the UiElemConfig structure above
 // Some values are aliases for combinations of other values, like Margins is MarginLeft|MarginTop|MarginRight|MarginBottom
@@ -436,6 +451,8 @@ plex UiThemer
 typedef plex BasicUiThemerOptions BasicUiThemerOptions;
 plex BasicUiThemerOptions
 {
+	bool applyToNonText;
+	bool applyToText;
 	u32 fields;
 	UiElemConfig config;
 };
@@ -455,6 +472,7 @@ enum UiRenderCmdType
 	UiRenderCmdType_None = 0,
 	UiRenderCmdType_Rectangle,
 	UiRenderCmdType_Text,
+	UiRenderCmdType_RichText,
 	UiRenderCmdType_Scissor,
 	UiRenderCmdType_Count,
 };
@@ -468,6 +486,7 @@ PEXPI const char* GetUiRenderCmdTypeStr(UiRenderCmdType enumValue)
 		case UiRenderCmdType_None:      return "None";
 		case UiRenderCmdType_Rectangle: return "Rectangle";
 		case UiRenderCmdType_Text:      return "Text";
+		case UiRenderCmdType_RichText:  return "RichText";
 		case UiRenderCmdType_Scissor:   return "Scissor";
 		default: return UNKNOWN_STR;
 	}
@@ -502,8 +521,26 @@ plex UiRenderCmd
 		{
 			v2 position;
 			PigFont* font;
+			r32 fontSize;
+			u8 fontStyle;
+			r32 wrapWidth;
 			Str8 text;
+			//TODO: clipRec?
 		} text;
+		
+		// +==============================+
+		// |   UiRenderCmdType_RichText   |
+		// +==============================+
+		plex
+		{
+			v2 position;
+			PigFont* font;
+			r32 fontSize;
+			u8 fontStyle;
+			r32 wrapWidth;
+			RichStr text;
+			//TODO: clipRec?
+		} richText;
 		
 		// +==============================+
 		// |   UiRenderCmdType_Scissor    |

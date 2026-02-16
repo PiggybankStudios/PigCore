@@ -157,9 +157,11 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 #define VarArrayGetIndexOf(type, arrayPntr, itemInQuestion, indexOut) VarArrayGetIndexOf_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (itemInQuestion), (indexOut))
 #endif
 
-#define VarArrayLoop(arrayPntr, indexVarName) for (uxx indexVarName = 0; indexVarName < (arrayPntr)->length; indexVarName++)
-#define VarArrayLoopGet(type, varName, arrayPntr, indexVarName) type* varName = (((type*)(arrayPntr)->items) + (indexVarName));
-#define VarArrayLoopGetValue(type, varName, arrayPntr, indexVarName) type varName = *(((type*)(arrayPntr)->items) + (indexVarName));
+#define VarArrayLoop(arrayPntr, indexVarName)                               for (uxx indexVarName = 0; indexVarName < (arrayPntr)->length; indexVarName++)
+#define VarArrayLoopGet(type, varName, arrayPntr, indexVarName)             type* varName =  (((type*)(arrayPntr)->items) + (indexVarName));
+#define VarArrayLoopGetValue(type, varName, arrayPntr, indexVarName)        type  varName = *(((type*)(arrayPntr)->items) + (indexVarName));
+#define VarArrayLoopGetReverse(type, varName, arrayPntr, indexVarName)      type* varName =  (((type*)(arrayPntr)->items) + ((arrayPntr)->length - 1) - (indexVarName));
+#define VarArrayLoopGetValueReverse(type, varName, arrayPntr, indexVarName) type  varName = *(((type*)(arrayPntr)->items) + ((arrayPntr)->length - 1) - (indexVarName));
 
 //Hard indicates we want to assertOnFailure, opposed to Soft which will return nullptr. Not specifying leads to implicitly using Hard variant
 #if LANGUAGE_IS_C

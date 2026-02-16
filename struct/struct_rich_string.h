@@ -49,7 +49,7 @@ enum FontStyleFlag
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetFontStyleFlagStr(FontStyleFlag enumValue);
 #else
-const char* GetFontStyleFlagStr(FontStyleFlag enumValue)
+PEXP const char* GetFontStyleFlagStr(FontStyleFlag enumValue)
 {
 	switch (enumValue)
 	{
@@ -80,7 +80,7 @@ enum RichStrStyleChangeType
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetRichStrStyleChangeTypeStr(RichStrStyleChangeType enumValue);
 #else
-const char* GetRichStrStyleChangeTypeStr(RichStrStyleChangeType enumValue)
+PEXP const char* GetRichStrStyleChangeTypeStr(RichStrStyleChangeType enumValue)
 {
 	switch (enumValue)
 	{
@@ -169,6 +169,8 @@ plex RichStr
 
 #define RichStr_Empty_Const MakeRichStr_Const(MakeRichStrPiece_Const(RichStrStyleChange_None_Const, Str8_Empty_Const), 0, nullptr)
 #define RichStr_Empty       MakeRichStr(MakeRichStrPiece(RichStrStyleChange_None, Str8_Empty), 0, nullptr)
+
+#define IsEmptyRichStr(richStr)   IsEmptyStr((richStr).fullPiece.str)
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

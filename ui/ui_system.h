@@ -391,62 +391,6 @@ PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
 	return false;
 }
 
-static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* parent, bool xAxis)
-{
-	DebugNotNull(element);
-	DebugAssert(parent != nullptr || element->elementIndex == 0); //parent can be null, only for the root element
-	bool isThisLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
-	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.padding.child) : 0.0f;
-	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
-	
-	r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
-	r32* preferredSizePntr = (xAxis ? &element->preferredSize.Width : &element->preferredSize.Height);
-	
-	UiSizingType sizingType = (xAxis ? element->config.sizing.x.type : element->config.sizing.y.type);
-	r32 sizingValue = (xAxis ? element->config.sizing.x.value : element->config.sizing.y.value);
-	if (sizingType == UiSizingType_FixedPx)
-	{
-		*minimumSizePntr = sizingValue;
-		*preferredSizePntr = sizingValue;
-	}
-	else if (sizingType == UiSizingType_FixedPercent)
-	{
-		// NOTE: Nothing special happens here for percentage sizing. We handle this primarily in DistributeSpaceToUiElemChildrenOnAxis
-		*minimumSizePntr = elemInnerPaddingLrOrTb + layoutAxisChildPadding;
-		*preferredSizePntr = elemInnerPaddingLrOrTb + layoutAxisChildPadding;
-	}
-	else if (sizingType == UiSizingType_Fit)
-	{
-		*minimumSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding;
-		if (!IsInfiniteOrNanR32(*preferredSizePntr)) { *preferredSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding; }
-	}
-	else if (sizingType == UiSizingType_Expand)
-	{
-		*minimumSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding;
-		if (*minimumSizePntr < sizingValue) { *minimumSizePntr = sizingValue; }
-		*preferredSizePntr = INFINITY;
-	}
-	else { DebugAssert(false); }
-	
-	if (parent != nullptr && element->config.floating.type == UiFloatingType_None)
-	{
-		bool isParentLayoutDir = (IsUiDirHorizontal(parent->config.direction) == xAxis);
-		r32 outerPaddingLrOrTb = (xAxis ? (element->config.padding.outer.Left + element->config.padding.outer.Right) : (element->config.padding.outer.Top + element->config.padding.outer.Bottom));
-		r32* parentMinimumSizePntr = (xAxis ? &parent->minimumSize.Width : &parent->minimumSize.Height);
-		r32* parentPreferredSizePntr = (xAxis ? &parent->preferredSize.Width : &parent->preferredSize.Height);
-		
-		if (isParentLayoutDir) { *parentMinimumSizePntr += *minimumSizePntr + outerPaddingLrOrTb; }
-		else { *parentMinimumSizePntr = MaxR32(*parentMinimumSizePntr, *minimumSizePntr + outerPaddingLrOrTb); }
-		
-		if (!IsInfiniteOrNanR32(*parentPreferredSizePntr))
-		{
-			if (IsInfiniteOrNanR32(*preferredSizePntr)) { *parentPreferredSizePntr = INFINITY; }
-			else if (isParentLayoutDir) { *parentPreferredSizePntr += *preferredSizePntr + outerPaddingLrOrTb; }
-			else { *parentPreferredSizePntr = MaxR32(*parentPreferredSizePntr, *preferredSizePntr + outerPaddingLrOrTb); }
-		}
-	}
-}
-
 PEXPI UiElement* CloseUiElement()
 {
 	NotNull(UiCtx);
@@ -458,6 +402,7 @@ PEXPI UiElement* CloseUiElement()
 	element->isOpen = false;
 	UiCtx->currentElementIndex = element->parentIndex;
 	
+	//Multiply config sizing values by UiCtx->scale
 	if (element->config.sizing.x.type == UiSizingType_FixedPx || element->config.sizing.x.type == UiSizingType_Expand)
 	{
 		element->config.sizing.x.value *= UiCtx->scale;
@@ -480,11 +425,6 @@ PEXPI UiElement* CloseUiElement()
 	element->config.borderThickness.Top    *= UiCtx->scale; if (element->config.borderThickness.Top    > 0.0f && element->config.borderThickness.Top    < 1.0f) { element->config.borderThickness.Top    = 1.0f; }
 	element->config.borderThickness.Right  *= UiCtx->scale; if (element->config.borderThickness.Right  > 0.0f && element->config.borderThickness.Right  < 1.0f) { element->config.borderThickness.Right  = 1.0f; }
 	element->config.borderThickness.Bottom *= UiCtx->scale; if (element->config.borderThickness.Bottom > 0.0f && element->config.borderThickness.Bottom < 1.0f) { element->config.borderThickness.Bottom = 1.0f; }
-	
-	// We take the opportunity in CloseUiElement (which is a Reverse Breadth-First Visit on the tree) to do some basic sizing calculations
-	UiElement* parent = GetUiElementParent(element, 0);
-	CalculateUiElemSizeOnAxisOnClose(element, parent, true);
-	CalculateUiElemSizeOnAxisOnClose(element, parent, false);
 	
 	return element;
 }
@@ -717,6 +657,98 @@ PEXPI Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element)
 	return result.str;
 }
 
+// +==============================+
+// |     UI Layout Algorithm      |
+// +==============================+
+static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement* parent, bool xAxis)
+{
+	DebugNotNull(element);
+	DebugAssert(parent != nullptr || element->elementIndex == 0); //parent can be null, only for the root element
+	bool isThisLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
+	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.padding.child) : 0.0f;
+	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
+	
+	r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
+	r32* preferredSizePntr = (xAxis ? &element->preferredSize.Width : &element->preferredSize.Height);
+	
+	UiSizingType sizingType = (xAxis ? element->config.sizing.x.type : element->config.sizing.y.type);
+	r32 sizingValue = (xAxis ? element->config.sizing.x.value : element->config.sizing.y.value);
+	if (sizingType == UiSizingType_FixedPx)
+	{
+		*minimumSizePntr = sizingValue;
+		*preferredSizePntr = sizingValue;
+	}
+	else if (sizingType == UiSizingType_FixedPercent)
+	{
+		// NOTE: Nothing special happens here for percentage sizing. We handle this primarily in DistributeSpaceToUiElemChildrenOnAxis
+		*minimumSizePntr = elemInnerPaddingLrOrTb + layoutAxisChildPadding;
+		*preferredSizePntr = elemInnerPaddingLrOrTb + layoutAxisChildPadding;
+	}
+	else if (sizingType == UiSizingType_Fit)
+	{
+		*minimumSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding;
+		if (!IsInfiniteOrNanR32(*preferredSizePntr)) { *preferredSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding; }
+	}
+	else if (sizingType == UiSizingType_Expand)
+	{
+		*minimumSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding;
+		if (*minimumSizePntr < sizingValue) { *minimumSizePntr = sizingValue; }
+		*preferredSizePntr = INFINITY;
+	}
+	else if (sizingType == UiSizingType_TextClip || sizingType == UiSizingType_TextWrap)
+	{
+		AssertMsg(element->config.font != nullptr, "Text elements must have a font set!");
+		AssertMsg(element->numChildren == 0, "Text elements cannot have children!");
+		TextMeasure measure = ZEROED;
+		r32 wrapWidth = element->config.textWrapWidth;
+		if (!xAxis && sizingType == UiSizingType_TextWrap)
+		{
+			wrapWidth = element->layoutRec.Width; //The layoutRec.Width is already decided because of the full X-axis sizing pass before Y-axis in UiSystemDoLayout
+			if (element->config.textWrapWidth != 0.0f && wrapWidth > element->config.textWrapWidth) { wrapWidth = element->config.textWrapWidth; }
+		}
+		r32 fontSize = ((element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(element->config.font));
+		if (!IsEmptyRichStr(element->config.richText))
+		{
+			measure = MeasureRichTextEx(element->config.font, fontSize, element->config.fontStyle, false, wrapWidth, element->config.richText);
+		}
+		else
+		{
+			measure = MeasureTextEx(element->config.font, fontSize, element->config.fontStyle, false, wrapWidth, element->config.text);
+		}
+		r32 minWidthOrWrapWidth = MaxR32(sizingValue, element->config.textWrapWidth);
+		r32 measureHeightOrLineHeight = MaxR32(measure.Height, GetFontLineHeight(element->config.font, fontSize, element->config.fontStyle));
+		*minimumSizePntr = (xAxis ? ((minWidthOrWrapWidth >= 0.0f) ? minWidthOrWrapWidth : measure.Width) : measureHeightOrLineHeight);
+		*preferredSizePntr = (xAxis ? measure.Width : measureHeightOrLineHeight);
+	}
+	else { DebugAssert(false); }
+}
+
+static void PropogateMinimumAndPreferredSizeToParentOnAxis(UiElement* element, UiElement* parent, bool xAxis)
+{
+	DebugNotNull(element);
+	DebugAssert(parent != nullptr || element->elementIndex == 0); //parent can be null, only for the root element
+	if (parent != nullptr && element->config.floating.type == UiFloatingType_None)
+	{
+		r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
+		r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
+		
+		bool isParentLayoutDir = (IsUiDirHorizontal(parent->config.direction) == xAxis);
+		r32 outerPaddingLrOrTb = (xAxis ? (element->config.padding.outer.Left + element->config.padding.outer.Right) : (element->config.padding.outer.Top + element->config.padding.outer.Bottom));
+		r32* parentMinimumSizePntr = (xAxis ? &parent->minimumSize.Width : &parent->minimumSize.Height);
+		r32* parentPreferredSizePntr = (xAxis ? &parent->preferredSize.Width : &parent->preferredSize.Height);
+		
+		if (isParentLayoutDir) { *parentMinimumSizePntr += minimumSize + outerPaddingLrOrTb; }
+		else { *parentMinimumSizePntr = MaxR32(*parentMinimumSizePntr, minimumSize + outerPaddingLrOrTb); }
+		
+		if (!IsInfiniteOrNanR32(*parentPreferredSizePntr))
+		{
+			if (IsInfiniteOrNanR32(preferredSize)) { *parentPreferredSizePntr = INFINITY; }
+			else if (isParentLayoutDir) { *parentPreferredSizePntr += preferredSize + outerPaddingLrOrTb; }
+			else { *parentPreferredSizePntr = MaxR32(*parentPreferredSizePntr, preferredSize + outerPaddingLrOrTb); }
+		}
+	}
+}
+
 static void CalculateSizeForFloatingUiElementOnAxis(UiElement* element, bool xAxis)
 {
 	//TODO: This is a weird subset of the logic that lives in CalculateUiElemSizeOnAxisOnClose and DistributeSpaceToUiElemChildrenOnAxis. Maybe we can merge these better somehow?
@@ -755,10 +787,6 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	UNUSED(printDebug);
 	#endif
 	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
-	
-	// Floating elements need to decide their own size first
-	CalculateSizeForFloatingUiElementOnAxis(element, xAxis);
-	
 	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
 	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
 	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
@@ -973,7 +1001,113 @@ static void TrackMouseInteractionAfterUiLayout()
 
 static void UiSystemDoLayout()
 {
+	ScratchBegin2(scratch, UiCtx->arena, UiCtx->frameArena);
 	bool printDebug = IsKeyboardKeyPressed(UiCtx->keyboard, nullptr, Key_T, false);
+	// The root element decides it's own final position/size
+	// Most elements have their size decided by their parent inside DistributeSpaceToUiElemChildrenOnAxis
+	// Floating elements are the only other elements that decide their own position/size
+	UiElement* rootElement = VarArrayGetFirst(UiElement, &UiCtx->elements);
+	rootElement->layoutRec.TopLeft = V2_Zero;
+	rootElement->layoutRec.Size = UiCtx->screenSize;
+	
+	//NOTE: Because text wrapping will affect the minimumSize along the Y-axis of text elements based on the
+	//      final size given on the X-axis, we have to do both passes of X-axis sizing BEFORE we do Y-axis sizing
+	// +================================+
+	// | Size X-axis in Bottom-Up order |
+	// +================================+
+	VarArrayLoop(&UiCtx->elements, eIndex)
+	{
+		VarArrayLoopGetReverse(UiElement, element, &UiCtx->elements, eIndex);
+		// #if DEBUG_BUILD
+		// if (printDebug)
+		// {
+		// 	Str8 fullName = GetUiElementQualifiedName(scratch, element);
+		// 	PrintLine_D("Visiting %.*s X-Axis (Min/Preferred Pass)", StrPrint(fullName));
+		// }
+		// #endif
+		UiElement* parent = GetUiElementParent(element, 0);
+		CalcUiElementMinimumAndPreferredOnAxis(element, parent, true);
+		PropogateMinimumAndPreferredSizeToParentOnAxis(element, parent, true);
+	}
+	// +======================================+
+	// | Distribute X-axis in Top-Down order  |
+	// +======================================+
+	VarArrayLoop(&UiCtx->elements, eIndex)
+	{
+		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+		// #if DEBUG_BUILD
+		// if (printDebug)
+		// {
+		// 	Str8 fullName = GetUiElementQualifiedName(scratch, element);
+		// 	PrintLine_D("Visiting %.*s X-Axis (Distribute Pass)", StrPrint(fullName));
+		// }
+		// #endif
+		if (element->config.floating.type != UiFloatingType_None) { CalculateSizeForFloatingUiElementOnAxis(element, true); }
+		if (element->numChildren > 0)
+		{
+			#if DEBUG_BUILD
+			if (printDebug)
+			{
+				Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
+				PrintLine_D("0x%016llX %.*s Sizing X-Axis %llu child%s",
+					element->id.id,
+					StrPrint(fullName),
+					element->numChildren, PluralEx(element->numChildren, "", "ren")
+				);
+			}
+			#endif //DEBUG_BUILD
+			DistributeSpaceToUiElemChildrenOnAxis(element, true, printDebug);
+		}
+	}
+	
+	// +================================+
+	// | Size Y-axis in Bottom-Up order |
+	// +================================+
+	VarArrayLoop(&UiCtx->elements, eIndex)
+	{
+		VarArrayLoopGetReverse(UiElement, element, &UiCtx->elements, eIndex);
+		// #if DEBUG_BUILD
+		// if (printDebug)
+		// {
+		// 	Str8 fullName = GetUiElementQualifiedName(scratch, element);
+		// 	PrintLine_D("Visiting %.*s Y-Axis (Min/Preferred Pass)", StrPrint(fullName));
+		// }
+		// #endif
+		UiElement* parent = GetUiElementParent(element, 0);
+		CalcUiElementMinimumAndPreferredOnAxis(element, parent, false);
+		PropogateMinimumAndPreferredSizeToParentOnAxis(element, parent, false);
+	}
+	// +======================================+
+	// | Distribute Y-axis in Top-Down order  |
+	// +======================================+
+	VarArrayLoop(&UiCtx->elements, eIndex)
+	{
+		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+		// #if DEBUG_BUILD
+		// if (printDebug)
+		// {
+		// 	Str8 fullName = GetUiElementQualifiedName(scratch, element);
+		// 	PrintLine_D("Visiting %.*s Y-Axis (Distribute Pass)", StrPrint(fullName));
+		// }
+		// #endif
+		if (element->config.floating.type != UiFloatingType_None) { CalculateSizeForFloatingUiElementOnAxis(element, false); }
+		if (element->numChildren > 0)
+		{
+			#if DEBUG_BUILD
+			if (printDebug)
+			{
+				Str8 fullName = GetUiElementQualifiedName(scratch, element);
+				PrintLine_D("0x%016llX %.*s Sizing Y-Axis %llu child%s",
+					element->id.id,
+					StrPrint(fullName),
+					element->numChildren, PluralEx(element->numChildren, "", "ren")
+				);
+			}
+			#endif //DEBUG_BUILD
+			DistributeSpaceToUiElemChildrenOnAxis(element, false, printDebug);
+		}
+	}
+	
 	#if DEBUG_BUILD
 	if (printDebug)
 	{
@@ -981,7 +1115,7 @@ static void UiSystemDoLayout()
 		{
 			VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
 			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
-			PrintLine_D("0x%016llX %.*s: element=%llu treeDepth=%llu sibling=%llu parent=%llu children=%llu descendents=%llu - sizing[X=%s, Y=%s] minimum(%g,%g) preferred(%g,%g) depth=%g",
+			PrintLine_D("0x%016llX %.*s: element=%llu treeDepth=%llu sibling=%llu parent=%llu children=%llu descendents=%llu - sizing[X=%s, Y=%s] minimum(%g,%g) preferred(%g,%g)",
 				element->id.id,
 				StrPrint(fullName),
 				element->elementIndex,
@@ -992,20 +1126,13 @@ static void UiSystemDoLayout()
 				element->numDescendents,
 				GetUiSizingTypeStr(element->config.sizing.x.type), GetUiSizingTypeStr(element->config.sizing.y.type),
 				element->minimumSize.Width, element->minimumSize.Height,
-				element->preferredSize.Width, element->preferredSize.Height,
-				element->config.depth
+				element->preferredSize.Width, element->preferredSize.Height
 			);
 		}
 	}
 	#endif //DEBUG_BUILD
 	
-	// The root element decides it's own final position/size
-	// Most elements have their size decided by their parent inside DistributeSpaceToUiElemChildrenOnAxis
-	// Floating elements are the only other elements that decide their own position/size
-	UiElement* rootElement = VarArrayGetFirst(UiElement, &UiCtx->elements);
-	rootElement->layoutRec.TopLeft = V2_Zero;
-	rootElement->layoutRec.Size = rootElement->preferredSize;
-	
+	#if 0
 	// +======================================+
 	// | Distribute Sizes to Children via BFS |
 	// +======================================+
@@ -1043,6 +1170,7 @@ static void UiSystemDoLayout()
 			}
 		}
 	}
+	#endif
 	
 	// +============================================+
 	// | Position Children According to UiLayoutDir |
@@ -1131,6 +1259,7 @@ static void UiSystemDoLayout()
 	
 	TrackMouseInteractionAfterUiLayout();
 	UiCtx->hasDoneOneLayout = true;
+	ScratchEnd(scratch);
 }
 
 // +==========================================+
@@ -1212,6 +1341,42 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->rectangle.borderThickness = element->config.borderThickness;
 				newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
 				newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
+			}
+			
+			bool isWrappingText = (element->config.sizing.x.type == UiSizingType_TextWrap);
+			if (!IsEmptyRichStr(element->config.richText))
+			{
+				UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
+				DebugNotNull(newCmd);
+				ClearPointer(newCmd);
+				newCmd->type = UiRenderCmdType_RichText;
+				newCmd->depth = element->config.depth;
+				newCmd->srcElementIndex = element->elementIndex;
+				newCmd->color = UiConfigTextColorToActualColor(element->config.textColor);
+				newCmd->richText.font = element->config.font;
+				newCmd->richText.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->richText.font);
+				newCmd->richText.fontStyle = element->config.fontStyle;
+				newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
+				if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
+				newCmd->richText.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->richText.font, newCmd->richText.fontSize, newCmd->richText.fontStyle)));
+				newCmd->richText.text = element->config.richText;
+			}
+			else if (!IsEmptyStr(element->config.text))
+			{
+				UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
+				DebugNotNull(newCmd);
+				ClearPointer(newCmd);
+				newCmd->type = UiRenderCmdType_Text;
+				newCmd->depth = element->config.depth;
+				newCmd->srcElementIndex = element->elementIndex;
+				newCmd->color = UiConfigTextColorToActualColor(element->config.textColor);
+				newCmd->text.font = element->config.font;
+				newCmd->text.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->text.font);
+				newCmd->text.fontStyle = element->config.fontStyle;
+				newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
+				if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
+				newCmd->text.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->text.font, newCmd->text.fontSize, newCmd->text.fontStyle)));
+				newCmd->text.text = element->config.text;
 			}
 		}
 	}

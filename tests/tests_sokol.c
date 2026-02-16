@@ -1340,7 +1340,7 @@ bool AppFrame(void)
 			
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, &keyboard, &mouse, &touchscreen);
 			
-			PushUiFields({ .color = MonokaiDarkGray });
+			// PushUiFields({ .color = MonokaiDarkGray });
 			// PushUiFields({ .padding = {
 			// 	.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
 			// 	.child = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
@@ -1430,6 +1430,13 @@ bool AppFrame(void)
 						.sizing=UI_FIXED2(100, 200)
 					});
 					
+					UIELEM_LEAF({ .id = UiIdLit("LoremIpsum"),
+						.sizing = UI_TEXT_WRAP(30.0f),
+						.text = StrLit("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
+						.font = &testFont,
+						.textColor = MonokaiWhite,
+					});
+					
 					for (uxx tIndex = 0; tIndex < 4; tIndex++)
 					{
 						Texture* texture = ((tIndex%2) == 0) ? &mipmapTexture : &noMipmapTexture;
@@ -1451,15 +1458,13 @@ bool AppFrame(void)
 				{
 					case UiRenderCmdType_Rectangle:
 					{
-						Color32 color = cmd->color;
-						if (color.valueU32 == PigUiDefaultColor_Value) { color = White; }
 						if (cmd->rectangle.texture != nullptr)
 						{
-							DrawTexturedRectangle(cmd->rectangle.rectangle, color, cmd->rectangle.texture);
+							DrawTexturedRectangle(cmd->rectangle.rectangle, cmd->color, cmd->rectangle.texture);
 						}
 						else
 						{
-							DrawRectangle(cmd->rectangle.rectangle, color);
+							DrawRectangle(cmd->rectangle.rectangle, cmd->color);
 						}
 						if (cmd->rectangle.borderThickness.X > 0.0f)
 						{
@@ -1470,6 +1475,17 @@ bool AppFrame(void)
 								false
 							);
 						}
+					} break;
+					
+					case UiRenderCmdType_Text:
+					{
+						RichStr richStr = ToRichStr(cmd->text.text);
+						DrawWrappedRichTextWithFont(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, richStr, cmd->text.position, cmd->text.wrapWidth, cmd->color);
+					} break;
+					
+					case UiRenderCmdType_RichText:
+					{
+						DrawWrappedRichTextWithFont(cmd->richText.font, cmd->richText.fontSize, cmd->richText.fontStyle, cmd->richText.text, cmd->richText.position, cmd->richText.wrapWidth, cmd->color);
 					} break;
 				}
 			}
