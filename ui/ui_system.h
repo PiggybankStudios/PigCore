@@ -552,45 +552,53 @@ PEXPI Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element)
 	return result.str;
 }
 
-static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis, bool printDebug)
+static void CalculateSizeForFloatingUiElementOnAxis(UiElement* element, bool xAxis)
 {
-	#if !DEBUG_BUILD
-	UNUSED(printDebug);
-	#endif
-	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
-	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
-	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
-	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
-	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
-	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
-	
-	// Floating elements need to decide their own size first
+	//TODO: This is a weird subset of the logic that lives in CalculateUiElemSizeOnAxisOnClose and DistributeSpaceToUiElemChildrenOnAxis. Maybe we can merge these better somehow?
+	NotNull(element);
 	if (element->config.floating.type != UiFloatingType_None)
 	{
+		r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
+		r32* preferredSizePntr = (xAxis ? &element->preferredSize.Width : &element->preferredSize.Height);
+		
 		UiElement* attachParent = GetUiElementAttachParent(element);
 		DebugNotNull(attachParent);
 		r32 attachParentSize = (xAxis ? attachParent->layoutRec.Width : attachParent->layoutRec.Height);
 		
-		//TODO: This is a weird subset of the logic that lives in CalculateUiElemSizeOnAxisOnClose and that lives in this function. Maybe we can merge these better somehow?
-		r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
-		r32* preferredSizePntr = (xAxis ? &element->preferredSize.Width : &element->preferredSize.Height);
 		UiSizingType elemSizingType = (xAxis ? element->config.sizing.x.type : element->config.sizing.y.type);
 		r32 elemSizingValue = (xAxis ? element->config.sizing.x.value : element->config.sizing.y.value);
-		if (elemSizingValue == UiSizingType_FixedPercent)
+		if (elemSizingType == UiSizingType_FixedPercent)
 		{
 			*minimumSizePntr = attachParentSize * elemSizingValue; //TODO: This should take outer padding into account
 			*preferredSizePntr = *minimumSizePntr;
 		}
-		else if (elemSizingValue == UiSizingType_Expand)
+		else if (elemSizingType == UiSizingType_Expand)
 		{
 			*minimumSizePntr = attachParentSize;
 			if (*minimumSizePntr < elemSizingValue) { *minimumSizePntr = elemSizingValue; }
 			*preferredSizePntr = INFINITY;
 		}
 		
-		*sizePntr = minimumSize;
+		r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
+		*sizePntr = *minimumSizePntr;
 	}
+}
+
+static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis, bool printDebug)
+{
+	#if !DEBUG_BUILD
+	UNUSED(printDebug);
+	#endif
+	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
 	
+	// Floating elements need to decide their own size first
+	CalculateSizeForFloatingUiElementOnAxis(element, xAxis);
+	
+	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
+	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
+	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
+	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
+	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
 	r32 innerSize = *sizePntr - elemInnerPaddingLrOrTb;
 	
 	// Visit all percentage-based children (including floating) and size them according to our decided size
