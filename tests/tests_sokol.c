@@ -1381,10 +1381,32 @@ bool AppFrame(void)
 					PopUiThemer(&uiContext.themers, testThemerId);
 				}
 				
-				UIELEM_LEAF({ .id = UiIdLit("Yellow"),
+				UIELEM({ .id = UiIdLit("Yellow"),
 					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiYellow,
-				});
+				})
+				{
+					UIELEM({ .id = UiIdLit("FloatingGreen"),
+						// .sizing = UI_FIT2(),
+						.sizing = UI_PERCENT2(0.8f, 0.5f),
+						// .sizing = UI_EXPAND2(),
+						.direction = UiLayoutDir_TopDown,
+						.padding = { .child = 5, .inner = FillV4r(10) },
+						.color=MonokaiGreen,
+						.depth = -1.0f,
+						.floating = {
+							.type = UiFloatingType_Parent,
+							.offset = mouse.position, //MakeV2(15, 45),
+							.parentAttach = Dir2Ex_Up,
+							.elemAttach = Dir2Ex_BottomRight,
+						},
+					})
+					{
+						UIELEM_LEAF({.sizing = UI_FIXED2(300, 32), .color = MonokaiRed });
+						UIELEM_LEAF({.sizing = UI_FIXED2(300, 32), .color = MonokaiPurple });
+						UIELEM_LEAF({.sizing = UI_FIXED2(300, 32), .color = MonokaiOrange });
+					}
+				}
 				
 				UIELEM({ .id = UiIdLit("Red"),
 					.sizing = { .x=UI_FIT(), .y=UI_EXPAND() },

@@ -75,6 +75,7 @@ Description:
 	void InitUiContext(Arena* arena, UiContext* contextOut);
 	PIG_CORE_INLINE UiElement* GetUiElementParent(UiElement* element, uxx ancestorIndex);
 	PIG_CORE_INLINE UiElement* GetUiElementChild(UiElement* element, uxx childIndex);
+	PIG_CORE_INLINE UiElement* GetUiElementAttachParent(UiElement* element);
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
@@ -280,6 +281,18 @@ PEXPI UiElement* GetUiElementChild(UiElement* element, uxx childIndex)
 	return result;
 }
 
+PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
+{
+	if (element->config.floating.type == UiFloatingType_Parent) { return GetUiElementParent(element, 0); }
+	else if (element->config.floating.type == UiFloatingType_Root) { return VarArrayGetFirst(UiElement, &UiCtx->elements); }
+	else if (element->config.floating.type == UiFloatingType_Id)
+	{
+		AssertMsg(false, "Need to implement lookup by ID!"); //TODO: Implement me!
+		return nullptr;
+	}
+	else { DebugAssert(false); return nullptr; }
+}
+
 static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* parent, bool xAxis)
 {
 	DebugNotNull(element);
@@ -317,7 +330,7 @@ static void CalculateUiElemSizeOnAxisOnClose(UiElement* element, UiElement* pare
 	}
 	else { DebugAssert(false); }
 	
-	if (parent != nullptr)
+	if (parent != nullptr && element->config.floating.type == UiFloatingType_None)
 	{
 		bool isParentLayoutDir = (IsUiDirHorizontal(parent->config.direction) == xAxis);
 		r32 outerPaddingLrOrTb = (xAxis ? (element->config.padding.outer.Left + element->config.padding.outer.Right) : (element->config.padding.outer.Top + element->config.padding.outer.Bottom));
@@ -364,6 +377,7 @@ PEXPI UiElement* CloseUiElement()
 	element->config.padding.outer.Right    *= UiCtx->scale;
 	element->config.padding.outer.Bottom   *= UiCtx->scale;
 	element->config.padding.child          *= UiCtx->scale;
+	//NOTE: For border thicknesses we want to keep them from going below 1px if the thickness was non-zero at uiScale=1.0
 	element->config.borderThickness.Left   *= UiCtx->scale; if (element->config.borderThickness.Left   > 0.0f && element->config.borderThickness.Left   < 1.0f) { element->config.borderThickness.Left   = 1.0f; }
 	element->config.borderThickness.Top    *= UiCtx->scale; if (element->config.borderThickness.Top    > 0.0f && element->config.borderThickness.Top    < 1.0f) { element->config.borderThickness.Top    = 1.0f; }
 	element->config.borderThickness.Right  *= UiCtx->scale; if (element->config.borderThickness.Right  > 0.0f && element->config.borderThickness.Right  < 1.0f) { element->config.borderThickness.Right  = 1.0f; }
@@ -456,6 +470,11 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(newElement->config.texture->Width, newElement->config.texture->Height);
 	}
 	
+	if (newElement->config.floating.type == UiFloatingType_None && parentElement != nullptr)
+	{
+		parentElement->numNonFloatingChildren++;
+	}
+	
 	//TODO: How do we decide runChildCode for things like buttons?
 	newElement->runChildCode = true;
 	
@@ -539,26 +558,56 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	UNUSED(printDebug);
 	#endif
 	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
-	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numChildren > 1 ? element->numChildren-1 : 0) * element->config.padding.child) : 0.0f;
+	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
 	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
-	
 	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
 	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
 	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
+	
+	// Floating elements need to decide their own size first
+	if (element->config.floating.type != UiFloatingType_None)
+	{
+		UiElement* attachParent = GetUiElementAttachParent(element);
+		DebugNotNull(attachParent);
+		r32 attachParentSize = (xAxis ? attachParent->layoutRec.Width : attachParent->layoutRec.Height);
+		
+		//TODO: This is a weird subset of the logic that lives in CalculateUiElemSizeOnAxisOnClose and that lives in this function. Maybe we can merge these better somehow?
+		r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
+		r32* preferredSizePntr = (xAxis ? &element->preferredSize.Width : &element->preferredSize.Height);
+		UiSizingType elemSizingType = (xAxis ? element->config.sizing.x.type : element->config.sizing.y.type);
+		r32 elemSizingValue = (xAxis ? element->config.sizing.x.value : element->config.sizing.y.value);
+		if (elemSizingValue == UiSizingType_FixedPercent)
+		{
+			*minimumSizePntr = attachParentSize * elemSizingValue; //TODO: This should take outer padding into account
+			*preferredSizePntr = *minimumSizePntr;
+		}
+		else if (elemSizingValue == UiSizingType_Expand)
+		{
+			*minimumSizePntr = attachParentSize;
+			if (*minimumSizePntr < elemSizingValue) { *minimumSizePntr = elemSizingValue; }
+			*preferredSizePntr = INFINITY;
+		}
+		
+		*sizePntr = minimumSize;
+	}
+	
 	r32 innerSize = *sizePntr - elemInnerPaddingLrOrTb;
 	
-	// Visit all percentage-based children and size them according to our decided size
+	// Visit all percentage-based children (including floating) and size them according to our decided size
 	for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 	{
 		UiElement* child = GetUiElementChild(element, cIndex);
-		UiSizingType childSizingType = (xAxis ? child->config.sizing.x.type : child->config.sizing.y.type);
-		if (childSizingType == UiSizingType_FixedPercent)
+		if (child->config.floating.type == UiFloatingType_None)
 		{
-			r32 childSizingValue = (xAxis ? child->config.sizing.x.value : child->config.sizing.y.value);
-			r32* childMinimumSizePntr = (xAxis ? &child->minimumSize.Width : &child->minimumSize.Height);
-			r32* childPreferredSizePntr = (xAxis ? &child->preferredSize.Width : &child->preferredSize.Height);
-			*childMinimumSizePntr = innerSize * childSizingValue;
-			*childPreferredSizePntr = *childMinimumSizePntr;
+			UiSizingType childSizingType = (xAxis ? child->config.sizing.x.type : child->config.sizing.y.type);
+			if (childSizingType == UiSizingType_FixedPercent)
+			{
+				r32 childSizingValue = (xAxis ? child->config.sizing.x.value : child->config.sizing.y.value);
+				r32* childMinimumSizePntr = (xAxis ? &child->minimumSize.Width : &child->minimumSize.Height);
+				r32* childPreferredSizePntr = (xAxis ? &child->preferredSize.Width : &child->preferredSize.Height);
+				*childMinimumSizePntr = innerSize * childSizingValue; //TODO: This should take outer padding into account
+				*childPreferredSizePntr = *childMinimumSizePntr;
+			}
 		}
 	}
 	
@@ -566,17 +615,20 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	{
 		// Copy children's minimumSize into layoutRec.Size and track how many want to be bigger and what their total minimum size is
 		uxx numGrowableChildren = 0;
-		r32 childrenMinimumTotal = elemInnerPaddingLrOrTb + (element->config.padding.child * (element->numChildren-1));
+		r32 childrenMinimumTotal = elemInnerPaddingLrOrTb + (element->config.padding.child * (element->numNonFloatingChildren-1));
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
-			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-			r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-			r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
-			r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
-			if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize) { numGrowableChildren++; }
-			*childSizePntr = childMinimumSize;
-			childrenMinimumTotal += childMinimumSize + childOuterPaddingLrOrTb;
+			if (child->config.floating.type == UiFloatingType_None)
+			{
+				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+				r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+				if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize) { numGrowableChildren++; }
+				*childSizePntr = childMinimumSize;
+				childrenMinimumTotal += childMinimumSize + childOuterPaddingLrOrTb;
+			}
 		}
 		
 		//TODO: We should probably be rounding to whole pixel values, and figuring out how to distribute remainders amongst n children
@@ -603,43 +655,46 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 			{
 				UiElement* child = GetUiElementChild(element, cIndex);
-				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-				r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
-				// #if DEBUG_BUILD
-				// if (printDebug) { PrintLine_D("\t-> Child[%llu] is %g, [%g,%g]", cIndex, childSize, childMinimumSize, childPreferredSize); }
-				// #endif
-				if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
+				if (child->config.floating.type == UiFloatingType_None)
 				{
-					if (IsInfiniteOrNanR32(smallestChildSize) || childSize < smallestChildSize)
+					r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+					r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+					r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
+					// #if DEBUG_BUILD
+					// if (printDebug) { PrintLine_D("\t-> Child[%llu] is %g, [%g,%g]", cIndex, childSize, childMinimumSize, childPreferredSize); }
+					// #endif
+					if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
 					{
-						// #if DEBUG_BUILD
-						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new smallest!", cIndex); }
-						// #endif
-						if (!IsInfiniteOrNanR32(smallestChildSize)) { secondSmallestChildSize = smallestChildSize; }
-						if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
-						smallestChildSize = childSize;
-						smallestChildCount = 1;
+						if (IsInfiniteOrNanR32(smallestChildSize) || childSize < smallestChildSize)
+						{
+							// #if DEBUG_BUILD
+							// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new smallest!", cIndex); }
+							// #endif
+							if (!IsInfiniteOrNanR32(smallestChildSize)) { secondSmallestChildSize = smallestChildSize; }
+							if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
+							smallestChildSize = childSize;
+							smallestChildCount = 1;
+						}
+						else if (AreSimilarR32(smallestChildSize, childSize, DEFAULT_R32_TOLERANCE))
+						{
+							// #if DEBUG_BUILD
+							// if (printDebug) { PrintLine_D("\t-> Child[%llu] is same as smallest!", cIndex); }
+							// #endif
+							if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
+							smallestChildCount++;
+						}
+						else if (childSize < secondSmallestChildSize)
+						{
+							// #if DEBUG_BUILD
+							// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new second smallest!", cIndex); }
+							// #endif
+							secondSmallestChildSize = childSize;
+						}
 					}
-					else if (AreSimilarR32(smallestChildSize, childSize, DEFAULT_R32_TOLERANCE))
-					{
-						// #if DEBUG_BUILD
-						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is same as smallest!", cIndex); }
-						// #endif
-						if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
-						smallestChildCount++;
-					}
-					else if (childSize < secondSmallestChildSize)
-					{
-						// #if DEBUG_BUILD
-						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new second smallest!", cIndex); }
-						// #endif
-						secondSmallestChildSize = childSize;
-					}
+					// #if DEBUG_BUILD
+					// if (printDebug) { PrintLine_D("\t-> After Child[%llu]: %llux %g (%g)", cIndex, smallestChildCount, smallestChildSize, secondSmallestChildSize); }
+					// #endif
 				}
-				// #if DEBUG_BUILD
-				// if (printDebug) { PrintLine_D("\t-> After Child[%llu]: %llux %g (%g)", cIndex, smallestChildCount, smallestChildSize, secondSmallestChildSize); }
-				// #endif
 			}
 			if (smallestChildCount == 0) { break; }
 			
@@ -655,14 +710,17 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 			{
 				UiElement* child = GetUiElementChild(element, cIndex);
-				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-				// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
-				r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
-				if (AreSimilarR32(*childSizePntr, smallestChildSize, DEFAULT_R32_TOLERANCE) &&
-					(IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize))
+				if (child->config.floating.type == UiFloatingType_None)
 				{
-					*childSizePntr += (spaceToDistributeThisRound / (r32)smallestChildCount);
+					r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+					r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+					// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+					r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+					if (AreSimilarR32(*childSizePntr, smallestChildSize, DEFAULT_R32_TOLERANCE) &&
+						(IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize))
+					{
+						*childSizePntr += (spaceToDistributeThisRound / (r32)smallestChildCount);
+					}
 				}
 			}
 			distRoundIndex++;
@@ -677,17 +735,20 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
-			r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-			r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-			r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
-			r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
-			if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize)
+			if (child->config.floating.type == UiFloatingType_None)
 			{
-				*childSizePntr = MinR32(innerSize - childOuterPaddingLrOrTb, childPreferredSize);
-			}
-			else
-			{
-				*childSizePntr = childMinimumSize;
+				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+				r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+				if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize)
+				{
+					*childSizePntr = MinR32(innerSize - childOuterPaddingLrOrTb, childPreferredSize);
+				}
+				else
+				{
+					*childSizePntr = childMinimumSize;
+				}
 			}
 		}
 	}
@@ -721,8 +782,9 @@ static void UiSystemDoLayout()
 	}
 	#endif //DEBUG_BUILD
 	
-	// The root element is the only element that decides it's own final position/size
-	// Otherwise we decide the size of children elements when visiting the parent
+	// The root element decides it's own final position/size
+	// Most elements have their size decided by their parent inside DistributeSpaceToUiElemChildrenOnAxis
+	// Floating elements are the only other elements that decide their own position/size
 	UiElement* rootElement = VarArrayGetFirst(UiElement, &UiCtx->elements);
 	rootElement->layoutRec.TopLeft = V2_Zero;
 	rootElement->layoutRec.Size = rootElement->preferredSize;
@@ -754,11 +816,14 @@ static void UiSystemDoLayout()
 		DistributeSpaceToUiElemChildrenOnAxis(element, true, printDebug);
 		DistributeSpaceToUiElemChildrenOnAxis(element, false, printDebug);
 		
-		//Add all children who have children to bfsIndices
+		//Add all children who have children to bfsIndices (also add floating children, even if they are leaf nodes, since they need to size themselves)
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
-			if (child->numChildren > 0) { VarArrayAddValue(uxx, &bfsIndices, child->elementIndex); }
+			if (child->numChildren > 0 || child->config.floating.type != UiFloatingType_None)
+			{
+				VarArrayAddValue(uxx, &bfsIndices, child->elementIndex);
+			}
 		}
 	}
 	
@@ -787,20 +852,41 @@ static void UiSystemDoLayout()
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
-			r32 childPadding = ((cIndex > 0) ? element->config.padding.child : 0.0f);
-			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += childPadding + child->config.padding.outer.Left; }
-			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += childPadding + child->config.padding.outer.Top; }
-			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->layoutRec.Width + childPadding + child->config.padding.outer.Right; }
-			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->layoutRec.Height + childPadding + child->config.padding.outer.Bottom; }
-			
-			child->layoutRec.TopLeft = layoutPos;
-			if (IsUiDirHorizontal(element->config.direction)) { child->layoutRec.Y += child->config.padding.outer.Top; }
-			else { child->layoutRec.X += child->config.padding.outer.Left; }
-			
-			if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->layoutRec.Width + child->config.padding.outer.Right; }
-			if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + child->config.padding.outer.Bottom; }
-			if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.outer.Left; }
-			if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.outer.Top; }
+			if (child->config.floating.type == UiFloatingType_None)
+			{
+				r32 childPadding = ((cIndex > 0) ? element->config.padding.child : 0.0f);
+				if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += childPadding + child->config.padding.outer.Left; }
+				if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += childPadding + child->config.padding.outer.Top; }
+				if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->layoutRec.Width + childPadding + child->config.padding.outer.Right; }
+				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->layoutRec.Height + childPadding + child->config.padding.outer.Bottom; }
+				
+				child->layoutRec.TopLeft = layoutPos;
+				if (IsUiDirHorizontal(element->config.direction)) { child->layoutRec.Y += child->config.padding.outer.Top; }
+				else { child->layoutRec.X += child->config.padding.outer.Left; }
+				
+				if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->layoutRec.Width + child->config.padding.outer.Right; }
+				if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + child->config.padding.outer.Bottom; }
+				if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.outer.Left; }
+				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.outer.Top; }
+			}
+			else
+			{
+				UiElement* attachParent = GetUiElementAttachParent(child);
+				DebugNotNull(attachParent);
+				child->layoutRec.TopLeft = AddV2(attachParent->layoutRec.TopLeft, child->config.floating.offset);
+				#if DEBUG_BUILD
+				if (printDebug)
+				{
+					PrintLine_D("Put floating child \"%.*s\" at (%g,%g) from parent \"%.*s\" (%g, %g)+(%g,%g)",
+						StrPrint(child->id.str),
+						child->layoutRec.X, child->layoutRec.Y,
+						StrPrint(attachParent->id.str),
+						attachParent->layoutRec.X, attachParent->layoutRec.Y,
+						child->config.floating.offset.X, child->config.floating.offset.Y
+					);
+				}
+				#endif
+			}
 			
 			#if DEBUG_BUILD
 			if (printDebug)

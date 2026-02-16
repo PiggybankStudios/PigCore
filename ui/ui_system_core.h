@@ -200,7 +200,7 @@ typedef plex UiFloatingConfig UiFloatingConfig;
 plex UiFloatingConfig
 {
 	UiFloatingType type;
-	v2 offset;
+	v2 offset; // This is not multiplied by UI scale (unlike other UiElemConfig sizing/padding members)
 	UiId attachId;
 	Dir2Ex parentAttach;
 	Dir2Ex elemAttach;
@@ -357,6 +357,7 @@ plex UiElement
 	bool isOpen; //are we currently adding children to this element
 	bool runChildCode;
 	uxx numChildren; //How many direct children does this element have
+	uxx numNonFloatingChildren; //How many direct children does this element have that are NOT floating
 	uxx numDescendents; //How many elements after this one are a descendent of this element (children, grandchildren, etc. Useful for knowing how many elements to skip over if we don't want to walk the tree of elements below this one)
 	
 	v2 minimumSize;
