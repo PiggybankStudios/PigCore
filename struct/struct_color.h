@@ -34,6 +34,7 @@ car Color32
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE Color32 ColorMultSimple(Color32 left, Color32 right);
 	PIG_CORE_INLINE Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount);
 	PIG_CORE_INLINE Color32 ColorWithAlphaU8(Color32 rgbColor, u8 alpha);
 	PIG_CORE_INLINE Color32 ColorWithAlpha(Color32 rgbColor, r32 alpha);
@@ -68,6 +69,15 @@ car Color32
 // +--------------------------------------------------------------+
 // |                     Basic Math Functions                     |
 // +--------------------------------------------------------------+
+PEXPI Color32 ColorMultSimple(Color32 left, Color32 right)
+{
+	return MakeColor(
+		(u8)ClampI32(RoundR32i(((r32)left.r / 255.0f) * ((r32)right.r / 255.0f) * 255.0f), 0, 255),
+		(u8)ClampI32(RoundR32i(((r32)left.g / 255.0f) * ((r32)right.g / 255.0f) * 255.0f), 0, 255),
+		(u8)ClampI32(RoundR32i(((r32)left.b / 255.0f) * ((r32)right.b / 255.0f) * 255.0f), 0, 255),
+		(u8)ClampI32(RoundR32i(((r32)left.a / 255.0f) * ((r32)right.a / 255.0f) * 255.0f), 0, 255)
+	);
+}
 //"Simple" meaning we don't do lerp in linear color space, we lerp in Gamma sRGB space, which is innaccurate but simple to do
 PEXPI Color32 ColorLerpSimple(Color32 start, Color32 end, r32 amount)
 {

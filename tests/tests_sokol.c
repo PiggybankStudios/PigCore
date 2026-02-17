@@ -293,7 +293,7 @@ UI_THEMER_CALLBACK_DEF(TestsGlobalUiThemerCallback)
 // bool TestsUiThemerCallback(plex UiContext* context, UiElement* element, void* userPntr)
 UI_THEMER_CALLBACK_DEF(TestsUiThemerCallback)
 {
-	if (!element->config.themer.isButton && element->config.texture == nullptr)
+	if (!element->config.themer.isButton && element->config.texture == nullptr && IsEmptyStr(element->config.text) && IsEmptyRichStr(element->config.richText))
 	{
 		element->config.texture = &testTexture;
 		element->config.dontSizeToTexture = true;
@@ -1414,6 +1414,7 @@ bool AppFrame(void)
 					},
 					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiRed,
+					.colorRecursive = MonokaiPurple,
 				})
 				{
 					UIELEM({ .id = UiIdLit("DarkGreen"),
@@ -1453,6 +1454,7 @@ bool AppFrame(void)
 						.direction = UiLayoutDir_TopDown,
 						.padding = { .child = 5, .inner = FillV4r(10) },
 						.color=MonokaiDarkGray,
+						.colorRecursive = ColorWithAlpha(White, 0.5f),
 						.depth = -1.0f,
 						.mousePassthrough = true,
 						.floating = {

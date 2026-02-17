@@ -576,6 +576,12 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		newElement->floatDepth = (parentElement != nullptr) ? parentElement->floatDepth : 0;
 	}
 	
+	if (newElement->config.colorRecursive.valueU32 != PigUiDefaultColor_Value ||
+		(parentElement != nullptr && parentElement->config.colorRecursive.valueU32 != PigUiDefaultColor_Value))
+	{
+		Color32 parentColorRecursive = (parentElement != nullptr) ? UiConfigColorToActualColor(parentElement->config.colorRecursive) : White;
+		newElement->config.colorRecursive = ColorMultSimple(UiConfigColorToActualColor(newElement->config.colorRecursive), parentColorRecursive);
+	}
 	if (!IsEmptyRichStr(newElement->config.richText) && !IsPntrFromArena(UiCtx->frameArena, newElement->config.richText.fullPiece.str.chars))
 	{
 		newElement->config.richText = AllocRichStr(UiCtx->frameArena, newElement->config.richText);
@@ -1435,9 +1441,14 @@ PEXP UiRenderList* GetUiRenderList()
 		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
 		if (DoesOverlapRec(element->layoutRec, element->clipRec, true))
 		{
+			Color32 colorRecursive = UiConfigColorToActualColor(element->config.colorRecursive);
+			Color32 colorIfTexture = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
+			Color32 actualColor = ColorMultSimple(colorRecursive, colorIfTexture);
+			Color32 actualBorderColor = ColorMultSimple(UiConfigColorToActualColor(element->config.borderColor), colorRecursive);
+			Color32 actualTextColor = ColorMultSimple(UiConfigTextColorToActualColor(element->config.textColor), colorRecursive);
 			bool isBorderSameDepth = (AreSimilarR32(element->config.borderDepth, element->config.depth, DEFAULT_R32_TOLERANCE) || element->config.borderDepth == 0.0f);
 			bool borderHasAlpha = (element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0));
-			if (element->config.color.a != 0 || (borderHasAlpha && isBorderSameDepth))
+			if (actualColor.a != 0 || (borderHasAlpha && isBorderSameDepth))
 			{
 				UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
 				DebugNotNull(newCmd);
@@ -1447,13 +1458,13 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->srcElementIndex = element->elementIndex;
 				newCmd->srcElementId = element->id;
 				newCmd->clipRec = element->clipRec;
-				newCmd->color = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
+				newCmd->color = actualColor;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.texture = element->config.texture;
 				if (isBorderSameDepth)
 				{
 					newCmd->rectangle.borderThickness = element->config.borderThickness;
-					newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
+					newCmd->rectangle.borderColor = actualBorderColor;
 					newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
 				}
 			}
@@ -1470,7 +1481,7 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->color = Transparent;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.borderThickness = element->config.borderThickness;
-				newCmd->rectangle.borderColor = UiConfigColorToActualColor(element->config.borderColor);
+				newCmd->rectangle.borderColor = actualBorderColor;
 				newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
 			}
 			
@@ -1489,7 +1500,7 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->srcElementIndex = element->elementIndex;
 					newCmd->srcElementId = element->id;
 					newCmd->clipRec = textClipRec;
-					newCmd->color = UiConfigTextColorToActualColor(element->config.textColor);
+					newCmd->color = actualTextColor;
 					newCmd->richText.font = element->config.font;
 					newCmd->richText.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->richText.font);
 					newCmd->richText.fontStyle = element->config.fontStyle;
@@ -1513,7 +1524,7 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->srcElementIndex = element->elementIndex;
 					newCmd->srcElementId = element->id;
 					newCmd->clipRec = textClipRec;
-					newCmd->color = UiConfigTextColorToActualColor(element->config.textColor);
+					newCmd->color = actualTextColor;
 					newCmd->text.font = element->config.font;
 					newCmd->text.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->text.font);
 					newCmd->text.fontStyle = element->config.fontStyle;

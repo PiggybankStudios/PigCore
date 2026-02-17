@@ -62,7 +62,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Child Alignment Options
 	[X] Copy text or richText to frameArena
 	[X] Add WasCurrentElementLeftClicked() and similar functions
-	[!] Transparency and Color that affects child elements?
+	[X] Transparency and Color that affects child elements?
 	[!] Repeating textures
 	[!] SpriteSheet support
 	[!] Add new UiElemConfig fields to UiElemConfigField enum
@@ -70,6 +70,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	(!) The 'e' at the end of "Blue" is getting cut for some reason
 	(!) Three buttons with expand width do not respect minimum size of children to inform parent which is fit width
 	(!) Alignment options don't work yet for RightToLeft or BottomUp
+	(!) Should we be doing something better than ColorMultSimple when multiplying colorRecursive?
 	(X) Floating elements that attach to items by ID that are deeper in the tree than themselves are not positioned properly
 	( ) We are a little too strict with the mouse starting hover ID tracking. When the mouse hovers a different UI element in the middle of a click we should attempt to find a common ancestor that isn't passthrough and track that as the element that was clicked on
 	[ ] Option for what bounds a floating element is restricted to (clipped to is separate? Only for EXPAND?)

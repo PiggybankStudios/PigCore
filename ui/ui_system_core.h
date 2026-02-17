@@ -314,6 +314,7 @@ plex UiElemConfig
 	bool clipChildren; //TODO: Add UiElemConfigField entry for this
 	r32 depth;
 	Color32 color;
+	Color32 colorRecursive; //This color is multiplied through all children TODO: Add UiElemConfigField entry for this
 	Texture* texture;
 	bool dontSizeToTexture;
 	UiPadding padding;
