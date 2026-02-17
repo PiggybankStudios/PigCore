@@ -37,6 +37,7 @@ Shader simpleShader;
 Shader main2dShader;
 Shader main3dShader;
 Texture gradientTexture;
+SpriteSheet testSheet;
 PigFont testFont;
 PigFont debugFont;
 VertBuffer cubeBuffer;
@@ -296,9 +297,7 @@ UI_THEMER_CALLBACK_DEF(TestsUiThemerCallback)
 {
 	if (!element->config.themer.isButton && element->config.texture == nullptr && IsEmptyStr(element->config.text) && IsEmptyRichStr(element->config.richText))
 	{
-		// element->config.texture = &testTexture;
 		element->config.texture = &backgroundTexture;
-		element->config.dontSizeToTexture = true;
 		element->config.repeatingTexture = true;
 	}
 	return true;
@@ -420,6 +419,8 @@ void AppInit(void)
 	
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
 	Assert(gradientTexture.error == Result_Success);
+	
+	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/home/robbitay/test_sheet_4x5.png"), true);
 	
 	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	const u32 Filled = 0xFFFFFFFF;
@@ -1444,11 +1445,13 @@ bool AppFrame(void)
 					
 					for (uxx tIndex = 0; tIndex < 4; tIndex++)
 					{
-						Texture* texture = ((tIndex%2) == 0) ? &mipmapTexture : &noMipmapTexture;
-						UIELEM_LEAF({ .id = UiIdLitIndex("Texture", tIndex),
-							.sizing = UI_FIXED2(texture->Width*0.3f, texture->Height*0.3f),
+						// Texture* texture = ((tIndex%2) == 0) ? &mipmapTexture : &noMipmapTexture;
+						UIELEM_LEAF({ .id = UiIdLitIndex("SheetCell", tIndex),
+							// .sizing = UI_FIXED2(texture->Width*0.3f, texture->Height*0.3f),
 							.color=ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
-							.texture = texture,
+							// .texture = texture,
+							.spriteSheet = &testSheet,
+							.sheetCell = MakeV2i(0, 2),
 						});
 					}
 				}

@@ -31,6 +31,7 @@ Description:
 #include "struct/struct_vectors.h"
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
+#include "file_fmt/file_fmt_sprite_sheet.h"
 #include "os/os_threading.h"
 #include "input/input_keyboard.h"
 #include "input/input_mouse.h"
@@ -171,7 +172,7 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_Depth:                 return (configPntr->depth == UI_DEPTH_DEFAULT);
 		case UiElemConfigField_Color:                 return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
 		case UiElemConfigField_Texture:               return (configPntr->texture == nullptr);
-		case UiElemConfigField_DontSizeToTexture:     return (configPntr->dontSizeToTexture == false);
+		case UiElemConfigField_DontSizeToTexture:     return (configPntr->dontSizeToImage == false);
 		case UiElemConfigField_InnerPaddingLeft:      return (configPntr->padding.inner.Left   == 0.0f);
 		case UiElemConfigField_InnerPaddingTop:       return (configPntr->padding.inner.Top    == 0.0f);
 		case UiElemConfigField_InnerPaddingRight:     return (configPntr->padding.inner.Right  == 0.0f);
@@ -215,7 +216,7 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_Depth:                 configToPntr->depth = configFromPntr->depth; break;
 		case UiElemConfigField_Color:                 configToPntr->color = configFromPntr->color; break;
 		case UiElemConfigField_Texture:               configToPntr->texture = configFromPntr->texture; break;
-		case UiElemConfigField_DontSizeToTexture:     configToPntr->dontSizeToTexture = configFromPntr->dontSizeToTexture; break;
+		case UiElemConfigField_DontSizeToTexture:     configToPntr->dontSizeToImage = configFromPntr->dontSizeToImage; break;
 		case UiElemConfigField_InnerPaddingLeft:      configToPntr->padding.inner.Left   = configFromPntr->padding.inner.Left; break;
 		case UiElemConfigField_InnerPaddingTop:       configToPntr->padding.inner.Top    = configFromPntr->padding.inner.Top; break;
 		case UiElemConfigField_InnerPaddingRight:     configToPntr->padding.inner.Right  = configFromPntr->padding.inner.Right; break;
@@ -553,11 +554,24 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		if (newElement->config.floating.type != UiFloatingType_None) { newElement->config.depth += PIG_UI_DEFAULT_FLOATING_ELEM_DEPTH_OFFSET; }
 	}
 	// If you have default sizing parameters and you attached a texture then we copy in the texture dimensions as UiSizingType_Fit
-	if (newElement->config.texture != nullptr && !newElement->config.repeatingTexture && !newElement->config.dontSizeToTexture &&
+	if (!newElement->config.dontSizeToImage &&
 		newElement->config.sizing.x.type == UiSizingType_Default && newElement->config.sizing.y.type == UiSizingType_Default &&
 		newElement->config.sizing.x.value == 0.0f && newElement->config.sizing.y.value == 0.0f)
 	{
-		newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(newElement->config.texture->Width, newElement->config.texture->Height);
+		if (newElement->config.texture != nullptr && !newElement->config.repeatingTexture)
+		{
+			newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(
+				newElement->config.texture->Width,
+				newElement->config.texture->Height
+			);
+		}
+		else if (newElement->config.spriteSheet != nullptr)
+		{
+			newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(
+				newElement->config.spriteSheet->cellSize.Width * UiCtx->scale,
+				newElement->config.spriteSheet->cellSize.Height * UiCtx->scale
+			);
+		}
 	}
 	
 	if (newElement->config.floating.type == UiFloatingType_None && parentElement != nullptr)
@@ -1442,8 +1456,8 @@ PEXP UiRenderList* GetUiRenderList()
 		if (DoesOverlapRec(element->layoutRec, element->clipRec, true))
 		{
 			Color32 colorRecursive = UiConfigColorToActualColor(element->config.colorRecursive);
-			Color32 colorIfTexture = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
-			Color32 actualColor = ColorMultSimple(colorRecursive, colorIfTexture);
+			Color32 colorIfImage = (element->config.texture != nullptr || element->config.spriteSheet != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
+			Color32 actualColor = ColorMultSimple(colorRecursive, colorIfImage);
 			Color32 actualBorderColor = ColorMultSimple(UiConfigColorToActualColor(element->config.borderColor), colorRecursive);
 			Color32 actualTextColor = ColorMultSimple(UiConfigTextColorToActualColor(element->config.textColor), colorRecursive);
 			bool isBorderSameDepth = (AreSimilarR32(element->config.borderDepth, element->config.depth, DEFAULT_R32_TOLERANCE) || element->config.borderDepth == 0.0f);
@@ -1460,9 +1474,14 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->clipRec = element->clipRec;
 				newCmd->color = actualColor;
 				newCmd->rectangle.rectangle = element->layoutRec;
-				newCmd->rectangle.texture = element->config.texture;
-				if (element->config.texture != nullptr)
+				if (element->config.spriteSheet != nullptr)
 				{
+					newCmd->rectangle.texture = &element->config.spriteSheet->texture;
+					newCmd->rectangle.sourceRec = GetSheetCellRec(element->config.spriteSheet, element->config.sheetCell);
+				}
+				else if (element->config.texture != nullptr)
+				{
+					newCmd->rectangle.texture = element->config.texture;
 					if (element->config.repeatingTexture)
 					{
 						newCmd->rectangle.sourceRec = MakeRecV(V2_Zero, ScaleV2(element->layoutRec.Size, 1.0f / UiCtx->scale));

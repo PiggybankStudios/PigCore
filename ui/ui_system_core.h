@@ -20,6 +20,7 @@ Description:
 #include "struct/struct_string.h"
 #include "struct/struct_var_array.h"
 #include "struct/struct_directions.h"
+#include "file_fmt/file_fmt_sprite_sheet.h"
 #include "os/os_threading.h"
 #include "input/input_keyboard.h"
 #include "input/input_mouse.h"
@@ -310,15 +311,17 @@ plex UiElemConfig
 	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
 	UiLayoutDir direction;
 	UiSizing sizing;
+	bool dontSizeToImage; //TODO: Update/move UiElemConfigField entry for this
 	UiAlignment alignment; //TODO: Add UiElemConfigField entry for this
 	bool clipChildren; //TODO: Add UiElemConfigField entry for this
 	r32 depth;
 	Color32 color;
 	Color32 colorRecursive; //This color is multiplied through all children TODO: Add UiElemConfigField entry for this
 	Texture* texture;
-	bool repeatingTexture;
-	bool dontSizeToTexture;
-	rec textureSourceRec;
+	bool repeatingTexture; //TODO: Add UiElemConfigField entry for this
+	rec textureSourceRec; //TODO: Add UiElemConfigField entry for this
+	SpriteSheet* spriteSheet; //TODO: Add UiElemConfigField entry for this
+	v2i sheetCell; //TODO: Add UiElemConfigField entry for this
 	UiPadding padding;
 	v4r borderThickness;
 	Color32 borderColor;
