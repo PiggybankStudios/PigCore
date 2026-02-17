@@ -1379,14 +1379,14 @@ bool AppFrame(void)
 					
 					UiElemConfig greenElem = { .id = UiIdLit("Green"), .color=MonokaiGreen };
 					greenElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.20f);
-					greenElem.alignment.x = UiAlignmentType_Right;
-					greenElem.alignment.y = UiAlignmentType_Bottom;
+					greenElem.alignment.x = UiAlign_Right;
+					greenElem.alignment.y = UiAlign_Bottom;
 					UIELEM(greenElem) { SIMPLETEXTELEM("Green", false); }
 					
 					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
 					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
-					blueElem.alignment.x = UiAlignmentType_Left;
-					blueElem.alignment.y = UiAlignmentType_Top;
+					blueElem.alignment.x = UiAlign_Left;
+					blueElem.alignment.y = UiAlign_Top;
 					// blueElem.condition = UiConditionType_MouseLeftClicked;
 					if (!IsKeyboardKeyDown(&keyboard, nullptr, Key_Control)) { blueElem.depth = -1; }
 					UIELEM(blueElem)
@@ -1429,7 +1429,7 @@ bool AppFrame(void)
 					UIELEM({ .id = UiIdLit("DarkGreen"),
 						.color=MonokaiDarkGreen,
 						.sizing=UI_FIXED2(100, 200),
-						.alignment = { .y = UiAlignmentType_Top },
+						.alignment = { .y = UiAlign_Top },
 					})
 					{
 						SIMPLETEXTELEM("Green", false);

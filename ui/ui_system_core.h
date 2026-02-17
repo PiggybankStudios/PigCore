@@ -188,27 +188,27 @@ car UiSizing
 #define UI_TEXT_CLIP(minWidth)          { .x={.type=UiSizingType_TextClip, .value=(minWidth)}, .y={.type=UiSizingType_TextClip} }
 #define UI_TEXT_FULL()                  UI_TEXT_CLIP(-1.0f)
 
-typedef enum UiAlignmentType UiAlignmentType;
-enum UiAlignmentType
+typedef enum UiAlign UiAlign;
+enum UiAlign
 {
-	UiAlignmentType_Center = 0,
-	UiAlignmentType_Left,
-	UiAlignmentType_Right,
-	UiAlignmentType_Count,
-	UiAlignmentType_Default = UiAlignmentType_Center,
-	UiAlignmentType_Top = UiAlignmentType_Left,
-	UiAlignmentType_Bottom = UiAlignmentType_Right,
+	UiAlign_Center = 0,
+	UiAlign_Left,
+	UiAlign_Right,
+	UiAlign_Count,
+	UiAlign_Default = UiAlign_Center,
+	UiAlign_Top = UiAlign_Left,
+	UiAlign_Bottom = UiAlign_Right,
 };
 #if !PIG_CORE_IMPLEMENTATION
-const char* GetUiAlignmentTypeStr(UiAlignmentType enumValue);
+const char* GetUiAlignStr(UiAlign enumValue);
 #else
-PEXP const char* GetUiAlignmentTypeStr(UiAlignmentType enumValue)
+PEXP const char* GetUiAlignStr(UiAlign enumValue)
 {
 	switch (enumValue)
 	{
-		case UiAlignmentType_Center: return "Center(Default)";
-		case UiAlignmentType_Left:   return "Left(Top)";
-		case UiAlignmentType_Right:  return "Right(Bottom)";
+		case UiAlign_Center: return "Center(Default)";
+		case UiAlign_Left:   return "Left(Top)";
+		case UiAlign_Right:  return "Right(Bottom)";
 		default: return UNKNOWN_STR;
 	}
 }
@@ -217,9 +217,9 @@ PEXP const char* GetUiAlignmentTypeStr(UiAlignmentType enumValue)
 typedef car UiAlignment UiAlignment;
 car UiAlignment
 {
-	UiAlignmentType axis[2];
-	plex { UiAlignmentType x, y; };
-	plex { UiAlignmentType horizontal, vertical; };
+	UiAlign axis[2];
+	plex { UiAlign x, y; };
+	plex { UiAlign horizontal, vertical; };
 };
 
 typedef enum UiFloatingType UiFloatingType;
@@ -311,17 +311,17 @@ plex UiElemConfig
 	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
 	UiLayoutDir direction;
 	UiSizing sizing;
-	bool dontSizeToImage; //TODO: Update/move UiElemConfigField entry for this
-	UiAlignment alignment; //TODO: Add UiElemConfigField entry for this
-	bool clipChildren; //TODO: Add UiElemConfigField entry for this
+	bool dontSizeToImage;
+	UiAlignment alignment;
+	bool clipChildren;
 	r32 depth;
 	Color32 color;
 	Color32 colorRecursive; //This color is multiplied through all children TODO: Add UiElemConfigField entry for this
 	Texture* texture;
-	bool repeatingTexture; //TODO: Add UiElemConfigField entry for this
-	rec textureSourceRec; //TODO: Add UiElemConfigField entry for this
-	SpriteSheet* spriteSheet; //TODO: Add UiElemConfigField entry for this
-	v2i sheetCell; //TODO: Add UiElemConfigField entry for this
+	bool repeatingTexture;
+	rec textureSourceRec;
+	SpriteSheet* spriteSheet;
+	v2i sheetCell;
 	UiPadding padding;
 	v4r borderThickness;
 	Color32 borderColor;
@@ -330,13 +330,13 @@ plex UiElemConfig
 	UiConditionType condition;
 	bool mousePassthrough;
 	bool strictHover; //this element is not considered hovered if any of it's child elements is hovered over
-	Str8 text; //TODO: Add UiElemConfigField entry for this
-	RichStr richText; //TODO: Add UiElemConfigField entry for this
-	Color32 textColor; //TODO: Add UiElemConfigField entry for this
-	r32 textWrapWidth; //TODO: Add UiElemConfigField entry for this
-	PigFont* font; //TODO: Add UiElemConfigField entry for this
-	r32 fontSize; //TODO: Add UiElemConfigField entry for this
-	u8 fontStyle; //TODO: Add UiElemConfigField entry for this
+	Str8 text;
+	RichStr richText;
+	Color32 textColor;
+	r32 textWrapWidth;
+	PigFont* font;
+	r32 fontSize;
+	u8 fontStyle;
 	
 	//These types can contain different things for each application, see the description near the top of the file
 	UiRendererParameters renderer;
@@ -361,41 +361,57 @@ enum UiElemConfigField
 	UiElemConfigField_SizingValueX          = ((1ull) << 4),
 	UiElemConfigField_SizingTypeY           = ((1ull) << 5),
 	UiElemConfigField_SizingValueY          = ((1ull) << 6),
-	UiElemConfigField_Depth                 = ((1ull) << 7),
-	UiElemConfigField_Color                 = ((1ull) << 8),
-	UiElemConfigField_Texture               = ((1ull) << 9),
-	UiElemConfigField_DontSizeToTexture     = ((1ull) << 10),
-	UiElemConfigField_InnerPaddingLeft      = ((1ull) << 11),
-	UiElemConfigField_InnerPaddingTop       = ((1ull) << 12),
-	UiElemConfigField_InnerPaddingRight     = ((1ull) << 13),
-	UiElemConfigField_InnerPaddingBottom    = ((1ull) << 14),
-	UiElemConfigField_OuterPaddingLeft      = ((1ull) << 15),
-	UiElemConfigField_OuterPaddingTop       = ((1ull) << 16),
-	UiElemConfigField_OuterPaddingRight     = ((1ull) << 17),
-	UiElemConfigField_OuterPaddingBottom    = ((1ull) << 18),
-	UiElemConfigField_ChildPadding          = ((1ull) << 19),
-	UiElemConfigField_BorderThicknessLeft   = ((1ull) << 20),
-	UiElemConfigField_BorderThicknessTop    = ((1ull) << 21),
-	UiElemConfigField_BorderThicknessRight  = ((1ull) << 22),
-	UiElemConfigField_BorderThicknessBottom = ((1ull) << 23),
-	UiElemConfigField_BorderColor           = ((1ull) << 24),
-	UiElemConfigField_BorderDepth           = ((1ull) << 25),
-	UiElemConfigField_FloatingType          = ((1ull) << 26),
-	UiElemConfigField_FloatingOffsetX       = ((1ull) << 27),
-	UiElemConfigField_FloatingOffsetY       = ((1ull) << 28),
-	UiElemConfigField_FloatingAttachId      = ((1ull) << 29),
-	UiElemConfigField_FloatingParentSide    = ((1ull) << 30),
-	UiElemConfigField_FloatingElemSide      = ((1ull) << 31),
-	UiElemConfigField_Condition             = ((1ull) << 32),
-	UiElemConfigField_MousePassthrough      = ((1ull) << 33),
-	UiElemConfigField_StrictHover           = ((1ull) << 34),
-	UiElemConfigField_RendererParams        = ((1ull) << 35), // NOTE: Fields inside UiRendererParameters struct are not represented individually
-	UiElemConfigField_ThemerParams          = ((1ull) << 36), // NOTE: Fields inside UiThemerParameters struct are not represented individually
-	UiElemConfigField_Count                 = 37,
+	UiElemConfigField_DontSizeToImage       = ((1ull) << 7),
+	UiElemConfigField_AlignmentX            = ((1ull) << 8),
+	UiElemConfigField_AlignmentY            = ((1ull) << 9),
+	UiElemConfigField_ClipChildren          = ((1ull) << 10),
+	UiElemConfigField_Depth                 = ((1ull) << 11),
+	UiElemConfigField_Color                 = ((1ull) << 12),
+	UiElemConfigField_ColorRecursive        = ((1ull) << 13),
+	UiElemConfigField_Texture               = ((1ull) << 14),
+	UiElemConfigField_RepeatingTexture      = ((1ull) << 15),
+	UiElemConfigField_TextureSourceRec      = ((1ull) << 16),
+	UiElemConfigField_SpriteSheet           = ((1ull) << 17),
+	UiElemConfigField_SheetCell             = ((1ull) << 18),
+	UiElemConfigField_InnerPaddingLeft      = ((1ull) << 19),
+	UiElemConfigField_InnerPaddingTop       = ((1ull) << 20),
+	UiElemConfigField_InnerPaddingRight     = ((1ull) << 21),
+	UiElemConfigField_InnerPaddingBottom    = ((1ull) << 22),
+	UiElemConfigField_OuterPaddingLeft      = ((1ull) << 23),
+	UiElemConfigField_OuterPaddingTop       = ((1ull) << 24),
+	UiElemConfigField_OuterPaddingRight     = ((1ull) << 25),
+	UiElemConfigField_OuterPaddingBottom    = ((1ull) << 26),
+	UiElemConfigField_ChildPadding          = ((1ull) << 27),
+	UiElemConfigField_BorderThicknessLeft   = ((1ull) << 28),
+	UiElemConfigField_BorderThicknessTop    = ((1ull) << 29),
+	UiElemConfigField_BorderThicknessRight  = ((1ull) << 30),
+	UiElemConfigField_BorderThicknessBottom = ((1ull) << 31),
+	UiElemConfigField_BorderColor           = ((1ull) << 32),
+	UiElemConfigField_BorderDepth           = ((1ull) << 33),
+	UiElemConfigField_FloatingType          = ((1ull) << 34),
+	UiElemConfigField_FloatingOffsetX       = ((1ull) << 35),
+	UiElemConfigField_FloatingOffsetY       = ((1ull) << 36),
+	UiElemConfigField_FloatingAttachId      = ((1ull) << 37),
+	UiElemConfigField_FloatingParentSide    = ((1ull) << 38),
+	UiElemConfigField_FloatingElemSide      = ((1ull) << 39),
+	UiElemConfigField_Condition             = ((1ull) << 40),
+	UiElemConfigField_MousePassthrough      = ((1ull) << 41),
+	UiElemConfigField_StrictHover           = ((1ull) << 42),
+	UiElemConfigField_Text                  = ((1ull) << 43),
+	UiElemConfigField_RichText              = ((1ull) << 44),
+	UiElemConfigField_TextColor             = ((1ull) << 45),
+	UiElemConfigField_TextWrapWidth         = ((1ull) << 46),
+	UiElemConfigField_Font                  = ((1ull) << 47),
+	UiElemConfigField_FontSize              = ((1ull) << 48),
+	UiElemConfigField_FontStyle             = ((1ull) << 49),
+	UiElemConfigField_RendererParams        = ((1ull) << 50), // NOTE: Fields inside UiRendererParameters struct are not represented individually
+	UiElemConfigField_ThemerParams          = ((1ull) << 51), // NOTE: Fields inside UiThemerParameters struct are not represented individually
+	UiElemConfigField_Count                 = 52,
 	UiElemConfigField_All                   = (((1ull) << UiElemConfigField_Count)-1),
 	UiElemConfigField_Sizing                = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueX|UiElemConfigField_SizingValueY),
 	UiElemConfigField_SizingX               = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingValueX),
 	UiElemConfigField_SizingY               = (UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueY),
+	UiElemConfigField_Alignment             = (UiElemConfigField_AlignmentX|UiElemConfigField_AlignmentY),
 	UiElemConfigField_InnerPadding          = (UiElemConfigField_InnerPaddingLeft|UiElemConfigField_InnerPaddingTop|UiElemConfigField_InnerPaddingRight|UiElemConfigField_InnerPaddingBottom),
 	UiElemConfigField_OuterPadding          = (UiElemConfigField_OuterPaddingLeft|UiElemConfigField_OuterPaddingTop|UiElemConfigField_OuterPaddingRight|UiElemConfigField_OuterPaddingBottom),
 	UiElemConfigField_Padding               = (UiElemConfigField_InnerPadding|UiElemConfigField_OuterPadding|UiElemConfigField_ChildPadding),
@@ -416,13 +432,21 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_GlobalId:              return "GlobalId";
 		case UiElemConfigField_Direction:             return "Direction";
 		case UiElemConfigField_SizingTypeX:           return "SizingTypeX";
-		case UiElemConfigField_SizingTypeY:           return "SizingTypeY";
 		case UiElemConfigField_SizingValueX:          return "SizingValueX";
+		case UiElemConfigField_SizingTypeY:           return "SizingTypeY";
 		case UiElemConfigField_SizingValueY:          return "SizingValueY";
+		case UiElemConfigField_DontSizeToImage:       return "DontSizeToImage";
+		case UiElemConfigField_AlignmentX:            return "AlignmentX";
+		case UiElemConfigField_AlignmentY:            return "AlignmentY";
+		case UiElemConfigField_ClipChildren:          return "ClipChildren";
 		case UiElemConfigField_Depth:                 return "Depth";
 		case UiElemConfigField_Color:                 return "Color";
+		case UiElemConfigField_ColorRecursive:        return "ColorRecursive";
 		case UiElemConfigField_Texture:               return "Texture";
-		case UiElemConfigField_DontSizeToTexture:     return "DontSizeToTexture";
+		case UiElemConfigField_RepeatingTexture:      return "RepeatingTexture";
+		case UiElemConfigField_TextureSourceRec:      return "TextureSourceRec";
+		case UiElemConfigField_SpriteSheet:           return "SpriteSheet";
+		case UiElemConfigField_SheetCell:             return "SheetCell";
 		case UiElemConfigField_InnerPaddingLeft:      return "InnerPaddingLeft";
 		case UiElemConfigField_InnerPaddingTop:       return "InnerPaddingTop";
 		case UiElemConfigField_InnerPaddingRight:     return "InnerPaddingRight";
@@ -447,6 +471,13 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_Condition:             return "Condition";
 		case UiElemConfigField_MousePassthrough:      return "MousePassthrough";
 		case UiElemConfigField_StrictHover:           return "StrictHover";
+		case UiElemConfigField_Text:                  return "Text";
+		case UiElemConfigField_RichText:              return "RichText";
+		case UiElemConfigField_TextColor:             return "TextColor";
+		case UiElemConfigField_TextWrapWidth:         return "TextWrapWidth";
+		case UiElemConfigField_Font:                  return "Font";
+		case UiElemConfigField_FontSize:              return "FontSize";
+		case UiElemConfigField_FontStyle:             return "FontStyle";
 		case UiElemConfigField_RendererParams:        return "RendererParams";
 		case UiElemConfigField_ThemerParams:          return "ThemerParams";
 		case UiElemConfigField_All:                   return "All";
@@ -615,10 +646,7 @@ plex UiContext
 	
 	Arena* frameArena;
 	uxx frameArenaMark;
-	#if (TARGET_HAS_THREADING && DEBUG_BUILD)
-	ThreadId threadId;
-	#endif
-	v2 screenSize; //TODO: Remove me
+	v2 screenSize;
 	r32 scale;
 	u64 programTime;
 	KeyboardState* keyboard;

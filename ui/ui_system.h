@@ -51,15 +51,15 @@ Description:
 //TODO: Should this be thread local?
 #if TARGET_IS_WINDOWS
 	#if !PIG_CORE_IMPLEMENTATION
-	extern __declspec(dllimport) UiContext* UiCtx;
+	extern __declspec(dllimport) THREAD_LOCAL UiContext* UiCtx;
 	#else
-	__declspec(dllexport) UiContext* UiCtx = nullptr;
+	__declspec(dllexport) THREAD_LOCAL UiContext* UiCtx = nullptr;
 	#endif
 #else
 	#if !PIG_CORE_IMPLEMENTATION
-	extern UiContext* UiCtx;
+	extern THREAD_LOCAL UiContext* UiCtx;
 	#else
-	UiContext* UiCtx = nullptr;
+	THREAD_LOCAL UiContext* UiCtx = nullptr;
 	#endif
 #endif
 
@@ -122,12 +122,6 @@ plex UiElemConfigWrapper { UiElemConfig config; };
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-#if (TARGET_HAS_THREADING && DEBUG_BUILD)
-#define AssertUiThreadIsSame() AssertMsg(UiCtx == nullptr || UiCtx->threadId == OsGetCurrentThreadId(), "Calling a UI function from a different thread than the UI frame was started on!")
-#else
-#define AssertUiThreadIsSame() //nothing
-#endif
-
 PEXPI UiId CalcUiId(UiId baseId, Str8 idString, uxx index)
 {
 	UiId result = ZEROED;
@@ -169,10 +163,18 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_SizingValueX:          return (configPntr->sizing.x.value == 0.0f);
 		case UiElemConfigField_SizingTypeY:           return (configPntr->sizing.y.type == UiSizingType_Default);
 		case UiElemConfigField_SizingValueY:          return (configPntr->sizing.y.value == 0.0f);
+		case UiElemConfigField_DontSizeToImage:       return (configPntr->dontSizeToImage == false);
+		case UiElemConfigField_AlignmentX:            return (configPntr->alignment.x == UiAlign_Default);
+		case UiElemConfigField_AlignmentY:            return (configPntr->alignment.y == UiAlign_Default);
+		case UiElemConfigField_ClipChildren:          return (configPntr->clipChildren == false);
 		case UiElemConfigField_Depth:                 return (configPntr->depth == UI_DEPTH_DEFAULT);
 		case UiElemConfigField_Color:                 return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_ColorRecursive:        return (configPntr->colorRecursive.valueU32 == PigUiDefaultColor_Value);
 		case UiElemConfigField_Texture:               return (configPntr->texture == nullptr);
-		case UiElemConfigField_DontSizeToTexture:     return (configPntr->dontSizeToImage == false);
+		case UiElemConfigField_RepeatingTexture:      return (configPntr->repeatingTexture == false);
+		case UiElemConfigField_TextureSourceRec:      return AreEqualRec(configPntr->textureSourceRec, Rec_Zero);
+		case UiElemConfigField_SpriteSheet:           return (configPntr->spriteSheet == nullptr);
+		case UiElemConfigField_SheetCell:             return (configPntr->sheetCell.X == 0 && configPntr->sheetCell.Y == 0);
 		case UiElemConfigField_InnerPaddingLeft:      return (configPntr->padding.inner.Left   == 0.0f);
 		case UiElemConfigField_InnerPaddingTop:       return (configPntr->padding.inner.Top    == 0.0f);
 		case UiElemConfigField_InnerPaddingRight:     return (configPntr->padding.inner.Right  == 0.0f);
@@ -197,6 +199,13 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_Condition:             return (configPntr->condition == UiConditionType_None);
 		case UiElemConfigField_MousePassthrough:      return (configPntr->mousePassthrough == false);
 		case UiElemConfigField_StrictHover:           return (configPntr->strictHover == false);
+		case UiElemConfigField_Text:                  return IsEmptyStr(configPntr->text);
+		case UiElemConfigField_RichText:              return IsEmptyRichStr(configPntr->richText);
+		case UiElemConfigField_TextColor:             return (configPntr->textColor.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_TextWrapWidth:         return (configPntr->textWrapWidth == 0.0f);
+		case UiElemConfigField_Font:                  return (configPntr->font == nullptr);
+		case UiElemConfigField_FontSize:              return (configPntr->fontSize == 0.0f);
+		case UiElemConfigField_FontStyle:             return (configPntr->fontStyle == 0);
 		case UiElemConfigField_RendererParams:        return true; //TODO: What do we want to do for these?
 		case UiElemConfigField_ThemerParams:          return true; //TODO: What do we want to do for these?
 		default: DebugAssert(false); return true;
@@ -213,10 +222,18 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_SizingValueX:          configToPntr->sizing.x.value = configFromPntr->sizing.x.value; break;
 		case UiElemConfigField_SizingTypeY:           configToPntr->sizing.y.type = configFromPntr->sizing.y.type; break;
 		case UiElemConfigField_SizingValueY:          configToPntr->sizing.y.value = configFromPntr->sizing.y.value; break;
+		case UiElemConfigField_DontSizeToImage:       configToPntr->dontSizeToImage = configFromPntr->dontSizeToImage; break;
+		case UiElemConfigField_AlignmentX:            configToPntr->alignment.x = configFromPntr->alignment.x; break;
+		case UiElemConfigField_AlignmentY:            configToPntr->alignment.y = configFromPntr->alignment.y; break;
+		case UiElemConfigField_ClipChildren:          configToPntr->clipChildren = configFromPntr->clipChildren; break;
 		case UiElemConfigField_Depth:                 configToPntr->depth = configFromPntr->depth; break;
 		case UiElemConfigField_Color:                 configToPntr->color = configFromPntr->color; break;
+		case UiElemConfigField_ColorRecursive:        configToPntr->colorRecursive = configFromPntr->colorRecursive; break;
 		case UiElemConfigField_Texture:               configToPntr->texture = configFromPntr->texture; break;
-		case UiElemConfigField_DontSizeToTexture:     configToPntr->dontSizeToImage = configFromPntr->dontSizeToImage; break;
+		case UiElemConfigField_RepeatingTexture:      configToPntr->repeatingTexture = configFromPntr->repeatingTexture; break;
+		case UiElemConfigField_TextureSourceRec:      configToPntr->textureSourceRec = configFromPntr->textureSourceRec; break;
+		case UiElemConfigField_SpriteSheet:           configToPntr->spriteSheet = configFromPntr->spriteSheet; break;
+		case UiElemConfigField_SheetCell:             configToPntr->sheetCell = configFromPntr->sheetCell; break;
 		case UiElemConfigField_InnerPaddingLeft:      configToPntr->padding.inner.Left   = configFromPntr->padding.inner.Left; break;
 		case UiElemConfigField_InnerPaddingTop:       configToPntr->padding.inner.Top    = configFromPntr->padding.inner.Top; break;
 		case UiElemConfigField_InnerPaddingRight:     configToPntr->padding.inner.Right  = configFromPntr->padding.inner.Right; break;
@@ -241,6 +258,13 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_Condition:             configToPntr->condition = configFromPntr->condition; break;
 		case UiElemConfigField_MousePassthrough:      configToPntr->mousePassthrough = configFromPntr->mousePassthrough; break;
 		case UiElemConfigField_StrictHover:           configToPntr->strictHover = configFromPntr->strictHover; break;
+		case UiElemConfigField_Text:                  configToPntr->text = configFromPntr->text; break;
+		case UiElemConfigField_RichText:              configToPntr->richText = configFromPntr->richText; break;
+		case UiElemConfigField_TextColor:             configToPntr->textColor = configFromPntr->textColor; break;
+		case UiElemConfigField_TextWrapWidth:         configToPntr->textWrapWidth = configFromPntr->textWrapWidth; break;
+		case UiElemConfigField_Font:                  configToPntr->font = configFromPntr->font; break;
+		case UiElemConfigField_FontSize:              configToPntr->fontSize = configFromPntr->fontSize; break;
+		case UiElemConfigField_FontStyle:             configToPntr->fontStyle = configFromPntr->fontStyle; break;
 		case UiElemConfigField_RendererParams:        MyMemCopy(&configToPntr->renderer, &configFromPntr->renderer, sizeof(UiRendererParameters)); break;
 		case UiElemConfigField_ThemerParams:          MyMemCopy(&configToPntr->themer, &configFromPntr->themer, sizeof(UiThemerParameters)); break;
 		default: DebugAssert(false); break;
@@ -447,7 +471,6 @@ PEXPI bool DidCurrentUiElementClickStart(MouseBtn mouseBtn)
 PEXPI UiElement* CloseUiElement()
 {
 	NotNull(UiCtx);
-	AssertUiThreadIsSame();
 	DebugAssertMsg(UiCtx->currentElementIndex < UiCtx->elements.length, "Tried to close UI element when none was open! UI hierarchy is potentially invalid!");
 	if (UiCtx->currentElementIndex >= UiCtx->elements.length) { return nullptr; }
 	UiElement* element = VarArrayGetHard(UiElement, &UiCtx->elements, UiCtx->currentElementIndex);
@@ -487,7 +510,6 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 {
 	NotNull(UiCtx);
 	// DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);//TODO: Enable this once we figure out how to allow this ONLY when the root element is getting opened in StartUiFrame
-	AssertUiThreadIsSame();
 	
 	//NOTE: Everything that happens in the first part of this function must be reversable if !allThemersAcceptedElement
 	
@@ -691,10 +713,6 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	DebugAssert(context->arena != context->frameArena);
 	FlagSet(context->frameArena->flags, ArenaFlag_DontPop);
 	context->frameArenaMark = ArenaGetMark(context->frameArena);
-	
-	#if (TARGET_HAS_THREADING && DEBUG_BUILD)
-	context->threadId = OsGetCurrentThreadId();
-	#endif
 	
 	context->screenSize = screenSize;
 	context->scale = (scale != 0.0f) ? scale : 1.0f;
@@ -1339,12 +1357,12 @@ static void UiSystemDoLayout()
 			MaxR32(0.0f, innerSize.Height - childrenTotalSize.Height)
 		);
 		v2 alignmentOffset = V2_Zero;
-		if (element->config.alignment.x == UiAlignmentType_Left)   { alignmentOffset.X = emptySpaceForAlignment.X * 0.0f; }
-		if (element->config.alignment.x == UiAlignmentType_Center) { alignmentOffset.X = emptySpaceForAlignment.X * 0.5f; }
-		if (element->config.alignment.x == UiAlignmentType_Right)  { alignmentOffset.X = emptySpaceForAlignment.X * 1.0f; }
-		if (element->config.alignment.y == UiAlignmentType_Top)    { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.0f; }
-		if (element->config.alignment.y == UiAlignmentType_Center) { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.5f; }
-		if (element->config.alignment.y == UiAlignmentType_Bottom) { alignmentOffset.Y = emptySpaceForAlignment.Y * 1.0f; }
+		if (element->config.alignment.x == UiAlign_Left)   { alignmentOffset.X = emptySpaceForAlignment.X * 0.0f; }
+		if (element->config.alignment.x == UiAlign_Center) { alignmentOffset.X = emptySpaceForAlignment.X * 0.5f; }
+		if (element->config.alignment.x == UiAlign_Right)  { alignmentOffset.X = emptySpaceForAlignment.X * 1.0f; }
+		if (element->config.alignment.y == UiAlign_Top)    { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.0f; }
+		if (element->config.alignment.y == UiAlign_Center) { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.5f; }
+		if (element->config.alignment.y == UiAlign_Bottom) { alignmentOffset.Y = emptySpaceForAlignment.Y * 1.0f; }
 		
 		v2 layoutPos = V2_Zero_Const;
 		if (element->config.direction == UiLayoutDir_LeftToRight || element->config.direction == UiLayoutDir_TopDown)
@@ -1433,7 +1451,6 @@ static COMPARE_FUNC_DEF(UiRenderCmd_DepthAndHierarchySortCompare)
 PEXP UiRenderList* GetUiRenderList()
 {
 	NotNull(UiCtx);
-	AssertUiThreadIsSame();
 	
 	// Close the root element if it's still open. This also acts as a way for us to know if GetUiRenderList has been called yet this frame
 	if (UiCtx->currentElementIndex < UiCtx->elements.length)
@@ -1446,7 +1463,6 @@ PEXP UiRenderList* GetUiRenderList()
 	// +==============================+
 	// |          UI Render           |
 	// +==============================+
-	rec screenRec = MakeRecV(V2_Zero, UiCtx->screenSize);
 	UiCtx->renderList.context = UiCtx;
 	UiCtx->renderList.arena = UiCtx->frameArena;
 	InitVarArrayWithInitial(UiRenderCmd, &UiCtx->renderList.commands, UiCtx->frameArena, UiCtx->elements.length); //Lower estimate (TODO: Should we decide on a better upper estimate?)
@@ -1581,7 +1597,6 @@ PEXP UiRenderList* GetUiRenderList()
 PEXP void EndUiFrame()
 {
 	NotNull(UiCtx);
-	AssertUiThreadIsSame();
 	
 	ClearStruct(UiCtx->renderList); //Memset to zero since it was allocated from frameArena and will get freed in the ResetToMark below
 	

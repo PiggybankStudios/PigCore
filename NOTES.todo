@@ -65,8 +65,8 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Transparency and Color that affects child elements?
 	[X] Repeating textures
 	[X] SpriteSheet support
-	[!] Add new UiElemConfig fields to UiElemConfigField enum
-	[!] Make the UiCtx global thread_local
+	[X] Add new UiElemConfig fields to UiElemConfigField enum
+	[X] Make the UiCtx global thread_local
 	(!) Weird distribution issues at 0.74f uiScale and repeating texture elements
 	(!) The 'e' at the end of "Blue" is getting cut for some reason
 	(!) Three buttons with expand width do not respect minimum size of children to inform parent which is fit width
@@ -118,6 +118,8 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Convert ui_clay_tooltip.h
 	[ ] Add tooltip registration through UiElemConfig
 	[ ] Measure MeasureText performance impact. Set up measure caching if needed
+	[ ] IsMouseOverUI()
+	[ ] Input handling
 	[ ] 
 
 # Things we do differently than Clay
