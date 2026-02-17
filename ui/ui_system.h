@@ -513,6 +513,17 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		parentElement->numNonFloatingChildren++;
 	}
 	
+	if (newElement->config.floating.type != UiFloatingType_None)
+	{
+		UiElement* attachParent = GetUiElementAttachParent(newElement);
+		AssertMsg(attachParent != nullptr, "Could not find floating element attach parent. NOTE: Floating elements must be defined AFTER the element they attach to!");
+		newElement->floatDepth = attachParent->floatDepth + 1;
+	}
+	else
+	{
+		newElement->floatDepth = (parentElement != nullptr) ? parentElement->floatDepth : 0;
+	}
+	
 	newElement->runChildCode = true;
 	if (newElement->config.condition != UiConditionType_None)
 	{
@@ -958,12 +969,12 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 static void TrackMouseInteractionAfterUiLayout()
 {
 	UiElement* hoveredElement = nullptr;
-	if (UiCtx->mouse != nullptr)
+	if (UiCtx->mouse != nullptr && UiCtx->mouse->isOverWindow)
 	{
 		VarArrayLoop(&UiCtx->elements, eIndex)
 		{
 			VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
-			if (!element->config.mousePassthrough && IsInsideRec(element->layoutRec, UiCtx->mouse->position))
+			if (!element->config.mousePassthrough && IsInsideRec(element->layoutRec, UiCtx->mouse->position) && IsInsideRec(element->clipRec, UiCtx->mouse->position))
 			{
 				if (hoveredElement == nullptr ||
 					element->config.depth < hoveredElement->config.depth ||
@@ -999,6 +1010,22 @@ static void TrackMouseInteractionAfterUiLayout()
 	}
 }
 
+// +==================================================+
+// | UiElementPntr_FloatDepthThenElementIndex_Compare |
+// +==================================================+
+// i32 UiElementPntr_FloatDepthThenElementIndex_Compare(const void* left, const void* right, void* contextPntr)
+COMPARE_FUNC_DEF(UiElementPntr_FloatDepthThenElementIndex_Compare)
+{
+	UNUSED(contextPntr);
+	UiElement* leftElement = *((UiElement**)left);
+	UiElement* rightElement = *((UiElement**)right);
+	if (leftElement->floatDepth > rightElement->floatDepth) { return 1; }
+	else if (leftElement->floatDepth < rightElement->floatDepth) { return -1; }
+	else if (leftElement->elementIndex > rightElement->elementIndex) { return 1; }
+	else if (leftElement->elementIndex < rightElement->elementIndex) { return -1; }
+	else { return 0; }
+}
+
 static void UiSystemDoLayout()
 {
 	ScratchBegin2(scratch, UiCtx->arena, UiCtx->frameArena);
@@ -1009,15 +1036,44 @@ static void UiSystemDoLayout()
 	UiElement* rootElement = VarArrayGetFirst(UiElement, &UiCtx->elements);
 	rootElement->layoutRec.TopLeft = V2_Zero;
 	rootElement->layoutRec.Size = UiCtx->screenSize;
+	rootElement->clipRec = rootElement->layoutRec;
+	
+	VarArray sortedElements = ZEROED; //UiElement*
+	InitVarArrayWithInitial(UiElement*, &sortedElements, scratch, UiCtx->elements.length);
+	UiElement** sortedElementsRange = VarArrayAddMulti(UiElement*, &sortedElements, UiCtx->elements.length);
+	VarArrayLoop(&UiCtx->elements, eIndex)
+	{
+		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+		sortedElementsRange[eIndex] = element;
+	}
+	QuickSortVarArray(UiElement*, &sortedElements, UiElementPntr_FloatDepthThenElementIndex_Compare, nullptr);
+	#if DEBUG_BUILD
+	if (printDebug)
+	{
+		PrintLine_D("Sorted %llu elements:", sortedElements.length);
+		VarArrayLoop(&sortedElements, eIndex)
+		{
+			VarArrayLoopGetValue(UiElement*, element, &sortedElements, eIndex);
+			Str8 fullName = GetUiElementQualifiedName(scratch, element);
+			PrintLine_D("[%llu] \"%.*s\" elementIndex=%llu treeDepth=%llu floatDepth=%llu",
+				eIndex,
+				StrPrint(fullName),
+				element->elementIndex,
+				element->treeDepth,
+				element->floatDepth
+			);
+		}
+	}
+	#endif
 	
 	//NOTE: Because text wrapping will affect the minimumSize along the Y-axis of text elements based on the
 	//      final size given on the X-axis, we have to do both passes of X-axis sizing BEFORE we do Y-axis sizing
 	// +================================+
 	// | Size X-axis in Bottom-Up order |
 	// +================================+
-	VarArrayLoop(&UiCtx->elements, eIndex)
+	VarArrayLoop(&sortedElements, eIndex)
 	{
-		VarArrayLoopGetReverse(UiElement, element, &UiCtx->elements, eIndex);
+		VarArrayLoopGetValueReverse(UiElement*, element, &sortedElements, eIndex);
 		// #if DEBUG_BUILD
 		// if (printDebug)
 		// {
@@ -1032,9 +1088,9 @@ static void UiSystemDoLayout()
 	// +======================================+
 	// | Distribute X-axis in Top-Down order  |
 	// +======================================+
-	VarArrayLoop(&UiCtx->elements, eIndex)
+	VarArrayLoop(&sortedElements, eIndex)
 	{
-		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+		VarArrayLoopGetValue(UiElement*, element, &sortedElements, eIndex);
 		// #if DEBUG_BUILD
 		// if (printDebug)
 		// {
@@ -1063,9 +1119,9 @@ static void UiSystemDoLayout()
 	// +================================+
 	// | Size Y-axis in Bottom-Up order |
 	// +================================+
-	VarArrayLoop(&UiCtx->elements, eIndex)
+	VarArrayLoop(&sortedElements, eIndex)
 	{
-		VarArrayLoopGetReverse(UiElement, element, &UiCtx->elements, eIndex);
+		VarArrayLoopGetValueReverse(UiElement*, element, &sortedElements, eIndex);
 		// #if DEBUG_BUILD
 		// if (printDebug)
 		// {
@@ -1080,9 +1136,9 @@ static void UiSystemDoLayout()
 	// +======================================+
 	// | Distribute Y-axis in Top-Down order  |
 	// +======================================+
-	VarArrayLoop(&UiCtx->elements, eIndex)
+	VarArrayLoop(&sortedElements, eIndex)
 	{
-		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+		VarArrayLoopGetValue(UiElement*, element, &sortedElements, eIndex);
 		// #if DEBUG_BUILD
 		// if (printDebug)
 		// {
@@ -1132,52 +1188,40 @@ static void UiSystemDoLayout()
 	}
 	#endif //DEBUG_BUILD
 	
-	#if 0
-	// +======================================+
-	// | Distribute Sizes to Children via BFS |
-	// +======================================+
-	VarArray bfsIndices; //bfs = Breadth-First Search
-	InitVarArrayWithInitial(uxx, &bfsIndices, UiCtx->frameArena, UiCtx->elements.length); //TODO: This is a hard upper bound, and quite an overestimate in most cases
-	VarArrayAddValue(uxx, &bfsIndices, 0); //Add the root element, always at index 0
-	while (bfsIndices.length > 0)
-	{
-		uxx eIndex = VarArrayGetFirstValue(uxx, &bfsIndices);
-		VarArrayRemoveFirst(uxx, &bfsIndices);
-		UiElement* element = VarArrayGetHard(UiElement, &UiCtx->elements, eIndex);
-		
-		#if DEBUG_BUILD
-		if (printDebug)
-		{
-			Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, element);
-			PrintLine_D("0x%016llX %.*s Sizing %llu child%s",
-				element->id.id,
-				StrPrint(fullName),
-				element->numChildren, PluralEx(element->numChildren, "", "ren")
-			);
-		}
-		#endif //DEBUG_BUILD
-		
-		DistributeSpaceToUiElemChildrenOnAxis(element, true, printDebug);
-		DistributeSpaceToUiElemChildrenOnAxis(element, false, printDebug);
-		
-		//Add all children who have children to bfsIndices (also add floating children, even if they are leaf nodes, since they need to size themselves)
-		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
-		{
-			UiElement* child = GetUiElementChild(element, cIndex);
-			if (child->numChildren > 0 || child->config.floating.type != UiFloatingType_None)
-			{
-				VarArrayAddValue(uxx, &bfsIndices, child->elementIndex);
-			}
-		}
-	}
-	#endif
-	
 	// +============================================+
 	// | Position Children According to UiLayoutDir |
 	// +============================================+
-	VarArrayLoop(&UiCtx->elements, eIndex)
+	VarArrayLoop(&sortedElements, eIndex)
 	{
-		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+		VarArrayLoopGetValue(UiElement*, element, &sortedElements, eIndex);
+		
+		if (element->config.floating.type != UiFloatingType_None)
+		{
+			UiElement* attachParent = GetUiElementAttachParent(element);
+			DebugNotNull(attachParent);
+			v2 parentHalfSize = ScaleV2(attachParent->layoutRec.Size, 0.5f);
+			v2 elemHalfSize = ScaleV2(element->layoutRec.Size, 0.5f);
+			v2 parentAttachPos = AddV2(attachParent->layoutRec.TopLeft, parentHalfSize);
+			v2 parentDirMult = ToV2Fromi(V2iFromDir2Ex(element->config.floating.parentSide));
+			v2 elemDirMult = ToV2Fromi(V2iFromDir2Ex(element->config.floating.elemSide));
+			parentAttachPos = AddV2(parentAttachPos, MulV2(parentHalfSize, parentDirMult));
+			parentAttachPos = SubV2(parentAttachPos, elemHalfSize);
+			parentAttachPos = SubV2(parentAttachPos, MulV2(elemHalfSize, elemDirMult));
+			parentAttachPos = AddV2(parentAttachPos, element->config.floating.offset);
+			element->layoutRec.TopLeft = parentAttachPos;
+			#if DEBUG_BUILD
+			if (printDebug)
+			{
+				PrintLine_D("Put floating element \"%.*s\" at (%g,%g) from parent \"%.*s\" (%g, %g)+(%g,%g)",
+					StrPrint(element->id.str),
+					element->layoutRec.X, element->layoutRec.Y,
+					StrPrint(attachParent->id.str),
+					attachParent->layoutRec.X, attachParent->layoutRec.Y,
+					element->config.floating.offset.X, element->config.floating.offset.Y
+				);
+			}
+			#endif
+		}
 		
 		v2 childrenTotalSize = V2_Zero;
 		uxx nonFloatingChildIndex = 0;
@@ -1242,6 +1286,7 @@ static void UiSystemDoLayout()
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
+			
 			if (child->config.floating.type == UiFloatingType_None)
 			{
 				r32 childPadding = ((cIndex > 0) ? element->config.padding.child : 0.0f);
@@ -1259,33 +1304,9 @@ static void UiSystemDoLayout()
 				if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.outer.Left; }
 				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.outer.Top; }
 			}
-			else
-			{
-				UiElement* attachParent = GetUiElementAttachParent(child);
-				DebugNotNull(attachParent);
-				v2 parentHalfSize = ScaleV2(attachParent->layoutRec.Size, 0.5f);
-				v2 childHalfSize = ScaleV2(child->layoutRec.Size, 0.5f);
-				v2 parentAttachPos = AddV2(attachParent->layoutRec.TopLeft, parentHalfSize);
-				v2 parentDirMult = ToV2Fromi(V2iFromDir2Ex(child->config.floating.parentSide));
-				v2 childDirMult = ToV2Fromi(V2iFromDir2Ex(child->config.floating.elemSide));
-				parentAttachPos = AddV2(parentAttachPos, MulV2(parentHalfSize, parentDirMult));
-				parentAttachPos = SubV2(parentAttachPos, childHalfSize);
-				parentAttachPos = SubV2(parentAttachPos, MulV2(childHalfSize, childDirMult));
-				parentAttachPos = AddV2(parentAttachPos, child->config.floating.offset);
-				child->layoutRec.TopLeft = parentAttachPos;
-				#if DEBUG_BUILD
-				if (printDebug)
-				{
-					PrintLine_D("Put floating child \"%.*s\" at (%g,%g) from parent \"%.*s\" (%g, %g)+(%g,%g)",
-						StrPrint(child->id.str),
-						child->layoutRec.X, child->layoutRec.Y,
-						StrPrint(attachParent->id.str),
-						attachParent->layoutRec.X, attachParent->layoutRec.Y,
-						child->config.floating.offset.X, child->config.floating.offset.Y
-					);
-				}
-				#endif
-			}
+			
+			if (element->config.clipChildren) { child->clipRec = OverlapPartRec(element->clipRec, element->layoutRec); }
+			else { child->clipRec = element->clipRec; }
 			
 			#if DEBUG_BUILD
 			if (printDebug)
@@ -1351,7 +1372,7 @@ PEXP UiRenderList* GetUiRenderList()
 	VarArrayLoop(&UiCtx->elements, eIndex)
 	{
 		VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
-		if (DoesOverlapRec(element->layoutRec, screenRec, true))
+		if (DoesOverlapRec(element->layoutRec, element->clipRec, true))
 		{
 			bool isBorderSameDepth = (AreSimilarR32(element->config.borderDepth, element->config.depth, DEFAULT_R32_TOLERANCE) || element->config.borderDepth == 0.0f);
 			bool borderHasAlpha = (element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0));
@@ -1363,6 +1384,8 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->type = UiRenderCmdType_Rectangle;
 				newCmd->depth = element->config.depth;
 				newCmd->srcElementIndex = element->elementIndex;
+				newCmd->srcElementId = element->id;
+				newCmd->clipRec = element->clipRec;
 				newCmd->color = (element->config.texture != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.texture = element->config.texture;
@@ -1381,6 +1404,8 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->type = UiRenderCmdType_Rectangle;
 				newCmd->depth = element->config.borderDepth;
 				newCmd->srcElementIndex = element->elementIndex;
+				newCmd->srcElementId = element->id;
+				newCmd->clipRec = element->clipRec;
 				newCmd->color = Transparent;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.borderThickness = element->config.borderThickness;
@@ -1391,37 +1416,51 @@ PEXP UiRenderList* GetUiRenderList()
 			bool isWrappingText = (element->config.sizing.x.type == UiSizingType_TextWrap);
 			if (!IsEmptyRichStr(element->config.richText))
 			{
-				UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
-				DebugNotNull(newCmd);
-				ClearPointer(newCmd);
-				newCmd->type = UiRenderCmdType_RichText;
-				newCmd->depth = element->config.depth;
-				newCmd->srcElementIndex = element->elementIndex;
-				newCmd->color = UiConfigTextColorToActualColor(element->config.textColor);
-				newCmd->richText.font = element->config.font;
-				newCmd->richText.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->richText.font);
-				newCmd->richText.fontStyle = element->config.fontStyle;
-				newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
-				if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
-				newCmd->richText.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->richText.font, newCmd->richText.fontSize, newCmd->richText.fontStyle)));
-				newCmd->richText.text = element->config.richText;
+				rec textClipRec = element->clipRec;
+				if (element->config.sizing.x.type == UiSizingType_TextClip) { textClipRec = OverlapPartRec(element->layoutRec, element->clipRec); }
+				if (textClipRec.Width > 0 && textClipRec.Height > 0)
+				{
+					UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
+					DebugNotNull(newCmd);
+					ClearPointer(newCmd);
+					newCmd->type = UiRenderCmdType_RichText;
+					newCmd->depth = element->config.depth;
+					newCmd->srcElementIndex = element->elementIndex;
+					newCmd->srcElementId = element->id;
+					newCmd->clipRec = textClipRec;
+					newCmd->color = UiConfigTextColorToActualColor(element->config.textColor);
+					newCmd->richText.font = element->config.font;
+					newCmd->richText.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->richText.font);
+					newCmd->richText.fontStyle = element->config.fontStyle;
+					newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
+					if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
+					newCmd->richText.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->richText.font, newCmd->richText.fontSize, newCmd->richText.fontStyle)));
+					newCmd->richText.text = element->config.richText;
+				}
 			}
 			else if (!IsEmptyStr(element->config.text))
 			{
-				UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
-				DebugNotNull(newCmd);
-				ClearPointer(newCmd);
-				newCmd->type = UiRenderCmdType_Text;
-				newCmd->depth = element->config.depth;
-				newCmd->srcElementIndex = element->elementIndex;
-				newCmd->color = UiConfigTextColorToActualColor(element->config.textColor);
-				newCmd->text.font = element->config.font;
-				newCmd->text.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->text.font);
-				newCmd->text.fontStyle = element->config.fontStyle;
-				newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
-				if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
-				newCmd->text.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->text.font, newCmd->text.fontSize, newCmd->text.fontStyle)));
-				newCmd->text.text = element->config.text;
+				rec textClipRec = element->clipRec;
+				if (element->config.sizing.x.type == UiSizingType_TextClip) { textClipRec = OverlapPartRec(element->layoutRec, element->clipRec); }
+				if (textClipRec.Width > 0 && textClipRec.Height > 0)
+				{
+					UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
+					DebugNotNull(newCmd);
+					ClearPointer(newCmd);
+					newCmd->type = UiRenderCmdType_Text;
+					newCmd->depth = element->config.depth;
+					newCmd->srcElementIndex = element->elementIndex;
+					newCmd->srcElementId = element->id;
+					newCmd->clipRec = textClipRec;
+					newCmd->color = UiConfigTextColorToActualColor(element->config.textColor);
+					newCmd->text.font = element->config.font;
+					newCmd->text.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->text.font);
+					newCmd->text.fontStyle = element->config.fontStyle;
+					newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
+					if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
+					newCmd->text.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->text.font, newCmd->text.fontSize, newCmd->text.fontStyle)));
+					newCmd->text.text = element->config.text;
+				}
 			}
 		}
 	}

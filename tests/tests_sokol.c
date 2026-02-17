@@ -1341,13 +1341,14 @@ bool AppFrame(void)
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, &keyboard, &mouse, &touchscreen);
 			
 			// PushUiFields({ .color = MonokaiDarkGray });
+			PushUiFieldsText({ .textColor = MonokaiDarkGray });
 			// PushUiFields({ .padding = {
 			// 	.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
 			// 	.child = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
 			// }});
-			PushUiFields({ .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
+			PushUiFields({ .borderThickness = FillV4r(2.0f), .padding = {.inner = FillV4r(2.0f) }, .borderColor = ColorWithAlpha(White, 0.75f) });
 			PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
-			#define SIMPLETEXTELEM(strLit) UIELEM_LEAF({ .sizing = UI_TEXT_FULL(), .text = StrLit(strLit), .font = &testFont, .textColor = MonokaiWhite });
+			#define SIMPLETEXTELEM(strLit, isMousePassthrough) UIELEM_LEAF({ .sizing = UI_TEXT_FULL(), .padding = { .outer = FillV4r(4) }, .text = StrLit(strLit), .font = &testFont, .textColor = MonokaiWhite, .mousePassthrough=(isMousePassthrough)});
 			
 			UiElemConfig rootElem = { .id = UiIdLit("Root") };
 			rootElem.direction = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown;
@@ -1355,7 +1356,7 @@ bool AppFrame(void)
 			{
 				UiElemConfig orangeElem = { .id = UiIdLit("Orange"), .color=MonokaiOrange };
 				orangeElem.direction   = UiLayoutDir_LeftToRight;
-				UIELEM(orangeElem) { SIMPLETEXTELEM("Orange"); }
+				UIELEM(orangeElem) { SIMPLETEXTELEM("Orange", false); }
 				
 				UiElemConfig percentageRowElem = { .id = UiIdLit("PercentageRow") };
 				percentageRowElem.direction = UiLayoutDir_RightToLeft;
@@ -1369,7 +1370,9 @@ bool AppFrame(void)
 					
 					UiElemConfig greenElem = { .id = UiIdLit("Green"), .color=MonokaiGreen };
 					greenElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.20f);
-					UIELEM(greenElem) { SIMPLETEXTELEM("Green"); }
+					greenElem.alignment.x = UiAlignmentType_Right;
+					greenElem.alignment.y = UiAlignmentType_Bottom;
+					UIELEM(greenElem) { SIMPLETEXTELEM("Green", false); }
 					
 					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
 					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
@@ -1382,7 +1385,7 @@ bool AppFrame(void)
 					
 					UiElemConfig purpleElem = { .id = UiIdLit("Purple"), .color=MonokaiPurple };
 					purpleElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.60f);
-					UIELEM(purpleElem) { SIMPLETEXTELEM("Purple"); }
+					UIELEM(purpleElem) { SIMPLETEXTELEM("Purple", false); }
 					
 					PopUiThemer(&uiContext.themers, testThemerId);
 				}
@@ -1390,30 +1393,10 @@ bool AppFrame(void)
 				UIELEM({ .id = UiIdLit("Yellow"),
 					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiYellow,
+					.clipChildren = true,
 				})
 				{
-					UIELEM({ .id = UiIdLit("FloatingGreen"),
-						.sizing = UI_FIT2(),
-						// .sizing = UI_PERCENT2(0.8f, 0.5f),
-						// .sizing = UI_EXPAND2(),
-						.direction = UiLayoutDir_TopDown,
-						.padding = { .child = 5, .inner = FillV4r(10) },
-						.color=MonokaiGreen,
-						.depth = -1.0f,
-						.floating = {
-							.type = UiFloatingType_Parent,
-							// .type = UiFloatingType_Id,
-							// .attachId = UiIdLit("Blue"),
-							.offset = SubV2(mouse.position, ScaleV2(windowSize, 0.25f)), //MakeV2(15, 45),
-							.parentSide = UiSide_Center,
-							.elemSide = UiSide_BottomCenter,
-						},
-					})
-					{
-						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiRed    }) { SIMPLETEXTELEM("Red"); }
-						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiPurple }) { SIMPLETEXTELEM("Purple"); }
-						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiOrange }) { SIMPLETEXTELEM("Orange"); }
-					}
+					
 				}
 				
 				UIELEM({ .id = UiIdLit("Red"),
@@ -1429,16 +1412,18 @@ bool AppFrame(void)
 					UIELEM({ .id = UiIdLit("DarkGreen"),
 						.color=MonokaiDarkGreen,
 						.sizing=UI_FIXED2(100, 200),
+						.alignment = { .y = UiAlignmentType_Top },
 					})
 					{
-						SIMPLETEXTELEM("Green");
+						SIMPLETEXTELEM("Green", false);
 					}
 					
 					UIELEM_LEAF({ .id = UiIdLit("LoremIpsum"),
 						.sizing = UI_TEXT_WRAP(30.0f),
-						.text = StrLit("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"),
+						.padding = { .outer = FillV4r(4) },
+						.richText = DecodeStrToRichStr(UiCtx->frameArena, StrLit("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed [alpha=0.5]do eiusmod tempor incididunt[alpha] ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum")),
 						.font = &testFont,
-						.textColor = MonokaiWhite,
+						// .textColor = MonokaiWhite,
 					});
 					
 					for (uxx tIndex = 0; tIndex < 4; tIndex++)
@@ -1451,6 +1436,34 @@ bool AppFrame(void)
 						});
 					}
 				}
+				
+				if (UiCtx->mouseHoveredId.id != 0 && GetUiElementById(UiCtx->mouseHoveredId, false) != nullptr)
+				{
+					UIELEM({ .id = UiIdLit("FloatingMenu"),
+						.sizing = UI_FIT2(),
+						// .sizing = UI_PERCENT2(0.8f, 0.5f),
+						// .sizing = UI_EXPAND2(),
+						.direction = UiLayoutDir_TopDown,
+						.padding = { .child = 5, .inner = FillV4r(10) },
+						.color=MonokaiDarkGray,
+						.depth = -1.0f,
+						.mousePassthrough = true,
+						.floating = {
+							// .type = UiFloatingType_Parent,
+							.type = UiFloatingType_Id,
+							.attachId = UiCtx->mouseHoveredId,
+							.offset = MakeV2(0, -2 * uiScale), //SubV2(mouse.position, ScaleV2(windowSize, 0.25f)), //MakeV2(15, 45),
+							.parentSide = UiSide_TopCenter,
+							.elemSide = UiSide_BottomCenter,
+						},
+						.clipChildren = true,
+					})
+					{
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiRed,    .mousePassthrough = true }) { SIMPLETEXTELEM("Red", true); }
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiPurple, .mousePassthrough = true }) { SIMPLETEXTELEM("Purple", true); }
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiOrange, .mousePassthrough = true }) { SIMPLETEXTELEM("OrangeOrangeOrangeOrange", true); }
+					}
+				}
 			}
 			
 			UiRenderList* uiRenderList = GetUiRenderList();
@@ -1458,6 +1471,7 @@ bool AppFrame(void)
 			VarArrayLoop(&uiRenderList->commands, cIndex)
 			{
 				VarArrayLoopGet(UiRenderCmd, cmd, &uiRenderList->commands, cIndex);
+				SetClipRec(ToReciFromf(cmd->clipRec));
 				switch (cmd->type)
 				{
 					case UiRenderCmdType_Rectangle:
@@ -1493,6 +1507,7 @@ bool AppFrame(void)
 					} break;
 				}
 			}
+			DisableClipRec();
 			
 			EndUiFrame();
 			

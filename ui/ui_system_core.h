@@ -86,8 +86,8 @@ plex UiId
 #define UiId_None       MakeUiId(0, Str8_Empty, 0)
 #define UiId_None_Const MakeUiId_Const(0, Str8_Empty_Const, 0)
 #define UiId_Root_U64   0x6D216EB70FEE0D58ull
-#define UiId_Root       MakeUiId(UiId_Root_U64, StrLit(PIG_UI_ROOT_ID_STR), 0)
-#define UiId_Root_Const MakeUiId_Const(UiId_Root_U64, StrLit_Const(PIG_UI_ROOT_ID_STR), 0)
+#define UiId_Root       MakeUiId(UiId_Root_U64, StrLit(PIG_UI_ROOT_ID_STR), PIG_UI_ID_INDEX_NONE)
+#define UiId_Root_Const MakeUiId_Const(UiId_Root_U64, StrLit_Const(PIG_UI_ROOT_ID_STR), PIG_UI_ID_INDEX_NONE)
 
 //This is the most convenient way to give a UiId from a string literal, like UiIdNt("Element1")
 #define UiIdLit(idStrLit)             CalcUiId(UiId_None, StrLit(idStrLit),    PIG_UI_ID_INDEX_NONE)
@@ -311,6 +311,7 @@ plex UiElemConfig
 	UiLayoutDir direction;
 	UiSizing sizing;
 	UiAlignment alignment; //TODO: Add UiElemConfigField entry for this
+	bool clipChildren; //TODO: Add UiElemConfigField entry for this
 	r32 depth;
 	Color32 color;
 	Texture* texture;
@@ -455,6 +456,7 @@ plex UiElement
 	UiId id; //This is the "real" ID, the one in config actually gets recalculated in OpenUiElement based on the parent element's ID
 	
 	uxx treeDepth; //How many parents this element has
+	uxx floatDepth; //How many of this elements parents are floating
 	uxx elementIndex; //What's this element's index in the UiContext->elements VarArray
 	uxx siblingIndex; //which index child is this element amongst it's siblings
 	uxx parentIndex; //What is the index of the parent element in the UiContext>elements VarArray
@@ -467,6 +469,7 @@ plex UiElement
 	
 	v2 minimumSize;
 	v2 preferredSize;
+	rec clipRec;
 	rec layoutRec;
 };
 
@@ -533,8 +536,10 @@ plex UiRenderCmd
 {
 	UiRenderCmdType type;
 	uxx srcElementIndex;
+	UiId srcElementId;
 	r32 depth;
 	Color32 color;
+	rec clipRec;
 	car
 	{
 		// +==============================+

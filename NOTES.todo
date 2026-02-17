@@ -59,9 +59,10 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Floating elements
 	[X] Border on top of children option?
 	[X] Make sure childGap works
-	[!] Child Alignment Options
+	[X] Child Alignment Options
 	(!) Three buttons with expand width do not respect minimum size of children to inform parent which is fit width
 	(!) Alignment options don't work yet for RightToLeft or BottomUp
+	(!) Floating elements that attach to items by ID that are deeper in the tree than themselves are not positioned properly
 	[ ] Add WasCurrentElementLeftClicked() and similar functions
 	( ) We are a little too strict with the mouse starting hover ID tracking. When the mouse hovers a different UI element in the middle of a click we should attempt to find a common ancestor that isn't passthrough and track that as the element that was clicked on
 	[ ] Option for what bounds a floating element is restricted to (clipped to is separate? Only for EXPAND?)
@@ -70,7 +71,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Get current element
 	[X] Get an elements layout last frame
 	[X] Figure out what element the mouse is hovering over (including depth and occlussion+clipping of elements)
-	[ ] Child clipping
+	[X] Child clipping
 	[ ] Mouse hovering needs to take into account clipping of child elements to their parent
 	[ ] Scrollable elements
 	[ ] Cubic decay scrolling
