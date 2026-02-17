@@ -1376,11 +1376,18 @@ bool AppFrame(void)
 					
 					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
 					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
-					blueElem.condition = UiConditionType_MouseLeftClicked;
+					blueElem.alignment.x = UiAlignmentType_Left;
+					blueElem.alignment.y = UiAlignmentType_Top;
+					// blueElem.condition = UiConditionType_MouseLeftClicked;
 					if (!IsKeyboardKeyDown(&keyboard, nullptr, Key_Control)) { blueElem.depth = -1; }
 					UIELEM(blueElem)
 					{
-						WriteLine_D("You click on the blue element!");
+						if (WasCurrentUiElementClicked(MouseBtn_Left))
+						// if (DidCurrentUiElementClickStart(MouseBtn_Left))
+						{
+							WriteLine_D("You click on the blue element!");
+						}
+						SIMPLETEXTELEM("Blue", true);
 					}
 					
 					UiElemConfig purpleElem = { .id = UiIdLit("Purple"), .color=MonokaiPurple };

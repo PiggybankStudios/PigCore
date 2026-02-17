@@ -82,9 +82,15 @@ Description:
 	PIG_CORE_INLINE UiElement* GetUiElementAttachParent(UiElement* element);
 	PIG_CORE_INLINE bool IsUiElementHoveredStrict(UiId id);
 	PIG_CORE_INLINE bool IsUiElementHovered(UiId id);
-	PIG_CORE_INLINE bool IsUiCurrentElementHoveredStrict();
-	PIG_CORE_INLINE bool IsUiCurrentElementHovered();
+	PIG_CORE_INLINE bool IsCurrentUiElementHoveredStrict();
+	PIG_CORE_INLINE bool IsCurrentUiElementHovered();
+	PIG_CORE_INLINE bool DidMouseStartClickInsideUiElement(UiId id, MouseBtn mouseBtn);
 	PIG_CORE_INLINE bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn);
+	PIG_CORE_INLINE bool WasUiElementClicked(UiId id, MouseBtn mouseBtn);
+	PIG_CORE_INLINE bool DidUiElementClickStart(UiId id, MouseBtn mouseBtn);
+	PIG_CORE_INLINE bool IsCurrentUiElementBeingClicked(MouseBtn mouseBtn);
+	PIG_CORE_INLINE bool WasCurrentUiElementClicked(MouseBtn mouseBtn);
+	PIG_CORE_INLINE bool DidCurrentUiElementClickStart(MouseBtn mouseBtn);
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
@@ -355,25 +361,24 @@ PEXPI bool IsUiElementHovered(UiId id)
 	}
 	return false;
 }
-PEXPI bool IsUiCurrentElementHoveredStrict()
+PEXPI bool IsCurrentUiElementHoveredStrict()
 {
 	UiElement* currentUiElement = GetCurrentUiElement();
 	NotNull(currentUiElement);
 	return IsUiElementHoveredStrict(currentUiElement->id);
 }
-PEXPI bool IsUiCurrentElementHovered()
+PEXPI bool IsCurrentUiElementHovered()
 {
 	UiElement* currentUiElement = GetCurrentUiElement();
 	NotNull(currentUiElement);
 	return IsUiElementHovered(currentUiElement->id);
 }
 
-PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
+PEXPI bool DidMouseStartClickInsideUiElement(UiId id, MouseBtn mouseBtn)
 {
 	NotNull(UiCtx);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
-	if (!IsMouseBtnDown(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
 	if (UiCtx->clickStartHoveredId[mouseBtn].id == 0) { return false; }
 	if (UiCtx->clickStartHoveredId[mouseBtn].id == id.id) { return true; }
 	if (UiCtx->clickStartHoveredLocalId[mouseBtn].id == id.id) { return true; }
@@ -389,6 +394,53 @@ PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
 		}
 	}
 	return false;
+}
+PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
+{
+	NotNull(UiCtx);
+	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
+	if (UiCtx->mouse == nullptr) { return false; }
+	if (!IsMouseBtnDown(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
+	if (!IsUiElementHovered(id)) { return false; }
+	if (DidMouseStartClickInsideUiElement(id, mouseBtn)) { return true; }
+	return false;
+}
+PEXPI bool WasUiElementClicked(UiId id, MouseBtn mouseBtn)
+{
+	NotNull(UiCtx);
+	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
+	if (UiCtx->mouse == nullptr) { return false; }
+	if (!IsMouseBtnReleased(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
+	if (!IsUiElementHovered(id)) { return false; }
+	if (DidMouseStartClickInsideUiElement(id, mouseBtn)) { return true; }
+	return false;
+}
+PEXPI bool DidUiElementClickStart(UiId id, MouseBtn mouseBtn)
+{
+	NotNull(UiCtx);
+	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
+	if (UiCtx->mouse == nullptr) { return false; }
+	if (!IsMouseBtnPressed(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
+	if (IsUiElementHovered(id)) { return true; }
+	return false;
+}
+PEXPI bool IsCurrentUiElementBeingClicked(MouseBtn mouseBtn)
+{
+	UiElement* currentUiElement = GetCurrentUiElement();
+	NotNull(currentUiElement);
+	return IsUiElementBeingClicked(currentUiElement->id, mouseBtn);
+}
+PEXPI bool WasCurrentUiElementClicked(MouseBtn mouseBtn)
+{
+	UiElement* currentUiElement = GetCurrentUiElement();
+	NotNull(currentUiElement);
+	return WasUiElementClicked(currentUiElement->id, mouseBtn);
+}
+PEXPI bool DidCurrentUiElementClickStart(MouseBtn mouseBtn)
+{
+	UiElement* currentUiElement = GetCurrentUiElement();
+	NotNull(currentUiElement);
+	return DidUiElementClickStart(currentUiElement->id, mouseBtn);
 }
 
 PEXPI UiElement* CloseUiElement()
@@ -522,6 +574,15 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 	else
 	{
 		newElement->floatDepth = (parentElement != nullptr) ? parentElement->floatDepth : 0;
+	}
+	
+	if (!IsEmptyRichStr(newElement->config.richText) && !IsPntrFromArena(UiCtx->frameArena, newElement->config.richText.fullPiece.str.chars))
+	{
+		newElement->config.richText = AllocRichStr(UiCtx->frameArena, newElement->config.richText);
+	}
+	if (!IsEmptyStr(newElement->config.text) && !IsPntrFromArena(UiCtx->frameArena, newElement->config.text.chars))
+	{
+		newElement->config.text = AllocStr8(UiCtx->frameArena, newElement->config.text);
 	}
 	
 	newElement->runChildCode = true;
@@ -720,16 +781,16 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		r32 fontSize = ((element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(element->config.font));
 		if (!IsEmptyRichStr(element->config.richText))
 		{
-			measure = MeasureRichTextEx(element->config.font, fontSize, element->config.fontStyle, false, wrapWidth, element->config.richText);
+			measure = MeasureRichTextEx(element->config.font, fontSize, element->config.fontStyle, true, wrapWidth, element->config.richText);
 		}
 		else
 		{
-			measure = MeasureTextEx(element->config.font, fontSize, element->config.fontStyle, false, wrapWidth, element->config.text);
+			measure = MeasureTextEx(element->config.font, fontSize, element->config.fontStyle, true, wrapWidth, element->config.text);
 		}
 		r32 minWidthOrWrapWidth = MaxR32(sizingValue, element->config.textWrapWidth);
-		r32 measureHeightOrLineHeight = MaxR32(measure.Height, GetFontLineHeight(element->config.font, fontSize, element->config.fontStyle));
-		*minimumSizePntr = (xAxis ? ((minWidthOrWrapWidth >= 0.0f) ? minWidthOrWrapWidth : measure.Width) : measureHeightOrLineHeight);
-		*preferredSizePntr = (xAxis ? measure.Width : measureHeightOrLineHeight);
+		r32 measureHeightOrLineHeight = MaxR32(measure.visualRec.Height, GetFontLineHeight(element->config.font, fontSize, element->config.fontStyle));
+		*minimumSizePntr = (xAxis ? ((minWidthOrWrapWidth >= 0.0f) ? minWidthOrWrapWidth : measure.visualRec.Width) : measureHeightOrLineHeight);
+		*preferredSizePntr = (xAxis ? measure.visualRec.Width : measureHeightOrLineHeight);
 	}
 	else { DebugAssert(false); }
 }

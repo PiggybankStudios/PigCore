@@ -60,10 +60,17 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Border on top of children option?
 	[X] Make sure childGap works
 	[X] Child Alignment Options
+	[X] Copy text or richText to frameArena
+	[X] Add WasCurrentElementLeftClicked() and similar functions
+	[!] Transparency and Color that affects child elements?
+	[!] Repeating textures
+	[!] SpriteSheet support
+	[!] Add new UiElemConfig fields to UiElemConfigField enum
+	[!] Make the UiCtx global thread_local
+	(!) The 'e' at the end of "Blue" is getting cut for some reason
 	(!) Three buttons with expand width do not respect minimum size of children to inform parent which is fit width
 	(!) Alignment options don't work yet for RightToLeft or BottomUp
-	(!) Floating elements that attach to items by ID that are deeper in the tree than themselves are not positioned properly
-	[ ] Add WasCurrentElementLeftClicked() and similar functions
+	(X) Floating elements that attach to items by ID that are deeper in the tree than themselves are not positioned properly
 	( ) We are a little too strict with the mouse starting hover ID tracking. When the mouse hovers a different UI element in the middle of a click we should attempt to find a common ancestor that isn't passthrough and track that as the element that was clicked on
 	[ ] Option for what bounds a floating element is restricted to (clipped to is separate? Only for EXPAND?)
 	[X] PushUiFields non-text? Or maybe it's non-text by default?
@@ -86,8 +93,6 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Better support for UiRendererParams and UiThemerParams
 	[ ] Default UI Renderer implementation
 	[?] Uneven distribution of available space based on some sort of priority?
-	[?] Transparency and Color that affects child elements?
-	[ ] SpriteSheet support
 	[ ] Debug panel. Inspect specific elements and trace logic through entire layout process
 		[?] Duplicate and visualize stages of the layout?
 		[ ] Inspect elements under mouse
@@ -100,10 +105,15 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 		[ ] Delta-encoding render commands from frame-to-frame
 	[?] Vector art support?
 	[?] We we construct UiElemConfig elements into the local scope (outside UIELEM macro). Can we limit the visiblity of that config after it's been sent to UIELEM or UIELEM_LEAF?
-	[ ] Make the UiCtx global thread_local
 	[ ] borderThickness is margin and border renders outside UI element options
+	[ ] Convert ui_clay_checkbox.h
+	[ ] Convert ui_clay_hoverable.h
+	[ ] Convert ui_clay_label.h
+	[ ] Convert ui_clay_listview.h
+	[ ] Convert ui_clay_notifications.h
+	[ ] Convert ui_clay_textbox.h
+	[ ] Convert ui_clay_tooltip.h
 	[ ] Add tooltip registration through UiElemConfig
-	[?] Repeating textures?
 	[ ] Measure MeasureText performance impact. Set up measure caching if needed
 	[ ] 
 
