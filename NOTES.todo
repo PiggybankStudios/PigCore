@@ -63,10 +63,11 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] Copy text or richText to frameArena
 	[X] Add WasCurrentElementLeftClicked() and similar functions
 	[X] Transparency and Color that affects child elements?
-	[!] Repeating textures
+	[X] Repeating textures
 	[!] SpriteSheet support
 	[!] Add new UiElemConfig fields to UiElemConfigField enum
 	[!] Make the UiCtx global thread_local
+	(!) Weird distribution issues at 0.74f uiScale and repeating texture elements
 	(!) The 'e' at the end of "Blue" is getting cut for some reason
 	(!) Three buttons with expand width do not respect minimum size of children to inform parent which is fit width
 	(!) Alignment options don't work yet for RightToLeft or BottomUp

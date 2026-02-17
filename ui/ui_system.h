@@ -553,7 +553,7 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		if (newElement->config.floating.type != UiFloatingType_None) { newElement->config.depth += PIG_UI_DEFAULT_FLOATING_ELEM_DEPTH_OFFSET; }
 	}
 	// If you have default sizing parameters and you attached a texture then we copy in the texture dimensions as UiSizingType_Fit
-	if (newElement->config.texture != nullptr && !newElement->config.dontSizeToTexture &&
+	if (newElement->config.texture != nullptr && !newElement->config.repeatingTexture && !newElement->config.dontSizeToTexture &&
 		newElement->config.sizing.x.type == UiSizingType_Default && newElement->config.sizing.y.type == UiSizingType_Default &&
 		newElement->config.sizing.x.value == 0.0f && newElement->config.sizing.y.value == 0.0f)
 	{
@@ -1461,6 +1461,22 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->color = actualColor;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.texture = element->config.texture;
+				if (element->config.texture != nullptr)
+				{
+					if (element->config.repeatingTexture)
+					{
+						newCmd->rectangle.sourceRec = MakeRecV(V2_Zero, ScaleV2(element->layoutRec.Size, 1.0f / UiCtx->scale));
+					}
+					else if (element->config.textureSourceRec.X != 0 || element->config.textureSourceRec.Y != 0 || element->config.textureSourceRec.Width != 0 || element->config.textureSourceRec.Height != 0)
+					{
+						newCmd->rectangle.sourceRec = element->config.textureSourceRec;
+					}
+					else 
+					{
+						newCmd->rectangle.sourceRec = MakeRecV(V2_Zero, ToV2Fromi(element->config.texture->size));
+					}
+				}
+				
 				if (isBorderSameDepth)
 				{
 					newCmd->rectangle.borderThickness = element->config.borderThickness;

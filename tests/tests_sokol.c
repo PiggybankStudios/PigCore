@@ -76,6 +76,7 @@ Rot2 screenRotation = Rot2_0;
 bool screenRotated = false;
 #endif
 Texture mipmapTexture = ZEROED;
+Texture backgroundTexture = ZEROED;
 Texture noMipmapTexture = ZEROED;
 Texture testTexture = ZEROED;
 PerfGraph perfGraph = ZEROED;
@@ -295,8 +296,10 @@ UI_THEMER_CALLBACK_DEF(TestsUiThemerCallback)
 {
 	if (!element->config.themer.isButton && element->config.texture == nullptr && IsEmptyStr(element->config.text) && IsEmptyRichStr(element->config.richText))
 	{
-		element->config.texture = &testTexture;
+		// element->config.texture = &testTexture;
+		element->config.texture = &backgroundTexture;
 		element->config.dontSizeToTexture = true;
+		element->config.repeatingTexture = true;
 	}
 	return true;
 }
@@ -625,14 +628,19 @@ void AppInit(void)
 	#if !TARGET_IS_OSX //TODO: Remove me once we get files working on OSX
 	#if TARGET_IS_WINDOWS
 	FilePath testImagePath = FilePathLit("Q:/test.png");
+	FilePath backgroundImagePath = FilePathLit("Q:/test.png");
 	#elif TARGET_IS_LINUX
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
+	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test4.png");
 	#else
 	FilePath testImagePath = FilePathLit("test.png");
+	FilePath backgroundImagePath = FilePathLit("test.png");
 	#endif
 	mipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_None);
 	noMipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_NoMipmaps);
 	#endif //!TARGET_IS_OSX
+	
+	backgroundTexture = LoadTexture(stdHeap, backgroundImagePath, TextureFlag_IsRepeating);
 	
 	ImageData testTextureData = ZEROED;
 	testTextureData.size = MakeV2i(512, 512);
@@ -652,7 +660,7 @@ void AppInit(void)
 			pixel->a = 255;
 		}
 	}
-	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_HasCopy);
+	testTexture = InitTexture(stdHeap, StrLit("testTexture"), testTextureData.size, testTextureData.pixels, TextureFlag_HasCopy|TextureFlag_IsRepeating);
 	Assert(testTexture.error == Result_Success);
 	
 	OsMarkStartTime();
@@ -1487,7 +1495,7 @@ bool AppFrame(void)
 					{
 						if (cmd->rectangle.texture != nullptr)
 						{
-							DrawTexturedRectangle(cmd->rectangle.rectangle, cmd->color, cmd->rectangle.texture);
+							DrawTexturedRectangleEx(cmd->rectangle.rectangle, cmd->color, cmd->rectangle.texture, cmd->rectangle.sourceRec);
 						}
 						else
 						{

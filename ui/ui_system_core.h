@@ -316,7 +316,9 @@ plex UiElemConfig
 	Color32 color;
 	Color32 colorRecursive; //This color is multiplied through all children TODO: Add UiElemConfigField entry for this
 	Texture* texture;
+	bool repeatingTexture;
 	bool dontSizeToTexture;
+	rec textureSourceRec;
 	UiPadding padding;
 	v4r borderThickness;
 	Color32 borderColor;
@@ -553,6 +555,7 @@ plex UiRenderCmd
 			v4r borderThickness;
 			Color32 borderColor;
 			Texture* texture;
+			rec sourceRec;
 		} rectangle;
 		
 		// +==============================+
