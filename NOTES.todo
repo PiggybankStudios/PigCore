@@ -46,6 +46,60 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Can we make a Windows installer? Maybe copy File Pilot's design?
 	
 	@ UI System
+	[!] Scrollable elements
+	[!] Default UI Renderer implementation
+	[!] Add support for shrinking elements if they are too big at their preferred size
+	[!] IsMouseOverUI()
+	[!] Text elliding with ellipses
+	[!] Input handling
+	(!) Alignment options don't work yet for RightToLeft or BottomUp
+	(!) Weird distribution issues at 0.74f uiScale and repeating texture elements
+	(!) Three buttons with expand width do not respect minimum size of children to inform parent which is fit width
+	[?] Uneven distribution of available space based on some sort of priority?
+	[ ] Cubic decay scrolling
+	[ ] Touch input scrolling
+	[!] Better support for UiRendererParams and UiThemerParams
+	[ ] Should we be doing something better than ColorMultSimple when multiplying colorRecursive?
+	[!] borderThickness-as-margin and border-renders-outside-UI-element options
+	( ) The 'e' at the end of "Blue" is getting cut for some reason
+	[?] UI_EXPAND_FIXED, UI_FIXED_EXPAND, UI_PERCENT_EXPAND, etc.
+	( ) We are a little too strict with the mouse starting hover ID tracking. When the mouse hovers a different UI element in the middle of a click we should attempt to find a common ancestor that isn't passthrough and track that as the element that was clicked on
+	[ ] Option for what bounds a floating element is restricted to (clipped to is separate? Only for EXPAND?)
+	[ ] Some idea of focused element, keyboard/gamepad-driven interaction of most UI
+	[ ] Aspect ratio restricted grow elements (for textures elements mostly)
+	[ ] HashMap of ID->element
+	[ ] Debug panel. Inspect specific elements and trace logic through entire layout process
+		[?] Duplicate and visualize stages of the layout?
+		[ ] Inspect elements under mouse
+	[?] Widgets? Scrollbar, Topbar, EditText, Button, etc.
+	[?] Border thickness for between elements?
+	[ ] Render offset (maybe render offset affects children too?)
+	[?] How do we want to support animations? Can we ask the system whether anything is moving currently so we can properly do "sleeping" behavior like we do in CSwitch?
+	[?] Serialization of UiRenderCmd? Remote connection to UI server?
+		[ ] Recording and playback of render commands
+		[ ] Delta-encoding render commands from frame-to-frame
+	[?] Vector art support?
+	[?] We we construct UiElemConfig elements into the local scope (outside UIELEM macro). Can we limit the visiblity of that config after it's been sent to UIELEM or UIELEM_LEAF?
+	[ ] Convert ui_clay_checkbox.h
+	[ ] Convert ui_clay_hoverable.h
+	[ ] Convert ui_clay_label.h
+	[ ] Convert ui_clay_listview.h
+	[ ] Convert ui_clay_notifications.h
+	[ ] Convert ui_clay_textbox.h
+	[ ] Convert ui_clay_tooltip.h
+	[ ] Add tooltip registration through UiElemConfig
+	[ ] Profile MeasureText performance impact. Set up measure caching if needed
+	(X) Floating elements that attach to items by ID that are deeper in the tree than themselves are not positioned properly
+	[X] PushUiFields non-text? Or maybe it's non-text by default?
+	[X] Get current element
+	[X] Get an elements layout last frame
+	[X] Figure out what element the mouse is hovering over (including depth and occlussion+clipping of elements)
+	[X] Child clipping
+	[X] Mouse hovering needs to take into account clipping of child elements to their parent
+	[X] Run child scope if clicked or other input events
+	[X] Text elements
+	[X] Complex word-wrapping support
+	[X] RichStr support
 	[X] UIELEM_LEAF macro
 	[X] Handle globalId in UiElemConfig
 	[X] Convenient Push/Pop of basic Themers
@@ -67,60 +121,6 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[X] SpriteSheet support
 	[X] Add new UiElemConfig fields to UiElemConfigField enum
 	[X] Make the UiCtx global thread_local
-	(!) Weird distribution issues at 0.74f uiScale and repeating texture elements
-	(!) The 'e' at the end of "Blue" is getting cut for some reason
-	(!) Three buttons with expand width do not respect minimum size of children to inform parent which is fit width
-	(!) Alignment options don't work yet for RightToLeft or BottomUp
-	(!) Should we be doing something better than ColorMultSimple when multiplying colorRecursive?
-	[?] UI_EXPAND_FIXED, UI_FIXED_EXPAND, UI_PERCENT_EXPAND, etc.
-	(X) Floating elements that attach to items by ID that are deeper in the tree than themselves are not positioned properly
-	( ) We are a little too strict with the mouse starting hover ID tracking. When the mouse hovers a different UI element in the middle of a click we should attempt to find a common ancestor that isn't passthrough and track that as the element that was clicked on
-	[ ] Option for what bounds a floating element is restricted to (clipped to is separate? Only for EXPAND?)
-	[X] PushUiFields non-text? Or maybe it's non-text by default?
-	[ ] Add support for shrinking elements if they are too big at their preferred size
-	[X] Get current element
-	[X] Get an elements layout last frame
-	[X] Figure out what element the mouse is hovering over (including depth and occlussion+clipping of elements)
-	[X] Child clipping
-	[ ] Mouse hovering needs to take into account clipping of child elements to their parent
-	[ ] Scrollable elements
-	[ ] Cubic decay scrolling
-	[ ] Touch input scrolling
-	[X] Run child scope if clicked or other input events
-	[ ] Some idea of focused element, keyboard/gamepad-driven interaction of most UI
-	[X] Text elements
-	[X] Complex word-wrapping support
-	[X] RichStr support
-	[ ] Aspect ratio restricted grow elements (for textures elements mostly)
-	[ ] HashMap of ID->element
-	[ ] Better support for UiRendererParams and UiThemerParams
-	[ ] Default UI Renderer implementation
-	[?] Uneven distribution of available space based on some sort of priority?
-	[ ] Debug panel. Inspect specific elements and trace logic through entire layout process
-		[?] Duplicate and visualize stages of the layout?
-		[ ] Inspect elements under mouse
-	[?] Widgets? Scrollbar, Topbar, EditText, Button, etc.
-	[?] Border thickness for between elements?
-	[ ] Render offset (maybe render offset affects children too?)
-	[?] How do we want to support animations? Can we ask the system whether anything is moving currently so we can properly do "sleeping" behavior like we do in CSwitch?
-	[?] Serialization of UiRenderCmd? Remote connection to UI server?
-		[ ] Recording and playback of render commands
-		[ ] Delta-encoding render commands from frame-to-frame
-	[?] Vector art support?
-	[?] We we construct UiElemConfig elements into the local scope (outside UIELEM macro). Can we limit the visiblity of that config after it's been sent to UIELEM or UIELEM_LEAF?
-	[ ] borderThickness is margin and border renders outside UI element options
-	[ ] Convert ui_clay_checkbox.h
-	[ ] Convert ui_clay_hoverable.h
-	[ ] Convert ui_clay_label.h
-	[ ] Convert ui_clay_listview.h
-	[ ] Convert ui_clay_notifications.h
-	[ ] Convert ui_clay_textbox.h
-	[ ] Convert ui_clay_tooltip.h
-	[ ] Add tooltip registration through UiElemConfig
-	[ ] Measure MeasureText performance impact. Set up measure caching if needed
-	[ ] IsMouseOverUI()
-	[ ] Input handling
-	[ ] 
 
 # Things we do differently than Clay
 	[ ] UIELEM_LEAF variant

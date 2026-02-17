@@ -316,7 +316,7 @@ plex UiElemConfig
 	bool clipChildren;
 	r32 depth;
 	Color32 color;
-	Color32 colorRecursive; //This color is multiplied through all children TODO: Add UiElemConfigField entry for this
+	Color32 colorRecursive; //This color is multiplied through all children
 	Texture* texture;
 	bool repeatingTexture;
 	rec textureSourceRec;
