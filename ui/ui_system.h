@@ -1444,7 +1444,12 @@ static COMPARE_FUNC_DEF(UiRenderCmd_DepthAndHierarchySortCompare)
 		// return 0;
 		if (leftCmd->srcElementIndex < rightCmd->srcElementIndex) { return -1; }
 		else if (leftCmd->srcElementIndex > rightCmd->srcElementIndex) { return 1; }
-		else { return 0; }
+		else
+		{
+			if (leftCmd->type == UiRenderCmdType_Text && rightCmd->type != UiRenderCmdType_Text) { return -1; }
+			else if (leftCmd->type != UiRenderCmdType_Text && rightCmd->type == UiRenderCmdType_Text) { return 1; }
+			else { return 0; }
+		}
 	}
 }
 

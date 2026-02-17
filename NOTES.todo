@@ -52,6 +52,7 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[!] IsMouseOverUI()
 	[!] Text elliding with ellipses
 	[!] Input handling
+	(!) Text element's background color is rendering on top of text
 	(!) Alignment options don't work yet for RightToLeft or BottomUp
 	(!) Weird distribution issues at 0.74f uiScale and repeating texture elements
 	(!) Three buttons with expand width do not respect minimum size of children to inform parent which is fit width

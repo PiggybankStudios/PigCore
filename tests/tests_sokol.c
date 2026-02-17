@@ -632,7 +632,7 @@ void AppInit(void)
 	FilePath backgroundImagePath = FilePathLit("Q:/test.png");
 	#elif TARGET_IS_LINUX
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
-	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test4.png");
+	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test5.png");
 	#else
 	FilePath testImagePath = FilePathLit("test.png");
 	FilePath backgroundImagePath = FilePathLit("test.png");
@@ -1440,6 +1440,7 @@ bool AppFrame(void)
 						.padding = { .outer = FillV4r(4) },
 						.richText = DecodeStrToRichStr(UiCtx->frameArena, StrLit("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed [alpha=0.5]do eiusmod tempor incididunt[alpha] ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum")),
 						.font = &testFont,
+						.color = ColorWithAlpha(MonokaiDarkGray, 0.95f),
 						// .textColor = MonokaiWhite,
 					});
 					
