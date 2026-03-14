@@ -95,7 +95,7 @@ Description:
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
-	void StartUiFrame(UiContext* context, v2 screenSize, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
+	void StartUiFrame(UiContext* context, v2 screenSize, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
 	PIG_CORE_INLINE Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element);
 	UiRenderList* GetUiRenderList();
 	void EndUiFrame();
@@ -166,6 +166,10 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_DontSizeToImage:       return (configPntr->dontSizeToImage == false);
 		case UiElemConfigField_AlignmentX:            return (configPntr->alignment.x == UiAlign_Default);
 		case UiElemConfigField_AlignmentY:            return (configPntr->alignment.y == UiAlign_Default);
+		case UiElemConfigField_ScrollingX:            return (configPntr->scrolling.x.enabled == false);
+		case UiElemConfigField_ScrollingLagX:         return (configPntr->scrolling.x.lag == UI_SCROLL_LAG_DEFAULT);
+		case UiElemConfigField_ScrollingY:            return (configPntr->scrolling.y.enabled == false);
+		case UiElemConfigField_ScrollingLagY:         return (configPntr->scrolling.y.lag == UI_SCROLL_LAG_DEFAULT);
 		case UiElemConfigField_ClipChildren:          return (configPntr->clipChildren == false);
 		case UiElemConfigField_Depth:                 return (configPntr->depth == UI_DEPTH_DEFAULT);
 		case UiElemConfigField_Color:                 return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
@@ -225,6 +229,10 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_DontSizeToImage:       configToPntr->dontSizeToImage = configFromPntr->dontSizeToImage; break;
 		case UiElemConfigField_AlignmentX:            configToPntr->alignment.x = configFromPntr->alignment.x; break;
 		case UiElemConfigField_AlignmentY:            configToPntr->alignment.y = configFromPntr->alignment.y; break;
+		case UiElemConfigField_ScrollingX:            configToPntr->scrolling.x.enabled = configFromPntr->scrolling.x.enabled; break;
+		case UiElemConfigField_ScrollingLagX:         configToPntr->scrolling.x.lag = configFromPntr->scrolling.x.lag; break;
+		case UiElemConfigField_ScrollingY:            configToPntr->scrolling.y.enabled = configFromPntr->scrolling.y.enabled; break;
+		case UiElemConfigField_ScrollingLagY:         configToPntr->scrolling.y.lag = configFromPntr->scrolling.y.lag; break;
 		case UiElemConfigField_ClipChildren:          configToPntr->clipChildren = configFromPntr->clipChildren; break;
 		case UiElemConfigField_Depth:                 configToPntr->depth = configFromPntr->depth; break;
 		case UiElemConfigField_Color:                 configToPntr->color = configFromPntr->color; break;
@@ -627,6 +635,14 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		newElement->config.text = AllocStr8(UiCtx->frameArena, newElement->config.text);
 	}
 	
+	if (parentElement != nullptr)
+	{
+		if (parentElement->config.scrolling.x.enabled) { AssertMsg(newElement->config.sizing.x.type != UiSizingType_Expand, "Expand children are not allowed in a scrollable container along the scroll axis"); }
+		if (parentElement->config.scrolling.y.enabled) { AssertMsg(newElement->config.sizing.y.type != UiSizingType_Expand, "Expand children are not allowed in a scrollable container along the scroll axis"); }
+		if (parentElement->config.scrolling.x.enabled) { AssertMsg(newElement->config.sizing.x.type != UiSizingType_FixedPercent, "Percentage children are not allowed in a scrollable container along the scroll axis"); }
+		if (parentElement->config.scrolling.y.enabled) { AssertMsg(newElement->config.sizing.y.type != UiSizingType_FixedPercent, "Percentage children are not allowed in a scrollable container along the scroll axis"); }
+	}
+	
 	newElement->runChildCode = true;
 	if (newElement->config.condition != UiConditionType_None)
 	{
@@ -699,7 +715,7 @@ PEXPI bool OpenUiElementConditional(UiElemConfig config)
 	return (elementPntr != nullptr && elementPntr->runChildCode && elementPntr->isOpen);
 }
 
-PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
+PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
 {
 	DebugNotNull(context);
 	DebugNotNull(context->arena);
@@ -717,6 +733,7 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	context->screenSize = screenSize;
 	context->scale = (scale != 0.0f) ? scale : 1.0f;
 	context->programTime = programTime;
+	context->defaultScrollLagDivisor = ((defaultScrollLagDivisor == 0.0f) ? UI_SCROLL_LAG_DEFAULT_DIVISOR : defaultScrollLagDivisor);
 	context->keyboard = keyboard;
 	context->mouse = mouse;
 	context->touchscreen = touchscreen;
@@ -777,9 +794,13 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 	bool isThisLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
 	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
 	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
+	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
 	
 	r32* minimumSizePntr = (xAxis ? &element->minimumSize.Width : &element->minimumSize.Height);
 	r32* preferredSizePntr = (xAxis ? &element->preferredSize.Width : &element->preferredSize.Height);
+	r32* contentSizePntr = (xAxis ? &element->contentSize.Width : &element->contentSize.Height);
+	
+	if (isScrolling) { *contentSizePntr = *minimumSizePntr; }
 	
 	UiSizingType sizingType = (xAxis ? element->config.sizing.x.type : element->config.sizing.y.type);
 	r32 sizingValue = (xAxis ? element->config.sizing.x.value : element->config.sizing.y.value);
@@ -801,6 +822,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 	}
 	else if (sizingType == UiSizingType_Expand)
 	{
+		if (isScrolling) { *minimumSizePntr = 0; } //Throw away children minimumSize since we will allow scrolling along this axis (also minimumSize got copied into contentSize above)
 		*minimumSizePntr += elemInnerPaddingLrOrTb + layoutAxisChildPadding;
 		if (*minimumSizePntr < sizingValue) { *minimumSizePntr = sizingValue; }
 		*preferredSizePntr = INFINITY;
@@ -809,6 +831,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 	{
 		AssertMsg(element->config.font != nullptr, "Text elements must have a font set!");
 		AssertMsg(element->numChildren == 0, "Text elements cannot have children!");
+		AssertMsg(!isScrolling, "Text elements cannot have scrolling!");
 		TextMeasure measure = ZEROED;
 		r32 wrapWidth = element->config.textWrapWidth;
 		if (!xAxis && sizingType == UiSizingType_TextWrap)
@@ -898,6 +921,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	#endif
 	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
 	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
+	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
 	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
 	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
 	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
@@ -913,6 +937,13 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			UiSizingType childSizingType = (xAxis ? child->config.sizing.x.type : child->config.sizing.y.type);
 			if (childSizingType == UiSizingType_FixedPercent)
 			{
+				#if DEBUG_BUILD
+				if (isScrolling)
+				{
+					Str8 fullName = GetUiElementQualifiedName(UiCtx->frameArena, child);
+					PrintLine_W("Element \"%.*s\" has percentage sizing on %s-axis which is scrollable", xAxis ? "X" : "Y", StrPrint(fullName));
+				}
+				#endif //DEBUG_BUILD
 				r32 childSizingValue = (xAxis ? child->config.sizing.x.value : child->config.sizing.y.value);
 				r32* childMinimumSizePntr = (xAxis ? &child->minimumSize.Width : &child->minimumSize.Height);
 				r32* childPreferredSizePntr = (xAxis ? &child->preferredSize.Width : &child->preferredSize.Height);
@@ -922,7 +953,29 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 		}
 	}
 	
-	if (isLayoutDir)
+	if (isScrolling)
+	{
+		r32* contentSizePntr = (xAxis ? &element->contentSize.Width : &element->contentSize.Height);
+		r32* scrollMaxPntr = (xAxis ? &element->scrollMax.X : &element->scrollMax.Y);
+		*contentSizePntr = (isLayoutDir ? (element->config.padding.child * (element->numNonFloatingChildren-1)) : 0.0f);
+		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+		{
+			UiElement* child = GetUiElementChild(element, cIndex);
+			if (child->config.floating.type == UiFloatingType_None)
+			{
+				r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+				r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+				AssertMsg(IsInfiniteOrNanR32(childPreferredSize), "Expand children are not allowed in a scrollable container along the scroll axis");
+				*childSizePntr = MaxR32(childMinimumSize, childPreferredSize);
+				if (isLayoutDir) { *contentSizePntr += *childSizePntr + childOuterPaddingLrOrTb; }
+				else { *contentSizePntr = MaxR32(*contentSizePntr, *childSizePntr + childOuterPaddingLrOrTb); }
+			}
+		}
+		*scrollMaxPntr = MaxR32(0.0f, *contentSizePntr - innerSize);
+	}
+	else if (isLayoutDir)
 	{
 		// Copy children's minimumSize into layoutRec.Size and track how many want to be bigger and what their total minimum size is
 		uxx numGrowableChildren = 0;
@@ -1065,6 +1118,49 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	}
 }
 
+static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool printDebug)
+{
+	UNUSED(printDebug);
+	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
+	if (isScrolling)
+	{
+		r32* scrollPntr = (xAxis ? &element->scroll.X : &element->scroll.Y);
+		r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
+		r32 scrollMax = (xAxis ? element->scrollMax.X : element->scrollMax.Y);
+		
+		*scrollPntr = ClampR32(*scrollPntr, 0.0f, scrollMax);
+		*scrollGotoPntr = ClampR32(*scrollGotoPntr, 0.0f, scrollMax);
+		
+		r32 scrollDelta = (*scrollGotoPntr - *scrollPntr);
+		if (AbsR32(scrollDelta) > UI_SCROLL_GOTO_SNAP_DISTANCE)
+		{
+			r32 divisor = (xAxis ? element->config.scrolling.x.lag : element->config.scrolling.y.lag);
+			AssertMsg(divisor <= 0.0f || divisor >= 1.0f, "Fractional scroll lag value will cause undesired behavior!");
+			if (divisor < 0.0f) { divisor = 1.0f; } //aka UI_SCROLL_LAG_NONE
+			else if (divisor == UI_SCROLL_LAG_DEFAULT) { divisor = UiCtx->defaultScrollLagDivisor; }
+			*scrollPntr += scrollDelta / divisor; //TODO: Make this framerate independent!!
+		}
+		else { *scrollPntr = *scrollGotoPntr; }
+	}
+}
+
+static void HandleMouseScrollWheelOnAxisAfterUiLayout(bool xAxis, UiElement* element)
+{
+	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
+	if (isScrolling)
+	{
+		r32 scrollDelta = (xAxis ? UiCtx->mouse->scrollDelta.X : UiCtx->mouse->scrollDelta.Y);
+		if (scrollDelta != 0.0f)
+		{
+			r32* scrollPntr = (xAxis ? &element->scroll.X : &element->scroll.Y);
+			r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
+			r32 scrollMax = (xAxis ? element->scrollMax.X : element->scrollMax.Y);
+			*scrollPntr = ClampR32(*scrollPntr, 0.0f, *scrollPntr + (scrollDelta * 5.0f)); //TODO: Make 5.0f multiplier configurable!
+			//TODO: Set the appropriate handled flag
+		}
+	}
+}
+
 static void TrackMouseInteractionAfterUiLayout()
 {
 	UiElement* hoveredElement = nullptr;
@@ -1106,6 +1202,12 @@ static void TrackMouseInteractionAfterUiLayout()
 			UiCtx->clickStartHoveredId[mouseBtn] = UiCtx->mouseHoveredId;
 			UiCtx->clickStartHoveredLocalId[mouseBtn] = UiCtx->mouseHoveredLocalId;
 		}
+	}
+	
+	if (hoveredElement != nullptr && UiCtx->mouse != nullptr && !AreEqualV2(UiCtx->mouse->scrollDelta, V2_Zero))
+	{
+		HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredElement);
+		HandleMouseScrollWheelOnAxisAfterUiLayout(false, hoveredElement);
 	}
 }
 
@@ -1212,6 +1314,7 @@ static void UiSystemDoLayout()
 			}
 			#endif //DEBUG_BUILD
 			DistributeSpaceToUiElemChildrenOnAxis(element, true, printDebug);
+			UpdateUiElemScrollingOnAxis(element, true, printDebug);
 		}
 	}
 	
@@ -1260,6 +1363,7 @@ static void UiSystemDoLayout()
 			}
 			#endif //DEBUG_BUILD
 			DistributeSpaceToUiElemChildrenOnAxis(element, false, printDebug);
+			UpdateUiElemScrollingOnAxis(element, false, printDebug);
 		}
 	}
 	
@@ -1381,7 +1485,9 @@ static void UiSystemDoLayout()
 			//TODO: How do we take alignmentOffset into account?
 		}
 		else { DebugAssert(false); }
+		layoutPos = AddV2(layoutPos, element->scroll);
 		
+		bool clipChildren = (element->config.scrolling.x.enabled || element->config.scrolling.y.enabled || element->config.clipChildren);
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 		{
 			UiElement* child = GetUiElementChild(element, cIndex);
@@ -1404,7 +1510,7 @@ static void UiSystemDoLayout()
 				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.outer.Top; }
 			}
 			
-			if (element->config.clipChildren) { child->clipRec = OverlapPartRec(element->clipRec, element->layoutRec); }
+			if (clipChildren) { child->clipRec = OverlapPartRec(element->clipRec, element->layoutRec); }
 			else { child->clipRec = element->clipRec; }
 			
 			#if DEBUG_BUILD

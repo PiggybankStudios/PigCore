@@ -44,6 +44,11 @@ Description:
 #define PigUiDefaultColor_Value TransparentBlack_Value
 #define PigUiDefaultColor       TransparentBlack
 
+#define UI_SCROLL_LAG_DEFAULT_DIVISOR 10.0f
+#define UI_SCROLL_LAG_DEFAULT 0.0f
+#define UI_SCROLL_LAG_NONE    -1.0f
+#define UI_SCROLL_GOTO_SNAP_DISTANCE 0.5f //px
+
 #define UiSide_TopLeft      Dir2Ex_TopLeft
 #define UiSide_TopCenter    Dir2Ex_Up
 #define UiSide_TopRight     Dir2Ex_TopRight
@@ -221,6 +226,39 @@ car UiAlignment
 	plex { UiAlign x, y; };
 	plex { UiAlign horizontal, vertical; };
 };
+#define UI_ALIGN_CENTER()         { .x=UiAlign_Center, .y=UiAlign_Center }
+#define UI_ALIGN_LEFT_CENTER()    { .x=UiAlign_Left,   .y=UiAlign_Center }
+#define UI_ALIGN_RIGHT_CENTER()   { .x=UiAlign_Right,  .y=UiAlign_Center }
+#define UI_ALIGN_TOP_CENTER()     { .x=UiAlign_Center, .y=UiAlign_Top    }
+#define UI_ALIGN_BOTTOM_CENTER()  { .x=UiAlign_Center, .y=UiAlign_Bottom }
+#define UI_ALIGN_TOP_LEFT()       { .x=UiAlign_Left,   .y=UiAlign_Top    }
+#define UI_ALIGN_TOP_RIGHT()      { .x=UiAlign_Right,  .y=UiAlign_Top    }
+#define UI_ALIGN_BOTTOM_LEFT()    { .x=UiAlign_Left,   .y=UiAlign_Bottom }
+#define UI_ALIGN_BOTTOM_RIGHT()   { .x=UiAlign_Right,  .y=UiAlign_Bottom }
+
+typedef plex UiScrollingAxis UiScrollingAxis;
+plex UiScrollingAxis
+{
+	bool enabled;
+	r32 lag; //divisor
+};
+
+typedef car UiScrolling UiScrolling;
+car UiScrolling
+{
+	UiScrollingAxis axis[2];
+	plex { UiScrollingAxis x; UiScrollingAxis y; };
+	plex { UiScrollingAxis horizontal; UiScrollingAxis vertical; };
+};
+#define UI_SCROLL_HORIZONTAL()               { .x={ .enabled=true,  .lag=UI_SCROLL_LAG_DEFAULT }, .y={ .enabled=false, .lag=0.0f                  } }
+#define UI_SCROLL_VERTICAL()                 { .x={ .enabled=false, .lag=0.0f                  }, .y={ .enabled=true,  .lag=UI_SCROLL_LAG_DEFAULT } }
+#define UI_SCROLL_BOTH()                     { .x={ .enabled=true,  .lag=UI_SCROLL_LAG_DEFAULT }, .y={ .enabled=true,  .lag=UI_SCROLL_LAG_DEFAULT } }
+#define UI_SCROLL_HORIZONTAL_LAG(lagDivisor) { .x={ .enabled=true,  .lag=(lagDivisor)          }, .y={ .enabled=false, .lag=0.0f                  } }
+#define UI_SCROLL_VERTICAL_LAG(lagDivisor)   { .x={ .enabled=false, .lag=0.0f                  }, .y={ .enabled=true,  .lag=(lagDivisor)          } }
+#define UI_SCROLL_BOTH_LAG(lagDivisor)       { .x={ .enabled=true,  .lag=(lagDivisor)          }, .y={ .enabled=true,  .lag=(lagDivisor)          } }
+#define UI_SCROLL_HORIZONTAL_NO_LAG()        { .x={ .enabled=true,  .lag=UI_SCROLL_LAG_NONE    }, .y={ .enabled=false, .lag=0.0f                  } }
+#define UI_SCROLL_VERTICAL_NO_LAG()          { .x={ .enabled=false, .lag=0.0f                  }, .y={ .enabled=true,  .lag=UI_SCROLL_LAG_NONE    } }
+#define UI_SCROLL_BOTH_NO_LAG()              { .x={ .enabled=true,  .lag=UI_SCROLL_LAG_NONE    }, .y={ .enabled=true,  .lag=UI_SCROLL_LAG_NONE    } }
 
 typedef enum UiFloatingType UiFloatingType;
 enum UiFloatingType
@@ -313,7 +351,8 @@ plex UiElemConfig
 	UiSizing sizing;
 	bool dontSizeToImage;
 	UiAlignment alignment;
-	bool clipChildren;
+	UiScrolling scrolling;
+	bool clipChildren; //this is assumed true if scrolling is enable, in which case this has no effect
 	r32 depth;
 	Color32 color;
 	Color32 colorRecursive; //This color is multiplied through all children
@@ -364,54 +403,60 @@ enum UiElemConfigField
 	UiElemConfigField_DontSizeToImage       = ((1ull) << 7),
 	UiElemConfigField_AlignmentX            = ((1ull) << 8),
 	UiElemConfigField_AlignmentY            = ((1ull) << 9),
-	UiElemConfigField_ClipChildren          = ((1ull) << 10),
-	UiElemConfigField_Depth                 = ((1ull) << 11),
-	UiElemConfigField_Color                 = ((1ull) << 12),
-	UiElemConfigField_ColorRecursive        = ((1ull) << 13),
-	UiElemConfigField_Texture               = ((1ull) << 14),
-	UiElemConfigField_RepeatingTexture      = ((1ull) << 15),
-	UiElemConfigField_TextureSourceRec      = ((1ull) << 16),
-	UiElemConfigField_SpriteSheet           = ((1ull) << 17),
-	UiElemConfigField_SheetCell             = ((1ull) << 18),
-	UiElemConfigField_InnerPaddingLeft      = ((1ull) << 19),
-	UiElemConfigField_InnerPaddingTop       = ((1ull) << 20),
-	UiElemConfigField_InnerPaddingRight     = ((1ull) << 21),
-	UiElemConfigField_InnerPaddingBottom    = ((1ull) << 22),
-	UiElemConfigField_OuterPaddingLeft      = ((1ull) << 23),
-	UiElemConfigField_OuterPaddingTop       = ((1ull) << 24),
-	UiElemConfigField_OuterPaddingRight     = ((1ull) << 25),
-	UiElemConfigField_OuterPaddingBottom    = ((1ull) << 26),
-	UiElemConfigField_ChildPadding          = ((1ull) << 27),
-	UiElemConfigField_BorderThicknessLeft   = ((1ull) << 28),
-	UiElemConfigField_BorderThicknessTop    = ((1ull) << 29),
-	UiElemConfigField_BorderThicknessRight  = ((1ull) << 30),
-	UiElemConfigField_BorderThicknessBottom = ((1ull) << 31),
-	UiElemConfigField_BorderColor           = ((1ull) << 32),
-	UiElemConfigField_BorderDepth           = ((1ull) << 33),
-	UiElemConfigField_FloatingType          = ((1ull) << 34),
-	UiElemConfigField_FloatingOffsetX       = ((1ull) << 35),
-	UiElemConfigField_FloatingOffsetY       = ((1ull) << 36),
-	UiElemConfigField_FloatingAttachId      = ((1ull) << 37),
-	UiElemConfigField_FloatingParentSide    = ((1ull) << 38),
-	UiElemConfigField_FloatingElemSide      = ((1ull) << 39),
-	UiElemConfigField_Condition             = ((1ull) << 40),
-	UiElemConfigField_MousePassthrough      = ((1ull) << 41),
-	UiElemConfigField_StrictHover           = ((1ull) << 42),
-	UiElemConfigField_Text                  = ((1ull) << 43),
-	UiElemConfigField_RichText              = ((1ull) << 44),
-	UiElemConfigField_TextColor             = ((1ull) << 45),
-	UiElemConfigField_TextWrapWidth         = ((1ull) << 46),
-	UiElemConfigField_Font                  = ((1ull) << 47),
-	UiElemConfigField_FontSize              = ((1ull) << 48),
-	UiElemConfigField_FontStyle             = ((1ull) << 49),
-	UiElemConfigField_RendererParams        = ((1ull) << 50), // NOTE: Fields inside UiRendererParameters struct are not represented individually
-	UiElemConfigField_ThemerParams          = ((1ull) << 51), // NOTE: Fields inside UiThemerParameters struct are not represented individually
-	UiElemConfigField_Count                 = 52,
+	UiElemConfigField_ScrollingX            = ((1ull) << 10),
+	UiElemConfigField_ScrollingLagX         = ((1ull) << 11),
+	UiElemConfigField_ScrollingY            = ((1ull) << 12),
+	UiElemConfigField_ScrollingLagY         = ((1ull) << 13),
+	UiElemConfigField_ClipChildren          = ((1ull) << 14),
+	UiElemConfigField_Depth                 = ((1ull) << 15),
+	UiElemConfigField_Color                 = ((1ull) << 16),
+	UiElemConfigField_ColorRecursive        = ((1ull) << 17),
+	UiElemConfigField_Texture               = ((1ull) << 18),
+	UiElemConfigField_RepeatingTexture      = ((1ull) << 19),
+	UiElemConfigField_TextureSourceRec      = ((1ull) << 20),
+	UiElemConfigField_SpriteSheet           = ((1ull) << 21),
+	UiElemConfigField_SheetCell             = ((1ull) << 22),
+	UiElemConfigField_InnerPaddingLeft      = ((1ull) << 23),
+	UiElemConfigField_InnerPaddingTop       = ((1ull) << 24),
+	UiElemConfigField_InnerPaddingRight     = ((1ull) << 25),
+	UiElemConfigField_InnerPaddingBottom    = ((1ull) << 26),
+	UiElemConfigField_OuterPaddingLeft      = ((1ull) << 27),
+	UiElemConfigField_OuterPaddingTop       = ((1ull) << 28),
+	UiElemConfigField_OuterPaddingRight     = ((1ull) << 29),
+	UiElemConfigField_OuterPaddingBottom    = ((1ull) << 30),
+	UiElemConfigField_ChildPadding          = ((1ull) << 31),
+	UiElemConfigField_BorderThicknessLeft   = ((1ull) << 32),
+	UiElemConfigField_BorderThicknessTop    = ((1ull) << 33),
+	UiElemConfigField_BorderThicknessRight  = ((1ull) << 34),
+	UiElemConfigField_BorderThicknessBottom = ((1ull) << 35),
+	UiElemConfigField_BorderColor           = ((1ull) << 36),
+	UiElemConfigField_BorderDepth           = ((1ull) << 37),
+	UiElemConfigField_FloatingType          = ((1ull) << 38),
+	UiElemConfigField_FloatingOffsetX       = ((1ull) << 39),
+	UiElemConfigField_FloatingOffsetY       = ((1ull) << 40),
+	UiElemConfigField_FloatingAttachId      = ((1ull) << 41),
+	UiElemConfigField_FloatingParentSide    = ((1ull) << 42),
+	UiElemConfigField_FloatingElemSide      = ((1ull) << 43),
+	UiElemConfigField_Condition             = ((1ull) << 44),
+	UiElemConfigField_MousePassthrough      = ((1ull) << 45),
+	UiElemConfigField_StrictHover           = ((1ull) << 46),
+	UiElemConfigField_Text                  = ((1ull) << 47),
+	UiElemConfigField_RichText              = ((1ull) << 48),
+	UiElemConfigField_TextColor             = ((1ull) << 49),
+	UiElemConfigField_TextWrapWidth         = ((1ull) << 50),
+	UiElemConfigField_Font                  = ((1ull) << 51),
+	UiElemConfigField_FontSize              = ((1ull) << 52),
+	UiElemConfigField_FontStyle             = ((1ull) << 53),
+	UiElemConfigField_RendererParams        = ((1ull) << 54), // NOTE: Fields inside UiRendererParameters struct are not represented individually
+	UiElemConfigField_ThemerParams          = ((1ull) << 55), // NOTE: Fields inside UiThemerParameters struct are not represented individually
+	UiElemConfigField_Count                 = 56,
 	UiElemConfigField_All                   = (((1ull) << UiElemConfigField_Count)-1),
 	UiElemConfigField_Sizing                = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueX|UiElemConfigField_SizingValueY),
 	UiElemConfigField_SizingX               = (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingValueX),
 	UiElemConfigField_SizingY               = (UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueY),
 	UiElemConfigField_Alignment             = (UiElemConfigField_AlignmentX|UiElemConfigField_AlignmentY),
+	UiElemConfigField_Scrolling             = (UiElemConfigField_ScrollingX|UiElemConfigField_ScrollingY),
+	UiElemConfigField_ScrollingLag          = (UiElemConfigField_ScrollingLagX|UiElemConfigField_ScrollingLagY),
 	UiElemConfigField_InnerPadding          = (UiElemConfigField_InnerPaddingLeft|UiElemConfigField_InnerPaddingTop|UiElemConfigField_InnerPaddingRight|UiElemConfigField_InnerPaddingBottom),
 	UiElemConfigField_OuterPadding          = (UiElemConfigField_OuterPaddingLeft|UiElemConfigField_OuterPaddingTop|UiElemConfigField_OuterPaddingRight|UiElemConfigField_OuterPaddingBottom),
 	UiElemConfigField_Padding               = (UiElemConfigField_InnerPadding|UiElemConfigField_OuterPadding|UiElemConfigField_ChildPadding),
@@ -438,6 +483,10 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_DontSizeToImage:       return "DontSizeToImage";
 		case UiElemConfigField_AlignmentX:            return "AlignmentX";
 		case UiElemConfigField_AlignmentY:            return "AlignmentY";
+		case UiElemConfigField_ScrollingX:            return "ScrollingX";
+		case UiElemConfigField_ScrollingLagX:         return "ScrollingLagX";
+		case UiElemConfigField_ScrollingY:            return "ScrollingY";
+		case UiElemConfigField_ScrollingLagY:         return "ScrollingLagY";
 		case UiElemConfigField_ClipChildren:          return "ClipChildren";
 		case UiElemConfigField_Depth:                 return "Depth";
 		case UiElemConfigField_Color:                 return "Color";
@@ -508,6 +557,10 @@ plex UiElement
 	v2 preferredSize;
 	rec clipRec;
 	rec layoutRec;
+	v2 contentSize;
+	v2 scroll;
+	v2 scrollGoto;
+	v2 scrollMax;
 };
 
 //NOTE: Returning false makes the element disappear and it's child scope not run
@@ -649,6 +702,7 @@ plex UiContext
 	v2 screenSize;
 	r32 scale;
 	u64 programTime;
+	r32 defaultScrollLagDivisor;
 	KeyboardState* keyboard;
 	MouseState* mouse;
 	TouchscreenState* touchscreen;

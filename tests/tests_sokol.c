@@ -632,7 +632,7 @@ void AppInit(void)
 	FilePath backgroundImagePath = FilePathLit("Q:/test.png");
 	#elif TARGET_IS_LINUX
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
-	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test5.png");
+	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test.png");
 	#else
 	FilePath testImagePath = FilePathLit("test.png");
 	FilePath backgroundImagePath = FilePathLit("test.png");
@@ -1347,7 +1347,8 @@ bool AppFrame(void)
 				uiScale = ClampR32(uiScale, 0.1f, 10.0f);
 			}
 			
-			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, &keyboard, &mouse, &touchscreen);
+			const r32 scrollLag = 10.0f;
+			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, scrollLag, &keyboard, &mouse, &touchscreen);
 			
 			// PushUiFields({ .color = MonokaiDarkGray });
 			PushUiFieldsText({ .textColor = MonokaiDarkGray });
