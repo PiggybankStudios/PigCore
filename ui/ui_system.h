@@ -1428,6 +1428,8 @@ static void UiSystemDoLayout()
 	// +============================================+
 	// | Position Children According to UiLayoutDir |
 	// +============================================+
+	//TODO: This loop is getting quite large and hard to understand.
+	//      Is there someway we could merge the layout direction dependent logic so we can have one bit of logic that works for every direction?
 	VarArrayLoop(&sortedElements, eIndex)
 	{
 		VarArrayLoopGetValue(UiElement*, element, &sortedElements, eIndex);
@@ -1495,12 +1497,18 @@ static void UiSystemDoLayout()
 			MaxR32(0.0f, innerSize.Height - childrenTotalSize.Height)
 		);
 		v2 alignmentOffset = V2_Zero;
-		if (element->config.alignment.x == UiAlign_Left)   { alignmentOffset.X = emptySpaceForAlignment.X * 0.0f; }
-		if (element->config.alignment.x == UiAlign_Center) { alignmentOffset.X = emptySpaceForAlignment.X * 0.5f; }
-		if (element->config.alignment.x == UiAlign_Right)  { alignmentOffset.X = emptySpaceForAlignment.X * 1.0f; }
-		if (element->config.alignment.y == UiAlign_Top)    { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.0f; }
-		if (element->config.alignment.y == UiAlign_Center) { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.5f; }
-		if (element->config.alignment.y == UiAlign_Bottom) { alignmentOffset.Y = emptySpaceForAlignment.Y * 1.0f; }
+		if (IsUiDirHorizontal(element->config.direction))
+		{
+			if (element->config.alignment.x == UiAlign_Left)   { alignmentOffset.X = emptySpaceForAlignment.X * 0.0f; }
+			if (element->config.alignment.x == UiAlign_Center) { alignmentOffset.X = emptySpaceForAlignment.X * 0.5f; }
+			if (element->config.alignment.x == UiAlign_Right)  { alignmentOffset.X = emptySpaceForAlignment.X * 1.0f; }
+		}
+		else
+		{
+			if (element->config.alignment.y == UiAlign_Top)    { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.0f; }
+			if (element->config.alignment.y == UiAlign_Center) { alignmentOffset.Y = emptySpaceForAlignment.Y * 0.5f; }
+			if (element->config.alignment.y == UiAlign_Bottom) { alignmentOffset.Y = emptySpaceForAlignment.Y * 1.0f; }
+		}
 		
 		v2 layoutPos = V2_Zero_Const;
 		if (element->config.direction == UiLayoutDir_LeftToRight || element->config.direction == UiLayoutDir_TopDown)
@@ -1536,8 +1544,20 @@ static void UiSystemDoLayout()
 				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->layoutRec.Height + childPadding + child->config.padding.outer.Bottom; }
 				
 				child->layoutRec.TopLeft = layoutPos;
-				if (IsUiDirHorizontal(element->config.direction)) { child->layoutRec.Y += child->config.padding.outer.Top; }
-				else { child->layoutRec.X += child->config.padding.outer.Left; }
+				if (IsUiDirHorizontal(element->config.direction))
+				{
+					r32 childOuterPaddingTb = (child->config.padding.outer.Top + child->config.padding.outer.Bottom);
+					if (element->config.alignment.y == UiAlign_Center) { child->layoutRec.Y += innerSize.Height/2 - (child->layoutRec.Height + childOuterPaddingTb)/2; }
+					else if (element->config.alignment.y == UiAlign_Bottom) { child->layoutRec.Y += innerSize.Height - (child->layoutRec.Height + childOuterPaddingTb); }
+					child->layoutRec.Y += child->config.padding.outer.Top;
+				}
+				else
+				{
+					r32 childOuterPaddingLr = (child->config.padding.outer.Left + child->config.padding.outer.Right);
+					if (element->config.alignment.x == UiAlign_Center) { child->layoutRec.X += innerSize.Width/2 - (child->layoutRec.Width + childOuterPaddingLr)/2; }
+					else if (element->config.alignment.x == UiAlign_Left) { child->layoutRec.X += innerSize.Width - (child->layoutRec.Width + childOuterPaddingLr); }
+					child->layoutRec.X += child->config.padding.outer.Left;
+				}
 				
 				if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.X += child->layoutRec.Width + child->config.padding.outer.Right; }
 				if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + child->config.padding.outer.Bottom; }

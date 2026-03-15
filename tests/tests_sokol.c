@@ -1377,9 +1377,9 @@ bool AppFrame(void)
 					UiElemConfig scrollableElem1 = { .id = UiIdLit("ScrollableVert") };
 					scrollableElem1.direction = UiLayoutDir_TopDown;
 					scrollableElem1.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.5f);
-					scrollableElem1.sizing.y = NEW_STRUCT(UiSizingAxis)UI_EXPAND();
+					scrollableElem1.sizing.y = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.8f);
 					scrollableElem1.padding.inner = FillV4r(8);
-					scrollableElem1.padding.outer.Bottom = 64;
+					// scrollableElem1.padding.outer.Bottom = 64;
 					scrollableElem1.padding.child = 8;
 					scrollableElem1.scrolling = NEW_STRUCT(UiScrolling)UI_SCROLL_VERTICAL();
 					scrollableElem1.color = MonokaiLightPurple;
