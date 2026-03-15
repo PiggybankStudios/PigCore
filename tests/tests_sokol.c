@@ -420,7 +420,11 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
 	Assert(gradientTexture.error == Result_Success);
 	
+	#if TARGET_IS_WINDOWS
+	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
+	#else
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/home/robbitay/test_sheet_4x5.png"), true);
+	#endif
 	
 	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	const u32 Filled = 0xFFFFFFFF;
@@ -628,8 +632,8 @@ void AppInit(void)
 	
 	#if !TARGET_IS_OSX //TODO: Remove me once we get files working on OSX
 	#if TARGET_IS_WINDOWS
-	FilePath testImagePath = FilePathLit("Q:/test.png");
-	FilePath backgroundImagePath = FilePathLit("Q:/test.png");
+	FilePath testImagePath = FilePathLit("G:/test.png");
+	FilePath backgroundImagePath = FilePathLit("G:/test.png");
 	#elif TARGET_IS_LINUX
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
 	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test.png");
@@ -1453,7 +1457,7 @@ bool AppFrame(void)
 							.color=ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
 							// .texture = texture,
 							.spriteSheet = &testSheet,
-							.sheetCell = MakeV2i(0, 2),
+							.sheetCell = MakeV2i((i32)(tIndex+3) % testSheet.gridWidth, (i32)(tIndex+3) / testSheet.gridWidth),
 						});
 					}
 				}

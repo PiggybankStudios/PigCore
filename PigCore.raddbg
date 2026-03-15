@@ -26,8 +26,8 @@ recent_file: path: "../Crest/core/tests/tests_main.c"
 recent_file: path: "struct/struct_var_array.h"
 target:
 {
-  executable: "_build/tests.exe"
-  working_directory: _build
+  executable: "build/tests.exe"
+  working_directory: build
   enabled: 1
   label: Tests
 }
@@ -117,4 +117,9 @@ type_view:
 {
   type: HMM_Mat2
   expr: "rows($, Columns[0].X, Columns[1].X, Columns[0].Y, Columns[1].Y)"
+}
+debug_info:
+{
+  path: "C:/gamedev/projects/PigCore/build/tests.pdb"
+  timestamp: 66209314383672
 }

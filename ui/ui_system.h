@@ -47,13 +47,13 @@ Description:
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
-//TODO: Change __declspec stuff to work when compiling with Clang!
+//TODO: Can't have THREAD_LOCAL and __declspec(dllexport/dllimport)! Is this a problem?
 //TODO: Should this be thread local?
 #if TARGET_IS_WINDOWS
 	#if !PIG_CORE_IMPLEMENTATION
-	extern __declspec(dllimport) THREAD_LOCAL UiContext* UiCtx;
+	extern THREAD_LOCAL UiContext* UiCtx;
 	#else
-	__declspec(dllexport) THREAD_LOCAL UiContext* UiCtx = nullptr;
+	THREAD_LOCAL UiContext* UiCtx = nullptr;
 	#endif
 #else
 	#if !PIG_CORE_IMPLEMENTATION
@@ -591,8 +591,8 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		if (newElement->config.texture != nullptr && !newElement->config.repeatingTexture)
 		{
 			newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(
-				newElement->config.texture->Width,
-				newElement->config.texture->Height
+				(r32)newElement->config.texture->Width,
+				(r32)newElement->config.texture->Height
 			);
 		}
 		else if (newElement->config.spriteSheet != nullptr)

@@ -12,11 +12,13 @@ Date:   08\15\2025
 #include "base/base_defines_check.h"
 #include "lib/lib_sokol_gfx.h"
 
+//TODO: GetOpenGLErrorStr can work on Windows, we just have to make the defines for all the errors ourself since sokol_gfx.h seems to only define a subset of OpenGL #defines
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	#if defined(SOKOL_GLCORE) || defined(SOKOL_GLES3)
+	#if !TARGET_IS_WINDOWS && (defined(SOKOL_GLCORE) || defined(SOKOL_GLES3))
 	const char* GetOpenGLErrorStr(unsigned int error);
 	#endif
 #endif
@@ -26,7 +28,7 @@ Date:   08\15\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-#if defined(SOKOL_GLCORE) || defined(SOKOL_GLES3)
+#if !TARGET_IS_WINDOWS && (defined(SOKOL_GLCORE) || defined(SOKOL_GLES3))
 PEXP const char* GetOpenGLErrorStr(unsigned int error)
 {
 	switch (error)

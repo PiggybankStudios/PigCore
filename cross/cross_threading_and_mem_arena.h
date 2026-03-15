@@ -18,7 +18,7 @@ Date:   01\20\2026
 #if !PIG_CORE_IMPLEMENTATION
 extern THREAD_LOCAL Str8 CurrentThreadName;
 #else
-THREAD_LOCAL Str8 CurrentThreadName = Str8_Empty;
+THREAD_LOCAL Str8 CurrentThreadName = Str8_Empty_Const;
 #endif
 
 #if !PIG_CORE_IMPLEMENTATION

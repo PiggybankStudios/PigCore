@@ -16,12 +16,14 @@ Target shader languages (used with -l --slang):
   - glsl410        desktop OpenGL backend (SOKOL_GLCORE)
   - glsl430        desktop OpenGL backend (SOKOL_GLCORE)
   - glsl300es      OpenGLES3 and WebGL2 (SOKOL_GLES3)
+  - glsl310es      OpenGLES3.1 (SOKOL_GLES3)
   - hlsl4          Direct3D11 with HLSL4 (SOKOL_D3D11)
   - hlsl5          Direct3D11 with HLSL5 (SOKOL_D3D11)
   - metal_macos    Metal on macOS (SOKOL_METAL)
   - metal_ios      Metal on iOS devices (SOKOL_METAL)
   - metal_sim      Metal on iOS simulator (SOKOL_METAL)
   - wgsl           WebGPU (SOKOL_WGPU)
+  - spirv_vk       Vulkan-flavoured SPIRV (SOKOL_VULKAN)
 
 Output formats (used with -f --format):
   - sokol          C header which includes both decl and inlined impl
@@ -32,6 +34,7 @@ Output formats (used with -f --format):
   - sokol_rust     Rust module file
   - sokol_d        D module file
   - sokol_jai      Jai module file
+  - sokol_c2       C2 module file
   - sokol_c3       C3 module file
   - bare           raw output of SPIRV-Cross compiler, in text or binary format
   - bare_yaml      like bare, but with reflection file in YAML format
@@ -54,3 +57,5 @@ Options:
    --ifdef                          - wrap backend-specific generated code in #ifdef/#endif
 -n --noifdef                        - obsolete, superseded by --ifdef
    --save-intermediate-spirv        - save intermediate SPIRV bytecode (for debug inspection)
+   --no-log-cmdline                 - don't log the cmdline to the code-generated output file
+   --dependency-file=<[deps file]>  - generate a Clang/GCC style dep-file for use with build systems
