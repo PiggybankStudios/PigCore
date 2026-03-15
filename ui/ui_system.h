@@ -379,7 +379,7 @@ PEXPI bool IsUiElementHovered(UiId id)
 	if (UiCtx->mouseHoveredLocalId.id == id.id) { return true; }
 	if (UiCtx->mouseHoveredId.id != 0)
 	{
-		UiElement* hoveredElement = GetUiElementByIdInPrevFrame(UiCtx->mouseHoveredId, false);
+		UiElement* hoveredElement = (UiCtx->layoutDone ? GetUiElementById(UiCtx->mouseHoveredId, false) : GetUiElementByIdInPrevFrame(UiCtx->mouseHoveredId, false));
 		if (hoveredElement != nullptr && hoveredElement->config.floating.type == UiFloatingType_None)
 		{
 			UiElement* parent = GetUiElementParent(hoveredElement, 0);
@@ -390,7 +390,7 @@ PEXPI bool IsUiElementHovered(UiId id)
 				parent = GetUiElementParent(parent, 0);
 			}
 		}
-		else { WriteLine_W("Couldn't find hovered element in prev frame hierarchy!"); }
+		else { PrintLine_W("Couldn't find hovered element in %s frame hierarchy!", UiCtx->layoutDone); }
 	}
 	return false;
 }
@@ -643,6 +643,24 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 		if (parentElement->config.scrolling.y.enabled) { AssertMsg(newElement->config.sizing.y.type != UiSizingType_FixedPercent, "Percentage children are not allowed in a scrollable container along the scroll axis"); }
 	}
 	
+	if (newElement->config.scrolling.x.enabled || newElement->config.scrolling.y.enabled)
+	{
+		UiElement* prevFrameElement = GetUiElementByIdInPrevFrame(newElement->id, false);
+		if (prevFrameElement != nullptr)
+		{
+			if (newElement->config.scrolling.x.enabled)
+			{
+				newElement->scroll.X = prevFrameElement->scroll.X;
+				newElement->scrollGoto.X = prevFrameElement->scrollGoto.X;
+			}
+			if (newElement->config.scrolling.y.enabled)
+			{
+				newElement->scroll.Y = prevFrameElement->scroll.Y;
+				newElement->scrollGoto.Y = prevFrameElement->scrollGoto.Y;
+			}
+		}
+	}
+	
 	newElement->runChildCode = true;
 	if (newElement->config.condition != UiConditionType_None)
 	{
@@ -751,6 +769,8 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	context->currentElementIndex = PIG_UI_INDEX_INVALID;
 	
 	UiThemerRegistryStartFrame(&context->themers);
+	
+	context->layoutDone = false;
 	
 	Assert(UiCtx == nullptr);
 	UiCtx = context;
@@ -967,7 +987,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 				r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
 				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
 				r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
-				AssertMsg(IsInfiniteOrNanR32(childPreferredSize), "Expand children are not allowed in a scrollable container along the scroll axis");
+				AssertMsg(!IsInfiniteOrNanR32(childPreferredSize), "Expand children are not allowed in a scrollable container along the scroll axis");
 				*childSizePntr = MaxR32(childMinimumSize, childPreferredSize);
 				if (isLayoutDir) { *contentSizePntr += *childSizePntr + childOuterPaddingLrOrTb; }
 				else { *contentSizePntr = MaxR32(*contentSizePntr, *childSizePntr + childOuterPaddingLrOrTb); }
@@ -1121,8 +1141,8 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool printDebug)
 {
 	UNUSED(printDebug);
-	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
-	if (isScrolling)
+	bool isScrollingOnAxis = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
+	if (isScrollingOnAxis)
 	{
 		r32* scrollPntr = (xAxis ? &element->scroll.X : &element->scroll.Y);
 		r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
@@ -1140,25 +1160,25 @@ static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool pri
 			else if (divisor == UI_SCROLL_LAG_DEFAULT) { divisor = UiCtx->defaultScrollLagDivisor; }
 			*scrollPntr += scrollDelta / divisor; //TODO: Make this framerate independent!!
 		}
-		else { *scrollPntr = *scrollGotoPntr; }
+		else if (*scrollPntr != *scrollGotoPntr)
+		{
+			*scrollPntr = *scrollGotoPntr;
+		}
 	}
 }
 
-static void HandleMouseScrollWheelOnAxisAfterUiLayout(bool xAxis, UiElement* element)
+static bool HandleMouseScrollWheelOnAxisAfterUiLayout(bool xAxis, UiElement* element, r32 scrollDelta)
 {
-	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
-	if (isScrolling)
+	bool handled = false;
+	bool isScrollableOnAxis = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
+	if (isScrollableOnAxis && scrollDelta != 0.0f && IsUiElementHovered(element->id))
 	{
-		r32 scrollDelta = (xAxis ? UiCtx->mouse->scrollDelta.X : UiCtx->mouse->scrollDelta.Y);
-		if (scrollDelta != 0.0f)
-		{
-			r32* scrollPntr = (xAxis ? &element->scroll.X : &element->scroll.Y);
-			r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
-			r32 scrollMax = (xAxis ? element->scrollMax.X : element->scrollMax.Y);
-			*scrollPntr = ClampR32(*scrollPntr, 0.0f, *scrollPntr + (scrollDelta * 5.0f)); //TODO: Make 5.0f multiplier configurable!
-			//TODO: Set the appropriate handled flag
-		}
+		r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
+		r32 scrollMax = (xAxis ? element->scrollMax.X : element->scrollMax.Y);
+		*scrollGotoPntr = ClampR32(*scrollGotoPntr - (scrollDelta * 35.0f), 0.0f, scrollMax); //TODO: Make 35.0f multiplier configurable!
+		handled = true;
 	}
+	return handled;
 }
 
 static void TrackMouseInteractionAfterUiLayout()
@@ -1204,10 +1224,24 @@ static void TrackMouseInteractionAfterUiLayout()
 		}
 	}
 	
-	if (hoveredElement != nullptr && UiCtx->mouse != nullptr && !AreEqualV2(UiCtx->mouse->scrollDelta, V2_Zero))
+	if (UiCtx->mouse != nullptr)
 	{
-		HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredElement);
-		HandleMouseScrollWheelOnAxisAfterUiLayout(false, hoveredElement);
+		UiElement* hoveredAncestor = hoveredElement;
+		bool axisHandled[2] = { (UiCtx->mouse->scrollDelta.X == 0.0f), (UiCtx->mouse->scrollDelta.Y == 0.0f) };
+		while (hoveredAncestor != nullptr && (!axisHandled[0] || !axisHandled[1]))
+		{
+			//TODO: Set the appropriate handled flag
+			if (!axisHandled[0]) { axisHandled[0] = HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredAncestor, UiCtx->mouse->scrollDelta.X); }
+			if (!axisHandled[1])
+			{
+				bool verticalScrollDeltaIsHorizontal = false;
+				if (UiCtx->keyboard != nullptr && IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Shift)) { verticalScrollDeltaIsHorizontal = true; }
+				else if (hoveredAncestor->config.scrolling.x.enabled && !hoveredAncestor->config.scrolling.y.enabled) { verticalScrollDeltaIsHorizontal = true; }
+				axisHandled[1] = HandleMouseScrollWheelOnAxisAfterUiLayout(verticalScrollDeltaIsHorizontal, hoveredAncestor, UiCtx->mouse->scrollDelta.Y);
+			}
+			if (hoveredAncestor->config.floating.type != UiFloatingType_None) { break; }
+			hoveredAncestor = GetUiElementParent(hoveredAncestor, 0);
+		}
 	}
 }
 
@@ -1485,7 +1519,8 @@ static void UiSystemDoLayout()
 			//TODO: How do we take alignmentOffset into account?
 		}
 		else { DebugAssert(false); }
-		layoutPos = AddV2(layoutPos, element->scroll);
+		
+		layoutPos = SubV2(layoutPos, element->scroll); //apply scrolling to position of children
 		
 		bool clipChildren = (element->config.scrolling.x.enabled || element->config.scrolling.y.enabled || element->config.clipChildren);
 		for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
@@ -1528,8 +1563,10 @@ static void UiSystemDoLayout()
 		}
 	}
 	
-	TrackMouseInteractionAfterUiLayout();
+	UiCtx->layoutDone = true;
 	UiCtx->hasDoneOneLayout = true;
+	
+	TrackMouseInteractionAfterUiLayout();
 	ScratchEnd(scratch);
 }
 

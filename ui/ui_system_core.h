@@ -715,6 +715,7 @@ plex UiContext
 	UiId clickStartHoveredId[MouseBtn_Count];
 	UiId clickStartHoveredLocalId[MouseBtn_Count];
 	
+	bool layoutDone;
 	bool hasDoneOneLayout;
 	UiRenderList renderList; //allocated from frameArena
 };

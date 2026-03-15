@@ -3071,6 +3071,7 @@
 			"bool ExportWaveAsCode(Wave wave, const char *fileName)",
 			"bool FileExists(const char *fileName)",
 			"bool FindNextWhitespaceInStr(Str8 target, uxx startIndex)",
+			"bool HandleMouseScrollWheelOnAxisAfterUiLayout(bool xAxis, UiElement* element)",
 			"bool IsAudioDeviceReady(void)",
 			"bool IsAudioStreamPlaying(AudioStream stream)",
 			"bool IsAudioStreamProcessed(AudioStream stream)",
