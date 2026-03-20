@@ -1,5 +1,5 @@
 /*
-File:   tools_cli.h
+File:   build_system_cli.h
 Author: Taylor Robbins
 Date:   06\16\2025
 Description:
@@ -7,8 +7,8 @@ Description:
 	** and then join them together and run an external CLI tool with those arguments.
 */
 
-#ifndef _TOOLS_CLI_H
-#define _TOOLS_CLI_H
+#ifndef _BUILD_SYSTEM_CLI_H
+#define _BUILD_SYSTEM_CLI_H
 
 // +--------------------------------------------------------------+
 // |                   Composing Argument Lists                   |
@@ -266,4 +266,4 @@ bool WasEmsdkEnvBatchRun()
     return (sdkEnvVarValue != nullptr);
 }
 
-#endif //  _TOOLS_CLI_H
+#endif //  _BUILD_SYSTEM_CLI_H

@@ -1,13 +1,13 @@
 /*
-File:   tools_clang_flags.h
+File:   build_system_clang_flags.h
 Author: Taylor Robbins
 Date:   06\16\2025
 Description:
 	** Contains defines for all the Clang compiler flags that we may use in our build scripts
 */
 
-#ifndef _TOOLS_CLANG_FLAGS_H
-#define _TOOLS_CLANG_FLAGS_H
+#ifndef _BUILD_SYSTEM_CLANG_FLAGS_H
+#define _BUILD_SYSTEM_CLANG_FLAGS_H
 
 #define EXE_CLANG     "clang"
 #define EXE_WSL_CLANG "wsl clang-18"
@@ -66,4 +66,4 @@ Description:
 #define CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH "implicit-fallthrough" //Must use [[fallthrough]] on a case label that falls through to the next case
 #define CLANG_WARNING_MISSING_FIELD_INITIALIZERS    "missing-field-initializers" //Warn when curly bracket initializers don't contain values for all fields
 
-#endif //  _TOOLS_CLANG_FLAGS_H
+#endif //  _BUILD_SYSTEM_CLANG_FLAGS_H

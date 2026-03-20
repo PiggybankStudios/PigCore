@@ -1,13 +1,13 @@
 /*
-File:   tools_gcc_flags.h
+File:   build_system_gcc_flags.h
 Author: Taylor Robbins
 Date:   06\22\2025
 Description:
 	** Contains defines for all the GCC compiler flags that we may use in our build scripts
 */
 
-#ifndef _TOOLS_GCC_FLAGS_H
-#define _TOOLS_GCC_FLAGS_H
+#ifndef _BUILD_SYSTEM_GCC_FLAGS_H
+#define _BUILD_SYSTEM_GCC_FLAGS_H
 
 #define EXE_ARM_GCC "arm-none-eabi-gcc" //we use this when compiling for the Playdate device
 
@@ -49,4 +49,4 @@ Description:
 #define GCC_EMIT_RELOCATIONS         "-Wl,--emit-relocs" //TODO: Find the documentation for this option and give this define a better name!
 #define GCC_MAP_FILE                 "-Wl,-Map=\"[VAL]\""
 
-#endif //  _TOOLS_GCC_FLAGS_H
+#endif //  _BUILD_SYSTEM_GCC_FLAGS_H

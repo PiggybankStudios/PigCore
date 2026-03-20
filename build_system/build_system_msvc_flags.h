@@ -1,13 +1,13 @@
 /*
-File:   tools_msvc_flags.h
+File:   build_system_msvc_flags.h
 Author: Taylor Robbins
 Date:   06\16\2025
 Description:
 	** Contains defines for all the MSVC compiler\linker flags that we may use in our build scripts
 */
 
-#ifndef _TOOLS_MSVC_FLAGS_H
-#define _TOOLS_MSVC_FLAGS_H
+#ifndef _BUILD_SYSTEM_MSVC_FLAGS_H
+#define _BUILD_SYSTEM_MSVC_FLAGS_H
 
 #define EXE_MSVC_CL    "cl"
 #define EXE_MSVC_LINK  "LINK"
@@ -107,4 +107,4 @@ Description:
 #define RC_NO_LOGO     "/nologo"
 #define RC_OUTPUT_FILE "/Fo\"[VAL]\""
 
-#endif //  _TOOLS_MSVC_FLAGS_H
+#endif //  _BUILD_SYSTEM_MSVC_FLAGS_H

@@ -1,5 +1,5 @@
 /*
-File:   tools_pig_core_build_flags.h
+File:   build_system_pig_core_build_flags.h
 Author: Taylor Robbins
 Date:   06\23\2025
 Description: 
@@ -10,8 +10,8 @@ Description:
 
 //test
 
-#ifndef _TOOLS_PIG_CORE_BUILD_FLAGS_H
-#define _TOOLS_PIG_CORE_BUILD_FLAGS_H
+#ifndef _BUILD_SYSTEM_PIG_CORE_BUILD_FLAGS_H
+#define _BUILD_SYSTEM_PIG_CORE_BUILD_FLAGS_H
 
 void Fill_cl_CommonFlags(CliArgList* cl_CommonFlags, Str8 pigCoreThirdPartyPath, bool DEBUG_BUILD, bool DUMP_PREPROCESSOR, bool DUMP_ASSEMBLY, bool BUILD_WITH_FREETYPE)
 {
@@ -475,4 +475,4 @@ void Fill_pdc_CommonFlags(CliArgList* pdc_CommonFlags, Str8 playdateSdkDir)
 	if (playdateSdkDir.length > 0) { AddArgStr(pdc_CommonFlags, PDC_SDK_PATH, playdateSdkDir); }
 }
 
-#endif //  _TOOLS_PIG_CORE_BUILD_FLAGS_H
+#endif //  _BUILD_SYSTEM_PIG_CORE_BUILD_FLAGS_H

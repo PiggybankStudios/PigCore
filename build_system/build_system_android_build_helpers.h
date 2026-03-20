@@ -1,11 +1,11 @@
 /*
-File:   tools_android_build_helpers.h
+File:   build_system_android_build_helpers.h
 Author: Taylor Robbins
 Date:   09\16\2025
 */
 
-#ifndef _TOOLS_ANDROID_BUILD_HELPERS_H
-#define _TOOLS_ANDROID_BUILD_HELPERS_H
+#ifndef _BUILD_SYSTEM_ANDROID_BUILD_HELPERS_H
+#define _BUILD_SYSTEM_ANDROID_BUILD_HELPERS_H
 
 typedef enum AndroidTargetArchitechture AndroidTargetArchitechture;
 enum AndroidTargetArchitechture
@@ -73,4 +73,4 @@ static inline Str8 GetAndroidSdkPath()
 	return result;
 }
 
-#endif //  _TOOLS_ANDROID_BUILD_HELPERS_H
+#endif //  _BUILD_SYSTEM_ANDROID_BUILD_HELPERS_H

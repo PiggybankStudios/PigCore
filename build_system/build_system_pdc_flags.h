@@ -1,13 +1,13 @@
 /*
-File:   tools_pdc_flags.h
+File:   build_system_pdc_flags.h
 Author: Taylor Robbins
 Date:   06\22\2025
 Description:
 	** Contains defines for all the pdc.exe (Playdate packager util) flags that we may use in our build scripts
 */
 
-#ifndef _TOOLS_PDC_FLAGS_H
-#define _TOOLS_PDC_FLAGS_H
+#ifndef _BUILD_SYSTEM_PDC_FLAGS_H
+#define _BUILD_SYSTEM_PDC_FLAGS_H
 
 #define PDC_SDK_PATH      "-sdkpath \"[VAL]\"" //use the SDK at the given path instead of the default
 #define PDC_LIBPATH       "--libpath \"[VAL]\"" //add the given path to the list of folders to search when resolving imports
@@ -19,4 +19,4 @@ Description:
 #define PDC_SKIP_UNKNOWN  "--skip-unknown" //skip unrecognized files instead of copying them to the pdx folder
 #define PDC_CHECK_FONTS   "--check-fonts" //perform additional validation on font data (may produce false warnings)
 
-#endif //  _TOOLS_PDC_FLAGS_H
+#endif //  _BUILD_SYSTEM_PDC_FLAGS_H

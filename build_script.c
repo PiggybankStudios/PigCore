@@ -16,20 +16,20 @@ Description:
 
 //TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
 
-#include "tools/tools_shared.h"
-#include "tools/tools_str_array.h"
-#include "tools/tools_cli.h"
+#include "build_system/build_system_shared.h"
+#include "build_system/build_system_str_array.h"
+#include "build_system/build_system_cli.h"
 
-#include "tools/tools_msvc_flags.h"
-#include "tools/tools_clang_flags.h"
-#include "tools/tools_gcc_flags.h"
-#include "tools/tools_emscripten_flags.h"
-#include "tools/tools_shdc_flags.h"
-#include "tools/tools_pdc_flags.h"
+#include "build_system/build_system_msvc_flags.h"
+#include "build_system/build_system_clang_flags.h"
+#include "build_system/build_system_gcc_flags.h"
+#include "build_system/build_system_emscripten_flags.h"
+#include "build_system/build_system_shdc_flags.h"
+#include "build_system/build_system_pdc_flags.h"
 
-#include "tools/tools_build_helpers.h"
-#include "tools/tools_pig_core_build_flags.h"
-#include "tools/tools_android_build_helpers.h"
+#include "build_system/build_system_build_helpers.h"
+#include "build_system/build_system_pig_core_build_flags.h"
+#include "build_system/build_system_android_build_helpers.h"
 
 #define BUILD_CONFIG_PATH       "../build_config.h"
 

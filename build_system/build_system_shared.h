@@ -1,5 +1,5 @@
 /*
-File:   tools_shared.h
+File:   build_system_shared.h
 Author: Taylor Robbins
 Date:   06\16\2025
 Description: 
@@ -9,8 +9,8 @@ Description:
 	** are helping compile.
 */
 
-#ifndef _TOOLS_SHARED_H
-#define _TOOLS_SHARED_H
+#ifndef _BUILD_SYSTEM_SHARED_H
+#define _BUILD_SYSTEM_SHARED_H
 
 // +--------------------------------------------------------------+
 // |                     Std Library Includes                     |
@@ -1142,4 +1142,4 @@ bool TryExtractDefineFrom(Str8 headerFileContents, Str8 defineName, Str8* valueO
 	return false;
 }
 
-#endif //  _TOOLS_SHARED_H
+#endif //  _BUILD_SYSTEM_SHARED_H

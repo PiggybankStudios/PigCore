@@ -1,11 +1,11 @@
 /*
-File:   tools_build_helpers.h
+File:   build_system_build_helpers.h
 Author: Taylor Robbins
 Date:   06\19\2025
 */
 
-#ifndef _TOOLS_BUILD_HELPERS_H
-#define _TOOLS_BUILD_HELPERS_H
+#ifndef _BUILD_SYSTEM_BUILD_HELPERS_H
+#define _BUILD_SYSTEM_BUILD_HELPERS_H
 
 static inline Str8 ExtractStrDefine(Str8 buildConfigContents, Str8 defineName)
 {
@@ -652,4 +652,4 @@ RECURSIVE_DIR_WALK_CALLBACK_DEF(FindShaderFilesCallback)
 	return true;
 }
 
-#endif //  _TOOLS_BUILD_HELPERS_H
+#endif //  _BUILD_SYSTEM_BUILD_HELPERS_H

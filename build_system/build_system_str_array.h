@@ -1,11 +1,11 @@
 /*
-File:   tools_str_array.h
+File:   build_system_str_array.h
 Author: Taylor Robbins
 Date:   06\20\2025
 */
 
-#ifndef _TOOLS_STR_ARRAY_H
-#define _TOOLS_STR_ARRAY_H
+#ifndef _BUILD_SYSTEM_STR_ARRAY_H
+#define _BUILD_SYSTEM_STR_ARRAY_H
 
 typedef plex StrArray StrArray;
 plex StrArray
@@ -95,4 +95,4 @@ bool RemoveStr(StrArray* array, Str8 targetStr)
 	}
 }
 
-#endif //  _TOOLS_STR_ARRAY_H
+#endif //  _BUILD_SYSTEM_STR_ARRAY_H

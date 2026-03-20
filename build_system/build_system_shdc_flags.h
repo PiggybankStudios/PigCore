@@ -1,13 +1,13 @@
 /*
-File:   tools_shdc_flags.h
+File:   build_system_shdc_flags.h
 Author: Taylor Robbins
 Date:   06\19\2025
 Description:
 	** Contains defines for all the sokol-shdc.exe flags that we may use in pig_build.exe
 */
 
-#ifndef _TOOLS_SHDC_FLAGS_H
-#define _TOOLS_SHDC_FLAGS_H
+#ifndef _BUILD_SYSTEM_SHDC_FLAGS_H
+#define _BUILD_SYSTEM_SHDC_FLAGS_H
 
 #if BUILDING_ON_WINDOWS
 #define EXE_SHDC        "third_party/_tools/win32/sokol-shdc.exe"
@@ -27,4 +27,4 @@ Description:
 #define SHDC_INPUT            "--input=\"[VAL]\""
 #define SHDC_OUTPUT           "--output=\"[VAL]\""
 
-#endif //  _TOOLS_SHDC_FLAGS_H
+#endif //  _BUILD_SYSTEM_SHDC_FLAGS_H
