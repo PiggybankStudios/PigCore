@@ -17,15 +17,9 @@ Description:
 //TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
 
 #include "build_system/build_system_shared.h"
+#include "build_system/build_system_cli_flags.h"
 #include "build_system/build_system_str_array.h"
 #include "build_system/build_system_cli.h"
-
-#include "build_system/build_system_msvc_flags.h"
-#include "build_system/build_system_clang_flags.h"
-#include "build_system/build_system_gcc_flags.h"
-#include "build_system/build_system_emscripten_flags.h"
-#include "build_system/build_system_shdc_flags.h"
-#include "build_system/build_system_pdc_flags.h"
 
 #include "build_system/build_system_build_helpers.h"
 #include "build_system/build_system_pig_core_build_flags.h"
