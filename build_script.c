@@ -16,14 +16,14 @@ Description:
 
 //TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
 
-#include "build_system/build_system_shared.h"
-#include "build_system/build_system_recompile.h"
-#include "build_system/build_system_cli_flags.h"
-#include "build_system/build_system_str_array.h"
-#include "build_system/build_system_cli.h"
-#include "build_system/build_system_build_helpers.h"
-#include "build_system/build_system_pig_core_build_flags.h"
-#include "build_system/build_system_android_build_helpers.h"
+#include "pig_build_shared.h"
+#include "pig_build_recompile.h"
+#include "pig_build_cli_flags.h"
+#include "pig_build_str_array.h"
+#include "pig_build_cli.h"
+#include "pig_build_build_helpers.h"
+#include "pig_build_pig_core_build_flags.h"
+#include "pig_build_android_helpers.h"
 
 #define BUILD_CONFIG_PATH       "../build_config.h"
 
@@ -66,15 +66,15 @@ Description:
 #define FILENAME_PDEX_DLL              "pdex.dll"
 #define FILENAME_TESTS_PDX             "tests.pdx"
 
-static inline void PrintUsage()
+void PrintUsage()
 {
-	WriteLine_E("Usage: " BUILD_SCRIPT_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
+	WriteLine_E("Usage: " BUILD_SCRIPT_EXE_NAME " [DEBUG_BUILD={1/0}] [BUILD_TESTS={1/0}] ...");
 }
 
 int main(int argc, char* argv[])
 {
 	RecompileIfNeeded();
-	PrintLine("[builder...]");
+	PrintLine("[" BUILD_SCRIPT_EXE_NAME "...]");
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
 	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
@@ -150,6 +150,9 @@ int main(int argc, char* argv[])
 			PrintLine("Arg[%d]: %s", aIndex-1, argv[aIndex]);
 			//TODO: We should parse these arguments and use them as overrides to the #defines we loaded above!
 		}
+		PrintUsage(); //TODO: Only print this out if we find an argument we don't understand
+		PrintLine_E("ERROR: Command-line arguments are not supported yet!");
+		return 1;
 	}
 	
 	// +==============================+

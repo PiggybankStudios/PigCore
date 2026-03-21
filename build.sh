@@ -4,15 +4,17 @@
 mkdir -p build
 pushd build > /dev/null
 
-# If you want to change any of these values, make sure you change them in build.bat and build_system/build_system_recompile.h
+# If you want to change any of these values, make sure you change them in build.bat and pig_build_recompile.h
 REBUILD_EXIT_CODE="42"
 BUILD_SCRIPT_EXE_NAME="builder"
 BUILD_SCRIPT_HASH_PATH="builder_hash.txt"
 BUILD_SCRIPT_SOURCE_NAME="build_script.c"
 BUILD_SCRIPT_SOURCE_PATH="../$BUILD_SCRIPT_SOURCE_NAME"
+PIG_BUILD_FOLDER_NAME="pig_build"
+PIG_BUILD_FOLDER_PATH="../$PIG_BUILD_FOLDER_NAME"
 
 # The flags are only used when compiling the build_script.c (not for compiling your main program, those flags should be defined inside the build_script.c)
-compiler_flags="-std=gnu2x -fdiagnostics-absolute-paths -O0 -g -I.."
+compiler_flags="-std=gnu2x -fdiagnostics-absolute-paths -O0 -g -I.. -I$PIG_BUILD_FOLDER_PATH"
 
 # If the build_script binary doesn't exist then it obviously needs to be built
 if [ ! -e "$BUILD_SCRIPT_EXE_NAME" ]; then

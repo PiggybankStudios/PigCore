@@ -45,14 +45,6 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Some way to automatically update an application
 	[ ] Can we make a Windows installer? Maybe copy File Pilot's design?
 	
-	@ Build System
-	[X] Move all the `tools/` files to a separate `build_system/` folder
-	[ ] Change that folder into it's own git repository
-	[ ] Clean up and rename the build_system files as needed
-		[ ] Rename `build_system_flags_....h`
-	[ ] Add a system that hashes all the build_script related files and checks for changes
-	[ ] 
-	
 	@ UI System
 	[!] Scrollable elements
 	[!] Default UI Renderer implementation
