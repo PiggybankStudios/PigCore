@@ -484,7 +484,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS) { InitializeMsvcIf(StrLit(".."), &isMsvcInitialized); }
 		
-		PrintLine("Found %lu shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
+		PrintLine("Found %llu shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
 		// for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		// {
 		// 	PrintLine("Shader[%u]", sIndex);
