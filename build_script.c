@@ -16,14 +16,8 @@ Description:
 
 //TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
 
-#include "pig_build_shared.h"
-#include "pig_build_recompile.h"
-#include "pig_build_cli_flags.h"
-#include "pig_build_str_array.h"
-#include "pig_build_cli.h"
-#include "pig_build_build_helpers.h"
-#include "pig_build_pig_core_build_flags.h"
-#include "pig_build_android_helpers.h"
+#define PIG_BUILD_PRINT_SYS_CMDS 0
+#include "pig_build.h"
 
 #define BUILD_CONFIG_PATH       "../build_config.h"
 
@@ -176,7 +170,7 @@ int main(int argc, char* argv[])
 	if (BUILD_WEB && USE_EMSCRIPTEN)
 	{
 		emscriptenSdkPath = GetEmscriptenSdkPath();
-		PrintLine("Emscripten SDK path: \"%.*s\"", emscriptenSdkPath.length, emscriptenSdkPath.chars);
+		PrintLine("Emscripten SDK path: \"%.*s\"", StrPrint(emscriptenSdkPath));
 		InitializeEmsdkIf(StrLit(".."), &isEmsdkInitialized);
 	}
 	
@@ -188,7 +182,7 @@ int main(int argc, char* argv[])
 	if (BUILD_ANDROID)
 	{
 		androidSdkDir = GetAndroidSdkPath();
-		PrintLine("Android SDK path: \"%.*s\"", androidSdkDir.length, androidSdkDir.chars);
+		PrintLine("Android SDK path: \"%.*s\"", StrPrint(androidSdkDir));
 		androidSdkBuildToolsDir = JoinStrings3(androidSdkDir, StrLit("/build-tools/"), ANDROID_BUILD_TOOLS_VERSION, false);
 		androidSdkPlatformDir = JoinStrings3(androidSdkDir, StrLit("/platforms/"), ANDROID_PLATFORM_FOLDERNAME, false);
 		androidNdkDir = JoinStrings3(androidSdkDir, StrLit("/ndk/"), ANDROID_NDK_VERSION, false);
@@ -201,7 +195,7 @@ int main(int argc, char* argv[])
 	if (BUILD_ORCA)
 	{
 		orcaSdkPath = GetOrcaSdkPath();
-		PrintLine("Orca SDK path: \"%.*s\"", orcaSdkPath.length, orcaSdkPath.chars);
+		PrintLine("Orca SDK path: \"%.*s\"", StrPrint(orcaSdkPath));
 	}
 	
 	Str8 playdateSdkDir = ZEROED;
@@ -209,7 +203,7 @@ int main(int argc, char* argv[])
 	if (BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR)
 	{
 		playdateSdkDir = GetPlaydateSdkPath();
-		PrintLine("Playdate SDK path: \"%.*s\"", playdateSdkDir.length, playdateSdkDir.chars);
+		PrintLine("Playdate SDK path: \"%.*s\"", StrPrint(playdateSdkDir));
 		playdateSdkDir_C_API = JoinStrings2(playdateSdkDir, StrLit("/C_API"), false);
 	}
 	
@@ -423,7 +417,7 @@ int main(int argc, char* argv[])
 		const char* ignoreList[] = { ".git", "_template", "third_party", "_build" };
 		findContext.ignoreListLength = ArrayCount(ignoreList);
 		findContext.ignoreList = (Str8*)malloc(sizeof(Str8) * findContext.ignoreListLength);
-		for (uxx iIndex = 0; iIndex < findContext.ignoreListLength; iIndex++)
+		for (u64 iIndex = 0; iIndex < findContext.ignoreListLength; iIndex++)
 		{
 			findContext.ignoreList[iIndex] = MakeStr8Nt(ignoreList[iIndex]);
 		}
@@ -432,38 +426,38 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_WINDOWS)
 		{
-			for (uxx sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
+			for (u64 sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
 			{
 				Str8 objPath = findContext.objPaths.strings[sIndex];
 				AddArgStr(&cl_WindowsShaderObjects, CLI_QUOTED_ARG, objPath);
-				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", objPath.length, objPath.chars); BUILD_SHADERS = true; }
+				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(objPath)); BUILD_SHADERS = true; }
 			}
 		}
 		if (BUILD_LINUX)
 		{
-			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			for (u64 sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
 				AddArgStr(&clang_LinuxShaderObjects, CLI_QUOTED_ARG, oPath);
 				Str8 oPathWithFolder = BUILDING_ON_LINUX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
-				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
+				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPathWithFolder)); BUILD_SHADERS = true; }
 			}
 		}
 		if (BUILD_OSX)
 		{
-			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			for (u64 sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
 				AddArgStr(&clang_OsxShaderObjects, CLI_QUOTED_ARG, oPath);
 				Str8 oPathWithFolder = BUILDING_ON_OSX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_OSX "/"), oPath, false);
-				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
+				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPathWithFolder)); BUILD_SHADERS = true; }
 			}
 		}
 		if (BUILD_ANDROID)
 		{
-			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			for (u64 sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
-				for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+				for (u64 archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
 				{
 					AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
 					Str8 archFolderName = MakeStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture));
@@ -471,7 +465,7 @@ int main(int argc, char* argv[])
 					Str8 oPath = findContext.oPaths.strings[sIndex];
 					AddArgStr(&clang_AndroidShaderObjects[archIndex], CLI_QUOTED_ARG, oPath);
 					Str8 oRelativePath = JoinStrings3(StrLit(FOLDERNAME_ANDROID "/"), archFolderPath, oPath, false);
-					if (!DoesFileExist(oRelativePath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oRelativePath.length, oRelativePath.chars); BUILD_SHADERS = true; }
+					if (!DoesFileExist(oRelativePath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oRelativePath)); BUILD_SHADERS = true; }
 				}
 			}
 		}
@@ -490,19 +484,19 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS) { InitializeMsvcIf(StrLit(".."), &isMsvcInitialized); }
 		
-		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
-		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
+		PrintLine("Found %lu shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
+		// for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		// {
 		// 	PrintLine("Shader[%u]", sIndex);
-		// 	PrintLine("\t\"%.*s\"", findContext.shaderPaths.strings[sIndex].length, findContext.shaderPaths.strings[sIndex].chars);
-		// 	PrintLine("\t\"%.*s\"", findContext.headerPaths.strings[sIndex].length, findContext.headerPaths.strings[sIndex].chars);
-		// 	PrintLine("\t\"%.*s\"", findContext.sourcePaths.strings[sIndex].length, findContext.sourcePaths.strings[sIndex].chars);
-		// 	PrintLine("\t\"%.*s\"", findContext.objPaths.strings[sIndex].length, findContext.objPaths.strings[sIndex].chars);
-		// 	PrintLine("\t\"%.*s\"", findContext.oPaths.strings[sIndex].length, findContext.oPaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.shaderPaths.strings[sIndex]));
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.headerPaths.strings[sIndex]));
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.sourcePaths.strings[sIndex]));
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.objPaths.strings[sIndex]));
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.oPaths.strings[sIndex]));
 		// }
 		
 		// First use shdc.exe to generate header files for each .glsl file
-		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
+		for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		{
 			Str8 shaderPath = findContext.shaderPaths.strings[sIndex];
 			Str8 headerPath = findContext.headerPaths.strings[sIndex];
@@ -517,7 +511,7 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, SHDC_INPUT, shaderPath);
 			AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
 			
-			PrintLine("Generating \"%.*s\"...", realHeaderPath.length, realHeaderPath.chars);
+			PrintLine("Generating \"%.*s\"...", StrPrint(realHeaderPath));
 			Str8 shdcExe = JoinStrings2(StrLit("../"), StrLit(EXE_SHDC), false);
 			FixPathSlashes(shdcExe, PATH_SEP_CHAR);
 			RunCliProgramAndExitOnFailure(shdcExe, &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
@@ -529,7 +523,7 @@ int main(int argc, char* argv[])
 		}
 		
 		//Then compile each header file to an .o/.obj file
-		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
+		for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		{
 			Str8 headerPath = findContext.headerPaths.strings[sIndex];
 			Str8 sourcePath = findContext.sourcePaths.strings[sIndex];
@@ -544,7 +538,7 @@ int main(int argc, char* argv[])
 				StrLit("\"\n"),
 				false
 			);
-			PrintLine("Generating \"%.*s\"...", realSourcePath.length, realSourcePath.chars);
+			PrintLine("Generating \"%.*s\"...", StrPrint(realSourcePath));
 			CreateAndWriteFile(realSourcePath, sourceFileContents, true);
 			
 			if (BUILD_WINDOWS)
@@ -620,7 +614,7 @@ int main(int argc, char* argv[])
 				mkdir("lib", FOLDER_PERMISSIONS);
 				chdir("lib");
 				
-				for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+				for (u64 archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
 				{
 					AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
 					mkdir(GetAndroidTargetArchitechtureFolderName(architecture), FOLDER_PERMISSIONS);
@@ -1077,7 +1071,7 @@ int main(int argc, char* argv[])
 			// MyRemoveDirectory(StrLit("lib"), true);
 			mkdir("lib", FOLDER_PERMISSIONS);
 			chdir("lib");
-			for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+			for (u64 archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
 			{
 				AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
 				mkdir(GetAndroidTargetArchitechtureFolderName(architecture), FOLDER_PERMISSIONS);
@@ -1175,7 +1169,7 @@ int main(int argc, char* argv[])
 					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"), true);
 					
 					mkdir("lib", FOLDER_PERMISSIONS);
-					for (uxx archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+					for (u64 archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
 					{
 						AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
 						Str8 apkFolder = JoinStrings2(StrLit("lib/"), MakeStr8Nt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
@@ -1207,7 +1201,7 @@ int main(int argc, char* argv[])
 				CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK), true);
 				RemoveFile(tempAlignedApkName);
 				
-				PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, ANDROID_SIGNING_KEY_PATH.length, ANDROID_SIGNING_KEY_PATH.chars);
+				PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, StrPrint(ANDROID_SIGNING_KEY_PATH));
 				CliArgList signApkCmd = ZEROED;
 				signApkCmd.pathSepChar = '/';
 				signApkCmd.rootDirPath = StrLit("../..");
@@ -1367,7 +1361,7 @@ int main(int argc, char* argv[])
 		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
 		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd.exe install exited With Error!"));
 		
-		PrintLine_E("Launching \"%.*s\"...", ANDROID_ACTIVITY_PATH.length, ANDROID_ACTIVITY_PATH.chars);
+		PrintLine_E("Launching \"%.*s\"...", StrPrint(ANDROID_ACTIVITY_PATH));
 		CliArgList launchCmd = ZEROED;
 		launchCmd.pathSepChar = '/';
 		AddArg(&launchCmd, "shell");
