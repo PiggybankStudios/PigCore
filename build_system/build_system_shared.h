@@ -585,7 +585,7 @@ static inline bool TryReadFile(Str8 filePath, Str8* contentsOut)
 	free(filePathNt.chars);
 	if (fileHandle == nullptr)
 	{
-		fprintf(stderr, "Couldn't open file at \"%.*s\"!\n", filePath.length, filePath.chars);
+		// fprintf(stderr, "Couldn't open file at \"%.*s\"!\n", filePath.length, filePath.chars);
 		return false;
 	}
 	

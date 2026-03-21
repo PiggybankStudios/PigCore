@@ -17,10 +17,10 @@ Description:
 //TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
 
 #include "build_system/build_system_shared.h"
+#include "build_system/build_system_recompile.h"
 #include "build_system/build_system_cli_flags.h"
 #include "build_system/build_system_str_array.h"
 #include "build_system/build_system_cli.h"
-
 #include "build_system/build_system_build_helpers.h"
 #include "build_system/build_system_pig_core_build_flags.h"
 #include "build_system/build_system_android_build_helpers.h"
@@ -66,20 +66,15 @@ Description:
 #define FILENAME_PDEX_DLL              "pdex.dll"
 #define FILENAME_TESTS_PDX             "tests.pdx"
 
-#if BUILDING_ON_WINDOWS
-#define TOOL_EXE_NAME      "pig_build.exe"
-#else
-#define TOOL_EXE_NAME      "pig_build"
-#endif
-
 static inline void PrintUsage()
 {
-	WriteLine_E("Usage: " TOOL_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
+	WriteLine_E("Usage: " BUILD_SCRIPT_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
 }
 
 int main(int argc, char* argv[])
 {
-	// PrintLine("Running %s...", TOOL_EXE_NAME);
+	RecompileIfNeeded();
+	PrintLine("[builder...]");
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
 	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
@@ -143,6 +138,19 @@ int main(int argc, char* argv[])
 	Str8 ANDROID_ACTIVITY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_ACTIVITY_PATH")), false);
 	
 	free(buildConfigContents.chars);
+	
+	// +==============================+
+	// | Parse Command-Line Arguments |
+	// +==============================+
+	if (argc > 1)
+	{
+		PrintLine("Got %d argument%s", argc-1, (argc-1 == 1) ? "" : "s");
+		for (int aIndex = 1; aIndex < argc; aIndex++)
+		{
+			PrintLine("Arg[%d]: %s", aIndex-1, argv[aIndex]);
+			//TODO: We should parse these arguments and use them as overrides to the #defines we loaded above!
+		}
+	}
 	
 	// +==============================+
 	// | Enforce Option Restrictions  |
@@ -1366,6 +1374,6 @@ int main(int argc, char* argv[])
 		RunCliProgramAndExitOnFailure(adbExe, &launchCmd, StrLit("abd.exe shell exited With Error!"));
 	}
 	
-	PrintLine("\n[%s Finished Successfully]", TOOL_EXE_NAME);
+	PrintLine("\n[%s Finished Successfully]", BUILD_SCRIPT_EXE_NAME);
 	return 0;
 }

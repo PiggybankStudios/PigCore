@@ -27,8 +27,8 @@ Description:
 	** address is allowed to be written to. Similarly, it's up to the usage code
 	** to know if a string is null-terminated or not
 	** NOTE: To make a Str8 from a string literal like "hello" wrap the literal with StrLit("hello")
-	** This will call strlen on the pointer to fill the length of the Str8 struct.
-	** Note this can also be used any string that has null-terminator not just string literals
+	** This will calculate the length of the string literal using a sizeof("hello") which is only valid for
+	** string literals, not just any pointer to a null-terminated string, for those you can use MakeStr8Nt(nullTermStr)
 	** NOTE: Any Str8 that has a non-zero length is required to have a non-null pointer value.
 	** Many functions will check for this degenerate case with NotNullStr(...).
 	** However a Str8 with 0 length is allowed to have a null pointer value.
@@ -38,7 +38,8 @@ Description:
 	** NOTE: This file does not directly depend on base_unicode.h or mem_arena.h
 	** allowing it to be used it more limited scenarios (like embedded systems).
 	** There are "cross" files that extend the API when those other files are
-	** included alongside this one.
+	** included alongside this one, for example cross_mem_arena_and_string.h contains
+	** string manipulation functions that require an allocator to implement.
 */
 
 #ifndef _STRUCT_STRING_H
