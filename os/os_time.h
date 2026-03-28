@@ -24,7 +24,7 @@ plex OsTime
 	
 	#if TARGET_IS_WINDOWS
 	LARGE_INTEGER largeInteger;
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	struct timespec timeValue;
 	#endif
 };
@@ -223,7 +223,7 @@ PEXPI u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut)
 			SetOptionalOutPntr(remainderOut, (r32)FractionalPartR64((r64)now / 1000000.0));
 		}
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
 		SetOptionalOutPntr(remainderOut, 0.0f); //TODO: Fill remainderOut
 		if (end.timeValue.tv_sec > start.timeValue.tv_sec ||
@@ -262,9 +262,8 @@ PEXPI OsTime OsGetTime()
 	{
 		QueryPerformanceCounter(&result.largeInteger);
 	}
-	#elif TARGET_IS_LINUX
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
 	{
-		
 		clock_gettime(CLOCK_MONOTONIC, &result.timeValue);
 	}
 	// #elif TARGET_IS_OSX

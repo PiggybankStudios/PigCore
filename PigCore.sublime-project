@@ -8,12 +8,27 @@
 				"build",
 				"_template",
 				"third_party",
+				"pig_build",
 				".cache",
 			],
 			"file_exclude_patterns": [
 				"*.rdbg",
 				"*.glsl.h",
 				"*.glsl.c",
+			],
+		},
+		{
+			"path": "pig_build",
+			"name": "Pig Build",
+			"file_exclude_patterns": [
+				"build.sh",
+				"README.md",
+				"NOTES.todo",
+				".gitignore",
+				"*.sublime-*",
+			],
+			"folder_exclude_patterns": [
+				"shell",
 			],
 		},
 		{
@@ -249,6 +264,8 @@
 			"BLEND_SUBTRACT_COLORS",
 			"BLUE",
 			"BROWN",
+			"BUILDING_ON_OSX_ARM",
+			"BUILDING_ON_OSX_INTEL",
 			"BUILD_ANDROID",
 			"BUILD_ANDROID_APK",
 			"BUILD_CLANGD_DUMMY",

@@ -42,13 +42,18 @@ typedef uint16_t char16_t;
 #if (TARGET_IS_WINDOWS || USING_CUSTOM_STDLIB)
 	#include <intrin.h>
 #endif
+#if TARGET_IS_LINUX
+    #include <dbus/dbus.h> //you may need to install `libdbus-1-dev` on your OS
+#endif
 #if (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	#include <sys/types.h>
 	#include <signal.h>
 	// Gives us getpagesize and sleep and access
 	#include <unistd.h>
 	pid_t gettid(void);
+	#if TARGET_IS_LINUX
 	int pthread_setname_np(pthread_t thread, const char *name);
+	#endif
 	// Gives us DIR and dirent types
 	#include <dirent.h>
 	// Gives us mmap
@@ -65,7 +70,6 @@ typedef uint16_t char16_t;
 	#include <time.h>
 	#include <sys/syscall.h> //needed for syscall(SYS_gettid) in os_threading.h
     // #include <poll.h>
-    #include <dbus/dbus.h> //you may need to install `libdbus-1-dev` on your OS
 #endif
 #if TARGET_IS_OSX
 	#include <Cocoa/Cocoa.h>

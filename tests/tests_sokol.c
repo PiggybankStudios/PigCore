@@ -422,7 +422,9 @@ void AppInit(void)
 	
 	#if TARGET_IS_WINDOWS
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
-	#else
+	#elif TARGET_IS_OSX
+	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/Users/robbitay/test_sheet_4x5.jpg"), true);
+	#elif TARGET_IS_LINUX
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/home/robbitay/test_sheet_4x5.png"), true);
 	#endif
 	
@@ -630,20 +632,21 @@ void AppInit(void)
 	UpdateScreenSafeMargins();
 	oldWindowSize = MakeV2i(sapp_width(), sapp_height());
 	
-	#if !TARGET_IS_OSX //TODO: Remove me once we get files working on OSX
 	#if TARGET_IS_WINDOWS
 	FilePath testImagePath = FilePathLit("G:/test.png");
 	FilePath backgroundImagePath = FilePathLit("G:/test.png");
 	#elif TARGET_IS_LINUX
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
 	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test.png");
+	#elif TARGET_IS_OSX
+	FilePath testImagePath = FilePathLit("/Users/robbitay/test.jpg");
+	FilePath backgroundImagePath = FilePathLit("/Users/robbitay/test.jpg");
 	#else
 	FilePath testImagePath = FilePathLit("test.png");
 	FilePath backgroundImagePath = FilePathLit("test.png");
 	#endif
 	mipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_None);
 	noMipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_NoMipmaps);
-	#endif //!TARGET_IS_OSX
 	
 	backgroundTexture = LoadTexture(stdHeap, backgroundImagePath, TextureFlag_IsRepeating);
 	
