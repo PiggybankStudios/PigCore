@@ -16,7 +16,7 @@ Description:
 
 //TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
 
-#define PIG_BUILD_PRINT_SYS_CMDS 0
+#define PIG_BUILD_PRINT_SYS_CMDS 1
 #include "pig_build.h"
 
 #define BUILD_CONFIG_PATH       "../build_config.h"
@@ -211,15 +211,25 @@ int main(int argc, char* argv[])
 	// |       Fill CliArgLists       |
 	// +==============================+
 	Str8 pigCoreThirdPartyPath = StrLit("[ROOT]/third_party");
-	CliArgList pigCoreArgs = ZEROED;
-	FillPigCoreFlags(&pigCoreArgs, pigCoreThirdPartyPath, androidNdkDir, androidNdkToolchainDir, orcaSdkPath, playdateSdkDir, playdateSdkDir_C_API);
+	CliArgList pigCoreCompilerFlags = ZEROED;
+	CliArgList pigCoreLinkerFlags = ZEROED;
+	FillPigCoreFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags,
+		pigCoreThirdPartyPath,
+		androidNdkDir, androidNdkToolchainDir,
+		orcaSdkPath,
+		playdateSdkDir, playdateSdkDir_C_API
+	);
 	
-	#define _TAGS_ EXE_MSVC_CL ""
-	WriteLine(_TAGS_); RunCliProgram(StrLit("echo"), _TAGS_, &pigCoreArgs);
+	#define _TAGS_ EXE_CLANG "|OSX|LangObjectiveC|LinuxOrOsx"
+	WriteLine(_TAGS_);
+	RunCliProgram(StrLit("echo"), _TAGS_, &pigCoreCompilerFlags);
+	RunCliProgram(StrLit("echo"), _TAGS_, &pigCoreLinkerFlags);
 	#undef _TAGS_
 	
-	#define _TAGS_ EXE_MSVC_CL "|DEBUG_BUILD"
-	WriteLine(_TAGS_); RunCliProgram(StrLit("echo"), _TAGS_, &pigCoreArgs);
+	#define _TAGS_ EXE_CLANG "|OSX|LangObjectiveC|LinuxOrOsx|DEBUG_BUILD"
+	WriteLine(_TAGS_);
+	RunCliProgram(StrLit("echo"), _TAGS_, &pigCoreCompilerFlags);
+	RunCliProgram(StrLit("echo"), _TAGS_, &pigCoreLinkerFlags);
 	#undef _TAGS_
 	
 	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, pigCoreThirdPartyPath, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY, BUILD_WITH_FREETYPE);
@@ -972,15 +982,26 @@ int main(int argc, char* argv[])
 			CliArgList cmd = ZEROED;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.m");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
-			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LangObjectiveCFlags);
-			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
-			AddArgList(&cmd, &clang_CommonLibraries);
-			AddArgList(&cmd, &clang_OsxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreOsxLibraries);
+			AddArgList(&cmd, &pigCoreCompilerFlags);
+			AddArgList(&cmd, &pigCoreLinkerFlags);
+			// AddArgList(&cmd, &clang_CommonFlags);
+			// AddArgList(&cmd, &clang_LangObjectiveCFlags);
+			// AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			// AddArgList(&cmd, &clang_CommonLibraries);
+			// AddArgList(&cmd, &clang_OsxCommonLibraries);
+			// AddArgList(&cmd, &clang_PigCoreOsxLibraries);
 			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_OsxShaderObjects); }
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), "", &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
+			StrArray tags = ZEROED;
+			AddStr(&tags, StrLit("clang"));
+			AddStr(&tags, StrLit("LangObjectiveC"));
+			AddStr(&tags, StrLit("OSX"));
+			AddStr(&tags, StrLit("LinuxOrOsx"));
+			if (DEBUG_BUILD) { AddStr(&tags, StrLit("DEBUG_BUILD")); }
+			if (BUILD_WITH_SOKOL_GFX) { AddStr(&tags, StrLit("BUILD_WITH_SOKOL_GFX")); }
+			// PrintLine("%llu tags:", tags.length);
+			// for (u64 tIndex = 0; tIndex < tags.length; tIndex++) { PrintLine("\t[%llu]: \"%.*s\"", tIndex, StrPrint(tags.strings[tIndex])); }
+			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS), true);
 			PrintLine("[Built %s for OSX!]", FILENAME_TESTS);
 		}
