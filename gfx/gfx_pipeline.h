@@ -188,16 +188,27 @@ PEXP GfxPipeline InitGfxPipeline(Arena* arena, Str8 name, const GfxPipelineOptio
 	if (!IsEmptyStr(name)) { result.name = AllocStr8(arena, name); NotNull(result.name.chars); }
 	MyMemCopy(&result.options, options, sizeof(GfxPipelineOptions));
 	
+	// WriteLine_D("Initializing pipeline with options:");
+	// PrintLine_D("\tvertexSize=%llu", options->vertexSize);
+	// PrintLine_D("\tnumVertAttributes=%llu", options->numVertAttributes);
+	// // VertAttribute vertAttributes[MAX_NUM_VERT_ATTRIBUTES];
+	// PrintLine_D("\tcolorWriteEnabled=%s", options->colorWriteEnabled ? "True" : "False");
+	// PrintLine_D("\tdepthWriteEnabled=%s", options->depthWriteEnabled ? "True" : "False");
+	// PrintLine_D("\tdepthTestEnabled=%s", options->depthTestEnabled ? "True" : "False");
+	// PrintLine_D("\tcullingEnabled=%s", options->cullingEnabled ? "True" : "False");
+	// PrintLine_D("\tindexedVerticesSize=%llu", options->indexedVerticesSize);
+	// PrintLine_D("\tblendMode=%s", GetGfxPipelineBlendModeStr(options->blendMode));
+	
 	sg_pipeline_desc pipelineDesc = ZEROED;
 	Str8 nameNt = AllocStrAndCopy(scratch, name.length, name.chars, true); NotNull(nameNt.chars); //allocate to ensure null-term char
 	pipelineDesc.label = nameNt.chars;
 	MatchVertAttributesToShader(&pipelineDesc, options->shader, options->vertexSize, options->numVertAttributes, &options->vertAttributes[0]);
-	pipelineDesc.depth.pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
+	pipelineDesc.depth.pixel_format = _SG_PIXELFORMAT_DEFAULT;
 	pipelineDesc.depth.compare = options->depthTestEnabled ? SG_COMPAREFUNC_LESS_EQUAL : SG_COMPAREFUNC_ALWAYS;
 	pipelineDesc.depth.write_enabled = options->depthWriteEnabled;
 	pipelineDesc.stencil.enabled = false;
 	pipelineDesc.color_count = 1;
-	pipelineDesc.colors[0].pixel_format = _SG_PIXELFORMAT_DEFAULT; //TODO: What format is DEFAULT?
+	pipelineDesc.colors[0].pixel_format = _SG_PIXELFORMAT_DEFAULT;
 	pipelineDesc.colors[0].write_mask = options->colorWriteEnabled ? SG_COLORMASK_RGBA : SG_COLORMASK_NONE;
 	//TODO: We should do some more testing to make sure these options work for pre-multiplied alpha!
 	pipelineDesc.colors[0].blend.enabled = (options->blendMode != GfxPipelineBlendMode_Opaque);

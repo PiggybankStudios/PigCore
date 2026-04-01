@@ -10,6 +10,8 @@ Description:
 
 #if TARGET_IS_ANDROID
 #define MAIN_FONT_NAME "DroidSansMono"
+#elif TARGET_IS_OSX
+#define MAIN_FONT_NAME "Arial"
 #else
 #define MAIN_FONT_NAME "Consolas"
 #endif
@@ -428,7 +430,7 @@ void AppInit(void)
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/home/robbitay/test_sheet_4x5.png"), true);
 	#endif
 	
-	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
+	// #if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	const u32 Filled = 0xFFFFFFFF;
 	const u32 _Empty = 0x00FFFFFF;
 	u32 checkerGlyph18Pixels[12*18] = {
@@ -567,7 +569,7 @@ void AppInit(void)
 		Result bakeResult = TryAttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
 	}
-	#endif //!TARGET_IS_OSX
+	// #endif //!TARGET_IS_OSX
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, MakeBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);

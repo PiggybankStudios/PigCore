@@ -73,6 +73,8 @@ typedef uint16_t char16_t;
 #endif
 #if TARGET_IS_OSX
 	#include <Cocoa/Cocoa.h>
+	#include <CoreText/CoreText.h>
+	#include <CoreFoundation/CoreFoundation.h>
 #endif
 #if TARGET_IS_LINUX && !BUILD_FOR_PIGGEN
 	#include <fontconfig/fontconfig.h> //You may need to install libfontconfig-dev on your OS

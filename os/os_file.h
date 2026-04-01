@@ -303,7 +303,7 @@ PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 		}
 		ScratchEnd(scratch);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin(scratch);
 		FilePath fullPath = OsGetFullPath(scratch, path);
@@ -327,10 +327,6 @@ PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 		}
 		
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// }
 	#else
 	UNUSED(path);
 	UNUSED(isFolderOut);

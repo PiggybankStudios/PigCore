@@ -20,7 +20,7 @@ Description:
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "struct/struct_string.h"
-#if TARGET_IS_LINUX
+#if TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID
 #include "os/os_file.h"
 #endif
 
@@ -219,6 +219,68 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		
 		*fileContentsOut = fontFileContents;
 		result = Result_Success;
+	}
+	#elif TARGET_IS_OSX
+	{
+		ScratchBegin1(scratch, arena);
+		
+		NotNullStr(fontName);
+		Str8 fontNameNt = AllocStrAndCopy(scratch, fontName.length, fontName.chars, true);
+		CFStringRef fontNameCf = CFStringCreateWithCString(NULL, fontNameNt.chars, kCFStringEncodingUTF8);
+		// Build a query descriptor
+		CFDictionaryRef cfAttributes = CFDictionaryCreate(
+			NULL,
+			(const void *[]){ kCTFontFamilyNameAttribute },
+			(const void *[]){ fontNameCf },
+			1,
+			&kCFTypeDictionaryKeyCallBacks,
+			&kCFTypeDictionaryValueCallBacks
+		);
+		CFRelease(fontNameCf);
+		
+		CTFontDescriptorRef fontQuery = CTFontDescriptorCreateWithAttributes(cfAttributes);
+		CFRelease(cfAttributes);
+		
+		// Find matching descriptors
+		CFArrayRef queryArray = CFArrayCreate(NULL, (const void *[]){ fontQuery }, 1, &kCFTypeArrayCallBacks);
+		CFRelease(fontQuery);
+		
+		CTFontCollectionRef fontCollection = CTFontCollectionCreateWithFontDescriptors(queryArray, NULL);
+		CFRelease(queryArray);
+		
+		CFArrayRef matchesArray = CTFontCollectionCreateMatchingFontDescriptors(fontCollection);
+		CFRelease(fontCollection);
+		
+		if (!matchesArray || CFArrayGetCount(matchesArray) == 0) { return Result_Failure; }
+		
+		// Return the first match (caller must CFRelease)
+		CTFontDescriptorRef fontDescriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(matchesArray, 0);
+		CFRelease(matchesArray);
+		
+		CFURLRef fontUrlCf = CTFontDescriptorCopyAttribute(fontDescriptor, kCTFontURLAttribute);
+		
+		char pathArray[PATH_MAX];
+		CFURLGetFileSystemRepresentation(fontUrlCf, true, (u8*)pathArray, sizeof(pathArray));
+		CFRelease(fontUrlCf);
+		CFRelease(fontDescriptor);
+		
+		Str8 pathStr = MakeStr8Nt(&pathArray[0]);
+		
+		if (OsDoesFileExist(pathStr))
+		{
+			if (OsReadBinFile(pathStr, arena, fileContentsOut))
+			{
+				result = Result_Success;
+			}
+			else { result = Result_FailedToReadFile; }
+		}
+		else
+		{
+			PrintLine_W("URL of found font does not refer to a file: \"%.*s\"", StrPrint(pathStr));
+			result = Result_NotFound;
+		}
+		
+		ScratchEnd(scratch);
 	}
 	#elif TARGET_IS_ANDROID
 	{
