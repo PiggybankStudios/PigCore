@@ -16,6 +16,7 @@ set BUILD_SCRIPT_SOURCE_NAME=build_script.c
 set BUILD_SCRIPT_SOURCE_PATH=..\%BUILD_SCRIPT_SOURCE_NAME%
 set PIG_BUILD_FOLDER_NAME=pig_build
 set PIG_BUILD_FOLDER_PATH=..\%PIG_BUILD_FOLDER_NAME%
+set MSVC_ENVIRONMENT_TXT_PATH=msvc_environment.txt
 
 REM The flags are only used when compiling the build_script.c (not for compiling your main program, those flags should be defined inside the build_script.c)
 set compiler_flags=/std:clatest /INCREMENTAL:NO /Od /FC /nologo /Zi /I".." /I"%PIG_BUILD_FOLDER_PATH%" /link Shlwapi.lib"
@@ -26,7 +27,7 @@ if not exist %BUILD_SCRIPT_EXE_NAME% (
 	del %BUILD_SCRIPT_EXE_NAME% > NUL 2> NUL
 	del %BUILD_SCRIPT_PDB_NAME% > NUL 2> NUL
 	del %BUILD_SCRIPT_HASH_PATH% > NUL 2> NUL
-	CALL :init_msvc_compiler
+	CALL %PIG_BUILD_FOLDER_PATH%\shell\init_msvc.bat %MSVC_ENVIRONMENT_TXT_PATH%
 	cl %BUILD_SCRIPT_SOURCE_PATH% /Fe%BUILD_SCRIPT_EXE_NAME% /Fd"%BUILD_SCRIPT_PDB_NAME%" %compiler_flags%
 )
 
@@ -40,37 +41,11 @@ if "%ERRORLEVEL%"=="%REBUILD_EXIT_CODE%" (
 	del %BUILD_SCRIPT_EXE_NAME% > NUL 2> NUL
 	del %BUILD_SCRIPT_PDB_NAME% > NUL 2> NUL
 	del %BUILD_SCRIPT_HASH_PATH% > NUL 2> NUL
-	CALL :init_msvc_compiler
+	CALL %PIG_BUILD_FOLDER_PATH%\shell\init_msvc.bat %MSVC_ENVIRONMENT_TXT_PATH%
 	cl %BUILD_SCRIPT_SOURCE_PATH% /Fe%BUILD_SCRIPT_EXE_NAME% /Fd"%BUILD_SCRIPT_PDB_NAME%" %compiler_flags%
 	
 	REM Run the build binary (second try)
 	%BUILD_SCRIPT_EXE_NAME% %*
 )
 
-GOTO :eof
-
-:: +--------------------------------------------------------------+
-:: |                      Init MSVC Compiler                      |
-:: +--------------------------------------------------------------+
-:init_msvc_compiler
-
-for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
-	set /A "vsdevcmd_start_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
-)
-
-REM set VSCMD_DEBUG=3
-REM NOTE: Uncomment or change one of these lines to match your installation of Visual Studio compiler
-REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
-REM call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64 -no_logo
-call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64 > NUL
-
-for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
-	set /A "vsdevcmd_end_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
-)
-set /A vsdevcmd_elapsed_hundredths=vsdevcmd_end_time-vsdevcmd_start_time
-set /A vsdevcmd_elapsed_seconds_part=vsdevcmd_elapsed_hundredths/100
-set /A vsdevcmd_elapsed_hundredths_part=vsdevcmd_elapsed_hundredths%%100
-if %vsdevcmd_elapsed_hundredths_part% lss 10 set vsdevcmd_elapsed_hundredths_part=0%vsdevcmd_elapsed_hundredths_part%
-echo VsDevCmd.bat took %vsdevcmd_elapsed_seconds_part%.%vsdevcmd_elapsed_hundredths_part% seconds
-
-EXIT /B
+popd
