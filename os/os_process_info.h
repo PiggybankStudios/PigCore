@@ -23,6 +23,7 @@ Description:
 #include "misc/misc_printing.h"
 #include "os/os_path.h"
 #include "os/os_file.h"
+#include "os/os_jni.h"
 
 #if TARGET_IS_WINDOWS
 typedef HWND OsWindowHandle;

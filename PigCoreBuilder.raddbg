@@ -1,0 +1,27 @@
+// raddbg 0.9.24 project file
+
+recent_file: path: "pig_build/pig_build_arg_list.h"
+recent_file: path: "D:/a/_work/1/s/src/vctools/crt/vcruntime/src/string/amd64/memset.asm"
+recent_file: path: "build_script.c"
+recent_file: path: "pig_build/pig_build_recompile.h"
+target:
+{
+  executable: "build/builder.exe"
+  working_directory: "build/"
+  enabled: 1
+}
+debug_info:
+{
+  path: "C:/gamedev/projects/PigCore/build/builder.pdb"
+  timestamp: 66210904436321
+}
+breakpoint:
+{
+  source_location: "build_script.c:118:1"
+  hit_count: 1
+}
+type_view:
+{
+  type: Str8
+  expr: "rows($, array($.chars, $.length), $.length)"
+}

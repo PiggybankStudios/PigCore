@@ -302,8 +302,10 @@ PEXP void OsCloseThread(OsThreadHandle* threadHandle)
 	{
 		if (threadHandle->isFilled)
 		{
+			#if !TARGET_IS_ANDROID //TODO: pthread_cancel is not available on Android?
 			int cancelResult = pthread_cancel(threadHandle->handle);
 			Assert(cancelResult == 0);
+			#endif
 			int joinResult = pthread_join(threadHandle->handle, nullptr); //no need to grab the return value
 			if (joinResult != 0)
 			{

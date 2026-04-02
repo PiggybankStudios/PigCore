@@ -123,7 +123,7 @@ uxx FindSourceFilesInFolderRecursive(FilePath folderPath, uxx maxDepth, uxx dept
 			bool hasSourceExtension = false;
 			for (uxx eIndex = 0; eIndex < ArrayCount(SourceFileExtensions); eIndex++)
 			{
-				if (StrAnyCaseEndsWith(filePath, StrLit(SourceFileExtensions[eIndex])))
+				if (StrAnyCaseEndsWith(filePath, MakeStr8Nt(SourceFileExtensions[eIndex])))
 				{
 					hasSourceExtension = true;
 					break;
@@ -154,6 +154,9 @@ Str8 SpliceFile(Arena* arena, FilePath filePath, Str8 fileContents, uxx startInd
 	return newFileContents;
 }
 
+// +--------------------------------------------------------------+
+// |                       Main Entry Point                       |
+// +--------------------------------------------------------------+
 int main(int argc, char* argv[])
 {
 	InitScratchArenasVirtual(Gigabytes(4));
@@ -255,7 +258,7 @@ int main(int argc, char* argv[])
 			if (!readSuccess) { PrintLine_E("ERROR: Failed to read file at \"%.*s\"", StrPrint(sourceFilePath)); continue; }
 			
 			uxx snippetIndex = 0;
-			LineParser lineParser = NewLineParser(fileContents);
+			LineParser lineParser = MakeLineParser(fileContents);
 			Str8 fileLine = Str8_Empty;
 			while (LineParserGetLine(&lineParser, &fileLine))
 			{
@@ -490,4 +493,85 @@ int main(int argc, char* argv[])
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);
 	return 0;
+}
+
+// +--------------------------------------------------------------+
+// |                     Notification Routers                     |
+// +--------------------------------------------------------------+
+PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, const char* message)
+{
+	if ((level == DbgLevel_Debug   && ENABLE_NOTIFICATION_LEVEL_DEBUG)   ||
+		(level == DbgLevel_Regular && ENABLE_NOTIFICATION_LEVEL_REGULAR) ||
+		(level == DbgLevel_Info    && ENABLE_NOTIFICATION_LEVEL_INFO)    ||
+		(level == DbgLevel_Notify  && ENABLE_NOTIFICATION_LEVEL_NOTIFY)  ||
+		(level == DbgLevel_Other   && ENABLE_NOTIFICATION_LEVEL_OTHER)   ||
+		(level == DbgLevel_Warning && ENABLE_NOTIFICATION_LEVEL_WARNING) ||
+		(level == DbgLevel_Error   && ENABLE_NOTIFICATION_LEVEL_ERROR)   ||
+		level == DbgLevel_None || level >= DbgLevel_Count)
+	{
+		DebugOutputRouter(filePath, lineNumber, funcName, level, true, true, message);
+		// Error notifications are treated as breakpoints when no graphical display is available (only in debug builds)
+		#if DEBUG_BUILD
+		if (level >= DbgLevel_Error) { MyBreakMsg("Error notification!"); }
+		#endif
+	}
+}
+
+PEXP void NotificationRouterPrint(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, uxx printBufferLength, char* printBuffer, const char* formatString, ...)
+{
+	if ((level == DbgLevel_Debug   && ENABLE_NOTIFICATION_LEVEL_DEBUG)   ||
+		(level == DbgLevel_Regular && ENABLE_NOTIFICATION_LEVEL_REGULAR) ||
+		(level == DbgLevel_Info    && ENABLE_NOTIFICATION_LEVEL_INFO)    ||
+		(level == DbgLevel_Notify  && ENABLE_NOTIFICATION_LEVEL_NOTIFY)  ||
+		(level == DbgLevel_Other   && ENABLE_NOTIFICATION_LEVEL_OTHER)   ||
+		(level == DbgLevel_Warning && ENABLE_NOTIFICATION_LEVEL_WARNING) ||
+		(level == DbgLevel_Error   && ENABLE_NOTIFICATION_LEVEL_ERROR)   ||
+		level == DbgLevel_None || level >= DbgLevel_Count)
+	{
+		// When doing multi-threaded applications we may decide to use a buffer allocated on the stack rather than reaching for a Scratch arena (the thread may not have initialized any scratch arenas)
+		if (printBufferLength > 0 && printBuffer != nullptr)
+		{
+			va_list args;
+			va_start(args, formatString);
+			int printResult = MyVaListPrintf(printBuffer, printBufferLength, formatString, args);
+			va_end(args);
+			if (printResult >= 0)
+			{
+				printBuffer[printBufferLength-1] = '\0';
+				NotificationRouter(filePath, lineNumber, funcName, level, duration, printBuffer);
+			}
+			#if NOTIFICATION_ERRORS_ON_FORMAT_FAILURE
+			else
+			{
+				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, "NOTIFICATION_BUFFER_PRINT_FAILED! FORMAT:");
+				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, formatString);
+			}
+			#endif //NOTIFICATION_ERRORS_ON_FORMAT_FAILURE
+		}
+		else
+		{
+			ScratchBegin(scratch);
+			if (scratch != nullptr)
+			{
+				PrintInArenaVa(scratch, messageStr, messageLength, formatString);
+				if (messageLength >= 0 && (messageStr != nullptr || messageLength == 0))
+				{
+					NotificationRouter(filePath, lineNumber, funcName, level, duration, messageStr);
+				}
+				#if NOTIFICATION_ERRORS_ON_FORMAT_FAILURE
+				else
+				{
+					NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, "NOTIFICATION_SCRATCH_PRINT_FAILED! FORMAT:");
+					NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, formatString);
+				}
+				#endif //NOTIFICATION_ERRORS_ON_FORMAT_FAILURE
+			}
+			else
+			{
+				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, "NO_SCRATCH_FOR_NOTIFICATION_PRINT! FORMAT:");
+				NotificationRouter(filePath, lineNumber, funcName, DbgLevel_Error, duration, formatString);
+			}
+			ScratchEnd(scratch);
+		}
+	}
 }

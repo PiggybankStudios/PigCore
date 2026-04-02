@@ -50,10 +50,6 @@ typedef uint16_t char16_t;
 	#include <signal.h>
 	// Gives us getpagesize and sleep and access
 	#include <unistd.h>
-	pid_t gettid(void);
-	#if TARGET_IS_LINUX
-	int pthread_setname_np(pthread_t thread, const char *name);
-	#endif
 	// Gives us DIR and dirent types
 	#include <dirent.h>
 	// Gives us mmap
@@ -65,7 +61,14 @@ typedef uint16_t char16_t;
 	#include <sys/stat.h>
 	// Needed for getpwuid and getuid
 	#include <pwd.h>
+
+	//TODO: When do we actually need to declare these ourselves?
+	pid_t gettid(void);
+	#if (TARGET_IS_LINUX && LANGUAGE_IS_C)
+	int pthread_setname_np(pthread_t thread, const char *name);
+	#endif
 	#include <pthread.h>
+	
 	// Needed for time_t, time(), timespec, and clock_gettime()
 	#include <time.h>
 	#include <sys/syscall.h> //needed for syscall(SYS_gettid) in os_threading.h

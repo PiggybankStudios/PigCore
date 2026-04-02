@@ -2974,6 +2974,7 @@
 			"Str8 TrimWhitespaceAndNewLines(Str8 target)",
 			"Str8 UnescapeString(Arena* arena, Str8 escapedString)",
 			"Str8 UnescapeStringEx(Arena* arena, Str8 escapedString, u8 escapeSequences, bool addNullTerm)",
+			"Str8* AddStrArray(StrArray* dest, const StrArray* src)",
 			"Str8Pair NewStr8Pair(Str8 left, Str8 right)",
 			"StringBuffer NewScratchStrBuff2(uxx bufferSize, const Arena* conflict1, const Arena* conflict2)",
 			"StringBuffer NewStrBuffFromArena(Arena* arena, uxx bufferSize)",
