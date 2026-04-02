@@ -753,6 +753,7 @@ PEXP FontFile* TryFindFontFileForCodepointAtSize(PigFont* font, u32 codepoint, r
 			}
 			#else //!BUILD_WITH_FREETYPE
 			{
+				UNUSED(fontSize); //TODO: Should we be using this?
 				int glyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, (int)codepoint);
 				if (glyphIndex != 0)
 				{
@@ -1111,6 +1112,8 @@ PEXP FontGlyph* TryAddGlyphToActiveFontAtlas(PigFont* font, FontFile* fontFile, 
 		TO_I32_FROM_FT26(fontFile->freeTypeFace->glyph->metrics.height)
 	);
 	#else //!BUILD_WITH_FREETYPE
+	UNUSED(styleFlags); //TODO: Should we be using this?
+	UNUSED(isColorableCodepoint); //TODO: Should we be using this?
 	int glyphIndex = stbtt_FindGlyphIndex(&fontFile->ttfInfo, (int)codepoint);
 	Assert(glyphIndex != 0);
 	// r32 fontScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, activeAtlas->fontSize);

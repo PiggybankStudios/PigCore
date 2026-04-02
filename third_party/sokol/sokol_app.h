@@ -14054,6 +14054,7 @@ SOKOL_API_IMPL void sapp_set_topmost(bool topmost) {
     #elif defined(_SAPP_LINUX)
         _sapp_x11_set_topmost(topmost);
     #else
+        UNUSED(topmost);
         SOKOL_ASSERT(false && "sapp_set_topmost is not implemented for the current OS!");
     #endif
 }

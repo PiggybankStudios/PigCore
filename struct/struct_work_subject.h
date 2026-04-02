@@ -19,6 +19,8 @@ Description:
 #include "struct/struct_string.h"
 #include "os/os_threading.h"
 
+#if TARGET_HAS_THREADING
+
 //NOTE: Make sure the WorkSubject structure is updated if these values change (add or remove bespoke aliases like "id2", "index1", etc.)
 #define WORK_SUBJECT_NUM_IDS     3
 #define WORK_SUBJECT_NUM_INDICES 3
@@ -159,5 +161,7 @@ PEXPI Str8 AllocStringInWorkSubject(Arena* arena, WorkSubject* subject, uxx stri
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
+
+#endif //TARGET_HAS_THREADING
 
 #endif //  _STRUCT_WORK_SUBJECT_H

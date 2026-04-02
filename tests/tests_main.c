@@ -165,9 +165,10 @@ void PrintNumbers(VarArray* array)
 // +==============================+
 // |   TestsDebugOutputCallback   |
 // +==============================+
-// void TestsDebugOutputCallback(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool newLine, const char* message)
+// void TestsDebugOutputCallback(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, bool isNotification, bool newLine, const char* message)
 DEBUG_OUTPUT_HANDLER_DEF(TestsDebugOutputCallback)
 {
+	UNUSED(isNotification);
 	#if 1
 	MyPrint("TestsDebugOutputCallback(%s, %s):", GetDbgLevelStr(level), newLine ? "newLine" : "sameLine");
 	MyPrint("\tfrom: %s:%u in %s(...)", filePath, lineNumber, funcName);
