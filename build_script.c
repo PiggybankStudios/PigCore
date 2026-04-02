@@ -65,6 +65,54 @@ void PrintUsage()
 	WriteLine_E("Usage: " BUILD_SCRIPT_EXE_NAME " [DEBUG_BUILD={1/0}] [BUILD_TESTS={1/0}] ...");
 }
 
+bool GetBoolConfig(const char* defineName, Str8 buildConfigContents, int argc, char** argv, StrArray* tagsArrayOut)
+{
+	Str8 defineNameStr = MakeStr8Nt(defineName);
+	bool result = ExtractBoolDefine(buildConfigContents, defineNameStr);
+	
+	//Check for the define being passed on the command-line
+	if (argc > 1)
+	{
+		for (int aIndex = 1; aIndex < argc; aIndex++)
+		{
+			Str8 argStr = MakeStr8Nt(argv[aIndex]);
+			if (StrExactStartsWith(argStr, defineNameStr))
+			{
+				bool argValue = true;
+				Str8 valuePart = StrSliceFrom(argStr, defineNameStr.length);
+				valuePart = TrimWhitespace(valuePart);
+				if (valuePart.length > 0)
+				{
+					if (StrExactStartsWith(valuePart, StrLit("=")))
+					{
+						valuePart = StrSliceFrom(valuePart, 1);
+						valuePart = TrimWhitespace(valuePart);
+						if (StrExactStartsWith(valuePart, StrLit("true")) || StrExactStartsWith(valuePart, StrLit("1")))
+						{
+							argValue = true;
+						}
+						else if (StrExactStartsWith(valuePart, StrLit("false")) || StrExactStartsWith(valuePart, StrLit("0")))
+						{
+							argValue = false;
+						}
+						else { continue; }
+					}
+					else { continue; }
+				}
+				result = argValue;
+			}
+		}
+	}
+	
+	if (result)
+	{
+		AddStr(tagsArrayOut, defineNameStr);
+	}
+	
+	return result;
+}
+//TODO: Add GetStrConfig to do ExtractStrDefine and check cmd-line args for config value
+
 int main(int argc, char* argv[])
 {
 	RecompileIfNeeded();
@@ -73,53 +121,55 @@ int main(int argc, char* argv[])
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
 	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
 	
+	
 	// +==============================+
 	// |       Extract Defines        |
 	// +==============================+
+	StrArray buildConfigTags = ZEROED;
 	Str8 buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
-	bool DEBUG_BUILD                       = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
-	bool PROFILING_ENABLED                 = ExtractBoolDefine(buildConfigContents, StrLit("PROFILING_ENABLED"));
-	bool BUILD_PIGGEN                      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
-	bool BUILD_SHADERS                     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
-	bool GENERATE_COMPILE_COMMANDS_FOR_LSP = ExtractBoolDefine(buildConfigContents, StrLit("GENERATE_COMPILE_COMMANDS_FOR_LSP"));
-	bool RUN_PIGGEN                        = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
-	bool BUILD_TRACY_DLL                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TRACY_DLL"));
-	bool BUILD_IMGUI_OBJ                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_IMGUI_OBJ"));
-	bool BUILD_PHYSX_OBJ                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PHYSX_OBJ"));
-	bool BUILD_PIG_CORE_DLL                = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
-	bool BUILD_TESTS                       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TESTS"));
-	bool RUN_TESTS                         = ExtractBoolDefine(buildConfigContents, StrLit("RUN_TESTS"));
-	bool INSTALL_TESTS_APK                 = ExtractBoolDefine(buildConfigContents, StrLit("INSTALL_TESTS_APK"));
-	bool GENERATE_PROTOBUF                 = ExtractBoolDefine(buildConfigContents, StrLit("GENERATE_PROTOBUF"));
-	bool DUMP_PREPROCESSOR                 = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
-	bool DUMP_ASSEMBLY                     = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
-	bool CONVERT_WASM_TO_WAT               = ExtractBoolDefine(buildConfigContents, StrLit("CONVERT_WASM_TO_WAT"));
-	bool USE_EMSCRIPTEN                    = ExtractBoolDefine(buildConfigContents, StrLit("USE_EMSCRIPTEN"));
-	// bool ENABLE_AUTO_PROFILE               = ExtractBoolDefine(buildConfigContents, StrLit("ENABLE_AUTO_PROFILE"));
-	// bool RUN_FUZZER                        = ExtractBoolDefine(buildConfigContents, StrLit("RUN_FUZZER"));
-	bool BUILD_WINDOWS                     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WINDOWS"));
-	bool BUILD_LINUX                       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
-	bool BUILD_OSX                         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_OSX"));
-	bool BUILD_WEB                         = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WEB"));
-	bool BUILD_ANDROID                     = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID"));
-	bool BUILD_ANDROID_APK                 = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ANDROID_APK"));
-	bool BUILD_ORCA                        = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_ORCA"));
-	bool BUILD_PLAYDATE_DEVICE             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_DEVICE"));
-	bool BUILD_PLAYDATE_SIMULATOR          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PLAYDATE_SIMULATOR"));
-	bool BUILD_WITH_RAYLIB                 = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_RAYLIB"));
-	bool BUILD_WITH_BOX2D                  = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_BOX2D"));
-	bool BUILD_WITH_SOKOL_GFX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_GFX"));
-	bool BUILD_WITH_SOKOL_APP              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SOKOL_APP"));
-	bool BUILD_WITH_SDL                    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_SDL"));
-	bool BUILD_WITH_OPENVR                 = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_OPENVR"));
-	// bool BUILD_WITH_CLAY                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_CLAY"));
-	bool BUILD_WITH_IMGUI                  = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_IMGUI"));
-	bool BUILD_WITH_PHYSX                  = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PHYSX"));
-	bool BUILD_WITH_HTTP                   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_HTTP"));
-	bool BUILD_WITH_PROTOBUF               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_PROTOBUF"));
-	bool BUILD_WITH_FREETYPE               = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"));
-	bool BUILD_WITH_GTK                    = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_GTK"));
+	bool DEBUG_BUILD                       = GetBoolConfig("DEBUG_BUILD",                       buildConfigContents, argc, argv, &buildConfigTags);
+	bool PROFILING_ENABLED                 = GetBoolConfig("PROFILING_ENABLED",                 buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_PIGGEN                      = GetBoolConfig("BUILD_PIGGEN",                      buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_SHADERS                     = GetBoolConfig("BUILD_SHADERS",                     buildConfigContents, argc, argv, &buildConfigTags);
+	bool GENERATE_COMPILE_COMMANDS_FOR_LSP = GetBoolConfig("GENERATE_COMPILE_COMMANDS_FOR_LSP", buildConfigContents, argc, argv, &buildConfigTags);
+	bool RUN_PIGGEN                        = GetBoolConfig("RUN_PIGGEN",                        buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_TRACY_DLL                   = GetBoolConfig("BUILD_TRACY_DLL",                   buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_IMGUI_OBJ                   = GetBoolConfig("BUILD_IMGUI_OBJ",                   buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_PHYSX_OBJ                   = GetBoolConfig("BUILD_PHYSX_OBJ",                   buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_PIG_CORE_DLL                = GetBoolConfig("BUILD_PIG_CORE_DLL",                buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_TESTS                       = GetBoolConfig("BUILD_TESTS",                       buildConfigContents, argc, argv, &buildConfigTags);
+	bool RUN_TESTS                         = GetBoolConfig("RUN_TESTS",                         buildConfigContents, argc, argv, &buildConfigTags);
+	bool INSTALL_TESTS_APK                 = GetBoolConfig("INSTALL_TESTS_APK",                 buildConfigContents, argc, argv, &buildConfigTags);
+	bool GENERATE_PROTOBUF                 = GetBoolConfig("GENERATE_PROTOBUF",                 buildConfigContents, argc, argv, &buildConfigTags);
+	bool DUMP_PREPROCESSOR                 = GetBoolConfig("DUMP_PREPROCESSOR",                 buildConfigContents, argc, argv, &buildConfigTags);
+	bool DUMP_ASSEMBLY                     = GetBoolConfig("DUMP_ASSEMBLY",                     buildConfigContents, argc, argv, &buildConfigTags);
+	bool CONVERT_WASM_TO_WAT               = GetBoolConfig("CONVERT_WASM_TO_WAT",               buildConfigContents, argc, argv, &buildConfigTags);
+	bool USE_EMSCRIPTEN                    = GetBoolConfig("USE_EMSCRIPTEN",                    buildConfigContents, argc, argv, &buildConfigTags);
+	// bool ENABLE_AUTO_PROFILE               = GetBoolConfig("ENABLE_AUTO_PROFILE",            buildConfigContents, argc, argv, &buildConfigTags);
+	// bool RUN_FUZZER                        = GetBoolConfig("RUN_FUZZER",                     buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WINDOWS                     = GetBoolConfig("BUILD_WINDOWS",                     buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_LINUX                       = GetBoolConfig("BUILD_LINUX",                       buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_OSX                         = GetBoolConfig("BUILD_OSX",                         buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WEB                         = GetBoolConfig("BUILD_WEB",                         buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_ANDROID                     = GetBoolConfig("BUILD_ANDROID",                     buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_ANDROID_APK                 = GetBoolConfig("BUILD_ANDROID_APK",                 buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_ORCA                        = GetBoolConfig("BUILD_ORCA",                        buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_PLAYDATE_DEVICE             = GetBoolConfig("BUILD_PLAYDATE_DEVICE",             buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_PLAYDATE_SIMULATOR          = GetBoolConfig("BUILD_PLAYDATE_SIMULATOR",          buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_RAYLIB                 = GetBoolConfig("BUILD_WITH_RAYLIB",                 buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_BOX2D                  = GetBoolConfig("BUILD_WITH_BOX2D",                  buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_SOKOL_GFX              = GetBoolConfig("BUILD_WITH_SOKOL_GFX",              buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_SOKOL_APP              = GetBoolConfig("BUILD_WITH_SOKOL_APP",              buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_SDL                    = GetBoolConfig("BUILD_WITH_SDL",                    buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_OPENVR                 = GetBoolConfig("BUILD_WITH_OPENVR",                 buildConfigContents, argc, argv, &buildConfigTags);
+	// bool BUILD_WITH_CLAY                   = GetBoolConfig("BUILD_WITH_CLAY",                buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_IMGUI                  = GetBoolConfig("BUILD_WITH_IMGUI",                  buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_PHYSX                  = GetBoolConfig("BUILD_WITH_PHYSX",                  buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_HTTP                   = GetBoolConfig("BUILD_WITH_HTTP",                   buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_PROTOBUF               = GetBoolConfig("BUILD_WITH_PROTOBUF",               buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_FREETYPE               = GetBoolConfig("BUILD_WITH_FREETYPE",               buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_GTK                    = GetBoolConfig("BUILD_WITH_GTK",                    buildConfigContents, argc, argv, &buildConfigTags);
 	
 	Str8 ANDROID_SIGNING_KEY_PATH = CopyStr8(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")), false);
 	Str8 ANDROID_SIGNING_PASSWORD = ZEROED;
@@ -211,6 +261,15 @@ int main(int argc, char* argv[])
 	// |       Fill CliArgLists       |
 	// +==============================+
 	Str8 pigCoreThirdPartyPath = StrLit("[ROOT]/third_party");
+	CliArgList pigCoreCompilerFlags = ZEROED;
+	CliArgList pigCoreLinkerFlags = ZEROED;
+	FillPigCoreFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags,
+		pigCoreThirdPartyPath,
+		androidNdkDir, androidNdkToolchainDir,
+		orcaSdkPath,
+		playdateSdkDir, playdateSdkDir_C_API
+	);
+	
 	CliArgList cl_CommonFlags                    = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, pigCoreThirdPartyPath, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY, BUILD_WITH_FREETYPE);
 	CliArgList cl_LangCFlags                     = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags                   = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
@@ -283,7 +342,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &proto_CommonFlags);
 			AddArgNt(&cmd, PROTOC_C_OUT_PATH, "[ROOT]/parse");
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/parse/parse_proto_google_types.proto");
-			RunCliProgramAndExitOnFailure(protocExe, &cmd, StrLit("protoc Failed on parse_proto_google_types.proto!"));
+			RunCliProgramAndExitOnFailure(protocExe, "", &cmd, StrLit("protoc Failed on parse_proto_google_types.proto!"));
 		}
 		{
 			CliArgList cmd = ZEROED;
@@ -292,7 +351,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &proto_CommonFlags);
 			AddArgNt(&cmd, PROTOC_C_OUT_PATH, "[ROOT]/tests");
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_proto_types.proto");
-			RunCliProgramAndExitOnFailure(protocExe, &cmd, StrLit("protoc Failed on tests_proto_types.proto!"));
+			RunCliProgramAndExitOnFailure(protocExe, "", &cmd, StrLit("protoc Failed on tests_proto_types.proto!"));
 		}
 	}
 	
@@ -322,7 +381,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "Shlwapi.lib"); //Needed for PathFileExistsA
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_PIGGEN_EXE "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), "", &cmd, StrLit("Failed to build " FILENAME_PIGGEN_EXE "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN_EXE), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_PIGGEN_EXE);
 		}
@@ -349,7 +408,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
+			RunCliProgramAndExitOnFailure(clangExe, "", &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_PIGGEN);
 			
@@ -370,7 +429,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_OsxCommonLibraries);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), "", &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
 			PrintLine("[Built %s for OSX!]", FILENAME_PIGGEN);
 		}
@@ -401,7 +460,7 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_template/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_fuzzing/");
 		
-		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
+		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), "", &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
 	}
 	
 	// +--------------------------------------------------------------+
@@ -514,7 +573,7 @@ int main(int argc, char* argv[])
 			PrintLine("Generating \"%.*s\"...", StrPrint(realHeaderPath));
 			Str8 shdcExe = JoinStrings2(StrLit("../"), StrLit(EXE_SHDC), false);
 			FixPathSlashes(shdcExe, PATH_SEP_CHAR);
-			RunCliProgramAndExitOnFailure(shdcExe, &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
+			RunCliProgramAndExitOnFailure(shdcExe, "", &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
 			AssertFileExist(realHeaderPath, true);
 			
 			ScrapeShaderHeaderFileAndAddExtraInfo(realHeaderPath, realShaderPath);
@@ -554,7 +613,7 @@ int main(int argc, char* argv[])
 				AddArgList(&cmd, &cl_LangCFlags);
 				
 				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), objPath, StrLit(" for Windows!"), false);
-				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorMessage);
+				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), "", &cmd, errorMessage);
 				AssertFileExist(objPath, true);
 			}
 			if (BUILD_LINUX)
@@ -581,7 +640,7 @@ int main(int argc, char* argv[])
 				#endif
 				
 				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Linux!"), false);
-				RunCliProgramAndExitOnFailure(clangExe, &cmd, errorMessage);
+				RunCliProgramAndExitOnFailure(clangExe, "", &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 				
 				#if !BUILDING_ON_LINUX
@@ -604,7 +663,7 @@ int main(int argc, char* argv[])
 				AddArgNt(&cmd, CLANG_DISABLE_WARNING, "unused-command-line-argument");
 				
 				Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for OSX!"), false);
-				RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, errorMessage);
+				RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), "", &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 			}
 			if (BUILD_ANDROID)
@@ -635,7 +694,7 @@ int main(int argc, char* argv[])
 					AddArgNt(&cmd, CLANG_TARGET_ARCHITECTURE, GetAndroidTargetArchitechtureTargetStr(architecture));
 					
 					Str8 errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Android!"), false);
-					RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, errorMessage);
+					RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), "", &cmd, errorMessage);
 					AssertFileExist(oPath, true);
 					
 					chdir("..");
@@ -681,7 +740,7 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, LINK_BUILD_DLL);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), "", &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
 			AssertFileExist(StrLit(FILENAME_TRACY_DLL), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_TRACY_DLL);
 		}
@@ -716,7 +775,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TRACY_SO "!"));
+			RunCliProgramAndExitOnFailure(clangExe, "", &cmd, StrLit("Failed to build " FILENAME_TRACY_SO "!"));
 			AssertFileExist(StrLit(FILENAME_TRACY_SO), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_TRACY_SO);
 			
@@ -754,7 +813,7 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_IMGUI_OBJ "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), "", &cmd, StrLit("Failed to build " FILENAME_IMGUI_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_IMGUI_OBJ), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_IMGUI_OBJ);
 		}
@@ -781,7 +840,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_IMGUI_O "!"));
+			RunCliProgramAndExitOnFailure(clangExe, "", &cmd, StrLit("Failed to build " FILENAME_IMGUI_O "!"));
 			AssertFileExist(StrLit(FILENAME_IMGUI_O), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_IMGUI_O);
 			
@@ -819,7 +878,7 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_PHYSX_OBJ "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), "", &cmd, StrLit("Failed to build " FILENAME_PHYSX_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_PHYSX_OBJ), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_PHYSX_OBJ);
 		}
@@ -851,7 +910,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgList(&cmd, &cl_PigCoreLibraries);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), "", &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
 			AssertFileExist(StrLit(FILENAME_PIG_CORE_DLL), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_PIG_CORE_DLL);
 		}
@@ -881,7 +940,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
+			RunCliProgramAndExitOnFailure(clangExe, "", &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
 			AssertFileExist(StrLit(FILENAME_PIG_CORE_SO), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_PIG_CORE_SO);
 			
@@ -914,7 +973,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &cl_PigCoreLibraries);
 			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_WindowsShaderObjects); }
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_TESTS_EXE "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), "", &cmd, StrLit("Failed to build " FILENAME_TESTS_EXE "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_EXE), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_TESTS_EXE);
 		}
@@ -945,7 +1004,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
+			RunCliProgramAndExitOnFailure(clangExe, "", &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_TESTS);
 			
@@ -961,15 +1020,30 @@ int main(int argc, char* argv[])
 			CliArgList cmd = ZEROED;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.m");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
+			#if 1
+			AddArgList(&cmd, &pigCoreCompilerFlags);
+			AddArgList(&cmd, &pigCoreLinkerFlags);
+			#else
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangObjectiveCFlags);
 			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_OsxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreOsxLibraries);
+			#endif
 			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_OsxShaderObjects); }
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
+			StrArray tags = ZEROED;
+			AddStr(&tags, StrLit("clang"));
+			AddStr(&tags, StrLit("LangObjectiveC"));
+			AddStr(&tags, StrLit("OSX"));
+			AddStr(&tags, StrLit("LinuxOrOsx"));
+			for (u64 cIndex = 0; cIndex < buildConfigTags.length; cIndex++) { AddStr(&tags, buildConfigTags.strings[cIndex]); }
+			if (DEBUG_BUILD) { AddStr(&tags, StrLit("DEBUG_BUILD")); }
+			if (BUILD_WITH_SOKOL_GFX) { AddStr(&tags, StrLit("BUILD_WITH_SOKOL_GFX")); }
+			// PrintLine("%llu tags:", tags.length);
+			// for (u64 tIndex = 0; tIndex < tags.length; tIndex++) { PrintLine("\t[%llu]: \"%.*s\"", tIndex, StrPrint(tags.strings[tIndex])); }
+			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS), true);
 			PrintLine("[Built %s for OSX!]", FILENAME_TESTS);
 		}
@@ -996,7 +1070,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_WasmFlags);
 			AddArgList(&cmd, &clang_WebFlags);
 			
-			RunCliProgramAndExitOnFailure(USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_APP_WASM "!"));
+			RunCliProgramAndExitOnFailure(USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), "", &cmd, StrLit("Failed to build " FILENAME_APP_WASM "!"));
 			if (USE_EMSCRIPTEN)
 			{
 				AssertFileExist(StrLit(FILENAME_INDEX_HTML), true);
@@ -1015,7 +1089,7 @@ int main(int argc, char* argv[])
 				AddArgNt(&convertCmd, CLI_QUOTED_ARG, USE_EMSCRIPTEN ? FILENAME_INDEX_WASM : FILENAME_APP_WASM);
 				AddArgNt(&convertCmd, CLI_PIPE_OUTPUT_TO_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_WAT : FILENAME_APP_WAT);
 				
-				int convertStatusCode = RunCliProgram(StrLit("wasm2wat"), &convertCmd);
+				int convertStatusCode = RunCliProgram(StrLit("wasm2wat"), "", &convertCmd);
 				if (convertStatusCode == 0)
 				{
 					AssertFileExist(USE_EMSCRIPTEN ? StrLit(FILENAME_INDEX_WAT) : StrLit(FILENAME_APP_WAT), true);
@@ -1091,7 +1165,7 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath, false));
 				if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_AndroidShaderObjects[archIndex]); }
 				
-				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
+				RunCliProgramAndExitOnFailure(clangExe, "", &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
 				if (DUMP_PREPROCESSOR) { chdir(".."); continue; }
 				AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
 				
@@ -1117,7 +1191,7 @@ int main(int argc, char* argv[])
 					AddArgNt(&javacCmd, "-d \"[VAL]\"", ".");
 					AddArgStr(&javacCmd, "-classpath \"[VAL]\"", androidJarPath);
 					AddArgNt(&javacCmd, CLI_QUOTED_ARG, FILENAME_DUMMY_JAVA);
-					RunCliProgramAndExitOnFailure(javacExe, &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
+					RunCliProgramAndExitOnFailure(javacExe, "", &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
 					AssertFileExist(StrLit(FILENAME_DUMMY_CLASS), true);
 					
 					CliArgList d8Cmd = ZEROED;
@@ -1126,7 +1200,7 @@ int main(int argc, char* argv[])
 					AddArgStr(&d8Cmd, "--lib \"[VAL]\"", androidJarPath);
 					AddArgNt(&d8Cmd, "--output \"[VAL]\"", "./");
 					AddArgNt(&d8Cmd, CLI_QUOTED_ARG, FILENAME_DUMMY_CLASS);
-					RunCliProgramAndExitOnFailure(d8Exe, &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
+					RunCliProgramAndExitOnFailure(d8Exe, "", &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
 					AssertFileExist(StrLit(FILENAME_CLASSES_DEX), true);
 				}
 				
@@ -1137,7 +1211,7 @@ int main(int argc, char* argv[])
 				AddArg(&compileResCmd, "compile");
 				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/tests/android/res");
 				AddArgNt(&compileResCmd, "-o \"[VAL]\"", FILENAME_ANDROID_RESOURCES_ZIP);
-				RunCliProgramAndExitOnFailure(aaptExe, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
+				RunCliProgramAndExitOnFailure(aaptExe, "", &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
 				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
 				
 				RemoveFile(StrLit(FILENAME_TESTS_APK));
@@ -1151,7 +1225,7 @@ int main(int argc, char* argv[])
 				AddArgNt(&linkApkCmd, "-0 [VAL]", "resources.arsc");
 				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/tests/android/AndroidManifest.xml");
 				AddArgNt(&linkApkCmd, CLI_QUOTED_ARG, FILENAME_ANDROID_RESOURCES_ZIP);
-				RunCliProgramAndExitOnFailure(aaptExe, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
+				RunCliProgramAndExitOnFailure(aaptExe, "", &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
 				AssertFileExist(StrLit(FILENAME_TESTS_APK), true);
 				
 				//NOTE: In order to insert our .so files into the apk, we need to unpack it into a folder, add the .so files manually, and then repack it
@@ -1164,7 +1238,7 @@ int main(int argc, char* argv[])
 					CliArgList unpackApkCmd = ZEROED;
 					AddArg(&unpackApkCmd, "xf");
 					AddArg(&unpackApkCmd, "../" FILENAME_TESTS_APK);
-					RunCliProgramAndExitOnFailure(StrLit("jar"), &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
+					RunCliProgramAndExitOnFailure(StrLit("jar"), "", &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
 					
 					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"), true);
 					
@@ -1182,7 +1256,7 @@ int main(int argc, char* argv[])
 					AddArg(&repackApkCmd, "cf0");
 					AddArg(&repackApkCmd, "../" FILENAME_TESTS_APK);
 					AddArg(&repackApkCmd, "*");
-					RunCliProgramAndExitOnFailure(StrLit("jar"), &repackApkCmd, StrLit("Failed to repack " FILENAME_TESTS_APK "!"));
+					RunCliProgramAndExitOnFailure(StrLit("jar"), "", &repackApkCmd, StrLit("Failed to repack " FILENAME_TESTS_APK "!"));
 					
 					chdir("..");
 					MyRemoveDirectory(StrLit("apk_temp"), true);
@@ -1196,7 +1270,7 @@ int main(int argc, char* argv[])
 				AddArg(&alignApkCmd, "4");
 				AddArgNt(&alignApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK); //input
 				AddArgStr(&alignApkCmd, CLI_QUOTED_ARG, tempAlignedApkName); //output
-				RunCliProgramAndExitOnFailure(zipalignExe, &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
+				RunCliProgramAndExitOnFailure(zipalignExe, "", &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
 				AssertFileExist(tempAlignedApkName, true);
 				CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK), true);
 				RemoveFile(tempAlignedApkName);
@@ -1211,7 +1285,7 @@ int main(int argc, char* argv[])
 				else if (ANDROID_SIGNING_PASS_PATH.length > 0) { AddArgStr(&signApkCmd, "--ks-pass file:[VAL]", ANDROID_SIGNING_PASS_PATH); }
 				else { WriteLine_E("You must provide either a ANDROID_SIGNING_PASSWORD or ANDROID_SIGNING_PASS_PATH in order to sign an Android .apk!"); exit(4); }
 				AddArgNt(&signApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK);
-				RunCliProgramAndExitOnFailure(apksignerExe, &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
+				RunCliProgramAndExitOnFailure(apksignerExe, "", &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
 			}
 			
 			PrintLine("[Built %s for Android!]", BUILD_ANDROID_APK ? FILENAME_TESTS_APK : FILENAME_TESTS_SO);
@@ -1234,7 +1308,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_WasmFlags);
 			AddArgList(&cmd, &clang_OrcaFlags);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), &cmd, StrLit("Failed to build " FILENAME_MODULE_WASM "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_CLANG), "", &cmd, StrLit("Failed to build " FILENAME_MODULE_WASM "!"));
 			AssertFileExist(StrLit(FILENAME_MODULE_WASM), true);
 			PrintLine("[Built %s for Orca!]", FILENAME_MODULE_WASM);
 			
@@ -1242,7 +1316,7 @@ int main(int argc, char* argv[])
 			AddArg(&bundleCmd, "bundle");
 			AddArgNt(&bundleCmd, "--name [VAL]", "tests");
 			AddArg(&bundleCmd, FILENAME_MODULE_WASM);
-			RunCliProgramAndExitOnFailure(StrLit("orca"), &bundleCmd, StrLit("Failed to bundle " FILENAME_MODULE_WASM "!"));
+			RunCliProgramAndExitOnFailure(StrLit("orca"), "", &bundleCmd, StrLit("Failed to bundle " FILENAME_MODULE_WASM "!"));
 			PrintLine("[Bundled %s into \"tests\" app!]", FILENAME_MODULE_WASM);
 			
 			chdir("..");
@@ -1259,7 +1333,7 @@ int main(int argc, char* argv[])
 			AddArgList(&compileCmd, &gcc_PlaydateDeviceCommonFlags);
 			AddArgList(&compileCmd, &gcc_PlaydateDeviceCompilerFlags);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_ARM_GCC), &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_ARM_GCC), "", &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
 			
 			CliArgList linkCmd = ZEROED;
@@ -1269,7 +1343,7 @@ int main(int argc, char* argv[])
 			AddArgList(&linkCmd, &gcc_PlaydateDeviceLinkerFlags);
 			AddArgNt(&linkCmd, GCC_MAP_FILE, "tests.map");
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_ARM_GCC), &linkCmd, StrLit("Failed to build " FILENAME_PDEX_ELF "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_ARM_GCC), "", &linkCmd, StrLit("Failed to build " FILENAME_PDEX_ELF "!"));
 			AssertFileExist(StrLit(FILENAME_PDEX_ELF), true);
 			PrintLine("[Built %s for Playdate!]", FILENAME_PDEX_ELF);
 			
@@ -1287,7 +1361,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&compileCmd, CL_OBJ_FILE, FILENAME_TESTS_OBJ);
 			AddArgList(&compileCmd, &cl_PlaydateSimulatorCompilerFlags);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), "", &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
 			
 			CliArgList linkCmd = ZEROED;
@@ -1299,7 +1373,7 @@ int main(int argc, char* argv[])
 			AddArgList(&linkCmd, &link_PlaydateSimulatorLinkerFlags);
 			AddArgList(&linkCmd, &link_PlaydateSimulatorLibraries);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_LINK), &linkCmd, StrLit("Failed to build " FILENAME_PDEX_DLL "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_LINK), "", &linkCmd, StrLit("Failed to build " FILENAME_PDEX_DLL "!"));
 			AssertFileExist(StrLit(FILENAME_PDEX_DLL), true);
 			PrintLine("[Built %s for Playdate Simulator!]", FILENAME_PDEX_DLL);
 			
@@ -1316,7 +1390,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "playdate_data");
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_TESTS_PDX);
 			
-			RunCliProgramAndExitOnFailure(StrLit("pdc"), &cmd, StrLit("Failed to package " FILENAME_TESTS_PDX "!"));
+			RunCliProgramAndExitOnFailure(StrLit(EXE_PDC), "", &cmd, StrLit("Failed to package " FILENAME_TESTS_PDX "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_PDX), true); //TODO: Is this going to work on a folder?
 			PrintLine("[Packaged %s for Playdate!]", FILENAME_TESTS_PDX);
 		}
@@ -1348,7 +1422,7 @@ int main(int argc, char* argv[])
 		#endif
 		PrintLine("\n[%s]", RUNNABLE_FILENAME_TESTS);
 		CliArgList cmd = ZEROED;
-		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_TESTS), &cmd, StrLit(RUNNABLE_FILENAME_TESTS " Exited With Error!"));
+		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_TESTS), "", &cmd, StrLit(RUNNABLE_FILENAME_TESTS " Exited With Error!"));
 	}
 	
 	if (INSTALL_TESTS_APK)
@@ -1359,7 +1433,7 @@ int main(int argc, char* argv[])
 		CliArgList installCmd = ZEROED;
 		installCmd.pathSepChar = '/';
 		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
-		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd.exe install exited With Error!"));
+		RunCliProgramAndExitOnFailure(adbExe, "", &installCmd, StrLit("abd.exe install exited With Error!"));
 		
 		PrintLine_E("Launching \"%.*s\"...", StrPrint(ANDROID_ACTIVITY_PATH));
 		CliArgList launchCmd = ZEROED;
@@ -1368,7 +1442,7 @@ int main(int argc, char* argv[])
 		AddArg(&launchCmd, "am");
 		AddArg(&launchCmd, "start");
 		AddArgStr(&launchCmd, "-n \"[VAL]\"", ANDROID_ACTIVITY_PATH);
-		RunCliProgramAndExitOnFailure(adbExe, &launchCmd, StrLit("abd.exe shell exited With Error!"));
+		RunCliProgramAndExitOnFailure(adbExe, "", &launchCmd, StrLit("abd.exe shell exited With Error!"));
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", BUILD_SCRIPT_EXE_NAME);

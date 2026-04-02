@@ -42,12 +42,27 @@ void SokolLogCallback(const char* tag, u32 logLevel, u32 logId, const char* mess
 	if (logLevel == 0) { AssertMsg(false, "Sokol Panic!"); }
 }
 
+sg_pixel_format SokolAppPixelFormatToSokolGfx(sapp_pixel_format sokolAppFormat)
+{
+	switch (sokolAppFormat)
+	{
+		case SAPP_PIXELFORMAT_NONE:          return SG_PIXELFORMAT_NONE;
+		case SAPP_PIXELFORMAT_RGBA8:         return SG_PIXELFORMAT_RGBA8;
+		case SAPP_PIXELFORMAT_SRGB8A8:       return SG_PIXELFORMAT_SRGB8A8;
+		case SAPP_PIXELFORMAT_BGRA8:         return SG_PIXELFORMAT_BGRA8;
+		case SAPP_PIXELFORMAT_DEPTH_STENCIL: return SG_PIXELFORMAT_DEPTH_STENCIL;
+		case SAPP_PIXELFORMAT_DEPTH:         return SG_PIXELFORMAT_DEPTH;
+		case SAPP_PIXELFORMAT_SBGRA8:        AssertMsg(false, "SAPP_PIXELFORMAT_SBGRA8 is not supported in SokolAppPixelFormatToSokolGfx"); return SG_PIXELFORMAT_NONE; // TODO: FIXME!
+		default: AssertMsg(false, "Format is not supported in SokolAppPixelFormatToSokolGfx"); return SG_PIXELFORMAT_NONE;
+	}
+}
+
 sg_environment GetSokolGfxEnvironment()
 {
 	sg_environment result = ZEROED;
 	sapp_environment appEnvironment = sapp_get_environment();
-	result.defaults.color_format     = (sg_pixel_format)appEnvironment.defaults.color_format;
-	result.defaults.depth_format     = (sg_pixel_format)appEnvironment.defaults.depth_format;
+	result.defaults.color_format     = SokolAppPixelFormatToSokolGfx(appEnvironment.defaults.color_format);
+	result.defaults.depth_format     = SokolAppPixelFormatToSokolGfx(appEnvironment.defaults.depth_format);
 	result.defaults.sample_count     = appEnvironment.defaults.sample_count;
 	result.metal.device              = appEnvironment.metal.device;
 	result.d3d11.device              = appEnvironment.d3d11.device;
@@ -68,8 +83,8 @@ sg_swapchain GetSokolGfxSwapchain()
 	result.width = appSwapchain.width;
 	result.height = appSwapchain.height;
 	result.sample_count = appSwapchain.sample_count;
-	result.color_format = (sg_pixel_format)appSwapchain.color_format;
-	result.depth_format = (sg_pixel_format)appSwapchain.depth_format;
+	result.color_format = SokolAppPixelFormatToSokolGfx(appSwapchain.color_format);
+	result.depth_format = SokolAppPixelFormatToSokolGfx(appSwapchain.depth_format);
 	result.metal.current_drawable = appSwapchain.metal.current_drawable;
 	result.metal.depth_stencil_texture = appSwapchain.metal.depth_stencil_texture;
 	result.metal.msaa_color_texture = appSwapchain.metal.msaa_color_texture;

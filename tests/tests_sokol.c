@@ -10,6 +10,8 @@ Description:
 
 #if TARGET_IS_ANDROID
 #define MAIN_FONT_NAME "DroidSansMono"
+#elif TARGET_IS_OSX
+#define MAIN_FONT_NAME "Arial"
 #else
 #define MAIN_FONT_NAME "Consolas"
 #endif
@@ -422,11 +424,13 @@ void AppInit(void)
 	
 	#if TARGET_IS_WINDOWS
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
-	#else
+	#elif TARGET_IS_OSX
+	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/Users/robbitay/test_sheet_4x5.jpg"), true);
+	#elif TARGET_IS_LINUX
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/home/robbitay/test_sheet_4x5.png"), true);
 	#endif
 	
-	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
+	// #if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	const u32 Filled = 0xFFFFFFFF;
 	const u32 _Empty = 0x00FFFFFF;
 	u32 checkerGlyph18Pixels[12*18] = {
@@ -565,7 +569,7 @@ void AppInit(void)
 		Result bakeResult = TryAttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
 	}
-	#endif //!TARGET_IS_OSX
+	// #endif //!TARGET_IS_OSX
 	
 	GeneratedMesh cubeMesh = GenerateVertsForBox(scratch, MakeBoxV(V3_Zero, V3_One), White);
 	Vertex3D* cubeVertices = AllocArray(Vertex3D, scratch, cubeMesh.numIndices);
@@ -630,20 +634,21 @@ void AppInit(void)
 	UpdateScreenSafeMargins();
 	oldWindowSize = MakeV2i(sapp_width(), sapp_height());
 	
-	#if !TARGET_IS_OSX //TODO: Remove me once we get files working on OSX
 	#if TARGET_IS_WINDOWS
 	FilePath testImagePath = FilePathLit("G:/test.png");
 	FilePath backgroundImagePath = FilePathLit("G:/test.png");
 	#elif TARGET_IS_LINUX
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
 	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test.png");
+	#elif TARGET_IS_OSX
+	FilePath testImagePath = FilePathLit("/Users/robbitay/test.jpg");
+	FilePath backgroundImagePath = FilePathLit("/Users/robbitay/test.jpg");
 	#else
 	FilePath testImagePath = FilePathLit("test.png");
 	FilePath backgroundImagePath = FilePathLit("test.png");
 	#endif
 	mipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_None);
 	noMipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_NoMipmaps);
-	#endif //!TARGET_IS_OSX
 	
 	backgroundTexture = LoadTexture(stdHeap, backgroundImagePath, TextureFlag_IsRepeating);
 	

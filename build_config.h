@@ -89,6 +89,8 @@ Description:
 #define RUN_FUZZER 0
 // Tells the sokol_gfx.h include to use OpenGL instead of D3D11 on Windows (NOTE: Smooth resizing only works in OpenGL mode right now!)
 #define PREFER_OPENGL_OVER_D3D11 1
+// Disable this option when you intend to run tests.exe in a terminal that doesn't handle terminal escape sequences for color (like when doing RUN_TESTS in Sublime Text)
+#define DEBUG_OUTPUT_PRINT_COLOR_PREFIX 0
 
 // +===============================+
 // | Optional Libraries/Frameworks |
