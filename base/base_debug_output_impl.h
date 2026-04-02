@@ -202,6 +202,10 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 		}
 		#endif //TARGET_IS_ORCA
 		
+		#if TARGET_IS_PLAYDATE
+		pd->system->logToConsole(message);
+		#endif
+		
 		#if DEBUG_OUTPUT_CALLBACK_GLOBAL
 		if (DebugOutputCallback != nullptr)
 		{

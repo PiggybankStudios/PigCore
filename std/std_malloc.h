@@ -67,7 +67,7 @@ Description:
 #define MALLOC_ALIGNED_AVAILABLE 0
 
 #define MyMalloc(numBytes) pdrealloc(nullptr, (numBytes))
-#define MyMallocAligned(numBytes, alignment) MyMallocAligned(numBytes) //alignment options are not available in pdrealloc
+#define MyMallocAligned(numBytes, alignment) MyMalloc(numBytes) //alignment options are not available in pdrealloc
 #define MyMallocType(type) (type*)pdrealloc(nullptr, sizeof(type))
 #define MyRealloc(pntr, numBytes) pdrealloc((pntr), (numBytes))
 #define MyFree(pntr) pdrealloc((pntr), 0)

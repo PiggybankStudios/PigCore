@@ -1646,9 +1646,6 @@ EXPORT_FUNC int eventHandler(PlaydateAPI* playdate, PDSystemEvent event, uint32_
 }
 MAYBE_END_EXTERN_C
 
-DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter) { pd->system->logToConsole(message); }
-DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter) { pd->system->logToConsole(formatString); }
-
 #endif //TARGET_IS_PLAYDATE
 
 #if TARGET_IS_ANDROID && !BUILD_WITH_SOKOL_APP

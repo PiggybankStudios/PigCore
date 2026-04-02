@@ -142,7 +142,7 @@ car Obb3D
 _Static_assert(sizeof(Obb3D) == sizeof(r32) * 12, "Obb3D contains padding!");
 #endif
 #define MakeObb3_Const(x, y, z, width, height, depth, rotation) { .X=(x), .Y=(y), .Z=(z), .Width=(width), .Height=(height), .Depth=(depth), .Padding1=0, .Padding2=0, .Rotation=rotation }
-#define MakeObb3V_Const(center, size, rotation)                 { .Center=center,  .Size=size, .Padding5=0.0f, Padding6=0.0f, .Unused5=rotation }
+#define MakeObb3V_Const(center, size, rotation)                 { .Center=center,  .Size=size, .Padding5=0.0f, .Padding6=0.0f, .Unused5=rotation }
 #define MakeObb3(x, y, z, width, height, depth, rotation)       NEW_STRUCT(Obb3D)MakeObb3_Const((x), (y), (z), (width), (height), (depth), (rotation))
 #define MakeObb3V(center, size, rotation)                       NEW_STRUCT(Obb3D)MakeObb3V_Const((center), (size), (rotation))
 

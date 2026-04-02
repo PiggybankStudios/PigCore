@@ -939,15 +939,15 @@ bool AppFrame(void)
 				VarArrayLoopGet(PhysicsBody, body, &physWorld->bodies, bIndex);
 				PhysicsBodyTransform transform = GetPhysicsBodyTransform(body);
 				v3 position = MakeV3(transform.position.X, transform.position.Y, transform.position.Z);
-				quat rotation = NewQuat(transform.rotation.X, transform.rotation.Y, transform.rotation.Z, transform.rotation.W);
+				quat rotation = MakeQuat(transform.rotation.X, transform.rotation.Y, transform.rotation.Z, transform.rotation.W);
 				if (body->index == physWorld->groundPlaneBodyIndex)
 				{
 					//TODO: Figure out how PhysX want's us to intepret rotation/position on a Plane when drawing it
-					DrawObb3(NewObb3V(position, MakeV3(100.0f, 0.0001f, 100.0f), Quat_Identity), PalGreenDarker);
+					DrawObb3(MakeObb3V(position, MakeV3(100.0f, 0.0001f, 100.0f), Quat_Identity), PalGreenDarker);
 				}
 				else
 				{
-					DrawObb3(NewObb3V(position, MakeV3(1.0f, 1.0f, 1.0f), rotation), GetPredefPalColorByIndex(bIndex));
+					DrawObb3(MakeObb3V(position, MakeV3(1.0f, 1.0f, 1.0f), rotation), GetPredefPalColorByIndex(bIndex));
 				}
 			}
 			#endif

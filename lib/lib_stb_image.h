@@ -15,6 +15,8 @@ Date:   10\27\2025
 #include "std/std_malloc.h"
 #include "mem/mem_arena.h"
 
+//TODO: When TARGET_IS_ORCA we should maybe not compile an implementation of stb_image.h since liborca_wasm.a already has an implementation of it!
+
 //TODO: stb_image.h uses strtol which we currently don't have an implementation for in our custom standard library!
 #if USING_CUSTOM_STDLIB
 #define PIG_CORE_TRY_PARSE_IMAGE_AVAILABLE 0
@@ -71,7 +73,8 @@ static void StbImageFree(void* allocPntr)
 }
 #endif //PIG_CORE_IMPLEMENTATION
 
-#if PIG_CORE_IMPLEMENTATION && !BUILD_WITH_RAYLIB
+//NOTE: liborca_wasm.a already has an implementation of stb_image.h so we don't compile our own implementatation if TARGET_IS_WASM
+#if (PIG_CORE_IMPLEMENTATION && !BUILD_WITH_RAYLIB && !TARGET_IS_WASM)
 #define STB_IMAGE_IMPLEMENTATION
 #endif
 

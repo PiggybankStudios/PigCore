@@ -22,7 +22,14 @@ Description:
 #if PIG_CORE_IMPLEMENTATION
 #define STB_SPRINTF_IMPLEMENTATION
 #endif
+#if COMPILER_IS_MSVC
+#pragma warning(push)
+#pragma warning(disable:5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#endif
 #include "third_party/stb/stb_sprintf.h"
+#if COMPILER_IS_MSVC
+#pragma warning(pop)
+#endif
 
 //TODO: If we ever compile PigCore as a dll for Playdate then we may need to markup
 //      stbsp_sprintf with PEXP or maybe we need our own routing function around
