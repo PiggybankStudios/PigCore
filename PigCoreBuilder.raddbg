@@ -1,19 +1,20 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "build_script.c"
+recent_file: path: "d:/os/obj/amd64fre/minkernel/crts/ucrt/src/appcrt/string/mt/objfre/amd64/minkernel/crts/ucrt/src/appcrt/string/strnlen.cpp"
 recent_file: path: "pig_build/pig_build_arg_list.h"
 recent_file: path: "D:/a/_work/1/s/src/vctools/crt/vcruntime/src/string/amd64/memset.asm"
-recent_file: path: "build_script.c"
 recent_file: path: "pig_build/pig_build_recompile.h"
 target:
 {
   executable: "build/builder.exe"
-  working_directory: "build/"
+  working_directory: build
   enabled: 1
 }
 debug_info:
 {
   path: "C:/gamedev/projects/PigCore/build/builder.pdb"
-  timestamp: 66210904436321
+  timestamp: 66210984266307
 }
 breakpoint:
 {
