@@ -423,7 +423,8 @@ void AppInit(void)
 	Assert(gradientTexture.error == Result_Success);
 	
 	#if TARGET_IS_WINDOWS
-	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
+	// testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
+	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("D:/test_sheet_4x4.png"), true);
 	#elif TARGET_IS_OSX
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/Users/robbitay/test_sheet_4x5.jpg"), true);
 	#elif TARGET_IS_LINUX
@@ -635,8 +636,10 @@ void AppInit(void)
 	oldWindowSize = MakeV2i(sapp_width(), sapp_height());
 	
 	#if TARGET_IS_WINDOWS
-	FilePath testImagePath = FilePathLit("G:/test.png");
-	FilePath backgroundImagePath = FilePathLit("G:/test.png");
+	// FilePath testImagePath = FilePathLit("G:/test.png");
+	// FilePath backgroundImagePath = FilePathLit("G:/test.png");
+	FilePath testImagePath = FilePathLit("D:/test.png");
+	FilePath backgroundImagePath = FilePathLit("D:/test.png");
 	#elif TARGET_IS_LINUX
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
 	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test.png");
@@ -1504,7 +1507,7 @@ bool AppFrame(void)
 							.color=ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
 							// .texture = texture,
 							.spriteSheet = &testSheet,
-							.sheetCell = MakeV2i((i32)(tIndex+3) % testSheet.gridWidth, (i32)(tIndex+3) / testSheet.gridWidth),
+							.sheetCell = MakeV2i((i32)(tIndex) % testSheet.gridWidth, (i32)(tIndex) / testSheet.gridWidth),
 						});
 					}
 				}
