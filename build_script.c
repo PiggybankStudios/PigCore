@@ -342,8 +342,8 @@ int main(int argc, char* argv[])
 	if (BUILD_PIGGEN)
 	{
 		StrArray piggenTags = ZEROED;
-		AddStr(&piggenTags, StrLit("Piggen"));
-		AddStr(&piggenTags, BUILDING_ON_OSX ? StrLit("LangObjectiveC") : StrLit("LangC"));
+		AddTag(&piggenTags, T_PIGGEN);
+		AddTag(&piggenTags, BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C);
 		
 		if (BUILD_WINDOWS)
 		{
@@ -360,8 +360,8 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &piggenTags);
-			AddStr(&tags, StrLit("cl"));
-			AddStr(&tags, StrLit("Windows"));
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN_EXE "!"));
@@ -382,9 +382,9 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &piggenTags);
-			AddStr(&tags, StrLit("clang"));
-			AddStr(&tags, StrLit("Linux"));
-			AddStr(&tags, StrLit("LinuxOrOsx"));
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			#if BUILDING_ON_LINUX
@@ -417,9 +417,9 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &piggenTags);
-			AddStr(&tags, StrLit("clang"));
-			AddStr(&tags, StrLit("OSX"));
-			AddStr(&tags, StrLit("LinuxOrOsx"));
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_OSX);
+			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
@@ -608,8 +608,8 @@ int main(int argc, char* argv[])
 				
 				StrArray tags = ZEROED;
 				AddStrArray(&tags, &shaderTags);
-				AddStr(&tags, StrLit("cl"));
-				AddStr(&tags, StrLit("Windows"));
+				AddTag(&tags, T_MSVC_CL);
+				AddTag(&tags, T_WINDOWS);
 				AddStrArray(&tags, &buildConfigTags);
 				
 				Str errorMessage = JoinStrings3(StrLit("Fald to build "), objPath, StrLit(" for Windows!"), false);
@@ -630,9 +630,9 @@ int main(int argc, char* argv[])
 				
 				StrArray tags = ZEROED;
 				AddStrArray(&tags, &shaderTags);
-				AddStr(&tags, StrLit("clang"));
-				AddStr(&tags, StrLit("Linux"));
-				AddStr(&tags, StrLit("LinuxOrOsx"));
+				AddTag(&tags, T_CLANG);
+				AddTag(&tags, T_LINUX);
+				AddTag(&tags, T_UNIX);
 				AddStrArray(&tags, &buildConfigTags);
 				
 				#if BUILDING_ON_LINUX
@@ -667,9 +667,9 @@ int main(int argc, char* argv[])
 				
 				StrArray tags = ZEROED;
 				AddStrArray(&tags, &shaderTags);
-				AddStr(&tags, StrLit("clang"));
-				AddStr(&tags, StrLit("OSX"));
-				AddStr(&tags, StrLit("LinuxOrOsx"));
+				AddTag(&tags, T_CLANG);
+				AddTag(&tags, T_OSX);
+				AddTag(&tags, T_UNIX);
 				AddStrArray(&tags, &buildConfigTags);
 				
 				Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for OSX!"), false);
@@ -704,8 +704,8 @@ int main(int argc, char* argv[])
 					
 					StrArray tags = ZEROED;
 					AddStrArray(&tags, &shaderTags);
-					AddStr(&tags, StrLit("clang"));
-					AddStr(&tags, StrLit("Android"));
+					AddTag(&tags, T_CLANG);
+					AddTag(&tags, T_ANDROID);
 					AddStr(&tags, architectureStr);
 					AddStrArray(&tags, &buildConfigTags);
 					
@@ -756,8 +756,8 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &tracyTags);
-			AddStr(&tags, StrLit("cl"));
-			AddStr(&tags, StrLit("Windows"));
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
@@ -780,9 +780,9 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &tracyTags);
-			AddStr(&tags, StrLit("clang"));
-			AddStr(&tags, StrLit("Linux"));
-			AddStr(&tags, StrLit("LinuxOrOsx"));
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			#if BUILDING_ON_LINUX
@@ -832,8 +832,8 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &imguiTags);
-			AddStr(&tags, StrLit("cl"));
-			AddStr(&tags, StrLit("Windows"));
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_IMGUI_OBJ "!"));
@@ -853,9 +853,9 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &imguiTags);
-			AddStr(&tags, StrLit("clang"));
-			AddStr(&tags, StrLit("Linux"));
-			AddStr(&tags, StrLit("LinuxOrOsx"));
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			#if BUILDING_ON_LINUX
@@ -907,8 +907,8 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &physxTags);
-			AddStr(&tags, StrLit("cl"));
-			AddStr(&tags, StrLit("Windows"));
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_PHYSX_OBJ "!"));
@@ -949,8 +949,8 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &pigCoreTags);
-			AddStr(&tags, StrLit("cl"));
-			AddStr(&tags, StrLit("Windows"));
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
@@ -973,9 +973,9 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &pigCoreTags);
-			AddStr(&tags, StrLit("clang"));
-			AddStr(&tags, StrLit("Linux"));
-			AddStr(&tags, StrLit("LinuxOrOsx"));
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			#if BUILDING_ON_LINUX
@@ -1028,8 +1028,8 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &testsTags);
-			AddStr(&tags, StrLit("cl"));
-			AddStr(&tags, StrLit("Windows"));
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_TESTS_EXE "!"));
@@ -1055,9 +1055,9 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &testsTags);
-			AddStr(&tags, StrLit("clang"));
-			AddStr(&tags, StrLit("Linux"));
-			AddStr(&tags, StrLit("LinuxOrOsx"));
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			#if BUILDING_ON_LINUX
@@ -1094,9 +1094,9 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &testsTags);
-			AddStr(&tags, StrLit("clang"));
-			AddStr(&tags, StrLit("OSX"));
-			AddStr(&tags, StrLit("LinuxOrOsx"));
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_OSX);
+			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
@@ -1130,10 +1130,10 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &testsTags);
-			if (USE_EMSCRIPTEN) { AddStr(&tags, StrLit("emcc")); }
-			AddStr(&tags, StrLit("clang")); //basically all compiler flags that are compatible with clang are compatible with emcc
-			AddStr(&tags, StrLit("Web"));
-			AddStr(&tags, StrLit("Wasm"));
+			if (USE_EMSCRIPTEN) { AddTag(&tags, T_EMCC); }
+			AddTag(&tags, T_CLANG); //basically all compiler flags that are compatible with clang are compatible with emcc
+			AddTag(&tags, T_WEB);
+			AddTag(&tags, T_WASM);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_APP_WASM "!"));
@@ -1236,8 +1236,8 @@ int main(int argc, char* argv[])
 				
 				StrArray tags = ZEROED;
 				AddStrArray(&tags, &testsTags);
-				AddStr(&tags, StrLit("clang"));
-				AddStr(&tags, StrLit("Android"));
+				AddTag(&tags, T_CLANG);
+				AddTag(&tags, T_ANDROID);
 				AddStr(&tags, architectureStr);
 				AddStrArray(&tags, &buildConfigTags);
 				
@@ -1388,9 +1388,9 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &testsTags);
-			AddStr(&tags, StrLit("clang"));
-			AddStr(&tags, StrLit("Orca"));
-			AddStr(&tags, StrLit("Wasm"));
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_ORCA);
+			AddTag(&tags, T_WASM);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_MODULE_WASM "!"));
