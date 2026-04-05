@@ -116,7 +116,8 @@ bool GetBoolConfig(const char* defineName, Str buildConfigContents, int argc, ch
 
 int main(int argc, char* argv[])
 {
-	RecompileIfNeeded();
+	StrArray buildScriptSourceFolders = ZEROED;
+	RecompileIfNeeded(&buildScriptSourceFolders);
 	PrintLine("[" BUILD_SCRIPT_EXE_NAME "...]");
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
@@ -172,9 +173,9 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_GTK                    = GetBoolConfig("BUILD_WITH_GTK",                    buildConfigContents, argc, argv, &buildConfigTags);
 	
 	Str ANDROID_SIGNING_KEY_PATH = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")), false);
-	Str ANDROID_SIGNING_PASSWORD = ZEROED;
+	Str ANDROID_SIGNING_PASSWORD = Str_Empty;
 	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASSWORD"), &ANDROID_SIGNING_PASSWORD)) { ANDROID_SIGNING_PASSWORD = CopyStr(ANDROID_SIGNING_PASSWORD, false); }
-	Str ANDROID_SIGNING_PASS_PATH = ZEROED;
+	Str ANDROID_SIGNING_PASS_PATH = Str_Empty;
 	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASS_PATH"), &ANDROID_SIGNING_PASS_PATH)) { ANDROID_SIGNING_PASS_PATH = CopyStr(ANDROID_SIGNING_PASS_PATH, false); }
 	Str ANDROID_NDK_VERSION = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_NDK_VERSION")), false);
 	Str ANDROID_PLATFORM_FOLDERNAME = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_PLATFORM_FOLDERNAME")), false);
@@ -216,7 +217,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |        Find SDK Paths        |
 	// +==============================+
-	Str emscriptenSdkPath = ZEROED;
+	Str emscriptenSdkPath = Str_Empty;
 	if (BUILD_WEB && USE_EMSCRIPTEN)
 	{
 		emscriptenSdkPath = GetEmscriptenSdkPath();
@@ -224,11 +225,11 @@ int main(int argc, char* argv[])
 		InitializeEmsdkIf(StrLit(".."), &isEmsdkInitialized);
 	}
 	
-	Str androidSdkDir = ZEROED;
-	Str androidSdkBuildToolsDir = ZEROED;
-	Str androidSdkPlatformDir = ZEROED;
-	Str androidNdkDir = ZEROED;
-	Str androidNdkToolchainDir = ZEROED;
+	Str androidSdkDir = Str_Empty;
+	Str androidSdkBuildToolsDir = Str_Empty;
+	Str androidSdkPlatformDir = Str_Empty;
+	Str androidNdkDir = Str_Empty;
+	Str androidNdkToolchainDir = Str_Empty;
 	if (BUILD_ANDROID)
 	{
 		androidSdkDir = GetAndroidSdkPath();
@@ -241,15 +242,15 @@ int main(int argc, char* argv[])
 		//TODO: We should check to see if all these folders actually exist and give a nice error to the user when they need to install something or change the build_config.h
 	}
 	
-	Str orcaSdkPath = ZEROED;
+	Str orcaSdkPath = Str_Empty;
 	if (BUILD_ORCA)
 	{
 		orcaSdkPath = GetOrcaSdkPath();
 		PrintLine("Orca SDK path: \"%.*s\"", StrPrint(orcaSdkPath));
 	}
 	
-	Str playdateSdkDir = ZEROED;
-	Str playdateSdkDir_C_API = ZEROED;
+	Str playdateSdkDir = Str_Empty;
+	Str playdateSdkDir_C_API = Str_Empty;
 	if (BUILD_PLAYDATE_DEVICE || BUILD_PLAYDATE_SIMULATOR)
 	{
 		playdateSdkDir = GetPlaydateSdkPath();
@@ -263,12 +264,10 @@ int main(int argc, char* argv[])
 	Str pigCoreThirdPartyPath = StrLit("[ROOT]/third_party");
 	CliArgList pigCoreCompilerFlags = ZEROED;
 	CliArgList pigCoreLinkerFlags = ZEROED;
-	FillPigCoreFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags,
-		pigCoreThirdPartyPath,
-		androidNdkDir, androidNdkToolchainDir,
-		orcaSdkPath,
-		playdateSdkDir, playdateSdkDir_C_API
-	);
+	FillPigCoreFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, pigCoreThirdPartyPath);
+	FillAndroidFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, androidNdkDir, androidNdkToolchainDir);
+	FillPlaydateFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
+	FillOrcaFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, orcaSdkPath);
 	
 	//We'll put shader objects, imgui.obj/o, tracy.dll/so, and physx_capi.obj/o into this list
 	CliArgList thingsToLink = ZEROED;
