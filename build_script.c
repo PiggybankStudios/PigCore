@@ -591,9 +591,9 @@ int main(int argc, char* argv[])
 			CreateAndWriteFile(realSourcePath, sourceFileContents, true);
 			
 			StrArray shaderTags = ZEROED;
-			AddStr(&shaderTags, StrLit("Shader"));
-			AddStr(&shaderTags, BUILDING_ON_OSX ? StrLit("LangObjectiveC") : StrLit("LangC"));
-			AddStr(&shaderTags, StrLit("Object"));
+			AddTag(&shaderTags, T_SHADER);
+			AddTag(&shaderTags, BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C);
+			AddTag(&shaderTags, T_OBJECT);
 			
 			if (BUILD_WINDOWS)
 			{
@@ -736,9 +736,9 @@ int main(int argc, char* argv[])
 	if (BUILD_TRACY_DLL)
 	{
 		StrArray tracyTags = ZEROED;
-		AddStr(&tracyTags, StrLit("Tracy"));
-		AddStr(&tracyTags, StrLit("LangCpp"));
-		AddStr(&tracyTags, StrLit("Library"));
+		AddTag(&tracyTags, T_TRACY);
+		AddTag(&tracyTags, T_LANG_CPP);
+		AddTag(&tracyTags, T_LIBRARY);
 		
 		if (BUILD_WINDOWS)
 		{
@@ -815,9 +815,9 @@ int main(int argc, char* argv[])
 	if (BUILD_IMGUI_OBJ)
 	{
 		StrArray imguiTags = ZEROED;
-		AddStr(&imguiTags, StrLit("Imgui"));
-		AddStr(&imguiTags, StrLit("LangCpp"));
-		AddStr(&imguiTags, StrLit("Object"));
+		AddTag(&imguiTags, T_DEAR_IMGUI);
+		AddTag(&imguiTags, T_LANG_CPP);
+		AddTag(&imguiTags, T_OBJECT);
 		
 		if (BUILD_WINDOWS)
 		{
@@ -887,9 +887,9 @@ int main(int argc, char* argv[])
 	if (BUILD_PHYSX_OBJ)
 	{
 		StrArray physxTags = ZEROED;
-		AddStr(&physxTags, StrLit("PhysX"));
-		AddStr(&physxTags, StrLit("LangCpp"));
-		AddStr(&physxTags, StrLit("Object"));
+		AddTag(&physxTags, T_PHYSX);
+		AddTag(&physxTags, T_LANG_CPP);
+		AddTag(&physxTags, T_OBJECT);
 		
 		if (BUILD_WINDOWS)
 		{
@@ -929,9 +929,9 @@ int main(int argc, char* argv[])
 	if (BUILD_PIG_CORE_DLL)
 	{
 		StrArray pigCoreTags = ZEROED;
-		AddStr(&pigCoreTags, StrLit("PigCore"));
-		AddStr(&pigCoreTags, StrLit("LangC"));
-		AddStr(&pigCoreTags, StrLit("Library"));
+		AddTag(&pigCoreTags, T_PIG_CORE);
+		AddTag(&pigCoreTags, T_LANG_C);
+		AddTag(&pigCoreTags, T_LIBRARY);
 		
 		if (BUILD_WINDOWS)
 		{
@@ -1005,10 +1005,10 @@ int main(int argc, char* argv[])
 	if (BUILD_TESTS)
 	{
 		StrArray testsTags = ZEROED;
-		AddStr(&testsTags, StrLit("PigCoreTests"));
-		AddStr(&testsTags, StrLit("PigCore")); //We add this because we are compiling PigCore implementation directly into tests.exe (not linking as a .dll)
-		AddStr(&testsTags, BUILDING_ON_OSX ? StrLit("LangObjectiveC") : StrLit("LangC"));
-		AddStr(&testsTags, StrLit("Program"));
+		AddTag(&testsTags, T_PIG_CORE_TESTS);
+		AddTag(&testsTags, T_PIG_CORE); //We add this because we are compiling PigCore implementation directly into tests.exe (not linking as a .dll)
+		AddTag(&testsTags, BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C);
+		AddTag(&testsTags, T_PROGRAM);
 		
 		// +==============================+
 		// |      Windows tests.exe       |
@@ -1422,9 +1422,9 @@ int main(int argc, char* argv[])
 			
 			StrArray compileTags = ZEROED;
 			AddStrArray(&compileTags, &testsTags);
-			AddStr(&compileTags, StrLit(EXE_ARM_GCC));
-			AddStr(&compileTags, StrLit("Playdate"));
-			AddStr(&compileTags, StrLit("Device"));
+			AddTag(&compileTags, T_ARM_GCC);
+			AddTag(&compileTags, T_PLAYDATE);
+			AddTag(&compileTags, T_DEVICE);
 			AddStrArray(&compileTags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_ARM_GCC), &compileTags, &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
@@ -1439,9 +1439,9 @@ int main(int argc, char* argv[])
 			
 			StrArray linkTags = ZEROED;
 			AddStrArray(&linkTags, &testsTags);
-			AddStr(&linkTags, StrLit(EXE_ARM_GCC));
-			AddStr(&linkTags, StrLit("Playdate"));
-			AddStr(&linkTags, StrLit("Device"));
+			AddTag(&linkTags, T_ARM_GCC);
+			AddTag(&linkTags, T_PLAYDATE);
+			AddTag(&linkTags, T_DEVICE);
 			AddStrArray(&linkTags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_ARM_GCC), &linkTags, &linkCmd, StrLit("Failed to build " FILENAME_PDEX_ELF "!"));
@@ -1468,9 +1468,9 @@ int main(int argc, char* argv[])
 			
 			StrArray compileTags = ZEROED;
 			AddStrArray(&compileTags, &testsTags);
-			AddStr(&compileTags, StrLit("cl"));
-			AddStr(&compileTags, StrLit("Playdate"));
-			AddStr(&compileTags, StrLit("Simulator"));
+			AddTag(&compileTags, T_MSVC_CL);
+			AddTag(&compileTags, T_PLAYDATE);
+			AddTag(&compileTags, T_SIMULATOR);
 			AddStrArray(&compileTags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &compileTags, &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
@@ -1487,9 +1487,10 @@ int main(int argc, char* argv[])
 			
 			StrArray linkTags = ZEROED;
 			AddStrArray(&linkTags, &testsTags);
-			AddStr(&linkTags, StrLit(EXE_MSVC_LINK));
-			AddStr(&linkTags, StrLit("Playdate"));
-			AddStr(&linkTags, StrLit("Simulator"));
+			AddTag(&linkTags, T_MSVC_LINK);
+			AddTag(&linkTags, T_MSVC_CL_OR_LINK);
+			AddTag(&linkTags, T_PLAYDATE);
+			AddTag(&linkTags, T_SIMULATOR);
 			AddStrArray(&linkTags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_LINK), &linkTags, &linkCmd, StrLit("Failed to build " FILENAME_PDEX_DLL "!"));
@@ -1516,8 +1517,8 @@ int main(int argc, char* argv[])
 			
 			StrArray tags = ZEROED;
 			AddStrArray(&tags, &testsTags);
-			AddStr(&tags, StrLit(EXE_PDC));
-			AddStr(&tags, StrLit("Playdate"));
+			AddTag(&tags, T_PDC);
+			AddTag(&tags, T_PLAYDATE);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_PDC), &tags, &cmd, StrLit("Failed to package " FILENAME_TESTS_PDX "!"));
