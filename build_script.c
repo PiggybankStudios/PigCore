@@ -460,7 +460,7 @@ int main(int argc, char* argv[])
 	// |                        Build Shaders                         |
 	// +--------------------------------------------------------------+
 	FindShadersContext findContext = EMPTY;
-	CliArgList clang_AndroidShaderObjects[AndroidTargetArchitechture_Count] = EMPTY;
+	CliArgList clang_AndroidShaderObjects[AndroidTargetArchitecture_Count] = EMPTY;
 	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
 	{
 		const char* ignoreList[] = { ".git", "_template", "third_party", "_build" };
@@ -506,10 +506,10 @@ int main(int argc, char* argv[])
 		{
 			for (u64 sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
-				for (u64 archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+				for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 				{
-					AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
-					Str archFolderName = MakeStrNt(GetAndroidTargetArchitechtureFolderName(architecture));
+					AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
+					Str archFolderName = MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture));
 					Str archFolderPath = JoinStrings3(StrLit("lib/"), archFolderName, StrLit("/"), false);
 					Str oPath = findContext.oPaths.strings[sIndex];
 					AddArgStr(&clang_AndroidShaderObjects[archIndex], CLI_QUOTED_ARG, oPath);
@@ -683,12 +683,12 @@ int main(int argc, char* argv[])
 				mkdir("lib", FOLDER_PERMISSIONS);
 				chdir("lib");
 				
-				for (u64 archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+				for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 				{
-					AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
-					mkdir(GetAndroidTargetArchitechtureFolderName(architecture), FOLDER_PERMISSIONS);
-					chdir(GetAndroidTargetArchitechtureFolderName(architecture));
-					Str architectureStr = MakeStrNt(GetAndroidTargetArchitechtureTargetStr(architecture));
+					AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
+					mkdir(GetAndroidTargetArchitectureFolderName(architecture), FOLDER_PERMISSIONS);
+					chdir(GetAndroidTargetArchitectureFolderName(architecture));
+					Str architectureStr = MakeStrNt(GetAndroidTargetArchitectureTargetStr(architecture));
 					
 					Str oPath = findContext.oPaths.strings[sIndex];
 					
@@ -1214,13 +1214,13 @@ int main(int argc, char* argv[])
 			// MyRemoveDirectory(StrLit("lib"), true);
 			mkdir("lib", FOLDER_PERMISSIONS);
 			chdir("lib");
-			for (u64 archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+			for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 			{
-				AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
-				mkdir(GetAndroidTargetArchitechtureFolderName(architecture), FOLDER_PERMISSIONS);
-				chdir(GetAndroidTargetArchitechtureFolderName(architecture));
-				PrintLine("Building for %s...", GetAndroidTargetArchitechtureFolderName(architecture));
-				Str architectureStr = MakeStrNt(GetAndroidTargetArchitechtureTargetStr(architecture));
+				AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
+				mkdir(GetAndroidTargetArchitectureFolderName(architecture), FOLDER_PERMISSIONS);
+				chdir(GetAndroidTargetArchitectureFolderName(architecture));
+				PrintLine("Building for %s...", GetAndroidTargetArchitectureFolderName(architecture));
+				Str architectureStr = MakeStrNt(GetAndroidTargetArchitectureTargetStr(architecture));
 				
 				CliArgList cmd = EMPTY;
 				cmd.pathSepChar = '/';
@@ -1319,11 +1319,11 @@ int main(int argc, char* argv[])
 					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"), true);
 					
 					mkdir("lib", FOLDER_PERMISSIONS);
-					for (u64 archIndex = 1; archIndex < AndroidTargetArchitechture_Count; archIndex++)
+					for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 					{
-						AndroidTargetArchitechture architecture = (AndroidTargetArchitechture)archIndex;
-						Str apkFolder = JoinStrings2(StrLit("lib/"), MakeStrNt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
-						Str buildFolder = JoinStrings2(StrLit("../lib/"), MakeStrNt(GetAndroidTargetArchitechtureFolderName(architecture)), true);
+						AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
+						Str apkFolder = JoinStrings2(StrLit("lib/"), MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture)), true);
+						Str buildFolder = JoinStrings2(StrLit("../lib/"), MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture)), true);
 						mkdir(apkFolder.chars, FOLDER_PERMISSIONS);
 						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder, true);
 					}
