@@ -116,7 +116,7 @@ bool GetBoolConfig(const char* defineName, Str buildConfigContents, int argc, ch
 
 int main(int argc, char* argv[])
 {
-	StrArray buildScriptSourceFolders = ZEROED;
+	StrArray buildScriptSourceFolders = EMPTY;
 	RecompileIfNeeded(&buildScriptSourceFolders);
 	PrintLine("[" BUILD_SCRIPT_EXE_NAME "...]");
 	
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |       Extract Defines        |
 	// +==============================+
-	StrArray buildConfigTags = ZEROED;
+	StrArray buildConfigTags = EMPTY;
 	Str buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
 	bool DEBUG_BUILD                       = GetBoolConfig("DEBUG_BUILD",                       buildConfigContents, argc, argv, &buildConfigTags);
@@ -262,15 +262,15 @@ int main(int argc, char* argv[])
 	// |       Fill CliArgLists       |
 	// +==============================+
 	Str pigCoreThirdPartyPath = StrLit("[ROOT]/third_party");
-	CliArgList pigCoreCompilerFlags = ZEROED;
-	CliArgList pigCoreLinkerFlags = ZEROED;
+	CliArgList pigCoreCompilerFlags = EMPTY;
+	CliArgList pigCoreLinkerFlags = EMPTY;
 	FillPigCoreFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, pigCoreThirdPartyPath);
 	FillAndroidFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, androidNdkDir, androidNdkToolchainDir);
 	FillPlaydateFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
 	FillOrcaFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, orcaSdkPath);
 	
 	//We'll put shader objects, imgui.obj/o, tracy.dll/so, and physx_capi.obj/o into this list
-	CliArgList thingsToLink = ZEROED;
+	CliArgList thingsToLink = EMPTY;
 	
 	AddTaggedArgNt(&pigCoreCompilerFlags, EXE_MSVC_CL "|Piggen|DUMP_ASSEMBLY",          CL_ASSEMB_LISTING_FILE, "piggen.asm");
 	AddTaggedArgNt(&pigCoreCompilerFlags, EXE_MSVC_CL "|PigCore|Library|DUMP_ASSEMBLY", CL_ASSEMB_LISTING_FILE, "pig_core.asm");
@@ -299,7 +299,7 @@ int main(int argc, char* argv[])
 		Str protocExe = StrLit("protoc");
 		#endif
 		
-		CliArgList proto_CommonFlags = ZEROED;
+		CliArgList proto_CommonFlags = EMPTY;
 		AddArgNt(&proto_CommonFlags, PROTOC_PLUGIN_EXE_PATH, "[ROOT]/third_party/_tools/linux/protoc-gen-c");
 		AddArgNt(&proto_CommonFlags, PROTOC_ERROR_FORMAT, "msvs");
 		AddArgNt(&proto_CommonFlags, PROTOC_PROTO_PATH, "[ROOT]");
@@ -311,7 +311,7 @@ int main(int argc, char* argv[])
 		
 		//TODO: Rather than manually running on a specific set of .proto files, we should resursively search the folders and find all .proto files
 		{
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, PROTOC_PROTO_PATH, "[ROOT]/parse");
 			AddArgList(&cmd, &proto_CommonFlags);
@@ -320,7 +320,7 @@ int main(int argc, char* argv[])
 			RunCliProgramAndExitOnFailure(protocExe, "", &cmd, StrLit("protoc Failed on parse_proto_google_types.proto!"));
 		}
 		{
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, PROTOC_PROTO_PATH, "[ROOT]/tests");
 			AddArgList(&cmd, &proto_CommonFlags);
@@ -341,7 +341,7 @@ int main(int argc, char* argv[])
 	if (RUN_PIGGEN && !BUILD_PIGGEN && !DoesFileExist(StrLit(RUNNABLE_FILENAME_PIGGEN))) { PrintLine("Building %s because it's missing", RUNNABLE_FILENAME_PIGGEN); BUILD_PIGGEN = true; }
 	if (BUILD_PIGGEN)
 	{
-		StrArray piggenTags = ZEROED;
+		StrArray piggenTags = EMPTY;
 		AddTag(&piggenTags, T_PIGGEN);
 		AddTag(&piggenTags, BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C);
 		
@@ -350,7 +350,7 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN_EXE);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIGGEN_EXE);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &piggenTags);
 			AddTag(&tags, T_MSVC_CL);
 			AddTag(&tags, T_WINDOWS);
@@ -372,7 +372,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIGGEN);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
@@ -380,7 +380,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &piggenTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
@@ -408,14 +408,14 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for OSX...]", FILENAME_PIGGEN);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &piggenTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_OSX);
@@ -438,7 +438,7 @@ int main(int argc, char* argv[])
 		#define PIGGEN_OUTPUT_FOLDER "-o=\"[VAL]\""
 		#define PIGGEN_EXCLUDE_FOLDER "-e=\"[VAL]\""
 		
-		CliArgList cmd = ZEROED;
+		CliArgList cmd = EMPTY;
 		AddArgNt(&cmd, CLI_QUOTED_ARG, "..");
 		AddArgNt(&cmd, PIGGEN_OUTPUT_FOLDER, FOLDERNAME_GENERATED_CODE "/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/base/base_defines_check.h");
@@ -459,8 +459,8 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                        Build Shaders                         |
 	// +--------------------------------------------------------------+
-	FindShadersContext findContext = ZEROED;
-	CliArgList clang_AndroidShaderObjects[AndroidTargetArchitechture_Count] = ZEROED;
+	FindShadersContext findContext = EMPTY;
+	CliArgList clang_AndroidShaderObjects[AndroidTargetArchitechture_Count] = EMPTY;
 	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
 	{
 		const char* ignoreList[] = { ".git", "_template", "third_party", "_build" };
@@ -552,7 +552,7 @@ int main(int argc, char* argv[])
 			Str realHeaderPath = StrReplace(headerPath, StrLit("[ROOT]"), StrLit(".."), false);
 			Str realShaderPath = StrReplace(shaderPath, StrLit("[ROOT]"), StrLit(".."), false);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArgNt(&cmd, SHDC_FORMAT, "sokol_impl");
 			AddArgNt(&cmd, SHDC_ERROR_FORMAT, "msvc");
 			// AddArg(&cmd, SHDC_REFLECTION);
@@ -590,7 +590,7 @@ int main(int argc, char* argv[])
 			PrintLine("Generating \"%.*s\"...", StrPrint(realSourcePath));
 			CreateAndWriteFile(realSourcePath, sourceFileContents, true);
 			
-			StrArray shaderTags = ZEROED;
+			StrArray shaderTags = EMPTY;
 			AddTag(&shaderTags, T_SHADER);
 			AddTag(&shaderTags, BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C);
 			AddTag(&shaderTags, T_OBJECT);
@@ -599,14 +599,14 @@ int main(int argc, char* argv[])
 			{
 				Str objPath = findContext.objPaths.strings[sIndex];
 				
-				CliArgList cmd = ZEROED;
+				CliArgList cmd = EMPTY;
 				AddArg(&cmd, CL_COMPILE);
 				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
 				AddArgStr(&cmd, CL_OBJ_FILE, objPath);
 				AddArgStr(&cmd, CL_INCLUDE_DIR, headerDirectory);
 				AddArgList(&cmd, &pigCoreCompilerFlags);
 				
-				StrArray tags = ZEROED;
+				StrArray tags = EMPTY;
 				AddStrArray(&tags, &shaderTags);
 				AddTag(&tags, T_MSVC_CL);
 				AddTag(&tags, T_WINDOWS);
@@ -620,7 +620,7 @@ int main(int argc, char* argv[])
 			{
 				Str oPath = findContext.oPaths.strings[sIndex];
 				
-				CliArgList cmd = ZEROED;
+				CliArgList cmd = EMPTY;
 				cmd.pathSepChar = '/';
 				AddArg(&cmd, CLANG_COMPILE);
 				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
@@ -628,7 +628,7 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
 				AddArgList(&cmd, &pigCoreCompilerFlags);
 				
-				StrArray tags = ZEROED;
+				StrArray tags = EMPTY;
 				AddStrArray(&tags, &shaderTags);
 				AddTag(&tags, T_CLANG);
 				AddTag(&tags, T_LINUX);
@@ -656,7 +656,7 @@ int main(int argc, char* argv[])
 			{
 				Str oPath = findContext.oPaths.strings[sIndex];
 				
-				CliArgList cmd = ZEROED;
+				CliArgList cmd = EMPTY;
 				cmd.pathSepChar = '/';
 				AddArg(&cmd, CLANG_COMPILE);
 				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
@@ -665,7 +665,7 @@ int main(int argc, char* argv[])
 				AddArgNt(&cmd, CLANG_DISABLE_WARNING, "unused-command-line-argument");
 				AddArgList(&cmd, &pigCoreCompilerFlags);
 				
-				StrArray tags = ZEROED;
+				StrArray tags = EMPTY;
 				AddStrArray(&tags, &shaderTags);
 				AddTag(&tags, T_CLANG);
 				AddTag(&tags, T_OSX);
@@ -692,7 +692,7 @@ int main(int argc, char* argv[])
 					
 					Str oPath = findContext.oPaths.strings[sIndex];
 					
-					CliArgList cmd = ZEROED;
+					CliArgList cmd = EMPTY;
 					cmd.pathSepChar = '/';
 					cmd.rootDirPath = StrLit("../../../..");
 					AddArg(&cmd, CLANG_COMPILE);
@@ -702,7 +702,7 @@ int main(int argc, char* argv[])
 					AddArgStr(&cmd, CLANG_TARGET_ARCHITECTURE, architectureStr);
 					AddArgList(&cmd, &pigCoreCompilerFlags);
 					
-					StrArray tags = ZEROED;
+					StrArray tags = EMPTY;
 					AddStrArray(&tags, &shaderTags);
 					AddTag(&tags, T_CLANG);
 					AddTag(&tags, T_ANDROID);
@@ -735,7 +735,7 @@ int main(int argc, char* argv[])
 	if (PROFILING_ENABLED && !BUILD_TRACY_DLL && BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_TRACY_SO))) { PrintLine("Building %s because it's missing", FILENAME_TRACY_SO); BUILD_TRACY_DLL = true; }
 	if (BUILD_TRACY_DLL)
 	{
-		StrArray tracyTags = ZEROED;
+		StrArray tracyTags = EMPTY;
 		AddTag(&tracyTags, T_TRACY);
 		AddTag(&tracyTags, T_LANG_CPP);
 		AddTag(&tracyTags, T_LIBRARY);
@@ -745,7 +745,7 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_TRACY_DLL);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/third_party/tracy/TracyClient.cpp");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TRACY_DLL);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
@@ -754,7 +754,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &tracyTags);
 			AddTag(&tags, T_MSVC_CL);
 			AddTag(&tags, T_WINDOWS);
@@ -768,7 +768,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_TRACY_SO);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/third_party/tracy/TracyClient.cpp");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TRACY_SO);
@@ -778,7 +778,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &tracyTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
@@ -814,7 +814,7 @@ int main(int argc, char* argv[])
 	if (BUILD_WITH_IMGUI && !BUILD_IMGUI_OBJ && BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_IMGUI_O))) { PrintLine("Building %s because it's missing", FILENAME_IMGUI_O); BUILD_IMGUI_OBJ = true; }
 	if (BUILD_IMGUI_OBJ)
 	{
-		StrArray imguiTags = ZEROED;
+		StrArray imguiTags = EMPTY;
 		AddTag(&imguiTags, T_DEAR_IMGUI);
 		AddTag(&imguiTags, T_LANG_CPP);
 		AddTag(&imguiTags, T_OBJECT);
@@ -824,13 +824,13 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_IMGUI_OBJ);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArg(&cmd, CL_COMPILE);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/ui/ui_imgui_main.cpp");
 			AddArgNt(&cmd, CL_OBJ_FILE, FILENAME_IMGUI_OBJ);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &imguiTags);
 			AddTag(&tags, T_MSVC_CL);
 			AddTag(&tags, T_WINDOWS);
@@ -844,14 +844,14 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("[Building %s for Linux...]", FILENAME_IMGUI_O);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArg(&cmd, CLANG_COMPILE);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/ui/ui_imgui_main.cpp");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_IMGUI_O);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &imguiTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
@@ -886,7 +886,7 @@ int main(int argc, char* argv[])
 	if (BUILD_WITH_PHYSX && !BUILD_PHYSX_OBJ && BUILD_LINUX && !DoesFileExist(StrLit(FILENAME_PHYSX_O))) { PrintLine("Building %s because it's missing", FILENAME_PHYSX_O); BUILD_PHYSX_OBJ = true; }
 	if (BUILD_PHYSX_OBJ)
 	{
-		StrArray physxTags = ZEROED;
+		StrArray physxTags = EMPTY;
 		AddTag(&physxTags, T_PHYSX);
 		AddTag(&physxTags, T_LANG_CPP);
 		AddTag(&physxTags, T_OBJECT);
@@ -896,7 +896,7 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_PHYSX_OBJ);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArg(&cmd, CL_COMPILE);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/phys/phys_physx_capi_main.cpp");
 			AddArgNt(&cmd, CL_OBJ_FILE, FILENAME_PHYSX_OBJ);
@@ -905,7 +905,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &physxTags);
 			AddTag(&tags, T_MSVC_CL);
 			AddTag(&tags, T_WINDOWS);
@@ -928,7 +928,7 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	if (BUILD_PIG_CORE_DLL)
 	{
-		StrArray pigCoreTags = ZEROED;
+		StrArray pigCoreTags = EMPTY;
 		AddTag(&pigCoreTags, T_PIG_CORE);
 		AddTag(&pigCoreTags, T_LANG_C);
 		AddTag(&pigCoreTags, T_LIBRARY);
@@ -938,7 +938,7 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/dll/dll_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIG_CORE_DLL);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
@@ -947,7 +947,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &pigCoreTags);
 			AddTag(&tags, T_MSVC_CL);
 			AddTag(&tags, T_WINDOWS);
@@ -961,7 +961,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIG_CORE_SO);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/dll/dll_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIG_CORE_SO);
@@ -971,7 +971,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &pigCoreTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
@@ -1004,7 +1004,7 @@ int main(int argc, char* argv[])
 	if (INSTALL_TESTS_APK && !BUILD_TESTS && !DoesFileExist(StrLit(FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK))) { PrintLine("Building %s because it's missing", FILENAME_TESTS_APK); BUILD_TESTS = true; BUILD_ANDROID = true; }
 	if (BUILD_TESTS)
 	{
-		StrArray testsTags = ZEROED;
+		StrArray testsTags = EMPTY;
 		AddTag(&testsTags, T_PIG_CORE_TESTS);
 		AddTag(&testsTags, T_PIG_CORE); //We add this because we are compiling PigCore implementation directly into tests.exe (not linking as a .dll)
 		AddTag(&testsTags, BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C);
@@ -1018,7 +1018,7 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS_EXE);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TESTS_EXE);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
@@ -1026,7 +1026,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &testsTags);
 			AddTag(&tags, T_MSVC_CL);
 			AddTag(&tags, T_WINDOWS);
@@ -1044,7 +1044,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_TESTS);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
@@ -1053,7 +1053,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &testsTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
@@ -1085,14 +1085,14 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for OSX...]", FILENAME_TESTS);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.m");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &testsTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_OSX);
@@ -1120,7 +1120,7 @@ int main(int argc, char* argv[])
 			// TODO: del *.html > NUL 2> NUL
 			// TODO: del *.js > NUL 2> NUL
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.rootDirPath = StrLit("../..");
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_HTML : FILENAME_APP_WASM);
@@ -1128,7 +1128,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &testsTags);
 			if (USE_EMSCRIPTEN) { AddTag(&tags, T_EMCC); }
 			AddTag(&tags, T_CLANG); //basically all compiler flags that are compatible with clang are compatible with emcc
@@ -1151,7 +1151,7 @@ int main(int argc, char* argv[])
 			
 			if (CONVERT_WASM_TO_WAT)
 			{
-				CliArgList convertCmd = ZEROED;
+				CliArgList convertCmd = EMPTY;
 				AddArgNt(&convertCmd, CLI_QUOTED_ARG, USE_EMSCRIPTEN ? FILENAME_INDEX_WASM : FILENAME_APP_WASM);
 				AddArgNt(&convertCmd, CLI_PIPE_OUTPUT_TO_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_WAT : FILENAME_APP_WAT);
 				
@@ -1169,7 +1169,7 @@ int main(int argc, char* argv[])
 			
 			if (!USE_EMSCRIPTEN)
 			{
-				StrArray javascriptFiles = ZEROED;
+				StrArray javascriptFiles = EMPTY;
 				AddStr(&javascriptFiles, StrLit("../../wasm/wasm_globals.js"));
 				AddStr(&javascriptFiles, StrLit("../../wasm/std/include/internal/wasm_std_js_api.js"));
 				AddStr(&javascriptFiles, StrLit("../../wasm/wasm_app_js_api.js"));
@@ -1205,7 +1205,7 @@ int main(int argc, char* argv[])
 			FixPathSlashes(zipalignExe, PATH_SEP_CHAR);
 			Str androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"), false);
 			
-			CliArgList cmdBase = ZEROED;
+			CliArgList cmdBase = EMPTY;
 			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
 			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
@@ -1222,7 +1222,7 @@ int main(int argc, char* argv[])
 				PrintLine("Building for %s...", GetAndroidTargetArchitechtureFolderName(architecture));
 				Str architectureStr = MakeStrNt(GetAndroidTargetArchitechtureTargetStr(architecture));
 				
-				CliArgList cmd = ZEROED;
+				CliArgList cmd = EMPTY;
 				cmd.pathSepChar = '/';
 				cmd.rootDirPath = StrLit("../../../..");
 				AddArgList(&cmd, &cmdBase);
@@ -1234,7 +1234,7 @@ int main(int argc, char* argv[])
 				AddArgList(&cmd, &pigCoreLinkerFlags);
 				AddArgList(&cmd, &thingsToLink);
 				
-				StrArray tags = ZEROED;
+				StrArray tags = EMPTY;
 				AddStrArray(&tags, &testsTags);
 				AddTag(&tags, T_CLANG);
 				AddTag(&tags, T_ANDROID);
@@ -1261,7 +1261,7 @@ int main(int argc, char* argv[])
 						CreateAndWriteFile(StrLit(FILENAME_DUMMY_JAVA), MakeStrNt(dummyClassCode), true);
 					}
 					
-					CliArgList javacCmd = ZEROED;
+					CliArgList javacCmd = EMPTY;
 					javacCmd.pathSepChar = '/';
 					javacCmd.rootDirPath = StrLit("../..");
 					AddArgNt(&javacCmd, "-d \"[VAL]\"", ".");
@@ -1270,7 +1270,7 @@ int main(int argc, char* argv[])
 					RunCliProgramAndExitOnFailure(javacExe, "", &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
 					AssertFileExist(StrLit(FILENAME_DUMMY_CLASS), true);
 					
-					CliArgList d8Cmd = ZEROED;
+					CliArgList d8Cmd = EMPTY;
 					d8Cmd.pathSepChar = '/';
 					d8Cmd.rootDirPath = StrLit("../..");
 					AddArgStr(&d8Cmd, "--lib \"[VAL]\"", androidJarPath);
@@ -1281,7 +1281,7 @@ int main(int argc, char* argv[])
 				}
 				
 				PrintLine("Compiling %s...", FILENAME_ANDROID_RESOURCES_ZIP);
-				CliArgList compileResCmd = ZEROED;
+				CliArgList compileResCmd = EMPTY;
 				compileResCmd.pathSepChar = '/';
 				compileResCmd.rootDirPath = StrLit("../..");
 				AddArg(&compileResCmd, "compile");
@@ -1292,7 +1292,7 @@ int main(int argc, char* argv[])
 				
 				RemoveFile(StrLit(FILENAME_TESTS_APK));
 				PrintLine("Linking %s...", FILENAME_TESTS_APK);
-				CliArgList linkApkCmd = ZEROED;
+				CliArgList linkApkCmd = EMPTY;
 				linkApkCmd.pathSepChar = '/';
 				linkApkCmd.rootDirPath = StrLit("../..");
 				AddArg(&linkApkCmd, "link");
@@ -1311,7 +1311,7 @@ int main(int argc, char* argv[])
 					mkdir("apk_temp", FOLDER_PERMISSIONS);
 					chdir("apk_temp");
 					
-					CliArgList unpackApkCmd = ZEROED;
+					CliArgList unpackApkCmd = EMPTY;
 					AddArg(&unpackApkCmd, "xf");
 					AddArg(&unpackApkCmd, "../" FILENAME_TESTS_APK);
 					RunCliProgramAndExitOnFailure(StrLit("jar"), "", &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
@@ -1328,7 +1328,7 @@ int main(int argc, char* argv[])
 						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder, true);
 					}
 					
-					CliArgList repackApkCmd = ZEROED;
+					CliArgList repackApkCmd = EMPTY;
 					AddArg(&repackApkCmd, "cf0");
 					AddArg(&repackApkCmd, "../" FILENAME_TESTS_APK);
 					AddArg(&repackApkCmd, "*");
@@ -1341,7 +1341,7 @@ int main(int argc, char* argv[])
 				WriteLine("Performing ZIP alignment...");
 				Str tempAlignedApkName = StrLit("tests_aligned.apk");
 				RemoveFile(tempAlignedApkName);
-				CliArgList alignApkCmd = ZEROED;
+				CliArgList alignApkCmd = EMPTY;
 				AddArg(&alignApkCmd, "-v");
 				AddArg(&alignApkCmd, "4");
 				AddArgNt(&alignApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK); //input
@@ -1352,7 +1352,7 @@ int main(int argc, char* argv[])
 				RemoveFile(tempAlignedApkName);
 				
 				PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, StrPrint(ANDROID_SIGNING_KEY_PATH));
-				CliArgList signApkCmd = ZEROED;
+				CliArgList signApkCmd = EMPTY;
 				signApkCmd.pathSepChar = '/';
 				signApkCmd.rootDirPath = StrLit("../..");
 				AddArg(&signApkCmd, "sign");
@@ -1378,7 +1378,7 @@ int main(int argc, char* argv[])
 			mkdir(FOLDERNAME_ORCA, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ORCA);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			cmd.rootDirPath = StrLit("../..");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_MODULE_WASM);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
@@ -1386,7 +1386,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &testsTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_ORCA);
@@ -1397,7 +1397,7 @@ int main(int argc, char* argv[])
 			AssertFileExist(StrLit(FILENAME_MODULE_WASM), true);
 			PrintLine("[Built %s for Orca!]", FILENAME_MODULE_WASM);
 			
-			CliArgList bundleCmd = ZEROED;
+			CliArgList bundleCmd = EMPTY;
 			AddArg(&bundleCmd, "bundle");
 			AddArgNt(&bundleCmd, "--name [VAL]", "tests");
 			AddArg(&bundleCmd, FILENAME_MODULE_WASM);
@@ -1414,13 +1414,13 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Playdate...]", FILENAME_PDEX_ELF);
 			
-			CliArgList compileCmd = ZEROED;
+			CliArgList compileCmd = EMPTY;
 			AddArg(&compileCmd, GCC_COMPILE);
 			AddArgNt(&compileCmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&compileCmd, GCC_OUTPUT_FILE, FILENAME_TESTS_OBJ);
 			AddArgList(&compileCmd, &pigCoreCompilerFlags);
 			
-			StrArray compileTags = ZEROED;
+			StrArray compileTags = EMPTY;
 			AddStrArray(&compileTags, &testsTags);
 			AddTag(&compileTags, T_ARM_GCC);
 			AddTag(&compileTags, T_PLAYDATE);
@@ -1430,14 +1430,14 @@ int main(int argc, char* argv[])
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_ARM_GCC), &compileTags, &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
 			
-			CliArgList linkCmd = ZEROED;
+			CliArgList linkCmd = EMPTY;
 			AddArgNt(&linkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_OBJ);
 			AddArgNt(&linkCmd, GCC_OUTPUT_FILE, FILENAME_PDEX_ELF);
 			AddArgNt(&linkCmd, GCC_MAP_FILE, "tests.map");
 			AddArgList(&linkCmd, &pigCoreLinkerFlags);
 			AddArgList(&linkCmd, &thingsToLink);
 			
-			StrArray linkTags = ZEROED;
+			StrArray linkTags = EMPTY;
 			AddStrArray(&linkTags, &testsTags);
 			AddTag(&linkTags, T_ARM_GCC);
 			AddTag(&linkTags, T_PLAYDATE);
@@ -1460,13 +1460,13 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Playdate Simulator...]", FILENAME_PDEX_DLL);
 			
-			CliArgList compileCmd = ZEROED;
+			CliArgList compileCmd = EMPTY;
 			AddArg(&compileCmd, CL_COMPILE);
 			AddArgNt(&compileCmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
 			AddArgNt(&compileCmd, CL_OBJ_FILE, FILENAME_TESTS_OBJ);
 			AddArgList(&compileCmd, &pigCoreCompilerFlags);
 			
-			StrArray compileTags = ZEROED;
+			StrArray compileTags = EMPTY;
 			AddStrArray(&compileTags, &testsTags);
 			AddTag(&compileTags, T_MSVC_CL);
 			AddTag(&compileTags, T_PLAYDATE);
@@ -1476,7 +1476,7 @@ int main(int argc, char* argv[])
 			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &compileTags, &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
 			
-			CliArgList linkCmd = ZEROED;
+			CliArgList linkCmd = EMPTY;
 			AddArg(&linkCmd, LINK_BUILD_DLL);
 			AddArgNt(&linkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_OBJ);
 			AddArgNt(&linkCmd, LINK_OUTPUT_FILE, FILENAME_PDEX_DLL);
@@ -1485,7 +1485,7 @@ int main(int argc, char* argv[])
 			AddArgList(&linkCmd, &pigCoreLinkerFlags);
 			AddArgList(&linkCmd, &thingsToLink);
 			
-			StrArray linkTags = ZEROED;
+			StrArray linkTags = EMPTY;
 			AddStrArray(&linkTags, &testsTags);
 			AddTag(&linkTags, T_MSVC_LINK);
 			AddTag(&linkTags, T_MSVC_CL_OR_LINK);
@@ -1508,14 +1508,14 @@ int main(int argc, char* argv[])
 		{
 			CopyFileToFolder(StrLit("../pdxinfo"), StrLit("playdate_data"), true);
 			
-			CliArgList cmd = ZEROED;
+			CliArgList cmd = EMPTY;
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "playdate_data");
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_TESTS_PDX);
 			
-			StrArray tags = ZEROED;
+			StrArray tags = EMPTY;
 			AddStrArray(&tags, &testsTags);
 			AddTag(&tags, T_PDC);
 			AddTag(&tags, T_PLAYDATE);
@@ -1552,7 +1552,7 @@ int main(int argc, char* argv[])
 		#define RUNNABLE_FILENAME_TESTS FILENAME_TESTS
 		#endif
 		PrintLine("\n[%s]", RUNNABLE_FILENAME_TESTS);
-		CliArgList cmd = ZEROED;
+		CliArgList cmd = EMPTY;
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_TESTS), "", &cmd, StrLit(RUNNABLE_FILENAME_TESTS " Exited With Error!"));
 	}
 	
@@ -1561,13 +1561,13 @@ int main(int argc, char* argv[])
 		PrintLine("\n[Installing %s on AVD...]", FILENAME_TESTS_APK);
 		Str adbExe = JoinStrings2(androidSdkDir, StrLit("/platform-tools/adb.exe"), false);
 		
-		CliArgList installCmd = ZEROED;
+		CliArgList installCmd = EMPTY;
 		installCmd.pathSepChar = '/';
 		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
 		RunCliProgramAndExitOnFailure(adbExe, "", &installCmd, StrLit("abd.exe install exited With Error!"));
 		
 		PrintLine_E("Launching \"%.*s\"...", StrPrint(ANDROID_ACTIVITY_PATH));
-		CliArgList launchCmd = ZEROED;
+		CliArgList launchCmd = EMPTY;
 		launchCmd.pathSepChar = '/';
 		AddArg(&launchCmd, "shell");
 		AddArg(&launchCmd, "am");
