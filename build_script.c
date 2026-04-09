@@ -121,6 +121,7 @@ int main(int argc, char* argv[])
 	PrintLine("[" BUILD_SCRIPT_EXE_NAME "...]");
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
+	Str pigBuildFolder = StrLit("../pig_build");
 	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
 	
 	// +==============================+
@@ -347,7 +348,7 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			InitializeMsvcIf(pigBuildFolder, &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN_EXE);
 			
 			CliArgList cmd = EMPTY;
@@ -531,7 +532,7 @@ int main(int argc, char* argv[])
 	
 	if (BUILD_SHADERS)
 	{
-		if (BUILD_WINDOWS) { InitializeMsvcIf(StrLit(".."), &isMsvcInitialized); }
+		if (BUILD_WINDOWS) { InitializeMsvcIf(pigBuildFolder, &isMsvcInitialized); }
 		
 		PrintLine("Found %llu shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
 		// for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
@@ -742,7 +743,7 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			InitializeMsvcIf(pigBuildFolder, &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_TRACY_DLL);
 			
 			CliArgList cmd = EMPTY;
@@ -821,7 +822,7 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			InitializeMsvcIf(pigBuildFolder, &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_IMGUI_OBJ);
 			
 			CliArgList cmd = EMPTY;
@@ -893,7 +894,7 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			InitializeMsvcIf(pigBuildFolder, &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_PHYSX_OBJ);
 			
 			CliArgList cmd = EMPTY;
@@ -935,7 +936,7 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			InitializeMsvcIf(pigBuildFolder, &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
 			CliArgList cmd = EMPTY;
@@ -1015,7 +1016,7 @@ int main(int argc, char* argv[])
 		// +==============================+
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			InitializeMsvcIf(pigBuildFolder, &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS_EXE);
 			
 			CliArgList cmd = EMPTY;
@@ -1457,7 +1458,7 @@ int main(int argc, char* argv[])
 		// +==============================+
 		if (BUILD_PLAYDATE_SIMULATOR)
 		{
-			InitializeMsvcIf(StrLit(".."), &isMsvcInitialized);
+			InitializeMsvcIf(pigBuildFolder, &isMsvcInitialized);
 			PrintLine("\n[Building %s for Playdate Simulator...]", FILENAME_PDEX_DLL);
 			
 			CliArgList compileCmd = EMPTY;
