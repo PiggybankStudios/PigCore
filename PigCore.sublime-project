@@ -29,6 +29,7 @@
 			],
 			"folder_exclude_patterns": [
 				"shell",
+				"examples",
 			],
 		},
 		{

@@ -1,8 +1,8 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "tests/tests_sokol.c"
 recent_file: path: "gfx/gfx_font_flow.h"
 recent_file: path: "tests/tests_main.c"
-recent_file: path: "tests/tests_sokol.c"
 recent_file: path: "cross/cross_mem_arena_and_font_char_range.h"
 recent_file: path: "gfx/gfx_font.h"
 recent_file: path: "cross/cross_string_and_unicode.h"
@@ -122,4 +122,9 @@ debug_info:
 {
   path: "C:/gamedev/projects/PigCore/build/tests.pdb"
   timestamp: 66210981161914
+}
+debug_info:
+{
+  path: "D:/gamedev/projects/PigCore/build/tests.pdb"
+  timestamp: 66211833042779
 }

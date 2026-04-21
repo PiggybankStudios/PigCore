@@ -23,9 +23,9 @@ Description:
 #define PROFILING_ENABLED 0
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             0
+#define BUILD_WINDOWS             1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX               1
+#define BUILD_LINUX               0
 // Build binaries for OSX platform
 #define BUILD_OSX                 0
 // Build the WASM binary for operating as a webpage
