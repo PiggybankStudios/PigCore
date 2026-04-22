@@ -173,15 +173,15 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_FREETYPE               = GetBoolConfig("BUILD_WITH_FREETYPE",               buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WITH_GTK                    = GetBoolConfig("BUILD_WITH_GTK",                    buildConfigContents, argc, argv, &buildConfigTags);
 	
-	Str ANDROID_SIGNING_KEY_PATH = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")), false);
+	Str ANDROID_SIGNING_KEY_PATH = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")));
 	Str ANDROID_SIGNING_PASSWORD = Str_Empty;
-	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASSWORD"), &ANDROID_SIGNING_PASSWORD)) { ANDROID_SIGNING_PASSWORD = CopyStr(ANDROID_SIGNING_PASSWORD, false); }
+	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASSWORD"), &ANDROID_SIGNING_PASSWORD)) { ANDROID_SIGNING_PASSWORD = CopyStr(ANDROID_SIGNING_PASSWORD); }
 	Str ANDROID_SIGNING_PASS_PATH = Str_Empty;
-	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASS_PATH"), &ANDROID_SIGNING_PASS_PATH)) { ANDROID_SIGNING_PASS_PATH = CopyStr(ANDROID_SIGNING_PASS_PATH, false); }
-	Str ANDROID_NDK_VERSION = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_NDK_VERSION")), false);
-	Str ANDROID_PLATFORM_FOLDERNAME = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_PLATFORM_FOLDERNAME")), false);
-	Str ANDROID_BUILD_TOOLS_VERSION = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_BUILD_TOOLS_VERSION")), false);
-	Str ANDROID_ACTIVITY_PATH = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_ACTIVITY_PATH")), false);
+	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASS_PATH"), &ANDROID_SIGNING_PASS_PATH)) { ANDROID_SIGNING_PASS_PATH = CopyStr(ANDROID_SIGNING_PASS_PATH); }
+	Str ANDROID_NDK_VERSION = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_NDK_VERSION")));
+	Str ANDROID_PLATFORM_FOLDERNAME = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_PLATFORM_FOLDERNAME")));
+	Str ANDROID_BUILD_TOOLS_VERSION = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_BUILD_TOOLS_VERSION")));
+	Str ANDROID_ACTIVITY_PATH = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_ACTIVITY_PATH")));
 	
 	free(buildConfigContents.chars);
 	
@@ -235,11 +235,11 @@ int main(int argc, char* argv[])
 	{
 		androidSdkDir = GetAndroidSdkPath();
 		PrintLine("Android SDK path: \"%.*s\"", StrPrint(androidSdkDir));
-		androidSdkBuildToolsDir = JoinStrings3(androidSdkDir, StrLit("/build-tools/"), ANDROID_BUILD_TOOLS_VERSION, false);
-		androidSdkPlatformDir = JoinStrings3(androidSdkDir, StrLit("/platforms/"), ANDROID_PLATFORM_FOLDERNAME, false);
-		androidNdkDir = JoinStrings3(androidSdkDir, StrLit("/ndk/"), ANDROID_NDK_VERSION, false);
+		androidSdkBuildToolsDir = JoinStrings3(androidSdkDir, StrLit("/build-tools/"), ANDROID_BUILD_TOOLS_VERSION);
+		androidSdkPlatformDir = JoinStrings3(androidSdkDir, StrLit("/platforms/"), ANDROID_PLATFORM_FOLDERNAME);
+		androidNdkDir = JoinStrings3(androidSdkDir, StrLit("/ndk/"), ANDROID_NDK_VERSION);
 		//TODO: "windows-x86_64" is going to be different when compiling on Linux or OSX, we should figure out how we want that configured once we get there
-		androidNdkToolchainDir = JoinStrings3(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/"), StrLit("windows-x86_64"), false);
+		androidNdkToolchainDir = JoinStrings3(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/"), StrLit("windows-x86_64"));
 		//TODO: We should check to see if all these folders actually exist and give a nice error to the user when they need to install something or change the build_config.h
 	}
 	
@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
 	{
 		playdateSdkDir = GetPlaydateSdkPath();
 		PrintLine("Playdate SDK path: \"%.*s\"", StrPrint(playdateSdkDir));
-		playdateSdkDir_C_API = JoinStrings2(playdateSdkDir, StrLit("/C_API"), false);
+		playdateSdkDir_C_API = JoinStrings2(playdateSdkDir, StrLit("/C_API"));
 	}
 	
 	// +==============================+
@@ -489,7 +489,7 @@ int main(int argc, char* argv[])
 			{
 				Str oPath = findContext.oPaths.strings[sIndex];
 				AddTaggedArgStr(&thingsToLink, EXE_CLANG "|PigCore|Linux|BUILD_WITH_SOKOL_GFX", CLI_QUOTED_ARG, oPath);
-				Str oPathWithFolder = BUILDING_ON_LINUX ? CopyStr(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
+				Str oPathWithFolder = BUILDING_ON_LINUX ? CopyStr(oPath) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPathWithFolder)); BUILD_SHADERS = true; }
 			}
 		}
@@ -499,7 +499,7 @@ int main(int argc, char* argv[])
 			{
 				Str oPath = findContext.oPaths.strings[sIndex];
 				AddTaggedArgStr(&thingsToLink, EXE_CLANG "|PigCore|OSX|BUILD_WITH_SOKOL_GFX", CLI_QUOTED_ARG, oPath);
-				Str oPathWithFolder = BUILDING_ON_OSX ? CopyStr(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_OSX "/"), oPath, false);
+				Str oPathWithFolder = BUILDING_ON_OSX ? CopyStr(oPath) : JoinStrings2(StrLit(FOLDERNAME_OSX "/"), oPath);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPathWithFolder)); BUILD_SHADERS = true; }
 			}
 		}
@@ -511,10 +511,10 @@ int main(int argc, char* argv[])
 				{
 					AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
 					Str archFolderName = MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture));
-					Str archFolderPath = JoinStrings3(StrLit("lib/"), archFolderName, StrLit("/"), false);
+					Str archFolderPath = JoinStrings3(StrLit("lib/"), archFolderName, StrLit("/"));
 					Str oPath = findContext.oPaths.strings[sIndex];
 					AddArgStr(&clang_AndroidShaderObjects[archIndex], CLI_QUOTED_ARG, oPath);
-					Str oRelativePath = JoinStrings3(StrLit(FOLDERNAME_ANDROID "/"), archFolderPath, oPath, false);
+					Str oRelativePath = JoinStrings3(StrLit(FOLDERNAME_ANDROID "/"), archFolderPath, oPath);
 					if (!DoesFileExist(oRelativePath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oRelativePath)); BUILD_SHADERS = true; }
 				}
 			}
@@ -550,8 +550,8 @@ int main(int argc, char* argv[])
 		{
 			Str shaderPath = findContext.shaderPaths.strings[sIndex];
 			Str headerPath = findContext.headerPaths.strings[sIndex];
-			Str realHeaderPath = StrReplace(headerPath, StrLit("[ROOT]"), StrLit(".."), false);
-			Str realShaderPath = StrReplace(shaderPath, StrLit("[ROOT]"), StrLit(".."), false);
+			Str realHeaderPath = StrReplace(headerPath, StrLit("[ROOT]"), StrLit(".."));
+			Str realShaderPath = StrReplace(shaderPath, StrLit("[ROOT]"), StrLit(".."));
 			
 			CliArgList cmd = EMPTY;
 			AddArgNt(&cmd, SHDC_FORMAT, "sokol_impl");
@@ -562,7 +562,7 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
 			
 			PrintLine("Generating \"%.*s\"...", StrPrint(realHeaderPath));
-			Str shdcExe = JoinStrings2(StrLit("../"), StrLit(EXE_SHDC), false);
+			Str shdcExe = JoinStrings2(StrLit("../"), StrLit(EXE_SHDC));
 			FixPathSlashes(shdcExe, PATH_SEP_CHAR);
 			RunCliProgramAndExitOnFailure(shdcExe, "", &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
 			AssertFileExist(realHeaderPath, true);
@@ -579,14 +579,13 @@ int main(int argc, char* argv[])
 			Str sourcePath = findContext.sourcePaths.strings[sIndex];
 			Str headerFileName = GetFileNamePart(headerPath, true);
 			Str headerDirectory = GetDirectoryPart(headerPath, true);
-			Str realSourcePath = StrReplace(sourcePath, StrLit("[ROOT]"), StrLit(".."), false);
+			Str realSourcePath = StrReplace(sourcePath, StrLit("[ROOT]"), StrLit(".."));
 			
 			//We need a .c file that #includes shader_include.h (which defines SOKOL_SHDC_IMPL) and then the shader header file
 			Str sourceFileContents = JoinStrings3(
 				StrLit("\n#include \"shader_include.h\"\n\n#include \""),
 				headerFileName,
-				StrLit("\"\n"),
-				false
+				StrLit("\"\n")
 			);
 			PrintLine("Generating \"%.*s\"...", StrPrint(realSourcePath));
 			CreateAndWriteFile(realSourcePath, sourceFileContents, true);
@@ -613,7 +612,7 @@ int main(int argc, char* argv[])
 				AddTag(&tags, T_WINDOWS);
 				AddStrArray(&tags, &buildConfigTags);
 				
-				Str errorMessage = JoinStrings3(StrLit("Fald to build "), objPath, StrLit(" for Windows!"), false);
+				Str errorMessage = JoinStrings3(StrLit("Fald to build "), objPath, StrLit(" for Windows!"));
 				RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, errorMessage);
 				AssertFileExist(objPath, true);
 			}
@@ -645,7 +644,7 @@ int main(int argc, char* argv[])
 				cmd.rootDirPath = StrLit("../..");
 				#endif
 				
-				Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Linux!"), false);
+				Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Linux!"));
 				RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 				
@@ -673,7 +672,7 @@ int main(int argc, char* argv[])
 				AddTag(&tags, T_UNIX);
 				AddStrArray(&tags, &buildConfigTags);
 				
-				Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for OSX!"), false);
+				Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for OSX!"));
 				RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 			}
@@ -710,7 +709,7 @@ int main(int argc, char* argv[])
 					AddStr(&tags, architectureStr);
 					AddStrArray(&tags, &buildConfigTags);
 					
-					Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Android!"), false);
+					Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Android!"));
 					RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, errorMessage);
 					AssertFileExist(oPath, true);
 					
@@ -1193,18 +1192,18 @@ int main(int argc, char* argv[])
 			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ANDROID);
 			
-			Str clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"), false);
+			Str clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"));
 			FixPathSlashes(clangExe, PATH_SEP_CHAR);
 			Str javacExe = StrLit("javac.exe");
-			Str d8Exe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/d8.bat"), false);
+			Str d8Exe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/d8.bat"));
 			FixPathSlashes(d8Exe, PATH_SEP_CHAR);
-			Str aaptExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/aapt2.exe"), false);
+			Str aaptExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/aapt2.exe"));
 			FixPathSlashes(aaptExe, PATH_SEP_CHAR);
-			Str apksignerExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/apksigner.bat"), false);
+			Str apksignerExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/apksigner.bat"));
 			FixPathSlashes(apksignerExe, PATH_SEP_CHAR);
-			Str zipalignExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/zipalign"), false);
+			Str zipalignExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/zipalign"));
 			FixPathSlashes(zipalignExe, PATH_SEP_CHAR);
-			Str androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"), false);
+			Str androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"));
 			
 			CliArgList cmdBase = EMPTY;
 			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
@@ -1228,8 +1227,8 @@ int main(int argc, char* argv[])
 				cmd.rootDirPath = StrLit("../../../..");
 				AddArgList(&cmd, &cmdBase);
 				AddArgStr(&cmd, CLANG_TARGET_ARCHITECTURE, architectureStr);
-				Str sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), architectureStr, StrLit("/35/"), false);
-				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath, false));
+				Str sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), architectureStr, StrLit("/35/"));
+				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath));
 				if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_AndroidShaderObjects[archIndex]); } //TODO: Remove me!
 				AddArgList(&cmd, &pigCoreCompilerFlags);
 				AddArgList(&cmd, &pigCoreLinkerFlags);
@@ -1323,10 +1322,10 @@ int main(int argc, char* argv[])
 					for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 					{
 						AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
-						Str apkFolder = JoinStrings2(StrLit("lib/"), MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture)), true);
-						Str buildFolder = JoinStrings2(StrLit("../lib/"), MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture)), true);
+						Str apkFolder = JoinStrings2(StrLit("lib/"), MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture)));
+						Str buildFolder = JoinStrings2(StrLit("../lib/"), MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture)));
 						mkdir(apkFolder.chars, FOLDER_PERMISSIONS);
-						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO), false), apkFolder, true);
+						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO)), apkFolder, true);
 					}
 					
 					CliArgList repackApkCmd = EMPTY;
@@ -1560,7 +1559,7 @@ int main(int argc, char* argv[])
 	if (INSTALL_TESTS_APK)
 	{
 		PrintLine("\n[Installing %s on AVD...]", FILENAME_TESTS_APK);
-		Str adbExe = JoinStrings2(androidSdkDir, StrLit("/platform-tools/adb.exe"), false);
+		Str adbExe = JoinStrings2(androidSdkDir, StrLit("/platform-tools/adb.exe"));
 		
 		CliArgList installCmd = EMPTY;
 		installCmd.pathSepChar = '/';
