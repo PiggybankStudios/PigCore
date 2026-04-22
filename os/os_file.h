@@ -325,7 +325,7 @@ PEXP bool OsDoesFileOrFolderExist(FilePath path, bool* isFolderOut)
 				*isFolderOut = false;
 			}
 		}
-		
+		ScratchEnd(scratch);
 	}
 	#else
 	UNUSED(path);
