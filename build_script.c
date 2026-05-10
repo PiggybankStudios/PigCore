@@ -16,6 +16,10 @@ Description:
 
 //TODO: We should probably call _mkdir() (or _wmkdir()?) instead of mkdir() on Windows! https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/mkdir
 
+#ifndef PIG_BUILD_ROOT
+#error PIG_BUILD_ROOT was not defined by the shell script!
+#endif
+
 #define PIG_BUILD_PRINT_SYS_CMDS 0
 #define PIG_BUILD_INCLUDE_OPTIONAL_HEADERS 1
 #include "pig_build.h"
@@ -121,7 +125,8 @@ int main(int argc, char* argv[])
 	PrintLine("[" BUILD_SCRIPT_EXE_NAME "...]");
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
-	Str pigBuildFolder = StrLit("../pig_build");
+	Str pigBuildFolder = StrLit(PIG_BUILD_ROOT);
+	// PrintLine("pigBuildFolder=\"%.*s\"", StrPrint(pigBuildFolder));
 	bool isEmsdkInitialized = WasEmsdkEnvBatchRun();
 	
 	// +==============================+
