@@ -617,7 +617,7 @@ int main(int argc, char* argv[])
 				AddTag(&tags, T_WINDOWS);
 				AddStrArray(&tags, &buildConfigTags);
 				
-				Str errorMessage = JoinStrings3(StrLit("Fald to build "), objPath, StrLit(" for Windows!"));
+				Str errorMessage = JoinStrings3(StrLit("Failed to build "), objPath, StrLit(" for Windows!"));
 				RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, errorMessage);
 				AssertFileExist(objPath, true);
 			}
@@ -649,7 +649,7 @@ int main(int argc, char* argv[])
 				cmd.rootDirPath = StrLit("../..");
 				#endif
 				
-				Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Linux!"));
+				Str errorMessage = JoinStrings3(StrLit("Failed to build "), oPath, StrLit(" for Linux!"));
 				RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 				
@@ -677,7 +677,7 @@ int main(int argc, char* argv[])
 				AddTag(&tags, T_UNIX);
 				AddStrArray(&tags, &buildConfigTags);
 				
-				Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for OSX!"));
+				Str errorMessage = JoinStrings3(StrLit("Failed to build "), oPath, StrLit(" for OSX!"));
 				RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 			}
@@ -714,7 +714,7 @@ int main(int argc, char* argv[])
 					AddStr(&tags, architectureStr);
 					AddStrArray(&tags, &buildConfigTags);
 					
-					Str errorMessage = JoinStrings3(StrLit("Fald to build "), oPath, StrLit(" for Android!"));
+					Str errorMessage = JoinStrings3(StrLit("Failed to build "), oPath, StrLit(" for Android!"));
 					RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, errorMessage);
 					AssertFileExist(oPath, true);
 					
