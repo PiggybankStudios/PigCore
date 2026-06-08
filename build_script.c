@@ -267,10 +267,9 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// |         Fill CliArgs         |
 	// +==============================+
-	Str pigCoreThirdPartyPath = StrLit("[ROOT]/third_party");
 	CliArgs pigCoreCompilerFlags = EMPTY;
 	CliArgs pigCoreLinkerFlags = EMPTY;
-	FillPigCoreFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, pigCoreThirdPartyPath);
+	FillPigCoreFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, StrLit("[ROOT]"));
 	FillAndroidFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, androidNdkDir, androidNdkToolchainDir);
 	FillPlaydateFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
 	FillOrcaFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, orcaSdkPath);
