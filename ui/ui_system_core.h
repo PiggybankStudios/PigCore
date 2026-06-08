@@ -724,13 +724,13 @@ plex UiContext
 // |                Forward Function Declarations                 |
 // +--------------------------------------------------------------+
 // ui_system.h:
-PIG_CORE_INLINE UiId CalcUiId(UiId baseId, Str8 idString, uxx index);
-PIG_CORE_INLINE UiId PrintUiId(UiId baseId, uxx index, const char* formatString, ...);
+PEXPI UiId CalcUiId(UiId baseId, Str8 idString, uxx index);
+PEXPI UiId PrintUiId(UiId baseId, uxx index, const char* formatString, ...);
 // ui_system_theming.h:
-PIG_CORE_INLINE void FreeUiThemerRegistry(UiThemerRegistry* registry);
-void InitUiThemerRegistry(Arena* arena, UiThemerRegistry* registryOut);
-void UiThemerRegistryStartFrame(UiThemerRegistry* registry);
-bool RunUiThemerCallbacks(UiThemerRegistry* registry, UiContext* context, UiElement* element);
+PEXPI void FreeUiThemerRegistry(UiThemerRegistry* registry);
+PEXP void InitUiThemerRegistry(Arena* arena, UiThemerRegistry* registryOut);
+PEXP void UiThemerRegistryStartFrame(UiThemerRegistry* registry);
+PEXP bool RunUiThemerCallbacks(UiThemerRegistry* registry, UiContext* context, UiElement* element);
 
 #endif //BUILD_WITH_PIG_UI
 
