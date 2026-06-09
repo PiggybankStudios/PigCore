@@ -95,7 +95,7 @@ Description:
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
-	void StartUiFrame(UiContext* context, v2 screenSize, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
+	void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
 	PIG_CORE_INLINE Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element);
 	UiRenderList* GetUiRenderList();
 	void EndUiFrame();
