@@ -177,6 +177,7 @@ car UiSizing
 {
 	UiSizingAxis axis[2];
 	plex { UiSizingAxis x, y; };
+	plex { UiSizingAxis width, height; };
 	plex { UiSizingAxis horizontal, vertical; };
 };
 #define UI_FIXED(numPx)                 { .type=UiSizingType_FixedPx,      .value=(numPx)   }
