@@ -390,7 +390,7 @@ PEXPI bool IsUiElementHovered(UiId id)
 				parent = GetUiElementParent(parent, 0);
 			}
 		}
-		else { PrintLine_W("Couldn't find hovered element in %s frame hierarchy!", UiCtx->layoutDone); }
+		// else { PrintLine_W("Couldn't find hovered element in %s frame hierarchy!", UiCtx->layoutDone ? "current" : "previous"); }
 	}
 	return false;
 }
@@ -853,6 +853,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		AssertMsg(element->numChildren == 0, "Text elements cannot have children!");
 		AssertMsg(!isScrolling, "Text elements cannot have scrolling!");
 		TextMeasure measure = ZEROED;
+		r32 minSize = sizingValue;
 		r32 wrapWidth = element->config.textWrapWidth;
 		if (!xAxis && sizingType == UiSizingType_TextWrap)
 		{
@@ -868,9 +869,8 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		{
 			measure = MeasureTextEx(element->config.font, fontSize, element->config.fontStyle, true, wrapWidth, element->config.text);
 		}
-		r32 minWidthOrWrapWidth = MaxR32(sizingValue, element->config.textWrapWidth);
 		r32 measureHeightOrLineHeight = MaxR32(measure.visualRec.Height, GetFontLineHeight(element->config.font, fontSize, element->config.fontStyle));
-		*minimumSizePntr = (xAxis ? ((minWidthOrWrapWidth >= 0.0f) ? minWidthOrWrapWidth : measure.visualRec.Width) : measureHeightOrLineHeight);
+		*minimumSizePntr = (xAxis ? ((minSize >= 0.0f) ? minSize : measure.visualRec.Width) : measureHeightOrLineHeight);
 		*preferredSizePntr = (xAxis ? measure.visualRec.Width : measureHeightOrLineHeight);
 	}
 	else { DebugAssert(false); }
