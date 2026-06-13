@@ -1186,10 +1186,12 @@ static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool pri
 			if (divisor < 0.0f) { divisor = 1.0f; } //aka UI_SCROLL_LAG_NONE
 			else if (divisor == UI_SCROLL_LAG_DEFAULT) { divisor = UiCtx->defaultScrollLagDivisor; }
 			*scrollPntr += scrollDelta / divisor; //TODO: Make this framerate independent!!
+			UiCtx->smoothScrollingInProgress = true;
 		}
 		else if (*scrollPntr != *scrollGotoPntr)
 		{
 			*scrollPntr = *scrollGotoPntr;
+			UiCtx->smoothScrollingInProgress = true;
 		}
 	}
 }
@@ -1291,6 +1293,7 @@ COMPARE_FUNC_DEF(UiElementPntr_FloatDepthThenElementIndex_Compare)
 static void UiSystemDoLayout()
 {
 	ScratchBegin2(scratch, UiCtx->arena, UiCtx->frameArena);
+	UiCtx->smoothScrollingInProgress = false;
 	bool printDebug = IsKeyboardKeyPressed(UiCtx->keyboard, nullptr, Key_T, false);
 	// The root element decides it's own final position/size
 	// Most elements have their size decided by their parent inside DistributeSpaceToUiElemChildrenOnAxis
@@ -1361,6 +1364,7 @@ static void UiSystemDoLayout()
 		// }
 		// #endif
 		if (element->config.floating.type != UiFloatingType_None) { CalculateSizeForFloatingUiElementOnAxis(element, true); }
+		element->layoutRec.Width = RoundR32(element->layoutRec.Width);
 		if (element->numChildren > 0)
 		{
 			#if DEBUG_BUILD
@@ -1410,6 +1414,7 @@ static void UiSystemDoLayout()
 		// }
 		// #endif
 		if (element->config.floating.type != UiFloatingType_None) { CalculateSizeForFloatingUiElementOnAxis(element, false); }
+		element->layoutRec.Height = RoundR32(element->layoutRec.Height);
 		if (element->numChildren > 0)
 		{
 			#if DEBUG_BUILD

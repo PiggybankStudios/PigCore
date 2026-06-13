@@ -95,13 +95,17 @@ plex UiId
 #define UiId_Root       MakeUiId(UiId_Root_U64, StrLit(PIG_UI_ROOT_ID_STR), PIG_UI_ID_INDEX_NONE)
 #define UiId_Root_Const MakeUiId_Const(UiId_Root_U64, StrLit_Const(PIG_UI_ROOT_ID_STR), PIG_UI_ID_INDEX_NONE)
 
-//This is the most convenient way to give a UiId from a string literal, like UiIdNt("Element1")
+//This is the most convenient way to give a UiId from a string literal, like UiIdLit("Element1")
 #define UiIdLit(idStrLit)             CalcUiId(UiId_None, StrLit(idStrLit),    PIG_UI_ID_INDEX_NONE)
 #define UiIdNt(idStrNt)               CalcUiId(UiId_None, MakeStr8Nt(idStrNt), PIG_UI_ID_INDEX_NONE)
 #define UiIdStr(idStr)                CalcUiId(UiId_None, (idStr),             PIG_UI_ID_INDEX_NONE)
 #define UiIdLitIndex(idStrLit, index) CalcUiId(UiId_None, StrLit(idStrLit),    (index))
 #define UiIdNtIndex(idStrNt, index)   CalcUiId(UiId_None, MakeStr8Nt(idStrNt), (index))
 #define UiIdStrIndex(idStr, index)    CalcUiId(UiId_None, (idStr),             (index))
+// Str8 JoinStringsInArena(Arena* arena, Str8 left, Str8 right, bool addNullTerm)
+#define UiIdSuffixLit(baseId, suffixStrLit) CalcUiId(UiId_None, JoinStringsInArena(GetScratch(nullptr), (baseId).str, StrLit(suffixStrLit),     false), (baseId).index)
+#define UiIdSuffixNt(baseId, suffixStrNt)   CalcUiId(UiId_None, JoinStringsInArena(GetScratch(nullptr), (baseId).str, MakeStr8Nt(suffixStrLit), false), (baseId).index)
+#define UiIdSuffixStr(baseId, suffixStrNt)  CalcUiId(UiId_None, JoinStringsInArena(GetScratch(nullptr), (baseId).str, (suffixStrLit),           false), (baseId).index)
 
 #define UiIdPrint(formatString, ...)              PrintUiId(UiId_None, PIG_UI_ID_INDEX_NONE, (formatString),     ##__VA_ARGS__)
 #define UiIdPrintIndex(index, formatString, ...)  PrintUiId(UiId_None, (index),              (formatString),     ##__VA_ARGS__)
@@ -722,6 +726,7 @@ plex UiContext
 	UiId mouseHoveredLocalId;
 	UiId clickStartHoveredId[MouseBtn_Count];
 	UiId clickStartHoveredLocalId[MouseBtn_Count];
+	bool smoothScrollingInProgress;
 	
 	bool layoutDone;
 	bool hasDoneOneLayout;
