@@ -1776,7 +1776,12 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->text.fontStyle = element->config.fontStyle;
 					newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
 					if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
-					newCmd->text.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->text.font, newCmd->text.fontSize, newCmd->text.fontStyle)));
+					newCmd->text.position = AddV2(
+						element->layoutRec.TopLeft,
+						MakeV2(
+							element->config.padding.inner.Left,
+							element->config.padding.inner.Top + GetFontMaxAscend(newCmd->text.font, newCmd->text.fontSize, newCmd->text.fontStyle))
+					);
 					newCmd->text.text = element->config.text;
 				}
 			}
