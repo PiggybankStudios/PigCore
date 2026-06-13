@@ -157,61 +157,65 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 	switch (field)
 	{
 		case UiElemConfigField_Id: return (configPntr->id.id == 0);
-		case UiElemConfigField_GlobalId:              return (configPntr->globalId == false);
-		case UiElemConfigField_Direction:             return (configPntr->direction == UiLayoutDir_Default);
-		case UiElemConfigField_SizingTypeX:           return (configPntr->sizing.x.type == UiSizingType_Default);
-		case UiElemConfigField_SizingValueX:          return (configPntr->sizing.x.value == 0.0f);
-		case UiElemConfigField_SizingTypeY:           return (configPntr->sizing.y.type == UiSizingType_Default);
-		case UiElemConfigField_SizingValueY:          return (configPntr->sizing.y.value == 0.0f);
-		case UiElemConfigField_DontSizeToImage:       return (configPntr->dontSizeToImage == false);
-		case UiElemConfigField_AlignmentX:            return (configPntr->alignment.x == UiAlign_Default);
-		case UiElemConfigField_AlignmentY:            return (configPntr->alignment.y == UiAlign_Default);
-		case UiElemConfigField_ScrollingX:            return (configPntr->scrolling.x.enabled == false);
-		case UiElemConfigField_ScrollingLagX:         return (configPntr->scrolling.x.lag == UI_SCROLL_LAG_DEFAULT);
-		case UiElemConfigField_ScrollingY:            return (configPntr->scrolling.y.enabled == false);
-		case UiElemConfigField_ScrollingLagY:         return (configPntr->scrolling.y.lag == UI_SCROLL_LAG_DEFAULT);
-		case UiElemConfigField_ClipChildren:          return (configPntr->clipChildren == false);
-		case UiElemConfigField_Depth:                 return (configPntr->depth == UI_DEPTH_DEFAULT);
-		case UiElemConfigField_Color:                 return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
-		case UiElemConfigField_ColorRecursive:        return (configPntr->colorRecursive.valueU32 == PigUiDefaultColor_Value);
-		case UiElemConfigField_Texture:               return (configPntr->texture == nullptr);
-		case UiElemConfigField_RepeatingTexture:      return (configPntr->repeatingTexture == false);
-		case UiElemConfigField_TextureSourceRec:      return AreEqualRec(configPntr->textureSourceRec, Rec_Zero);
-		case UiElemConfigField_SpriteSheet:           return (configPntr->spriteSheet == nullptr);
-		case UiElemConfigField_SheetCell:             return (configPntr->sheetCell.X == 0 && configPntr->sheetCell.Y == 0);
-		case UiElemConfigField_InnerPaddingLeft:      return (configPntr->padding.inner.Left   == 0.0f);
-		case UiElemConfigField_InnerPaddingTop:       return (configPntr->padding.inner.Top    == 0.0f);
-		case UiElemConfigField_InnerPaddingRight:     return (configPntr->padding.inner.Right  == 0.0f);
-		case UiElemConfigField_InnerPaddingBottom:    return (configPntr->padding.inner.Bottom == 0.0f);
-		case UiElemConfigField_OuterPaddingLeft:      return (configPntr->padding.outer.Left   == 0.0f);
-		case UiElemConfigField_OuterPaddingTop:       return (configPntr->padding.outer.Top    == 0.0f);
-		case UiElemConfigField_OuterPaddingRight:     return (configPntr->padding.outer.Right  == 0.0f);
-		case UiElemConfigField_OuterPaddingBottom:    return (configPntr->padding.outer.Bottom == 0.0f);
-		case UiElemConfigField_ChildPadding:          return (configPntr->padding.child == 0.0f);
-		case UiElemConfigField_BorderThicknessLeft:   return (configPntr->borderThickness.Left   == 0.0f);
-		case UiElemConfigField_BorderThicknessTop:    return (configPntr->borderThickness.Top    == 0.0f);
-		case UiElemConfigField_BorderThicknessRight:  return (configPntr->borderThickness.Right  == 0.0f);
-		case UiElemConfigField_BorderThicknessBottom: return (configPntr->borderThickness.Bottom == 0.0f);
-		case UiElemConfigField_BorderColor:           return (configPntr->borderColor.valueU32 == PigUiDefaultColor_Value);
-		case UiElemConfigField_BorderDepth:           return (configPntr->borderDepth == 0.0f);
-		case UiElemConfigField_FloatingType:          return (configPntr->floating.type == UiFloatingType_Default);
-		case UiElemConfigField_FloatingOffsetX:       return (configPntr->floating.offset.X == 0.0f);
-		case UiElemConfigField_FloatingOffsetY:       return (configPntr->floating.offset.Y == 0.0f);
-		case UiElemConfigField_FloatingAttachId:      return (configPntr->floating.attachId.id == 0);
-		case UiElemConfigField_FloatingParentSide:    return (configPntr->floating.parentSide == Dir2Ex_None);
-		case UiElemConfigField_FloatingElemSide:      return (configPntr->floating.elemSide == Dir2Ex_None);
-		case UiElemConfigField_Condition:             return (configPntr->condition == UiConditionType_None);
-		case UiElemConfigField_MousePassthrough:      return (configPntr->mousePassthrough == false);
-		case UiElemConfigField_StrictHover:           return (configPntr->strictHover == false);
-		case UiElemConfigField_Text:                  return IsEmptyStr(configPntr->text);
-		case UiElemConfigField_RichText:              return IsEmptyRichStr(configPntr->richText);
-		case UiElemConfigField_TextColor:             return (configPntr->textColor.valueU32 == PigUiDefaultColor_Value);
-		case UiElemConfigField_TextWrapWidth:         return (configPntr->textWrapWidth == 0.0f);
-		case UiElemConfigField_Font:                  return (configPntr->font == nullptr);
-		case UiElemConfigField_FontSize:              return (configPntr->fontSize == 0.0f);
-		case UiElemConfigField_FontStyle:             return (configPntr->fontStyle == 0);
-		case UiElemConfigField_RendererParams:        return true; //TODO: What do we want to do for these?
-		case UiElemConfigField_ThemerParams:          return true; //TODO: What do we want to do for these?
+		case UiElemConfigField_GlobalId:                return (configPntr->globalId == false);
+		case UiElemConfigField_Direction:               return (configPntr->direction == UiLayoutDir_Default);
+		case UiElemConfigField_SizingTypeX:             return (configPntr->sizing.x.type == UiSizingType_Default);
+		case UiElemConfigField_SizingValueX:            return (configPntr->sizing.x.value == 0.0f);
+		case UiElemConfigField_SizingTypeY:             return (configPntr->sizing.y.type == UiSizingType_Default);
+		case UiElemConfigField_SizingValueY:            return (configPntr->sizing.y.value == 0.0f);
+		case UiElemConfigField_DontSizeToImage:         return (configPntr->dontSizeToImage == false);
+		case UiElemConfigField_AlignmentX:              return (configPntr->alignment.x == UiAlign_Default);
+		case UiElemConfigField_AlignmentY:              return (configPntr->alignment.y == UiAlign_Default);
+		case UiElemConfigField_ScrollingX:              return (configPntr->scrolling.x.enabled == false);
+		case UiElemConfigField_ScrollingLagX:           return (configPntr->scrolling.x.lag == UI_SCROLL_LAG_DEFAULT);
+		case UiElemConfigField_ScrollingY:              return (configPntr->scrolling.y.enabled == false);
+		case UiElemConfigField_ScrollingLagY:           return (configPntr->scrolling.y.lag == UI_SCROLL_LAG_DEFAULT);
+		case UiElemConfigField_ClipChildren:            return (configPntr->clipChildren == false);
+		case UiElemConfigField_Depth:                   return (configPntr->depth == UI_DEPTH_DEFAULT);
+		case UiElemConfigField_Color:                   return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_ColorRecursive:          return (configPntr->colorRecursive.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_Texture:                 return (configPntr->texture == nullptr);
+		case UiElemConfigField_RepeatingTexture:        return (configPntr->repeatingTexture == false);
+		case UiElemConfigField_TextureSourceRec:        return AreEqualRec(configPntr->textureSourceRec, Rec_Zero);
+		case UiElemConfigField_SpriteSheet:             return (configPntr->spriteSheet == nullptr);
+		case UiElemConfigField_SheetCell:               return (configPntr->sheetCell.X == 0 && configPntr->sheetCell.Y == 0);
+		case UiElemConfigField_InnerPaddingLeft:        return (configPntr->padding.inner.Left   == 0.0f);
+		case UiElemConfigField_InnerPaddingTop:         return (configPntr->padding.inner.Top    == 0.0f);
+		case UiElemConfigField_InnerPaddingRight:       return (configPntr->padding.inner.Right  == 0.0f);
+		case UiElemConfigField_InnerPaddingBottom:      return (configPntr->padding.inner.Bottom == 0.0f);
+		case UiElemConfigField_OuterPaddingLeft:        return (configPntr->padding.outer.Left   == 0.0f);
+		case UiElemConfigField_OuterPaddingTop:         return (configPntr->padding.outer.Top    == 0.0f);
+		case UiElemConfigField_OuterPaddingRight:       return (configPntr->padding.outer.Right  == 0.0f);
+		case UiElemConfigField_OuterPaddingBottom:      return (configPntr->padding.outer.Bottom == 0.0f);
+		case UiElemConfigField_ChildPadding:            return (configPntr->padding.child == 0.0f);
+		case UiElemConfigField_CornerRadiusTopLeft:     return (configPntr->cornerRadius.TopLeft     == 0.0f);
+		case UiElemConfigField_CornerRadiusTopRight:    return (configPntr->cornerRadius.TopRight    == 0.0f);
+		case UiElemConfigField_CornerRadiusBottomRight: return (configPntr->cornerRadius.BottomRight == 0.0f);
+		case UiElemConfigField_CornerRadiusBottomLeft:  return (configPntr->cornerRadius.BottomLeft  == 0.0f);
+		case UiElemConfigField_BorderThicknessLeft:     return (configPntr->borderThickness.Left   == 0.0f);
+		case UiElemConfigField_BorderThicknessTop:      return (configPntr->borderThickness.Top    == 0.0f);
+		case UiElemConfigField_BorderThicknessRight:    return (configPntr->borderThickness.Right  == 0.0f);
+		case UiElemConfigField_BorderThicknessBottom:   return (configPntr->borderThickness.Bottom == 0.0f);
+		case UiElemConfigField_BorderColor:             return (configPntr->borderColor.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_BorderDepth:             return (configPntr->borderDepth == 0.0f);
+		case UiElemConfigField_FloatingType:            return (configPntr->floating.type == UiFloatingType_Default);
+		case UiElemConfigField_FloatingOffsetX:         return (configPntr->floating.offset.X == 0.0f);
+		case UiElemConfigField_FloatingOffsetY:         return (configPntr->floating.offset.Y == 0.0f);
+		case UiElemConfigField_FloatingAttachId:        return (configPntr->floating.attachId.id == 0);
+		case UiElemConfigField_FloatingParentSide:      return (configPntr->floating.parentSide == Dir2Ex_None);
+		case UiElemConfigField_FloatingElemSide:        return (configPntr->floating.elemSide == Dir2Ex_None);
+		case UiElemConfigField_Condition:               return (configPntr->condition == UiConditionType_None);
+		case UiElemConfigField_MousePassthrough:        return (configPntr->mousePassthrough == false);
+		case UiElemConfigField_StrictHover:             return (configPntr->strictHover == false);
+		case UiElemConfigField_Text:                    return IsEmptyStr(configPntr->text);
+		case UiElemConfigField_RichText:                return IsEmptyRichStr(configPntr->richText);
+		case UiElemConfigField_TextColor:               return (configPntr->textColor.valueU32 == PigUiDefaultColor_Value);
+		case UiElemConfigField_TextWrapWidth:           return (configPntr->textWrapWidth == 0.0f);
+		case UiElemConfigField_Font:                    return (configPntr->font == nullptr);
+		case UiElemConfigField_FontSize:                return (configPntr->fontSize == 0.0f);
+		case UiElemConfigField_FontStyle:               return (configPntr->fontStyle == 0);
+		case UiElemConfigField_RendererParams:          return true; //TODO: What do we want to do for these?
+		case UiElemConfigField_ThemerParams:            return true; //TODO: What do we want to do for these?
 		default: DebugAssert(false); return true;
 	}
 }
@@ -219,62 +223,66 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 {
 	switch (field)
 	{
-		case UiElemConfigField_Id:                    configToPntr->id = configFromPntr->id; break;
-		case UiElemConfigField_GlobalId:              configToPntr->globalId = configFromPntr->globalId; break;
-		case UiElemConfigField_Direction:             configToPntr->direction = configFromPntr->direction; break;
-		case UiElemConfigField_SizingTypeX:           configToPntr->sizing.x.type = configFromPntr->sizing.x.type; break;
-		case UiElemConfigField_SizingValueX:          configToPntr->sizing.x.value = configFromPntr->sizing.x.value; break;
-		case UiElemConfigField_SizingTypeY:           configToPntr->sizing.y.type = configFromPntr->sizing.y.type; break;
-		case UiElemConfigField_SizingValueY:          configToPntr->sizing.y.value = configFromPntr->sizing.y.value; break;
-		case UiElemConfigField_DontSizeToImage:       configToPntr->dontSizeToImage = configFromPntr->dontSizeToImage; break;
-		case UiElemConfigField_AlignmentX:            configToPntr->alignment.x = configFromPntr->alignment.x; break;
-		case UiElemConfigField_AlignmentY:            configToPntr->alignment.y = configFromPntr->alignment.y; break;
-		case UiElemConfigField_ScrollingX:            configToPntr->scrolling.x.enabled = configFromPntr->scrolling.x.enabled; break;
-		case UiElemConfigField_ScrollingLagX:         configToPntr->scrolling.x.lag = configFromPntr->scrolling.x.lag; break;
-		case UiElemConfigField_ScrollingY:            configToPntr->scrolling.y.enabled = configFromPntr->scrolling.y.enabled; break;
-		case UiElemConfigField_ScrollingLagY:         configToPntr->scrolling.y.lag = configFromPntr->scrolling.y.lag; break;
-		case UiElemConfigField_ClipChildren:          configToPntr->clipChildren = configFromPntr->clipChildren; break;
-		case UiElemConfigField_Depth:                 configToPntr->depth = configFromPntr->depth; break;
-		case UiElemConfigField_Color:                 configToPntr->color = configFromPntr->color; break;
-		case UiElemConfigField_ColorRecursive:        configToPntr->colorRecursive = configFromPntr->colorRecursive; break;
-		case UiElemConfigField_Texture:               configToPntr->texture = configFromPntr->texture; break;
-		case UiElemConfigField_RepeatingTexture:      configToPntr->repeatingTexture = configFromPntr->repeatingTexture; break;
-		case UiElemConfigField_TextureSourceRec:      configToPntr->textureSourceRec = configFromPntr->textureSourceRec; break;
-		case UiElemConfigField_SpriteSheet:           configToPntr->spriteSheet = configFromPntr->spriteSheet; break;
-		case UiElemConfigField_SheetCell:             configToPntr->sheetCell = configFromPntr->sheetCell; break;
-		case UiElemConfigField_InnerPaddingLeft:      configToPntr->padding.inner.Left   = configFromPntr->padding.inner.Left; break;
-		case UiElemConfigField_InnerPaddingTop:       configToPntr->padding.inner.Top    = configFromPntr->padding.inner.Top; break;
-		case UiElemConfigField_InnerPaddingRight:     configToPntr->padding.inner.Right  = configFromPntr->padding.inner.Right; break;
-		case UiElemConfigField_InnerPaddingBottom:    configToPntr->padding.inner.Bottom = configFromPntr->padding.inner.Bottom; break;
-		case UiElemConfigField_OuterPaddingLeft:      configToPntr->padding.outer.Left   = configFromPntr->padding.outer.Left; break;
-		case UiElemConfigField_OuterPaddingTop:       configToPntr->padding.outer.Top    = configFromPntr->padding.outer.Top; break;
-		case UiElemConfigField_OuterPaddingRight:     configToPntr->padding.outer.Right  = configFromPntr->padding.outer.Right; break;
-		case UiElemConfigField_OuterPaddingBottom:    configToPntr->padding.outer.Bottom = configFromPntr->padding.outer.Bottom; break;
-		case UiElemConfigField_ChildPadding:          configToPntr->padding.child = configFromPntr->padding.child; break;
-		case UiElemConfigField_BorderThicknessLeft:   configToPntr->borderThickness.Left   = configFromPntr->borderThickness.Left; break;
-		case UiElemConfigField_BorderThicknessTop:    configToPntr->borderThickness.Top    = configFromPntr->borderThickness.Top; break;
-		case UiElemConfigField_BorderThicknessRight:  configToPntr->borderThickness.Right  = configFromPntr->borderThickness.Right; break;
-		case UiElemConfigField_BorderThicknessBottom: configToPntr->borderThickness.Bottom = configFromPntr->borderThickness.Bottom; break;
-		case UiElemConfigField_BorderColor:           configToPntr->borderColor = configFromPntr->borderColor; break;
-		case UiElemConfigField_BorderDepth:           configToPntr->borderDepth = configFromPntr->borderDepth; break;
-		case UiElemConfigField_FloatingType:          configToPntr->floating.type = configFromPntr->floating.type; break;
-		case UiElemConfigField_FloatingOffsetX:       configToPntr->floating.offset.X = configFromPntr->floating.offset.X; break;
-		case UiElemConfigField_FloatingOffsetY:       configToPntr->floating.offset.Y = configFromPntr->floating.offset.Y; break;
-		case UiElemConfigField_FloatingAttachId:      configToPntr->floating.attachId = configFromPntr->floating.attachId; break;
-		case UiElemConfigField_FloatingParentSide:    configToPntr->floating.parentSide = configFromPntr->floating.parentSide; break;
-		case UiElemConfigField_FloatingElemSide:      configToPntr->floating.elemSide = configFromPntr->floating.elemSide; break;
-		case UiElemConfigField_Condition:             configToPntr->condition = configFromPntr->condition; break;
-		case UiElemConfigField_MousePassthrough:      configToPntr->mousePassthrough = configFromPntr->mousePassthrough; break;
-		case UiElemConfigField_StrictHover:           configToPntr->strictHover = configFromPntr->strictHover; break;
-		case UiElemConfigField_Text:                  configToPntr->text = configFromPntr->text; break;
-		case UiElemConfigField_RichText:              configToPntr->richText = configFromPntr->richText; break;
-		case UiElemConfigField_TextColor:             configToPntr->textColor = configFromPntr->textColor; break;
-		case UiElemConfigField_TextWrapWidth:         configToPntr->textWrapWidth = configFromPntr->textWrapWidth; break;
-		case UiElemConfigField_Font:                  configToPntr->font = configFromPntr->font; break;
-		case UiElemConfigField_FontSize:              configToPntr->fontSize = configFromPntr->fontSize; break;
-		case UiElemConfigField_FontStyle:             configToPntr->fontStyle = configFromPntr->fontStyle; break;
-		case UiElemConfigField_RendererParams:        MyMemCopy(&configToPntr->renderer, &configFromPntr->renderer, sizeof(UiRendererParameters)); break;
-		case UiElemConfigField_ThemerParams:          MyMemCopy(&configToPntr->themer, &configFromPntr->themer, sizeof(UiThemerParameters)); break;
+		case UiElemConfigField_Id:                      configToPntr->id = configFromPntr->id; break;
+		case UiElemConfigField_GlobalId:                configToPntr->globalId = configFromPntr->globalId; break;
+		case UiElemConfigField_Direction:               configToPntr->direction = configFromPntr->direction; break;
+		case UiElemConfigField_SizingTypeX:             configToPntr->sizing.x.type = configFromPntr->sizing.x.type; break;
+		case UiElemConfigField_SizingValueX:            configToPntr->sizing.x.value = configFromPntr->sizing.x.value; break;
+		case UiElemConfigField_SizingTypeY:             configToPntr->sizing.y.type = configFromPntr->sizing.y.type; break;
+		case UiElemConfigField_SizingValueY:            configToPntr->sizing.y.value = configFromPntr->sizing.y.value; break;
+		case UiElemConfigField_DontSizeToImage:         configToPntr->dontSizeToImage = configFromPntr->dontSizeToImage; break;
+		case UiElemConfigField_AlignmentX:              configToPntr->alignment.x = configFromPntr->alignment.x; break;
+		case UiElemConfigField_AlignmentY:              configToPntr->alignment.y = configFromPntr->alignment.y; break;
+		case UiElemConfigField_ScrollingX:              configToPntr->scrolling.x.enabled = configFromPntr->scrolling.x.enabled; break;
+		case UiElemConfigField_ScrollingLagX:           configToPntr->scrolling.x.lag = configFromPntr->scrolling.x.lag; break;
+		case UiElemConfigField_ScrollingY:              configToPntr->scrolling.y.enabled = configFromPntr->scrolling.y.enabled; break;
+		case UiElemConfigField_ScrollingLagY:           configToPntr->scrolling.y.lag = configFromPntr->scrolling.y.lag; break;
+		case UiElemConfigField_ClipChildren:            configToPntr->clipChildren = configFromPntr->clipChildren; break;
+		case UiElemConfigField_Depth:                   configToPntr->depth = configFromPntr->depth; break;
+		case UiElemConfigField_Color:                   configToPntr->color = configFromPntr->color; break;
+		case UiElemConfigField_ColorRecursive:          configToPntr->colorRecursive = configFromPntr->colorRecursive; break;
+		case UiElemConfigField_Texture:                 configToPntr->texture = configFromPntr->texture; break;
+		case UiElemConfigField_RepeatingTexture:        configToPntr->repeatingTexture = configFromPntr->repeatingTexture; break;
+		case UiElemConfigField_TextureSourceRec:        configToPntr->textureSourceRec = configFromPntr->textureSourceRec; break;
+		case UiElemConfigField_SpriteSheet:             configToPntr->spriteSheet = configFromPntr->spriteSheet; break;
+		case UiElemConfigField_SheetCell:               configToPntr->sheetCell = configFromPntr->sheetCell; break;
+		case UiElemConfigField_InnerPaddingLeft:        configToPntr->padding.inner.Left   = configFromPntr->padding.inner.Left; break;
+		case UiElemConfigField_InnerPaddingTop:         configToPntr->padding.inner.Top    = configFromPntr->padding.inner.Top; break;
+		case UiElemConfigField_InnerPaddingRight:       configToPntr->padding.inner.Right  = configFromPntr->padding.inner.Right; break;
+		case UiElemConfigField_InnerPaddingBottom:      configToPntr->padding.inner.Bottom = configFromPntr->padding.inner.Bottom; break;
+		case UiElemConfigField_OuterPaddingLeft:        configToPntr->padding.outer.Left   = configFromPntr->padding.outer.Left; break;
+		case UiElemConfigField_OuterPaddingTop:         configToPntr->padding.outer.Top    = configFromPntr->padding.outer.Top; break;
+		case UiElemConfigField_OuterPaddingRight:       configToPntr->padding.outer.Right  = configFromPntr->padding.outer.Right; break;
+		case UiElemConfigField_OuterPaddingBottom:      configToPntr->padding.outer.Bottom = configFromPntr->padding.outer.Bottom; break;
+		case UiElemConfigField_ChildPadding:            configToPntr->padding.child = configFromPntr->padding.child; break;
+		case UiElemConfigField_CornerRadiusTopLeft:     configToPntr->cornerRadius.TopLeft     = configFromPntr->cornerRadius.TopLeft; break;
+		case UiElemConfigField_CornerRadiusTopRight:    configToPntr->cornerRadius.TopRight    = configFromPntr->cornerRadius.TopRight; break;
+		case UiElemConfigField_CornerRadiusBottomRight: configToPntr->cornerRadius.BottomRight = configFromPntr->cornerRadius.BottomRight; break;
+		case UiElemConfigField_CornerRadiusBottomLeft:  configToPntr->cornerRadius.BottomLeft  = configFromPntr->cornerRadius.BottomLeft; break;
+		case UiElemConfigField_BorderThicknessLeft:     configToPntr->borderThickness.Left   = configFromPntr->borderThickness.Left; break;
+		case UiElemConfigField_BorderThicknessTop:      configToPntr->borderThickness.Top    = configFromPntr->borderThickness.Top; break;
+		case UiElemConfigField_BorderThicknessRight:    configToPntr->borderThickness.Right  = configFromPntr->borderThickness.Right; break;
+		case UiElemConfigField_BorderThicknessBottom:   configToPntr->borderThickness.Bottom = configFromPntr->borderThickness.Bottom; break;
+		case UiElemConfigField_BorderColor:             configToPntr->borderColor = configFromPntr->borderColor; break;
+		case UiElemConfigField_BorderDepth:             configToPntr->borderDepth = configFromPntr->borderDepth; break;
+		case UiElemConfigField_FloatingType:            configToPntr->floating.type = configFromPntr->floating.type; break;
+		case UiElemConfigField_FloatingOffsetX:         configToPntr->floating.offset.X = configFromPntr->floating.offset.X; break;
+		case UiElemConfigField_FloatingOffsetY:         configToPntr->floating.offset.Y = configFromPntr->floating.offset.Y; break;
+		case UiElemConfigField_FloatingAttachId:        configToPntr->floating.attachId = configFromPntr->floating.attachId; break;
+		case UiElemConfigField_FloatingParentSide:      configToPntr->floating.parentSide = configFromPntr->floating.parentSide; break;
+		case UiElemConfigField_FloatingElemSide:        configToPntr->floating.elemSide = configFromPntr->floating.elemSide; break;
+		case UiElemConfigField_Condition:               configToPntr->condition = configFromPntr->condition; break;
+		case UiElemConfigField_MousePassthrough:        configToPntr->mousePassthrough = configFromPntr->mousePassthrough; break;
+		case UiElemConfigField_StrictHover:             configToPntr->strictHover = configFromPntr->strictHover; break;
+		case UiElemConfigField_Text:                    configToPntr->text = configFromPntr->text; break;
+		case UiElemConfigField_RichText:                configToPntr->richText = configFromPntr->richText; break;
+		case UiElemConfigField_TextColor:               configToPntr->textColor = configFromPntr->textColor; break;
+		case UiElemConfigField_TextWrapWidth:           configToPntr->textWrapWidth = configFromPntr->textWrapWidth; break;
+		case UiElemConfigField_Font:                    configToPntr->font = configFromPntr->font; break;
+		case UiElemConfigField_FontSize:                configToPntr->fontSize = configFromPntr->fontSize; break;
+		case UiElemConfigField_FontStyle:               configToPntr->fontStyle = configFromPntr->fontStyle; break;
+		case UiElemConfigField_RendererParams:          MyMemCopy(&configToPntr->renderer, &configFromPntr->renderer, sizeof(UiRendererParameters)); break;
+		case UiElemConfigField_ThemerParams:            MyMemCopy(&configToPntr->themer, &configFromPntr->themer, sizeof(UiThemerParameters)); break;
 		default: DebugAssert(false); break;
 	}
 }
@@ -495,20 +503,24 @@ PEXPI UiElement* CloseUiElement()
 	{
 		element->config.sizing.y.value *= UiCtx->scale;
 	}
-	element->config.padding.inner.Left     *= UiCtx->scale;
-	element->config.padding.inner.Top      *= UiCtx->scale;
-	element->config.padding.inner.Right    *= UiCtx->scale;
-	element->config.padding.inner.Bottom   *= UiCtx->scale;
-	element->config.padding.outer.Left     *= UiCtx->scale;
-	element->config.padding.outer.Top      *= UiCtx->scale;
-	element->config.padding.outer.Right    *= UiCtx->scale;
-	element->config.padding.outer.Bottom   *= UiCtx->scale;
-	element->config.padding.child          *= UiCtx->scale;
+	element->config.padding.inner.Left       *= UiCtx->scale;
+	element->config.padding.inner.Top        *= UiCtx->scale;
+	element->config.padding.inner.Right      *= UiCtx->scale;
+	element->config.padding.inner.Bottom     *= UiCtx->scale;
+	element->config.padding.outer.Left       *= UiCtx->scale;
+	element->config.padding.outer.Top        *= UiCtx->scale;
+	element->config.padding.outer.Right      *= UiCtx->scale;
+	element->config.padding.outer.Bottom     *= UiCtx->scale;
+	element->config.cornerRadius.TopLeft     *= UiCtx->scale;
+	element->config.cornerRadius.TopRight    *= UiCtx->scale;
+	element->config.cornerRadius.BottomRight *= UiCtx->scale;
+	element->config.cornerRadius.BottomLeft  *= UiCtx->scale;
+	element->config.padding.child            *= UiCtx->scale;
 	//NOTE: For border thicknesses we want to keep them from going below 1px if the thickness was non-zero at uiScale=1.0
-	element->config.borderThickness.Left   *= UiCtx->scale; if (element->config.borderThickness.Left   > 0.0f && element->config.borderThickness.Left   < 1.0f) { element->config.borderThickness.Left   = 1.0f; }
-	element->config.borderThickness.Top    *= UiCtx->scale; if (element->config.borderThickness.Top    > 0.0f && element->config.borderThickness.Top    < 1.0f) { element->config.borderThickness.Top    = 1.0f; }
-	element->config.borderThickness.Right  *= UiCtx->scale; if (element->config.borderThickness.Right  > 0.0f && element->config.borderThickness.Right  < 1.0f) { element->config.borderThickness.Right  = 1.0f; }
-	element->config.borderThickness.Bottom *= UiCtx->scale; if (element->config.borderThickness.Bottom > 0.0f && element->config.borderThickness.Bottom < 1.0f) { element->config.borderThickness.Bottom = 1.0f; }
+	element->config.borderThickness.Left     *= UiCtx->scale; if (element->config.borderThickness.Left   > 0.0f && element->config.borderThickness.Left   < 1.0f) { element->config.borderThickness.Left   = 1.0f; }
+	element->config.borderThickness.Top      *= UiCtx->scale; if (element->config.borderThickness.Top    > 0.0f && element->config.borderThickness.Top    < 1.0f) { element->config.borderThickness.Top    = 1.0f; }
+	element->config.borderThickness.Right    *= UiCtx->scale; if (element->config.borderThickness.Right  > 0.0f && element->config.borderThickness.Right  < 1.0f) { element->config.borderThickness.Right  = 1.0f; }
+	element->config.borderThickness.Bottom   *= UiCtx->scale; if (element->config.borderThickness.Bottom > 0.0f && element->config.borderThickness.Bottom < 1.0f) { element->config.borderThickness.Bottom = 1.0f; }
 	
 	return element;
 }
@@ -869,9 +881,24 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		{
 			measure = MeasureTextEx(element->config.font, fontSize, element->config.fontStyle, true, wrapWidth, element->config.text);
 		}
-		r32 measureHeightOrLineHeight = MaxR32(measure.visualRec.Height, GetFontLineHeight(element->config.font, fontSize, element->config.fontStyle));
-		*minimumSizePntr = (xAxis ? ((minSize >= 0.0f) ? minSize : measure.visualRec.Width) : measureHeightOrLineHeight);
-		*preferredSizePntr = (xAxis ? measure.visualRec.Width : measureHeightOrLineHeight);
+		
+		// Text should always be treated as at least lineHeight tall, even if no characters are being rendered
+		if (!xAxis)
+		{
+			measure.visualRec.Height = MaxR32(measure.visualRec.Height, GetFontLineHeight(element->config.font, fontSize, element->config.fontStyle));
+		}
+		
+		r32 textSize = (xAxis ? measure.visualRec.Width : measure.visualRec.Height);
+		if (sizingType == UiSizingType_TextWrap)
+		{
+			*minimumSizePntr = elemInnerPaddingLrOrTb + (xAxis ? 0 : textSize);
+		}
+		else if (sizingType == UiSizingType_TextClip)
+		{
+			*minimumSizePntr = elemInnerPaddingLrOrTb + textSize;
+		}
+		if (minSize > 0) { *minimumSizePntr = MaxR32(minSize, *minimumSizePntr); }
+		if (minSize > 0) { *preferredSizePntr = MaxR32(minSize, *preferredSizePntr); }
 	}
 	else { DebugAssert(false); }
 }
@@ -1658,6 +1685,7 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->clipRec = element->clipRec;
 				newCmd->color = actualColor;
 				newCmd->rectangle.rectangle = element->layoutRec;
+				newCmd->rectangle.cornerRadius = element->config.cornerRadius;
 				if (element->config.spriteSheet != nullptr)
 				{
 					newCmd->rectangle.texture = &element->config.spriteSheet->texture;
@@ -1684,7 +1712,6 @@ PEXP UiRenderList* GetUiRenderList()
 				{
 					newCmd->rectangle.borderThickness = element->config.borderThickness;
 					newCmd->rectangle.borderColor = actualBorderColor;
-					newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
 				}
 			}
 			if (!isBorderSameDepth && borderHasAlpha)
@@ -1701,7 +1728,7 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.borderThickness = element->config.borderThickness;
 				newCmd->rectangle.borderColor = actualBorderColor;
-				newCmd->rectangle.cornerRadius = V4r_Zero; //TODO: Implement this!
+				newCmd->rectangle.cornerRadius = element->config.cornerRadius;
 			}
 			
 			bool isWrappingText = (element->config.sizing.x.type == UiSizingType_TextWrap);
