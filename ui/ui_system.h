@@ -117,6 +117,9 @@ plex UiElemConfigWrapper { UiElemConfig config; };
 // A "leaf" element has no child elements, and therefore doesn't need a scope following the macro
 #define UIELEM_LEAF(...) do { if (OpenUiElementConditional(NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config)) { CloseUiElement(); } } while(0)
 
+#define UIEXPANDER_HORI() UIELEM_LEAF({ .sizing={ .width=UI_EXPAND(), .height=UI_FIXED(0) } })
+#define UIEXPANDER_VERT() UIELEM_LEAF({ .sizing={ .width=UI_FIXED(0), .height=UI_EXPAND() } })
+
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
@@ -897,6 +900,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		{
 			*minimumSizePntr = elemInnerPaddingLrOrTb + textSize;
 		}
+		*preferredSizePntr = elemInnerPaddingLrOrTb + textSize;
 		if (minSize > 0) { *minimumSizePntr = MaxR32(minSize, *minimumSizePntr); }
 		if (minSize > 0) { *preferredSizePntr = MaxR32(minSize, *preferredSizePntr); }
 	}
