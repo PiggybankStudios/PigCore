@@ -1179,7 +1179,7 @@ static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool pri
 		*scrollGotoPntr = ClampR32(*scrollGotoPntr, 0.0f, scrollMax);
 		
 		r32 scrollDelta = (*scrollGotoPntr - *scrollPntr);
-		if (AbsR32(scrollDelta) > UI_SCROLL_GOTO_SNAP_DISTANCE)
+		if (AbsR32(scrollDelta) > UI_SCROLL_GOTO_SNAP_DISTANCE && UiCtx->defaultScrollLagDivisor > 0.0f)
 		{
 			r32 divisor = (xAxis ? element->config.scrolling.x.lag : element->config.scrolling.y.lag);
 			AssertMsg(divisor <= 0.0f || divisor >= 1.0f, "Fractional scroll lag value will cause undesired behavior!");
@@ -1674,8 +1674,8 @@ PEXP UiRenderList* GetUiRenderList()
 			Color32 colorRecursive = UiConfigColorToActualColor(element->config.colorRecursive);
 			Color32 colorIfImage = (element->config.texture != nullptr || element->config.spriteSheet != nullptr) ? UiConfigColorToActualColor(element->config.color) : element->config.color;
 			Color32 actualColor = ColorMultSimple(colorRecursive, colorIfImage);
-			Color32 actualBorderColor = ColorMultSimple(UiConfigColorToActualColor(element->config.borderColor), colorRecursive);
-			Color32 actualTextColor = ColorMultSimple(UiConfigTextColorToActualColor(element->config.textColor), colorRecursive);
+			Color32 actualBorderColor = ColorMultSimple(element->config.borderColor, colorRecursive);
+			Color32 actualTextColor = ColorMultSimple(element->config.textColor, colorRecursive);
 			bool isBorderSameDepth = (AreSimilarR32(element->config.borderDepth, element->config.depth, DEFAULT_R32_TOLERANCE) || element->config.borderDepth == 0.0f);
 			bool borderHasAlpha = (element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0));
 			if (actualColor.a != 0 || (borderHasAlpha && isBorderSameDepth))

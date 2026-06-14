@@ -390,7 +390,6 @@ plex UiElemConfig
 
 //When configuring an element we often use the 0 value as a "default". So a color of "transparent black" actually means the default color, which is fully opaque white
 #define UiConfigColorToActualColor(color) (((color).valueU32 != PigUiDefaultColor_Value) ? (color) : White)
-#define UiConfigTextColorToActualColor(color) (((color).valueU32 != PigUiDefaultColor_Value) ? (color) : Black)
 
 // This is a bitwise enum where each bit represents a single "field" in the UiElemConfig structure above
 // Some values are aliases for combinations of other values, like Margins is MarginLeft|MarginTop|MarginRight|MarginBottom
