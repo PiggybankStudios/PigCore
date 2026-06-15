@@ -1061,89 +1061,167 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 		}
 		#endif //DEBUG_BUILD
 		
-		uxx distRoundIndex = 0;
-		while (spaceToDistribute > 0.0f + DEFAULT_R32_TOLERANCE && distRoundIndex < element->numChildren)
+		if (spaceToDistribute > 0) //grow children
 		{
-			r32 smallestChildSize = INFINITY;
-			uxx smallestChildCount = 0;
-			r32 secondSmallestChildSize = INFINITY;
-			for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+			uxx distRoundIndex = 0;
+			while (spaceToDistribute > 0.0f + DEFAULT_R32_TOLERANCE && distRoundIndex < element->numChildren)
 			{
-				UiElement* child = GetUiElementChild(element, cIndex);
-				if (child->config.floating.type == UiFloatingType_None)
+				r32 smallestChildSize = INFINITY;
+				uxx smallestChildCount = 0;
+				r32 secondSmallestChildSize = INFINITY;
+				for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
 				{
-					r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-					r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-					r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
-					// #if DEBUG_BUILD
-					// if (printDebug) { PrintLine_D("\t-> Child[%llu] is %g, [%g,%g]", cIndex, childSize, childMinimumSize, childPreferredSize); }
-					// #endif
-					if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
+					UiElement* child = GetUiElementChild(element, cIndex);
+					if (child->config.floating.type == UiFloatingType_None)
 					{
-						if (IsInfiniteOrNanR32(smallestChildSize) || childSize < smallestChildSize)
+						r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+						r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+						r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
+						// #if DEBUG_BUILD
+						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is %g, [%g,%g]", cIndex, childSize, childMinimumSize, childPreferredSize); }
+						// #endif
+						if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
 						{
-							// #if DEBUG_BUILD
-							// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new smallest!", cIndex); }
-							// #endif
-							if (!IsInfiniteOrNanR32(smallestChildSize)) { secondSmallestChildSize = smallestChildSize; }
-							if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
-							smallestChildSize = childSize;
-							smallestChildCount = 1;
+							if (IsInfiniteOrNanR32(smallestChildSize) || childSize < smallestChildSize)
+							{
+								// #if DEBUG_BUILD
+								// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new smallest!", cIndex); }
+								// #endif
+								if (!IsInfiniteOrNanR32(smallestChildSize)) { secondSmallestChildSize = smallestChildSize; }
+								if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
+								smallestChildSize = childSize;
+								smallestChildCount = 1;
+							}
+							else if (AreSimilarR32(smallestChildSize, childSize, DEFAULT_R32_TOLERANCE))
+							{
+								// #if DEBUG_BUILD
+								// if (printDebug) { PrintLine_D("\t-> Child[%llu] is same as smallest!", cIndex); }
+								// #endif
+								if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
+								smallestChildCount++;
+							}
+							else if (childSize < secondSmallestChildSize)
+							{
+								// #if DEBUG_BUILD
+								// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new second smallest!", cIndex); }
+								// #endif
+								secondSmallestChildSize = childSize;
+							}
 						}
-						else if (AreSimilarR32(smallestChildSize, childSize, DEFAULT_R32_TOLERANCE))
-						{
-							// #if DEBUG_BUILD
-							// if (printDebug) { PrintLine_D("\t-> Child[%llu] is same as smallest!", cIndex); }
-							// #endif
-							if (childPreferredSize < secondSmallestChildSize) { secondSmallestChildSize = childPreferredSize; }
-							smallestChildCount++;
-						}
-						else if (childSize < secondSmallestChildSize)
-						{
-							// #if DEBUG_BUILD
-							// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new second smallest!", cIndex); }
-							// #endif
-							secondSmallestChildSize = childSize;
-						}
-					}
-					// #if DEBUG_BUILD
-					// if (printDebug) { PrintLine_D("\t-> After Child[%llu]: %llux %g (%g)", cIndex, smallestChildCount, smallestChildSize, secondSmallestChildSize); }
-					// #endif
-				}
-			}
-			if (smallestChildCount == 0) { break; }
-			
-			r32 smallestToNextSmallestDiff = (!IsInfiniteOrNanR32(secondSmallestChildSize) && smallestChildCount > 0)
-				? (secondSmallestChildSize - smallestChildSize)
-				: INFINITY;
-			r32 spaceToDistributeThisRound = MinR32(spaceToDistribute, smallestToNextSmallestDiff * (r32)smallestChildCount);
-			// #if DEBUG_BUILD
-			// if (printDebug) { PrintLine_D("\t[%llu] There are %llu children at %g that can expand to %g. Distributing %g (%g left)...", distRoundIndex, smallestChildCount, smallestChildSize, secondSmallestChildSize, spaceToDistributeThisRound, spaceToDistribute - spaceToDistributeThisRound); }
-			// #endif
-			if (spaceToDistributeThisRound <= 0.0f) { break; }
-			spaceToDistribute -= spaceToDistributeThisRound;
-			for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
-			{
-				UiElement* child = GetUiElementChild(element, cIndex);
-				if (child->config.floating.type == UiFloatingType_None)
-				{
-					r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-					r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
-					// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
-					r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
-					if (AreSimilarR32(*childSizePntr, smallestChildSize, DEFAULT_R32_TOLERANCE) &&
-						(IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize))
-					{
-						*childSizePntr += (spaceToDistributeThisRound / (r32)smallestChildCount);
+						// #if DEBUG_BUILD
+						// if (printDebug) { PrintLine_D("\t-> After Child[%llu]: %llux %g (%g)", cIndex, smallestChildCount, smallestChildSize, secondSmallestChildSize); }
+						// #endif
 					}
 				}
+				if (smallestChildCount == 0) { break; }
+				
+				r32 smallestToNextSmallestDiff = (!IsInfiniteOrNanR32(secondSmallestChildSize) && smallestChildCount > 0)
+					? (secondSmallestChildSize - smallestChildSize)
+					: INFINITY;
+				r32 spaceToDistributeThisRound = MinR32(spaceToDistribute, smallestToNextSmallestDiff * (r32)smallestChildCount);
+				// #if DEBUG_BUILD
+				// if (printDebug) { PrintLine_D("\t[%llu] There are %llu children at %g that can expand to %g. Distributing %g (%g left)...", distRoundIndex, smallestChildCount, smallestChildSize, secondSmallestChildSize, spaceToDistributeThisRound, spaceToDistribute - spaceToDistributeThisRound); }
+				// #endif
+				if (spaceToDistributeThisRound <= 0.0f) { break; }
+				spaceToDistribute -= spaceToDistributeThisRound;
+				for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+				{
+					UiElement* child = GetUiElementChild(element, cIndex);
+					if (child->config.floating.type == UiFloatingType_None)
+					{
+						r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+						r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+						// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+						r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+						if (AreSimilarR32(*childSizePntr, smallestChildSize, DEFAULT_R32_TOLERANCE) &&
+							(IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize))
+						{
+							*childSizePntr += (spaceToDistributeThisRound / (r32)smallestChildCount);
+						}
+					}
+				}
+				distRoundIndex++;
 			}
-			distRoundIndex++;
 		}
-		// else if (spaceToDistribute < 0)
-		// {
-		// 	//TODO: Implement me!
-		// }
+		else if (spaceToDistribute < 0) //shrink children
+		{
+			spaceToDistribute = -spaceToDistribute;
+			
+			uxx distRoundIndex = 0;
+			while (spaceToDistribute > 0.0f + DEFAULT_R32_TOLERANCE && distRoundIndex < element->numChildren)
+			{
+				r32 largestChildSize = 0.0f;
+				uxx largestChildCount = 0;
+				r32 secondLargestChildSize = 0.0f;
+				for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+				{
+					UiElement* child = GetUiElementChild(element, cIndex);
+					if (child->config.floating.type == UiFloatingType_None)
+					{
+						r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+						r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+						r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
+						// #if DEBUG_BUILD
+						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is %g, [%g,%g]", cIndex, childSize, childMinimumSize, childPreferredSize); }
+						// #endif
+						// if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
+						{
+							if (largestChildSize == 0.0f || childSize > largestChildSize)
+							{
+								// #if DEBUG_BUILD
+								// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new largest!", cIndex); }
+								// #endif
+								if (largestChildSize != 0.0f) { secondLargestChildSize = largestChildSize; }
+								largestChildSize = childSize;
+								largestChildCount = 1;
+							}
+							else if (AreSimilarR32(largestChildSize, childSize, DEFAULT_R32_TOLERANCE))
+							{
+								// #if DEBUG_BUILD
+								// if (printDebug) { PrintLine_D("\t-> Child[%llu] is same as largest!", cIndex); }
+								// #endif
+								largestChildCount++;
+							}
+							else if (childSize > secondLargestChildSize)
+							{
+								// #if DEBUG_BUILD
+								// if (printDebug) { PrintLine_D("\t-> Child[%llu] is new second largest!", cIndex); }
+								// #endif
+								secondLargestChildSize = childSize;
+							}
+						}
+						// #if DEBUG_BUILD
+						// if (printDebug) { PrintLine_D("\t-> After Child[%llu]: %llux %g (%g)", cIndex, largestChildCount, largestChildSize, secondLargestChildSize); }
+						// #endif
+					}
+				}
+				if (largestChildCount == 0) { break; }
+				
+				r32 largestToNextLargestDiff = (largestChildSize - secondLargestChildSize);
+				r32 spaceToDistributeThisRound = MinR32(spaceToDistribute, largestToNextLargestDiff * (r32)largestChildCount);
+				// #if DEBUG_BUILD
+				// if (printDebug) { PrintLine_D("\t[%llu] There are %llu children at %g that can expand to %g. Distributing %g (%g left)...", distRoundIndex, largestChildCount, largestChildSize, secondSmallestChildSize, spaceToDistributeThisRound, spaceToDistribute - spaceToDistributeThisRound); }
+				// #endif
+				if (spaceToDistributeThisRound <= 0.0f) { break; }
+				spaceToDistribute -= spaceToDistributeThisRound;
+				for (uxx cIndex = 0; cIndex < element->numChildren; cIndex++)
+				{
+					UiElement* child = GetUiElementChild(element, cIndex);
+					if (child->config.floating.type == UiFloatingType_None)
+					{
+						r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+						r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+						// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+						r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
+						if (AreSimilarR32(*childSizePntr, largestChildSize, DEFAULT_R32_TOLERANCE))
+						{
+							*childSizePntr -= (spaceToDistributeThisRound / (r32)largestChildCount);
+						}
+					}
+				}
+				distRoundIndex++;
+			}
+		}
 	}
 	else //sizing in the non-layout direction
 	{
