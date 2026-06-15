@@ -22,6 +22,7 @@ Description:
 #include "struct/struct_typed_array.h"
 #include "struct/struct_string.h"
 #include "struct/struct_color.h"
+#include "gfx/gfx_font_flow.h"
 
 #if BUILD_WITH_CLAY
 
@@ -31,33 +32,6 @@ plex ClayElementUserData
 	bool outsideBorder;
 	rec imageSourceRec;
 };
-
-typedef enum TextContraction TextContraction;
-enum TextContraction
-{
-	TextContraction_None = 0,
-	TextContraction_ClipRight,
-	TextContraction_ClipLeft,
-	TextContraction_EllipseRight,
-	TextContraction_EllipseMiddle,
-	TextContraction_EllipseLeft,
-	TextContraction_EllipseFilePath,
-	TextContraction_Count,
-};
-const char* GetTextContractionStr(TextContraction enumValue)
-{
-	switch (enumValue)
-	{
-		case TextContraction_None:            return "None";
-		case TextContraction_ClipRight:       return "ClipRight";
-		case TextContraction_ClipLeft:        return "ClipLeft";
-		case TextContraction_EllipseRight:    return "EllipseRight";
-		case TextContraction_EllipseMiddle:   return "EllipseMiddle";
-		case TextContraction_EllipseLeft:     return "EllipseLeft";
-		case TextContraction_EllipseFilePath: return "EllipseFilePath";
-		default: return UNKNOWN_STR;
-	}
-}
 
 typedef plex ClayTextUserData ClayTextUserData;
 plex ClayTextUserData
@@ -107,6 +81,8 @@ typedef Clay_ElementId ClayId;
 	PIG_CORE_INLINE ClayId ToClayIdEx(Str8 idStr, uxx index);
 	PIG_CORE_INLINE ClayId ToClayId(Str8 idStr);
 	PIG_CORE_INLINE ClayId ToClayIdNt(const char* idNullTermString);
+	PIG_CORE_INLINE ClayId ToClayIdPrintEx(Arena* arena, uxx index, const char* formatString, ...);
+	PIG_CORE_INLINE ClayId ToClayIdPrint(Arena* arena, const char* formatString, ...);
 	void SetClayContext(ClayUI* clay);
 	void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureTextFunc, void* measureUserData, ClayRegisterTooltip_f* registerTooltipFunc, void* tooltipUserData, ClayUI* clayOut);
 	PIG_CORE_INLINE bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling);
@@ -169,6 +145,21 @@ static CLAY_HASH_TEXT_USERDATA_DEF(HashTextUserData)
 PEXPI ClayId ToClayIdEx(Str8 idStr, uxx index) { Assert(index <= UINT32_MAX); return Clay__HashString(idStr, (uint32_t)index, 0); }
 PEXPI ClayId ToClayId(Str8 idStr) { return ToClayIdEx(idStr, 0); }
 PEXPI ClayId ToClayIdNt(const char* idNullTermString) { return ToClayId(MakeStr8Nt(idNullTermString)); }
+
+PEXPI ClayId ToClayIdPrintEx(Arena* arena, uxx index, const char* formatString, ...)
+{
+	PrintInArenaVa(arena, formattedString, formattedStringLength, formatString);
+	Assert(formattedStringLength >= 0);
+	ClayId result = ToClayIdEx(MakeStr8((uxx)formattedStringLength, formattedString), index);
+	return result;
+}
+PEXPI ClayId ToClayIdPrint(Arena* arena, const char* formatString, ...)
+{
+	PrintInArenaVa(arena, formattedString, formattedStringLength, formatString);
+	Assert(formattedStringLength >= 0);
+	ClayId result = ToClayIdEx(MakeStr8((uxx)formattedStringLength, formattedString), 0);
+	return result;
+}
 
 // +--------------------------------------------------------------+
 // |                   Initialize and Begin/End                   |
@@ -241,7 +232,3 @@ PEXPI rec GetClayElementDrawRecNt(const char* elementIdStrNt) { return GetClayEl
 #endif //BUILD_WITH_CLAY
 
 #endif //  _UI_CLAY_H
-
-#if defined(_MEM_SCRATCH_H) && defined(_UI_CLAY_H)
-#include "cross/cross_scratch_and_clay.h"
-#endif

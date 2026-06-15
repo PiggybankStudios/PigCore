@@ -148,6 +148,37 @@ plex TextLayout
 	FontFlowGlyph* glyphs;
 };
 
+typedef enum TextContraction TextContraction;
+enum TextContraction
+{
+	TextContraction_None = 0,
+	TextContraction_ClipRight,
+	TextContraction_ClipLeft,
+	TextContraction_EllipseRight,
+	TextContraction_EllipseMiddle,
+	TextContraction_EllipseLeft,
+	TextContraction_EllipseFilePath,
+	TextContraction_Count,
+};
+#if !PIG_CORE_IMPLEMENTATION
+const char* GetTextContractionStr(TextContraction enumValue);
+#else
+PEXP const char* GetTextContractionStr(TextContraction enumValue)
+{
+	switch (enumValue)
+	{
+		case TextContraction_None:            return "None";
+		case TextContraction_ClipRight:       return "ClipRight";
+		case TextContraction_ClipLeft:        return "ClipLeft";
+		case TextContraction_EllipseRight:    return "EllipseRight";
+		case TextContraction_EllipseMiddle:   return "EllipseMiddle";
+		case TextContraction_EllipseLeft:     return "EllipseLeft";
+		case TextContraction_EllipseFilePath: return "EllipseFilePath";
+		default: return UNKNOWN_STR;
+	}
+}
+#endif
+
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+

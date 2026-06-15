@@ -7,6 +7,7 @@ Description:
 	** This allows us to bypass a dependency problem between ui_system.h and other files like ui_system_theming.h.
 	** The various ui_system_[x].h files are separated mostly for organizational purposes, so they depend on each
 	** other and cannot be separated, but they live in separate files to keep things organized
+	**
 */
 
 #ifndef _UI_SYSTEM_CORE_H
@@ -29,6 +30,15 @@ Description:
 #include "gfx/gfx_font.h"
 
 #if BUILD_WITH_PIG_UI
+
+#ifndef PIG_CORE_INCLUDE_PIG_UI_CONFIG
+#define PIG_CORE_INCLUDE_PIG_UI_CONFIG 0
+#endif
+#if PIG_CORE_INCLUDE_PIG_UI_CONFIG
+// NOTE: If BUILD_WITH_PIG_UI and PIG_CORE_INCLUDE_PIG_UI_CONFIG are enabled, then you must provide a "pig_ui_config.h" file
+// in an include directory. This file can be empty, or it can be used to configure UiRendererParameters and UiThemerParameters
+#include "pig_ui_config.h"
+#endif
 
 #define PIG_UI_INDEX_INVALID UINTXX_MAX
 #define PIG_UI_ID_INDEX_NONE UINTXX_MAX
@@ -638,6 +648,7 @@ plex UiRenderCmd
 	r32 depth;
 	Color32 color;
 	rec clipRec;
+	UiRendererParameters params;
 	car
 	{
 		// +==============================+

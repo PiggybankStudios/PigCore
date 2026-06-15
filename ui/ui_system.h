@@ -1770,6 +1770,7 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->srcElementIndex = element->elementIndex;
 				newCmd->srcElementId = element->id;
 				newCmd->clipRec = element->clipRec;
+				newCmd->params = element->config.renderer;
 				newCmd->color = actualColor;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.cornerRadius = element->config.cornerRadius;
@@ -1811,6 +1812,7 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->srcElementIndex = element->elementIndex;
 				newCmd->srcElementId = element->id;
 				newCmd->clipRec = element->clipRec;
+				newCmd->params = element->config.renderer;
 				newCmd->color = Transparent;
 				newCmd->rectangle.rectangle = element->layoutRec;
 				newCmd->rectangle.borderThickness = element->config.borderThickness;
@@ -1833,6 +1835,7 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->srcElementIndex = element->elementIndex;
 					newCmd->srcElementId = element->id;
 					newCmd->clipRec = textClipRec;
+					newCmd->params = element->config.renderer;
 					newCmd->color = actualTextColor;
 					newCmd->richText.font = element->config.font;
 					newCmd->richText.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->richText.font);
@@ -1857,6 +1860,7 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->srcElementIndex = element->elementIndex;
 					newCmd->srcElementId = element->id;
 					newCmd->clipRec = textClipRec;
+					newCmd->params = element->config.renderer;
 					newCmd->color = actualTextColor;
 					newCmd->text.font = element->config.font;
 					newCmd->text.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->text.font);
