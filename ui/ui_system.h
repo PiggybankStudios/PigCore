@@ -93,6 +93,7 @@ Description:
 	PIG_CORE_INLINE bool WasCurrentUiElementClicked(MouseBtn mouseBtn);
 	PIG_CORE_INLINE bool DidCurrentUiElementClickStart(MouseBtn mouseBtn);
 	PIG_CORE_INLINE UiElement* CloseUiElement();
+	PIG_CORE_INLINE void CloseUiElementMulti(u64 numElements); //mostly useful for DeferBlock
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
 	void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
@@ -527,6 +528,10 @@ PEXPI UiElement* CloseUiElement()
 	
 	return element;
 }
+PEXPI void CloseUiElementMulti(u64 numElements)
+{
+	for (u64 eIndex = 0; eIndex < numElements; eIndex++) { CloseUiElement(); }
+}
 
 //NOTE: This pointer becomes potentially invalid once OpenUiElement is called again, VarArrayAdd semantics
 PEXPI UiElement* OpenUiElement(UiElemConfig config)
@@ -605,14 +610,14 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 	{
 		if (newElement->config.texture != nullptr && !newElement->config.repeatingTexture)
 		{
-			newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(
+			newElement->config.sizing = UI_FIXED2(
 				(r32)newElement->config.texture->Width,
 				(r32)newElement->config.texture->Height
 			);
 		}
 		else if (newElement->config.spriteSheet != nullptr)
 		{
-			newElement->config.sizing = NEW_STRUCT(UiSizing)UI_FIXED2(
+			newElement->config.sizing = UI_FIXED2(
 				newElement->config.spriteSheet->cellSize.Width * UiCtx->scale,
 				newElement->config.spriteSheet->cellSize.Height * UiCtx->scale
 			);
@@ -667,11 +672,13 @@ PEXPI UiElement* OpenUiElement(UiElemConfig config)
 			{
 				newElement->scroll.X = prevFrameElement->scroll.X;
 				newElement->scrollGoto.X = prevFrameElement->scrollGoto.X;
+				newElement->scrollMax.X = prevFrameElement->scrollMax.X;
 			}
 			if (newElement->config.scrolling.y.enabled)
 			{
 				newElement->scroll.Y = prevFrameElement->scroll.Y;
 				newElement->scrollGoto.Y = prevFrameElement->scrollGoto.Y;
+				newElement->scrollMax.Y = prevFrameElement->scrollMax.Y;
 			}
 		}
 	}
@@ -888,10 +895,11 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		// Text should always be treated as at least lineHeight tall, even if no characters are being rendered
 		if (!xAxis)
 		{
-			measure.visualRec.Height = MaxR32(measure.visualRec.Height, GetFontLineHeight(element->config.font, fontSize, element->config.fontStyle));
+			r32 lineHeight = GetFontLineHeight(element->config.font, fontSize, element->config.fontStyle);
+			if (measure.logicalRec.Height < lineHeight) { measure.logicalRec.Height = lineHeight; }
 		}
 		
-		r32 textSize = (xAxis ? measure.visualRec.Width : measure.visualRec.Height);
+		r32 textSize = (xAxis ? measure.logicalRec.X + measure.logicalRec.Width : measure.logicalRec.Height);
 		if (sizingType == UiSizingType_TextWrap)
 		{
 			*minimumSizePntr = elemInnerPaddingLrOrTb + (xAxis ? 0 : textSize);

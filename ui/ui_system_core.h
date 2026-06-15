@@ -194,18 +194,18 @@ car UiSizing
 	plex { UiSizingAxis width, height; };
 	plex { UiSizingAxis horizontal, vertical; };
 };
-#define UI_FIXED(numPx)                 { .type=UiSizingType_FixedPx,      .value=(numPx)   }
-#define UI_PERCENT(percent)             { .type=UiSizingType_FixedPercent, .value=(percent) }
-#define UI_FIT()                        { .type=UiSizingType_Fit,          .value=0         }
-#define UI_EXPAND()                     { .type=UiSizingType_Expand,       .value=0         }
-#define UI_EXPAND_MIN(minPx)            { .type=UiSizingType_Expand,       .value=(minPx)   }
-#define UI_FIXED2(numPxX, numPxY)       { .x=UI_FIXED(numPxX),     .y=UI_FIXED(numPxY)     }
-#define UI_PERCENT2(percentX, percentY) { .x=UI_PERCENT(percentX), .y=UI_PERCENT(percentY) }
-#define UI_FIT2()                       { .x=UI_FIT(),             .y=UI_FIT()             }
-#define UI_EXPAND2()                    { .x=UI_EXPAND(),          .y=UI_EXPAND()          }
-#define UI_EXPAND_MIN2(minPxX, minPxY)  { .x=UI_EXPAND(minPxX),    .y=UI_EXPAND(minPxY)    }
-#define UI_TEXT_WRAP(minWidth)          { .x={.type=UiSizingType_TextWrap, .value=(minWidth)}, .y={.type=UiSizingType_TextWrap} }
-#define UI_TEXT_CLIP(minWidth)          { .x={.type=UiSizingType_TextClip, .value=(minWidth)}, .y={.type=UiSizingType_TextClip} }
+#define UI_FIXED(numPx)                 NEW_STRUCT(UiSizingAxis){ .type=UiSizingType_FixedPx,      .value=(numPx)   }
+#define UI_PERCENT(percent)             NEW_STRUCT(UiSizingAxis){ .type=UiSizingType_FixedPercent, .value=(percent) }
+#define UI_FIT()                        NEW_STRUCT(UiSizingAxis){ .type=UiSizingType_Fit,          .value=0         }
+#define UI_EXPAND()                     NEW_STRUCT(UiSizingAxis){ .type=UiSizingType_Expand,       .value=0         }
+#define UI_EXPAND_MIN(minPx)            NEW_STRUCT(UiSizingAxis){ .type=UiSizingType_Expand,       .value=(minPx)   }
+#define UI_FIXED2(numPxX, numPxY)       NEW_STRUCT(UiSizing){ .x=UI_FIXED(numPxX),     .y=UI_FIXED(numPxY)     }
+#define UI_PERCENT2(percentX, percentY) NEW_STRUCT(UiSizing){ .x=UI_PERCENT(percentX), .y=UI_PERCENT(percentY) }
+#define UI_FIT2()                       NEW_STRUCT(UiSizing){ .x=UI_FIT(),             .y=UI_FIT()             }
+#define UI_EXPAND2()                    NEW_STRUCT(UiSizing){ .x=UI_EXPAND(),          .y=UI_EXPAND()          }
+#define UI_EXPAND_MIN2(minPxX, minPxY)  NEW_STRUCT(UiSizing){ .x=UI_EXPAND(minPxX),    .y=UI_EXPAND(minPxY)    }
+#define UI_TEXT_WRAP(minWidth)          NEW_STRUCT(UiSizing){ .x={.type=UiSizingType_TextWrap, .value=(minWidth)}, .y={.type=UiSizingType_TextWrap} }
+#define UI_TEXT_CLIP(minWidth)          NEW_STRUCT(UiSizing){ .x={.type=UiSizingType_TextClip, .value=(minWidth)}, .y={.type=UiSizingType_TextClip} }
 #define UI_TEXT_FULL()                  UI_TEXT_CLIP(-1.0f)
 
 typedef enum UiAlign UiAlign;

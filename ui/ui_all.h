@@ -25,5 +25,6 @@ Date:   02\16\2025
 #include "ui/ui_system.h"
 #include "ui/ui_system_core.h"
 #include "ui/ui_system_theming.h"
+#include "ui/ui_scrollbar.h"
 
 #endif //  _UI_ALL_H
