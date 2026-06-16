@@ -36,6 +36,7 @@ Description:
 typedef plex UiScrollbarState UiScrollbarState;
 plex UiScrollbarState
 {
+	bool autohide;
 	bool isHovered;
 	bool isDragging;
 	bool isDraggingSmooth;
@@ -49,21 +50,25 @@ plex UiScrollbarState
 // |                 Header Function Declarations                 |
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
-	void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* state, UiElemConfig splitterContainerConfig, UiElemConfig scrollViewConfig);
+	void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* state, UiElemConfig splitterContainerConfig);
+	void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState* state, UiElemConfig splitterContainerConfig);
 #endif
 
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define ContainerWithVerticalScrollbar(scrollViewId, statePntr, splitterContainerConfig, scrollViewConfig) \
-	DeferBlockWithStart(ContainerWithVerticalScrollbar_((scrollViewId), (statePntr), (splitterContainerConfig), (scrollViewConfig)), CloseUiElementMulti(2))
+#define ContainerWithVerticalScrollbar(scrollViewId, statePntr, ...) \
+	DeferBlockWithStart(ContainerWithVerticalScrollbar_((scrollViewId), (statePntr), NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config), CloseUiElement())
+#define ContainerWithHorizontalScrollbar(scrollViewId, statePntr, ...) \
+	DeferBlockWithStart(ContainerWithHorizontalScrollbar_((scrollViewId), (statePntr), NEW_STRUCT(UiElemConfigWrapper){ __VA_ARGS__ }.config), CloseUiElement())
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
-PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* state, UiElemConfig splitterContainerConfig, UiElemConfig scrollViewConfig)
+//TODO: We should combine the implementation of vertical and horizontal scrollbar into one function
+PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* state, UiElemConfig splitterContainerConfig)
 {
 	NotNull(state);
 	r32 gutterWidth = state->gutterWidth;
@@ -74,9 +79,9 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	if (barColor.valueU32 == PigUiDefaultColor_Value) { barColor = PIG_UI_DEFAULT_SCROLLBAR_COLOR; }
 	const r32 gutterLeftRightPadding = 1;
 	
-	UiId splitterId = UiIdSuffixLit(scrollViewId, "_ScrollbarSplitter");
-	UiId barId = UiIdSuffixLit(scrollViewId, "_Scrollbar");
-	UiId gutterId = UiIdSuffixLit(scrollViewId, "_ScrollbarGutter");
+	UiId splitterId = UiIdSuffixLit(scrollViewId, "_VertScrollbarSplitter");
+	UiId barId = UiIdSuffixLit(scrollViewId, "_VertScrollbar");
+	UiId gutterId = UiIdSuffixLit(scrollViewId, "_VertScrollbarGutter");
 	UiElement* oldScrollViewElem = GetUiElementByIdInPrevFrame(scrollViewId, true);
 	UiElement* oldGutterElem = GetUiElementByIdInPrevFrame(gutterId, true);
 	UiElement* oldBarElem = GetUiElementByIdInPrevFrame(barId, true);
@@ -90,9 +95,6 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 		gutterSize.Width - (gutterLeftRightPadding*2),
 		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Height * viewablePercentage)), gutterSize.Height)
 	);
-	
-	bool setNewScrollValue = false;
-	r32 newScrollPercentage = 0.0f;
 	
 	if (UiCtx->mouse != nullptr)
 	{
@@ -113,6 +115,8 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 		
 		if (state->isDragging)
 		{
+			//TODO: Handle the mouseBtn!
+			
 			if (!IsMouseBtnDown(UiCtx->mouse, nullptr, MouseBtn_Left)) { state->isDragging = false; }
 			else
 			{
@@ -120,46 +124,147 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 				if (oldGutterElem != nullptr) { draggedBarPosition = SubV2(draggedBarPosition, oldGutterElem->layoutRec.TopLeft); }
 				draggedBarPosition = ShrinkV2(draggedBarPosition, UiCtx->scale);
 				r32 maxBarY = gutterSize.Height - barSize.Height;
-				newScrollPercentage = (maxBarY > 0.0f) ? draggedBarPosition.Y / maxBarY : 0.0f;
+				r32 newScrollPercentage = (maxBarY > 0.0f) ? draggedBarPosition.Y / maxBarY : 0.0f;
 				newScrollPercentage = ClampR32(newScrollPercentage, 0.0f, 1.0f);
-				setNewScrollValue = true;
+				
+				if (oldScrollViewElem != nullptr)
+				{
+					oldScrollViewElem->scrollGoto.Y = newScrollPercentage * oldScrollViewElem->scrollMax.Y;
+					if (!state->isDraggingSmooth) { oldScrollViewElem->scroll.Y = oldScrollViewElem->scrollGoto.Y; }
+				}
 			}
-			
-			//TODO: Handle the mouseBtn!
 		}
 	}
 	
+	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
+	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
+		AreSimilarR32(oldScrollViewElem->scroll.Y, oldScrollViewElem->scrollGoto.Y, DEFAULT_R32_TOLERANCE))
+	{
+		state->isDraggingSmooth = false;
+	}
 	
 	splitterContainerConfig.id = splitterId;
 	splitterContainerConfig.direction = UiLayoutDir_RightToLeft;
 	OpenUiElement(splitterContainerConfig);
 	
-	UIELEM({ .id = gutterId,
-		.direction = UiLayoutDir_TopDown,
-		.alignment = UI_ALIGN_TOP_CENTER(),
-		.sizing = { .width=UI_FIXED(gutterWidth), .height=UI_PERCENT(1.0f) },
-		.padding = { .inner = { .Left=gutterLeftRightPadding, .Right=gutterLeftRightPadding } },
-		.color = gutterColor,
-	})
+	if (!state->autohide || contentSize.Height > viewSize.Height)
 	{
-		r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.Y > 0) ? oldScrollViewElem->scroll.Y / oldScrollViewElem->scrollMax.Y : 0.0f;
-		UIELEM_LEAF({ .id = barId,
-			.sizing = UI_FIXED2(barSize.Width, barSize.Height),
-			.padding = { .outer = { .Top=RoundR32(scrollPercentage * (gutterSize.Height - barSize.Height)) } },
-			.color = barColor,
-			.cornerRadius = FillV4r(barSize.Width/2),
-		});
+		UIELEM({ .id = gutterId,
+			.direction = UiLayoutDir_TopDown,
+			.alignment = UI_ALIGN_TOP_CENTER(),
+			.sizing = { .width=UI_FIXED(gutterWidth), .height=UI_PERCENT(1.0f) },
+			.padding = { .inner = { .Left=gutterLeftRightPadding, .Right=gutterLeftRightPadding } },
+			.color = gutterColor,
+		})
+		{
+			r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.Y > 0) ? oldScrollViewElem->scroll.Y / oldScrollViewElem->scrollMax.Y : 0.0f;
+			UIELEM_LEAF({ .id = barId,
+				.sizing = UI_FIXED2(barSize.Width, barSize.Height),
+				.padding = { .outer = { .Top=RoundR32(scrollPercentage * (gutterSize.Height - barSize.Height)) } },
+				.color = barColor,
+				.cornerRadius = FillV4r(barSize.Width/2),
+			});
+		}
+	}
+}
+
+PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState* state, UiElemConfig splitterContainerConfig)
+{
+	NotNull(state);
+	r32 gutterHeight = state->gutterWidth;
+	Color32 gutterColor = state->gutterColor;
+	Color32 barColor = state->barColor;
+	if (gutterHeight == 0.0f) { gutterHeight = PIG_UI_DEFAULT_SCROLLBAR_WIDTH; }
+	if (gutterColor.valueU32 == PigUiDefaultColor_Value) { gutterColor = PIG_UI_DEFAULT_SCROLLBAR_GUTTER_COLOR; }
+	if (barColor.valueU32 == PigUiDefaultColor_Value) { barColor = PIG_UI_DEFAULT_SCROLLBAR_COLOR; }
+	const r32 gutterTopBottomPadding = 1;
+	
+	UiId splitterId = UiIdSuffixLit(scrollViewId, "_HoriScrollbarSplitter");
+	UiId barId = UiIdSuffixLit(scrollViewId, "_HoriScrollbar");
+	UiId gutterId = UiIdSuffixLit(scrollViewId, "_HoriScrollbarGutter");
+	UiElement* oldScrollViewElem = GetUiElementByIdInPrevFrame(scrollViewId, true);
+	UiElement* oldGutterElem = GetUiElementByIdInPrevFrame(gutterId, true);
+	UiElement* oldBarElem = GetUiElementByIdInPrevFrame(barId, true);
+	state->isHovered = IsUiElementHovered(barId);
+	bool isGutterHovered = IsUiElementHovered(gutterId);
+	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.Size, UiCtx->scale) : V2_One;
+	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.Size, UiCtx->scale) : V2_One;
+	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
+	r32 viewablePercentage = (contentSize.Width > viewSize.Width) ? (viewSize.Width / contentSize.Width) : 1.0f;
+	v2 barSize = MakeV2(
+		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Width * viewablePercentage)), gutterSize.Width),
+		gutterSize.Height - (gutterTopBottomPadding*2)
+	);
+	
+	if (UiCtx->mouse != nullptr)
+	{
+		if (state->isHovered && IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Left)) //TODO: Pass MouseStateHandling*
+		{
+			state->isDragging = true;
+			state->isDraggingSmooth = false;
+			state->draggingOffset = V2_Zero;
+			if (oldBarElem != nullptr) { state->draggingOffset = SubV2(UiCtx->mouse->position, oldBarElem->layoutRec.TopLeft); }
+		}
+		else if (isGutterHovered && IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Left)) //TODO: Pass MouseStateHandling*
+		{
+			state->isDragging = true;
+			state->isDraggingSmooth = true;
+			state->draggingOffset = V2_Zero;
+			if (oldBarElem != nullptr) { state->draggingOffset = ShrinkV2(oldBarElem->layoutRec.Size, 2); }
+		}
+		
+		if (state->isDragging)
+		{
+			//TODO: Handle the mouseBtn!
+			
+			if (!IsMouseBtnDown(UiCtx->mouse, nullptr, MouseBtn_Left)) { state->isDragging = false; }
+			else
+			{
+				v2 draggedBarPosition = SubV2(UiCtx->mouse->position, state->draggingOffset);
+				if (oldGutterElem != nullptr) { draggedBarPosition = SubV2(draggedBarPosition, oldGutterElem->layoutRec.TopLeft); }
+				draggedBarPosition = ShrinkV2(draggedBarPosition, UiCtx->scale);
+				r32 maxBarX = gutterSize.Width - barSize.Width;
+				r32 newScrollPercentage = (maxBarX > 0.0f) ? draggedBarPosition.X / maxBarX : 0.0f;
+				newScrollPercentage = ClampR32(newScrollPercentage, 0.0f, 1.0f);
+				
+				if (oldScrollViewElem != nullptr)
+				{
+					oldScrollViewElem->scrollGoto.X = newScrollPercentage * oldScrollViewElem->scrollMax.X;
+					if (!state->isDraggingSmooth) { oldScrollViewElem->scroll.X = oldScrollViewElem->scrollGoto.X; }
+				}
+			}
+		}
 	}
 	
-	scrollViewConfig.id = scrollViewId;
-	scrollViewConfig.sizing.width = UI_EXPAND();
-	UiElement* scrollViewElem = OpenUiElement(scrollViewConfig);
-	
-	if (setNewScrollValue && scrollViewElem != nullptr)
+	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
+	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
+		AreSimilarR32(oldScrollViewElem->scroll.X, oldScrollViewElem->scrollGoto.X, DEFAULT_R32_TOLERANCE))
 	{
-		scrollViewElem->scrollGoto.Y = newScrollPercentage * scrollViewElem->scrollMax.Y;
-		if (!state->isDraggingSmooth) { scrollViewElem->scroll.Y = scrollViewElem->scrollGoto.Y; }
-		if (state->isDraggingSmooth && AreSimilarR32(scrollViewElem->scroll.Y, scrollViewElem->scrollGoto.Y, DEFAULT_R32_TOLERANCE)) { state->isDraggingSmooth = false; }
+		state->isDraggingSmooth = false;
+	}
+	
+	splitterContainerConfig.id = splitterId;
+	splitterContainerConfig.direction = UiLayoutDir_BottomUp;
+	OpenUiElement(splitterContainerConfig);
+	
+	if (!state->autohide || contentSize.Width > viewSize.Width)
+	{
+		UIELEM({ .id = gutterId,
+			.direction = UiLayoutDir_LeftToRight,
+			.alignment = UI_ALIGN_LEFT_CENTER(),
+			.sizing = { .width=UI_PERCENT(1.0f), .height=UI_FIXED(gutterHeight) },
+			.padding = { .inner = { .Top=gutterTopBottomPadding, .Bottom=gutterTopBottomPadding } },
+			.color = gutterColor,
+		})
+		{
+			r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.X > 0) ? oldScrollViewElem->scroll.X / oldScrollViewElem->scrollMax.X : 0.0f;
+			UIELEM_LEAF({ .id = barId,
+				.sizing = UI_FIXED2(barSize.Width, barSize.Height),
+				.padding = { .outer = { .Left=RoundR32(scrollPercentage * (gutterSize.Width - barSize.Width)) } },
+				.color = barColor,
+				.cornerRadius = FillV4r(barSize.Height/2),
+			});
+		}
 	}
 }
 
