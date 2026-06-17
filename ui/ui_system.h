@@ -1685,10 +1685,11 @@ static void UiSystemDoLayout()
 				if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.Y += child->layoutRec.Height + child->config.padding.outer.Bottom; }
 				if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.X -= child->config.padding.outer.Left; }
 				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.Y -= child->config.padding.outer.Top; }
+				
+				if (clipChildren) { child->clipRec = OverlapPartRec(element->clipRec, element->layoutRec); }
+				else { child->clipRec = element->clipRec; }
 			}
-			
-			if (clipChildren) { child->clipRec = OverlapPartRec(element->clipRec, element->layoutRec); }
-			else { child->clipRec = element->clipRec; }
+			else { child->clipRec = MakeRec(0, 0, UiCtx->screenSize.Width, UiCtx->screenSize.Height); }
 			
 			#if DEBUG_BUILD
 			if (printDebug)
