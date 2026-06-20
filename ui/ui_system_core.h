@@ -585,6 +585,14 @@ plex UiElement
 #define UI_THEMER_CALLBACK_DEF(functionName) bool functionName(struct UiContext* context, UiElement* element, void* userPntr)
 typedef UI_THEMER_CALLBACK_DEF(UiThemerCallback_f);
 
+typedef plex UiPendingScrollSet UiPendingScrollSet;
+plex UiPendingScrollSet
+{
+	UiId id;
+	v2 newScroll;
+	v2 newScrollGoto;
+};
+
 typedef plex UiThemer UiThemer;
 plex UiThemer
 {
@@ -670,12 +678,13 @@ plex UiRenderCmd
 		plex
 		{
 			v2 position;
+			UiAlignment alignment;
+			rec bounds;
 			PigFont* font;
 			r32 fontSize;
 			u8 fontStyle;
 			r32 wrapWidth;
 			Str8 text;
-			//TODO: clipRec?
 		} text;
 		
 		// +==============================+
@@ -684,12 +693,13 @@ plex UiRenderCmd
 		plex
 		{
 			v2 position;
+			UiAlignment alignment;
+			rec bounds;
 			PigFont* font;
 			r32 fontSize;
 			u8 fontStyle;
 			r32 wrapWidth;
 			RichStr text;
-			//TODO: clipRec?
 		} richText;
 		
 		// +==============================+
@@ -737,6 +747,7 @@ plex UiContext
 	UiId clickStartHoveredId[MouseBtn_Count];
 	UiId clickStartHoveredLocalId[MouseBtn_Count];
 	bool smoothScrollingInProgress;
+	VarArray pendingScrollSets; //UiPendingScrollSet
 	
 	bool layoutDone;
 	bool hasDoneOneLayout;

@@ -92,6 +92,7 @@ Description:
 	PIG_CORE_INLINE bool IsCurrentUiElementBeingClicked(MouseBtn mouseBtn);
 	PIG_CORE_INLINE bool WasCurrentUiElementClicked(MouseBtn mouseBtn);
 	PIG_CORE_INLINE bool DidCurrentUiElementClickStart(MouseBtn mouseBtn);
+	PIG_CORE_INLINE void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto);
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE void CloseUiElementMulti(u64 numElements); //mostly useful for DeferBlock
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
@@ -488,6 +489,16 @@ PEXPI bool DidCurrentUiElementClickStart(MouseBtn mouseBtn)
 	return DidUiElementClickStart(currentUiElement->id, mouseBtn);
 }
 
+PEXPI void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto)
+{
+	UiPendingScrollSet* newPendingSet = VarArrayAdd(UiPendingScrollSet, &UiCtx->pendingScrollSets);
+	NotNull(newPendingSet);
+	ClearPointer(newPendingSet);
+	newPendingSet->id = elementId;
+	newPendingSet->newScroll = newScroll;
+	newPendingSet->newScrollGoto = newScrollGoto;
+}
+
 PEXPI UiElement* CloseUiElement()
 {
 	NotNull(UiCtx);
@@ -777,6 +788,7 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	context->keyboard = keyboard;
 	context->mouse = mouse;
 	context->touchscreen = touchscreen;
+	InitVarArray(UiPendingScrollSet, &context->pendingScrollSets, context->frameArena);
 	
 	if (context->hasDoneOneLayout)
 	{
@@ -1265,6 +1277,18 @@ static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool pri
 		r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
 		r32 scrollMax = (xAxis ? element->scrollMax.X : element->scrollMax.Y);
 		
+		VarArrayLoop(&UiCtx->pendingScrollSets, pIndex)
+		{
+			VarArrayLoopGet(UiPendingScrollSet, pendingScrollSet, &UiCtx->pendingScrollSets, pIndex);
+			if (pendingScrollSet->id.id == element->id.id || pendingScrollSet->id.id == element->config.id.id)
+			{
+				r32 newScroll = (xAxis ? pendingScrollSet->newScroll.X : pendingScrollSet->newScroll.Y);
+				r32 newScrollGoto = (xAxis ? pendingScrollSet->newScrollGoto.X : pendingScrollSet->newScrollGoto.Y);
+				if (newScroll >= 0) { *scrollPntr = newScroll; }
+				if (newScrollGoto >= 0) { *scrollGotoPntr = newScrollGoto; }
+			}
+		}
+		
 		*scrollPntr = ClampR32(*scrollPntr, 0.0f, scrollMax);
 		*scrollGotoPntr = ClampR32(*scrollGotoPntr, 0.0f, scrollMax);
 		
@@ -1277,6 +1301,7 @@ static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool pri
 			else if (divisor == UI_SCROLL_LAG_DEFAULT) { divisor = UiCtx->defaultScrollLagDivisor; }
 			*scrollPntr += scrollDelta / divisor; //TODO: Make this framerate independent!!
 			UiCtx->smoothScrollingInProgress = true;
+			// PrintLine_D("Scrolling.%s %g->%g", xAxis ? "X" : "Y", *scrollPntr, *scrollGotoPntr);
 		}
 		else if (*scrollPntr != *scrollGotoPntr)
 		{
@@ -1345,21 +1370,29 @@ static void TrackMouseInteractionAfterUiLayout()
 	
 	if (UiCtx->mouse != nullptr)
 	{
-		UiElement* hoveredAncestor = hoveredElement;
-		bool axisHandled[2] = { (UiCtx->mouse->scrollDelta.X == 0.0f), (UiCtx->mouse->scrollDelta.Y == 0.0f) };
-		while (hoveredAncestor != nullptr && (!axisHandled[0] || !axisHandled[1]))
+		if (UiCtx->keyboard == nullptr || (
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Control) &&
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Alt) &&
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Option) &&
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Command) &&
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Windows)))
 		{
-			//TODO: Set the appropriate handled flag
-			if (!axisHandled[0]) { axisHandled[0] = HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredAncestor, UiCtx->mouse->scrollDelta.X); }
-			if (!axisHandled[1])
+			UiElement* hoveredAncestor = hoveredElement;
+			bool axisHandled[2] = { (UiCtx->mouse->scrollDelta.X == 0.0f), (UiCtx->mouse->scrollDelta.Y == 0.0f) };
+			while (hoveredAncestor != nullptr && (!axisHandled[0] || !axisHandled[1]))
 			{
-				bool verticalScrollDeltaIsHorizontal = false;
-				if (UiCtx->keyboard != nullptr && IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Shift)) { verticalScrollDeltaIsHorizontal = true; }
-				else if (hoveredAncestor->config.scrolling.x.enabled && !hoveredAncestor->config.scrolling.y.enabled) { verticalScrollDeltaIsHorizontal = true; }
-				axisHandled[1] = HandleMouseScrollWheelOnAxisAfterUiLayout(verticalScrollDeltaIsHorizontal, hoveredAncestor, UiCtx->mouse->scrollDelta.Y);
+				//TODO: Set the appropriate handled flag
+				if (!axisHandled[0]) { axisHandled[0] = HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredAncestor, UiCtx->mouse->scrollDelta.X); }
+				if (!axisHandled[1])
+				{
+					bool verticalScrollDeltaIsHorizontal = false;
+					if (UiCtx->keyboard != nullptr && IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Shift)) { verticalScrollDeltaIsHorizontal = true; }
+					else if (hoveredAncestor->config.scrolling.x.enabled && !hoveredAncestor->config.scrolling.y.enabled) { verticalScrollDeltaIsHorizontal = true; }
+					axisHandled[1] = HandleMouseScrollWheelOnAxisAfterUiLayout(verticalScrollDeltaIsHorizontal, hoveredAncestor, UiCtx->mouse->scrollDelta.Y);
+				}
+				if (hoveredAncestor->config.floating.type != UiFloatingType_None) { break; }
+				hoveredAncestor = GetUiElementParent(hoveredAncestor, 0);
 			}
-			if (hoveredAncestor->config.floating.type != UiFloatingType_None) { break; }
-			hoveredAncestor = GetUiElementParent(hoveredAncestor, 0);
 		}
 	}
 }
@@ -1846,6 +1879,8 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->clipRec = textClipRec;
 					newCmd->params = element->config.renderer;
 					newCmd->color = actualTextColor;
+					newCmd->text.alignment = element->config.alignment;
+					newCmd->text.bounds = element->layoutRec;
 					newCmd->richText.font = element->config.font;
 					newCmd->richText.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->richText.font);
 					newCmd->richText.fontStyle = element->config.fontStyle;
@@ -1871,6 +1906,8 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->clipRec = textClipRec;
 					newCmd->params = element->config.renderer;
 					newCmd->color = actualTextColor;
+					newCmd->text.alignment = element->config.alignment;
+					newCmd->text.bounds = element->layoutRec;
 					newCmd->text.font = element->config.font;
 					newCmd->text.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->text.font);
 					newCmd->text.fontStyle = element->config.fontStyle;
@@ -1907,6 +1944,7 @@ PEXP void EndUiFrame()
 	UiCtx->keyboard = nullptr;
 	UiCtx->mouse = nullptr;
 	UiCtx->touchscreen = nullptr;
+	ClearStruct(UiCtx->pendingScrollSets);
 	
 	UiCtx = nullptr;
 }

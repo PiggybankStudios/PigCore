@@ -96,6 +96,13 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Height * viewablePercentage)), gutterSize.Height)
 	);
 	
+	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
+	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
+		AreSimilarR32(oldScrollViewElem->scroll.Y, oldScrollViewElem->scrollGoto.Y, DEFAULT_R32_TOLERANCE))
+	{
+		state->isDraggingSmooth = false;
+	}
+	
 	if (UiCtx->mouse != nullptr)
 	{
 		if (state->isHovered && IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Left)) //TODO: Pass MouseStateHandling*
@@ -129,18 +136,12 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 				
 				if (oldScrollViewElem != nullptr)
 				{
-					oldScrollViewElem->scrollGoto.Y = newScrollPercentage * oldScrollViewElem->scrollMax.Y;
-					if (!state->isDraggingSmooth) { oldScrollViewElem->scroll.Y = oldScrollViewElem->scrollGoto.Y; }
+					r32 newScrollGotoY = newScrollPercentage * oldScrollViewElem->scrollMax.Y;
+					SetUiElementScroll(scrollViewId, FillV2(-1), MakeV2(-1, newScrollGotoY));
+					if (!state->isDraggingSmooth) { SetUiElementScroll(scrollViewId, MakeV2(-1, newScrollGotoY), FillV2(-1)); }
 				}
 			}
 		}
-	}
-	
-	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
-	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
-		AreSimilarR32(oldScrollViewElem->scroll.Y, oldScrollViewElem->scrollGoto.Y, DEFAULT_R32_TOLERANCE))
-	{
-		state->isDraggingSmooth = false;
 	}
 	
 	splitterContainerConfig.id = splitterId;
@@ -196,6 +197,13 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 		gutterSize.Height - (gutterTopBottomPadding*2)
 	);
 	
+	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
+	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
+		AreSimilarR32(oldScrollViewElem->scroll.X, oldScrollViewElem->scrollGoto.X, DEFAULT_R32_TOLERANCE))
+	{
+		state->isDraggingSmooth = false;
+	}
+	
 	if (UiCtx->mouse != nullptr)
 	{
 		if (state->isHovered && IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Left)) //TODO: Pass MouseStateHandling*
@@ -229,18 +237,12 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 				
 				if (oldScrollViewElem != nullptr)
 				{
-					oldScrollViewElem->scrollGoto.X = newScrollPercentage * oldScrollViewElem->scrollMax.X;
-					if (!state->isDraggingSmooth) { oldScrollViewElem->scroll.X = oldScrollViewElem->scrollGoto.X; }
+					r32 newScrollGotoX = newScrollPercentage * oldScrollViewElem->scrollMax.X;
+					SetUiElementScroll(scrollViewId, FillV2(-1), MakeV2(newScrollGotoX, -1));
+					if (!state->isDraggingSmooth) { SetUiElementScroll(scrollViewId, MakeV2(newScrollGotoX, -1), FillV2(-1)); }
 				}
 			}
 		}
-	}
-	
-	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
-	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
-		AreSimilarR32(oldScrollViewElem->scroll.X, oldScrollViewElem->scrollGoto.X, DEFAULT_R32_TOLERANCE))
-	{
-		state->isDraggingSmooth = false;
 	}
 	
 	splitterContainerConfig.id = splitterId;
