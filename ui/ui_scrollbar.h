@@ -90,8 +90,9 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	bool isGutterHovered = IsUiElementHovered(gutterId);
 	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.Size, UiCtx->scale) : V2_One;
 	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.Size, UiCtx->scale) : V2_One;
+	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.XY, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
 	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
-	r32 viewablePercentage = (contentSize.Height > viewSize.Height) ? (viewSize.Height / contentSize.Height) : 1.0f;
+	r32 viewablePercentage = (contentSize.Height > usableViewSize.Height) ? (usableViewSize.Height / contentSize.Height) : 1.0f;
 	v2 barSize = MakeV2(
 		gutterSize.Width - (gutterLeftRightPadding*2),
 		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Height * viewablePercentage)), gutterSize.Height)
@@ -149,7 +150,7 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	splitterContainerConfig.direction = UiLayoutDir_RightToLeft;
 	OpenUiElement(splitterContainerConfig);
 	
-	if (!state->hidden && (!state->autohide || contentSize.Height > viewSize.Height))
+	if (!state->hidden && (!state->autohide || contentSize.Height > usableViewSize.Height))
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_TopDown,
@@ -191,8 +192,9 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	bool isGutterHovered = IsUiElementHovered(gutterId);
 	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.Size, UiCtx->scale) : V2_One;
 	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.Size, UiCtx->scale) : V2_One;
+	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.XY, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
 	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
-	r32 viewablePercentage = (contentSize.Width > viewSize.Width) ? (viewSize.Width / contentSize.Width) : 1.0f;
+	r32 viewablePercentage = (contentSize.Width > usableViewSize.Width) ? (usableViewSize.Width / contentSize.Width) : 1.0f;
 	v2 barSize = MakeV2(
 		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Width * viewablePercentage)), gutterSize.Width),
 		gutterSize.Height - (gutterTopBottomPadding*2)
@@ -250,7 +252,7 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	splitterContainerConfig.direction = UiLayoutDir_BottomUp;
 	OpenUiElement(splitterContainerConfig);
 	
-	if (state->hidden && (!state->autohide || contentSize.Width > viewSize.Width))
+	if (state->hidden && (!state->autohide || contentSize.Width > usableViewSize.Width))
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_LeftToRight,
