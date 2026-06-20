@@ -37,6 +37,7 @@ typedef plex UiScrollbarState UiScrollbarState;
 plex UiScrollbarState
 {
 	bool autohide;
+	bool hidden;
 	bool isHovered;
 	bool isDragging;
 	bool isDraggingSmooth;
@@ -148,7 +149,7 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	splitterContainerConfig.direction = UiLayoutDir_RightToLeft;
 	OpenUiElement(splitterContainerConfig);
 	
-	if (!state->autohide || contentSize.Height > viewSize.Height)
+	if (!state->hidden && (!state->autohide || contentSize.Height > viewSize.Height))
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_TopDown,
@@ -249,7 +250,7 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	splitterContainerConfig.direction = UiLayoutDir_BottomUp;
 	OpenUiElement(splitterContainerConfig);
 	
-	if (!state->autohide || contentSize.Width > viewSize.Width)
+	if (state->hidden && (!state->autohide || contentSize.Width > viewSize.Width))
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_LeftToRight,

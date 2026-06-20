@@ -491,6 +491,7 @@ PEXPI bool DidCurrentUiElementClickStart(MouseBtn mouseBtn)
 
 PEXPI void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto)
 {
+	NotNull(UiCtx);
 	UiPendingScrollSet* newPendingSet = VarArrayAdd(UiPendingScrollSet, &UiCtx->pendingScrollSets);
 	NotNull(newPendingSet);
 	ClearPointer(newPendingSet);
