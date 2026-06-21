@@ -728,6 +728,7 @@ typedef plex UiContext UiContext;
 plex UiContext
 {
 	Arena* arena;
+	bool frameStarted;
 	
 	Arena* frameArena;
 	uxx frameArenaMark;

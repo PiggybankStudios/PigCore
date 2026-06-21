@@ -97,6 +97,8 @@ Description:
 	PIG_CORE_INLINE void CloseUiElementMulti(u64 numElements); //mostly useful for DeferBlock
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
+	PIG_CORE_INLINE void SetUiContext(UiContext* context); //this gets set in StartUiFrame too, but it can be useful to set earlier
+	PIG_CORE_INLINE UiContext* GetUiCtx();
 	void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 elapsedMs, r32 defaultScrollLagConstant, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
 	PIG_CORE_INLINE Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element);
 	UiRenderList* GetUiRenderList();
@@ -332,6 +334,7 @@ PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
 PEXPI UiElement* GetCurrentUiElement()
 {
 	DebugAssert(UiCtx != nullptr);
+	DebugAssert(UiCtx->frameStarted);
 	DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);
 	return VarArrayGetHard(UiElement, &UiCtx->elements, UiCtx->currentElementIndex);
 }
@@ -370,8 +373,8 @@ PEXPI UiElement* GetUiElementByIdInArray(VarArray* arrayPntr, UiId id, bool matc
 	}
 	return nullptr;
 }
-PEXPI UiElement* GetUiElementByIdInPrevFrame(UiId id, bool matchLocalIds) { NotNull(UiCtx); return GetUiElementByIdInArray(&UiCtx->prevElements, id, matchLocalIds); }
-PEXPI UiElement* GetUiElementById(UiId id, bool matchLocalIds) { NotNull(UiCtx); return GetUiElementByIdInArray(&UiCtx->elements, id, matchLocalIds); }
+PEXPI UiElement* GetUiElementByIdInPrevFrame(UiId id, bool matchLocalIds) { DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr); return GetUiElementByIdInArray(&UiCtx->prevElements, id, matchLocalIds); }
+PEXPI UiElement* GetUiElementById(UiId id, bool matchLocalIds) { DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr); return GetUiElementByIdInArray(&UiCtx->elements, id, matchLocalIds); }
 
 PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
 {
@@ -386,10 +389,10 @@ PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
 	else { DebugAssert(false); return nullptr; }
 }
 
-PEXPI bool IsUiElementHoveredStrict(UiId id) { NotNull(UiCtx); return (UiCtx->mouseHoveredId.id == id.id || UiCtx->mouseHoveredLocalId.id == id.id); }
+PEXPI bool IsUiElementHoveredStrict(UiId id) { DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr); return (UiCtx->mouseHoveredId.id == id.id || UiCtx->mouseHoveredLocalId.id == id.id); }
 PEXPI bool IsUiElementHovered(UiId id)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	if (UiCtx->mouseHoveredId.id == id.id) { return true; }
 	if (UiCtx->mouseHoveredLocalId.id == id.id) { return true; }
 	if (UiCtx->mouseHoveredId.id != 0)
@@ -424,7 +427,7 @@ PEXPI bool IsCurrentUiElementHovered()
 
 PEXPI bool DidMouseStartClickInsideUiElement(UiId id, MouseBtn mouseBtn)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
 	if (UiCtx->clickStartHoveredId[mouseBtn].id == 0) { return false; }
@@ -445,7 +448,7 @@ PEXPI bool DidMouseStartClickInsideUiElement(UiId id, MouseBtn mouseBtn)
 }
 PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
 	if (!IsMouseBtnDown(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
@@ -455,7 +458,7 @@ PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
 }
 PEXPI bool WasUiElementClicked(UiId id, MouseBtn mouseBtn)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
 	if (!IsMouseBtnReleased(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
@@ -465,7 +468,7 @@ PEXPI bool WasUiElementClicked(UiId id, MouseBtn mouseBtn)
 }
 PEXPI bool DidUiElementClickStart(UiId id, MouseBtn mouseBtn)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
 	if (!IsMouseBtnPressed(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
@@ -493,7 +496,7 @@ PEXPI bool DidCurrentUiElementClickStart(MouseBtn mouseBtn)
 
 PEXPI void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	UiPendingScrollSet* newPendingSet = VarArrayAdd(UiPendingScrollSet, &UiCtx->pendingScrollSets);
 	NotNull(newPendingSet);
 	ClearPointer(newPendingSet);
@@ -504,7 +507,7 @@ PEXPI void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto)
 
 PEXPI UiElement* CloseUiElement()
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	DebugAssertMsg(UiCtx->currentElementIndex < UiCtx->elements.length, "Tried to close UI element when none was open! UI hierarchy is potentially invalid!");
 	if (UiCtx->currentElementIndex >= UiCtx->elements.length) { return nullptr; }
 	UiElement* element = VarArrayGetHard(UiElement, &UiCtx->elements, UiCtx->currentElementIndex);
@@ -550,7 +553,7 @@ PEXPI void CloseUiElementMulti(u64 numElements)
 //NOTE: This pointer becomes potentially invalid once OpenUiElement is called again, VarArrayAdd semantics
 PEXPI UiElement* OpenUiElement(UiElemConfig config)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	// DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);//TODO: Enable this once we figure out how to allow this ONLY when the root element is getting opened in StartUiFrame
 	
 	//NOTE: Everything that happens in the first part of this function must be reversable if !allThemersAcceptedElement
@@ -769,6 +772,14 @@ PEXPI bool OpenUiElementConditional(UiElemConfig config)
 	return (elementPntr != nullptr && elementPntr->runChildCode && elementPntr->isOpen);
 }
 
+PEXPI void SetUiContext(UiContext* context)
+{
+	Assert(context == nullptr || context->arena != nullptr);
+	Assert(context == nullptr || UiCtx == nullptr || UiCtx == context);
+	UiCtx = context;
+}
+PEXPI UiContext* GetUiCtx() { return UiCtx; }
+
 PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 elapsedMs, r32 defaultScrollLagConstant, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
 {
 	DebugNotNull(context);
@@ -809,8 +820,9 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	UiThemerRegistryStartFrame(&context->themers);
 	
 	context->layoutDone = false;
+	context->frameStarted = true;
 	
-	Assert(UiCtx == nullptr);
+	Assert(UiCtx == nullptr || UiCtx == context);
 	UiCtx = context;
 	
 	UiElement* rootElement = OpenUiElement(NEW_STRUCT(UiElemConfig){
@@ -1792,7 +1804,7 @@ static COMPARE_FUNC_DEF(UiRenderCmd_DepthAndHierarchySortCompare)
 
 PEXP UiRenderList* GetUiRenderList()
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	
 	// Close the root element if it's still open. This also acts as a way for us to know if GetUiRenderList has been called yet this frame
 	if (UiCtx->currentElementIndex < UiCtx->elements.length)
@@ -1951,7 +1963,7 @@ PEXP UiRenderList* GetUiRenderList()
 
 PEXP void EndUiFrame()
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	
 	ClearStruct(UiCtx->renderList); //Memset to zero since it was allocated from frameArena and will get freed in the ResetToMark below
 	
@@ -1964,6 +1976,7 @@ PEXP void EndUiFrame()
 	UiCtx->touchscreen = nullptr;
 	ClearStruct(UiCtx->pendingScrollSets);
 	
+	UiCtx->frameStarted = false;
 	UiCtx = nullptr;
 }
 

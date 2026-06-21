@@ -104,7 +104,7 @@ plex NotificationQueue
 	#if BUILD_WITH_CLAY
 	void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize);
 	#elif BUILD_WITH_PIG_UI
-	void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize);
+	void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize, r32 depth);
 	#endif
 #endif
 
@@ -196,7 +196,7 @@ PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel lev
 #if BUILD_WITH_CLAY
 PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize)
 #elif BUILD_WITH_PIG_UI
-PEXP void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize)
+PEXP void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize, r32 depth)
 #endif
 {
 	NotNull(queue);
@@ -417,12 +417,12 @@ PEXP void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fon
 		Color32 iconColor = (icon != nullptr) ? icon->color : MonokaiWhite;
 		
 		UIELEM({ .id = notificationId,
+			.depth = depth,
 			.sizing = UI_FIT2(),
 			.direction = UiLayoutDir_LeftToRight,
 			.padding = { .inner=FillV4r(NOTIFICATION_PADDING), .child=5 },
 			.alignment = UI_ALIGN_CENTER(),
 			.floating = {
-				// .zIndex = 102, //TODO: Should we give some zIndex-like thing?
 				.type = UiFloatingType_Parent,
 				.offset = offset,
 				.parentSide = UiSide_BottomRight,
