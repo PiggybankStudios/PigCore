@@ -154,6 +154,7 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_TopDown,
+			.scrollRelayId = scrollViewId,
 			.alignment = UI_ALIGN_TOP_CENTER(),
 			.sizing = { .width=UI_FIXED(gutterWidth), .height=UI_PERCENT(1.0f) },
 			.padding = { .inner = { .Left=gutterLeftRightPadding, .Right=gutterLeftRightPadding } },
@@ -256,6 +257,7 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_LeftToRight,
+			.scrollRelayId = scrollViewId,
 			.alignment = UI_ALIGN_LEFT_CENTER(),
 			.sizing = { .width=UI_PERCENT(1.0f), .height=UI_FIXED(gutterHeight) },
 			.padding = { .inner = { .Top=gutterTopBottomPadding, .Bottom=gutterTopBottomPadding } },

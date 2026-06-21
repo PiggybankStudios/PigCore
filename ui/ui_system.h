@@ -161,7 +161,7 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 {
 	switch (field)
 	{
-		case UiElemConfigField_Id: return (configPntr->id.id == 0);
+		case UiElemConfigField_Id:                      return (configPntr->id.id == 0);
 		case UiElemConfigField_GlobalId:                return (configPntr->globalId == false);
 		case UiElemConfigField_Direction:               return (configPntr->direction == UiLayoutDir_Default);
 		case UiElemConfigField_SizingTypeX:             return (configPntr->sizing.x.type == UiSizingType_Default);
@@ -175,6 +175,7 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_ScrollingLagX:           return (configPntr->scrolling.x.lag == UI_SCROLL_LAG_DEFAULT);
 		case UiElemConfigField_ScrollingY:              return (configPntr->scrolling.y.enabled == false);
 		case UiElemConfigField_ScrollingLagY:           return (configPntr->scrolling.y.lag == UI_SCROLL_LAG_DEFAULT);
+		case UiElemConfigField_ScrollRelayId:           return (configPntr->scrollRelayId.id == 0);
 		case UiElemConfigField_ClipChildren:            return (configPntr->clipChildren == false);
 		case UiElemConfigField_Depth:                   return (configPntr->depth == UI_DEPTH_DEFAULT);
 		case UiElemConfigField_Color:                   return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
@@ -242,6 +243,7 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_ScrollingLagX:           configToPntr->scrolling.x.lag = configFromPntr->scrolling.x.lag; break;
 		case UiElemConfigField_ScrollingY:              configToPntr->scrolling.y.enabled = configFromPntr->scrolling.y.enabled; break;
 		case UiElemConfigField_ScrollingLagY:           configToPntr->scrolling.y.lag = configFromPntr->scrolling.y.lag; break;
+		case UiElemConfigField_ScrollRelayId:           configToPntr->scrollRelayId = configFromPntr->scrollRelayId; break;
 		case UiElemConfigField_ClipChildren:            configToPntr->clipChildren = configFromPntr->clipChildren; break;
 		case UiElemConfigField_Depth:                   configToPntr->depth = configFromPntr->depth; break;
 		case UiElemConfigField_Color:                   configToPntr->color = configFromPntr->color; break;
@@ -1316,7 +1318,7 @@ static bool HandleMouseScrollWheelOnAxisAfterUiLayout(bool xAxis, UiElement* ele
 {
 	bool handled = false;
 	bool isScrollableOnAxis = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
-	if (isScrollableOnAxis && scrollDelta != 0.0f && IsUiElementHovered(element->id))
+	if (isScrollableOnAxis && scrollDelta != 0.0f)
 	{
 		r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
 		r32 scrollMax = (xAxis ? element->scrollMax.X : element->scrollMax.Y);
@@ -1379,17 +1381,26 @@ static void TrackMouseInteractionAfterUiLayout()
 			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Windows)))
 		{
 			UiElement* hoveredAncestor = hoveredElement;
+			bool hasRelayed = false;
 			bool axisHandled[2] = { (UiCtx->mouse->scrollDelta.X == 0.0f), (UiCtx->mouse->scrollDelta.Y == 0.0f) };
 			while (hoveredAncestor != nullptr && (!axisHandled[0] || !axisHandled[1]))
 			{
-				//TODO: Set the appropriate handled flag
-				if (!axisHandled[0]) { axisHandled[0] = HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredAncestor, UiCtx->mouse->scrollDelta.X); }
-				if (!axisHandled[1])
+				if (hoveredAncestor->config.scrollRelayId.id != 0)
 				{
-					bool verticalScrollDeltaIsHorizontal = false;
-					if (UiCtx->keyboard != nullptr && IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Shift)) { verticalScrollDeltaIsHorizontal = true; }
-					else if (hoveredAncestor->config.scrolling.x.enabled && !hoveredAncestor->config.scrolling.y.enabled) { verticalScrollDeltaIsHorizontal = true; }
-					axisHandled[1] = HandleMouseScrollWheelOnAxisAfterUiLayout(verticalScrollDeltaIsHorizontal, hoveredAncestor, UiCtx->mouse->scrollDelta.Y);
+					UiElement* relayElement = GetUiElementByIdInArray(&UiCtx->elements, hoveredAncestor->config.scrollRelayId, true);
+					if (relayElement != nullptr) { hoveredAncestor = relayElement; hasRelayed = true; }
+				}
+				if (hasRelayed || IsUiElementHovered(hoveredAncestor->id))
+				{
+					//TODO: Set the appropriate handled flag
+					if (!axisHandled[0]) { axisHandled[0] = HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredAncestor, UiCtx->mouse->scrollDelta.X); }
+					if (!axisHandled[1])
+					{
+						bool verticalScrollDeltaIsHorizontal = false;
+						if (UiCtx->keyboard != nullptr && IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Shift)) { verticalScrollDeltaIsHorizontal = true; }
+						else if (hoveredAncestor->config.scrolling.x.enabled && !hoveredAncestor->config.scrolling.y.enabled) { verticalScrollDeltaIsHorizontal = true; }
+						axisHandled[1] = HandleMouseScrollWheelOnAxisAfterUiLayout(verticalScrollDeltaIsHorizontal, hoveredAncestor, UiCtx->mouse->scrollDelta.Y);
+					}
 				}
 				if (hoveredAncestor->config.floating.type != UiFloatingType_None) { break; }
 				hoveredAncestor = GetUiElementParent(hoveredAncestor, 0);
