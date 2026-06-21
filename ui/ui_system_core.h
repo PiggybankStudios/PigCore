@@ -361,37 +361,37 @@ typedef plex UiElemConfig UiElemConfig;
 plex UiElemConfig
 {
 	UiId id;
-	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
 	UiLayoutDir direction;
 	UiSizing sizing;
-	bool dontSizeToImage;
 	UiAlignment alignment;
 	UiScrolling scrolling;
-	bool clipChildren; //this is assumed true if scrolling is enable, in which case this has no effect
+	UiConditionType condition;
+	UiPadding padding;
 	r32 depth;
 	Color32 color;
 	Color32 colorRecursive; //This color is multiplied through all children
 	Texture* texture;
-	bool repeatingTexture;
 	rec textureSourceRec;
 	SpriteSheet* spriteSheet;
 	v2i sheetCell;
-	UiPadding padding;
 	v4r cornerRadius;
 	v4r borderThickness;
 	Color32 borderColor;
 	r32 borderDepth; //0.0f will result in borderDepth inheriting value of depth
-	UiFloatingConfig floating;
-	UiConditionType condition;
-	bool mousePassthrough;
-	bool strictHover; //this element is not considered hovered if any of it's child elements is hovered over
 	Str8 text;
 	RichStr richText;
+	UiFloatingConfig floating;
 	Color32 textColor;
 	r32 textWrapWidth;
 	PigFont* font;
 	r32 fontSize;
 	u8 fontStyle;
+	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
+	bool clipChildren; //this is assumed true if scrolling is enable, in which case this has no effect
+	bool repeatingTexture;
+	bool mousePassthrough;
+	bool strictHover; //this element is not considered hovered if any of it's child elements is hovered over
+	bool dontSizeToImage;
 	
 	//These types can contain different things for each application, see the description near the top of the file
 	UiRendererParameters renderer;

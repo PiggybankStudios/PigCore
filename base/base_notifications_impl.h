@@ -20,7 +20,7 @@ Date:   11\10\2025
 #include "mem/mem_arena.h"
 #include "mem/mem_scratch.h"
 #include "misc/misc_printing.h"
-#include "ui/ui_clay_notifications.h"
+#include "ui/ui_notifications.h"
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
