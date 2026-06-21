@@ -97,7 +97,7 @@ Description:
 	PIG_CORE_INLINE void CloseUiElementMulti(u64 numElements); //mostly useful for DeferBlock
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
-	void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
+	void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 elapsedMs, r32 defaultScrollLagConstant, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
 	PIG_CORE_INLINE Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element);
 	UiRenderList* GetUiRenderList();
 	void EndUiFrame();
@@ -769,7 +769,7 @@ PEXPI bool OpenUiElementConditional(UiElemConfig config)
 	return (elementPntr != nullptr && elementPntr->runChildCode && elementPntr->isOpen);
 }
 
-PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
+PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 elapsedMs, r32 defaultScrollLagConstant, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
 {
 	DebugNotNull(context);
 	DebugNotNull(context->arena);
@@ -787,7 +787,8 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	context->screenSize = screenSize;
 	context->scale = (scale != 0.0f) ? scale : 1.0f;
 	context->programTime = programTime;
-	context->defaultScrollLagDivisor = ((defaultScrollLagDivisor == 0.0f) ? UI_SCROLL_LAG_DEFAULT_DIVISOR : defaultScrollLagDivisor);
+	context->elapsedMs = elapsedMs;
+	context->defaultScrollLagConstant = ((defaultScrollLagConstant == 0.0f) ? UI_SCROLL_LAG_DEFAULT_CONSTANT : defaultScrollLagConstant);
 	context->keyboard = keyboard;
 	context->mouse = mouse;
 	context->touchscreen = touchscreen;
@@ -1296,20 +1297,25 @@ static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool pri
 		*scrollGotoPntr = ClampR32(*scrollGotoPntr, 0.0f, scrollMax);
 		
 		r32 scrollDelta = (*scrollGotoPntr - *scrollPntr);
-		if (AbsR32(scrollDelta) > UI_SCROLL_GOTO_SNAP_DISTANCE && UiCtx->defaultScrollLagDivisor > 0.0f)
+		if (AbsR32(scrollDelta) > UI_SCROLL_GOTO_SNAP_DISTANCE)
 		{
-			r32 divisor = (xAxis ? element->config.scrolling.x.lag : element->config.scrolling.y.lag);
-			AssertMsg(divisor <= 0.0f || divisor >= 1.0f, "Fractional scroll lag value will cause undesired behavior!");
-			if (divisor < 0.0f) { divisor = 1.0f; } //aka UI_SCROLL_LAG_NONE
-			else if (divisor == UI_SCROLL_LAG_DEFAULT) { divisor = UiCtx->defaultScrollLagDivisor; }
-			*scrollPntr += scrollDelta / divisor; //TODO: Make this framerate independent!!
-			UiCtx->smoothScrollingInProgress = true;
+			r32 lagConstant = (xAxis ? element->config.scrolling.x.lag : element->config.scrolling.y.lag);
+			if (lagConstant == UI_SCROLL_LAG_DEFAULT) { lagConstant = UiCtx->defaultScrollLagConstant; }
+			if (lagConstant < 0.0f) { *scrollPntr = *scrollGotoPntr; } //aka UI_SCROLL_LAG_NONE
+			else
+			{
+				#if 1
+				*scrollPntr += scrollDelta * (1 - PowR32(e32, -lagConstant * (UiCtx->elapsedMs/1000.0f))); //This is framerate independent
+				#else
+				*scrollPntr += scrollDelta / lagConstant; //This is framerate dependent
+				#endif
+				UiCtx->smoothScrollingInProgress = true;
+			}
 			// PrintLine_D("Scrolling.%s %g->%g", xAxis ? "X" : "Y", *scrollPntr, *scrollGotoPntr);
 		}
 		else if (*scrollPntr != *scrollGotoPntr)
 		{
 			*scrollPntr = *scrollGotoPntr;
-			UiCtx->smoothScrollingInProgress = true;
 		}
 	}
 }

@@ -54,7 +54,7 @@ Description:
 #define PigUiDefaultColor_Value TransparentBlack_Value
 #define PigUiDefaultColor       TransparentBlack
 
-#define UI_SCROLL_LAG_DEFAULT_DIVISOR 10.0f
+#define UI_SCROLL_LAG_DEFAULT_CONSTANT 15.0f
 #define UI_SCROLL_LAG_DEFAULT 0.0f
 #define UI_SCROLL_LAG_NONE    -1.0f
 #define UI_SCROLL_GOTO_SNAP_DISTANCE 0.5f //px
@@ -734,7 +734,8 @@ plex UiContext
 	v2 screenSize;
 	r32 scale;
 	u64 programTime;
-	r32 defaultScrollLagDivisor;
+	r32 defaultScrollLagConstant;
+	r32 elapsedMs;
 	KeyboardState* keyboard;
 	MouseState* mouse;
 	TouchscreenState* touchscreen;
