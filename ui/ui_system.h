@@ -997,10 +997,10 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
 	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
 	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
-	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
+	// r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
 	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
-	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
-	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
+	// r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
+	// r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
 	r32 innerSize = *sizePntr - elemInnerPaddingLrOrTb;
 	
 	// Visit all percentage-based children (including floating) and size them according to our decided size
@@ -1182,13 +1182,12 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 					UiElement* child = GetUiElementChild(element, cIndex);
 					if (child->config.floating.type == UiFloatingType_None)
 					{
-						r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-						r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+						// r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+						// r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
 						r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
 						// #if DEBUG_BUILD
 						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is %g, [%g,%g]", cIndex, childSize, childMinimumSize, childPreferredSize); }
 						// #endif
-						// if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
 						{
 							if (largestChildSize == 0.0f || childSize > largestChildSize)
 							{
@@ -1233,8 +1232,8 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 					UiElement* child = GetUiElementChild(element, cIndex);
 					if (child->config.floating.type == UiFloatingType_None)
 					{
-						r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-						r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+						// r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+						// r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
 						// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
 						r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
 						if (AreSimilarR32(*childSizePntr, largestChildSize, DEFAULT_R32_TOLERANCE))
@@ -1772,6 +1771,7 @@ static COMPARE_FUNC_DEF(UiRenderCmd_DepthAndHierarchySortCompare)
 {
 	DebugNotNull(left);
 	DebugNotNull(right);
+	UNUSED(contextPntr);
 	UiRenderCmd* leftCmd = (UiRenderCmd*)left;
 	UiRenderCmd* rightCmd = (UiRenderCmd*)right;
 	if (leftCmd->depth < rightCmd->depth) { return 1; }
