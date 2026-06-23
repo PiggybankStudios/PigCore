@@ -328,6 +328,7 @@ PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
 	contextOut->arena = arena;
 	InitVarArray(UiElement, &contextOut->elements, arena);
 	InitVarArray(UiElement, &contextOut->prevElements, arena);
+	InitVarArray(UiPendingScrollSet, &contextOut->pendingScrollSets, arena);
 	InitUiThemerRegistry(arena, &contextOut->themers);
 }
 
@@ -496,7 +497,7 @@ PEXPI bool DidCurrentUiElementClickStart(MouseBtn mouseBtn)
 
 PEXPI void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto)
 {
-	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	UiPendingScrollSet* newPendingSet = VarArrayAdd(UiPendingScrollSet, &UiCtx->pendingScrollSets);
 	NotNull(newPendingSet);
 	ClearPointer(newPendingSet);
@@ -803,7 +804,6 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	context->keyboard = keyboard;
 	context->mouse = mouse;
 	context->touchscreen = touchscreen;
-	InitVarArray(UiPendingScrollSet, &context->pendingScrollSets, context->frameArena);
 	
 	if (context->hasDoneOneLayout)
 	{
@@ -1768,6 +1768,7 @@ static void UiSystemDoLayout()
 		}
 	}
 	
+	VarArrayClear(&UiCtx->pendingScrollSets);
 	UiCtx->layoutDone = true;
 	UiCtx->hasDoneOneLayout = true;
 	
@@ -1974,7 +1975,6 @@ PEXP void EndUiFrame()
 	UiCtx->keyboard = nullptr;
 	UiCtx->mouse = nullptr;
 	UiCtx->touchscreen = nullptr;
-	ClearStruct(UiCtx->pendingScrollSets);
 	
 	UiCtx->frameStarted = false;
 	UiCtx = nullptr;
