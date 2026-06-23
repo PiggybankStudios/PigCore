@@ -907,7 +907,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		r32 wrapWidth = element->config.textWrapWidth;
 		if (!xAxis && sizingType == UiSizingType_TextWrap)
 		{
-			wrapWidth = element->layoutRec.Width; //The layoutRec.Width is already decided because of the full X-axis sizing pass before Y-axis in UiSystemDoLayout
+			wrapWidth = element->layoutRec.Width+1; //The layoutRec.Width is already decided because of the full X-axis sizing pass before Y-axis in UiSystemDoLayout
 			if (element->config.textWrapWidth != 0.0f && wrapWidth > element->config.textWrapWidth) { wrapWidth = element->config.textWrapWidth; }
 		}
 		r32 fontSize = ((element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(element->config.font));
@@ -928,6 +928,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		}
 		
 		r32 textSize = (xAxis ? measure.logicalRec.X + measure.logicalRec.Width : measure.logicalRec.Height);
+		textSize = CeilR32(textSize);
 		if (sizingType == UiSizingType_TextWrap)
 		{
 			*minimumSizePntr = elemInnerPaddingLrOrTb + (xAxis ? 0 : textSize);
@@ -1893,7 +1894,13 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->rectangle.cornerRadius = element->config.cornerRadius;
 			}
 			
-			bool isWrappingText = (element->config.sizing.x.type == UiSizingType_TextWrap);
+			r32 wrapWidth = element->config.textWrapWidth;
+			if (element->config.sizing.x.type == UiSizingType_TextWrap)
+			{
+				wrapWidth = element->layoutRec.Width+1;
+				if (element->config.textWrapWidth != 0.0f && wrapWidth > element->config.textWrapWidth) { wrapWidth = element->config.textWrapWidth; }
+			}
+			
 			if (!IsEmptyRichStr(element->config.richText))
 			{
 				rec textClipRec = element->clipRec;
@@ -1915,8 +1922,7 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->richText.font = element->config.font;
 					newCmd->richText.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->richText.font);
 					newCmd->richText.fontStyle = element->config.fontStyle;
-					newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
-					if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
+					newCmd->richText.wrapWidth = wrapWidth;
 					newCmd->richText.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->richText.font, newCmd->richText.fontSize, newCmd->richText.fontStyle)));
 					newCmd->richText.text = element->config.richText;
 				}
@@ -1942,8 +1948,7 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->text.font = element->config.font;
 					newCmd->text.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->text.font);
 					newCmd->text.fontStyle = element->config.fontStyle;
-					newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
-					if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
+					newCmd->richText.wrapWidth = wrapWidth;
 					newCmd->text.position = AddV2(
 						element->layoutRec.TopLeft,
 						MakeV2(
