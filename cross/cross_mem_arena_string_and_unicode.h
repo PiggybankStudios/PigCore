@@ -20,8 +20,8 @@ Date:   01\17\2025
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define ToStr16From8(arena, usc2Str, addNullTerm) ConvertUcs2StrToUtf8((arena), (usc2Str), (addNullTerm))
-#define ToStr8From16(arena, utf8Str, addNullTerm) ConvertUtf8StrToUcs2((arena), (utf8Str), (addNullTerm))
+#define ToStr8From16(arena, usc2Str, addNullTerm) ConvertUcs2StrToUtf8((arena), (usc2Str), (addNullTerm))
+#define ToStr16From8(arena, utf8Str, addNullTerm) ConvertUtf8StrToUcs2((arena), (utf8Str), (addNullTerm))
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
