@@ -51,6 +51,7 @@ Description:
 #include "base/base_assert.h"
 #include "base/base_char.h"
 #include "std/std_memset.h"
+#include "third_party/raddbg/raddbg_markup.h"
 
 // +--------------------------------------------------------------+
 // |                       String Structure                       |
@@ -70,6 +71,8 @@ plex Str8
 #define MakeStr8Nt(nullTermStr)               NEW_STRUCT(Str8)MakeStr8Nt_Const(nullTermStr)
 #define MakeStr8Char(charStrLit)              NEW_STRUCT(Str8)MakeStr8Char_Const(charStrLit)
 #define StrLit(stringLiteral)                 NEW_STRUCT(Str8)StrLit_Const(stringLiteral)
+
+raddbg_type_view(Str8, array($.chars, $.length));
 
 //NOTE: This structure is useful for all sorts of data encapsulation. "Slice" alias indicates that a piece of code isn't
 //      treating the contents of the data as a "string" in the traditional sense, but it's still operating with the same
