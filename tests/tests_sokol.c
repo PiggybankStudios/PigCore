@@ -9,11 +9,14 @@ Description:
 #if BUILD_WITH_SOKOL_APP
 
 #if TARGET_IS_ANDROID
-#define MAIN_FONT_NAME "DroidSansMono"
+#define MAIN_FONT_NAME  "DroidSansMono"
+#define DEBUG_FONT_NAME "Consolas"
 #elif TARGET_IS_OSX
 #define MAIN_FONT_NAME "Arial"
+#define DEBUG_FONT_NAME "Courier New"
 #else
 #define MAIN_FONT_NAME "Consolas"
+#define DEBUG_FONT_NAME "Consolas"
 #endif
 
 #include "lib/lib_sokol_app_impl.c"
@@ -426,7 +429,7 @@ void AppInit(void)
 	// testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("D:/test_sheet_4x4.png"), true);
 	#elif TARGET_IS_OSX
-	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/Users/robbitay/test_sheet_4x5.jpg"), true);
+	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/Users/robbitay/test_sheet_2x2.png"), true);
 	#elif TARGET_IS_LINUX
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/home/robbitay/test_sheet_4x5.png"), true);
 	#endif
@@ -512,9 +515,11 @@ void AppInit(void)
 		
 		MakeFontActive(&testFont, 64, 256, 5, 0, 0);
 		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		#if !TARGET_IS_OSX //TODO: It seems like Arial regular is available on OSX but not Arial Bold
 		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
 		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult == Result_Success);
 		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult == Result_Success);
+		#endif //!TARGET_IS_OSX
 		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
 		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
 		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
@@ -562,10 +567,12 @@ void AppInit(void)
 			FontCharRange_LatinSupplementAccent,
 		};
 		FontBakeSettings bakeSettings[] = {
-			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_None },
-			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_Bold },
-			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_Italic },
-			{ .name=StrLit("Consolas"), .size=12*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
+			{ .name=StrLit(DEBUG_FONT_NAME), .size=12*textScale, .style=FontStyleFlag_None },
+			#if !TARGET_IS_OSX //TODO: It seems like Arial regular is available on OSX but not Arial Bold
+			{ .name=StrLit(DEBUG_FONT_NAME), .size=12*textScale, .style=FontStyleFlag_Bold },
+			{ .name=StrLit(DEBUG_FONT_NAME), .size=12*textScale, .style=FontStyleFlag_Italic },
+			{ .name=StrLit(DEBUG_FONT_NAME), .size=12*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
+			#endif //!TARGET_IS_OSX
 		};
 		Result bakeResult = TryAttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
 		Assert(bakeResult == Result_Success);
@@ -644,8 +651,8 @@ void AppInit(void)
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
 	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test.png");
 	#elif TARGET_IS_OSX
-	FilePath testImagePath = FilePathLit("/Users/robbitay/test.jpg");
-	FilePath backgroundImagePath = FilePathLit("/Users/robbitay/test.jpg");
+	FilePath testImagePath = FilePathLit("/Users/robbitay/test.png");
+	FilePath backgroundImagePath = FilePathLit("/Users/robbitay/test.png");
 	#else
 	FilePath testImagePath = FilePathLit("test.png");
 	FilePath backgroundImagePath = FilePathLit("test.png");

@@ -221,6 +221,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		result = Result_Success;
 	}
 	#elif TARGET_IS_OSX
+	@autoreleasepool
 	{
 		ScratchBegin1(scratch, arena);
 		
@@ -236,33 +237,32 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 			&kCFTypeDictionaryKeyCallBacks,
 			&kCFTypeDictionaryValueCallBacks
 		);
-		CFRelease(fontNameCf);
 		
 		CTFontDescriptorRef fontQuery = CTFontDescriptorCreateWithAttributes(cfAttributes);
-		CFRelease(cfAttributes);
+		Assert(fontQuery);
 		
 		// Find matching descriptors
 		CFArrayRef queryArray = CFArrayCreate(NULL, (const void *[]){ fontQuery }, 1, &kCFTypeArrayCallBacks);
-		CFRelease(fontQuery);
+		Assert(queryArray);
 		
 		CTFontCollectionRef fontCollection = CTFontCollectionCreateWithFontDescriptors(queryArray, NULL);
-		CFRelease(queryArray);
+		Assert(fontCollection);
 		
 		CFArrayRef matchesArray = CTFontCollectionCreateMatchingFontDescriptors(fontCollection);
-		CFRelease(fontCollection);
+		Assert(matchesArray);
 		
-		if (!matchesArray || CFArrayGetCount(matchesArray) == 0) { return Result_Failure; }
+		if (!matchesArray || CFArrayGetCount(matchesArray) == 0)
+		{
+			return Result_Failure;
+		}
 		
 		// Return the first match (caller must CFRelease)
 		CTFontDescriptorRef fontDescriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(matchesArray, 0);
-		CFRelease(matchesArray);
 		
 		CFURLRef fontUrlCf = CTFontDescriptorCopyAttribute(fontDescriptor, kCTFontURLAttribute);
 		
 		char pathArray[PATH_MAX];
 		CFURLGetFileSystemRepresentation(fontUrlCf, true, (u8*)pathArray, sizeof(pathArray));
-		CFRelease(fontUrlCf);
-		CFRelease(fontDescriptor);
 		
 		Str8 pathStr = MakeStr8Nt(&pathArray[0]);
 		

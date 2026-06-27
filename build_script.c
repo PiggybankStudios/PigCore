@@ -120,8 +120,7 @@ bool GetBoolConfig(const char* defineName, Str buildConfigContents, int argc, ch
 
 int main(int argc, char* argv[])
 {
-	StrArray buildScriptSourceFolders = EMPTY;
-	RecompileIfNeeded(&buildScriptSourceFolders);
+	RecompileIfNeeded(StrArray_Empty);
 	PrintLine("[" BUILD_SCRIPT_EXE_NAME "...]");
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
@@ -322,7 +321,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &proto_CommonFlags);
 			AddArgNt(&cmd, PROTOC_C_OUT_PATH, "[ROOT]/parse");
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/parse/parse_proto_google_types.proto");
-			RunCliProgramAndExitOnFailure(protocExe, "", &cmd, StrLit("protoc Failed on parse_proto_google_types.proto!"));
+			RunCliProgramAndExitOnFailure(protocExe, &cmd, StrLit("protoc Failed on parse_proto_google_types.proto!"));
 		}
 		{
 			CliArgs cmd = EMPTY;
@@ -331,7 +330,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &proto_CommonFlags);
 			AddArgNt(&cmd, PROTOC_C_OUT_PATH, "[ROOT]/tests");
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_proto_types.proto");
-			RunCliProgramAndExitOnFailure(protocExe, "", &cmd, StrLit("protoc Failed on tests_proto_types.proto!"));
+			RunCliProgramAndExitOnFailure(protocExe, &cmd, StrLit("protoc Failed on tests_proto_types.proto!"));
 		}
 	}
 	
@@ -369,7 +368,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN_EXE "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN_EXE "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN_EXE), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_PIGGEN_EXE);
 		}
@@ -401,7 +400,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_PIGGEN);
 			
@@ -427,7 +426,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_CLANG), tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
 			PrintLine("[Built %s for OSX!]", FILENAME_PIGGEN);
 		}
@@ -458,7 +457,7 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_template/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_fuzzing/");
 		
-		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), "", &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
+		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
 	}
 	
 	// +--------------------------------------------------------------+
@@ -568,7 +567,7 @@ int main(int argc, char* argv[])
 			PrintLine("Generating \"%.*s\"...", StrPrint(realHeaderPath));
 			Str shdcExe = JoinStrings2(StrLit("../"), StrLit(EXE_SHDC));
 			FixPathSlashes(shdcExe, PATH_SEP_CHAR);
-			RunCliProgramAndExitOnFailure(shdcExe, "", &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
+			RunCliProgramAndExitOnFailure(shdcExe, &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
 			AssertFileExist(realHeaderPath, true);
 			
 			ScrapeShaderHeaderFileAndAddExtraInfo(realHeaderPath, realShaderPath);
@@ -617,7 +616,7 @@ int main(int argc, char* argv[])
 				AddStrArray(&tags, &buildConfigTags);
 				
 				Str errorMessage = JoinStrings3(StrLit("Failed to build "), objPath, StrLit(" for Windows!"));
-				RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, errorMessage);
+				RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, errorMessage);
 				AssertFileExist(objPath, true);
 			}
 			if (BUILD_LINUX)
@@ -649,7 +648,7 @@ int main(int argc, char* argv[])
 				#endif
 				
 				Str errorMessage = JoinStrings3(StrLit("Failed to build "), oPath, StrLit(" for Linux!"));
-				RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, errorMessage);
+				RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 				
 				#if !BUILDING_ON_LINUX
@@ -677,7 +676,7 @@ int main(int argc, char* argv[])
 				AddStrArray(&tags, &buildConfigTags);
 				
 				Str errorMessage = JoinStrings3(StrLit("Failed to build "), oPath, StrLit(" for OSX!"));
-				RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, errorMessage);
+				RunCliProgramAndExitOnFailureTags(StrLit(EXE_CLANG), tags, &cmd, errorMessage);
 				AssertFileExist(oPath, true);
 			}
 			if (BUILD_ANDROID)
@@ -714,7 +713,7 @@ int main(int argc, char* argv[])
 					AddStrArray(&tags, &buildConfigTags);
 					
 					Str errorMessage = JoinStrings3(StrLit("Failed to build "), oPath, StrLit(" for Android!"));
-					RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, errorMessage);
+					RunCliProgramAndExitOnFailureTags(StrLit(EXE_CLANG), tags, &cmd, errorMessage);
 					AssertFileExist(oPath, true);
 					
 					chdir("..");
@@ -764,7 +763,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
 			AssertFileExist(StrLit(FILENAME_TRACY_DLL), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_TRACY_DLL);
 		}
@@ -798,7 +797,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, StrLit("Failed to build " FILENAME_TRACY_SO "!"));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_TRACY_SO "!"));
 			AssertFileExist(StrLit(FILENAME_TRACY_SO), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_TRACY_SO);
 			
@@ -840,7 +839,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_IMGUI_OBJ "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_IMGUI_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_IMGUI_OBJ), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_IMGUI_OBJ);
 		}
@@ -871,7 +870,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, StrLit("Failed to build " FILENAME_IMGUI_O "!"));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_IMGUI_O "!"));
 			AssertFileExist(StrLit(FILENAME_IMGUI_O), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_IMGUI_O);
 			
@@ -915,7 +914,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_PHYSX_OBJ "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_PHYSX_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_PHYSX_OBJ), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_PHYSX_OBJ);
 		}
@@ -957,7 +956,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
 			AssertFileExist(StrLit(FILENAME_PIG_CORE_DLL), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_PIG_CORE_DLL);
 		}
@@ -991,7 +990,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
 			AssertFileExist(StrLit(FILENAME_PIG_CORE_SO), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_PIG_CORE_SO);
 			
@@ -1036,7 +1035,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WINDOWS);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &tags, &cmd, StrLit("Failed to build " FILENAME_TESTS_EXE "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_TESTS_EXE "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_EXE), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_TESTS_EXE);
 		}
@@ -1073,7 +1072,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_TESTS);
 			
@@ -1103,7 +1102,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_UNIX);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_CLANG), tags, &cmd, StrLit("Failed to build " FILENAME_TESTS "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS), true);
 			PrintLine("[Built %s for OSX!]", FILENAME_TESTS);
 		}
@@ -1140,7 +1139,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WASM);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_APP_WASM "!"));
+			RunCliProgramAndExitOnFailureTags(USE_EMSCRIPTEN ? StrLit(EXE_EMSCRIPTEN_COMPILER) : StrLit(EXE_CLANG), tags, &cmd, StrLit("Failed to build " FILENAME_APP_WASM "!"));
 			if (USE_EMSCRIPTEN)
 			{
 				AssertFileExist(StrLit(FILENAME_INDEX_HTML), true);
@@ -1159,7 +1158,7 @@ int main(int argc, char* argv[])
 				AddArgNt(&convertCmd, CLI_QUOTED_ARG, USE_EMSCRIPTEN ? FILENAME_INDEX_WASM : FILENAME_APP_WASM);
 				AddArgNt(&convertCmd, CLI_PIPE_OUTPUT_TO_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_WAT : FILENAME_APP_WAT);
 				
-				int convertStatusCode = RunCliProgram(StrLit("wasm2wat"), "", &convertCmd);
+				int convertStatusCode = RunCliProgram(StrLit("wasm2wat"), &convertCmd);
 				if (convertStatusCode == 0)
 				{
 					AssertFileExist(USE_EMSCRIPTEN ? StrLit(FILENAME_INDEX_WAT) : StrLit(FILENAME_APP_WAT), true);
@@ -1245,7 +1244,7 @@ int main(int argc, char* argv[])
 				AddStr(&tags, architectureStr);
 				AddStrArray(&tags, &buildConfigTags);
 				
-				RunCliProgramTagArrayAndExitOnFailure(clangExe, &tags, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
+				RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
 				if (DUMP_PREPROCESSOR) { chdir(".."); continue; }
 				AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
 				
@@ -1271,7 +1270,7 @@ int main(int argc, char* argv[])
 					AddArgNt(&javacCmd, "-d \"[VAL]\"", ".");
 					AddArgStr(&javacCmd, "-classpath \"[VAL]\"", androidJarPath);
 					AddArgNt(&javacCmd, CLI_QUOTED_ARG, FILENAME_DUMMY_JAVA);
-					RunCliProgramAndExitOnFailure(javacExe, "", &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
+					RunCliProgramAndExitOnFailure(javacExe, &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
 					AssertFileExist(StrLit(FILENAME_DUMMY_CLASS), true);
 					
 					CliArgs d8Cmd = EMPTY;
@@ -1280,7 +1279,7 @@ int main(int argc, char* argv[])
 					AddArgStr(&d8Cmd, "--lib \"[VAL]\"", androidJarPath);
 					AddArgNt(&d8Cmd, "--output \"[VAL]\"", "./");
 					AddArgNt(&d8Cmd, CLI_QUOTED_ARG, FILENAME_DUMMY_CLASS);
-					RunCliProgramAndExitOnFailure(d8Exe, "", &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
+					RunCliProgramAndExitOnFailure(d8Exe, &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
 					AssertFileExist(StrLit(FILENAME_CLASSES_DEX), true);
 				}
 				
@@ -1291,7 +1290,7 @@ int main(int argc, char* argv[])
 				AddArg(&compileResCmd, "compile");
 				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/tests/android/res");
 				AddArgNt(&compileResCmd, "-o \"[VAL]\"", FILENAME_ANDROID_RESOURCES_ZIP);
-				RunCliProgramAndExitOnFailure(aaptExe, "", &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
+				RunCliProgramAndExitOnFailure(aaptExe, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
 				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
 				
 				RemoveFile(StrLit(FILENAME_TESTS_APK));
@@ -1305,7 +1304,7 @@ int main(int argc, char* argv[])
 				AddArgNt(&linkApkCmd, "-0 [VAL]", "resources.arsc");
 				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/tests/android/AndroidManifest.xml");
 				AddArgNt(&linkApkCmd, CLI_QUOTED_ARG, FILENAME_ANDROID_RESOURCES_ZIP);
-				RunCliProgramAndExitOnFailure(aaptExe, "", &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
+				RunCliProgramAndExitOnFailure(aaptExe, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
 				AssertFileExist(StrLit(FILENAME_TESTS_APK), true);
 				
 				//NOTE: In order to insert our .so files into the apk, we need to unpack it into a folder, add the .so files manually, and then repack it
@@ -1318,7 +1317,7 @@ int main(int argc, char* argv[])
 					CliArgs unpackApkCmd = EMPTY;
 					AddArg(&unpackApkCmd, "xf");
 					AddArg(&unpackApkCmd, "../" FILENAME_TESTS_APK);
-					RunCliProgramAndExitOnFailure(StrLit("jar"), "", &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
+					RunCliProgramAndExitOnFailure(StrLit("jar"), &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
 					
 					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"), true);
 					
@@ -1336,7 +1335,7 @@ int main(int argc, char* argv[])
 					AddArg(&repackApkCmd, "cf0");
 					AddArg(&repackApkCmd, "../" FILENAME_TESTS_APK);
 					AddArg(&repackApkCmd, "*");
-					RunCliProgramAndExitOnFailure(StrLit("jar"), "", &repackApkCmd, StrLit("Failed to repack " FILENAME_TESTS_APK "!"));
+					RunCliProgramAndExitOnFailure(StrLit("jar"), &repackApkCmd, StrLit("Failed to repack " FILENAME_TESTS_APK "!"));
 					
 					chdir("..");
 					MyRemoveDirectory(StrLit("apk_temp"), true);
@@ -1350,7 +1349,7 @@ int main(int argc, char* argv[])
 				AddArg(&alignApkCmd, "4");
 				AddArgNt(&alignApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK); //input
 				AddArgStr(&alignApkCmd, CLI_QUOTED_ARG, tempAlignedApkName); //output
-				RunCliProgramAndExitOnFailure(zipalignExe, "", &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
+				RunCliProgramAndExitOnFailure(zipalignExe, &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
 				AssertFileExist(tempAlignedApkName, true);
 				CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK), true);
 				RemoveFile(tempAlignedApkName);
@@ -1365,7 +1364,7 @@ int main(int argc, char* argv[])
 				else if (ANDROID_SIGNING_PASS_PATH.length > 0) { AddArgStr(&signApkCmd, "--ks-pass file:[VAL]", ANDROID_SIGNING_PASS_PATH); }
 				else { WriteLine_E("You must provide either a ANDROID_SIGNING_PASSWORD or ANDROID_SIGNING_PASS_PATH in order to sign an Android .apk!"); exit(4); }
 				AddArgNt(&signApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK);
-				RunCliProgramAndExitOnFailure(apksignerExe, "", &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
+				RunCliProgramAndExitOnFailure(apksignerExe, &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
 			}
 			
 			PrintLine("[Built %s for Android!]", BUILD_ANDROID_APK ? FILENAME_TESTS_APK : FILENAME_TESTS_SO);
@@ -1397,7 +1396,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WASM);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_CLANG), &tags, &cmd, StrLit("Failed to build " FILENAME_MODULE_WASM "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_CLANG), tags, &cmd, StrLit("Failed to build " FILENAME_MODULE_WASM "!"));
 			AssertFileExist(StrLit(FILENAME_MODULE_WASM), true);
 			PrintLine("[Built %s for Orca!]", FILENAME_MODULE_WASM);
 			
@@ -1405,7 +1404,7 @@ int main(int argc, char* argv[])
 			AddArg(&bundleCmd, "bundle");
 			AddArgNt(&bundleCmd, "--name [VAL]", "tests");
 			AddArg(&bundleCmd, FILENAME_MODULE_WASM);
-			RunCliProgramAndExitOnFailure(StrLit("orca"), "", &bundleCmd, StrLit("Failed to bundle " FILENAME_MODULE_WASM "!"));
+			RunCliProgramAndExitOnFailure(StrLit("orca"), &bundleCmd, StrLit("Failed to bundle " FILENAME_MODULE_WASM "!"));
 			PrintLine("[Bundled %s into \"tests\" app!]", FILENAME_MODULE_WASM);
 			
 			chdir("..");
@@ -1431,7 +1430,7 @@ int main(int argc, char* argv[])
 			AddTag(&compileTags, T_DEVICE);
 			AddStrArray(&compileTags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_ARM_GCC), &compileTags, &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_ARM_GCC), compileTags, &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
 			
 			CliArgs linkCmd = EMPTY;
@@ -1448,7 +1447,7 @@ int main(int argc, char* argv[])
 			AddTag(&linkTags, T_DEVICE);
 			AddStrArray(&linkTags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_ARM_GCC), &linkTags, &linkCmd, StrLit("Failed to build " FILENAME_PDEX_ELF "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_ARM_GCC), linkTags, &linkCmd, StrLit("Failed to build " FILENAME_PDEX_ELF "!"));
 			AssertFileExist(StrLit(FILENAME_PDEX_ELF), true);
 			PrintLine("[Built %s for Playdate!]", FILENAME_PDEX_ELF);
 			
@@ -1477,7 +1476,7 @@ int main(int argc, char* argv[])
 			AddTag(&compileTags, T_SIMULATOR);
 			AddStrArray(&compileTags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_CL), &compileTags, &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), compileTags, &compileCmd, StrLit("Failed to build " FILENAME_TESTS_OBJ "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_OBJ), true);
 			
 			CliArgs linkCmd = EMPTY;
@@ -1497,7 +1496,7 @@ int main(int argc, char* argv[])
 			AddTag(&linkTags, T_SIMULATOR);
 			AddStrArray(&linkTags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_MSVC_LINK), &linkTags, &linkCmd, StrLit("Failed to build " FILENAME_PDEX_DLL "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_LINK), linkTags, &linkCmd, StrLit("Failed to build " FILENAME_PDEX_DLL "!"));
 			AssertFileExist(StrLit(FILENAME_PDEX_DLL), true);
 			PrintLine("[Built %s for Playdate Simulator!]", FILENAME_PDEX_DLL);
 			
@@ -1525,7 +1524,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_PLAYDATE);
 			AddStrArray(&tags, &buildConfigTags);
 			
-			RunCliProgramTagArrayAndExitOnFailure(StrLit(EXE_PDC), &tags, &cmd, StrLit("Failed to package " FILENAME_TESTS_PDX "!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_PDC), tags, &cmd, StrLit("Failed to package " FILENAME_TESTS_PDX "!"));
 			AssertFileExist(StrLit(FILENAME_TESTS_PDX), true); //TODO: Is this going to work on a folder?
 			PrintLine("[Packaged %s for Playdate!]", FILENAME_TESTS_PDX);
 		}
@@ -1557,7 +1556,7 @@ int main(int argc, char* argv[])
 		#endif
 		PrintLine("\n[%s]", RUNNABLE_FILENAME_TESTS);
 		CliArgs cmd = EMPTY;
-		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_TESTS), "", &cmd, StrLit(RUNNABLE_FILENAME_TESTS " Exited With Error!"));
+		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_TESTS), &cmd, StrLit(RUNNABLE_FILENAME_TESTS " Exited With Error!"));
 	}
 	
 	if (INSTALL_TESTS_APK)
@@ -1568,7 +1567,7 @@ int main(int argc, char* argv[])
 		CliArgs installCmd = EMPTY;
 		installCmd.pathSepChar = '/';
 		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
-		RunCliProgramAndExitOnFailure(adbExe, "", &installCmd, StrLit("abd.exe install exited With Error!"));
+		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd.exe install exited With Error!"));
 		
 		PrintLine_E("Launching \"%.*s\"...", StrPrint(ANDROID_ACTIVITY_PATH));
 		CliArgs launchCmd = EMPTY;
@@ -1577,7 +1576,7 @@ int main(int argc, char* argv[])
 		AddArg(&launchCmd, "am");
 		AddArg(&launchCmd, "start");
 		AddArgStr(&launchCmd, "-n \"[VAL]\"", ANDROID_ACTIVITY_PATH);
-		RunCliProgramAndExitOnFailure(adbExe, "", &launchCmd, StrLit("abd.exe shell exited With Error!"));
+		RunCliProgramAndExitOnFailure(adbExe, &launchCmd, StrLit("abd.exe shell exited With Error!"));
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", BUILD_SCRIPT_EXE_NAME);
