@@ -94,6 +94,8 @@ r32 uiScale = 1.0f;
 //TODO: Somehow we need to detect how big our text should be in order to be a particular size on screen with consideration for high DPI displays
 #if TARGET_IS_ANDROID
 #define TEXT_SCALE 3.0f
+#elif TARGET_IS_OSX
+#define TEXT_SCALE 3.0f
 #else
 #define TEXT_SCALE 1.0f
 #endif
@@ -1365,6 +1367,23 @@ bool AppFrame(void)
 			// 	uiScale = RoundR32(uiScale * 100.0f) / 100.0f;
 			// 	uiScale = ClampR32(uiScale, 0.1f, 10.0f);
 			// }
+			#if TARGET_IS_OSX
+			bool isCntrlOrCmdDown = IsKeyboardKeyDown(&keyboard, nullptr, Key_Command);
+			#else
+			bool isCntrlOrCmdDown = IsKeyboardKeyDown(&keyboard, nullptr, Key_Control);
+			#endif
+			if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_Plus, true) && isCntrlOrCmdDown)
+			{
+				uiScale *= 1.1f;
+				uiScale = RoundR32(uiScale * 100.0f) / 100.0f;
+				uiScale = ClampR32(uiScale, 0.1f, 10.0f);
+			}
+			if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_Minus, true) && isCntrlOrCmdDown)
+			{
+				uiScale *= 0.9f;
+				uiScale = RoundR32(uiScale * 100.0f) / 100.0f;
+				uiScale = ClampR32(uiScale, 0.1f, 10.0f);
+			}
 			
 			const r32 scrollLag = 10.0f;
 			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, elapsedMs, scrollLag, &keyboard, &mouse, &touchscreen);
