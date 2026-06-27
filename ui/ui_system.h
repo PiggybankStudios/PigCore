@@ -92,11 +92,14 @@ Description:
 	PIG_CORE_INLINE bool IsCurrentUiElementBeingClicked(MouseBtn mouseBtn);
 	PIG_CORE_INLINE bool WasCurrentUiElementClicked(MouseBtn mouseBtn);
 	PIG_CORE_INLINE bool DidCurrentUiElementClickStart(MouseBtn mouseBtn);
+	PIG_CORE_INLINE void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto);
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE void CloseUiElementMulti(u64 numElements); //mostly useful for DeferBlock
 	PIG_CORE_INLINE UiElement* OpenUiElement(UiElemConfig config);
 	PIG_CORE_INLINE bool OpenUiElementConditional(UiElemConfig config);
-	void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
+	PIG_CORE_INLINE void SetUiContext(UiContext* context); //this gets set in StartUiFrame too, but it can be useful to set earlier
+	PIG_CORE_INLINE UiContext* GetUiCtx();
+	void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 elapsedMs, r32 defaultScrollLagConstant, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen);
 	PIG_CORE_INLINE Str8 GetUiElementQualifiedName(Arena* arena, UiElement* element);
 	UiRenderList* GetUiRenderList();
 	void EndUiFrame();
@@ -160,7 +163,7 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 {
 	switch (field)
 	{
-		case UiElemConfigField_Id: return (configPntr->id.id == 0);
+		case UiElemConfigField_Id:                      return (configPntr->id.id == 0);
 		case UiElemConfigField_GlobalId:                return (configPntr->globalId == false);
 		case UiElemConfigField_Direction:               return (configPntr->direction == UiLayoutDir_Default);
 		case UiElemConfigField_SizingTypeX:             return (configPntr->sizing.x.type == UiSizingType_Default);
@@ -174,6 +177,7 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_ScrollingLagX:           return (configPntr->scrolling.x.lag == UI_SCROLL_LAG_DEFAULT);
 		case UiElemConfigField_ScrollingY:              return (configPntr->scrolling.y.enabled == false);
 		case UiElemConfigField_ScrollingLagY:           return (configPntr->scrolling.y.lag == UI_SCROLL_LAG_DEFAULT);
+		case UiElemConfigField_ScrollRelayId:           return (configPntr->scrollRelayId.id == 0);
 		case UiElemConfigField_ClipChildren:            return (configPntr->clipChildren == false);
 		case UiElemConfigField_Depth:                   return (configPntr->depth == UI_DEPTH_DEFAULT);
 		case UiElemConfigField_Color:                   return (configPntr->color.valueU32 == PigUiDefaultColor_Value);
@@ -241,6 +245,7 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_ScrollingLagX:           configToPntr->scrolling.x.lag = configFromPntr->scrolling.x.lag; break;
 		case UiElemConfigField_ScrollingY:              configToPntr->scrolling.y.enabled = configFromPntr->scrolling.y.enabled; break;
 		case UiElemConfigField_ScrollingLagY:           configToPntr->scrolling.y.lag = configFromPntr->scrolling.y.lag; break;
+		case UiElemConfigField_ScrollRelayId:           configToPntr->scrollRelayId = configFromPntr->scrollRelayId; break;
 		case UiElemConfigField_ClipChildren:            configToPntr->clipChildren = configFromPntr->clipChildren; break;
 		case UiElemConfigField_Depth:                   configToPntr->depth = configFromPntr->depth; break;
 		case UiElemConfigField_Color:                   configToPntr->color = configFromPntr->color; break;
@@ -323,12 +328,14 @@ PEXP void InitUiContext(Arena* arena, UiContext* contextOut)
 	contextOut->arena = arena;
 	InitVarArray(UiElement, &contextOut->elements, arena);
 	InitVarArray(UiElement, &contextOut->prevElements, arena);
+	InitVarArray(UiPendingScrollSet, &contextOut->pendingScrollSets, arena);
 	InitUiThemerRegistry(arena, &contextOut->themers);
 }
 
 PEXPI UiElement* GetCurrentUiElement()
 {
 	DebugAssert(UiCtx != nullptr);
+	DebugAssert(UiCtx->frameStarted);
 	DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);
 	return VarArrayGetHard(UiElement, &UiCtx->elements, UiCtx->currentElementIndex);
 }
@@ -367,8 +374,8 @@ PEXPI UiElement* GetUiElementByIdInArray(VarArray* arrayPntr, UiId id, bool matc
 	}
 	return nullptr;
 }
-PEXPI UiElement* GetUiElementByIdInPrevFrame(UiId id, bool matchLocalIds) { NotNull(UiCtx); return GetUiElementByIdInArray(&UiCtx->prevElements, id, matchLocalIds); }
-PEXPI UiElement* GetUiElementById(UiId id, bool matchLocalIds) { NotNull(UiCtx); return GetUiElementByIdInArray(&UiCtx->elements, id, matchLocalIds); }
+PEXPI UiElement* GetUiElementByIdInPrevFrame(UiId id, bool matchLocalIds) { DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr); return GetUiElementByIdInArray(&UiCtx->prevElements, id, matchLocalIds); }
+PEXPI UiElement* GetUiElementById(UiId id, bool matchLocalIds) { DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr); return GetUiElementByIdInArray(&UiCtx->elements, id, matchLocalIds); }
 
 PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
 {
@@ -383,10 +390,10 @@ PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
 	else { DebugAssert(false); return nullptr; }
 }
 
-PEXPI bool IsUiElementHoveredStrict(UiId id) { NotNull(UiCtx); return (UiCtx->mouseHoveredId.id == id.id || UiCtx->mouseHoveredLocalId.id == id.id); }
+PEXPI bool IsUiElementHoveredStrict(UiId id) { DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr); return (UiCtx->mouseHoveredId.id == id.id || UiCtx->mouseHoveredLocalId.id == id.id); }
 PEXPI bool IsUiElementHovered(UiId id)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	if (UiCtx->mouseHoveredId.id == id.id) { return true; }
 	if (UiCtx->mouseHoveredLocalId.id == id.id) { return true; }
 	if (UiCtx->mouseHoveredId.id != 0)
@@ -421,7 +428,7 @@ PEXPI bool IsCurrentUiElementHovered()
 
 PEXPI bool DidMouseStartClickInsideUiElement(UiId id, MouseBtn mouseBtn)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
 	if (UiCtx->clickStartHoveredId[mouseBtn].id == 0) { return false; }
@@ -442,7 +449,7 @@ PEXPI bool DidMouseStartClickInsideUiElement(UiId id, MouseBtn mouseBtn)
 }
 PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
 	if (!IsMouseBtnDown(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
@@ -452,7 +459,7 @@ PEXPI bool IsUiElementBeingClicked(UiId id, MouseBtn mouseBtn)
 }
 PEXPI bool WasUiElementClicked(UiId id, MouseBtn mouseBtn)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
 	if (!IsMouseBtnReleased(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
@@ -462,7 +469,7 @@ PEXPI bool WasUiElementClicked(UiId id, MouseBtn mouseBtn)
 }
 PEXPI bool DidUiElementClickStart(UiId id, MouseBtn mouseBtn)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
 	Assert(mouseBtn > MouseBtn_None && mouseBtn < MouseBtn_Count);
 	if (UiCtx->mouse == nullptr) { return false; }
 	if (!IsMouseBtnPressed(UiCtx->mouse, nullptr, mouseBtn)) { return false; }
@@ -488,9 +495,20 @@ PEXPI bool DidCurrentUiElementClickStart(MouseBtn mouseBtn)
 	return DidUiElementClickStart(currentUiElement->id, mouseBtn);
 }
 
+PEXPI void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto)
+{
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
+	UiPendingScrollSet* newPendingSet = VarArrayAdd(UiPendingScrollSet, &UiCtx->pendingScrollSets);
+	NotNull(newPendingSet);
+	ClearPointer(newPendingSet);
+	newPendingSet->id = elementId;
+	newPendingSet->newScroll = newScroll;
+	newPendingSet->newScrollGoto = newScrollGoto;
+}
+
 PEXPI UiElement* CloseUiElement()
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	DebugAssertMsg(UiCtx->currentElementIndex < UiCtx->elements.length, "Tried to close UI element when none was open! UI hierarchy is potentially invalid!");
 	if (UiCtx->currentElementIndex >= UiCtx->elements.length) { return nullptr; }
 	UiElement* element = VarArrayGetHard(UiElement, &UiCtx->elements, UiCtx->currentElementIndex);
@@ -536,7 +554,7 @@ PEXPI void CloseUiElementMulti(u64 numElements)
 //NOTE: This pointer becomes potentially invalid once OpenUiElement is called again, VarArrayAdd semantics
 PEXPI UiElement* OpenUiElement(UiElemConfig config)
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	// DebugAssert(UiCtx->currentElementIndex < UiCtx->elements.length);//TODO: Enable this once we figure out how to allow this ONLY when the root element is getting opened in StartUiFrame
 	
 	//NOTE: Everything that happens in the first part of this function must be reversable if !allThemersAcceptedElement
@@ -755,7 +773,15 @@ PEXPI bool OpenUiElementConditional(UiElemConfig config)
 	return (elementPntr != nullptr && elementPntr->runChildCode && elementPntr->isOpen);
 }
 
-PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
+PEXPI void SetUiContext(UiContext* context)
+{
+	Assert(context == nullptr || context->arena != nullptr);
+	Assert(context == nullptr || UiCtx == nullptr || UiCtx == context);
+	UiCtx = context;
+}
+PEXPI UiContext* GetUiCtx() { return UiCtx; }
+
+PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 elapsedMs, r32 defaultScrollLagConstant, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)
 {
 	DebugNotNull(context);
 	DebugNotNull(context->arena);
@@ -773,7 +799,8 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	context->screenSize = screenSize;
 	context->scale = (scale != 0.0f) ? scale : 1.0f;
 	context->programTime = programTime;
-	context->defaultScrollLagDivisor = ((defaultScrollLagDivisor == 0.0f) ? UI_SCROLL_LAG_DEFAULT_DIVISOR : defaultScrollLagDivisor);
+	context->elapsedMs = elapsedMs;
+	context->defaultScrollLagConstant = ((defaultScrollLagConstant == 0.0f) ? UI_SCROLL_LAG_DEFAULT_CONSTANT : defaultScrollLagConstant);
 	context->keyboard = keyboard;
 	context->mouse = mouse;
 	context->touchscreen = touchscreen;
@@ -793,8 +820,9 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	UiThemerRegistryStartFrame(&context->themers);
 	
 	context->layoutDone = false;
+	context->frameStarted = true;
 	
-	Assert(UiCtx == nullptr);
+	Assert(UiCtx == nullptr || UiCtx == context);
 	UiCtx = context;
 	
 	UiElement* rootElement = OpenUiElement(NEW_STRUCT(UiElemConfig){
@@ -879,7 +907,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		r32 wrapWidth = element->config.textWrapWidth;
 		if (!xAxis && sizingType == UiSizingType_TextWrap)
 		{
-			wrapWidth = element->layoutRec.Width; //The layoutRec.Width is already decided because of the full X-axis sizing pass before Y-axis in UiSystemDoLayout
+			wrapWidth = element->layoutRec.Width+1; //The layoutRec.Width is already decided because of the full X-axis sizing pass before Y-axis in UiSystemDoLayout
 			if (element->config.textWrapWidth != 0.0f && wrapWidth > element->config.textWrapWidth) { wrapWidth = element->config.textWrapWidth; }
 		}
 		r32 fontSize = ((element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(element->config.font));
@@ -900,6 +928,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 		}
 		
 		r32 textSize = (xAxis ? measure.logicalRec.X + measure.logicalRec.Width : measure.logicalRec.Height);
+		textSize = CeilR32(textSize);
 		if (sizingType == UiSizingType_TextWrap)
 		{
 			*minimumSizePntr = elemInnerPaddingLrOrTb + (xAxis ? 0 : textSize);
@@ -981,10 +1010,10 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	r32* sizePntr = (xAxis ? &element->layoutRec.Width : &element->layoutRec.Height);
 	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
 	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
-	r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
+	// r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
 	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
-	r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
-	r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
+	// r32 minimumSize = (xAxis ? element->minimumSize.Width : element->minimumSize.Height);
+	// r32 preferredSize = (xAxis ? element->preferredSize.Width : element->preferredSize.Height);
 	r32 innerSize = *sizePntr - elemInnerPaddingLrOrTb;
 	
 	// Visit all percentage-based children (including floating) and size them according to our decided size
@@ -1166,13 +1195,12 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 					UiElement* child = GetUiElementChild(element, cIndex);
 					if (child->config.floating.type == UiFloatingType_None)
 					{
-						r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-						r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+						// r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+						// r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
 						r32 childSize = (xAxis ? child->layoutRec.Width : child->layoutRec.Height);
 						// #if DEBUG_BUILD
 						// if (printDebug) { PrintLine_D("\t-> Child[%llu] is %g, [%g,%g]", cIndex, childSize, childMinimumSize, childPreferredSize); }
 						// #endif
-						// if (IsInfiniteOrNanR32(childPreferredSize) || (childPreferredSize > childMinimumSize && childSize < childPreferredSize))
 						{
 							if (largestChildSize == 0.0f || childSize > largestChildSize)
 							{
@@ -1217,8 +1245,8 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 					UiElement* child = GetUiElementChild(element, cIndex);
 					if (child->config.floating.type == UiFloatingType_None)
 					{
-						r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
-						r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
+						// r32 childMinimumSize = (xAxis ? child->minimumSize.Width : child->minimumSize.Height);
+						// r32 childPreferredSize = (xAxis ? child->preferredSize.Width : child->preferredSize.Height);
 						// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
 						r32* childSizePntr = (xAxis ? &child->layoutRec.Width : &child->layoutRec.Height);
 						if (AreSimilarR32(*childSizePntr, largestChildSize, DEFAULT_R32_TOLERANCE))
@@ -1265,23 +1293,41 @@ static void UpdateUiElemScrollingOnAxis(UiElement* element, bool xAxis, bool pri
 		r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
 		r32 scrollMax = (xAxis ? element->scrollMax.X : element->scrollMax.Y);
 		
+		VarArrayLoop(&UiCtx->pendingScrollSets, pIndex)
+		{
+			VarArrayLoopGet(UiPendingScrollSet, pendingScrollSet, &UiCtx->pendingScrollSets, pIndex);
+			if (pendingScrollSet->id.id == element->id.id || pendingScrollSet->id.id == element->config.id.id)
+			{
+				r32 newScroll = (xAxis ? pendingScrollSet->newScroll.X : pendingScrollSet->newScroll.Y);
+				r32 newScrollGoto = (xAxis ? pendingScrollSet->newScrollGoto.X : pendingScrollSet->newScrollGoto.Y);
+				if (newScroll >= 0) { *scrollPntr = newScroll; }
+				if (newScrollGoto >= 0) { *scrollGotoPntr = newScrollGoto; }
+			}
+		}
+		
 		*scrollPntr = ClampR32(*scrollPntr, 0.0f, scrollMax);
 		*scrollGotoPntr = ClampR32(*scrollGotoPntr, 0.0f, scrollMax);
 		
 		r32 scrollDelta = (*scrollGotoPntr - *scrollPntr);
-		if (AbsR32(scrollDelta) > UI_SCROLL_GOTO_SNAP_DISTANCE && UiCtx->defaultScrollLagDivisor > 0.0f)
+		if (AbsR32(scrollDelta) > UI_SCROLL_GOTO_SNAP_DISTANCE)
 		{
-			r32 divisor = (xAxis ? element->config.scrolling.x.lag : element->config.scrolling.y.lag);
-			AssertMsg(divisor <= 0.0f || divisor >= 1.0f, "Fractional scroll lag value will cause undesired behavior!");
-			if (divisor < 0.0f) { divisor = 1.0f; } //aka UI_SCROLL_LAG_NONE
-			else if (divisor == UI_SCROLL_LAG_DEFAULT) { divisor = UiCtx->defaultScrollLagDivisor; }
-			*scrollPntr += scrollDelta / divisor; //TODO: Make this framerate independent!!
-			UiCtx->smoothScrollingInProgress = true;
+			r32 lagConstant = (xAxis ? element->config.scrolling.x.lag : element->config.scrolling.y.lag);
+			if (lagConstant == UI_SCROLL_LAG_DEFAULT) { lagConstant = UiCtx->defaultScrollLagConstant; }
+			if (lagConstant < 0.0f) { *scrollPntr = *scrollGotoPntr; } //aka UI_SCROLL_LAG_NONE
+			else
+			{
+				#if 1
+				*scrollPntr += scrollDelta * (1 - PowR32(e32, -lagConstant * (UiCtx->elapsedMs/1000.0f))); //This is framerate independent
+				#else
+				*scrollPntr += scrollDelta / lagConstant; //This is framerate dependent
+				#endif
+				UiCtx->smoothScrollingInProgress = true;
+			}
+			// PrintLine_D("Scrolling.%s %g->%g", xAxis ? "X" : "Y", *scrollPntr, *scrollGotoPntr);
 		}
 		else if (*scrollPntr != *scrollGotoPntr)
 		{
 			*scrollPntr = *scrollGotoPntr;
-			UiCtx->smoothScrollingInProgress = true;
 		}
 	}
 }
@@ -1290,7 +1336,7 @@ static bool HandleMouseScrollWheelOnAxisAfterUiLayout(bool xAxis, UiElement* ele
 {
 	bool handled = false;
 	bool isScrollableOnAxis = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
-	if (isScrollableOnAxis && scrollDelta != 0.0f && IsUiElementHovered(element->id))
+	if (isScrollableOnAxis && scrollDelta != 0.0f)
 	{
 		r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.X : &element->scrollGoto.Y);
 		r32 scrollMax = (xAxis ? element->scrollMax.X : element->scrollMax.Y);
@@ -1345,21 +1391,38 @@ static void TrackMouseInteractionAfterUiLayout()
 	
 	if (UiCtx->mouse != nullptr)
 	{
-		UiElement* hoveredAncestor = hoveredElement;
-		bool axisHandled[2] = { (UiCtx->mouse->scrollDelta.X == 0.0f), (UiCtx->mouse->scrollDelta.Y == 0.0f) };
-		while (hoveredAncestor != nullptr && (!axisHandled[0] || !axisHandled[1]))
+		if (UiCtx->keyboard == nullptr || (
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Control) &&
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Alt) &&
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Option) &&
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Command) &&
+			!IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Windows)))
 		{
-			//TODO: Set the appropriate handled flag
-			if (!axisHandled[0]) { axisHandled[0] = HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredAncestor, UiCtx->mouse->scrollDelta.X); }
-			if (!axisHandled[1])
+			UiElement* hoveredAncestor = hoveredElement;
+			bool hasRelayed = false;
+			bool axisHandled[2] = { (UiCtx->mouse->scrollDelta.X == 0.0f), (UiCtx->mouse->scrollDelta.Y == 0.0f) };
+			while (hoveredAncestor != nullptr && (!axisHandled[0] || !axisHandled[1]))
 			{
-				bool verticalScrollDeltaIsHorizontal = false;
-				if (UiCtx->keyboard != nullptr && IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Shift)) { verticalScrollDeltaIsHorizontal = true; }
-				else if (hoveredAncestor->config.scrolling.x.enabled && !hoveredAncestor->config.scrolling.y.enabled) { verticalScrollDeltaIsHorizontal = true; }
-				axisHandled[1] = HandleMouseScrollWheelOnAxisAfterUiLayout(verticalScrollDeltaIsHorizontal, hoveredAncestor, UiCtx->mouse->scrollDelta.Y);
+				if (hoveredAncestor->config.scrollRelayId.id != 0)
+				{
+					UiElement* relayElement = GetUiElementByIdInArray(&UiCtx->elements, hoveredAncestor->config.scrollRelayId, true);
+					if (relayElement != nullptr) { hoveredAncestor = relayElement; hasRelayed = true; }
+				}
+				if (hasRelayed || IsUiElementHovered(hoveredAncestor->id))
+				{
+					//TODO: Set the appropriate handled flag
+					if (!axisHandled[0]) { axisHandled[0] = HandleMouseScrollWheelOnAxisAfterUiLayout(true, hoveredAncestor, UiCtx->mouse->scrollDelta.X); }
+					if (!axisHandled[1])
+					{
+						bool verticalScrollDeltaIsHorizontal = false;
+						if (UiCtx->keyboard != nullptr && IsKeyboardKeyDown(UiCtx->keyboard, nullptr, Key_Shift)) { verticalScrollDeltaIsHorizontal = true; }
+						else if (hoveredAncestor->config.scrolling.x.enabled && !hoveredAncestor->config.scrolling.y.enabled) { verticalScrollDeltaIsHorizontal = true; }
+						axisHandled[1] = HandleMouseScrollWheelOnAxisAfterUiLayout(verticalScrollDeltaIsHorizontal, hoveredAncestor, UiCtx->mouse->scrollDelta.Y);
+					}
+				}
+				if (hoveredAncestor->config.floating.type != UiFloatingType_None) { break; }
+				hoveredAncestor = GetUiElementParent(hoveredAncestor, 0);
 			}
-			if (hoveredAncestor->config.floating.type != UiFloatingType_None) { break; }
-			hoveredAncestor = GetUiElementParent(hoveredAncestor, 0);
 		}
 	}
 }
@@ -1706,6 +1769,7 @@ static void UiSystemDoLayout()
 		}
 	}
 	
+	VarArrayClear(&UiCtx->pendingScrollSets);
 	UiCtx->layoutDone = true;
 	UiCtx->hasDoneOneLayout = true;
 	
@@ -1721,6 +1785,7 @@ static COMPARE_FUNC_DEF(UiRenderCmd_DepthAndHierarchySortCompare)
 {
 	DebugNotNull(left);
 	DebugNotNull(right);
+	UNUSED(contextPntr);
 	UiRenderCmd* leftCmd = (UiRenderCmd*)left;
 	UiRenderCmd* rightCmd = (UiRenderCmd*)right;
 	if (leftCmd->depth < rightCmd->depth) { return 1; }
@@ -1741,7 +1806,7 @@ static COMPARE_FUNC_DEF(UiRenderCmd_DepthAndHierarchySortCompare)
 
 PEXP UiRenderList* GetUiRenderList()
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	
 	// Close the root element if it's still open. This also acts as a way for us to know if GetUiRenderList has been called yet this frame
 	if (UiCtx->currentElementIndex < UiCtx->elements.length)
@@ -1829,7 +1894,13 @@ PEXP UiRenderList* GetUiRenderList()
 				newCmd->rectangle.cornerRadius = element->config.cornerRadius;
 			}
 			
-			bool isWrappingText = (element->config.sizing.x.type == UiSizingType_TextWrap);
+			r32 wrapWidth = element->config.textWrapWidth;
+			if (element->config.sizing.x.type == UiSizingType_TextWrap)
+			{
+				wrapWidth = element->layoutRec.Width+1;
+				if (element->config.textWrapWidth != 0.0f && wrapWidth > element->config.textWrapWidth) { wrapWidth = element->config.textWrapWidth; }
+			}
+			
 			if (!IsEmptyRichStr(element->config.richText))
 			{
 				rec textClipRec = element->clipRec;
@@ -1846,11 +1917,12 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->clipRec = textClipRec;
 					newCmd->params = element->config.renderer;
 					newCmd->color = actualTextColor;
+					newCmd->text.alignment = element->config.alignment;
+					newCmd->text.bounds = element->layoutRec;
 					newCmd->richText.font = element->config.font;
 					newCmd->richText.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->richText.font);
 					newCmd->richText.fontStyle = element->config.fontStyle;
-					newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
-					if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
+					newCmd->richText.wrapWidth = wrapWidth;
 					newCmd->richText.position = AddV2(element->layoutRec.TopLeft, MakeV2(0, GetFontMaxAscend(newCmd->richText.font, newCmd->richText.fontSize, newCmd->richText.fontStyle)));
 					newCmd->richText.text = element->config.richText;
 				}
@@ -1871,11 +1943,12 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->clipRec = textClipRec;
 					newCmd->params = element->config.renderer;
 					newCmd->color = actualTextColor;
+					newCmd->text.alignment = element->config.alignment;
+					newCmd->text.bounds = element->layoutRec;
 					newCmd->text.font = element->config.font;
 					newCmd->text.fontSize = (element->config.fontSize != 0.0f) ? element->config.fontSize : GetDefaultFontSize(newCmd->text.font);
 					newCmd->text.fontStyle = element->config.fontStyle;
-					newCmd->richText.wrapWidth = (isWrappingText ? MaxR32(element->layoutRec.Width, 1.0f) : element->config.textWrapWidth);
-					if (isWrappingText && element->config.textWrapWidth != 0.0f && newCmd->richText.wrapWidth > element->config.textWrapWidth) { newCmd->richText.wrapWidth = element->config.textWrapWidth; }
+					newCmd->richText.wrapWidth = wrapWidth;
 					newCmd->text.position = AddV2(
 						element->layoutRec.TopLeft,
 						MakeV2(
@@ -1896,7 +1969,7 @@ PEXP UiRenderList* GetUiRenderList()
 
 PEXP void EndUiFrame()
 {
-	NotNull(UiCtx);
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr && UiCtx->frameStarted);
 	
 	ClearStruct(UiCtx->renderList); //Memset to zero since it was allocated from frameArena and will get freed in the ResetToMark below
 	
@@ -1908,6 +1981,7 @@ PEXP void EndUiFrame()
 	UiCtx->mouse = nullptr;
 	UiCtx->touchscreen = nullptr;
 	
+	UiCtx->frameStarted = false;
 	UiCtx = nullptr;
 }
 

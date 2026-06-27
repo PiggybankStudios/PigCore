@@ -9,7 +9,7 @@ Description:
 	** Tooltips can be attached to a specific Clay UI element by ID or they can be attached to a rectangle on screen
 	** Tooltips show up after the mouse is hovering over the target element\rectangle and TOOLTIP_HOVER_DELAY has elapsed since the mouse moved
 	** When a tooltip opens, it needs to position itself somewhere that is not under the mouse and is entirely inside the window, so the exact location of the tooltip is somewhat hard to predict
-	** Tooltips should be displayed on top of nearly all UI elements, even things like ui_clay_notifications.h since nearly all UI can have tooltips attached and the tooltip is more closely tied to the mouse itself rather than the UI layers for any particular application
+	** Tooltips should be displayed on top of nearly all UI elements, even things like ui_notifications.h since nearly all UI can have tooltips attached and the tooltip is more closely tied to the mouse itself rather than the UI layers for any particular application
 	** Tooltips can be registered manually through RegisterTooltip\UnregisterTooltip OR they can be registered through CLAY macros which is the preferred method since it's more ergonomic. Simply fill out .tooltip inside the Clay_ElementDeclaration struct
 */
 

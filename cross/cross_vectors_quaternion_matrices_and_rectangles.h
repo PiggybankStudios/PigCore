@@ -9,6 +9,8 @@ Date:   01\15\2025
 
 //NOTE: Intentionally no includes here
 
+#if LANGUAGE_IS_C
+
 // +--------------------------------------------------------------+
 // |                      C11 Generic Macros                      |
 // +--------------------------------------------------------------+
@@ -279,5 +281,7 @@ Date:   01\15\2025
 //TODO: HMM_Transpose(M)
 //TODO: HMM_Determinant(M)
 //TODO: HMM_InvGeneral(M)
+
+#endif //LANGUAGE_IS_C
 
 #endif //  _CROSS_VECTORS_QUATERNION_MATRICES_AND_RECTANGLES_H

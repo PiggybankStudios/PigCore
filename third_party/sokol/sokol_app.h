@@ -9951,6 +9951,7 @@ _SOKOL_PRIVATE void _sapp_win32_run(const sapp_desc* desc) {
             }
         }
         bool frameResult = _sapp_win32_frame(false);
+        (void)frameResult; //TODO: Handle frameResult somehow?
         // check for window resized, this cannot happen in WM_SIZE as it explodes memory usage
         if (_sapp_win32_update_dimensions()) {
             #if defined(SOKOL_D3D11)

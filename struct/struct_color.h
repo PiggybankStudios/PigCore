@@ -14,6 +14,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_math.h"
+#include "third_party/raddbg/raddbg_markup.h"
 
 //NOTE: The name "Color" conflicts with a definition in <windows.h>
 //NOTE: This is BGRA order in memory, or in hex that's 0xAARRGGBB
@@ -29,6 +30,9 @@ car Color32
 #define MakeColor_Const(r, g, b, a) { .blue=(b), .green=(g), .red=(r), .alpha=(a) }
 #define MakeColorU32(value)         NEW_STRUCT(Color32)MakeColorU32_Const((value))
 #define MakeColor(r, g, b, a)       NEW_STRUCT(Color32)MakeColor_Const((r), (g), (b), (a))
+
+//TODO: Add support for viewing alpha
+raddbg_type_view(Color32, color(((unsigned int)$.r << 16) | ((unsigned int)$.g << 8) | ((unsigned int)$.b << 0)));
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

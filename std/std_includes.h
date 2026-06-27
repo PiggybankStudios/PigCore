@@ -29,6 +29,7 @@ Descriptions:
 #include <math.h>
 //TODO: HandmadeMath.h includes <xmmintrin.h> when SSE is supported
 
+#if LANGUAGE_IS_C
 #if TARGET_IS_ORCA //uchar.h is not in the orca-libc yet
 typedef unsigned char char16_t;
 #elif TARGET_IS_PLAYDATE_DEVICE
@@ -38,6 +39,7 @@ typedef uint16_t char16_t;
 #else
 #include <uchar.h> //for char16_t
 #endif
+#endif //LANGUAGE_IS_C
 
 #if (TARGET_IS_WINDOWS || USING_CUSTOM_STDLIB)
 	#include <intrin.h>

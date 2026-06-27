@@ -89,6 +89,7 @@ car Vec4Raw
 	plex { r32 _Ignored2; HMM_Vec2 YZ; r32 _Ignored3; };
 	plex { r32 _Ignored4; r32 _Ignored5; HMM_Vec2 ZW; };
 	
+	plex { r32 Width, Height, Depth, wDepth; };
 	plex { r32 Left, Top, Right, Bottom; }; //NOTE: These aliases are mostly used for UI side parameters (like borderThickness and margins)
 	plex { r32 TopLeft, TopRight, BottomRight, BottomLeft; }; //NOTE: These aliases are mostly used for UI cornerRadius
 };
@@ -117,6 +118,7 @@ car Vec3i
 	plex { i32 X, Y, Z; };
 	plex { i32 U, V, W; };
 	plex { i32 R, G, B; };
+	plex { i32 Width, Height, Depth; };
 	plex { Vec2i XY; i32 _Ignored0; };
 	plex { i32 _Ignored1; Vec2i YZ; };
 	plex { Vec2i UV; i32 _Ignored2; };
@@ -149,6 +151,7 @@ car Vec4i
 		};
 		i32 A;
 	};
+	plex { i32 Width, Height, Depth, wDepth; };
 	plex { Vec2i XY; i32 _Ignored0; i32 _Ignored1; };
 	plex { i32 _Ignored2; Vec2i YZ; i32 _Ignored3; };
 	plex { i32 _Ignored4; i32 _Ignored5; Vec2i ZW; };
@@ -214,6 +217,7 @@ car Vec4R64
 		};
 		r64 A;
 	};
+	plex { r64 Width, Height, Depth, wDepth; };
 	plex { Vec2R64 XY; r64 _Ignored0; r64 _Ignored1; };
 	plex { r64 _Ignored2; Vec2R64 YZ; r64 _Ignored3; };
 	plex { r64 _Ignored4; r64 _Ignored5; Vec2R64 ZW; };

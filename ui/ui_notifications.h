@@ -1,9 +1,9 @@
 /*
-File:   ui_clay_notifications.h
+File:   ui_notifications.h
 Author: Taylor Robbins
 Date:   11\07\2025
 Description:
-	** This is the graphical side of the notification queue when using Clay as the layout engine and sokol_gfx.h
+	** This is the graphical side of the notification queue when using Clay or Pig UI as the layout engine and sokol_gfx.h
 	** The NotificationQueue can be used as the output for base_notifications.h in graphical applications, otherwise notifications are treated as regular debug output
 */
 
@@ -28,11 +28,12 @@ Description:
 #include "struct/struct_var_array.h"
 #include "ui/ui_clay.h"
 #include "ui/ui_clay_widget_context.h"
+#include "ui/ui_system.h"
 #include "lib/lib_sokol_gfx.h"
 #include "gfx/gfx_font.h"
 #include "gfx/gfx_texture.h"
 
-#if BUILD_WITH_SOKOL_GFX && BUILD_WITH_CLAY
+#if BUILD_WITH_SOKOL_GFX && (BUILD_WITH_CLAY || BUILD_WITH_PIG_UI)
 #define NOTIFICATION_QUEUE_AVAILABLE 1
 #else
 #define NOTIFICATION_QUEUE_AVAILABLE 0
@@ -100,7 +101,11 @@ plex NotificationQueue
 	PIG_CORE_INLINE void SetNotificationIconEx(NotificationQueue* queue, DbgLevel level, Texture* texture, r32 scale, Color32 color, rec sourceRec);
 	PIG_CORE_INLINE void SetNotificationIcon(NotificationQueue* queue, DbgLevel level, Texture* texture, r32 scale, Color32 color);
 	Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message);
+	#if BUILD_WITH_CLAY
 	void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize);
+	#elif BUILD_WITH_PIG_UI
+	void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize, r32 depth);
+	#endif
 #endif
 
 // +--------------------------------------------------------------+
@@ -188,21 +193,29 @@ PEXP Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel lev
 	return newNotification;
 }
 
+#if BUILD_WITH_CLAY
 PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize)
+#elif BUILD_WITH_PIG_UI
+PEXP void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fontSize, u8 fontStyle, v2i screenSize, r32 depth)
+#endif
 {
-	NotNull(context);
-	NotNull(context->uiArena);
-	NotNull(context->renderer);
 	NotNull(queue);
 	NotNull(queue->arena);
 	NotNull(font);
-	queue->currentProgramTime = context->programTime;
-	queue->notificationDisappeared = false;
 	
-	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
+	#if BUILD_WITH_CLAY
+	u64 programTime = context->programTime;
+	r32 notificationPadding = UISCALE_U16(context->uiScale, NOTIFICATION_PADDING);
+	#elif BUILD_WITH_PIG_UI
+	u64 programTime = UiCtx->programTime;
+	r32 notificationPadding = (UiCtx->scale * NOTIFICATION_PADDING);
+	#endif
+	
+	queue->notificationDisappeared = false;
+	queue->currentProgramTime = programTime;
 	bool screenSizeChanged = (!AreEqualV2i(queue->prevScreenSize, screenSize));
 	r32 lineHeight = GetFontLineHeight(font, fontSize, fontStyle);
-	r32 wrapWidth = (screenSize.Width * NOTIFICATION_MAX_WIDTH_PERCENT) - (r32)(2*UISCALE_U16(context->uiScale, NOTIFICATION_PADDING));
+	r32 wrapWidth = (screenSize.Width * NOTIFICATION_MAX_WIDTH_PERCENT) - (2 * notificationPadding);
 	
 	VarArrayLoop(&queue->notifications, nIndex)
 	{
@@ -212,14 +225,14 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		if (notification->gotoOffsetY >= screenSize.Height * (r32)NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT)
 		{
 			// PrintLine_D("Dismissing notification (height limit) \"%.*s\"", StrPrint(notification->messageStr));
-			u64 currentTime = TimeSinceBy(context->programTime, notification->spawnTime);
+			u64 currentTime = TimeSinceBy(programTime, notification->spawnTime);
 			if (currentTime < notification->duration - NOTIFICATION_DISAPPEAR_ANIM_TIME)
 			{
 				notification->duration = currentTime + NOTIFICATION_DISAPPEAR_ANIM_TIME;
 			}
 		}
 		
-		if (TimeSinceBy(context->programTime, notification->spawnTime) >= notification->duration)
+		if (TimeSinceBy(programTime, notification->spawnTime) >= notification->duration)
 		{
 			// PrintLine_D("Dismissing notification (timeout) \"%.*s\"", StrPrint(notification->messageStr));
 			FreeNotification(notification);
@@ -239,6 +252,15 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 		}
 	}
 	
+	// +==============================+
+	// |         Clay Version         |
+	// +==============================+
+	#if BUILD_WITH_CLAY
+	NotNull(context);
+	NotNull(context->uiArena);
+	NotNull(context->renderer);
+	
+	u16 fontId = GetClayUIRendererFontId(context->renderer, font, fontStyle);
 	rec prevNotificationDrawRec = Rec_Zero;
 	VarArrayLoop(&queue->notifications, nIndex)
 	{
@@ -342,6 +364,99 @@ PEXP void DoUiNotificationQueue(UiWidgetContext* context, NotificationQueue* que
 			}
 		}
 	}
+	
+	// +==============================+
+	// |        Pig UI Version        |
+	// +==============================+
+	#elif BUILD_WITH_PIG_UI
+	NotNull(UiCtx);
+	
+	r32 screenMarginBottom = (UiCtx->scale*NOTIFICATION_SCREEN_MARGIN_BOTTOM);
+	r32 screenMarginRight = (UiCtx->scale*NOTIFICATION_SCREEN_MARGIN_RIGHT);
+	r32 betweenMargin = (UiCtx->scale*NOTIFICATION_BETWEEN_MARGIN);
+	rec prevNotificationDrawRec = Rec_Zero;
+	VarArrayLoop(&queue->notifications, nIndex)
+	{
+		VarArrayLoopGet(Notification, notification, &queue->notifications, nIndex);
+		UiId notificationId = UiIdPrint("Notification%llu", (u64)notification->id);
+		UiElement* notificationElem = GetUiElementByIdInPrevFrame(notificationId, true);
+		rec notificationDrawRec = (notificationElem != nullptr) ? notificationElem->layoutRec : Rec_Zero;
+		
+		if (!screenSizeChanged && !queue->notificationDisappeared && prevNotificationDrawRec.Width > 0 && prevNotificationDrawRec.Height > 0)
+		{
+			notification->gotoOffsetY = ((r32)screenSize.Height - screenMarginBottom) - (prevNotificationDrawRec.Y - betweenMargin);
+		}
+		prevNotificationDrawRec = notificationDrawRec;
+		
+		r32 offsetDiff = (notification->gotoOffsetY - notification->currentOffsetY);
+		if (AbsR32(offsetDiff) >= 1.0f) { notification->currentOffsetY += offsetDiff / NOTIFICATION_MOVE_LAG; }
+		else { notification->currentOffsetY = notification->gotoOffsetY; }
+		
+		u64 spawnAnimTime = TimeSinceBy(programTime, notification->spawnTime);
+		r32 appearAnimAmount = 1.0f;
+		r32 disappearAnimAmount = 0.0f;
+		if (spawnAnimTime > notification->duration - NOTIFICATION_DISAPPEAR_ANIM_TIME)
+		{
+			disappearAnimAmount = (r32)(spawnAnimTime - (notification->duration - NOTIFICATION_DISAPPEAR_ANIM_TIME)) / (r32)NOTIFICATION_DISAPPEAR_ANIM_TIME;
+		}
+		else if (spawnAnimTime < NOTIFICATION_APPEAR_ANIM_TIME)
+		{
+			appearAnimAmount = (r32)spawnAnimTime / (r32)NOTIFICATION_APPEAR_ANIM_TIME;
+		}
+		
+		Color32 backgroundColor = ColorWithAlpha(MonokaiDarkGray, 1.0f - disappearAnimAmount);
+		Color32 textColor = ColorWithAlpha(MonokaiWhite, 1.0f - disappearAnimAmount);
+		Color32 borderColor = ColorWithAlpha(MonokaiLightGray, 1.0f - disappearAnimAmount);
+		v2 offset = MakeV2(-screenMarginRight, -screenMarginBottom - notification->currentOffsetY);
+		if (appearAnimAmount < 1.0f && notificationElem != nullptr)
+		{
+			offset.X += notificationDrawRec.Width * EaseExponentialIn(1.0f - appearAnimAmount);
+		}
+		NotificationIcon* icon = (notification->level < DbgLevel_Count) ? &queue->icons[notification->level] : nullptr;
+		Texture* iconTexture = (icon != nullptr) ? icon->texture : nullptr;
+		Color32 iconColor = (icon != nullptr) ? icon->color : MonokaiWhite;
+		
+		UIELEM({ .id = notificationId,
+			.depth = depth,
+			.sizing = UI_FIT2(),
+			.direction = UiLayoutDir_LeftToRight,
+			.padding = { .inner=FillV4r(NOTIFICATION_PADDING), .child=5 },
+			.alignment = UI_ALIGN_CENTER(),
+			.floating = {
+				.type = UiFloatingType_Parent,
+				.offset = offset,
+				.parentSide = UiSide_BottomRight,
+				.elemSide = (notificationElem != nullptr) ? UiSide_BottomRight : UiSide_BottomLeft,
+			},
+			.color = backgroundColor,
+			.cornerRadius = FillV4r(8),
+			.borderColor = borderColor,
+			.borderThickness = FillV4r(2),
+		})
+		{
+			if (iconTexture != nullptr)
+			{
+				UIELEM_LEAF({
+					.sizing = UI_FIXED2(icon->sourceRec.Width * icon->scale, icon->sourceRec.Height * icon->scale),
+					.texture = icon->texture,
+					.textureSourceRec = icon->sourceRec,
+					.color = ColorWithAlpha(iconColor, 1.0f - disappearAnimAmount),
+				});
+			}
+			
+			UIELEM_LEAF({
+				.sizing = UI_FIXED2(notification->textMeasure.Width, notification->textMeasure.Height),
+				.textWrapWidth = notification->textMeasureWrapWidth,
+				.text = notification->messageStr,
+				.font = font,
+				.fontSize = fontSize,
+				.fontStyle = fontStyle,
+				.textColor = textColor,
+			});
+		}
+	}
+	
+	#endif //BUILD_WITH_CLAY
 	
 	queue->prevScreenSize = screenSize;
 }

@@ -37,6 +37,7 @@ typedef plex UiScrollbarState UiScrollbarState;
 plex UiScrollbarState
 {
 	bool autohide;
+	bool hidden;
 	bool isHovered;
 	bool isDragging;
 	bool isDraggingSmooth;
@@ -89,12 +90,20 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	bool isGutterHovered = IsUiElementHovered(gutterId);
 	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.Size, UiCtx->scale) : V2_One;
 	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.Size, UiCtx->scale) : V2_One;
+	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.XY, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
 	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
-	r32 viewablePercentage = (contentSize.Height > viewSize.Height) ? (viewSize.Height / contentSize.Height) : 1.0f;
+	r32 viewablePercentage = (contentSize.Height > usableViewSize.Height) ? (usableViewSize.Height / contentSize.Height) : 1.0f;
 	v2 barSize = MakeV2(
 		gutterSize.Width - (gutterLeftRightPadding*2),
 		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Height * viewablePercentage)), gutterSize.Height)
 	);
+	
+	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
+	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
+		AreSimilarR32(oldScrollViewElem->scroll.Y, oldScrollViewElem->scrollGoto.Y, DEFAULT_R32_TOLERANCE))
+	{
+		state->isDraggingSmooth = false;
+	}
 	
 	if (UiCtx->mouse != nullptr)
 	{
@@ -129,28 +138,23 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 				
 				if (oldScrollViewElem != nullptr)
 				{
-					oldScrollViewElem->scrollGoto.Y = newScrollPercentage * oldScrollViewElem->scrollMax.Y;
-					if (!state->isDraggingSmooth) { oldScrollViewElem->scroll.Y = oldScrollViewElem->scrollGoto.Y; }
+					r32 newScrollGotoY = newScrollPercentage * oldScrollViewElem->scrollMax.Y;
+					SetUiElementScroll(scrollViewId, FillV2(-1), MakeV2(-1, newScrollGotoY));
+					if (!state->isDraggingSmooth) { SetUiElementScroll(scrollViewId, MakeV2(-1, newScrollGotoY), FillV2(-1)); }
 				}
 			}
 		}
-	}
-	
-	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
-	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
-		AreSimilarR32(oldScrollViewElem->scroll.Y, oldScrollViewElem->scrollGoto.Y, DEFAULT_R32_TOLERANCE))
-	{
-		state->isDraggingSmooth = false;
 	}
 	
 	splitterContainerConfig.id = splitterId;
 	splitterContainerConfig.direction = UiLayoutDir_RightToLeft;
 	OpenUiElement(splitterContainerConfig);
 	
-	if (!state->autohide || contentSize.Height > viewSize.Height)
+	if (!state->hidden && (!state->autohide || contentSize.Height > usableViewSize.Height))
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_TopDown,
+			.scrollRelayId = scrollViewId,
 			.alignment = UI_ALIGN_TOP_CENTER(),
 			.sizing = { .width=UI_FIXED(gutterWidth), .height=UI_PERCENT(1.0f) },
 			.padding = { .inner = { .Left=gutterLeftRightPadding, .Right=gutterLeftRightPadding } },
@@ -189,12 +193,20 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	bool isGutterHovered = IsUiElementHovered(gutterId);
 	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.Size, UiCtx->scale) : V2_One;
 	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.Size, UiCtx->scale) : V2_One;
+	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.XY, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
 	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
-	r32 viewablePercentage = (contentSize.Width > viewSize.Width) ? (viewSize.Width / contentSize.Width) : 1.0f;
+	r32 viewablePercentage = (contentSize.Width > usableViewSize.Width) ? (usableViewSize.Width / contentSize.Width) : 1.0f;
 	v2 barSize = MakeV2(
 		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Width * viewablePercentage)), gutterSize.Width),
 		gutterSize.Height - (gutterTopBottomPadding*2)
 	);
+	
+	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
+	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
+		AreSimilarR32(oldScrollViewElem->scroll.X, oldScrollViewElem->scrollGoto.X, DEFAULT_R32_TOLERANCE))
+	{
+		state->isDraggingSmooth = false;
+	}
 	
 	if (UiCtx->mouse != nullptr)
 	{
@@ -229,28 +241,23 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 				
 				if (oldScrollViewElem != nullptr)
 				{
-					oldScrollViewElem->scrollGoto.X = newScrollPercentage * oldScrollViewElem->scrollMax.X;
-					if (!state->isDraggingSmooth) { oldScrollViewElem->scroll.X = oldScrollViewElem->scrollGoto.X; }
+					r32 newScrollGotoX = newScrollPercentage * oldScrollViewElem->scrollMax.X;
+					SetUiElementScroll(scrollViewId, FillV2(-1), MakeV2(newScrollGotoX, -1));
+					if (!state->isDraggingSmooth) { SetUiElementScroll(scrollViewId, MakeV2(newScrollGotoX, -1), FillV2(-1)); }
 				}
 			}
 		}
-	}
-	
-	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
-	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
-		AreSimilarR32(oldScrollViewElem->scroll.X, oldScrollViewElem->scrollGoto.X, DEFAULT_R32_TOLERANCE))
-	{
-		state->isDraggingSmooth = false;
 	}
 	
 	splitterContainerConfig.id = splitterId;
 	splitterContainerConfig.direction = UiLayoutDir_BottomUp;
 	OpenUiElement(splitterContainerConfig);
 	
-	if (!state->autohide || contentSize.Width > viewSize.Width)
+	if (state->hidden && (!state->autohide || contentSize.Width > usableViewSize.Width))
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_LeftToRight,
+			.scrollRelayId = scrollViewId,
 			.alignment = UI_ALIGN_LEFT_CENTER(),
 			.sizing = { .width=UI_PERCENT(1.0f), .height=UI_FIXED(gutterHeight) },
 			.padding = { .inner = { .Top=gutterTopBottomPadding, .Bottom=gutterTopBottomPadding } },

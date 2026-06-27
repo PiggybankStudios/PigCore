@@ -390,6 +390,16 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		
 		ScratchEnd(scratch);
 	}
+	// #elif TARGET_IS_OSX
+	// {
+	// 	//TODO: Implement me!
+	// 	// Normally something like: ~/Library/Application Support/<appname> (where appname is AppID from Info.plist)
+	// 	// Get value of NSApplicationSupportDirectory?
+	// 	// FSRef ref;
+	// 	// OSType folderType = kApplicationSupportFolderType;
+	// 	// FSFindFolder( kUserDomain, folderType, kCreateFolder, &ref );
+	// 	// FSRefMakePath( &ref, (UInt8*)&path, PATH_MAX );
+	// }
 	#elif TARGET_IS_ANDROID
 	{
 		AssertMsg(AndroidNativeActivity != nullptr, "You must set AndroidNativeActivity global before calling OsGetSettingsSavePath!");

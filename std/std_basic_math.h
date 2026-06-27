@@ -79,8 +79,9 @@ Date:   01\05\2025
 // +--------------------------------------------------------------+
 // |                            Macros                            |
 // +--------------------------------------------------------------+
-#define Min(value1, value2) (((value1) < (value2)) ? (value1) : (value2))
-#define MinX(value1, value2) _Generic(value1, \
+#define Min2(value1, value2) (((value1) < (value2)) ? (value1) : (value2))
+#if LANGUAGE_IS_C
+#define Min2X(value1, value2) _Generic(value1, \
 	u8:  MinU8((value1),  (value2)),          \
 	u16: MinU16((value1), (value2)),          \
 	u32: MinU32((value1), (value2)),          \
@@ -94,7 +95,7 @@ Date:   01\05\2025
 	r32: MinR32((value1), (value2)),          \
 	r64: MinR64((value1), (value2))           \
 )
-#define MinX3(value1, value2, value3) _Generic(value1, \
+#define Min3X(value1, value2, value3) _Generic(value1, \
 	u8:  MinU8((value1),  MinU8((value2),  (value3))), \
 	u16: MinU16((value1), MinU16((value2), (value3))), \
 	u32: MinU32((value1), MinU32((value2), (value3))), \
@@ -108,9 +109,11 @@ Date:   01\05\2025
 	r32: MinR32((value1), MinR32((value2), (value3))), \
 	r64: MinR64((value1), MinR64((value2), (value3)))  \
 )
+#endif //LANGUAGE_IS_C
 
-#define Max(value1, value2) (((value1) > (value2)) ? (value1) : (value2))
-#define MaxX(value1, value2) _Generic(value1, \
+#define Max2(value1, value2) (((value1) > (value2)) ? (value1) : (value2))
+#if LANGUAGE_IS_C
+#define Max2X(value1, value2) _Generic(value1, \
 	u8:  MaxU8((value1),  (value2)),          \
 	u16: MaxU16((value1), (value2)),          \
 	u32: MaxU32((value1), (value2)),          \
@@ -124,7 +127,7 @@ Date:   01\05\2025
 	r32: MaxR32((value1), (value2)),          \
 	r64: MaxR64((value1), (value2))           \
 )
-#define MaxX3(value1, value2, value3) _Generic(value1, \
+#define Max3X(value1, value2, value3) _Generic(value1, \
 	u8:  MaxU8((value1),  MaxU8((value2),  (value3))), \
 	u16: MaxU16((value1), MaxU16((value2), (value3))), \
 	u32: MaxU32((value1), MaxU32((value2), (value3))), \
@@ -138,6 +141,7 @@ Date:   01\05\2025
 	r32: MaxR32((value1), MaxR32((value2), (value3))), \
 	r64: MaxR64((value1), MaxR64((value2), (value3)))  \
 )
+#endif //LANGUAGE_IS_C
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |

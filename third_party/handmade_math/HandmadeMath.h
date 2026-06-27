@@ -270,6 +270,11 @@ typedef union HMM_Vec3
 
     struct
     {
+        float Width, Height, Depth;
+    };
+
+    struct
+    {
         HMM_Vec2 XY;
         float _Ignored0;
     };
@@ -329,6 +334,11 @@ typedef union HMM_Vec4
         };
 
         float A;
+    };
+
+    struct
+    {
+        float Width, Height, Depth, wDepth;
     };
 
     struct

@@ -54,7 +54,7 @@ Description:
 #define PigUiDefaultColor_Value TransparentBlack_Value
 #define PigUiDefaultColor       TransparentBlack
 
-#define UI_SCROLL_LAG_DEFAULT_DIVISOR 10.0f
+#define UI_SCROLL_LAG_DEFAULT_CONSTANT 15.0f
 #define UI_SCROLL_LAG_DEFAULT 0.0f
 #define UI_SCROLL_LAG_NONE    -1.0f
 #define UI_SCROLL_GOTO_SNAP_DISTANCE 0.5f //px
@@ -361,37 +361,38 @@ typedef plex UiElemConfig UiElemConfig;
 plex UiElemConfig
 {
 	UiId id;
-	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
+	UiId scrollRelayId; //TODO: Add a bitflag for this!
 	UiLayoutDir direction;
 	UiSizing sizing;
-	bool dontSizeToImage;
 	UiAlignment alignment;
 	UiScrolling scrolling;
-	bool clipChildren; //this is assumed true if scrolling is enable, in which case this has no effect
+	UiConditionType condition;
+	UiPadding padding;
 	r32 depth;
 	Color32 color;
 	Color32 colorRecursive; //This color is multiplied through all children
 	Texture* texture;
-	bool repeatingTexture;
 	rec textureSourceRec;
 	SpriteSheet* spriteSheet;
 	v2i sheetCell;
-	UiPadding padding;
 	v4r cornerRadius;
 	v4r borderThickness;
 	Color32 borderColor;
 	r32 borderDepth; //0.0f will result in borderDepth inheriting value of depth
-	UiFloatingConfig floating;
-	UiConditionType condition;
-	bool mousePassthrough;
-	bool strictHover; //this element is not considered hovered if any of it's child elements is hovered over
 	Str8 text;
 	RichStr richText;
+	UiFloatingConfig floating;
 	Color32 textColor;
 	r32 textWrapWidth;
 	PigFont* font;
 	r32 fontSize;
 	u8 fontStyle;
+	bool globalId; //keeps the ID in the UiElement from being based on the parents' IDs
+	bool clipChildren; //this is assumed true if scrolling is enable, in which case this has no effect
+	bool repeatingTexture;
+	bool mousePassthrough;
+	bool strictHover; //this element is not considered hovered if any of it's child elements is hovered over
+	bool dontSizeToImage;
 	
 	//These types can contain different things for each application, see the description near the top of the file
 	UiRendererParameters renderer;
@@ -420,53 +421,54 @@ typedef u64 UiElemConfigField;
 #define UiElemConfigField_ScrollingLagX           ((1ull) << 11ull)
 #define UiElemConfigField_ScrollingY              ((1ull) << 12ull)
 #define UiElemConfigField_ScrollingLagY           ((1ull) << 13ull)
-#define UiElemConfigField_ClipChildren            ((1ull) << 14ull)
-#define UiElemConfigField_Depth                   ((1ull) << 15ull)
-#define UiElemConfigField_Color                   ((1ull) << 16ull)
-#define UiElemConfigField_ColorRecursive          ((1ull) << 17ull)
-#define UiElemConfigField_Texture                 ((1ull) << 18ull)
-#define UiElemConfigField_RepeatingTexture        ((1ull) << 19ull)
-#define UiElemConfigField_TextureSourceRec        ((1ull) << 20ull)
-#define UiElemConfigField_SpriteSheet             ((1ull) << 21ull)
-#define UiElemConfigField_SheetCell               ((1ull) << 22ull)
-#define UiElemConfigField_InnerPaddingLeft        ((1ull) << 23ull)
-#define UiElemConfigField_InnerPaddingTop         ((1ull) << 24ull)
-#define UiElemConfigField_InnerPaddingRight       ((1ull) << 25ull)
-#define UiElemConfigField_InnerPaddingBottom      ((1ull) << 26ull)
-#define UiElemConfigField_OuterPaddingLeft        ((1ull) << 27ull)
-#define UiElemConfigField_OuterPaddingTop         ((1ull) << 28ull)
-#define UiElemConfigField_OuterPaddingRight       ((1ull) << 29ull)
-#define UiElemConfigField_OuterPaddingBottom      ((1ull) << 30ull)
-#define UiElemConfigField_ChildPadding            ((1ull) << 31ull)
-#define UiElemConfigField_CornerRadiusTopLeft     ((1ull) << 32ull)
-#define UiElemConfigField_CornerRadiusTopRight    ((1ull) << 33ull)
-#define UiElemConfigField_CornerRadiusBottomRight ((1ull) << 34ull)
-#define UiElemConfigField_CornerRadiusBottomLeft  ((1ull) << 35ull)
-#define UiElemConfigField_BorderThicknessLeft     ((1ull) << 36ull)
-#define UiElemConfigField_BorderThicknessTop      ((1ull) << 37ull)
-#define UiElemConfigField_BorderThicknessRight    ((1ull) << 38ull)
-#define UiElemConfigField_BorderThicknessBottom   ((1ull) << 39ull)
-#define UiElemConfigField_BorderColor             ((1ull) << 40ull)
-#define UiElemConfigField_BorderDepth             ((1ull) << 41ull)
-#define UiElemConfigField_FloatingType            ((1ull) << 42ull)
-#define UiElemConfigField_FloatingOffsetX         ((1ull) << 43ull)
-#define UiElemConfigField_FloatingOffsetY         ((1ull) << 44ull)
-#define UiElemConfigField_FloatingAttachId        ((1ull) << 45ull)
-#define UiElemConfigField_FloatingParentSide      ((1ull) << 46ull)
-#define UiElemConfigField_FloatingElemSide        ((1ull) << 47ull)
-#define UiElemConfigField_Condition               ((1ull) << 48ull)
-#define UiElemConfigField_MousePassthrough        ((1ull) << 49ull)
-#define UiElemConfigField_StrictHover             ((1ull) << 50ull)
-#define UiElemConfigField_Text                    ((1ull) << 51ull)
-#define UiElemConfigField_RichText                ((1ull) << 52ull)
-#define UiElemConfigField_TextColor               ((1ull) << 53ull)
-#define UiElemConfigField_TextWrapWidth           ((1ull) << 54ull)
-#define UiElemConfigField_Font                    ((1ull) << 55ull)
-#define UiElemConfigField_FontSize                ((1ull) << 56ull)
-#define UiElemConfigField_FontStyle               ((1ull) << 57ull)
-#define UiElemConfigField_RendererParams          ((1ull) << 58ull) // NOTE: Fields inside UiRendererParameters struct are not represented individually
-#define UiElemConfigField_ThemerParams            ((1ull) << 59ull) // NOTE: Fields inside UiThemerParameters struct are not represented individually
-#define UiElemConfigField_Count                 60
+#define UiElemConfigField_ScrollRelayId           ((1ull) << 14ull)
+#define UiElemConfigField_ClipChildren            ((1ull) << 15ull)
+#define UiElemConfigField_Depth                   ((1ull) << 16ull)
+#define UiElemConfigField_Color                   ((1ull) << 17ull)
+#define UiElemConfigField_ColorRecursive          ((1ull) << 18ull)
+#define UiElemConfigField_Texture                 ((1ull) << 19ull)
+#define UiElemConfigField_RepeatingTexture        ((1ull) << 20ull)
+#define UiElemConfigField_TextureSourceRec        ((1ull) << 21ull)
+#define UiElemConfigField_SpriteSheet             ((1ull) << 22ull)
+#define UiElemConfigField_SheetCell               ((1ull) << 23ull)
+#define UiElemConfigField_InnerPaddingLeft        ((1ull) << 24ull)
+#define UiElemConfigField_InnerPaddingTop         ((1ull) << 25ull)
+#define UiElemConfigField_InnerPaddingRight       ((1ull) << 26ull)
+#define UiElemConfigField_InnerPaddingBottom      ((1ull) << 27ull)
+#define UiElemConfigField_OuterPaddingLeft        ((1ull) << 28ull)
+#define UiElemConfigField_OuterPaddingTop         ((1ull) << 29ull)
+#define UiElemConfigField_OuterPaddingRight       ((1ull) << 30ull)
+#define UiElemConfigField_OuterPaddingBottom      ((1ull) << 31ull)
+#define UiElemConfigField_ChildPadding            ((1ull) << 32ull)
+#define UiElemConfigField_CornerRadiusTopLeft     ((1ull) << 33ull)
+#define UiElemConfigField_CornerRadiusTopRight    ((1ull) << 34ull)
+#define UiElemConfigField_CornerRadiusBottomRight ((1ull) << 35ull)
+#define UiElemConfigField_CornerRadiusBottomLeft  ((1ull) << 36ull)
+#define UiElemConfigField_BorderThicknessLeft     ((1ull) << 37ull)
+#define UiElemConfigField_BorderThicknessTop      ((1ull) << 38ull)
+#define UiElemConfigField_BorderThicknessRight    ((1ull) << 39ull)
+#define UiElemConfigField_BorderThicknessBottom   ((1ull) << 40ull)
+#define UiElemConfigField_BorderColor             ((1ull) << 41ull)
+#define UiElemConfigField_BorderDepth             ((1ull) << 42ull)
+#define UiElemConfigField_FloatingType            ((1ull) << 43ull)
+#define UiElemConfigField_FloatingOffsetX         ((1ull) << 44ull)
+#define UiElemConfigField_FloatingOffsetY         ((1ull) << 45ull)
+#define UiElemConfigField_FloatingAttachId        ((1ull) << 46ull)
+#define UiElemConfigField_FloatingParentSide      ((1ull) << 47ull)
+#define UiElemConfigField_FloatingElemSide        ((1ull) << 48ull)
+#define UiElemConfigField_Condition               ((1ull) << 49ull)
+#define UiElemConfigField_MousePassthrough        ((1ull) << 50ull)
+#define UiElemConfigField_StrictHover             ((1ull) << 51ull)
+#define UiElemConfigField_Text                    ((1ull) << 52ull)
+#define UiElemConfigField_RichText                ((1ull) << 53ull)
+#define UiElemConfigField_TextColor               ((1ull) << 54ull)
+#define UiElemConfigField_TextWrapWidth           ((1ull) << 55ull)
+#define UiElemConfigField_Font                    ((1ull) << 56ull)
+#define UiElemConfigField_FontSize                ((1ull) << 57ull)
+#define UiElemConfigField_FontStyle               ((1ull) << 58ull)
+#define UiElemConfigField_RendererParams          ((1ull) << 59ull) // NOTE: Fields inside UiRendererParameters struct are not represented individually
+#define UiElemConfigField_ThemerParams            ((1ull) << 60ull) // NOTE: Fields inside UiThemerParameters struct are not represented individually
+#define UiElemConfigField_Count                 61
 #define UiElemConfigField_All                   (((1ull) << UiElemConfigField_Count)-1)
 #define UiElemConfigField_Sizing                (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingTypeY|UiElemConfigField_SizingValueX|UiElemConfigField_SizingValueY)
 #define UiElemConfigField_SizingX               (UiElemConfigField_SizingTypeX|UiElemConfigField_SizingValueX)
@@ -504,6 +506,7 @@ PEXP const char* GetUiElemConfigFieldStr(UiElemConfigField enumValue)
 		case UiElemConfigField_ScrollingLagX:         return "ScrollingLagX";
 		case UiElemConfigField_ScrollingY:            return "ScrollingY";
 		case UiElemConfigField_ScrollingLagY:         return "ScrollingLagY";
+		case UiElemConfigField_ScrollRelayId:         return "ScrollRelayId";
 		case UiElemConfigField_ClipChildren:          return "ClipChildren";
 		case UiElemConfigField_Depth:                 return "Depth";
 		case UiElemConfigField_Color:                 return "Color";
@@ -584,6 +587,14 @@ plex UiElement
 //NOTE: Returning false makes the element disappear and it's child scope not run
 #define UI_THEMER_CALLBACK_DEF(functionName) bool functionName(struct UiContext* context, UiElement* element, void* userPntr)
 typedef UI_THEMER_CALLBACK_DEF(UiThemerCallback_f);
+
+typedef plex UiPendingScrollSet UiPendingScrollSet;
+plex UiPendingScrollSet
+{
+	UiId id;
+	v2 newScroll;
+	v2 newScrollGoto;
+};
 
 typedef plex UiThemer UiThemer;
 plex UiThemer
@@ -670,12 +681,13 @@ plex UiRenderCmd
 		plex
 		{
 			v2 position;
+			UiAlignment alignment;
+			rec bounds;
 			PigFont* font;
 			r32 fontSize;
 			u8 fontStyle;
 			r32 wrapWidth;
 			Str8 text;
-			//TODO: clipRec?
 		} text;
 		
 		// +==============================+
@@ -684,12 +696,13 @@ plex UiRenderCmd
 		plex
 		{
 			v2 position;
+			UiAlignment alignment;
+			rec bounds;
 			PigFont* font;
 			r32 fontSize;
 			u8 fontStyle;
 			r32 wrapWidth;
 			RichStr text;
-			//TODO: clipRec?
 		} richText;
 		
 		// +==============================+
@@ -715,13 +728,15 @@ typedef plex UiContext UiContext;
 plex UiContext
 {
 	Arena* arena;
+	bool frameStarted;
 	
 	Arena* frameArena;
 	uxx frameArenaMark;
 	v2 screenSize;
 	r32 scale;
 	u64 programTime;
-	r32 defaultScrollLagDivisor;
+	r32 defaultScrollLagConstant;
+	r32 elapsedMs;
 	KeyboardState* keyboard;
 	MouseState* mouse;
 	TouchscreenState* touchscreen;
@@ -737,6 +752,7 @@ plex UiContext
 	UiId clickStartHoveredId[MouseBtn_Count];
 	UiId clickStartHoveredLocalId[MouseBtn_Count];
 	bool smoothScrollingInProgress;
+	VarArray pendingScrollSets; //UiPendingScrollSet
 	
 	bool layoutDone;
 	bool hasDoneOneLayout;
