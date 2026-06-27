@@ -1,15 +1,12 @@
 /*
-File:   tests_ui_parameter_types.h
+File:   pig_ui_config.h
 Author: Taylor Robbins
-Date:   02\11\2026
+Date:   06\27\2026
 */
 
-#ifndef _TESTS_UI_PARAMETER_TYPES_H
-#define _TESTS_UI_PARAMETER_TYPES_H
+#ifndef _PIG_UI_CONFIG_H
+#define _PIG_UI_CONFIG_H
 
-//TODO: This is a temporary file while we test out things. This solution doesn't work if PigCore is getting compiled separately as a dll unless the dll_main.c #includes this file!
-
-#if BUILD_WITH_PIG_UI
 typedef plex TestsUiRendererParams TestsUiRendererParams;
 plex TestsUiRendererParams
 {
@@ -26,6 +23,5 @@ plex TestsUiThemerParams
 	bool isBackground;
 };
 #define UiThemerParameters TestsUiThemerParams
-#endif
 
-#endif //  _TESTS_UI_PARAMETER_TYPES_H
+#endif //  _PIG_UI_CONFIG_H

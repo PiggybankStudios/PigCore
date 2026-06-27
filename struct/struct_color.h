@@ -14,7 +14,7 @@ Description:
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "base/base_math.h"
-#include "third_party/raddbg/raddbg_markup.h"
+#include "lib/lib_raddbg.h"
 
 //NOTE: The name "Color" conflicts with a definition in <windows.h>
 //NOTE: This is BGRA order in memory, or in hex that's 0xAARRGGBB

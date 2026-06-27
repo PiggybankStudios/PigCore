@@ -51,7 +51,7 @@ Description:
 #include "base/base_assert.h"
 #include "base/base_char.h"
 #include "std/std_memset.h"
-#include "third_party/raddbg/raddbg_markup.h"
+#include "lib/lib_raddbg.h"
 
 // +--------------------------------------------------------------+
 // |                       String Structure                       |

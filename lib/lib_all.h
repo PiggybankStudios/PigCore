@@ -12,6 +12,7 @@ Date:   10\27\2025
 #include "lib/lib_handmade_math.h"
 #include "lib/lib_metadesk.h"
 #include "lib/lib_plutosvg.h"
+#include "lib/lib_raddbg.h"
 #include "lib/lib_sokol_app.h"
 #include "lib/lib_sokol_gfx.h"
 #include "lib/lib_stb_image.h"

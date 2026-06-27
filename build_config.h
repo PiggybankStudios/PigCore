@@ -128,6 +128,9 @@ Description:
 // Enables linking with libgtk-4.so on Linux and enables some GTK-specific features on Linux (like OsDoOpenFileDialog)
 #define BUILD_WITH_GTK       0
 
+//This should stay enabled, it makes the ui_system_core.h file #include "pig_ui_config.h"
+#define PIG_CORE_INCLUDE_PIG_UI_CONFIG 1
+
 // +==============================+
 // |        String Defines        |
 // +==============================+

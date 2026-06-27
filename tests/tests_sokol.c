@@ -1367,7 +1367,7 @@ bool AppFrame(void)
 			// }
 			
 			const r32 scrollLag = 10.0f;
-			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, scrollLag, &keyboard, &mouse, &touchscreen);
+			StartUiFrame(&uiContext, windowSize, MonokaiLightGray, uiScale, programTime, elapsedMs, scrollLag, &keyboard, &mouse, &touchscreen);
 			
 			// PushUiFields({ .color = MonokaiDarkGray });
 			PushUiFieldsText({ .textColor = MonokaiDarkGray });
