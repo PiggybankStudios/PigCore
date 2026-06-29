@@ -109,7 +109,7 @@ plex OsFileWriteTime
 {
 	#if TARGET_IS_WINDOWS
 	FILETIME fileTime;
-	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	plex timespec timeSpec;
 	#else
 	u8 placeholder;
@@ -1403,7 +1403,7 @@ PEXP Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)
 		else { result = Result_NotFound; }
 		ScratchEnd(scratch);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		ScratchBegin(scratch);
 		Str8 filePathNt = AllocStrAndCopy(scratch, filePath.length, filePath.chars, true);
@@ -1414,7 +1414,11 @@ PEXP Result OsGetFileWriteTime(FilePath filePath, OsFileWriteTime* timeOut)
 		if (timeOut != nullptr)
 		{
 			ClearPointer(timeOut);
+			#if TARGET_IS_OSX
+			timeOut->timeSpec = statStruct.st_mtimespec;
+			#else
 			timeOut->timeSpec = statStruct.st_mtim;
+			#endif
 		}
 		result = Result_Success;
 	}
@@ -1439,7 +1443,7 @@ PEXPI i32 OsCompareFileWriteTime(OsFileWriteTime left, OsFileWriteTime right)
 		else if (leftTime.QuadPart < rightTime.QuadPart) { return -1; }
 		else { return 0; }
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_ANDROID)
+	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
 	{
 		if (left.timeSpec.tv_sec > right.timeSpec.tv_sec) { return 1; }
 		else if (left.timeSpec.tv_sec < right.timeSpec.tv_sec) { return -1; }
