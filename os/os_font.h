@@ -221,6 +221,9 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		result = Result_Success;
 	}
 	#elif TARGET_IS_OSX
+	UNUSED(fontSize);
+	UNUSED(bold); //TODO: How do we incorporate bold/italic into our search?
+	UNUSED(italic);
 	@autoreleasepool
 	{
 		ScratchBegin1(scratch, arena);

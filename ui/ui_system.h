@@ -1096,6 +1096,8 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 				numGrowableChildren, element->numChildren, PluralEx(numGrowableChildren, "", "ren")
 			);
 		}
+		#else
+		UNUSED(numGrowableChildren);
 		#endif //DEBUG_BUILD
 		
 		if (spaceToDistribute > 0) //grow children
