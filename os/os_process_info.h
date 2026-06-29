@@ -390,16 +390,39 @@ PEXP FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 program
 		
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	// 	//TODO: Implement me!
-	// 	// Normally something like: ~/Library/Application Support/<appname> (where appname is AppID from Info.plist)
-	// 	// Get value of NSApplicationSupportDirectory?
-	// 	// FSRef ref;
-	// 	// OSType folderType = kApplicationSupportFolderType;
-	// 	// FSFindFolder( kUserDomain, folderType, kCreateFolder, &ref );
-	// 	// FSRefMakePath( &ref, (UInt8*)&path, PATH_MAX );
-	// }
+	#elif TARGET_IS_OSX
+	{
+		NSArray* userDomainPaths = NSSearchPathForDirectoriesInDomains(
+			NSApplicationSupportDirectory, //directory
+			NSUserDomainMask, //domainMask
+			YES //expandTilde
+		);
+		if (userDomainPaths == nullptr) { return FilePath_Empty; }
+		
+		// Normally something like: ~/Library/Application Support/<appname> (where appname is AppID from Info.plist)
+		NSString* applicationSupportPath = [userDomainPaths firstObject];
+		if (applicationSupportPath == nil) { return FilePath_Empty; }
+		
+		const char* applicationSupportPathNt = [applicationSupportPath UTF8String];
+		if (applicationSupportPathNt == nullptr || applicationSupportPathNt[0] == '\0') { return FilePath_Empty; }
+		
+		result = PrintInArenaStr(arena, "%s%s%.*s",
+			applicationSupportPathNt,
+			DoesPathHaveTrailingSlash(MakeStr8Nt(applicationSupportPathNt)) ? "" : "/",
+			StrPrint(programName)
+		);
+		
+		if (createFolders)
+		{
+			Result createFolderResult = OsCreateFolder(result, true);
+			if (createFolderResult != Result_Success)
+			{
+				PrintLine_E("Failed to create \"%.*s\"!", StrPrint(result));
+				FreeStr8(arena, &result);
+				return FilePath_Empty;
+			}
+		}
+	}
 	#elif TARGET_IS_ANDROID
 	{
 		AssertMsg(AndroidNativeActivity != nullptr, "You must set AndroidNativeActivity global before calling OsGetSettingsSavePath!");
