@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN_EXE);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/piggen/piggen_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIGGEN_EXE);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArg(&cmd, CL_LINK);
@@ -381,7 +381,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
@@ -416,7 +416,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for OSX...]", FILENAME_PIGGEN);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
@@ -448,11 +448,10 @@ int main(int argc, char* argv[])
 		CliArgs cmd = EMPTY;
 		AddArgNt(&cmd, CLI_QUOTED_ARG, "..");
 		AddArgNt(&cmd, PIGGEN_OUTPUT_FOLDER, FOLDERNAME_GENERATED_CODE "/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/base/base_defines_check.h");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/piggen/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/tools/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/base/base_defines_check.h");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/piggen/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/wasm/std/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/third_party/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/wasm/std/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/.git/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_build/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_scripts/");
@@ -832,7 +831,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			AddArg(&cmd, CL_COMPILE);
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/ui/ui_imgui_main.cpp");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/ui/ui_imgui_main.cpp");
 			AddArgNt(&cmd, CL_OBJ_FILE, FILENAME_IMGUI_OBJ);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			
@@ -853,7 +852,7 @@ int main(int argc, char* argv[])
 			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArg(&cmd, CLANG_COMPILE);
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/ui/ui_imgui_main.cpp");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/ui/ui_imgui_main.cpp");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_IMGUI_O);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			
@@ -904,7 +903,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			AddArg(&cmd, CL_COMPILE);
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/phys/phys_physx_capi_main.cpp");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/phys/phys_physx_capi_main.cpp");
 			AddArgNt(&cmd, CL_OBJ_FILE, FILENAME_PHYSX_OBJ);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArg(&cmd, CL_LINK);
@@ -969,7 +968,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/dll/dll_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/dll/dll_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIG_CORE_SO);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
@@ -1052,7 +1051,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			AddArgList(&cmd, &pigCoreCompilerFlags);
@@ -1128,7 +1127,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.rootDirPath = StrLit("../..");
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_HTML : FILENAME_APP_WASM);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
@@ -1176,14 +1175,14 @@ int main(int argc, char* argv[])
 			if (!USE_EMSCRIPTEN)
 			{
 				StrArray javascriptFiles = EMPTY;
-				AddStr(&javascriptFiles, StrLit("../../wasm/wasm_globals.js"));
-				AddStr(&javascriptFiles, StrLit("../../wasm/std/include/internal/wasm_std_js_api.js"));
-				AddStr(&javascriptFiles, StrLit("../../wasm/wasm_app_js_api.js"));
-				AddStr(&javascriptFiles, StrLit("../../wasm/wasm_main.js"));
+				AddStr(&javascriptFiles, StrLit("../../src/wasm/wasm_globals.js"));
+				AddStr(&javascriptFiles, StrLit("../../src/wasm/std/include/internal/wasm_std_js_api.js"));
+				AddStr(&javascriptFiles, StrLit("../../src/wasm/wasm_app_js_api.js"));
+				AddStr(&javascriptFiles, StrLit("../../src/wasm/wasm_main.js"));
 				ConcatAllFilesIntoSingleFile(&javascriptFiles, StrLit("combined.js"));
 				
-				CopyFileToPath(StrLit("../../wasm/wasm_app_style.css"), StrLit("main.css"), true);
-				CopyFileToPath(StrLit("../../wasm/wasm_app_index.html"), StrLit("index.html"), true);
+				CopyFileToPath(StrLit("../../src/wasm/wasm_app_style.css"), StrLit("main.css"), true);
+				CopyFileToPath(StrLit("../../src/wasm/wasm_app_index.html"), StrLit("index.html"), true);
 			}
 			
 			chdir("..");
