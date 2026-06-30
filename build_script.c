@@ -285,8 +285,8 @@ int main(int argc, char* argv[])
 	
 	//NOTE: Generated .pb-c.h files contain an #include that doesn't go through "third_party/protobuf_c/" so we add this as an
 	//      include directory explicitly and from there it can find <protobuf-c/protobuf-c.h>
-	AddTaggedArgNt(&pigCoreCompilerFlags, EXE_MSVC_CL "|BUILD_WITH_PROTOBUF", CL_INCLUDE_DIR, "[ROOT]/third_party/protobuf_c");
-	AddTaggedArgNt(&pigCoreCompilerFlags, EXE_CLANG "|BUILD_WITH_PROTOBUF", CLANG_INCLUDE_DIR, "[ROOT]/third_party/protobuf_c");
+	AddTaggedArgNt(&pigCoreCompilerFlags, EXE_MSVC_CL "|BUILD_WITH_PROTOBUF", CL_INCLUDE_DIR, "[ROOT]/src/third_party/protobuf_c");
+	AddTaggedArgNt(&pigCoreCompilerFlags, EXE_CLANG "|BUILD_WITH_PROTOBUF", CLANG_INCLUDE_DIR, "[ROOT]/src/third_party/protobuf_c");
 	
 	// +--------------------------------------------------------------+
 	// |                   Generate Protobuf Files                    |
@@ -307,7 +307,7 @@ int main(int argc, char* argv[])
 		#endif
 		
 		CliArgs proto_CommonFlags = EMPTY;
-		AddArgNt(&proto_CommonFlags, PROTOC_PLUGIN_EXE_PATH, "[ROOT]/third_party/_tools/linux/protoc-gen-c");
+		AddArgNt(&proto_CommonFlags, PROTOC_PLUGIN_EXE_PATH, "[ROOT]/src/third_party/_tools/linux/protoc-gen-c");
 		AddArgNt(&proto_CommonFlags, PROTOC_ERROR_FORMAT, "msvs");
 		AddArgNt(&proto_CommonFlags, PROTOC_PROTO_PATH, "[ROOT]");
 		
@@ -451,7 +451,7 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/base/base_defines_check.h");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/piggen/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/wasm/std/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/third_party/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/third_party/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/.git/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_build/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_scripts/");
@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
 	CliArgs clang_AndroidShaderObjects[AndroidTargetArchitecture_Count] = EMPTY;
 	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
 	{
-		const char* ignoreList[] = { ".git", "_template", "third_party", "_build" };
+		const char* ignoreList[] = { ".git", "_template", "src/third_party", "_build" };
 		findContext.ignoreListLength = ArrayCount(ignoreList);
 		findContext.ignoreList = (Str*)malloc(sizeof(Str) * findContext.ignoreListLength);
 		for (u64 iIndex = 0; iIndex < findContext.ignoreListLength; iIndex++)
@@ -751,7 +751,7 @@ int main(int argc, char* argv[])
 			PrintLine("[Building %s for Windows...]", FILENAME_TRACY_DLL);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/third_party/tracy/TracyClient.cpp");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/third_party/tracy/TracyClient.cpp");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TRACY_DLL);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArg(&cmd, CL_LINK);
@@ -775,7 +775,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/third_party/tracy/TracyClient.cpp");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/third_party/tracy/TracyClient.cpp");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TRACY_SO);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
@@ -1091,7 +1091,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for OSX...]", FILENAME_TESTS);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.m");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/tests/tests_main.m");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
