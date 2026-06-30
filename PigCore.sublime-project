@@ -2087,6 +2087,7 @@
 		"custom_functions":
 		[
 			"#define ALLOC_FUNC_DEF(functionName)",
+			"#define ARRAY_LIT_AS_SIZE_AND_PNTR(elemType, ...)",
 			"#define AlignOffset(pntr, alignment)",
 			"#define AllocArray(type, arenaPntr, count)",
 			"#define AllocArrayUnaligned(type, arenaPntr, count)",

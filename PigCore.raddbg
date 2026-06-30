@@ -1,4 +1,4 @@
-// raddbg 0.9.24 project file
+// raddbg 0.9.27 project file
 
 recent_file: path: "tests/tests_sokol.c"
 recent_file: path: "gfx/gfx_font_flow.h"
@@ -103,28 +103,8 @@ watch_pin:
   expression: fontSize
   source_location: "tests/tests_sokol.c:489:1"
 }
-debug_info:
-{
-  path: "D:/gamedev/projects/PigCore/_build/tests.pdb"
-  timestamp: 66198485886611
-}
-debug_info:
-{
-  path: "D:/Programs/Gource/SDL2.dll"
-  timestamp: 66082662667000
-}
 type_view:
 {
   type: HMM_Mat2
   expr: "rows($, Columns[0].X, Columns[1].X, Columns[0].Y, Columns[1].Y)"
-}
-debug_info:
-{
-  path: "C:/gamedev/projects/PigCore/build/tests.pdb"
-  timestamp: 66210981161914
-}
-debug_info:
-{
-  path: "D:/gamedev/projects/PigCore/build/tests.pdb"
-  timestamp: 66211833042779
 }

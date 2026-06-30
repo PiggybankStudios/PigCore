@@ -428,8 +428,8 @@ void AppInit(void)
 	Assert(gradientTexture.error == Result_Success);
 	
 	#if TARGET_IS_WINDOWS
-	// testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
-	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("D:/test_sheet_4x4.png"), true);
+	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
+	// testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("D:/test_sheet_4x4.png"), true);
 	#elif TARGET_IS_OSX
 	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/Users/robbitay/test_sheet_2x2.png"), true);
 	#elif TARGET_IS_LINUX
@@ -647,8 +647,8 @@ void AppInit(void)
 	#if TARGET_IS_WINDOWS
 	// FilePath testImagePath = FilePathLit("G:/test.png");
 	// FilePath backgroundImagePath = FilePathLit("G:/test.png");
-	FilePath testImagePath = FilePathLit("D:/test.png");
-	FilePath backgroundImagePath = FilePathLit("D:/test.png");
+	FilePath testImagePath = FilePathLit("G:/test.png");
+	FilePath backgroundImagePath = FilePathLit("G:/test.png");
 	#elif TARGET_IS_LINUX
 	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
 	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test.png");
@@ -1410,8 +1410,8 @@ bool AppFrame(void)
 					
 					UiElemConfig scrollableElem1 = { .id = UiIdLit("ScrollableVert") };
 					scrollableElem1.direction = UiLayoutDir_TopDown;
-					scrollableElem1.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.5f);
-					scrollableElem1.sizing.y = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.8f);
+					scrollableElem1.sizing.x = UI_PERCENT(0.5f);
+					scrollableElem1.sizing.y = UI_PERCENT(0.8f);
 					scrollableElem1.padding.inner = FillV4r(8);
 					// scrollableElem1.padding.outer.Bottom = 64;
 					scrollableElem1.padding.child = 8;
@@ -1430,8 +1430,8 @@ bool AppFrame(void)
 					
 					UiElemConfig scrollableElem2 = { .id = UiIdLit("ScrollableHori") };
 					scrollableElem2.direction = UiLayoutDir_LeftToRight;
-					scrollableElem2.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.2f);
-					scrollableElem2.sizing.y = NEW_STRUCT(UiSizingAxis)UI_EXPAND();
+					scrollableElem2.sizing.x = UI_PERCENT(0.2f);
+					scrollableElem2.sizing.y = UI_EXPAND();
 					scrollableElem2.padding.inner = FillV4r(8);
 					scrollableElem2.padding.child = 8;
 					scrollableElem2.scrolling = NEW_STRUCT(UiScrolling)UI_SCROLL_HORIZONTAL();
@@ -1459,13 +1459,13 @@ bool AppFrame(void)
 					uxx testThemerId = PushUiThemer(&uiContext.themers, TestsUiThemerCallback, nullptr);
 					
 					UiElemConfig greenElem = { .id = UiIdLit("Green"), .color=MonokaiGreen };
-					greenElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.20f);
+					greenElem.sizing.x = UI_PERCENT(0.20f);
 					greenElem.alignment.x = UiAlign_Right;
 					greenElem.alignment.y = UiAlign_Bottom;
 					UIELEM(greenElem) { SIMPLETEXTELEM("Green", false); }
 					
 					UiElemConfig blueElem = { .id = UiIdLit("Blue"), .color=MonokaiBlue };
-					blueElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.10f);
+					blueElem.sizing.x = UI_PERCENT(0.10f);
 					blueElem.alignment.x = UiAlign_Left;
 					blueElem.alignment.y = UiAlign_Top;
 					// blueElem.condition = UiConditionType_MouseLeftClicked;
@@ -1481,7 +1481,7 @@ bool AppFrame(void)
 					}
 					
 					UiElemConfig purpleElem = { .id = UiIdLit("Purple"), .color=MonokaiPurple };
-					purpleElem.sizing.x = NEW_STRUCT(UiSizingAxis)UI_PERCENT(0.60f);
+					purpleElem.sizing.x = UI_PERCENT(0.60f);
 					UIELEM(purpleElem) { SIMPLETEXTELEM("Purple", false); }
 					
 					PopUiThemer(&uiContext.themers, testThemerId);

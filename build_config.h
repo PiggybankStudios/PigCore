@@ -60,7 +60,7 @@ Description:
 #define BUILD_PHYSX_OBJ 0
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
-#define BUILD_PIG_CORE_DLL 0
+#define BUILD_PIG_CORE_DLL 1
 
 // Compiles tests/main.c
 #define BUILD_TESTS       1

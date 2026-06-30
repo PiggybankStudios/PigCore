@@ -273,6 +273,9 @@ int main(int argc, char* argv[])
 	FillPlaydateFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
 	FillOrcaFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, orcaSdkPath);
 	
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL,      CL_INCLUDE_DIR, "[ROOT]");
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_CLANG T_UNIX, CLANG_INCLUDE_DIR, "[ROOT]");
+	
 	//We'll put shader objects, imgui.obj/o, tracy.dll/so, and physx_capi.obj/o into this list
 	CliArgs thingsToLink = EMPTY;
 	
@@ -942,7 +945,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/dll/dll_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/dll/dll_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIG_CORE_DLL);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArg(&cmd, CL_LINK);
@@ -1022,7 +1025,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS_EXE);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/tests/tests_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TESTS_EXE);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArg(&cmd, CL_LINK);

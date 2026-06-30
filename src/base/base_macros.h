@@ -274,6 +274,12 @@ Description:
 // WARNING: The name provided has no effect! It's simply there to help connect Begin/EndBreakableBlock(name) and BreakBlock(name) statements clearly
 #define BreakBlock(optionalName) break
 
+// Sometimes we want to pass an array of elements to a function, but the array length information is lost in the function call so
+// we have to do ArrayCount({ ... }) as a separate parameter and then the array literal { ... }. This means the array literal
+// is going to be duplicated, once to satisfy the ArrayCount macro, and again to pass it as a pointer. This macro helps do that
+// duplication making it feel like we can pass array literals to functions that take a length and pointer
+#define ARRAY_LIT_AS_SIZE_AND_PNTR(elemType, ...) (sizeof((elemType[]){__VA_ARGS__}) / sizeof(elemType)), ((elemType[]){__VA_ARGS__})
+
 // +--------------------------------------------------------------+
 // |                  Platform Dependant Macros                   |
 // +--------------------------------------------------------------+
