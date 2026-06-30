@@ -372,27 +372,26 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, CLI_QUOTED_ARG, "..");
 		AddArgNt(&cmd, PIGGEN_OUTPUT_FOLDER, FOLDERNAME_GENERATED_CODE "/");
 		
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_build/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_data/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_traces/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_media/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/build/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/data/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/traces/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/media/");
 		
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/.git/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_build/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_data/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_media/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/build/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/data/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/media/");
 		
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/base/base_defines_check.h");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/piggen/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/tools/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/third_party/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/wasm/std/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/src/base/base_defines_check.h");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/src/piggen/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/src/third_party/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/src/wasm/std/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/.git/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_build/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_scripts/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_media/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_template/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_fuzzing/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/build/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/scripts/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/media/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/template/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/fuzzing/");
 		
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
 	}

@@ -453,11 +453,11 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/wasm/std/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/src/third_party/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/.git/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_build/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_scripts/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_media/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_template/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/_fuzzing/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/build/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/scripts/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/media/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/template/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/fuzzing/");
 		
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
 	}
@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
 	CliArgs clang_AndroidShaderObjects[AndroidTargetArchitecture_Count] = EMPTY;
 	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
 	{
-		const char* ignoreList[] = { ".git", "_template", "src/third_party", "_build" };
+		const char* ignoreList[] = { ".git", "template", "src/third_party", "build" };
 		findContext.ignoreListLength = ArrayCount(ignoreList);
 		findContext.ignoreList = (Str*)malloc(sizeof(Str) * findContext.ignoreListLength);
 		for (u64 iIndex = 0; iIndex < findContext.ignoreListLength; iIndex++)

@@ -1,4 +1,4 @@
-# `_template` Folder
+# `template` Folder
 This folder contains files meant to be used when creating a new project that uses PigCore.
 
 ## Usage

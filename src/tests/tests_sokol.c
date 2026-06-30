@@ -374,7 +374,7 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 Result TryAttachLocalFontFile(PigFont* font, Str8 fileName, u8 styleFlags)
 {
 	ScratchBegin1(scratch, font->arena);
-	Str8 filePath = JoinStringsInArena(scratch, StrLit("../_fonts/"), fileName, false);
+	Str8 filePath = JoinStringsInArena(scratch, StrLit("../fonts/"), fileName, false);
 	Slice fileContents = Slice_Empty;
 	if (!OsReadBinFile(filePath, scratch, &fileContents)) { ScratchEnd(scratch); return Result_FailedToReadFile; }
 	Result result = TryAttachFontFile(font, fileName, fileContents, styleFlags, true);
