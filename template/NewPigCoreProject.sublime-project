@@ -1,0 +1,170 @@
+{
+	"folders":
+	[
+		{
+			"name": "Root",
+			"path": ".",
+			"folder_exclude_patterns": [
+				"_build",
+				"_data",
+				"core",
+				"third_party",
+			],
+			"file_exclude_patterns": [
+				"*.glsl.h",
+				"*.glsl.c",
+			],
+		},
+		{
+			"name": "PigCore",
+			"path": "core",
+			"folder_exclude_patterns": [
+				"_build",
+				"_media",
+				"_template",
+				"third_party",
+				"wasm",
+				"tests",
+			],
+			"file_exclude_patterns": [
+				".gitignore",
+				"*.sublime-project",
+				"*.sublime-workspace",
+				"NOTES.todo",
+				"LICENSE.txt",
+				"README.md",
+				"*.rdbg",
+				"build.bat",
+				"build.sh",
+				"build_config.h",
+				"build_script.c",
+			],
+		},
+		{
+			"name": "Stb",
+			"path": "core/third_party/stb",
+			"file_include_patterns": [
+				"stb_image.h",
+				"stb_image_write.h",
+				"stb_rect_pack.h",
+				"stb_sprintf.h",
+				"stb_truetype.h",
+				"stb_vorbis.h",
+			],
+		},
+		{
+			"name": "raylib",
+			"path": "core/third_party/raylib",
+			"file_exclude_patterns": [
+				"LICENSE",
+				"README.md",
+			],
+		},
+		{
+			"name": "Box2D",
+			"path": "core/third_party/box2d",
+			"file_exclude_patterns": [
+				"LICENSE",
+			],
+		},
+		{
+			"name": "Sokol",
+			"path": "core/third_party/sokol",
+			"folder_exclude_patterns": [
+				".github",
+				"tests",
+			],
+			"file_exclude_patterns": [
+				".gitignore",
+				".editorconfig",
+				"LICENSE",
+				"README.md",
+			],
+		},
+		{
+			"name": "HandmadeMath",
+			"path": "core/third_party/handmade_math",
+			"file_exclude_patterns": [
+				"LICENSE",
+				"README.md",
+			],
+		},
+		{
+			"name": "meow_hash",
+			"path": "core/third_party/meow_hash",
+			"file_exclude_patterns": [
+				"LICENSE",
+				"README.md",
+			],
+		},
+		{
+			"name": "cgltf",
+			"path": "core/third_party/cgltf",
+			"folder_exclude_patterns": [
+				".github",
+				"fuzz",
+				"test",
+			],
+			"file_exclude_patterns": [
+				"LICENSE",
+				"README.md",
+			],
+		},
+		{
+			"name": "Clay",
+			"path": "core/third_party/clay",
+			"folder_exclude_patterns": [
+				".github",
+				"bindings",
+				"cmake",
+			],
+			"file_exclude_patterns": [
+				".dockerignore",
+				".gitignore",
+				"CMakeLists.txt",
+				"LICENSE.md",
+				"README.md",
+			],
+		},
+		{
+			"name": "cimgui",
+			"path": "core/third_party/cimgui",
+		},
+		{
+			"name": "Dear ImGui",
+			"path": "core/third_party/imgui",
+		},
+	],
+	"settings":
+	{
+		"build_options":
+		[
+		],
+		"custom_constants":
+		[
+			"BUILDING_AS_DLL",
+			"BUILD_GAME_DLL",
+			"BUILD_GAME_EXE",
+			"BUILD_INTO_SINGLE_UNIT",
+			"BUILD_PIGGEN_IF_NEEDED",
+			"BUILD_PIG_CORE_LIB",
+			"BUILD_PIG_CORE_LIB_IF_NEEDED",
+			"COPY_TO_DATA_DIRECTORY",
+			"PIG_CORE_BUILDING_AS_DLL",
+			"PIG_CORE_IMPLEMENTATION",
+			"PIG_CORE_INLINE",
+		],
+		"custom_functions":
+		[
+			"Result OsLoadDll(FilePath path, OsDll* dllOut)",
+			"Result TryParseImageFile(Slice fileContents, Arena* arena, ImageData* imageDataOut)",
+		],
+		"custom_globals":
+		[
+		],
+		"custom_types":
+		[
+			"OsDll",
+		],
+	},
+}
