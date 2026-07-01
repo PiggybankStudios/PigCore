@@ -6,6 +6,9 @@ third_party/ode/
 third_party/_lib_debug/old
 third_party/_lib_release/old
 
+*.raddbg
+*.rdbg
+
 fuzzing/c_tokenizer_corpus/*
 !fuzzing/c_tokenizer_corpus/*.c
 
