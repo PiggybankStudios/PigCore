@@ -65,19 +65,19 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 			ImGuiIO_AddMouseWheelEvent(imgui->io, input->mouse->scrollDelta.X * IMGUI_MOUSE_SCROLL_SCALE, input->mouse->scrollDelta.Y * IMGUI_MOUSE_SCROLL_SCALE);
 		}
 		
-		if (IsMouseBtnPressed(input->mouse, MouseBtn_Left)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 0, true); }
-		if (IsMouseBtnReleased(input->mouse, MouseBtn_Left)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 0, false); }
-		if (IsMouseBtnPressed(input->mouse, MouseBtn_Right)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 1, true); }
-		if (IsMouseBtnReleased(input->mouse, MouseBtn_Right)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 1, false); }
-		if (IsMouseBtnPressed(input->mouse, MouseBtn_Middle)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 2, true); }
-		if (IsMouseBtnReleased(input->mouse, MouseBtn_Middle)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 2, false); }
+		if (IsMouseBtnPressed(input->mouse, nullptr, MouseBtn_Left)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 0, true); }
+		if (IsMouseBtnReleased(input->mouse, nullptr, MouseBtn_Left)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 0, false); }
+		if (IsMouseBtnPressed(input->mouse, nullptr, MouseBtn_Right)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 1, true); }
+		if (IsMouseBtnReleased(input->mouse, nullptr, MouseBtn_Right)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 1, false); }
+		if (IsMouseBtnPressed(input->mouse, nullptr, MouseBtn_Middle)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 2, true); }
+		if (IsMouseBtnReleased(input->mouse, nullptr, MouseBtn_Middle)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 2, false); }
 	}
 	
 	if (!input->isTyping)
 	{
-		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Ctrl, IsKeyboardKeyDown(input->keyboard, Key_Control));
-		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Alt, IsKeyboardKeyDown(input->keyboard, Key_Alt));
-		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Shift, IsKeyboardKeyDown(input->keyboard, Key_Shift));
+		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Ctrl, IsKeyboardKeyDown(input->keyboard, nullptr, Key_Control));
+		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Alt, IsKeyboardKeyDown(input->keyboard, nullptr, Key_Alt));
+		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Shift, IsKeyboardKeyDown(input->keyboard, nullptr, Key_Shift));
 		
 		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++)
 		{
@@ -85,8 +85,8 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 			ImGuiKey imKey = GetImGuiKey(key);
 			if (imKey != ImGuiKey_None)
 			{
-				if (IsKeyboardKeyPressed(input->keyboard, key, false)) { ImGuiIO_AddKeyEvent(imgui->io, imKey, true); }
-				if (IsKeyboardKeyReleased(input->keyboard, key)) { ImGuiIO_AddKeyEvent(imgui->io, imKey, false); }
+				if (IsKeyboardKeyPressed(input->keyboard, nullptr, key, false)) { ImGuiIO_AddKeyEvent(imgui->io, imKey, true); }
+				if (IsKeyboardKeyReleased(input->keyboard, nullptr, key)) { ImGuiIO_AddKeyEvent(imgui->io, imKey, false); }
 			}
 		}
 		

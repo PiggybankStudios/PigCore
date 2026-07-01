@@ -33,16 +33,16 @@ void RunRaylibTests()
 	{
 		#if RAYLIB_3D
 		Camera3D camera = ZEROED;
-		camera.position = NewVector3(1, 2, -10);
-		camera.target = NewVector3(0, 0, 0);
+		camera.position = rlMakeVector3(1, 2, -10);
+		camera.target = rlMakeVector3(0, 0, 0);
 		camera.up = Vector3FromV3(V3_Up);
 		camera.fovy = 60; //ToDegrees32(QuarterPi32);
 		camera.projection = CAMERA_PERSPECTIVE;
 	    DisableCursor();
 		#else
 		Camera2D camera = ZEROED;
-		camera.target = NewVector2((r32)GetRenderWidth()/2, (r32)GetRenderHeight()/2);
-		camera.offset = NewVector2((r32)GetRenderWidth()/2, (r32)GetRenderHeight()/2);
+		camera.target = rlMakeVector2((r32)GetRenderWidth()/2, (r32)GetRenderHeight()/2);
+		camera.offset = rlMakeVector2((r32)GetRenderWidth()/2, (r32)GetRenderHeight()/2);
 		camera.rotation = 0;
 		camera.zoom = 1.0f;
 		#endif

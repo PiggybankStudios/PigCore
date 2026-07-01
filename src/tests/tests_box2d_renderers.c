@@ -196,7 +196,7 @@ void DebugBox2d_Sokol_DrawSolidPolygon(b2Transform transform, const b2Vec2* vert
 		r32 width = LengthV2(Sub(verticesV2[1], verticesV2[0]));
 		r32 height = LengthV2(Sub(verticesV2[3], verticesV2[0]));
 		r32 rotation = AtanR32(verticesV2[1].Y - verticesV2[0].Y, verticesV2[1].X - verticesV2[0].X);
-		DrawObb2(NewObb2(center.X, center.Y, width, height, rotation), Color32FromB2HexColor(color));
+		DrawObb2(MakeObb2(center.X, center.Y, width, height, rotation), Color32FromB2HexColor(color));
 	}
 	else
 	{

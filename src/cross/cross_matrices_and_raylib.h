@@ -14,11 +14,11 @@ NOTE: This file may need to be included manually if you include raylib.h AFTER i
 
 //TODO: We need to double check column-major vs row-major ordering of Raylib's Matrix struct!
 
-#define rlMakeMatrix(r0c0, r1c0, r2c0, r3c0, r0c1, r1c1, r2c1, r3c1, r0c2, r1c2, r2c2, r3c2, r0c3, r1c3, r2c3, r3c3) return NEW_STRUCT(Matrix) { \
-	.m0=(r0c0), .m1=(r1c0), .m2=(r2c0), .m3=(r3c0),                                                                                              \
-	.m4=(r0c1), .m5=(r1c1), .m6=(r2c1), .m7=(r3c1),                                                                                              \
-	.m8=(r0c2), .m9=(r1c2), .m10=(r2c2), .m11=(r3c2),                                                                                            \
-	.m12=(r0c3), .m13=(r1c3), .m14=(r2c3), .m15=(r3c3)                                                                                           \
+#define rlMakeMatrix(r0c0, r1c0, r2c0, r3c0, r0c1, r1c1, r2c1, r3c1, r0c2, r1c2, r2c2, r3c2, r0c3, r1c3, r2c3, r3c3) NEW_STRUCT(Matrix) { \
+	.m0=(r0c0), .m1=(r1c0), .m2=(r2c0), .m3=(r3c0),                                                                                       \
+	.m4=(r0c1), .m5=(r1c1), .m6=(r2c1), .m7=(r3c1),                                                                                       \
+	.m8=(r0c2), .m9=(r1c2), .m10=(r2c2), .m11=(r3c2),                                                                                     \
+	.m12=(r0c3), .m13=(r1c3), .m14=(r2c3), .m15=(r3c3)                                                                                    \
 }
 
 #if !PIG_CORE_IMPLEMENTATION
