@@ -40,6 +40,8 @@ Description:
 #include "std/std_math_ex.h"
 #include "std/std_trig.h"
 
+//TODO: Add C++ overloads for casting between various vector types? (with "explicit" keyword)
+
 //NOTE: About curly-bracket initialization in C/C++
 //      Both C and C++ have support for curly-bracket syntax when initializing a struct to some value.
 //      However their syntax support and generated code differs wildly since C++ calls a constructor for the struct (which is really a class) and for each member
@@ -844,7 +846,164 @@ PEXPI v4r ToV4rFromOcColor(oc_color orcaColor) { return MakeV4r(orcaColor.r, orc
 #endif //TARGET_IS_ORCA
 
 // +--------------------------------------------------------------+
-// |                Operator Overload Equivalents                 |
+// |                    C++ Operator Overloads                    |
+// +--------------------------------------------------------------+
+#if LANGUAGE_IS_CPP
+
+PEXPI v2  operator+(v2  left, v2  right) { v2  result; result.x = left.x + right.x; result.y = left.y + right.y; return result; }
+PEXPI v3  operator+(v3  left, v3  right) { v3  result; result.x = left.x + right.x; result.y = left.y + right.y; result.z = left.z + right.z; return result; }
+PEXPI v4  operator+(v4  left, v4  right) { v4  result; result.x = left.x + right.x; result.y = left.y + right.y; result.z = left.z + right.z; result.w = left.w + right.w; return result; }
+PEXPI v2i operator+(v2i left, v2i right) { v2i result; result.x = left.x + right.x; result.y = left.y + right.y; return result; }
+PEXPI v3i operator+(v3i left, v3i right) { v3i result; result.x = left.x + right.x; result.y = left.y + right.y; result.z = left.z + right.z; return result; }
+PEXPI v4i operator+(v4i left, v4i right) { v4i result; result.x = left.x + right.x; result.y = left.y + right.y; result.z = left.z + right.z; result.w = left.w + right.w; return result; }
+PEXPI v2d operator+(v2d left, v2d right) { v2d result; result.x = left.x + right.x; result.y = left.y + right.y; return result; }
+PEXPI v3d operator+(v3d left, v3d right) { v3d result; result.x = left.x + right.x; result.y = left.y + right.y; result.z = left.z + right.z; return result; }
+PEXPI v4d operator+(v4d left, v4d right) { v4d result; result.x = left.x + right.x; result.y = left.y + right.y; result.z = left.z + right.z; result.w = left.w + right.w; return result; }
+
+PEXPI v2  operator+=(v2&  left, v2  right) { return left = left + right; }
+PEXPI v3  operator+=(v3&  left, v3  right) { return left = left + right; }
+PEXPI v4  operator+=(v4&  left, v4  right) { return left = left + right; }
+PEXPI v2i operator+=(v2i& left, v2i right) { return left = left + right; }
+PEXPI v3i operator+=(v3i& left, v3i right) { return left = left + right; }
+PEXPI v4i operator+=(v4i& left, v4i right) { return left = left + right; }
+PEXPI v2d operator+=(v2d& left, v2d right) { return left = left + right; }
+PEXPI v3d operator+=(v3d& left, v3d right) { return left = left + right; }
+PEXPI v4d operator+=(v4d& left, v4d right) { return left = left + right; }
+
+PEXPI v2  operator-(v2  left, v2  right) { v2  result; result.x = left.x - right.x; result.y = left.y - right.y; return result; }
+PEXPI v3  operator-(v3  left, v3  right) { v3  result; result.x = left.x - right.x; result.y = left.y - right.y; result.z = left.z - right.z; return result; }
+PEXPI v4  operator-(v4  left, v4  right) { v4  result; result.x = left.x - right.x; result.y = left.y - right.y; result.z = left.z - right.z; result.w = left.w - right.w; return result; }
+PEXPI v2i operator-(v2i left, v2i right) { v2i result; result.x = left.x - right.x; result.y = left.y - right.y; return result; }
+PEXPI v3i operator-(v3i left, v3i right) { v3i result; result.x = left.x - right.x; result.y = left.y - right.y; result.z = left.z - right.z; return result; }
+PEXPI v4i operator-(v4i left, v4i right) { v4i result; result.x = left.x - right.x; result.y = left.y - right.y; result.z = left.z - right.z; result.w = left.w - right.w; return result; }
+PEXPI v2d operator-(v2d left, v2d right) { v2d result; result.x = left.x - right.x; result.y = left.y - right.y; return result; }
+PEXPI v3d operator-(v3d left, v3d right) { v3d result; result.x = left.x - right.x; result.y = left.y - right.y; result.z = left.z - right.z; return result; }
+PEXPI v4d operator-(v4d left, v4d right) { v4d result; result.x = left.x - right.x; result.y = left.y - right.y; result.z = left.z - right.z; result.w = left.w - right.w; return result; }
+
+PEXPI v2  operator-=(v2&  left, v2  right) { return left = left - right; }
+PEXPI v3  operator-=(v3&  left, v3  right) { return left = left - right; }
+PEXPI v4  operator-=(v4&  left, v4  right) { return left = left - right; }
+PEXPI v2i operator-=(v2i& left, v2i right) { return left = left - right; }
+PEXPI v3i operator-=(v3i& left, v3i right) { return left = left - right; }
+PEXPI v4i operator-=(v4i& left, v4i right) { return left = left - right; }
+PEXPI v2d operator-=(v2d& left, v2d right) { return left = left - right; }
+PEXPI v3d operator-=(v3d& left, v3d right) { return left = left - right; }
+PEXPI v4d operator-=(v4d& left, v4d right) { return left = left - right; }
+
+PEXPI v2  operator*(v2  left, v2  right) { v2  result; result.x = left.x * right.x; result.y = left.y * right.y; return result; }
+PEXPI v3  operator*(v3  left, v3  right) { v3  result; result.x = left.x * right.x; result.y = left.y * right.y; result.z = left.z * right.z; return result; }
+PEXPI v4  operator*(v4  left, v4  right) { v4  result; result.x = left.x * right.x; result.y = left.y * right.y; result.z = left.z * right.z; result.w = left.w * right.w; return result; }
+PEXPI v2i operator*(v2i left, v2i right) { v2i result; result.x = left.x * right.x; result.y = left.y * right.y; return result; }
+PEXPI v3i operator*(v3i left, v3i right) { v3i result; result.x = left.x * right.x; result.y = left.y * right.y; result.z = left.z * right.z; return result; }
+PEXPI v4i operator*(v4i left, v4i right) { v4i result; result.x = left.x * right.x; result.y = left.y * right.y; result.z = left.z * right.z; result.w = left.w * right.w; return result; }
+PEXPI v2d operator*(v2d left, v2d right) { v2d result; result.x = left.x * right.x; result.y = left.y * right.y; return result; }
+PEXPI v3d operator*(v3d left, v3d right) { v3d result; result.x = left.x * right.x; result.y = left.y * right.y; result.z = left.z * right.z; return result; }
+PEXPI v4d operator*(v4d left, v4d right) { v4d result; result.x = left.x * right.x; result.y = left.y * right.y; result.z = left.z * right.z; result.w = left.w * right.w; return result; }
+
+PEXPI v2  operator*=(v2&  left, v2  right) { return left = left * right; }
+PEXPI v3  operator*=(v3&  left, v3  right) { return left = left * right; }
+PEXPI v4  operator*=(v4&  left, v4  right) { return left = left * right; }
+PEXPI v2i operator*=(v2i& left, v2i right) { return left = left * right; }
+PEXPI v3i operator*=(v3i& left, v3i right) { return left = left * right; }
+PEXPI v4i operator*=(v4i& left, v4i right) { return left = left * right; }
+PEXPI v2d operator*=(v2d& left, v2d right) { return left = left * right; }
+PEXPI v3d operator*=(v3d& left, v3d right) { return left = left * right; }
+PEXPI v4d operator*=(v4d& left, v4d right) { return left = left * right; }
+
+PEXPI v2  operator/(v2  left, v2  right) { v2  result; result.x = left.x / right.x; result.y = left.y / right.y; return result; }
+PEXPI v3  operator/(v3  left, v3  right) { v3  result; result.x = left.x / right.x; result.y = left.y / right.y; result.z = left.z / right.z; return result; }
+PEXPI v4  operator/(v4  left, v4  right) { v4  result; result.x = left.x / right.x; result.y = left.y / right.y; result.z = left.z / right.z; result.w = left.w / right.w; return result; }
+PEXPI v2i operator/(v2i left, v2i right) { v2i result; result.x = left.x / right.x; result.y = left.y / right.y; return result; }
+PEXPI v3i operator/(v3i left, v3i right) { v3i result; result.x = left.x / right.x; result.y = left.y / right.y; result.z = left.z / right.z; return result; }
+PEXPI v4i operator/(v4i left, v4i right) { v4i result; result.x = left.x / right.x; result.y = left.y / right.y; result.z = left.z / right.z; result.w = left.w / right.w; return result; }
+PEXPI v2d operator/(v2d left, v2d right) { v2d result; result.x = left.x / right.x; result.y = left.y / right.y; return result; }
+PEXPI v3d operator/(v3d left, v3d right) { v3d result; result.x = left.x / right.x; result.y = left.y / right.y; result.z = left.z / right.z; return result; }
+PEXPI v4d operator/(v4d left, v4d right) { v4d result; result.x = left.x / right.x; result.y = left.y / right.y; result.z = left.z / right.z; result.w = left.w / right.w; return result; }
+
+PEXPI v2  operator/=(v2&  left, v2  right) { return left = left / right; }
+PEXPI v3  operator/=(v3&  left, v3  right) { return left = left / right; }
+PEXPI v4  operator/=(v4&  left, v4  right) { return left = left / right; }
+PEXPI v2i operator/=(v2i& left, v2i right) { return left = left / right; }
+PEXPI v3i operator/=(v3i& left, v3i right) { return left = left / right; }
+PEXPI v4i operator/=(v4i& left, v4i right) { return left = left / right; }
+PEXPI v2d operator/=(v2d& left, v2d right) { return left = left / right; }
+PEXPI v3d operator/=(v3d& left, v3d right) { return left = left / right; }
+PEXPI v4d operator/=(v4d& left, v4d right) { return left = left / right; }
+
+PEXPI v2  operator*(v2  vector, r32 scalar) { v2  result; result.x = vector.x * scalar; result.y = vector.y * scalar; return result; }
+PEXPI v3  operator*(v3  vector, r32 scalar) { v3  result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; return result; }
+PEXPI v4  operator*(v4  vector, r32 scalar) { v4  result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; result.w = vector.w * scalar; return result; }
+PEXPI v2i operator*(v2i vector, i32 scalar) { v2i result; result.x = vector.x * scalar; result.y = vector.y * scalar; return result; }
+PEXPI v3i operator*(v3i vector, i32 scalar) { v3i result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; return result; }
+PEXPI v4i operator*(v4i vector, i32 scalar) { v4i result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; result.w = vector.w * scalar; return result; }
+PEXPI v2d operator*(v2d vector, i32 scalar) { v2d result; result.x = vector.x * scalar; result.y = vector.y * scalar; return result; }
+PEXPI v3d operator*(v3d vector, i32 scalar) { v3d result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; return result; }
+PEXPI v4d operator*(v4d vector, i32 scalar) { v4d result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; result.w = vector.w * scalar; return result; }
+
+PEXPI v2  operator*=(v2&  vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v3  operator*=(v3&  vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v4  operator*=(v4&  vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v2i operator*=(v2i& vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v3i operator*=(v3i& vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v4i operator*=(v4i& vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v2d operator*=(v2d& vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v3d operator*=(v3d& vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v4d operator*=(v4d& vector, r32 scalar) { return vector = vector * scalar; }
+
+PEXPI v2  operator/(v2  vector, r32 scalar) { v2  result; result.x = vector.x / scalar; result.y = vector.y / scalar; return result; }
+PEXPI v3  operator/(v3  vector, r32 scalar) { v3  result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; return result; }
+PEXPI v4  operator/(v4  vector, r32 scalar) { v4  result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; result.w = vector.w / scalar; return result; }
+PEXPI v2i operator/(v2i vector, i32 scalar) { v2i result; result.x = vector.x / scalar; result.y = vector.y / scalar; return result; }
+PEXPI v3i operator/(v3i vector, i32 scalar) { v3i result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; return result; }
+PEXPI v4i operator/(v4i vector, i32 scalar) { v4i result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; result.w = vector.w / scalar; return result; }
+PEXPI v2d operator/(v2d vector, i32 scalar) { v2d result; result.x = vector.x / scalar; result.y = vector.y / scalar; return result; }
+PEXPI v3d operator/(v3d vector, i32 scalar) { v3d result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; return result; }
+PEXPI v4d operator/(v4d vector, i32 scalar) { v4d result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; result.w = vector.w / scalar; return result; }
+
+PEXPI v2  operator/=(v2&  vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v3  operator/=(v3&  vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v4  operator/=(v4&  vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v2i operator/=(v2i& vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v3i operator/=(v3i& vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v4i operator/=(v4i& vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v2d operator/=(v2d& vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v3d operator/=(v3d& vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v4d operator/=(v4d& vector, r32 scalar) { return vector = vector / scalar; }
+
+PEXPI v2  operator-(v2  vector) { v2  result; result.x = -vector.x; result.y = -vector.y; return result; }
+PEXPI v3  operator-(v3  vector) { v3  result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; return result; }
+PEXPI v4  operator-(v4  vector) { v4  result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; result.w = -vector.w; return result; }
+PEXPI v2i operator-(v2i vector) { v2i result; result.x = -vector.x; result.y = -vector.y; return result; }
+PEXPI v3i operator-(v3i vector) { v3i result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; return result; }
+PEXPI v4i operator-(v4i vector) { v4i result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; result.w = -vector.w; return result; }
+PEXPI v2d operator-(v2d vector) { v2d result; result.x = -vector.x; result.y = -vector.y; return result; }
+PEXPI v3d operator-(v3d vector) { v3d result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; return result; }
+PEXPI v4d operator-(v4d vector) { v4d result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; result.w = -vector.w; return result; }
+
+PEXPI v2  operator==(v2  left, v2  right) { return (left.x == right.x && left.y == right.y); }
+PEXPI v3  operator==(v3  left, v3  right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
+PEXPI v4  operator==(v4  left, v4  right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
+PEXPI v2i operator==(v2i left, v2i right) { return (left.x == right.x && left.y == right.y); }
+PEXPI v3i operator==(v3i left, v3i right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
+PEXPI v4i operator==(v4i left, v4i right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
+PEXPI v2d operator==(v2d left, v2d right) { return (left.x == right.x && left.y == right.y); }
+PEXPI v3d operator==(v3d left, v3d right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
+PEXPI v4d operator==(v4d left, v4d right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
+
+PEXPI v2  operator!=(v2  left, v2  right) { return (left.x != right.x && left.y != right.y); }
+PEXPI v3  operator!=(v3  left, v3  right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
+PEXPI v4  operator!=(v4  left, v4  right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
+PEXPI v2i operator!=(v2i left, v2i right) { return (left.x != right.x && left.y != right.y); }
+PEXPI v3i operator!=(v3i left, v3i right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
+PEXPI v4i operator!=(v4i left, v4i right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
+PEXPI v2d operator!=(v2d left, v2d right) { return (left.x != right.x && left.y != right.y); }
+PEXPI v3d operator!=(v3d left, v3d right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
+PEXPI v4d operator!=(v4d left, v4d right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
+
+#endif //LANGUAGE_IS_CPP
+
+// +--------------------------------------------------------------+
+// |               Operator Overload C Equivalents                |
 // +--------------------------------------------------------------+
 PEXPI v2   AddV2(v2  left, v2  right) { v2 result;  result.x = left.x + right.x; result.y = left.y + right.y; return result; }
 PEXPI v3   AddV3(v3  left, v3  right) { v3 result;  result.x = left.x + right.x; result.y = left.y + right.y; result.z = left.z + right.z; return result; }
