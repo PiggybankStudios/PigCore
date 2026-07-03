@@ -980,25 +980,25 @@ PEXPI v2d operator-(v2d vector) { v2d result; result.x = -vector.x; result.y = -
 PEXPI v3d operator-(v3d vector) { v3d result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; return result; }
 PEXPI v4d operator-(v4d vector) { v4d result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; result.w = -vector.w; return result; }
 
-PEXPI v2  operator==(v2  left, v2  right) { return (left.x == right.x && left.y == right.y); }
-PEXPI v3  operator==(v3  left, v3  right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
-PEXPI v4  operator==(v4  left, v4  right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
-PEXPI v2i operator==(v2i left, v2i right) { return (left.x == right.x && left.y == right.y); }
-PEXPI v3i operator==(v3i left, v3i right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
-PEXPI v4i operator==(v4i left, v4i right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
-PEXPI v2d operator==(v2d left, v2d right) { return (left.x == right.x && left.y == right.y); }
-PEXPI v3d operator==(v3d left, v3d right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
-PEXPI v4d operator==(v4d left, v4d right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
+PEXPI bool operator==(v2  left, v2  right) { return (left.x == right.x && left.y == right.y); }
+PEXPI bool operator==(v3  left, v3  right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
+PEXPI bool operator==(v4  left, v4  right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
+PEXPI bool operator==(v2i left, v2i right) { return (left.x == right.x && left.y == right.y); }
+PEXPI bool operator==(v3i left, v3i right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
+PEXPI bool operator==(v4i left, v4i right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
+PEXPI bool operator==(v2d left, v2d right) { return (left.x == right.x && left.y == right.y); }
+PEXPI bool operator==(v3d left, v3d right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
+PEXPI bool operator==(v4d left, v4d right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
 
-PEXPI v2  operator!=(v2  left, v2  right) { return (left.x != right.x && left.y != right.y); }
-PEXPI v3  operator!=(v3  left, v3  right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
-PEXPI v4  operator!=(v4  left, v4  right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
-PEXPI v2i operator!=(v2i left, v2i right) { return (left.x != right.x && left.y != right.y); }
-PEXPI v3i operator!=(v3i left, v3i right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
-PEXPI v4i operator!=(v4i left, v4i right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
-PEXPI v2d operator!=(v2d left, v2d right) { return (left.x != right.x && left.y != right.y); }
-PEXPI v3d operator!=(v3d left, v3d right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
-PEXPI v4d operator!=(v4d left, v4d right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
+PEXPI bool operator!=(v2  left, v2  right) { return (left.x != right.x && left.y != right.y); }
+PEXPI bool operator!=(v3  left, v3  right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
+PEXPI bool operator!=(v4  left, v4  right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
+PEXPI bool operator!=(v2i left, v2i right) { return (left.x != right.x && left.y != right.y); }
+PEXPI bool operator!=(v3i left, v3i right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
+PEXPI bool operator!=(v4i left, v4i right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
+PEXPI bool operator!=(v2d left, v2d right) { return (left.x != right.x && left.y != right.y); }
+PEXPI bool operator!=(v3d left, v3d right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
+PEXPI bool operator!=(v4d left, v4d right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
 
 #endif //LANGUAGE_IS_CPP
 
