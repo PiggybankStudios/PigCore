@@ -171,7 +171,7 @@ car Vector2_I32
 	plex { i32 width, height; };
 	plex { i32 hori, vert; };
 	#if LANGUAGE_IS_CPP
-	inline r32& operator[](const int& elemIndex) { return elem[elemIndex]; }
+	inline i32& operator[](const int& elemIndex) { return elem[elemIndex]; }
 	#endif
 };
 #define MakeV2i_Const(X, Y)   { .x=(X), .y=(Y) }
@@ -195,7 +195,7 @@ car Vector3_I32
 	plex { Vector2_I32 rg; i32 _unused5; };
 	plex { i32 _unused6; Vector2_I32 gb; };
 	#if LANGUAGE_IS_CPP
-	inline r32& operator[](const int& elemIndex) { return elem[elemIndex]; }
+	inline i32& operator[](const int& elemIndex) { return elem[elemIndex]; }
 	#endif
 };
 #define MakeV3i_Const(X, Y, Z)  { .x=(X), .y=(Y), .z=(Z) }
@@ -220,7 +220,7 @@ car Vector4_I32
 	plex { Vector2_I32 rg, ba; };
 	plex { i32 _unused7; Vector2_I32 gb; i32 _unused8; };
 	#if LANGUAGE_IS_CPP
-	inline r32& operator[](const int& elemIndex) { return elem[elemIndex]; }
+	inline i32& operator[](const int& elemIndex) { return elem[elemIndex]; }
 	#endif
 };
 #define MakeV4i_Const(X, Y, Z, W)  { .x=(X), .y=(Y), .z=(Z), .w=(W) }
@@ -239,7 +239,7 @@ car Vector2_R64
 	plex { r64 lon, lat; };
 	plex { r64 longitude, latitude; };
 	#if LANGUAGE_IS_CPP
-	inline r32& operator[](const int& elemIndex) { return elem[elemIndex]; }
+	inline r64& operator[](const int& elemIndex) { return elem[elemIndex]; }
 	#endif
 };
 #define MakeV2d_Const(X, Y)   { .x=(X), .y=(Y) }
@@ -263,7 +263,7 @@ car Vector3_R64
 	plex { Vector2_R64 rg; r64 _unused5; };
 	plex { r64 _unused6; Vector2_R64 gb; };
 	#if LANGUAGE_IS_CPP
-	inline r32& operator[](const int& elemIndex) { return elem[elemIndex]; }
+	inline r64& operator[](const int& elemIndex) { return elem[elemIndex]; }
 	#endif
 };
 #define MakeV3d_Const(X, Y, Z)  { .x=(X), .y=(Y), .z=(Z) }
@@ -288,7 +288,7 @@ car Vector4_R64
 	plex { Vector2_R64 rg, ba; };
 	plex { r64 _unused7; Vector2_R64 gb; r64 _unused8; };
 	#if LANGUAGE_IS_CPP
-	inline r32& operator[](const int& elemIndex) { return elem[elemIndex]; }
+	inline r64& operator[](const int& elemIndex) { return elem[elemIndex]; }
 	#endif
 };
 #define MakeV4d_Const(X, Y, Z, W)  { .x=(X), .y=(Y), .z=(Z), .w=(W) }
