@@ -2,8 +2,8 @@
 
 pushd ..
 
-if not exist _data mkdir _data
-pushd _data
+if not exist data mkdir data
+pushd data
 if not exist resources mkdir resources
 pushd resources
 if not exist image mkdir image
@@ -34,13 +34,13 @@ COPY core\template\platform_main.c app\platform_main.c
 COPY core\template\platform_api.c app\platform_api.c
 COPY core\template\main2d_shader.glsl app\main2d_shader.glsl
 COPY core\template\win_resources.rc app\win_resources.rc
-COPY core\template\icon.ico _data\resources\image\icon.ico
-COPY core\template\icon_16.png _data\resources\image\icon_16.png
-COPY core\template\icon_24.png _data\resources\image\icon_24.png
-COPY core\template\icon_32.png _data\resources\image\icon_32.png
-COPY core\template\icon_64.png _data\resources\image\icon_64.png
-COPY core\template\icon_120.png _data\resources\image\icon_120.png
-COPY core\template\icon_256.png _data\resources\image\icon_256.png
+COPY core\template\icon.ico data\resources\image\icon.ico
+COPY core\template\icon_16.png data\resources\image\icon_16.png
+COPY core\template\icon_24.png data\resources\image\icon_24.png
+COPY core\template\icon_32.png data\resources\image\icon_32.png
+COPY core\template\icon_64.png data\resources\image\icon_64.png
+COPY core\template\icon_120.png data\resources\image\icon_120.png
+COPY core\template\icon_256.png data\resources\image\icon_256.png
 
 popd
 
