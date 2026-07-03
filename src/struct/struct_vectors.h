@@ -22,6 +22,10 @@ Description:
 #include "lib/lib_handmade_math.h"
 
 // +--------------------------------------------------------------+
+// |                          Structures                          |
+// +--------------------------------------------------------------+
+
+// +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
 // +--------------------------------------------------------------+
 //NOTE: About curly-bracket initialization in C/C++
@@ -44,17 +48,30 @@ Description:
 //       10. Any macro arguments that are structs need to be NOT surrounded by parenthesis when inside a _Const macro. But we should surround them with parenthesis when inside a non _Const macro
 //       11. We should not mix names overlapping union members. For example we had a bug in Obb2 where we did { .Center=center, .Size=size, .Rotation=rotation } which caused Center and Size to be zeroed out because Rotation is NOT in the same struct as Center and Size so it zeroes out all other members when set
 
-#define MakeV2_Const(x, y)       { .X=(x), .Y=(y) }
+typedef car Vector2_R32 Vector2_R32;
+car Vector2_R32
+{
+	r32 Elements[2];
+	struct { r32 X, Y; };
+	struct { r32 U, V; };
+	struct { r32 Left, Right; };
+	struct { r32 Width, Height; };
+	#if LANGUAGE_IS_CPP
+	inline r32& operator[](const int& elemIndex) { return Elements[elemIndex]; }
+	#endif
+};
+#define MakeV2_Const(x, y)   { .X=(x), .Y=(y) }
+#define MakeV2(x, y)         NEW_STRUCT(Vector2_R32)MakeV2_Const((x), (y))
+#define FillV2_Const(value)  MakeV2_Const((value), (value))
+#define FillV2(value)        MakeV2((value), (value))
+
 #define MakeV3_Const(x, y, z)    { .X=(x), .Y=(y), .Z=(z) }
 #define MakeV4_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define MakeV2(x, y)             NEW_STRUCT(HMM_Vec2)MakeV2_Const((x), (y))
 #define MakeV3(x, y, z)          NEW_STRUCT(HMM_Vec3)MakeV3_Const((x), (y), (z))
 #define MakeV4(x, y, z, w)       NEW_STRUCT(HMM_Vec4)MakeV4_Const((x), (y), (z), (w))
 
-#define FillV2_Const(value)  MakeV2_Const((value), (value))
 #define FillV3_Const(value)  MakeV3_Const((value), (value), (value))
 #define FillV4_Const(value)  MakeV4_Const((value), (value), (value), (value))
-#define FillV2(value)        MakeV2((value), (value))
 #define FillV3(value)        MakeV3((value), (value), (value))
 #define FillV4(value)        MakeV4((value), (value), (value), (value))
 
@@ -85,9 +102,9 @@ car Vec4Raw
 		r32 A;
 	};
 	
-	plex { HMM_Vec2 XY; r32 _Ignored0; r32 _Ignored1; };
-	plex { r32 _Ignored2; HMM_Vec2 YZ; r32 _Ignored3; };
-	plex { r32 _Ignored4; r32 _Ignored5; HMM_Vec2 ZW; };
+	plex { Vector2_R32 XY; r32 _Ignored0; r32 _Ignored1; };
+	plex { r32 _Ignored2; Vector2_R32 YZ; r32 _Ignored3; };
+	plex { r32 _Ignored4; r32 _Ignored5; Vector2_R32 ZW; };
 	
 	plex { r32 Width, Height, Depth, wDepth; };
 	plex { r32 Left, Top, Right, Bottom; }; //NOTE: These aliases are mostly used for UI side parameters (like borderThickness and margins)
@@ -231,7 +248,7 @@ car Vec4R64
 //    'i' suffix refers to "integer" members and implicitly means 32-bit (unsigned and 64-bit integers are not yet supported)
 //    'd' suffix refers to "double" members which are 64-bit (we went with a 'd' suffix instead of something like 'r64' because a single character suffix reads a lot nicer and "double" is a well known word to refer to 64-bit floating point numbers)
 //    'r' suffix refers to "raw", which is the same as normal (r32 members) but without SIMD member so alignment is 4 instead of 16
-typedef HMM_Vec2 v2;
+typedef Vector2_R32 v2;
 typedef Vec2i    v2i;
 typedef Vec2R64  v2d;
 
@@ -251,7 +268,7 @@ typedef plex Vec2Slice Vec2Slice;
 plex Vec2Slice
 {
 	uxx length;
-	car { void* pntr; r32 components; HMM_Vec2* vectors; };
+	car { void* pntr; r32 components; Vector2_R32* vectors; };
 };
 typedef plex Vec2iSlice Vec2iSlice;
 plex Vec2iSlice
@@ -533,31 +550,31 @@ plex Vec4R64Slice
 
 #define ToV4From3(vec3, w) HMM_V4V((vec3), (w))
 
-#define AddV2(left, right) HMM_AddV2((left), (right))
+// #define AddV2(left, right) HMM_AddV2((left), (right))
 #define AddV3(left, right) HMM_AddV3((left), (right))
 #define AddV4(left, right) HMM_AddV4((left), (right))
 
-#define SubV2(left, right) HMM_SubV2((left), (right))
+// #define SubV2(left, right) HMM_SubV2((left), (right))
 #define SubV3(left, right) HMM_SubV3((left), (right))
 #define SubV4(left, right) HMM_SubV4((left), (right))
 
-#define MulV2(left, right) HMM_MulV2((left), (right))
+// #define MulV2(left, right) HMM_MulV2((left), (right))
 #define MulV3(left, right) HMM_MulV3((left), (right))
 #define MulV4(left, right) HMM_MulV4((left), (right))
 
-#define DivV2(left, right) HMM_DivV2((left), (right))
+// #define DivV2(left, right) HMM_DivV2((left), (right))
 #define DivV3(left, right) HMM_DivV3((left), (right))
 #define DivV4(left, right) HMM_DivV4((left), (right))
 
-#define ScaleV2(vec2, scalar) HMM_MulV2F((vec2), (scalar))
+// #define ScaleV2(vec2, scalar) HMM_MulV2F((vec2), (scalar))
 #define ScaleV3(vec3, scalar) HMM_MulV3F((vec3), (scalar))
 #define ScaleV4(vec4, scalar) HMM_MulV4F((vec4), (scalar))
 
-#define ShrinkV2(vec2, divisor) HMM_DivV2F((vec2), (divisor))
+// #define ShrinkV2(vec2, divisor) HMM_DivV2F((vec2), (divisor))
 #define ShrinkV3(vec3, divisor) HMM_DivV3F((vec3), (divisor))
 #define ShrinkV4(vec4, divisor) HMM_DivV4F((vec4), (divisor))
 
-#define AreEqualV2(left, right) HMM_EqV2((left), (right))
+// #define AreEqualV2(left, right) HMM_EqV2((left), (right))
 #define AreEqualV3(left, right) HMM_EqV3((left), (right))
 #define AreEqualV4(left, right) HMM_EqV4((left), (right))
 
@@ -568,25 +585,25 @@ plex Vec4R64Slice
 #define AreSimilarV3d(left, right, tolerance) (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)))
 #define AreSimilarV4d(left, right, tolerance) (AreSimilarR64((left).X, (right).X, (tolerance)) && AreSimilarR64((left).Y, (right).Y, (tolerance)) && AreSimilarR64((left).Z, (right).Z, (tolerance)) && AreSimilarR64((left).W, (right).W, (tolerance)))
 
-#define DotV2(left, right) HMM_DotV2((left), (right))
+// #define DotV2(left, right) HMM_DotV2((left), (right))
 #define DotV3(left, right) HMM_DotV3((left), (right))
 #define DotV4(left, right) HMM_DotV4((left), (right))
 
 #define CrossV3(left, right) HMM_Cross((left), (right))
 
-#define LengthSquaredV2(vec2) HMM_LenSqrV2(vec2)
+// #define LengthSquaredV2(vec2) HMM_LenSqrV2(vec2)
 #define LengthSquaredV3(vec3) HMM_LenSqrV3(vec3)
 #define LengthSquaredV4(vec4) HMM_LenSqrV4(vec4)
 
-#define LengthV2(vec2) HMM_LenV2(vec2)
+// #define LengthV2(vec2) HMM_LenV2(vec2)
 #define LengthV3(vec3) HMM_LenV3(vec3)
 #define LengthV4(vec4) HMM_LenV4(vec4)
 
-#define NormalizeV2(vec2) HMM_NormV2(vec2)
+// #define NormalizeV2(vec2) HMM_NormV2(vec2)
 #define NormalizeV3(vec3) HMM_NormV3(vec3)
 #define NormalizeV4(vec4) HMM_NormV4(vec4)
 
-#define LerpV2(start, end, amount) HMM_LerpV2((start), (amount), (end))
+// #define LerpV2(start, end, amount) HMM_LerpV2((start), (amount), (end))
 #define LerpV3(start, end, amount) HMM_LerpV3((start), (amount), (end))
 #define LerpV4(start, end, amount) HMM_LerpV4((start), (amount), (end))
 
@@ -790,6 +807,7 @@ PEXPI v4r ToV4rFromOcColor(oc_color orcaColor) { return MakeV4r(orcaColor.r, orc
 // +--------------------------------------------------------------+
 // |                Operator Overload Equivalents                 |
 // +--------------------------------------------------------------+
+PEXPI v2   AddV2(v2  left, v2  right) { v2 result;  result.X = left.X + right.X; result.Y = left.Y + right.Y; return result; }
 PEXPI v2i AddV2i(v2i left, v2i right) { v2i result; result.X = left.X + right.X; result.Y = left.Y + right.Y; return result; }
 PEXPI v3i AddV3i(v3i left, v3i right) { v3i result; result.X = left.X + right.X; result.Y = left.Y + right.Y; result.Z = left.Z + right.Z; return result; }
 PEXPI v4i AddV4i(v4i left, v4i right) { v4i result; result.X = left.X + right.X; result.Y = left.Y + right.Y; result.Z = left.Z + right.Z; result.W = left.W + right.W; return result; }
@@ -797,6 +815,7 @@ PEXPI v2d AddV2d(v2d left, v2d right) { v2d result; result.X = left.X + right.X;
 PEXPI v3d AddV3d(v3d left, v3d right) { v3d result; result.X = left.X + right.X; result.Y = left.Y + right.Y; result.Z = left.Z + right.Z; return result; }
 PEXPI v4d AddV4d(v4d left, v4d right) { v4d result; result.X = left.X + right.X; result.Y = left.Y + right.Y; result.Z = left.Z + right.Z; result.W = left.W + right.W; return result; }
 
+PEXPI v2   SubV2(v2  left, v2  right) { v2  result; result.X = left.X - right.X; result.Y = left.Y - right.Y; return result; }
 PEXPI v2i SubV2i(v2i left, v2i right) { v2i result; result.X = left.X - right.X; result.Y = left.Y - right.Y; return result; }
 PEXPI v3i SubV3i(v3i left, v3i right) { v3i result; result.X = left.X - right.X; result.Y = left.Y - right.Y; result.Z = left.Z - right.Z; return result; }
 PEXPI v4i SubV4i(v4i left, v4i right) { v4i result; result.X = left.X - right.X; result.Y = left.Y - right.Y; result.Z = left.Z - right.Z; result.W = left.W - right.W; return result; }
@@ -804,6 +823,7 @@ PEXPI v2d SubV2d(v2d left, v2d right) { v2d result; result.X = left.X - right.X;
 PEXPI v3d SubV3d(v3d left, v3d right) { v3d result; result.X = left.X - right.X; result.Y = left.Y - right.Y; result.Z = left.Z - right.Z; return result; }
 PEXPI v4d SubV4d(v4d left, v4d right) { v4d result; result.X = left.X - right.X; result.Y = left.Y - right.Y; result.Z = left.Z - right.Z; result.W = left.W - right.W; return result; }
 
+PEXPI v2   MulV2(v2  left, v2  right) { v2  result; result.X = left.X * right.X; result.Y = left.Y * right.Y; return result; }
 PEXPI v2i MulV2i(v2i left, v2i right) { v2i result; result.X = left.X * right.X; result.Y = left.Y * right.Y; return result; }
 PEXPI v3i MulV3i(v3i left, v3i right) { v3i result; result.X = left.X * right.X; result.Y = left.Y * right.Y; result.Z = left.Z * right.Z; return result; }
 PEXPI v4i MulV4i(v4i left, v4i right) { v4i result; result.X = left.X * right.X; result.Y = left.Y * right.Y; result.Z = left.Z * right.Z; result.W = left.W * right.W; return result; }
@@ -811,6 +831,7 @@ PEXPI v2d MulV2d(v2d left, v2d right) { v2d result; result.X = left.X * right.X;
 PEXPI v3d MulV3d(v3d left, v3d right) { v3d result; result.X = left.X * right.X; result.Y = left.Y * right.Y; result.Z = left.Z * right.Z; return result; }
 PEXPI v4d MulV4d(v4d left, v4d right) { v4d result; result.X = left.X * right.X; result.Y = left.Y * right.Y; result.Z = left.Z * right.Z; result.W = left.W * right.W; return result; }
 
+PEXPI v2   DivV2(v2  left, v2  right) { v2  result; result.X = left.X / right.X; result.Y = left.Y / right.Y; return result; }
 PEXPI v2i DivV2i(v2i left, v2i right) { v2i result; result.X = left.X / right.X; result.Y = left.Y / right.Y; return result; }
 PEXPI v3i DivV3i(v3i left, v3i right) { v3i result; result.X = left.X / right.X; result.Y = left.Y / right.Y; result.Z = left.Z / right.Z; return result; }
 PEXPI v4i DivV4i(v4i left, v4i right) { v4i result; result.X = left.X / right.X; result.Y = left.Y / right.Y; result.Z = left.Z / right.Z; result.W = left.W / right.W; return result; }
@@ -818,6 +839,7 @@ PEXPI v2d DivV2d(v2d left, v2d right) { v2d result; result.X = left.X / right.X;
 PEXPI v3d DivV3d(v3d left, v3d right) { v3d result; result.X = left.X / right.X; result.Y = left.Y / right.Y; result.Z = left.Z / right.Z; return result; }
 PEXPI v4d DivV4d(v4d left, v4d right) { v4d result; result.X = left.X / right.X; result.Y = left.Y / right.Y; result.Z = left.Z / right.Z; result.W = left.W / right.W; return result; }
 
+PEXPI v2   ScaleV2(v2  left, r32 scalar) { v2  result; result.X = left.X * scalar; result.Y = left.Y * scalar; return result; }
 PEXPI v2i ScaleV2i(v2i left, i32 scalar) { v2i result; result.X = left.X * scalar; result.Y = left.Y * scalar; return result; }
 PEXPI v3i ScaleV3i(v3i left, i32 scalar) { v3i result; result.X = left.X * scalar; result.Y = left.Y * scalar; result.Z = left.Z * scalar; return result; }
 PEXPI v4i ScaleV4i(v4i left, i32 scalar) { v4i result; result.X = left.X * scalar; result.Y = left.Y * scalar; result.Z = left.Z * scalar; result.W = left.W * scalar; return result; }
@@ -825,6 +847,7 @@ PEXPI v2d ScaleV2d(v2d left, r64 scalar) { v2d result; result.X = left.X * scala
 PEXPI v3d ScaleV3d(v3d left, r64 scalar) { v3d result; result.X = left.X * scalar; result.Y = left.Y * scalar; result.Z = left.Z * scalar; return result; }
 PEXPI v4d ScaleV4d(v4d left, r64 scalar) { v4d result; result.X = left.X * scalar; result.Y = left.Y * scalar; result.Z = left.Z * scalar; result.W = left.W * scalar; return result; }
 
+PEXPI v2   ShrinkV2(v2  left, r32 divisor) { v2  result; result.X = left.X / divisor; result.Y = left.Y / divisor; return result; }
 PEXPI v2i ShrinkV2i(v2i left, i32 divisor) { v2i result; result.X = left.X / divisor; result.Y = left.Y / divisor; return result; }
 PEXPI v3i ShrinkV3i(v3i left, i32 divisor) { v3i result; result.X = left.X / divisor; result.Y = left.Y / divisor; result.Z = left.Z / divisor; return result; }
 PEXPI v4i ShrinkV4i(v4i left, i32 divisor) { v4i result; result.X = left.X / divisor; result.Y = left.Y / divisor; result.Z = left.Z / divisor; result.W = left.W / divisor; return result; }
@@ -832,6 +855,7 @@ PEXPI v2d ShrinkV2d(v2d left, r64 divisor) { v2d result; result.X = left.X / div
 PEXPI v3d ShrinkV3d(v3d left, r64 divisor) { v3d result; result.X = left.X / divisor; result.Y = left.Y / divisor; result.Z = left.Z / divisor; return result; }
 PEXPI v4d ShrinkV4d(v4d left, r64 divisor) { v4d result; result.X = left.X / divisor; result.Y = left.Y / divisor; result.Z = left.Z / divisor; result.W = left.W / divisor; return result; }
 
+PEXPI bool  AreEqualV2(v2  left, v2  right) { return (left.X == right.X && left.Y == right.Y); }
 PEXPI bool AreEqualV4r(v4r left, v4r right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.W == right.W); }
 PEXPI bool AreEqualV2i(v2i left, v2i right) { return (left.X == right.X && left.Y == right.Y); }
 PEXPI bool AreEqualV3i(v3i left, v3i right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z); }
@@ -843,6 +867,7 @@ PEXPI bool AreEqualV4d(v4d left, v4d right) { return (left.X == right.X && left.
 // +--------------------------------------------------------------+
 // |                      Common Vector Math                      |
 // +--------------------------------------------------------------+
+PEXPI r32  DotV2(v2  left, v2  right) { return (left.X * right.X) + (left.Y * right.Y); }
 PEXPI i32 DotV2i(v2i left, v2i right) { return (left.X * right.X) + (left.Y * right.Y); }
 PEXPI i32 DotV3i(v3i left, v3i right) { return (left.X * right.X) + (left.Y * right.Y) + (left.Z * right.Z); }
 PEXPI i32 DotV4i(v4i left, v4i right) { return (left.X * right.X) + (left.Y * right.Y) + (left.Z * right.Z) + (left.W * right.W); }
@@ -853,6 +878,7 @@ PEXPI r64 DotV4d(v4d left, v4d right) { return (left.X * right.X) + (left.Y * ri
 PEXPI v3i CrossV3i(v3i left, v3i right) { return MakeV3i(left.Y*right.Z - left.Z*right.Y, left.Z*right.X - left.X*right.Z, left.X*right.Y - left.Y*right.X); }
 PEXPI v3d CrossV3d(v3d left, v3d right) { return MakeV3d(left.Y*right.Z - left.Z*right.Y, left.Z*right.X - left.X*right.Z, left.X*right.Y - left.Y*right.X); }
 
+PEXPI r32  LengthSquaredV2(v2  vec2)  { return  DotV2(vec2,  vec2);  }
 PEXPI i32 LengthSquaredV2i(v2i vec2i) { return DotV2i(vec2i, vec2i); }
 PEXPI i32 LengthSquaredV3i(v3i vec3i) { return DotV3i(vec3i, vec3i); }
 PEXPI i32 LengthSquaredV4i(v4i vec4i) { return DotV4i(vec4i, vec4i); }
@@ -860,6 +886,7 @@ PEXPI r64 LengthSquaredV2d(v2d vec2d) { return DotV2d(vec2d, vec2d); }
 PEXPI r64 LengthSquaredV3d(v3d vec3d) { return DotV3d(vec3d, vec3d); }
 PEXPI r64 LengthSquaredV4d(v4d vec4d) { return DotV4d(vec4d, vec4d); }
 
+PEXPI r32  LengthV2(v2  vec2)  { return SqrtR32(LengthSquaredV2(vec2)); }
 PEXPI r32 LengthV2i(v2i vec2i) { return SqrtR32((r32)LengthSquaredV2i(vec2i)); }
 PEXPI r32 LengthV3i(v3i vec3i) { return SqrtR32((r32)LengthSquaredV3i(vec3i)); }
 PEXPI r32 LengthV4i(v4i vec4i) { return SqrtR32((r32)LengthSquaredV4i(vec4i)); }
@@ -867,10 +894,12 @@ PEXPI r64 LengthV2d(v2d vec2d) { return SqrtR64(LengthSquaredV2d(vec2d)); }
 PEXPI r64 LengthV3d(v3d vec3d) { return SqrtR64(LengthSquaredV3d(vec3d)); }
 PEXPI r64 LengthV4d(v4d vec4d) { return SqrtR64(LengthSquaredV4d(vec4d)); }
 
+PEXPI v2   NormalizeV2(v2  vec2)  { return  ShrinkV2(vec2,   LengthV2(vec2));  }
 PEXPI v2d NormalizeV2d(v2d vec2d) { return ShrinkV2d(vec2d, LengthV2d(vec2d)); }
 PEXPI v3d NormalizeV3d(v3d vec3d) { return ShrinkV3d(vec3d, LengthV3d(vec3d)); }
 PEXPI v4d NormalizeV4d(v4d vec4d) { return ShrinkV4d(vec4d, LengthV4d(vec4d)); }
 
+PEXPI v2   LerpV2(v2  start, v2  end, r32 amount) { return AddV2(ScaleV2(start, (1.0f - amount)), ScaleV2(end, amount)); }
 PEXPI v2d LerpV2d(v2d start, v2d end, r64 amount) { return AddV2d(ScaleV2d(start, (1.0 - amount)), ScaleV2d(end, amount)); }
 PEXPI v3d LerpV3d(v3d start, v3d end, r64 amount) { return AddV3d(ScaleV3d(start, (1.0 - amount)), ScaleV3d(end, amount)); }
 PEXPI v4d LerpV4d(v4d start, v4d end, r64 amount) { return AddV4d(ScaleV4d(start, (1.0 - amount)), ScaleV4d(end, amount)); }

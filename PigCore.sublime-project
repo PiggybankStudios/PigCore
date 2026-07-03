@@ -32,7 +32,7 @@
 			],
 		},
 		{
-			"path": "third_party/stb",
+			"path": "src/third_party/stb",
 			"name": "stb",
 			"file_include_patterns": [
 				"stb_image.h",
@@ -44,7 +44,7 @@
 			],
 		},
 		{
-			"path": "third_party/raylib",
+			"path": "src/third_party/raylib",
 			"name": "raylib",
 			"file_exclude_patterns": [
 				"LICENSE",
@@ -52,14 +52,14 @@
 			],
 		},
 		{
-			"path": "third_party/box2d",
+			"path": "src/third_party/box2d",
 			"name": "Box2D",
 			"file_exclude_patterns": [
 				"LICENSE",
 			],
 		},
 		{
-			"path": "third_party/sokol",
+			"path": "src/third_party/sokol",
 			"name": "Sokol",
 			"folder_exclude_patterns": [
 				".github",
@@ -74,21 +74,21 @@
 			],
 		},
 		{
-			"path": "third_party/clay",
+			"path": "src/third_party/clay",
 			"name": "Clay",
 			"file_exclude_patterns": [
 				"LICENSE.md",
 			],
 		},
 		{
-			"path": "third_party/cimgui",
+			"path": "src/third_party/cimgui",
 			"name": "Imgui",
 			"file_exclude_patterns": [
 				"LICENSE",
 			],
 		},
 		{
-			"path": "third_party/handmade_math",
+			"path": "src/third_party/handmade_math",
 			"name": "HandmadeMath",
 			"file_exclude_patterns": [
 				"LICENSE",
@@ -96,7 +96,7 @@
 			],
 		},
 		{
-			"path": "third_party/meow_hash",
+			"path": "src/third_party/meow_hash",
 			"name": "meow_hash",
 			"file_exclude_patterns": [
 				"LICENSE",
@@ -104,7 +104,7 @@
 			],
 		},
 		{
-			"path": "third_party/miniz",
+			"path": "src/third_party/miniz",
 			"name": "miniz",
 			"file_exclude_patterns": [
 				"LICENSE",
@@ -113,21 +113,21 @@
 			],
 		},
 		{
-			"path": "third_party/openvr",
+			"path": "src/third_party/openvr",
 			"name": "OpenVR SDK",
 			"file_exclude_patterns": [
 				"LICENSE",
 			],
 		},
 		{
-			"path": "third_party/slre",
+			"path": "src/third_party/slre",
 			"name": "SLRE",
 			"file_exclude_patterns": [
 				"LICENSE",
 			],
 		},
 		{
-			"path": "third_party/cgltf",
+			"path": "src/third_party/cgltf",
 			"name": "cGLTF",
 			"file_exclude_patterns": [
 				"LICENSE",
@@ -165,7 +165,7 @@
 		},
 		{
 			"name": "Tracy",
-			"path": "third_party/tracy",
+			"path": "src/third_party/tracy",
 			"file_exclude_patterns": [
 				"TracyClient.F90",
 				"LICENSE",
@@ -174,7 +174,7 @@
 		},
 		{
 			"name": "Protobuf-C",
-			"path": "third_party/protobuf_c",
+			"path": "src/third_party/protobuf_c",
 		},
 		{
 			"name": "Android Native App Glue",
@@ -200,7 +200,7 @@
 		},
 		{
 			"name": "FreeType",
-			"path": "third_party/freetype",
+			"path": "src/third_party/freetype",
 			"file_exclude_patterns": [ "build.bat", "LICENSE.TXT"],
 		},
 		{
@@ -210,11 +210,11 @@
 				"LICENSE"
 			],
 			"name": "kb",
-			"path": "third_party/kb_text_shape",
+			"path": "src/third_party/kb_text_shape",
 		},
 		{
 			"name": "Pluto SVG",
-			"path": "third_party/plutosvg",
+			"path": "src/third_party/plutosvg",
 		},
 	],
 	"settings":
@@ -2087,6 +2087,7 @@
 		[
 			"#define ALLOC_FUNC_DEF(functionName)",
 			"#define ARRAY_LIT_AS_SIZE_AND_PNTR(elemType, ...)",
+			"#define Add(left, right)",
 			"#define AlignOffset(pntr, alignment)",
 			"#define AllocArray(type, arenaPntr, count)",
 			"#define AllocArrayUnaligned(type, arenaPntr, count)",
@@ -2130,6 +2131,8 @@
 			"#define DebugStaticAssert(condition)",
 			"#define Decrement(variable)",
 			"#define DecrementBy(variable, amount)",
+			"#define Div(left, right)",
+			"#define Dot(left, right)",
 			"#define DrawCircle(circle, color)",
 			"#define DrawCirclePiece(circle, angleMin, angleMax, color)",
 			"#define DrawLine(startPos, endPos, thickness, color)",
@@ -2256,6 +2259,8 @@
 			"#define IsVersionBelow(versionMajor, versionMinor, numberMajor, numberMinor)",
 			"#define JavaVMAttachBlock(envVarName)",
 			"#define Kilobytes(value)",
+			"#define Length(vector)",
+			"#define LengthSquared(vector)",
 			"#define Lerp(left, right, amount)",
 			"#define MakeBox(x, y, z, width, height, depth)",
 			"#define MakeBoxV(bottomLeftBack, size)",
@@ -2415,6 +2420,7 @@
 			"#define MakeV4r(x, y, z, w)",
 			"#define MakeV4r_Const(x, y, z, w)",
 			"#define Megabytes(value)",
+			"#define Mul(left, right)",
 			"#define MyBufferPrintf(buffer, bufferSize, formatStr, ...)",
 			"#define MyFree(pntr)",
 			"#define MyMalloc(numBytes)",
@@ -2441,6 +2447,7 @@
 			"#define NewScratchStrBuff1(bufferSize, conflict1)",
 			"#define NewStrBuff(variableName)",
 			"#define NewStrBuffEx(variableName, bufferSize)",
+			"#define Normalize(vector)",
 			"#define NotEmptyStr(string)",
 			"#define NotEmptyStrPntr(stringPntr)",
 			"#define NotNull(variable)",
@@ -2518,6 +2525,7 @@
 			"#define StrLit_Const(stringLiteral)",
 			"#define StrPntrPrint(strPntr)",
 			"#define StrPrint(string)",
+			"#define Sub(left, right)",
 			"#define SwapPointers(varType, pntr1, pntr2)",
 			"#define Terabytes(value)",
 			"#define ToDegrees32(radians)",
@@ -4286,6 +4294,7 @@
 			"UiThemerRegistry",
 			"VarArray",
 			"Vector2",
+			"Vector2_R32",
 			"Vector3",
 			"Vector4",
 			"VertAttributeType",

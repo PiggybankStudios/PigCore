@@ -919,8 +919,8 @@ PEXPI void GfxSystem_DrawNamedSheetCell(GfxSystem* system, SpriteSheet* sheet, S
 PEXPI void GfxSystem_DrawLine(GfxSystem* system, v2 startPos, v2 endPos, r32 thickness, Color32 color)
 {
 	if (AreEqualV2(startPos, endPos)) { return; }
-	v2 lineMidpoint = Div(Add(startPos, endPos), 2.0f);
-	v2 lineSize = MakeV2(LengthV2(Sub(endPos, startPos)), thickness);
+	v2 lineMidpoint = ShrinkV2(AddV2(startPos, endPos), 2.0f);
+	v2 lineSize = MakeV2(LengthV2(SubV2(endPos, startPos)), thickness);
 	r32 lineRotation = AtanR32(endPos.Y - startPos.Y, endPos.X - startPos.X);
 	obb2 lineBox = MakeObb2V(lineMidpoint, lineSize, lineRotation);
 	GfxSystem_DrawObb2(system, lineBox, color);

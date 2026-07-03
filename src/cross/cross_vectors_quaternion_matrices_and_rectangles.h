@@ -15,7 +15,7 @@ Date:   01\15\2025
 // |                      C11 Generic Macros                      |
 // +--------------------------------------------------------------+
 #define Add(left, right) _Generic((left), \
-	v2: HMM_AddV2,                        \
+	v2: AddV2,                            \
 	v3: HMM_AddV3,                        \
 	v4: HMM_AddV4,                        \
 	v2i: AddV2i,                          \
@@ -42,7 +42,7 @@ Date:   01\15\2025
 )((left), (right))
 
 #define Sub(left, right) _Generic((left), \
-	v2: HMM_SubV2,                        \
+	v2: SubV2,                            \
 	v3: HMM_SubV3,                        \
 	v4: HMM_SubV4,                        \
 	v2i: SubV2i,                          \
@@ -85,7 +85,7 @@ Date:   01\15\2025
 
 #define Mul(left, right) _Generic((right), \
 	r32: _Generic((left),                  \
-		v2: HMM_MulV2F,                    \
+		v2: ScaleV2,                       \
 		v3: HMM_MulV3F,                    \
 		v4: HMM_MulV4F,                    \
 		quat: HMM_MulQF,                   \
@@ -106,7 +106,7 @@ Date:   01\15\2025
 	mat3: HMM_MulM3,                       \
 	mat4: HMM_MulM4,                       \
 	default: _Generic((left),              \
-		v2: HMM_MulV2,                     \
+		v2: MulV2,                         \
 		v3: HMM_MulV3,                     \
 		v4: HMM_MulV4,                     \
 		v2i: MulV2i,                       \
@@ -148,7 +148,7 @@ Date:   01\15\2025
 //TODO: This should probably handle i32 right-hand type differently, no? I tried doing this once but it seemed to give weird results. Maybe a reordering of the cases would help?
 #define Div(left, right) _Generic((right), \
 	 r32: _Generic((left),                 \
-		v2: HMM_DivV2F,                    \
+		v2: ShrinkV2,                      \
 		v3: HMM_DivV3F,                    \
 		v4: HMM_DivV4F,                    \
 		quat: HMM_DivQF,                   \
@@ -166,7 +166,7 @@ Date:   01\15\2025
 		boxi: ShrinkBoxi                   \
 	 ),                                    \
 	 default: _Generic((left),             \
-		v2: HMM_DivV2,                     \
+		v2: DivV2,                         \
 		v3: HMM_DivV3,                     \
 		v4: HMM_DivV4,                     \
 		v2i: DivV2i,                       \
@@ -190,7 +190,7 @@ Date:   01\15\2025
 
 //TODO: These 4 should go in struct_vectors.h directly?
 #define Length(vector) _Generic((vector), \
-		v2: HMM_LenV2,                    \
+		v2: LengthV2,                     \
 		v3: HMM_LenV3,                    \
 		v4: HMM_LenV4,                    \
 		v2i: LengthV2i,                   \
@@ -202,7 +202,7 @@ Date:   01\15\2025
 )(vector)
 
 #define LengthSquared(vector) _Generic((vector), \
-		v2: HMM_LenSqrV2,                        \
+		v2: LengthSquaredV2,                     \
 		v3: HMM_LenSqrV3,                        \
 		v4: HMM_LenSqrV4,                        \
 		v2i: LengthSquaredV2i,                   \
@@ -214,7 +214,7 @@ Date:   01\15\2025
 )(vector)
 
 #define Normalize(vector) _Generic((vector), \
-		v2: HMM_NormV2,                      \
+		v2: NormalizeV2,                     \
 		v3: HMM_NormV3,                      \
 		v4: HMM_NormV4,                      \
 		v2d: NormalizeV2d,                   \
@@ -225,7 +225,7 @@ Date:   01\15\2025
 )(vector)
 
 #define Dot(left, right) _Generic((left), \
-		v2: HMM_DotV2,                    \
+		v2: DotV2,                        \
 		v3: HMM_DotV3,                    \
 		v4: HMM_DotV4,                    \
 		v2i: DotV2i,                      \
@@ -241,7 +241,7 @@ Date:   01\15\2025
 #define Lerp(left, right, amount) _Generic((left),  \
 		r32: LerpR32((left), (right), (amount)),    \
 		r64: LerpR64((left), (right), (amount)),    \
-		v2: HMM_LerpV2((left), (amount), (right)),  \
+		v2: LerpV2((left), (amount), (right)),      \
 		v3: HMM_LerpV3((left), (amount), (right)),  \
 		v4: HMM_LerpV4((left), (amount), (right)),  \
 		v2d: LerpV2d((left), (right), (amount)),    \
@@ -252,7 +252,7 @@ Date:   01\15\2025
 )
 
 #define AreEqual(left, right) _Generic((left), \
-		v2: HMM_EqV2,                          \
+		v2: AreEqualV2,                        \
 		v3: HMM_EqV3,                          \
 		v4: HMM_EqV4,                          \
 		v2i: AreEqualV2i,                      \
