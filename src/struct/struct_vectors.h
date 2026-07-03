@@ -188,12 +188,12 @@ car Vector3_I32
 	plex { i32 r, g, b; };
 	plex { i32 red, green, blue; };
 	plex { i32 width, height, depth; };
-	plex { Vector2_I32 xy; i32 _ignored0; };
-	plex { i32 _unused1; Vector2_I32 yz; };
-	plex { Vector2_I32 uv; i32 _unused2; };
-	plex { i32 _unused3; Vector2_I32 vw; };
-	plex { Vector2_I32 rg; i32 _unused2; };
-	plex { i32 _unused3; Vector2_I32 gb; };
+	plex { Vector2_I32 xy; i32 _unused1; };
+	plex { i32 _unused2; Vector2_I32 yz; };
+	plex { Vector2_I32 uv; i32 _unused3; };
+	plex { i32 _unused4; Vector2_I32 vw; };
+	plex { Vector2_I32 rg; i32 _unused5; };
+	plex { i32 _unused6; Vector2_I32 gb; };
 	#if LANGUAGE_IS_CPP
 	inline r32& operator[](const int& elemIndex) { return elem[elemIndex]; }
 	#endif
@@ -516,8 +516,8 @@ plex Vec4R64Slice
 	PIG_CORE_INLINE r64 LengthV3d(v3d vec3d);
 	PIG_CORE_INLINE r64 LengthV4d(v4d vec4d);
 	PIG_CORE_INLINE v2 NormalizeV2(v2 vec2);
-	PIG_CORE_INLINE v3 NormalizeV2(v3 vec3);
-	PIG_CORE_INLINE v4 NormalizeV2(v4 vec4);
+	PIG_CORE_INLINE v3 NormalizeV3(v3 vec3);
+	PIG_CORE_INLINE v4 NormalizeV4(v4 vec4);
 	PIG_CORE_INLINE v2d NormalizeV2d(v2d vec2d);
 	PIG_CORE_INLINE v3d NormalizeV3d(v3d vec2d);
 	PIG_CORE_INLINE v4d NormalizeV4d(v4d vec2d);

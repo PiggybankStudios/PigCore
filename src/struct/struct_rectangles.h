@@ -95,7 +95,7 @@ car Box_I32
 	i32 elem[6];
 	plex { i32 x, y, z, width, height, depth; };
 	plex { i32 left, bottom, back, _unused1, _unused2, _unused3; };
-	plex { v3i bottomleftback, size; };
+	plex { v3i bottomLeftBack, size; };
 };
 #define MakeBoxi_Const(xValue, yValue, zValue, widthValue, heightValue, depthValue) { .x=(xValue), .y=(yValue), .z=(zValue), .width=(widthValue), .height=(heightValue), .depth=(depthValue) }
 #define MakeBoxiV_Const(bottomLeftBackValue, sizeValue)                             { .bottomLeftBack=bottomLeftBackValue, .size=sizeValue }

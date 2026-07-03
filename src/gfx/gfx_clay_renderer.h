@@ -106,7 +106,7 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	r32 lineHeight = GetFontLineHeight(font->pntr, fontSize, font->styleFlags);
 	if (measure.height < lineHeight) { measure.height = lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
-	v2 result = MakeV2(CeilR32(measure.width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.height, measure.visualRec.height)));
+	v2 result = MakeV2(CeilR32(measure.width - measure.offsetX), CeilR32(MaxR32(measure.logicalRec.height, measure.visualRec.height)));
 	if (config->userData.wrapWidth != 0.0f) { result.width = MinR32(result.width, config->userData.wrapWidth); }
 	ScratchEnd(scratch);
 	return result;

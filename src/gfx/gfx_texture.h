@@ -144,10 +144,10 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 		r32 floatG = (r32)((upperLayer.pixels[pIndex] >>  8) & 0xFF) / 255.0f;
 		r32 floatB = (r32)((upperLayer.pixels[pIndex] >>  0) & 0xFF) / 255.0f;
 		r32 floatA = (r32)((upperLayer.pixels[pIndex] >> 24) & 0xFF) / 255.0f;
-		upperLayerLinear[pIndex].R = TO_LINEAR_FROM_GAMMA_R32_FAST(floatR);
-		upperLayerLinear[pIndex].G = TO_LINEAR_FROM_GAMMA_R32_FAST(floatG);
-		upperLayerLinear[pIndex].B = TO_LINEAR_FROM_GAMMA_R32_FAST(floatB);
-		upperLayerLinear[pIndex].A = floatA;
+		upperLayerLinear[pIndex].r = TO_LINEAR_FROM_GAMMA_R32_FAST(floatR);
+		upperLayerLinear[pIndex].g = TO_LINEAR_FROM_GAMMA_R32_FAST(floatG);
+		upperLayerLinear[pIndex].b = TO_LINEAR_FROM_GAMMA_R32_FAST(floatB);
+		upperLayerLinear[pIndex].a = floatA;
 	}
 	TracyCZoneEnd(linearConversion);
 	

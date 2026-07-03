@@ -332,8 +332,8 @@ UI_THEMER_CALLBACK_DEF(TestsUiThemerCallback)
 void DrawBox(box boundingBox, Color32 color)
 {
 	mat4 worldMat = Mat4_Identity;
-	TransformMat4(&worldMat, MakeScaleMat4(boundingBox.size));
-	TransformMat4(&worldMat, MakeTranslateMat4(boundingBox.BottomLeftBack));
+	TransformMat4(&worldMat, Make2DScaleMat4(boundingBox.size));
+	TransformMat4(&worldMat, MakeTranslateMat4(boundingBox.bottomLeftBack));
 	SetWorldMat(worldMat);
 	SetTintColor(color);
 	BindVertBuffer(&cubeBuffer);
@@ -342,7 +342,7 @@ void DrawBox(box boundingBox, Color32 color)
 void DrawObb3(obb3 boundingBox, Color32 color)
 {
 	mat4 worldMat = Mat4_Identity;
-	TransformMat4(&worldMat, MakeTranslateMat4(FillV3(-0.5f)));
+	TransformMat4(&worldMat, MakeTranslateXYZMat4(-0.5f, -0.5f, -0.5f));
 	TransformMat4(&worldMat, MakeScaleMat4(boundingBox.size));
 	TransformMat4(&worldMat, ToMat4FromQuat(boundingBox.rotation));
 	TransformMat4(&worldMat, MakeTranslateMat4(boundingBox.center));
@@ -354,7 +354,7 @@ void DrawObb3(obb3 boundingBox, Color32 color)
 void DrawSphere(Sphere sphere, Color32 color)
 {
 	mat4 worldMat = Mat4_Identity;
-	TransformMat4(&worldMat, MakeScaleMat4(FillV3(sphere.Radius)));
+	TransformMat4(&worldMat, MakeScaleMat4(FillV3(sphere.radius)));
 	TransformMat4(&worldMat, MakeTranslateMat4(sphere.center));
 	SetWorldMat(worldMat);
 	SetTintColor(color);
@@ -936,7 +936,7 @@ bool AppFrame(void)
 			mat4 projMat = MakePerspectiveMat4Dx(ToRadians32(45), windowSize.width/windowSize.height, 0.05f, 400);
 			#endif
 			SetProjectionMat(projMat);
-			mat4 viewMat = MakeLookAtMat4(cameraPos, Add(cameraPos, cameraLookDir), V3_Up);
+			mat4 viewMat = MakeLookAtMat4(cameraPos, AddV3(cameraPos, cameraLookDir), V3_Up);
 			SetViewMat(viewMat);
 			
 			BindTexture(&gfx.pixelTexture);
@@ -1588,7 +1588,7 @@ bool AppFrame(void)
 						{
 							DrawRectangleOutlineSidesEx(
 								cmd->rectangle.rectangle,
-								cmd->rectangle.borderThickness.Left, cmd->rectangle.borderThickness.Right, cmd->rectangle.borderThickness.Top, cmd->rectangle.borderThickness.Bottom,
+								cmd->rectangle.borderThickness.left, cmd->rectangle.borderThickness.right, cmd->rectangle.borderThickness.top, cmd->rectangle.borderThickness.bottom,
 								cmd->rectangle.borderColor,
 								false
 							);

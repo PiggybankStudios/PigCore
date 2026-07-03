@@ -118,19 +118,19 @@ PEXPI r32 ToGammaFromLinearR32(r32 channelValue)
 PEXP Colorf ToLinearFromGamma(Colorf color)
 {
 	return MakeColorf(
-		ToLinearFromGammaR32(color.R),
-		ToLinearFromGammaR32(color.G),
-		ToLinearFromGammaR32(color.B),
-		color.A
+		ToLinearFromGammaR32(color.r),
+		ToLinearFromGammaR32(color.g),
+		ToLinearFromGammaR32(color.b),
+		color.a
 	);
 }
 PEXP Colorf ToGammaFromLinear(Colorf color)
 {
 	return MakeColorf(
-		ToGammaFromLinearR32(color.R),
-		ToGammaFromLinearR32(color.G),
-		ToGammaFromLinearR32(color.B),
-		color.A
+		ToGammaFromLinearR32(color.r),
+		ToGammaFromLinearR32(color.g),
+		ToGammaFromLinearR32(color.b),
+		color.a
 	);
 }
 PEXPI Colorf ToLinearFromGamma32(Color32 gammaColor)

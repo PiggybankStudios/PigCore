@@ -154,10 +154,6 @@ typedef Matrix4x4_R32 mat4;
 	PIG_CORE_INLINE mat3 ShrinkMat3(mat3 matrix, r32 scalar);
 	PIG_CORE_INLINE r32 DeterminantMat3(mat3 matrix) ;
 	PIG_CORE_INLINE mat3 InverseMat3(mat3 matrix) ;
-	PIG_CORE_INLINE v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut);
-	PIG_CORE_INLINE v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation);
-	PIG_CORE_INLINE mat3 MakeTranslateMat3(v2 vec2);
-	PIG_CORE_INLINE mat3 MakeScaleMat3(v3 vec3);
 	PIG_CORE_INLINE mat4 TransposeMat4(mat4 matrix);
 	PIG_CORE_INLINE mat4 AddMat4(mat4 left, mat4 right);
 	PIG_CORE_INLINE mat4 SubMat4(mat4 left, mat4 right);
@@ -167,6 +163,8 @@ typedef Matrix4x4_R32 mat4;
 	PIG_CORE_INLINE mat4 ShrinkMat4(mat4 matrix, r32 scalar);
 	PIG_CORE_INLINE r32 DeterminantMat4(mat4 matrix) ;
 	PIG_CORE_INLINE mat4 InverseMat4(mat4 matrix) ;
+	PIG_CORE_INLINE v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut);
+	PIG_CORE_INLINE v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation);
 	PIG_CORE_INLINE mat4 MakeRotateMat4_RH(r32 angle, v3 axis);
 	PIG_CORE_INLINE mat4 MakeOrthographicMat4Gl_RH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 far);
 	PIG_CORE_INLINE mat4 MakeOrthographicMat4Dx_RH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 zFar);
@@ -240,9 +238,9 @@ typedef Matrix4x4_R32 mat4;
 )
 #define MakeScaleMat4_Const(scaleVec) MakeScaleXYZMat4_Const((scaleVec).x, (scaleVec).y, (scaleVec).z)
 #define MakeScaleXYZMat4(x, y, z)     NEW_STRUCT(Matrix4x4_R32)MakeScaleXYZMat4_Const((x), (y), (z))
-#define MakeScaleMat4(scaleVec)       NEW_STRUCT(Matrix4x4_R32)MakeScaleMat4_Const((scaleVec).x, (scaleVec).y, (scaleVec).z)
+#define MakeScaleMat4(scaleVec)       NEW_STRUCT(Matrix4x4_R32)MakeScaleXYZMat4_Const((scaleVec).x, (scaleVec).y, (scaleVec).z)
 #define MakeScaleXYMat4(x, y)         MakeScaleXYZMat4((x), (y), 0.0f)
-#define Make2DScaleMat4(scaleVec)     MakeScaleXYMat4((scaleVec).x, (scaleVec).y, 0.0f)
+#define Make2DScaleMat4(scaleVec)     MakeScaleXYMat4((scaleVec).x, (scaleVec).y)
 #define MakeScaleXMat4(x)             MakeScaleXYZMat4((x), 0.0f, 0.0f)
 #define MakeScaleYMat4(y)             MakeScaleXYZMat4(0.0f, (y), 0.0f)
 #define MakeScaleZMat4(z)             MakeScaleXYZMat4(0.0f, 0.0f, (z))
@@ -277,7 +275,7 @@ typedef Matrix4x4_R32 mat4;
 #define MakePerspectiveMat4Gl(fov, aspectRatio, zNear, zFar) MakePerspectiveMat4Gl_LH((fov), (aspectRatio), (zNear), (zFar))
 #define MakePerspectiveMat4Dx(fov, aspectRatio, zNear, zFar) MakePerspectiveMat4Dx_LH((fov), (aspectRatio), (zNear), (zFar))
 
-#define MakeLookAtMat4(eyePos, targetPos, upVec) MakeLookAtMat4_LH((eye), (targetPos), (upVec))
+#define MakeLookAtMat4(eyePos, targetPos, upVec) MakeLookAtMat4_LH((eyePos), (targetPos), (upVec))
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -306,9 +304,9 @@ PEXPI mat4 ToMat4From3(mat3 matrix3)
 //TODO: oc_mat2x3 conversion functions!
 #endif //TARGET_IS_ORCA
 
-PEXPI bool AreEqualMat2(mat2 left, mat2 right) { return (HMM_EqV2(left.columns[0], right.columns[0]) && HMM_EqV2(left.columns[1], right.columns[1])); }
-PEXPI bool AreEqualMat3(mat3 left, mat3 right) { return (HMM_EqV3(left.columns[0], right.columns[0]) && HMM_EqV3(left.columns[1], right.columns[1]) && HMM_EqV3(left.columns[2], right.columns[2])); }
-PEXPI bool AreEqualMat4(mat4 left, mat4 right) { return (HMM_EqV4(left.columns[0], right.columns[0]) && HMM_EqV4(left.columns[1], right.columns[1]) && HMM_EqV4(left.columns[2], right.columns[2]) && HMM_EqV4(left.columns[3], right.columns[3])); }
+PEXPI bool AreEqualMat2(mat2 left, mat2 right) { return (AreEqualV2(left.columns[0], right.columns[0]) && AreEqualV2(left.columns[1], right.columns[1])); }
+PEXPI bool AreEqualMat3(mat3 left, mat3 right) { return (AreEqualV3(left.columns[0], right.columns[0]) && AreEqualV3(left.columns[1], right.columns[1]) && AreEqualV3(left.columns[2], right.columns[2])); }
+PEXPI bool AreEqualMat4(mat4 left, mat4 right) { return (AreEqualV4(left.columns[0], right.columns[0]) && AreEqualV4(left.columns[1], right.columns[1]) && AreEqualV4(left.columns[2], right.columns[2]) && AreEqualV4(left.columns[3], right.columns[3])); }
 
 // +--------------------------------------------------------------+
 // |                     Matrix2x2 Functions                      |
@@ -519,39 +517,6 @@ PEXPI mat3 InverseMat3(mat3 matrix)
 	result.columns[2] = ScaleV3(cross.columns[2], invDeterminant);
 	
 	return TransposeMat3(result);
-}
-
-//TODO: Do we really need this variant where we pass out the W value?
-PEXPI v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut)
-{
-	v4 vec4 = ToV4From3(vec3, includeTranslation ? 1.0f : 0.0f);
-	vec4 = MulMat4AndV4(matrix4, vec4);
-	SetOptionalOutPntr(wOut, vec4.w);
-	//TODO: This ternary operator makes me think we're doing something wrong with the divide by W thing.
-	//      We should really look into how 3D points and vectors are transformed by 4x4 matrix transformations
-	return (vec4.w != 0) ? ShrinkV4(vec4, vec4.w).xyz : vec4.xyz;
-}
-PEXPI v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation) { return MulMat4AndV3GetW(matrix4, vec3, includeTranslation, nullptr); }
-
-// +--------------------------------------------------------------+
-// |               Common Matrix3x3 Transformations               |
-// +--------------------------------------------------------------+
-PEXPI mat3 MakeTranslateMat3(v2 vec2)
-{
-	return MakeMat3(
-		1.0f, 0.0f, vec2.x,
-		0.0f, 1.0f, vec2.y,
-		0.0f, 0.0f, 1.0f
-	);
-}
-
-PEXPI mat3 MakeScaleMat3(v3 vec3)
-{
-	return MakeMat3(
-		vec3.x, 0.0f, 0.0f,
-		0.0f, vec3.y, 0.0f,
-		0.0f, 0.0f, vec3.z
-	);
 }
 
 // +--------------------------------------------------------------+
@@ -771,6 +736,18 @@ PEXPI mat4 InverseMat4(mat4 matrix)
 	
 	return TransposeMat4(result);
 }
+
+//TODO: Do we really need this variant where we pass out the W value?
+PEXPI v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut)
+{
+	v4 vec4 = ToV4From3(vec3, includeTranslation ? 1.0f : 0.0f);
+	vec4 = MulMat4AndV4(matrix4, vec4);
+	SetOptionalOutPntr(wOut, vec4.w);
+	//TODO: This ternary operator makes me think we're doing something wrong with the divide by W thing.
+	//      We should really look into how 3D points and vectors are transformed by 4x4 matrix transformations
+	return (vec4.w != 0) ? ShrinkV4(vec4, vec4.w).xyz : vec4.xyz;
+}
+PEXPI v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation) { return MulMat4AndV3GetW(matrix4, vec3, includeTranslation, nullptr); }
 
 // +--------------------------------------------------------------+
 // |                 Common Matrix4x4 Transforms                  |

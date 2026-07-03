@@ -66,11 +66,11 @@ PEXP bool TryParseMat4Ex(Str8 str, mat4* valueOut, Result* errorOut, bool allow3
 		
 		if (is3x3Matrix)
 		{
-			matrix.Elements[cIndex % 3][cIndex / 3] = valueR32;
+			matrix.elem[cIndex % 3][cIndex / 3] = valueR32;
 		}
 		else
 		{
-			matrix.Elements[cIndex % 4][cIndex / 4] = valueR32;
+			matrix.elem[cIndex % 4][cIndex / 4] = valueR32;
 		}
 	}
 	

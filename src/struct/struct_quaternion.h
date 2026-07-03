@@ -75,8 +75,8 @@ typedef Quaternion_R64 quatd;
 	PIG_CORE_INLINE quat ShrinkQuat(quat left, r32 scalar);
 	PIG_CORE_INLINE r32 DotQuat(quat left, quat right);
 	PIG_CORE_INLINE quat InvertQuat(quat left);
-	PIG_CORE_INLINE r32 LengthSquaredQuat(v2 quaternion);
-	PIG_CORE_INLINE r32 LengthQuat(v2 quaternion);
+	PIG_CORE_INLINE r32 LengthSquaredQuat(quat quaternion);
+	PIG_CORE_INLINE r32 LengthQuat(quat quaternion);
 	PIG_CORE_INLINE quat NormalizeQuat(quat quaternion);
 	PIG_CORE_INLINE quat MixQuat(quat left, float mixLeft, quat right, float mixRight);
 	PIG_CORE_INLINE quat LerpQuat(quat start, quat right, r32 amount);
@@ -259,11 +259,11 @@ PEXPI quat InvertQuat(quat left)
 	return ShrinkQuat(result, DotQuat(left, left));
 }
 
-PEXPI r32 LengthSquaredQuat(v2 quaternion)
+PEXPI r32 LengthSquaredQuat(quat quaternion)
 {
 	return DotQuat(quaternion, quaternion);
 }
-PEXPI r32 LengthQuat(v2 quaternion)
+PEXPI r32 LengthQuat(quat quaternion)
 {
 	return SqrtR32(LengthSquaredQuat(quaternion));
 }
@@ -303,12 +303,12 @@ PEXPI quat SlerpQuat(quat start, quat right, r32 amount)
 	if (cosTheta < 0.0f) // NOTE(lcf): Take shortest path on Hyper-sphere
 	{
 		cosTheta = -cosTheta;
-		right = MakeQuat(-right.X, -right.Y, -right.Z, -right.W);
+		right = MakeQuat(-right.x, -right.y, -right.z, -right.w);
 	}
 	// NOTE(lcf): Use Normalized Linear interpolation when vectors are roughly not L.I.
 	if (cosTheta > 0.9995f)
 	{
-		result = LerpQuat(start, amount, right);
+		result = LerpQuat(start, right, amount);
 	}
 	else
 	{
@@ -326,7 +326,7 @@ PEXPI quatd ToQuatdFromAxis(v3d axis, r64 angle)
 	quatd result;
 	v3d axisNormalized = NormalizeV3d(axis);
 	r64 sineOfRotation = SinR64(angle / 2.0);
-	result.xYZ = ScaleV3d(axisNormalized, sineOfRotation);
+	result.xyz = ScaleV3d(axisNormalized, sineOfRotation);
 	result.w = CosR64(angle / 2.0);
 	return result;
 }

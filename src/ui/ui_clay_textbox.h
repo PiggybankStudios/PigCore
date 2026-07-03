@@ -529,7 +529,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		//When there is no text being rendered, we need to figure out the start position of the text
 		cursorRelativePos = MakeV2(
 			(r32)UISCALE_U16(context->uiScale, TEXTBOX_INNER_PADDING_X),
-			textboxRec.Height/2 + fontLineMetrics.centerOffset
+			textboxRec.height/2 + fontLineMetrics.centerOffset
 		);
 		AlignV2(&cursorRelativePos);
 	}

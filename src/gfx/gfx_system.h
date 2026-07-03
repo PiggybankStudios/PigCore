@@ -381,7 +381,7 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 		.action = {
 			.colors[0] = {
 				.load_action = SG_LOADACTION_CLEAR,
-				.clear_value = { clearColorVec.R, clearColorVec.G, clearColorVec.B, clearColorVec.A }
+				.clear_value = { clearColorVec.r, clearColorVec.g, clearColorVec.b, clearColorVec.a }
 			},
 			.depth = {
 				.load_action = SG_LOADACTION_CLEAR,
@@ -877,7 +877,7 @@ PEXPI void GfxSystem_DrawTexturedObb2Ex(GfxSystem* system, obb2 boundingBox, Col
 	mat4 worldMat = Mat4_Identity;
 	TransformMat4(&worldMat, MakeTranslateXYZMat4(-0.5f, -0.5f, 0.0f));
 	TransformMat4(&worldMat, MakeScaleXYZMat4(boundingBox.width, boundingBox.height, 1.0f));
-	TransformMat4(&worldMat, MakeRotate2DMat4(boundingBox.Rotation));
+	TransformMat4(&worldMat, MakeRotate2DMat4(boundingBox.rotation));
 	TransformMat4(&worldMat, MakeTranslateXYZMat4(boundingBox.x, boundingBox.y, system->state.depth));
 	GfxSystem_SetWorldMat(system, worldMat);
 	
@@ -963,8 +963,8 @@ PEXP void GfxSystem_DrawTexturedCirclePieceEx(GfxSystem* system, Circle circle, 
 	}
 	
 	mat4 worldMat = Mat4_Identity;
-	TransformMat4(&worldMat, MakeScaleXYZMat4(circle.R*2.0f, circle.R*2.0f, 1.0f));
-	TransformMat4(&worldMat, MakeTranslateXYZMat4(circle.x - circle.R, circle.y - circle.R, system->state.depth));
+	TransformMat4(&worldMat, MakeScaleXYZMat4(circle.r*2.0f, circle.r*2.0f, 1.0f));
+	TransformMat4(&worldMat, MakeTranslateXYZMat4(circle.x - circle.r, circle.y - circle.r, system->state.depth));
 	GfxSystem_SetWorldMat(system, worldMat);
 	
 	GfxSystem_SetTintColor(system, color);
@@ -1035,25 +1035,25 @@ PEXP void GfxSystem_DrawTexturedRoundedRectangleEx(GfxSystem* system, rec rectan
 		if (radiusBR > 0) //BottomRight Quarter Circle
 		{
 			Circle cornerCircle = MakeCircle(rectangle.x + rectangle.width - radiusBR, rectangle.y + rectangle.height - radiusBR, radiusBR);
-			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.R, cornerCircle.y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.r, cornerCircle.y - cornerCircle.r, 2 * cornerCircle.r, 2 * cornerCircle.r);
 			GfxSystem_DrawTexturedCirclePieceEx(system, cornerCircle, 0, HalfPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusBL > 0) //BottomLeft Quarter Circle
 		{
 			Circle cornerCircle = MakeCircle(rectangle.x + radiusBL, rectangle.y + rectangle.height - radiusBL, radiusBL);
-			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.R, cornerCircle.y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.r, cornerCircle.y - cornerCircle.r, 2 * cornerCircle.r, 2 * cornerCircle.r);
 			GfxSystem_DrawTexturedCirclePieceEx(system, cornerCircle, HalfPi32, Pi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusTL > 0) //TopLeft Quarter Circle
 		{
 			Circle cornerCircle = MakeCircle(rectangle.x + radiusTL, rectangle.y + radiusTL, radiusTL);
-			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.R, cornerCircle.y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.r, cornerCircle.y - cornerCircle.r, 2 * cornerCircle.r, 2 * cornerCircle.r);
 			GfxSystem_DrawTexturedCirclePieceEx(system, cornerCircle, Pi32, ThreeHalfsPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusTR > 0) //TopRight Quarter Circle
 		{
 			Circle cornerCircle = MakeCircle(rectangle.x + rectangle.width - radiusTR, rectangle.y + radiusTR, radiusTR);
-			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.R, cornerCircle.y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.r, cornerCircle.y - cornerCircle.r, 2 * cornerCircle.r, 2 * cornerCircle.r);
 			GfxSystem_DrawTexturedCirclePieceEx(system, cornerCircle, ThreeHalfsPi32, TwoPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 	}
@@ -1080,8 +1080,8 @@ PEXP void GfxSystem_DrawTexturedRingPieceEx(GfxSystem* system, Circle circle, r3
 	NotNull(system);
 	Assert(thickness >= 0.0f);
 	
-	r32 innerRadius = MaxR32(0.0f, circle.Radius - thickness);
-	r32 innerRadiusPercent = innerRadius / circle.Radius;
+	r32 innerRadius = MaxR32(0.0f, circle.radius - thickness);
+	r32 innerRadiusPercent = innerRadius / circle.radius;
 	if (innerRadiusPercent <= (1.0f / GFX_SYSTEM_RING_NUM_THICKNESSES) / 2.0f)
 	{
 		GfxSystem_DrawTexturedCirclePieceEx(system, circle, angleMin, angleMax, color, texture, sourceRec);
@@ -1123,8 +1123,8 @@ PEXP void GfxSystem_DrawTexturedRingPieceEx(GfxSystem* system, Circle circle, r3
 	}
 	
 	mat4 worldMat = Mat4_Identity;
-	TransformMat4(&worldMat, MakeScaleXYZMat4(circle.R*2.0f, circle.R*2.0f, 1.0f));
-	TransformMat4(&worldMat, MakeTranslateXYZMat4(circle.x - circle.R, circle.y - circle.R, system->state.depth));
+	TransformMat4(&worldMat, MakeScaleXYZMat4(circle.r*2.0f, circle.r*2.0f, 1.0f));
+	TransformMat4(&worldMat, MakeTranslateXYZMat4(circle.x - circle.r, circle.y - circle.r, system->state.depth));
 	GfxSystem_SetWorldMat(system, worldMat);
 	
 	GfxSystem_SetTintColor(system, color);
@@ -1185,25 +1185,25 @@ PEXP void GfxSystem_DrawTexturedRoundedRectangleOutlineEx(GfxSystem* system, rec
 		if (radiusBR > 0) //BottomRight Ring Piece
 		{
 			Circle cornerCircle = MakeCircle(rectangle.x + rectangle.width - radiusBR, rectangle.y + rectangle.height - radiusBR, radiusBR);
-			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.R, cornerCircle.y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.r, cornerCircle.y - cornerCircle.r, 2 * cornerCircle.r, 2 * cornerCircle.r);
 			GfxSystem_DrawTexturedRingPieceEx(system, cornerCircle, thickness, 0, HalfPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusBL > 0) //BottomLeft Ring Piece
 		{
 			Circle cornerCircle = MakeCircle(rectangle.x + radiusBL, rectangle.y + rectangle.height - radiusBL, radiusBL);
-			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.R, cornerCircle.y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.r, cornerCircle.y - cornerCircle.r, 2 * cornerCircle.r, 2 * cornerCircle.r);
 			GfxSystem_DrawTexturedRingPieceEx(system, cornerCircle, thickness, HalfPi32, Pi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusTL > 0) //TopLeft Ring Piece
 		{
 			Circle cornerCircle = MakeCircle(rectangle.x + radiusTL, rectangle.y + radiusTL, radiusTL);
-			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.R, cornerCircle.y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.r, cornerCircle.y - cornerCircle.r, 2 * cornerCircle.r, 2 * cornerCircle.r);
 			GfxSystem_DrawTexturedRingPieceEx(system, cornerCircle, thickness, Pi32, ThreeHalfsPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 		if (radiusTR > 0) //TopRight Ring Piece
 		{
 			Circle cornerCircle = MakeCircle(rectangle.x + rectangle.width - radiusTR, rectangle.y + radiusTR, radiusTR);
-			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.R, cornerCircle.y - cornerCircle.R, 2 * cornerCircle.R, 2 * cornerCircle.R);
+			rec cornerFullCircleRec = MakeRec(cornerCircle.x - cornerCircle.r, cornerCircle.y - cornerCircle.r, 2 * cornerCircle.r, 2 * cornerCircle.r);
 			GfxSystem_DrawTexturedRingPieceEx(system, cornerCircle, thickness, ThreeHalfsPi32, TwoPi32, color, texture, RelativeRec(rectangle, cornerFullCircleRec, sourceRec));
 		}
 	}

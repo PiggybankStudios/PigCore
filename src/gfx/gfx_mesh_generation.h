@@ -67,7 +67,7 @@ PEXPI void FreeGeneratedMesh(GeneratedMesh* mesh)
 	ClearPointer(mesh);
 }
 
-PEXP GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32* colors)
+PEXP GeneratedMesh GenerateVertsForBoxEx(Arena* arena, box boundingBox, Color32* colors)
 {
 	GeneratedMesh result = ZEROED;
 	result.arena = arena;
@@ -205,7 +205,7 @@ PEXP GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32*
 	DebugAssert((uxx)iIndex == result.numIndices);
 	return result;
 }
-PEXPI GeneratedMesh GenerateVertsForBox(Arena* arena, Box boundingBox, Color32 color)
+PEXPI GeneratedMesh GenerateVertsForBox(Arena* arena, box boundingBox, Color32 color)
 {
 	Color32 colors[BOX_NUM_FACES] = { color, color, color, color, color, color };
 	return GenerateVertsForBoxEx(arena, boundingBox, &colors[0]);
@@ -232,8 +232,8 @@ PEXP GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRi
 	const i32 bottomCenterIndex = 0;
 	const i32 topCenterIndex = (i32)result.numVertices-1;
 	
-	result.vertices[topCenterIndex].position    = MakeV3(sphere.x, sphere.y + sphere.Radius, sphere.z);
-	result.vertices[bottomCenterIndex].position = MakeV3(sphere.x, sphere.y - sphere.Radius, sphere.z);
+	result.vertices[topCenterIndex].position    = MakeV3(sphere.x, sphere.y + sphere.radius, sphere.z);
+	result.vertices[bottomCenterIndex].position = MakeV3(sphere.x, sphere.y - sphere.radius, sphere.z);
 	
 	v4r colorV4r = ToV4rFromColor32(color);
 	r32 ringStep = Pi32 / (r32)(numRings+1);
@@ -243,15 +243,15 @@ PEXP GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRi
 	for (uxx rIndex = 0; rIndex < numRings; rIndex++)
 	{
 		r32 ringAngle = -HalfPi32 + (ringStep * (rIndex+1));
-		r32 ringY = sphere.y + (SinR32(ringAngle) * sphere.Radius);
-		r32 ringRadius = CosR32(ringAngle) * sphere.Radius;
+		r32 ringY = sphere.y + (SinR32(ringAngle) * sphere.radius);
+		r32 ringRadius = CosR32(ringAngle) * sphere.radius;
 		for (uxx sIndex = 0; sIndex < numSegments; sIndex++)
 		{
 			r32 segmentAngle = (sIndex * segmentStep);
 			i32 ringVertIndex = (i32)(1 + (rIndex * numSegments) + sIndex);
 			Assert((uxx)ringVertIndex < result.numVertices);
 			result.vertices[ringVertIndex].position = MakeV3(sphere.x + CosR32(segmentAngle) * ringRadius, ringY, sphere.z + SinR32(segmentAngle) * ringRadius);
-			result.vertices[ringVertIndex].normal = NormalizeV3(SubV3(result.vertices[ringVertIndex].position, sphere.Center));
+			result.vertices[ringVertIndex].normal = NormalizeV3(SubV3(result.vertices[ringVertIndex].position, sphere.center));
 			result.vertices[ringVertIndex].texCoord = MakeV2(1.0f - ((r32)sIndex * texCoordStepX), 1.0f - ((r32)rIndex * texCoordStepY));
 			result.vertices[ringVertIndex].color = colorV4r;
 		}

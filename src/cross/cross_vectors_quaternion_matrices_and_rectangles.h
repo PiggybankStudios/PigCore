@@ -24,11 +24,11 @@ Date:   01\15\2025
 	v2d: AddV2d,                          \
 	v3d: AddV3d,                          \
 	v4d: AddV4d,                          \
-	quat: HMM_AddQ,                       \
+	quat: AddQuat,                        \
 	quatd: AddQuatd,                      \
-	mat2: HMM_AddM2,                      \
-	mat3: HMM_AddM3,                      \
-	mat4: HMM_AddM4,                      \
+	mat2: AddMat2,                        \
+	mat3: AddMat3,                        \
+	mat4: AddMat4,                        \
 	rec: AddRec,                          \
 	reci: AddReci,                        \
 	recd: AddRecd,                        \
@@ -51,11 +51,11 @@ Date:   01\15\2025
 	v2d: SubV2d,                          \
 	v3d: SubV3d,                          \
 	v4d: SubV4d,                          \
-	quat: HMM_SubQ,                       \
+	quat: SubQuat,                        \
 	quatd: SubQuatd,                      \
-	mat2: HMM_SubM2,                      \
-	mat3: HMM_SubM3,                      \
-	mat4: HMM_SubM4,                      \
+	mat2: SubMat2,                        \
+	mat3: SubMat3,                        \
+	mat4: SubMat4,                        \
 	rec: SubRec,                          \
 	reci: SubReci,                        \
 	recd: SubRecd,                        \
@@ -88,10 +88,10 @@ Date:   01\15\2025
 		v2: ScaleV2,                       \
 		v3: ScaleV3,                       \
 		v4: ScaleV4,                       \
-		quat: HMM_MulQF,                   \
-		mat2: HMM_MulM2F,                  \
-		mat3: HMM_MulM3F,                  \
-		mat4: HMM_MulM4F,                  \
+		quat: ScaleQuat,                   \
+		mat2: ScaleMat2,                   \
+		mat3: ScaleMat3,                   \
+		mat4: ScaleMat4,                   \
 		rec: ScaleRec,                     \
 		box: ScaleBox,                     \
 		obb2: ScaleObb2,                   \
@@ -102,9 +102,9 @@ Date:   01\15\2025
 		boxi: ScaleBoxi,                   \
 		reci: ScaleReci                    \
 	),                                     \
-	mat2: HMM_MulM2,                       \
-	mat3: HMM_MulM3,                       \
-	mat4: HMM_MulM4,                       \
+	mat2: MulMat2,                         \
+	mat3: MulMat3,                         \
+	mat4: MulMat4,                         \
 	default: _Generic((left),              \
 		v2: MulV2,                         \
 		v3: MulV3,                         \
@@ -115,10 +115,10 @@ Date:   01\15\2025
 		v2d: MulV2d,                       \
 		v3d: MulV3d,                       \
 		v4d: MulV4d,                       \
-		mat2: HMM_MulM2V2,                 \
-		mat3: HMM_MulM3V3,                 \
-		mat4: HMM_MulM4V4,                 \
-		quat: HMM_MulQ,                    \
+		mat2: MulMat2AndV2,                \
+		mat3: MulMat3AndV3,                \
+		mat4: MulMat4AndV4,                \
+		quat: MulQuat,                     \
 		quatd: MulQuatd,                   \
 		rec: MulRec,                       \
 		reci: MulReci,                     \
@@ -130,7 +130,7 @@ Date:   01\15\2025
 		obb2d: MulObb2d,                   \
 		obb3: MulObb3,                     \
 		obb3d: MulObb3d                    \
-	)
+	)                                      \
 )((left), (right))
 
 //TODO: For some reason the _Generic on (right) is matching r64 case even when the right-hand argument is clearly a v3. So for now Mul does not support 64-bit types
@@ -151,10 +151,10 @@ Date:   01\15\2025
 		v2: ShrinkV2,                      \
 		v3: ShrinkV3,                      \
 		v4: ShrinkV4,                      \
-		quat: HMM_DivQF,                   \
-		mat2: HMM_DivM2F,                  \
-		mat3: HMM_DivM3F,                  \
-		mat4: HMM_DivM4F,                  \
+		quat: ShrinkQuat,                  \
+		mat2: ShrinkMat2,                  \
+		mat3: ShrinkMat3,                  \
+		mat4: ShrinkMat4,                  \
 		rec: ShrinkRec,                    \
 		box: ShrinkBox,                    \
 		obb2: ShrinkObb2,                  \
@@ -220,7 +220,7 @@ Date:   01\15\2025
 		v2d: NormalizeV2d,                   \
 		v3d: NormalizeV3d,                   \
 		v4d: NormalizeV4d,                   \
-		quat: HMM_NormQ,                     \
+		quat: NormalizeQuat,                 \
 		quatd: NormalizeQuatd                \
 )(vector)
 
@@ -234,7 +234,7 @@ Date:   01\15\2025
 		v2d: DotV2d,                      \
 		v3d: DotV3d,                      \
 		v4d: DotV4d,                      \
-		quat: HMM_DotQ,                   \
+		quat: DotQuat,                    \
 		quatd: DotQuatd                   \
 )((left), (right))
 
@@ -247,7 +247,7 @@ Date:   01\15\2025
 		v2d: LerpV2d((left), (right), (amount)),    \
 		v3d: LerpV3d((left), (right), (amount)),    \
 		v4d: LerpV4d((left), (right), (amount)),    \
-		quat: HMM_NLerp((left), (amount), (right)), \
+		quat: LerpQuat((left), (amount), (right)),  \
 		quatd: LerpQuatd((left), (right), (amount)) \
 )
 

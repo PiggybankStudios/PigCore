@@ -148,11 +148,11 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 			{
 				r32 newScrollbarPos = ClampR32(context->mouse->position.y - list->scrollbarGrabOffset.y, minY, maxY);
 				r32 newScrollbarPercent = (newScrollbarPos - minY) / (maxY - minY);
-				scrollData.scrollTarget->Y = -((scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height) * newScrollbarPercent);
-				if (!list->isDraggingSmooth) { scrollData.scrollPosition->Y = scrollData.scrollTarget->Y; }
+				scrollData.scrollTarget->y = -((scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height) * newScrollbarPercent);
+				if (!list->isDraggingSmooth) { scrollData.scrollPosition->y = scrollData.scrollTarget->y; }
 			}
 		}
-		if (scrollData.scrollPosition->Y == scrollData.scrollTarget->Y) { list->isDraggingSmooth = false; }
+		if (scrollData.scrollPosition->y == scrollData.scrollTarget->y) { list->isDraggingSmooth = false; }
 	}
 	
 	CLAY({ .id = list->id,
@@ -287,7 +287,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 				if (scrollData.found && scrollData.contentDimensions.height > scrollData.scrollContainerDimensions.height)
 				{
 					scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.height / scrollData.contentDimensions.height, 0.0f, 1.0f);
-					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->Y / (scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height), 0.0f, 1.0f);
+					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->y / (scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height), 0.0f, 1.0f);
 				}
 				rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
 				v2 scrollBarSize = MakeV2(

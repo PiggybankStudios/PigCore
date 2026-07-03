@@ -90,7 +90,7 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	bool isGutterHovered = IsUiElementHovered(gutterId);
 	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.size, UiCtx->scale) : V2_One;
 	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.size, UiCtx->scale) : V2_One;
-	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.xy, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
+	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.xy, oldScrollViewElem->config.padding.inner.zw), UiCtx->scale)) : viewSize;
 	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
 	r32 viewablePercentage = (contentSize.height > usableViewSize.height) ? (usableViewSize.height / contentSize.height) : 1.0f;
 	v2 barSize = MakeV2(
@@ -157,14 +157,14 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 			.scrollRelayId = scrollViewId,
 			.alignment = UI_ALIGN_TOP_CENTER(),
 			.sizing = { .width=UI_FIXED(gutterWidth), .height=UI_PERCENT(1.0f) },
-			.padding = { .inner = { .Left=gutterLeftRightPadding, .Right=gutterLeftRightPadding } },
+			.padding = { .inner = { .left=gutterLeftRightPadding, .right=gutterLeftRightPadding } },
 			.color = gutterColor,
 		})
 		{
 			r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.y > 0) ? oldScrollViewElem->scroll.y / oldScrollViewElem->scrollMax.y : 0.0f;
 			UIELEM_LEAF({ .id = barId,
 				.sizing = UI_FIXED2(barSize.width, barSize.height),
-				.padding = { .outer = { .Top=RoundR32(scrollPercentage * (gutterSize.height - barSize.height)) } },
+				.padding = { .outer = { .top=RoundR32(scrollPercentage * (gutterSize.height - barSize.height)) } },
 				.color = barColor,
 				.cornerRadius = FillV4r(barSize.width/2),
 			});
@@ -193,7 +193,7 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	bool isGutterHovered = IsUiElementHovered(gutterId);
 	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.size, UiCtx->scale) : V2_One;
 	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.size, UiCtx->scale) : V2_One;
-	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.xy, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
+	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.xy, oldScrollViewElem->config.padding.inner.zw), UiCtx->scale)) : viewSize;
 	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
 	r32 viewablePercentage = (contentSize.width > usableViewSize.width) ? (usableViewSize.width / contentSize.width) : 1.0f;
 	v2 barSize = MakeV2(
@@ -260,14 +260,14 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 			.scrollRelayId = scrollViewId,
 			.alignment = UI_ALIGN_LEFT_CENTER(),
 			.sizing = { .width=UI_PERCENT(1.0f), .height=UI_FIXED(gutterHeight) },
-			.padding = { .inner = { .Top=gutterTopBottomPadding, .Bottom=gutterTopBottomPadding } },
+			.padding = { .inner = { .top=gutterTopBottomPadding, .bottom=gutterTopBottomPadding } },
 			.color = gutterColor,
 		})
 		{
 			r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.x > 0) ? oldScrollViewElem->scroll.x / oldScrollViewElem->scrollMax.x : 0.0f;
 			UIELEM_LEAF({ .id = barId,
 				.sizing = UI_FIXED2(barSize.width, barSize.height),
-				.padding = { .outer = { .Left=RoundR32(scrollPercentage * (gutterSize.width - barSize.width)) } },
+				.padding = { .outer = { .left=RoundR32(scrollPercentage * (gutterSize.width - barSize.width)) } },
 				.color = barColor,
 				.cornerRadius = FillV4r(barSize.height/2),
 			});

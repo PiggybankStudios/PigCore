@@ -187,23 +187,23 @@ PEXP bool IsUiElemConfigFieldDefault(const UiElemConfig* configPntr, UiElemConfi
 		case UiElemConfigField_TextureSourceRec:        return AreEqualRec(configPntr->textureSourceRec, Rec_Zero);
 		case UiElemConfigField_SpriteSheet:             return (configPntr->spriteSheet == nullptr);
 		case UiElemConfigField_SheetCell:               return (configPntr->sheetCell.x == 0 && configPntr->sheetCell.y == 0);
-		case UiElemConfigField_InnerPaddingLeft:        return (configPntr->padding.inner.Left   == 0.0f);
-		case UiElemConfigField_InnerPaddingTop:         return (configPntr->padding.inner.Top    == 0.0f);
-		case UiElemConfigField_InnerPaddingRight:       return (configPntr->padding.inner.Right  == 0.0f);
-		case UiElemConfigField_InnerPaddingBottom:      return (configPntr->padding.inner.Bottom == 0.0f);
-		case UiElemConfigField_OuterPaddingLeft:        return (configPntr->padding.outer.Left   == 0.0f);
-		case UiElemConfigField_OuterPaddingTop:         return (configPntr->padding.outer.Top    == 0.0f);
-		case UiElemConfigField_OuterPaddingRight:       return (configPntr->padding.outer.Right  == 0.0f);
-		case UiElemConfigField_OuterPaddingBottom:      return (configPntr->padding.outer.Bottom == 0.0f);
+		case UiElemConfigField_InnerPaddingLeft:        return (configPntr->padding.inner.left   == 0.0f);
+		case UiElemConfigField_InnerPaddingTop:         return (configPntr->padding.inner.top    == 0.0f);
+		case UiElemConfigField_InnerPaddingRight:       return (configPntr->padding.inner.right  == 0.0f);
+		case UiElemConfigField_InnerPaddingBottom:      return (configPntr->padding.inner.bottom == 0.0f);
+		case UiElemConfigField_OuterPaddingLeft:        return (configPntr->padding.outer.left   == 0.0f);
+		case UiElemConfigField_OuterPaddingTop:         return (configPntr->padding.outer.top    == 0.0f);
+		case UiElemConfigField_OuterPaddingRight:       return (configPntr->padding.outer.right  == 0.0f);
+		case UiElemConfigField_OuterPaddingBottom:      return (configPntr->padding.outer.bottom == 0.0f);
 		case UiElemConfigField_ChildPadding:            return (configPntr->padding.child == 0.0f);
 		case UiElemConfigField_CornerRadiusTopLeft:     return (configPntr->cornerRadius.topLeft     == 0.0f);
-		case UiElemConfigField_CornerRadiusTopRight:    return (configPntr->cornerRadius.TopRight    == 0.0f);
-		case UiElemConfigField_CornerRadiusBottomRight: return (configPntr->cornerRadius.BottomRight == 0.0f);
-		case UiElemConfigField_CornerRadiusBottomLeft:  return (configPntr->cornerRadius.BottomLeft  == 0.0f);
-		case UiElemConfigField_BorderThicknessLeft:     return (configPntr->borderThickness.Left   == 0.0f);
-		case UiElemConfigField_BorderThicknessTop:      return (configPntr->borderThickness.Top    == 0.0f);
-		case UiElemConfigField_BorderThicknessRight:    return (configPntr->borderThickness.Right  == 0.0f);
-		case UiElemConfigField_BorderThicknessBottom:   return (configPntr->borderThickness.Bottom == 0.0f);
+		case UiElemConfigField_CornerRadiusTopRight:    return (configPntr->cornerRadius.topRight    == 0.0f);
+		case UiElemConfigField_CornerRadiusBottomRight: return (configPntr->cornerRadius.bottomRight == 0.0f);
+		case UiElemConfigField_CornerRadiusBottomLeft:  return (configPntr->cornerRadius.bottomLeft  == 0.0f);
+		case UiElemConfigField_BorderThicknessLeft:     return (configPntr->borderThickness.left   == 0.0f);
+		case UiElemConfigField_BorderThicknessTop:      return (configPntr->borderThickness.top    == 0.0f);
+		case UiElemConfigField_BorderThicknessRight:    return (configPntr->borderThickness.right  == 0.0f);
+		case UiElemConfigField_BorderThicknessBottom:   return (configPntr->borderThickness.bottom == 0.0f);
 		case UiElemConfigField_BorderColor:             return (configPntr->borderColor.valueU32 == PigUiDefaultColor_Value);
 		case UiElemConfigField_BorderDepth:             return (configPntr->borderDepth == 0.0f);
 		case UiElemConfigField_FloatingType:            return (configPntr->floating.type == UiFloatingType_Default);
@@ -255,23 +255,23 @@ PEXP void SetUiElemConfigField(UiElemConfig* configToPntr, const UiElemConfig* c
 		case UiElemConfigField_TextureSourceRec:        configToPntr->textureSourceRec = configFromPntr->textureSourceRec; break;
 		case UiElemConfigField_SpriteSheet:             configToPntr->spriteSheet = configFromPntr->spriteSheet; break;
 		case UiElemConfigField_SheetCell:               configToPntr->sheetCell = configFromPntr->sheetCell; break;
-		case UiElemConfigField_InnerPaddingLeft:        configToPntr->padding.inner.Left   = configFromPntr->padding.inner.Left; break;
-		case UiElemConfigField_InnerPaddingTop:         configToPntr->padding.inner.Top    = configFromPntr->padding.inner.Top; break;
-		case UiElemConfigField_InnerPaddingRight:       configToPntr->padding.inner.Right  = configFromPntr->padding.inner.Right; break;
-		case UiElemConfigField_InnerPaddingBottom:      configToPntr->padding.inner.Bottom = configFromPntr->padding.inner.Bottom; break;
-		case UiElemConfigField_OuterPaddingLeft:        configToPntr->padding.outer.Left   = configFromPntr->padding.outer.Left; break;
-		case UiElemConfigField_OuterPaddingTop:         configToPntr->padding.outer.Top    = configFromPntr->padding.outer.Top; break;
-		case UiElemConfigField_OuterPaddingRight:       configToPntr->padding.outer.Right  = configFromPntr->padding.outer.Right; break;
-		case UiElemConfigField_OuterPaddingBottom:      configToPntr->padding.outer.Bottom = configFromPntr->padding.outer.Bottom; break;
+		case UiElemConfigField_InnerPaddingLeft:        configToPntr->padding.inner.left   = configFromPntr->padding.inner.left; break;
+		case UiElemConfigField_InnerPaddingTop:         configToPntr->padding.inner.top    = configFromPntr->padding.inner.top; break;
+		case UiElemConfigField_InnerPaddingRight:       configToPntr->padding.inner.right  = configFromPntr->padding.inner.right; break;
+		case UiElemConfigField_InnerPaddingBottom:      configToPntr->padding.inner.bottom = configFromPntr->padding.inner.bottom; break;
+		case UiElemConfigField_OuterPaddingLeft:        configToPntr->padding.outer.left   = configFromPntr->padding.outer.left; break;
+		case UiElemConfigField_OuterPaddingTop:         configToPntr->padding.outer.top    = configFromPntr->padding.outer.top; break;
+		case UiElemConfigField_OuterPaddingRight:       configToPntr->padding.outer.right  = configFromPntr->padding.outer.right; break;
+		case UiElemConfigField_OuterPaddingBottom:      configToPntr->padding.outer.bottom = configFromPntr->padding.outer.bottom; break;
 		case UiElemConfigField_ChildPadding:            configToPntr->padding.child = configFromPntr->padding.child; break;
 		case UiElemConfigField_CornerRadiusTopLeft:     configToPntr->cornerRadius.topLeft     = configFromPntr->cornerRadius.topLeft; break;
-		case UiElemConfigField_CornerRadiusTopRight:    configToPntr->cornerRadius.TopRight    = configFromPntr->cornerRadius.TopRight; break;
-		case UiElemConfigField_CornerRadiusBottomRight: configToPntr->cornerRadius.BottomRight = configFromPntr->cornerRadius.BottomRight; break;
-		case UiElemConfigField_CornerRadiusBottomLeft:  configToPntr->cornerRadius.BottomLeft  = configFromPntr->cornerRadius.BottomLeft; break;
-		case UiElemConfigField_BorderThicknessLeft:     configToPntr->borderThickness.Left   = configFromPntr->borderThickness.Left; break;
-		case UiElemConfigField_BorderThicknessTop:      configToPntr->borderThickness.Top    = configFromPntr->borderThickness.Top; break;
-		case UiElemConfigField_BorderThicknessRight:    configToPntr->borderThickness.Right  = configFromPntr->borderThickness.Right; break;
-		case UiElemConfigField_BorderThicknessBottom:   configToPntr->borderThickness.Bottom = configFromPntr->borderThickness.Bottom; break;
+		case UiElemConfigField_CornerRadiusTopRight:    configToPntr->cornerRadius.topRight    = configFromPntr->cornerRadius.topRight; break;
+		case UiElemConfigField_CornerRadiusBottomRight: configToPntr->cornerRadius.bottomRight = configFromPntr->cornerRadius.bottomRight; break;
+		case UiElemConfigField_CornerRadiusBottomLeft:  configToPntr->cornerRadius.bottomLeft  = configFromPntr->cornerRadius.bottomLeft; break;
+		case UiElemConfigField_BorderThicknessLeft:     configToPntr->borderThickness.left   = configFromPntr->borderThickness.left; break;
+		case UiElemConfigField_BorderThicknessTop:      configToPntr->borderThickness.top    = configFromPntr->borderThickness.top; break;
+		case UiElemConfigField_BorderThicknessRight:    configToPntr->borderThickness.right  = configFromPntr->borderThickness.right; break;
+		case UiElemConfigField_BorderThicknessBottom:   configToPntr->borderThickness.bottom = configFromPntr->borderThickness.bottom; break;
 		case UiElemConfigField_BorderColor:             configToPntr->borderColor = configFromPntr->borderColor; break;
 		case UiElemConfigField_BorderDepth:             configToPntr->borderDepth = configFromPntr->borderDepth; break;
 		case UiElemConfigField_FloatingType:            configToPntr->floating.type = configFromPntr->floating.type; break;
@@ -525,24 +525,24 @@ PEXPI UiElement* CloseUiElement()
 	{
 		element->config.sizing.y.value *= UiCtx->scale;
 	}
-	element->config.padding.inner.Left       *= UiCtx->scale;
-	element->config.padding.inner.Top        *= UiCtx->scale;
-	element->config.padding.inner.Right      *= UiCtx->scale;
-	element->config.padding.inner.Bottom     *= UiCtx->scale;
-	element->config.padding.outer.Left       *= UiCtx->scale;
-	element->config.padding.outer.Top        *= UiCtx->scale;
-	element->config.padding.outer.Right      *= UiCtx->scale;
-	element->config.padding.outer.Bottom     *= UiCtx->scale;
+	element->config.padding.inner.left       *= UiCtx->scale;
+	element->config.padding.inner.top        *= UiCtx->scale;
+	element->config.padding.inner.right      *= UiCtx->scale;
+	element->config.padding.inner.bottom     *= UiCtx->scale;
+	element->config.padding.outer.left       *= UiCtx->scale;
+	element->config.padding.outer.top        *= UiCtx->scale;
+	element->config.padding.outer.right      *= UiCtx->scale;
+	element->config.padding.outer.bottom     *= UiCtx->scale;
 	element->config.cornerRadius.topLeft     *= UiCtx->scale;
-	element->config.cornerRadius.TopRight    *= UiCtx->scale;
-	element->config.cornerRadius.BottomRight *= UiCtx->scale;
-	element->config.cornerRadius.BottomLeft  *= UiCtx->scale;
+	element->config.cornerRadius.topRight    *= UiCtx->scale;
+	element->config.cornerRadius.bottomRight *= UiCtx->scale;
+	element->config.cornerRadius.bottomLeft  *= UiCtx->scale;
 	element->config.padding.child            *= UiCtx->scale;
 	//NOTE: For border thicknesses we want to keep them from going below 1px if the thickness was non-zero at uiScale=1.0
-	element->config.borderThickness.Left     *= UiCtx->scale; if (element->config.borderThickness.Left   > 0.0f && element->config.borderThickness.Left   < 1.0f) { element->config.borderThickness.Left   = 1.0f; }
-	element->config.borderThickness.Top      *= UiCtx->scale; if (element->config.borderThickness.Top    > 0.0f && element->config.borderThickness.Top    < 1.0f) { element->config.borderThickness.Top    = 1.0f; }
-	element->config.borderThickness.Right    *= UiCtx->scale; if (element->config.borderThickness.Right  > 0.0f && element->config.borderThickness.Right  < 1.0f) { element->config.borderThickness.Right  = 1.0f; }
-	element->config.borderThickness.Bottom   *= UiCtx->scale; if (element->config.borderThickness.Bottom > 0.0f && element->config.borderThickness.Bottom < 1.0f) { element->config.borderThickness.Bottom = 1.0f; }
+	element->config.borderThickness.left     *= UiCtx->scale; if (element->config.borderThickness.left   > 0.0f && element->config.borderThickness.left   < 1.0f) { element->config.borderThickness.left   = 1.0f; }
+	element->config.borderThickness.top      *= UiCtx->scale; if (element->config.borderThickness.top    > 0.0f && element->config.borderThickness.top    < 1.0f) { element->config.borderThickness.top    = 1.0f; }
+	element->config.borderThickness.right    *= UiCtx->scale; if (element->config.borderThickness.right  > 0.0f && element->config.borderThickness.right  < 1.0f) { element->config.borderThickness.right  = 1.0f; }
+	element->config.borderThickness.bottom   *= UiCtx->scale; if (element->config.borderThickness.bottom > 0.0f && element->config.borderThickness.bottom < 1.0f) { element->config.borderThickness.bottom = 1.0f; }
 	
 	return element;
 }
@@ -863,7 +863,7 @@ static void CalcUiElementMinimumAndPreferredOnAxis(UiElement* element, UiElement
 	DebugAssert(parent != nullptr || element->elementIndex == 0); //parent can be null, only for the root element
 	bool isThisLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
 	r32 layoutAxisChildPadding = isThisLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
-	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
+	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.left + element->config.padding.inner.right) : (element->config.padding.inner.top + element->config.padding.inner.bottom));
 	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
 	
 	r32* minimumSizePntr = (xAxis ? &element->minimumSize.width : &element->minimumSize.height);
@@ -954,7 +954,7 @@ static void PropogateMinimumAndPreferredSizeToParentOnAxis(UiElement* element, U
 		r32 preferredSize = (xAxis ? element->preferredSize.width : element->preferredSize.height);
 		
 		bool isParentLayoutDir = (IsUiDirHorizontal(parent->config.direction) == xAxis);
-		r32 outerPaddingLrOrTb = (xAxis ? (element->config.padding.outer.Left + element->config.padding.outer.Right) : (element->config.padding.outer.Top + element->config.padding.outer.Bottom));
+		r32 outerPaddingLrOrTb = (xAxis ? (element->config.padding.outer.left + element->config.padding.outer.right) : (element->config.padding.outer.top + element->config.padding.outer.bottom));
 		r32* parentMinimumSizePntr = (xAxis ? &parent->minimumSize.width : &parent->minimumSize.height);
 		r32* parentPreferredSizePntr = (xAxis ? &parent->preferredSize.width : &parent->preferredSize.height);
 		
@@ -1011,7 +1011,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 	bool isLayoutDir = (IsUiDirHorizontal(element->config.direction) == xAxis);
 	bool isScrolling = (xAxis ? element->config.scrolling.x.enabled : element->config.scrolling.y.enabled);
 	// r32 layoutAxisChildPadding = isLayoutDir ? ((r32)(element->numNonFloatingChildren > 1 ? element->numNonFloatingChildren-1 : 0) * element->config.padding.child) : 0.0f;
-	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.Left + element->config.padding.inner.Right) : (element->config.padding.inner.Top + element->config.padding.inner.Bottom));
+	r32 elemInnerPaddingLrOrTb = (xAxis ? (element->config.padding.inner.left + element->config.padding.inner.right) : (element->config.padding.inner.top + element->config.padding.inner.bottom));
 	// r32 minimumSize = (xAxis ? element->minimumSize.width : element->minimumSize.height);
 	// r32 preferredSize = (xAxis ? element->preferredSize.width : element->preferredSize.height);
 	r32 innerSize = *sizePntr - elemInnerPaddingLrOrTb;
@@ -1053,7 +1053,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			{
 				r32 childMinimumSize = (xAxis ? child->minimumSize.width : child->minimumSize.height);
 				r32 childPreferredSize = (xAxis ? child->preferredSize.width : child->preferredSize.height);
-				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.left + child->config.padding.outer.right) : (child->config.padding.outer.top + child->config.padding.outer.bottom));
 				r32* childSizePntr = (xAxis ? &child->layoutRec.width : &child->layoutRec.height);
 				AssertMsg(!IsInfiniteOrNanR32(childPreferredSize), "Expand children are not allowed in a scrollable container along the scroll axis");
 				*childSizePntr = MaxR32(childMinimumSize, childPreferredSize);
@@ -1075,7 +1075,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			{
 				r32 childMinimumSize = (xAxis ? child->minimumSize.width : child->minimumSize.height);
 				r32 childPreferredSize = (xAxis ? child->preferredSize.width : child->preferredSize.height);
-				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.left + child->config.padding.outer.right) : (child->config.padding.outer.top + child->config.padding.outer.bottom));
 				r32* childSizePntr = (xAxis ? &child->layoutRec.width : &child->layoutRec.height);
 				if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize) { numGrowableChildren++; }
 				*childSizePntr = childMinimumSize;
@@ -1170,7 +1170,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 					{
 						r32 childMinimumSize = (xAxis ? child->minimumSize.width : child->minimumSize.height);
 						r32 childPreferredSize = (xAxis ? child->preferredSize.width : child->preferredSize.height);
-						// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+						// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.left + child->config.padding.outer.right) : (child->config.padding.outer.top + child->config.padding.outer.bottom));
 						r32* childSizePntr = (xAxis ? &child->layoutRec.width : &child->layoutRec.height);
 						if (AreSimilarR32(*childSizePntr, smallestChildSize, DEFAULT_R32_TOLERANCE) &&
 							(IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize))
@@ -1249,7 +1249,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 					{
 						// r32 childMinimumSize = (xAxis ? child->minimumSize.width : child->minimumSize.height);
 						// r32 childPreferredSize = (xAxis ? child->preferredSize.width : child->preferredSize.height);
-						// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+						// r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.left + child->config.padding.outer.right) : (child->config.padding.outer.top + child->config.padding.outer.bottom));
 						r32* childSizePntr = (xAxis ? &child->layoutRec.width : &child->layoutRec.height);
 						if (AreSimilarR32(*childSizePntr, largestChildSize, DEFAULT_R32_TOLERANCE))
 						{
@@ -1270,7 +1270,7 @@ static void DistributeSpaceToUiElemChildrenOnAxis(UiElement* element, bool xAxis
 			{
 				r32 childMinimumSize = (xAxis ? child->minimumSize.width : child->minimumSize.height);
 				r32 childPreferredSize = (xAxis ? child->preferredSize.width : child->preferredSize.height);
-				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.Left + child->config.padding.outer.Right) : (child->config.padding.outer.Top + child->config.padding.outer.Bottom));
+				r32 childOuterPaddingLrOrTb = (xAxis ? (child->config.padding.outer.left + child->config.padding.outer.right) : (child->config.padding.outer.top + child->config.padding.outer.bottom));
 				r32* childSizePntr = (xAxis ? &child->layoutRec.width : &child->layoutRec.height);
 				if (IsInfiniteOrNanR32(childPreferredSize) || childPreferredSize > childMinimumSize)
 				{
@@ -1657,8 +1657,8 @@ static void UiSystemDoLayout()
 			if (child->config.floating.type == UiFloatingType_None)
 			{
 				v2 childSizeAndPadding = AddV2(child->layoutRec.size, MakeV2(
-					child->config.padding.outer.Left + child->config.padding.outer.Right,
-					child->config.padding.outer.Top + child->config.padding.outer.Bottom
+					child->config.padding.outer.left + child->config.padding.outer.right,
+					child->config.padding.outer.top + child->config.padding.outer.bottom
 				));
 				if (IsUiDirHorizontal(element->config.direction))
 				{
@@ -1676,8 +1676,8 @@ static void UiSystemDoLayout()
 			}
 		}
 		v2 innerSize = SubV2(element->layoutRec.size, MakeV2(
-			element->config.padding.inner.Left + element->config.padding.inner.Right,
-			element->config.padding.inner.Top + element->config.padding.inner.Bottom
+			element->config.padding.inner.left + element->config.padding.inner.right,
+			element->config.padding.inner.top + element->config.padding.inner.bottom
 		));
 		v2 emptySpaceForAlignment = MakeV2(
 			MaxR32(0.0f, innerSize.width - childrenTotalSize.width),
@@ -1700,17 +1700,17 @@ static void UiSystemDoLayout()
 		v2 layoutPos = V2_Zero_Const;
 		if (element->config.direction == UiLayoutDir_LeftToRight || element->config.direction == UiLayoutDir_TopDown)
 		{
-			layoutPos = AddV2(element->layoutRec.topLeft, element->config.padding.inner.xY); //XY is alias for (Left,Top)
+			layoutPos = AddV2(element->layoutRec.topLeft, element->config.padding.inner.xy); //XY is alias for (Left,Top)
 			layoutPos = AddV2(layoutPos, alignmentOffset);
 		}
 		else if (element->config.direction == UiLayoutDir_RightToLeft)
 		{
-			layoutPos = AddV2(element->layoutRec.topLeft, MakeV2(element->layoutRec.width - element->config.padding.inner.Right, element->config.padding.inner.Top));
+			layoutPos = AddV2(element->layoutRec.topLeft, MakeV2(element->layoutRec.width - element->config.padding.inner.right, element->config.padding.inner.top));
 			//TODO: How do we take alignmentOffset into account?
 		}
 		else if (element->config.direction == UiLayoutDir_BottomUp)
 		{
-			layoutPos = AddV2(element->layoutRec.topLeft, MakeV2(element->config.padding.inner.Left, element->layoutRec.height - element->config.padding.inner.Bottom));
+			layoutPos = AddV2(element->layoutRec.topLeft, MakeV2(element->config.padding.inner.left, element->layoutRec.height - element->config.padding.inner.bottom));
 			//TODO: How do we take alignmentOffset into account?
 		}
 		else { DebugAssert(false); }
@@ -1725,31 +1725,31 @@ static void UiSystemDoLayout()
 			if (child->config.floating.type == UiFloatingType_None)
 			{
 				r32 childPadding = ((cIndex > 0) ? element->config.padding.child : 0.0f);
-				if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.x += childPadding + child->config.padding.outer.Left; }
-				if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.y += childPadding + child->config.padding.outer.Top; }
-				if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.x -= child->layoutRec.width + childPadding + child->config.padding.outer.Right; }
-				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.y -= child->layoutRec.height + childPadding + child->config.padding.outer.Bottom; }
+				if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.x += childPadding + child->config.padding.outer.left; }
+				if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.y += childPadding + child->config.padding.outer.top; }
+				if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.x -= child->layoutRec.width + childPadding + child->config.padding.outer.right; }
+				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.y -= child->layoutRec.height + childPadding + child->config.padding.outer.bottom; }
 				
 				child->layoutRec.topLeft = layoutPos;
 				if (IsUiDirHorizontal(element->config.direction))
 				{
-					r32 childOuterPaddingTb = (child->config.padding.outer.Top + child->config.padding.outer.Bottom);
+					r32 childOuterPaddingTb = (child->config.padding.outer.top + child->config.padding.outer.bottom);
 					if (element->config.alignment.y == UiAlign_Center) { child->layoutRec.y += innerSize.height/2 - (child->layoutRec.height + childOuterPaddingTb)/2; }
 					else if (element->config.alignment.y == UiAlign_Bottom) { child->layoutRec.y += innerSize.height - (child->layoutRec.height + childOuterPaddingTb); }
-					child->layoutRec.y += child->config.padding.outer.Top;
+					child->layoutRec.y += child->config.padding.outer.top;
 				}
 				else
 				{
-					r32 childOuterPaddingLr = (child->config.padding.outer.Left + child->config.padding.outer.Right);
+					r32 childOuterPaddingLr = (child->config.padding.outer.left + child->config.padding.outer.right);
 					if (element->config.alignment.x == UiAlign_Center) { child->layoutRec.x += innerSize.width/2 - (child->layoutRec.width + childOuterPaddingLr)/2; }
 					else if (element->config.alignment.x == UiAlign_Left) { child->layoutRec.x += innerSize.width - (child->layoutRec.width + childOuterPaddingLr); }
-					child->layoutRec.x += child->config.padding.outer.Left;
+					child->layoutRec.x += child->config.padding.outer.left;
 				}
 				
-				if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.x += child->layoutRec.width + child->config.padding.outer.Right; }
-				if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.y += child->layoutRec.height + child->config.padding.outer.Bottom; }
-				if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.x -= child->config.padding.outer.Left; }
-				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.y -= child->config.padding.outer.Top; }
+				if (element->config.direction == UiLayoutDir_LeftToRight) { layoutPos.x += child->layoutRec.width + child->config.padding.outer.right; }
+				if (element->config.direction == UiLayoutDir_TopDown) { layoutPos.y += child->layoutRec.height + child->config.padding.outer.bottom; }
+				if (element->config.direction == UiLayoutDir_RightToLeft) { layoutPos.x -= child->config.padding.outer.left; }
+				if (element->config.direction == UiLayoutDir_BottomUp) { layoutPos.y -= child->config.padding.outer.top; }
 				
 				if (clipChildren) { child->clipRec = OverlapPartRec(element->clipRec, element->layoutRec); }
 				else { child->clipRec = element->clipRec; }
@@ -1835,7 +1835,7 @@ PEXP UiRenderList* GetUiRenderList()
 			Color32 actualBorderColor = ColorMultSimple(element->config.borderColor, colorRecursive);
 			Color32 actualTextColor = ColorMultSimple(element->config.textColor, colorRecursive);
 			bool isBorderSameDepth = (AreSimilarR32(element->config.borderDepth, element->config.depth, DEFAULT_R32_TOLERANCE) || element->config.borderDepth == 0.0f);
-			bool borderHasAlpha = (element->config.borderColor.a != 0 && (element->config.borderThickness.Left != 0 || element->config.borderThickness.Top != 0 || element->config.borderThickness.Right != 0 || element->config.borderThickness.Bottom != 0));
+			bool borderHasAlpha = (element->config.borderColor.a != 0 && (element->config.borderThickness.left != 0 || element->config.borderThickness.top != 0 || element->config.borderThickness.right != 0 || element->config.borderThickness.bottom != 0));
 			if (actualColor.a != 0 || (borderHasAlpha && isBorderSameDepth))
 			{
 				UiRenderCmd* newCmd = VarArrayAdd(UiRenderCmd, &UiCtx->renderList.commands);
@@ -1954,8 +1954,8 @@ PEXP UiRenderList* GetUiRenderList()
 					newCmd->text.position = AddV2(
 						element->layoutRec.topLeft,
 						MakeV2(
-							element->config.padding.inner.Left,
-							element->config.padding.inner.Top + GetFontMaxAscend(newCmd->text.font, newCmd->text.fontSize, newCmd->text.fontStyle))
+							element->config.padding.inner.left,
+							element->config.padding.inner.top + GetFontMaxAscend(newCmd->text.font, newCmd->text.fontSize, newCmd->text.fontStyle))
 					);
 					newCmd->text.text = element->config.text;
 				}

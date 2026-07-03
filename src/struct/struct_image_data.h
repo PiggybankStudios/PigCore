@@ -21,7 +21,7 @@ plex ImageData
 	u32* pixels;
 };
 #define MakeImageDataEx(sizeV2i, numPixelsValue, pixelsPntr) NEW_STRUCT(ImageData){ .size=(sizeV2i), .numPixels=(numPixelsValue), .pixels=(pixelsPntr) }
-#define MakeImageData(sizeV2i, pixelsPntr) NEW_STRUCT(ImageData){ .size=(sizeV2i), .numPixels=(uxx)((sizeV2i).Width * (sizeV2i).Height), .pixels=(pixelsPntr) }
+#define MakeImageData(sizeV2i, pixelsPntr) NEW_STRUCT(ImageData){ .size=(sizeV2i), .numPixels=(uxx)((sizeV2i).width * (sizeV2i).height), .pixels=(pixelsPntr) }
 
 #endif //  _STRUCT_IMAGE_DATA_H
 

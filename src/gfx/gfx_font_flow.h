@@ -113,7 +113,7 @@ plex TextMeasure
 	car
 	{
 		rec logicalRec;
-		plex { r32 OffsetX, OffsetY; r32 Width, Height; };
+		plex { r32 offsetX, offsetY; r32 width, height; };
 	};
 };
 
@@ -455,7 +455,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				}
 				
 				glyphDrawRec = MakeRecV(AddV2(state->position, glyphMetrics.renderOffset), ToV2Fromi(glyphMetrics.glyphSize));
-				glyphLogicalRec = MakeRecV(AddV2(state->position, glyphMetrics.logicalRec.topLeft), glyphMetrics.logicalRec.Size);
+				glyphLogicalRec = MakeRecV(AddV2(state->position, glyphMetrics.logicalRec.topLeft), glyphMetrics.logicalRec.size);
 				if (state->alignPixelSize.x != 0) { glyphDrawRec.x = RoundR32(glyphDrawRec.x * state->alignPixelSize.x) / state->alignPixelSize.x; }
 				if (state->alignPixelSize.y != 0) { glyphDrawRec.y = RoundR32(glyphDrawRec.y * state->alignPixelSize.y) / state->alignPixelSize.y; }
 				
@@ -674,7 +674,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	if (!IsEmptyStr(ellipsesStr))
 	{
 		TextMeasure ellipsesMeasure = MeasureTextEx(font, fontSize, styleFlags, false, 0, ellipsesStr);
-		ellipsesWidth = ellipsesMeasure.width - ellipsesMeasure.OffsetX;
+		ellipsesWidth = ellipsesMeasure.width - ellipsesMeasure.offsetX;
 	}
 	
 	Str8 leftPortion = StrSlice(text, 0, ellipsesIndex);
