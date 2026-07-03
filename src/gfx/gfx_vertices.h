@@ -79,9 +79,9 @@ car Vertex2D
 	};
 	plex
 	{
-		r32 X, Y;
+		r32 x, y;
 		r32 tX, tY;
-		r32 R, G, B, A;
+		r32 r, g, b, a;
 	};
 };
 #if STATIC_ASSERT_AVAILABLE
@@ -102,10 +102,10 @@ car Vertex3D
 	};
 	plex
 	{
-		r32 X, Y, Z;
+		r32 x, y, z;
 		r32 nX, nY, nZ;
 		r32 tX, tY;
-		r32 R, G, B, A;
+		r32 r, g, b, a;
 	};
 };
 #if STATIC_ASSERT_AVAILABLE

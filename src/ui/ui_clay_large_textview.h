@@ -202,13 +202,13 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 			{
 				tview->draggingHoriScrollbar = true;
 				tview->isDraggingHoriSmooth = false;
-				tview->horiScrollbarGrabOffset = SubV2(context->mouse->position, horiScrollbarDrawRec.TopLeft);
+				tview->horiScrollbarGrabOffset = SubV2(context->mouse->position, horiScrollbarDrawRec.topLeft);
 			}
 			else if (Clay_PointerOver(horiGutterId))
 			{
 				tview->draggingHoriScrollbar = true;
 				tview->isDraggingHoriSmooth = true;
-				tview->horiScrollbarGrabOffset = ShrinkV2(horiScrollbarDrawRec.Size, 2);
+				tview->horiScrollbarGrabOffset = ShrinkV2(horiScrollbarDrawRec.size, 2);
 			}
 		}
 		if (!tview->draggingVertScrollbar)
@@ -217,54 +217,54 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 			{
 				tview->draggingVertScrollbar = true;
 				tview->isDraggingVertSmooth = false;
-				tview->vertScrollbarGrabOffset = SubV2(context->mouse->position, vertScrollbarDrawRec.TopLeft);
+				tview->vertScrollbarGrabOffset = SubV2(context->mouse->position, vertScrollbarDrawRec.topLeft);
 			}
 			else if (Clay_PointerOver(vertGutterId))
 			{
 				tview->draggingVertScrollbar = true;
 				tview->isDraggingVertSmooth = true;
-				tview->vertScrollbarGrabOffset = ShrinkV2(vertScrollbarDrawRec.Size, 2);
+				tview->vertScrollbarGrabOffset = ShrinkV2(vertScrollbarDrawRec.size, 2);
 			}
 		}
 	}
 	
 	if (tview->draggingHoriScrollbar)
 	{
-		if (scrollData.found && scrollData.contentDimensions.Width <= scrollData.scrollContainerDimensions.Width) { tview->draggingHoriScrollbar = false; }
+		if (scrollData.found && scrollData.contentDimensions.width <= scrollData.scrollContainerDimensions.width) { tview->draggingHoriScrollbar = false; }
 		else if (!IsMouseBtnDown(context->mouse, context->mouseHandling, MouseBtn_Left)) { tview->draggingHoriScrollbar = false; }
 		else
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(horiGutterId);
-			r32 minX = scrollGutterDrawRec.X;
-			r32 maxX = scrollGutterDrawRec.X + scrollGutterDrawRec.Width - horiScrollbarDrawRec.Width;
+			r32 minX = scrollGutterDrawRec.x;
+			r32 maxX = scrollGutterDrawRec.x + scrollGutterDrawRec.width - horiScrollbarDrawRec.width;
 			if (maxX > minX)
 			{
-				r32 newScrollbarPos = ClampR32(context->mouse->position.X - tview->horiScrollbarGrabOffset.X, minX, maxX);
+				r32 newScrollbarPos = ClampR32(context->mouse->position.x - tview->horiScrollbarGrabOffset.x, minX, maxX);
 				r32 newScrollbarPercent = (newScrollbarPos - minX) / (maxX - minX);
-				scrollData.scrollTarget->X = -((scrollData.contentDimensions.Width - scrollData.scrollContainerDimensions.Width) * newScrollbarPercent);
-				if (!tview->isDraggingHoriSmooth) { scrollData.scrollPosition->X = scrollData.scrollTarget->X; }
+				scrollData.scrollTarget->x = -((scrollData.contentDimensions.width - scrollData.scrollContainerDimensions.width) * newScrollbarPercent);
+				if (!tview->isDraggingHoriSmooth) { scrollData.scrollPosition->x = scrollData.scrollTarget->x; }
 			}
 		}
-		if (AbsR32(scrollData.scrollPosition->X - scrollData.scrollTarget->X) < 1.0f) { tview->isDraggingHoriSmooth = false; }
+		if (AbsR32(scrollData.scrollPosition->x - scrollData.scrollTarget->x) < 1.0f) { tview->isDraggingHoriSmooth = false; }
 	}
 	if (tview->draggingVertScrollbar)
 	{
-		if (scrollData.found && scrollData.contentDimensions.Height <= scrollData.scrollContainerDimensions.Height) { tview->draggingVertScrollbar = false; }
+		if (scrollData.found && scrollData.contentDimensions.height <= scrollData.scrollContainerDimensions.height) { tview->draggingVertScrollbar = false; }
 		else if (!IsMouseBtnDown(context->mouse, context->mouseHandling, MouseBtn_Left)) { tview->draggingVertScrollbar = false; }
 		else
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(vertGutterId);
-			r32 minY = scrollGutterDrawRec.Y;
-			r32 maxY = scrollGutterDrawRec.Y + scrollGutterDrawRec.Height - vertScrollbarDrawRec.Height;
+			r32 minY = scrollGutterDrawRec.y;
+			r32 maxY = scrollGutterDrawRec.y + scrollGutterDrawRec.height - vertScrollbarDrawRec.height;
 			if (maxY > minY)
 			{
-				r32 newScrollbarPos = ClampR32(context->mouse->position.Y - tview->vertScrollbarGrabOffset.Y, minY, maxY);
+				r32 newScrollbarPos = ClampR32(context->mouse->position.y - tview->vertScrollbarGrabOffset.y, minY, maxY);
 				r32 newScrollbarPercent = (newScrollbarPos - minY) / (maxY - minY);
-				scrollData.scrollTarget->Y = -((scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height) * newScrollbarPercent);
-				if (!tview->isDraggingVertSmooth) { scrollData.scrollPosition->Y = scrollData.scrollTarget->Y; }
+				scrollData.scrollTarget->y = -((scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height) * newScrollbarPercent);
+				if (!tview->isDraggingVertSmooth) { scrollData.scrollPosition->y = scrollData.scrollTarget->y; }
 			}
 		}
-		if (AbsR32(scrollData.scrollPosition->Y - scrollData.scrollTarget->Y) < 1.0f) { tview->isDraggingVertSmooth = false; }
+		if (AbsR32(scrollData.scrollPosition->y - scrollData.scrollTarget->y) < 1.0f) { tview->isDraggingVertSmooth = false; }
 	}
 	
 	if (text != nullptr)
@@ -285,7 +285,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 		
 		text->maxLineWidth = 0.0f;
 		r32 verticalOffset = 0;
-		r32 wrapWidth = tview->wordWrapEnabled ? containerRec.Width : 0.0f;
+		r32 wrapWidth = tview->wordWrapEnabled ? containerRec.width : 0.0f;
 		VarArrayLoop(&text->lines, lIndex)
 		{
 			VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
@@ -298,14 +298,14 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 				line->font = font;
 				line->fontSize = fontSize;
 				line->fontStyle = fontStyle;
-				line->height = CeilR32(line->measure.logicalRec.Height / fontLineHeight) * fontLineHeight;
+				line->height = CeilR32(line->measure.logicalRec.height / fontLineHeight) * fontLineHeight;
 			}
 			if (lIndex == text->scrollLineIndex)
 			{
 				r32 verticalOffsetDiff = line->verticalOffset - verticalOffset;
 				text->prevScrollContainerPositionY += verticalOffsetDiff;
 			}
-			text->maxLineWidth = MaxR32(text->maxLineWidth, line->measure.logicalRec.Width);
+			text->maxLineWidth = MaxR32(text->maxLineWidth, line->measure.logicalRec.width);
 			line->verticalOffset = verticalOffset;
 			verticalOffset += line->height;
 		}
@@ -313,11 +313,11 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 	}
 	
 	v2 contentSize = V2_Zero;
-	if (tview->wordWrapEnabled) { contentSize.Width = containerRec.Width; }
+	if (tview->wordWrapEnabled) { contentSize.width = containerRec.width; }
 	if (text != nullptr)
 	{
-		contentSize.Height = text->totalHeight;
-		if (!tview->wordWrapEnabled) { contentSize.Width = text->maxLineWidth; }
+		contentSize.height = text->totalHeight;
+		if (!tview->wordWrapEnabled) { contentSize.width = text->maxLineWidth; }
 	}
 	
 	CLAY({ .id = tview->id,
@@ -340,7 +340,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 			})
 			{
 				scrollData = Clay_GetScrollContainerData(scrollContainerId, false);
-				r32 scrollY = (-scrollData.scrollPosition->Y);
+				r32 scrollY = (-scrollData.scrollPosition->y);
 				// Handle scroll changes moving our scrollLineIndex/scrollLineOffset
 				if (scrollData.found && scrollY != text->prevScrollContainerPositionY)
 				{
@@ -387,8 +387,8 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 				CLAY({ .id = contentId,
 					.layout = {
 						.sizing = {
-							.width = tview->wordWrapEnabled ? CLAY_SIZING_GROW(0) : CLAY_SIZING_FIXED(contentSize.Width),
-							.height = CLAY_SIZING_FIXED(contentSize.Height)
+							.width = tview->wordWrapEnabled ? CLAY_SIZING_GROW(0) : CLAY_SIZING_FIXED(contentSize.width),
+							.height = CLAY_SIZING_FIXED(contentSize.height)
 						},
 					},
 				})
@@ -396,32 +396,32 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 					rec contentRec = GetClayElementDrawRec(contentId);
 					if (text != nullptr)
 					{
-						v2 textOffset = contentRec.TopLeft;
+						v2 textOffset = contentRec.topLeft;
 						//TODO: This loop should eventually jump straight to scrollLineIndex
 						VarArrayLoop(&text->lines, lIndex)
 						{
 							VarArrayLoopGet(UiLargeTextLine, line, &text->lines, lIndex);
 							rec lineRec = MakeRecV(
 								AddV2(textOffset, MakeV2(0, line->verticalOffset)),
-								MakeV2(tview->wordWrapEnabled ? containerRec.Width : line->measure.logicalRec.Width, line->height)
+								MakeV2(tview->wordWrapEnabled ? containerRec.width : line->measure.logicalRec.width, line->height)
 							);
-							r32 extraRenderHeight = MaxR32(100, containerRec.Height);
+							r32 extraRenderHeight = MaxR32(100, containerRec.height);
 							
-							if (lineRec.Y >= containerRec.Y + containerRec.Height + extraRenderHeight) { break; }
-							if (lineRec.Y + lineRec.Height >= containerRec.Y - extraRenderHeight)
+							if (lineRec.y >= containerRec.y + containerRec.height + extraRenderHeight) { break; }
+							if (lineRec.y + lineRec.height >= containerRec.y - extraRenderHeight)
 							{
 								//NOTE: When doing word wrapping (no horizontal scrolling) we need to set width to GROW not FIXED because
 								//      Clay will push the container off the rightside of the window if it thinks it needs to contain the content
 								//      and this causes us to never shrink and re-measure at a smaller wrapWidth
-								Clay_SizingAxis lineContainerWidth = tview->wordWrapEnabled ? CLAY_SIZING_GROW(0) : CLAY_SIZING_FIXED(lineRec.Width);
+								Clay_SizingAxis lineContainerWidth = tview->wordWrapEnabled ? CLAY_SIZING_GROW(0) : CLAY_SIZING_FIXED(lineRec.width);
 								CLAY({
 									.layout = {
-										.sizing = { .width = lineContainerWidth, .height = CLAY_SIZING_FIXED(lineRec.Height) },
+										.sizing = { .width = lineContainerWidth, .height = CLAY_SIZING_FIXED(lineRec.height) },
 									},
 									.floating = {
 										.attachTo = CLAY_ATTACH_TO_PARENT,
 										.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
-										.offset = SubV2(lineRec.TopLeft, contentRec.TopLeft),
+										.offset = SubV2(lineRec.topLeft, contentRec.topLeft),
 										.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
 									},
 									// .backgroundColor = ColorWithAlpha(MonokaiWhite, ((lIndex%2) == 0) ? 0.25f : 0.1f),
@@ -456,32 +456,32 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 				},
 			})
 			{
-				if (scrollData.found && scrollData.contentDimensions.Width > scrollData.scrollContainerDimensions.Width)
+				if (scrollData.found && scrollData.contentDimensions.width > scrollData.scrollContainerDimensions.width)
 				{
 					r32 scrollbarXPercent = 0.0f;
 					r32 scrollbarSizePercent = 1.0f;
-					if (scrollData.found && scrollData.contentDimensions.Width > scrollData.scrollContainerDimensions.Width)
+					if (scrollData.found && scrollData.contentDimensions.width > scrollData.scrollContainerDimensions.width)
 					{
-						scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.Width / scrollData.contentDimensions.Width, 0.0f, 1.0f);
-						scrollbarXPercent = ClampR32(-scrollData.scrollPosition->X / (scrollData.contentDimensions.Width - scrollData.scrollContainerDimensions.Width), 0.0f, 1.0f);
+						scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.width / scrollData.contentDimensions.width, 0.0f, 1.0f);
+						scrollbarXPercent = ClampR32(-scrollData.scrollPosition->x / (scrollData.contentDimensions.width - scrollData.scrollContainerDimensions.width), 0.0f, 1.0f);
 					}
 					rec scrollGutterDrawRec = GetClayElementDrawRec(horiGutterId);
 					v2 scrollBarSize = MakeV2(
-						MaxR32(MinR32(UISCALE_R32(context->uiScale, 20), scrollGutterDrawRec.Width*0.25f), scrollGutterDrawRec.Width * scrollbarSizePercent),
+						MaxR32(MinR32(UISCALE_R32(context->uiScale, 20), scrollGutterDrawRec.width*0.25f), scrollGutterDrawRec.width * scrollbarSizePercent),
 						UISCALE_R32(context->uiScale, 8)
 					);
-					r32 scrollBarOffsetX = ClampR32((scrollGutterDrawRec.Width - scrollBarSize.Width) * scrollbarXPercent, 0.0f, scrollGutterDrawRec.Width);
+					r32 scrollBarOffsetX = ClampR32((scrollGutterDrawRec.width - scrollBarSize.width) * scrollbarXPercent, 0.0f, scrollGutterDrawRec.width);
 					
 					CLAY({ .id = horiScrollbarId,
 						.layout = {
-							.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.X), .height = CLAY_SIZING_FIXED(scrollBarSize.Y) },
+							.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.x), .height = CLAY_SIZING_FIXED(scrollBarSize.y) },
 						},
 						.floating = {
 							.attachTo = CLAY_ATTACH_TO_PARENT,
 							.offset = MakeV2(scrollBarOffsetX, UISCALE_R32(context->uiScale, 1)),
 						},
 						.backgroundColor = (isHoriScrollbarHovered || tview->draggingHoriScrollbar) ? MonokaiWhite : MonokaiLightGray,
-						.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),
+						.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.width/2.0f),
 					}) {}
 				}
 			}
@@ -499,32 +499,32 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 			},
 		})
 		{
-			if (scrollData.found && scrollData.contentDimensions.Height > scrollData.scrollContainerDimensions.Height)
+			if (scrollData.found && scrollData.contentDimensions.height > scrollData.scrollContainerDimensions.height)
 			{
 				r32 scrollbarYPercent = 0.0f;
 				r32 scrollbarSizePercent = 1.0f;
-				if (scrollData.found && scrollData.contentDimensions.Height > scrollData.scrollContainerDimensions.Height)
+				if (scrollData.found && scrollData.contentDimensions.height > scrollData.scrollContainerDimensions.height)
 				{
-					scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.Height / scrollData.contentDimensions.Height, 0.0f, 1.0f);
-					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->Y / (scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height), 0.0f, 1.0f);
+					scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.height / scrollData.contentDimensions.height, 0.0f, 1.0f);
+					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->y / (scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height), 0.0f, 1.0f);
 				}
 				rec scrollGutterDrawRec = GetClayElementDrawRec(vertGutterId);
 				v2 scrollBarSize = MakeV2(
 					UISCALE_R32(context->uiScale, 8),
-					MaxR32(MinR32(UISCALE_R32(context->uiScale, 20), scrollGutterDrawRec.Height*0.25f), scrollGutterDrawRec.Height * scrollbarSizePercent)
+					MaxR32(MinR32(UISCALE_R32(context->uiScale, 20), scrollGutterDrawRec.height*0.25f), scrollGutterDrawRec.height * scrollbarSizePercent)
 				);
-				r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
+				r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.height - scrollBarSize.height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.height);
 				
 				CLAY({ .id = vertScrollbarId,
 					.layout = {
-						.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.X), .height = CLAY_SIZING_FIXED(scrollBarSize.Y) },
+						.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.x), .height = CLAY_SIZING_FIXED(scrollBarSize.y) },
 					},
 					.floating = {
 						.attachTo = CLAY_ATTACH_TO_PARENT,
 						.offset = MakeV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
 					},
 					.backgroundColor = (isVertScrollbarHovered || tview->draggingVertScrollbar) ? MonokaiWhite : MonokaiLightGray,
-					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),
+					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.width/2.0f),
 				}) {}
 			}
 		}

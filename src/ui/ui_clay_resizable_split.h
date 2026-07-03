@@ -157,15 +157,15 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 		
 		rec outerRec = GetClayElementDrawRec(outerId);
 		rec secondSectionRec = GetClayElementDrawRec(secondSectionId);
-		if (!AreEqualV2(secondSectionRec.Size, V2_Zero))
+		if (!AreEqualV2(secondSectionRec.size, V2_Zero))
 		{
 			r32 dividerPadding = UISCALE_R32(context->uiScale, (r32)split->dividerPadding);
 			r32 handleWidth = MaxR32(UISCALE_R32(context->uiScale, 4), dividerPadding);
 			CLAY({ .id = dividerId,
 				.layout = {
 					.sizing = {
-						.width  = CLAY_SIZING_FIXED(split->horizontal ? handleWidth : secondSectionRec.Width),
-						.height = CLAY_SIZING_FIXED(split->horizontal ? secondSectionRec.Height : handleWidth),
+						.width  = CLAY_SIZING_FIXED(split->horizontal ? handleWidth : secondSectionRec.width),
+						.height = CLAY_SIZING_FIXED(split->horizontal ? secondSectionRec.height : handleWidth),
 					},
 				},
 				.floating = {
@@ -185,7 +185,7 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 				if (IsMouseBtnPressed(context->mouse, context->mouseHandling, MouseBtn_Left))
 				{
 					split->resizing = true;
-					split->resizingMouseOffset = split->horizontal ? (context->mouse->position.X - secondSectionRec.X) : (context->mouse->position.Y - secondSectionRec.Y);
+					split->resizingMouseOffset = split->horizontal ? (context->mouse->position.x - secondSectionRec.x) : (context->mouse->position.y - secondSectionRec.y);
 				}
 			}
 			
@@ -195,7 +195,7 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 				{
 					context->cursorShape = (split->horizontal ? MouseCursorShape_ResizeHori : MouseCursorShape_ResizeVert);
 					split->splitPercent = ClampR32(
-						split->horizontal ? (context->mouse->position.X - outerRec.X) / outerRec.Width : (context->mouse->position.Y - outerRec.Y) / outerRec.Height,
+						split->horizontal ? (context->mouse->position.x - outerRec.x) / outerRec.width : (context->mouse->position.y - outerRec.y) / outerRec.height,
 						split->minSplitPercent, split->maxSplitPercent
 					);
 				}
@@ -204,11 +204,11 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 		}
 		else { split->resizing = false; }
 		
-		if (outerRec.Width > 0 && outerRec.Height > 0)
+		if (outerRec.width > 0 && outerRec.height > 0)
 		{
-			r32 minPercent = MaxR32(split->minSplitPercent, split->minFirstSplitSize / (split->horizontal ? outerRec.Width : outerRec.Height));
-			r32 maxPercent = MinR32(split->maxSplitPercent, 1.0f - (split->minSecondSplitSize / (split->horizontal ? outerRec.Width : outerRec.Height)));
-			if (minPercent >= maxPercent) //handle degenerate scenarios (like outerRec.Width < split->minFirstSplitSize)
+			r32 minPercent = MaxR32(split->minSplitPercent, split->minFirstSplitSize / (split->horizontal ? outerRec.width : outerRec.height));
+			r32 maxPercent = MinR32(split->maxSplitPercent, 1.0f - (split->minSecondSplitSize / (split->horizontal ? outerRec.width : outerRec.height)));
+			if (minPercent >= maxPercent) //handle degenerate scenarios (like outerRec.width < split->minFirstSplitSize)
 			{
 				minPercent = (minPercent + maxPercent)/2.0f;
 				if (minPercent < 0.0f || minPercent > 1.0f) { minPercent = 0.5f; }

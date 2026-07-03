@@ -60,7 +60,7 @@ plex SparseSetV3i
 #define SparseSetV3i_SlotSize(itemSize, itemAlignment) (SparseSetV3i_HeaderSize + SparseSetV3i_ItemOffset(itemAlignment) + (itemSize))
 #define SparseSetV3i_GetSlotPntr(itemSize, itemAlignment, slotsPntr, index) ((u8*)(slotsPntr) + ((index) * SparseSetV3i_SlotSize((itemSize), (itemAlignment))))
 #define SparseSetV3i_Hash(x, y, z) FnvHashV3((x), (y), (z)) //NOTE: CantorTriplet could be used but performs worse
-#define SparseSetV3i_IsEmpty(vector) ((vector).X == SparseSetV3i_EmptyValue && (vector).Y == SparseSetV3i_EmptyValue && (vector).Z == SparseSetV3i_EmptyValue)
+#define SparseSetV3i_IsEmpty(vector) ((vector).x == SparseSetV3i_EmptyValue && (vector).y == SparseSetV3i_EmptyValue && (vector).z == SparseSetV3i_EmptyValue)
 
 #if LANGUAGE_IS_C
 #define InitSparseSetV3i(type, setPntr, arenaPntr)   InitSparseSetV3i_((uxx)sizeof(type), (uxx)_Alignof(type), (setPntr), (arenaPntr))
@@ -161,7 +161,7 @@ static void SparseSetV3iExpand(SparseSetV3i* set, uxx capacityRequired)
 		v3i* oldSlotPntr = (v3i*)SparseSetV3i_GetSlotPntr(set->itemSize, set->itemAlignment, set->slots, sIndex);
 		if (!SparseSetV3i_IsEmpty(*oldSlotPntr))
 		{
-			i32 oldSlotHash = SparseSetV3i_Hash(oldSlotPntr->X, oldSlotPntr->Y, oldSlotPntr->Z);
+			i32 oldSlotHash = SparseSetV3i_Hash(oldSlotPntr->x, oldSlotPntr->y, oldSlotPntr->z);
 			i32 newExpectedIndex = (oldSlotHash % newAllocLength);
 			
 			i32 newSlotIndex = newExpectedIndex;
@@ -205,7 +205,7 @@ PEXPI void* SparseSetV3iGet_(uxx itemSize, uxx itemAlignment, SparseSetV3i* set,
 	DebugAssertMsg(!SparseSetV3i_IsEmpty(key), "SparseSetV3i can't store (INT32_MAX, INT32_MAX, INT32_MAX) since that acts as a special value meaning \"empty\"");
 	if (set->allocLength == 0) { return nullptr; }
 	
-	i32 hash = SparseSetV3i_Hash(key.X, key.Y, key.Z);
+	i32 hash = SparseSetV3i_Hash(key.x, key.y, key.z);
 	i32 expectedIndex = (hash % set->allocLength);
 	
 	i32 slotIndex = expectedIndex;
@@ -242,7 +242,7 @@ PEXP void* SparseSetV3iAdd_(uxx itemSize, uxx itemAlignment, SparseSetV3i* set, 
 	
 	SparseSetV3iExpand(set, set->length+1);
 	
-	i32 hash = SparseSetV3i_Hash(key.X, key.Y, key.Z);
+	i32 hash = SparseSetV3i_Hash(key.x, key.y, key.z);
 	i32 expectedIndex = (hash % set->allocLength);
 	
 	i32 slotIndex = expectedIndex;

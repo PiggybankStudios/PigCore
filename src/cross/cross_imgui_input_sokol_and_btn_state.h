@@ -57,12 +57,12 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 	
 	imgui->io->DeltaTime = (input->elapsedMs / 1000.0f);
 	
-	ImGuiIO_AddMousePosEvent(imgui->io, input->mouse->position.X, input->mouse->position.Y);
+	ImGuiIO_AddMousePosEvent(imgui->io, input->mouse->position.x, input->mouse->position.y);
 	if (!input->isMouseOverOther)
 	{
-		if (input->mouse->scrollDelta.X != 0 || input->mouse->scrollDelta.Y != 0)
+		if (input->mouse->scrollDelta.hori != 0 || input->mouse->scrollDelta.vert != 0)
 		{
-			ImGuiIO_AddMouseWheelEvent(imgui->io, input->mouse->scrollDelta.X * IMGUI_MOUSE_SCROLL_SCALE, input->mouse->scrollDelta.Y * IMGUI_MOUSE_SCROLL_SCALE);
+			ImGuiIO_AddMouseWheelEvent(imgui->io, input->mouse->scrollDelta.hori * IMGUI_MOUSE_SCROLL_SCALE, input->mouse->scrollDelta.vert * IMGUI_MOUSE_SCROLL_SCALE);
 		}
 		
 		if (IsMouseBtnPressed(input->mouse, nullptr, MouseBtn_Left)) { ImGuiIO_AddMouseButtonEvent(imgui->io, 0, true); }

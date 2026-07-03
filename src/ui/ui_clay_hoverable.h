@@ -82,48 +82,48 @@ PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContex
 			Clay_FloatingAttachPointType parentAttach = CLAY_ATTACH_POINT_LEFT_TOP;
 			Clay_FloatingAttachPointType tooltipAttach = CLAY_ATTACH_POINT_RIGHT_BOTTOM;
 			
-			v2 tooltipSize = GetClayElementDrawRec(tooltipId).Size;
+			v2 tooltipSize = GetClayElementDrawRec(tooltipId).size;
 			rec hoverRec = GetClayElementDrawRec(id);
-			if (!AreEqualV2(screenSize, V2_Zero) && !AreEqualV2(tooltipSize, V2_Zero) && !AreEqualV2(hoverRec.Size, V2_Zero))
+			if (!AreEqualV2(screenSize, V2_Zero) && !AreEqualV2(tooltipSize, V2_Zero) && !AreEqualV2(hoverRec.size, V2_Zero))
 			{
 				Dir2 attachSide = preferredTooltipSide;
 				u8 sideAlignment = 1; //0 for left/up, 1 for center, 2 for right/down
 				
-				if (attachSide == Dir2_Down && hoverRec.Y + hoverRec.Height + tooltipSize.Height > screenSize.Height && hoverRec.Y - screenSize.Height >= 0)
+				if (attachSide == Dir2_Down && hoverRec.y + hoverRec.height + tooltipSize.height > screenSize.height && hoverRec.y - screenSize.height >= 0)
 				{
 					attachSide = Dir2_Up;
 				}
-				else if (attachSide == Dir2_Up && hoverRec.Y - tooltipSize.Height < 0 && hoverRec.Y + hoverRec.Height + tooltipSize.Height <= screenSize.Height)
+				else if (attachSide == Dir2_Up && hoverRec.y - tooltipSize.height < 0 && hoverRec.y + hoverRec.height + tooltipSize.height <= screenSize.height)
 				{
 					attachSide = Dir2_Down;
 				}
-				else if (attachSide == Dir2_Right && hoverRec.X + hoverRec.Width + tooltipSize.Width > screenSize.Width && hoverRec.X - screenSize.Width >= 0)
+				else if (attachSide == Dir2_Right && hoverRec.x + hoverRec.width + tooltipSize.width > screenSize.width && hoverRec.x - screenSize.width >= 0)
 				{
 					attachSide = Dir2_Left;
 				}
-				else if (attachSide == Dir2_Left && hoverRec.X - tooltipSize.Width < 0 && hoverRec.X + hoverRec.Width + tooltipSize.Width <= screenSize.Width)
+				else if (attachSide == Dir2_Left && hoverRec.x - tooltipSize.width < 0 && hoverRec.x + hoverRec.width + tooltipSize.width <= screenSize.width)
 				{
 					attachSide = Dir2_Right;
 				}
 				
 				if (attachSide == Dir2_Left || attachSide == Dir2_Right)
 				{
-					if (hoverRec.Y + hoverRec.Height/2 + tooltipSize.Height/2 > screenSize.Height)
+					if (hoverRec.y + hoverRec.height/2 + tooltipSize.height/2 > screenSize.height)
 					{
 						sideAlignment = 0; //align up
 					}
-					else if (hoverRec.Y + hoverRec.Height/2 - tooltipSize.Height/2 < 0)
+					else if (hoverRec.y + hoverRec.height/2 - tooltipSize.height/2 < 0)
 					{
 						sideAlignment = 2; //align down
 					}
 				}
 				else if (attachSide == Dir2_Down || attachSide == Dir2_Up)
 				{
-					if (hoverRec.X + hoverRec.Width/2 + tooltipSize.Width/2 > screenSize.Width)
+					if (hoverRec.x + hoverRec.width/2 + tooltipSize.width/2 > screenSize.width)
 					{
 						sideAlignment = 0; //align left
 					}
-					else if (hoverRec.X + hoverRec.Width/2 - tooltipSize.Width/2 < 0)
+					else if (hoverRec.x + hoverRec.width/2 - tooltipSize.width/2 < 0)
 					{
 						sideAlignment = 2; //align right
 					}

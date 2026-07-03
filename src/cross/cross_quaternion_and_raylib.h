@@ -21,7 +21,7 @@ NOTE: This file may need to be included manually if you include raylib.h AFTER i
 
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI Quaternion QuaternionFromQuat(quat quaternion) { return rlMakeQuaternion(quaternion.X, quaternion.Y, quaternion.Z, quaternion.W); }
+PEXPI Quaternion QuaternionFromQuat(quat quaternion) { return rlMakeQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w); }
 PEXPI quat QuatFromQuaternion(Quaternion quaternion) { return MakeQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w); }
 
 #endif //PIG_CORE_IMPLEMENTATION

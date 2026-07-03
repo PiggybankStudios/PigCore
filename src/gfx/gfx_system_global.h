@@ -22,10 +22,10 @@ Without this file:
 		GfxSystem_BindTexture(&gfx, &gradientTexture);
 		GfxSystem_SetProjectionMat(&gfx, MakeScaleYMat4(-1.0f));
 		GfxSystem_SetViewMat(&gfx, Mat4_Identity);
-		GfxSystem_SetSourceRec(&gfx, MakeV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+		GfxSystem_SetSourceRec(&gfx, MakeV4(0, 0, (r32)gradientTexture.width, (r32)gradientTexture.height));
 		mat4 worldMat = Mat4_Identity;
-		TransformMat4(&worldMat, MakeScaleXYZMat4(recSize.Width, recSize.Height, 1.0f));
-		TransformMat4(&worldMat, MakeTranslateXYZMat4(recPos.X, recPos.Y, 0.0f));
+		TransformMat4(&worldMat, MakeScaleXYZMat4(recSize.width, recSize.height, 1.0f));
+		TransformMat4(&worldMat, MakeTranslateXYZMat4(recPos.x, recPos.y, 0.0f));
 		GfxSystem_SetWorldMat(&gfx, worldMat);
 		GfxSystem_SetTintColor(&gfx, color);
 		GfxSystem_BindVertBuffer(&gfx, &squareBuffer);
@@ -39,10 +39,10 @@ With this file:
 		BindTexture(&gradientTexture);
 		SetProjectionMat(MakeScaleYMat4(-1.0f));
 		SetViewMat(Mat4_Identity);
-		SetSourceRec(MakeV4(0, 0, (r32)gradientTexture.Width, (r32)gradientTexture.Height));
+		SetSourceRec(MakeV4(0, 0, (r32)gradientTexture.width, (r32)gradientTexture.height));
 		mat4 worldMat = Mat4_Identity;
-		TransformMat4(&worldMat, MakeScaleXYZMat4(recSize.Width, recSize.Height, 1.0f));
-		TransformMat4(&worldMat, MakeTranslateXYZMat4(recPos.X, recPos.Y, 0.0f));
+		TransformMat4(&worldMat, MakeScaleXYZMat4(recSize.width, recSize.height, 1.0f));
+		TransformMat4(&worldMat, MakeTranslateXYZMat4(recPos.x, recPos.y, 0.0f));
 		SetWorldMat(worldMat);
 		SetTintColor(color);
 		BindVertBuffer(&squareBuffer);

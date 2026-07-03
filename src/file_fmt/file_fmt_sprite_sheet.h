@@ -165,7 +165,7 @@ PEXP Result TryParseSpriteSheetMeta(SpriteSheet* sheet, Str8 metaFileContents, b
 				{
 					if (StrAnyCaseEquals(token.key, StrLit("Name")))
 					{
-						if (!IsEmptyStr(currentFrame->name)) { PrintLine_E("Duplicate name given for cell (%d, %d) in spriteSheet .meta file!", currentFrame->cellPos.X, currentFrame->cellPos.Y); result = Result_Duplicate; break; }
+						if (!IsEmptyStr(currentFrame->name)) { PrintLine_E("Duplicate name given for cell (%d, %d) in spriteSheet .meta file!", currentFrame->cellPos.x, currentFrame->cellPos.y); result = Result_Duplicate; break; }
 						currentFrame->name = AllocStr8(sheet->arena, token.value);
 					}
 					else { PrintLine_W("Unknown key in spriteSheet .meta file: \"%.*s\"", StrPrint(token.key)); }
@@ -314,8 +314,8 @@ PEXP SpriteSheet InitSpriteSheetSized(Arena* arena, Str8 debugName, Str8 filePat
 				Str8 widthStr = StrSlice(sizePart, 0, xCharIndex);
 				Str8 heightStr = StrSliceFrom(sizePart, xCharIndex+1);
 				v2i parsedGridSize = V2i_Zero;
-				if (TryParseI32(widthStr, &parsedGridSize.Width, nullptr) &&
-					TryParseI32(heightStr, &parsedGridSize.Height, nullptr))
+				if (TryParseI32(widthStr, &parsedGridSize.width, nullptr) &&
+					TryParseI32(heightStr, &parsedGridSize.height, nullptr))
 				{
 					actualGridSize = parsedGridSize;
 					foundGridSize = true;
@@ -332,7 +332,7 @@ PEXP SpriteSheet InitSpriteSheetSized(Arena* arena, Str8 debugName, Str8 filePat
 		
 		result.gridSize = actualGridSize;
 		result.cellSize = DivV2i(result.texture.size, result.gridSize);
-		if (result.cellSize.Width <= 0 || result.cellSize.Height <= 0)
+		if (result.cellSize.width <= 0 || result.cellSize.height <= 0)
 		{
 			DebugAssertMsg(false, "Invalid gridSize for texture size!");
 			result.error = Result_ValueTooHigh;

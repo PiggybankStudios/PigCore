@@ -3,10 +3,11 @@ File:   struct_quaternion.h
 Author: Taylor Robbins
 Date:   01\15\2025
 Description:
-	** Since we depend on HandmadeMath.h for the all of our quaternion math related
-	** functions and types, this file serves more as a aliasing file for all the
-	** things in HandmadeMath.h, with some extensions for functions that we had
-	** in GyLib that HandmadeMath.h does not have.
+	** Holds Quaternion type (basically a vector4) that is used to hold 3D rotations.
+	** There are 32-bit and 64-bit variants: Quaternion_R32 (quat) and Quaternion_R64 (quatd)
+	**
+	** This file originally was based on HandmadeMath.h so many of the function
+	** implementations are directly copied from there.
 */
 
 #ifndef _STRUCT_QUATERNION_H
@@ -18,35 +19,51 @@ Description:
 #include "std/std_includes.h"
 #include "std/std_trig.h"
 #include "struct/struct_vectors.h"
-#include "lib/lib_handmade_math.h"
 
 //TODO: Update HandmadeMath.h to get BYP's HMM_QFromNormPair/HMM_QFromVecPair
 
 // +--------------------------------------------------------------+
 // |                   Typedefs and Structures                    |
 // +--------------------------------------------------------------+
-#define MakeQuat_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define MakeQuat(x, y, z, w)       NEW_STRUCT(HMM_Quat)MakeQuat_Const((x), (y), (z), (w))
-
-typedef car QuatR64 QuatR64;
-car QuatR64
+typedef car Quaternion_R32 Quaternion_R32;
+car Quaternion_R32
 {
-	r64 Elements[4];
+	float elem[4];
 	plex
 	{
 		car
 		{
-			v3d XYZ;
-			plex { r64 X, Y, Z; };
+			v3 xyz;
+			plex { float x, y, z; };
 		};
-		r64 W;
+		float w;
+	};
+	// #ifdef HANDMADE_MATH__USE_SSE
+	// __m128 SSE;
+	// #endif
+};
+#define MakeQuat_Const(X, Y, Z, W) { .x=(X), .y=(Y), .z=(Z), .w=(W) }
+#define MakeQuat(x, y, z, w)       NEW_STRUCT(Quaternion_R32)MakeQuat_Const((x), (y), (z), (w))
+
+typedef car Quaternion_R64 Quaternion_R64;
+car Quaternion_R64
+{
+	r64 elem[4];
+	plex
+	{
+		car
+		{
+			v3d xyz;
+			plex { r64 x, y, z; };
+		};
+		r64 w;
 	};
 };
-#define MakeQuatd_Const(x, y, z, w) { .X=(x), .Y=(y), .Z=(z), .W=(w) }
-#define MakeQuatd(x, y, z, w)       NEW_STRUCT(QuatR64)MakeQuatd_Const((x), (y), (z), (w))
+#define MakeQuatd_Const(X, Y, Z, W) { .x=(X), .y=(Y), .z=(Z), .w=(W) }
+#define MakeQuatd(x, y, z, w)       NEW_STRUCT(Quaternion_R64)MakeQuatd_Const((x), (y), (z), (w))
 
-typedef HMM_Quat quat;
-typedef QuatR64 quatd;
+typedef Quaternion_R32 quat;
+typedef Quaternion_R64 quatd;
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |
@@ -76,75 +93,190 @@ typedef QuatR64 quatd;
 #define Quat_Identity        MakeQuat( 0.0f, 0.0f, 0.0f, 1.0f)
 #define Quatd_Identity       MakeQuatd(0.0,  0.0,  0.0,  1.0)
 
-#define ToQuatFromV4(vec4) HMM_QV4(vec4)
-#define ToQuatdFromV4d(vec4d) MakeQuatd((vec4d).X, (vec4d).Y, (vec4d).Z, (vec4d).W)
-#define ToV4FromQuat(quaternion) MakeV4((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
-#define ToV4dFromQuatd(quaternion) MakeV4d((quaternion).X, (quaternion).Y, (quaternion).Z, (quaternion).W)
-#define ToQuatFromAxis(axis, angle) HMM_QFromAxisAngle_LH((axis), (angle))
-
-#define AddQuat(left, right) HMM_AddQ((left), (right))
-#define SubQuat(left, right) HMM_SubQ((left), (right))
-#define MulQuat(left, right) HMM_MulQ((left), (right))
-#define ScaleQuat(quaternion, scalar) HMM_MulQF((quaternion), (scalar))
-#define ShrinkQuat(quaternion, divisor) HMM_DivQF((quaternion), (divisor))
-
-#define DotQuat(left, right) HMM_DotQ((left), (right))
-
-#define InvertQuat(quaternion) HMM_InvQ(quaternion)
-
-#define NormalizeQuat(quaternion) HMM_NormQ(quaternion)
-
-#define LerpQuat(start, end, amount) HMM_NLerp((start), (amount), (end))
-#define SlerpQuat(start, end, amount) HMM_SLerp((start), (amount), (end))
+#define ToQuatFromAxis_LH(axisVec, angleOfRotation) ToQuatFromAxis_RH((axisVec), -(angleOfRotation))
+#define ToQuatFromAxis(axisVec, angleOfRotation)    ToQuatFromAxis_LH((axisVec), (angleOfRotation))
 
 //TODO: Do we want GetAngleQuat and GetAxisQuat?
 //TODO: Do we want EquivalentQuat?
 //TODO: Do we want OppositeQuat?
 
-// HMM_QFromAxisAngle_RH
-// HMM_QFromAxisAngle_LH
+//TODO: HMM_QFromAxisAngle_RH?
+//TODO: HMM_QFromAxisAngle_LH?
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
+PEXPI quat ToQuatFromV4(v4 vec4) { return MakeQuat(vec4.x, vec4.y, vec4.z, vec4.w); }
+PEXPI quatd ToQuatdFromV4d(v4d vec4d) { return MakeQuatd(vec4d.x, vec4d.y, vec4d.z, vec4d.w); }
+PEXPI v4 ToV4FromQuat(quat quaternion) { return MakeV4(quaternion.x, quaternion.y, quaternion.z, quaternion.w); }
+PEXPI v4d ToV4dFromQuatd(quatd quaternion) { return MakeV4d(quaternion.x, quaternion.y, quaternion.z, quaternion.w); }
+
+PEXPI quat ToQuatFromAxis_RH(v3 axisVec, r32 angleOfRotation)
+{
+	quat result;
+	v3 axisNormalized = NormalizeV3(axisVec);
+	r32 sineOfRotation = SinR32(angleOfRotation / 2.0f);
+	result.xyz = ScaleV3(axisNormalized, sineOfRotation);
+	result.w = CosR32(angleOfRotation / 2.0f);
+	return result;
+}
+
+PEXPI quat AddQuat(quat left, quat right)
+{
+    quat result;
+	// #ifdef HANDMADE_MATH__USE_SSE
+    // result.SSE = _mm_add_ps(left.SSE, right.SSE);
+	// #else
+    result.x = left.x + right.x;
+    result.y = left.y + right.y;
+    result.z = left.z + right.z;
+    result.w = left.w + right.w;
+	// #endif
+    return result;
+}
+
+PEXPI quat SubQuat(quat left, quat right)
+{
+    quat result;
+	// #ifdef HANDMADE_MATH__USE_SSE
+    // result.SSE = _mm_sub_ps(left.SSE, right.SSE);
+	// #else
+    result.x = left.x - right.x;
+    result.y = left.y - right.y;
+    result.z = left.z - right.z;
+    result.w = left.w - right.w;
+	// #endif
+    return result;
+}
+
+PEXPI quat MulQuat(quat left, quat right)
+{
+	quat result;
+	// #ifdef HANDMADE_MATH__USE_SSE
+	// __m128 SSEResultOne = _mm_xor_ps(_mm_shuffle_ps(left.SSE, left.SSE, _MM_SHUFFLE(0, 0, 0, 0)), _mm_setr_ps(0.f, -0.f, 0.f, -0.f));
+	// __m128 SSEResultTwo = _mm_shuffle_ps(right.SSE, right.SSE, _MM_SHUFFLE(0, 1, 2, 3));
+	// __m128 SSEResultThree = _mm_mul_ps(SSEResultTwo, SSEResultOne);
+	
+	// SSEResultOne = _mm_xor_ps(_mm_shuffle_ps(left.SSE, left.SSE, _MM_SHUFFLE(1, 1, 1, 1)) , _mm_setr_ps(0.f, 0.f, -0.f, -0.f));
+	// SSEResultTwo = _mm_shuffle_ps(right.SSE, right.SSE, _MM_SHUFFLE(1, 0, 3, 2));
+	// SSEResultThree = _mm_add_ps(SSEResultThree, _mm_mul_ps(SSEResultTwo, SSEResultOne));
+	
+	// SSEResultOne = _mm_xor_ps(_mm_shuffle_ps(left.SSE, left.SSE, _MM_SHUFFLE(2, 2, 2, 2)), _mm_setr_ps(-0.f, 0.f, 0.f, -0.f));
+	// SSEResultTwo = _mm_shuffle_ps(right.SSE, right.SSE, _MM_SHUFFLE(2, 3, 0, 1));
+	// SSEResultThree = _mm_add_ps(SSEResultThree, _mm_mul_ps(SSEResultTwo, SSEResultOne));
+	
+	// SSEResultOne = _mm_shuffle_ps(left.SSE, left.SSE, _MM_SHUFFLE(3, 3, 3, 3));
+	// SSEResultTwo = _mm_shuffle_ps(right.SSE, right.SSE, _MM_SHUFFLE(3, 2, 1, 0));
+	// result.SSE = _mm_add_ps(SSEResultThree, _mm_mul_ps(SSEResultTwo, SSEResultOne));
+	// #else
+	result.x =  right.Elements[3] * +left.Elements[0];
+	result.y =  right.Elements[2] * -left.Elements[0];
+	result.z =  right.Elements[1] * +left.Elements[0];
+	result.w =  right.Elements[0] * -left.Elements[0];
+	
+	result.x += right.Elements[2] * +left.Elements[1];
+	result.y += right.Elements[3] * +left.Elements[1];
+	result.z += right.Elements[0] * -left.Elements[1];
+	result.w += right.Elements[1] * -left.Elements[1];
+	
+	result.x += right.Elements[1] * -left.Elements[2];
+	result.y += right.Elements[0] * +left.Elements[2];
+	result.z += right.Elements[3] * +left.Elements[2];
+	result.w += right.Elements[2] * -left.Elements[2];
+	
+	result.x += right.Elements[0] * +left.Elements[3];
+	result.y += right.Elements[1] * +left.Elements[3];
+	result.z += right.Elements[2] * +left.Elements[3];
+	result.w += right.Elements[3] * +left.Elements[3];
+	// #endif
+	return result;
+}
+
+PEXPI quat HMM_MulQF(quat left, float Multiplicative)
+{
+	quat result;
+	// #ifdef HANDMADE_MATH__USE_SSE
+	// __m128 Scalar = _mm_set1_ps(Multiplicative);
+	// result.SSE = _mm_mul_ps(left.SSE, Scalar);
+	// #else
+	result.x = left.x * Multiplicative;
+	result.y = left.y * Multiplicative;
+	result.z = left.z * Multiplicative;
+	result.w = left.w * Multiplicative;
+	// #endif
+	return result;
+}
+
+PEXPI quat HMM_DivQF(quat left, float Divnd)
+{
+    quat result;
+
+#ifdef HANDMADE_MATH__USE_SSE
+    __m128 Scalar = _mm_set1_ps(Divnd);
+    result.SSE = _mm_div_ps(left.SSE, Scalar);
+#else
+    result.x = left.x / Divnd;
+    result.y = left.y / Divnd;
+    result.z = left.z / Divnd;
+    result.w = left.w / Divnd;
+#endif
+
+    return result;
+}
+
+//TODO: #define AddQuat(left, right) HMM_AddQ((left), (right))
+//TODO: #define SubQuat(left, right) HMM_SubQ((left), (right))
+//TODO: #define MulQuat(left, right) HMM_MulQ((left), (right))
+//TODO: #define ScaleQuat(quaternion, scalar) HMM_MulQF((quaternion), (scalar))
+//TODO: #define ShrinkQuat(quaternion, divisor) HMM_DivQF((quaternion), (divisor))
+
+//TODO: #define DotQuat(left, right) HMM_DotQ((left), (right))
+
+//TODO: #define InvertQuat(quaternion) HMM_InvQ(quaternion)
+
+//TODO: #define NormalizeQuat(quaternion) HMM_NormQ(quaternion)
+
+//TODO: #define LerpQuat(start, end, amount) HMM_NLerp((start), (amount), (end))
+//TODO: #define SlerpQuat(start, end, amount) HMM_SLerp((start), (amount), (end))
+
 PEXPI quatd ToQuatdFromAxis(v3d axis, r64 angle)
 {
 	quatd result;
 	v3d axisNormalized = NormalizeV3d(axis);
 	r64 sineOfRotation = SinR64(angle / 2.0);
-	result.XYZ = ScaleV3d(axisNormalized, sineOfRotation);
-	result.W = CosR64(angle / 2.0);
+	result.xYZ = ScaleV3d(axisNormalized, sineOfRotation);
+	result.w = CosR64(angle / 2.0);
 	return result;
 }
 
-PEXPI quatd AddQuatd(quatd left, quatd right) { quatd result; result.X = left.X + right.X; result.Y = left.Y + right.Y; result.Z = left.Z + right.Z; result.W = left.W + right.W; return result; }
-PEXPI quatd SubQuatd(quatd left, quatd right) { quatd result; result.X = left.X - right.X; result.Y = left.Y - right.Y; result.Z = left.Z - right.Z; result.W = left.W - right.W; return result; }
+PEXPI quatd AddQuatd(quatd left, quatd right) { quatd result; result.x = left.x + right.x; result.y = left.y + right.y; result.z = left.z + right.z; result.w = left.w + right.w; return result; }
+PEXPI quatd SubQuatd(quatd left, quatd right) { quatd result; result.x = left.x - right.x; result.y = left.y - right.y; result.z = left.z - right.z; result.w = left.w - right.w; return result; }
 
 PEXPI quatd MulQuatd(quatd left, quatd right)
 {
 	quatd result;
 	
-	result.X =  right.W * +left.X;
-	result.Y =  right.Z * -left.X;
-	result.Z =  right.Y * +left.X;
-	result.W =  right.X * -left.X;
+	result.x =  right.w * +left.x;
+	result.y =  right.z * -left.x;
+	result.z =  right.y * +left.x;
+	result.w =  right.x * -left.x;
 	
-	result.X += right.Z * +left.Y;
-	result.Y += right.W * +left.Y;
-	result.Z += right.X * -left.Y;
-	result.W += right.Y * -left.Y;
+	result.x += right.z * +left.y;
+	result.y += right.w * +left.y;
+	result.z += right.x * -left.y;
+	result.w += right.y * -left.y;
 	
-	result.X += right.Y * -left.Z;
-	result.Y += right.X * +left.Z;
-	result.Z += right.W * +left.Z;
-	result.W += right.Z * -left.Z;
+	result.x += right.y * -left.z;
+	result.y += right.x * +left.z;
+	result.z += right.w * +left.z;
+	result.w += right.z * -left.z;
 	
-	result.X += right.X * +left.W;
-	result.Y += right.Y * +left.W;
-	result.Z += right.Z * +left.W;
-	result.W += right.W * +left.W;
+	result.x += right.x * +left.w;
+	result.y += right.y * +left.w;
+	result.z += right.z * +left.w;
+	result.w += right.w * +left.w;
 	
 	return result;
 }
@@ -152,36 +284,36 @@ PEXPI quatd MulQuatd(quatd left, quatd right)
 PEXPI quatd ScaleQuatd(quatd quaternion, r64 scalar)
 {
 	quatd result;
-	result.X = quaternion.X * scalar;
-	result.Y = quaternion.Y * scalar;
-	result.Z = quaternion.Z * scalar;
-	result.W = quaternion.W * scalar;
+	result.x = quaternion.x * scalar;
+	result.y = quaternion.y * scalar;
+	result.z = quaternion.z * scalar;
+	result.w = quaternion.w * scalar;
 	return result;
 }
 
 PEXPI quatd ShrinkQuatd(quatd quaternion, r64 divisor)
 {
 	quatd result;
-	result.X = quaternion.X / divisor;
-	result.Y = quaternion.Y / divisor;
-	result.Z = quaternion.Z / divisor;
-	result.W = quaternion.W / divisor;
+	result.x = quaternion.x / divisor;
+	result.y = quaternion.y / divisor;
+	result.z = quaternion.z / divisor;
+	result.w = quaternion.w / divisor;
 	return result;
 }
 
 PEXPI r64 DotQuatd(quatd left, quatd right)
 {
 	//NOTE: We removed "extra" parenthesis around these adds, but technically this might cause slightly more floating point error accumulation
-	return (left.X * right.X) + (left.Y * right.Y) + (left.Z * right.Z) + (left.W * right.W);
+	return (left.x * right.x) + (left.y * right.y) + (left.z * right.z) + (left.w * right.w);
 }
 
 PEXPI quatd InvertQuatd(quatd quaternion)
 {
 	quatd result;
-	result.X = -quaternion.X;
-	result.Y = -quaternion.Y;
-	result.Z = -quaternion.Z;
-	result.W = quaternion.W;
+	result.x = -quaternion.x;
+	result.y = -quaternion.y;
+	result.z = -quaternion.z;
+	result.w = quaternion.w;
 	return result;
 }
 
@@ -206,7 +338,7 @@ PEXPI quatd SlerpQuatd(quatd start, quatd end, r64 amount)
 	if (cosTheta < 0.0)
 	{
 		cosTheta = -cosTheta;
-		end = MakeQuatd(-end.X, -end.Y, -end.Z, -end.W);
+		end = MakeQuatd(-end.x, -end.y, -end.z, -end.w);
 	}
 	
 	if (cosTheta > 0.9995) //TODO: Should we choose a number closer to 1.0 when working in 64-bit floats?
@@ -225,8 +357,8 @@ PEXPI quatd SlerpQuatd(quatd start, quatd end, r64 amount)
 	return result;
 }
 
-PEXPI bool AreEqualQuat(quat left, quat right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.W == right.W); }
-PEXPI bool AreEqualQuatd(quatd left, quatd right) { return (left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.W == right.W); }
+PEXPI bool AreEqualQuat(quat left, quat right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
+PEXPI bool AreEqualQuatd(quatd left, quatd right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
 
 #endif //PIG_CORE_IMPLEMENTATION
 

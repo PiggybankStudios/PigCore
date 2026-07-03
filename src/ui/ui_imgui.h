@@ -82,7 +82,7 @@ PEXPI v2 ToV2FromImgui(ImVec2 vector)
 }
 PEXPI ImVec2 ToImVec2(v2 vector)
 {
-	return NEW_STRUCT(ImVec2){ .x=vector.X, .y=vector.Y };
+	return NEW_STRUCT(ImVec2){ .x=vector.x, .y=vector.y };
 }
 
 PEXPI v4 ToV4FromImgui(ImVec4 vector)
@@ -91,12 +91,12 @@ PEXPI v4 ToV4FromImgui(ImVec4 vector)
 }
 PEXPI ImVec4 ToImVec4(v4 vector)
 {
-	return NEW_STRUCT(ImVec4){ .x=vector.X, .y=vector.Y, .z=vector.Z, .w=vector.W };
+	return NEW_STRUCT(ImVec4){ .x=vector.x, .y=vector.y, .z=vector.z, .w=vector.w };
 }
 PEXPI ImVec4 ToImVec4FromColor(Color32 color)
 {
 	v4 colorVec = ToV4FromColor32(color);
-	return NEW_STRUCT(ImVec4){ .x=colorVec.X, .y=colorVec.Y, .z=colorVec.Z, .w=colorVec.W };
+	return NEW_STRUCT(ImVec4){ .x=colorVec.x, .y=colorVec.y, .z=colorVec.z, .w=colorVec.w };
 }
 
 static void* ImguiAllocCallback(size_t numBytes, void* userData)

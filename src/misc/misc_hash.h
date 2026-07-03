@@ -62,10 +62,10 @@ car Hash128
 // +--------------------------------------------------------------+
 // See https://www.cantorsparadise.com/cantor-pairing-function-e213a8a89c2b
 #define CantorPair(x, y) ((((x) + (y))*((x) + (y) + 1) + (y)) / 2)
-#define CantorPairV(vector) CantorPair((vector).X, (vector).Y)
+#define CantorPairV(vector) CantorPair((vector).x, (vector).y)
 //NOTE: CantorTriplet seems to perform worse than FnvHashV3 when used for a hash table, even for tightly packed values, like our test with all values between (0,0,0) and (10,10,10)
 #define CantorTriplet(x, y, z) (((CantorPair((x), (y)) + (z))*(CantorPair((x), (y)) + (z) + 1) + (z)) / 2)
-#define CantorTripletV(vector) CantorTriplet((vector).X, (vector).Y, (vector).Z)
+#define CantorTripletV(vector) CantorTriplet((vector).x, (vector).y, (vector).z)
 
 #define FnvHashV3(x, y, z) ((((((FNV_HASH_BASE_U32 ^ (u32)(x)) * FNV_HASH_PRIME_U32) ^ (u32)(y)) * FNV_HASH_PRIME_U32) ^ (u32)(z)) * FNV_HASH_PRIME_U32)
 

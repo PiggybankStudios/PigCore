@@ -77,10 +77,10 @@ PEXPI v4 ToV4FromColor32(Color32 color)
 PEXPI Color32 ToColor32FromV4(v4 vector)
 {
 	return MakeColor(
-		ClampCastI32ToU8(RoundR32i(vector.X * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.Y * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.Z * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.W * 255.0f))
+		ClampCastI32ToU8(RoundR32i(vector.x * 255.0f)),
+		ClampCastI32ToU8(RoundR32i(vector.y * 255.0f)),
+		ClampCastI32ToU8(RoundR32i(vector.z * 255.0f)),
+		ClampCastI32ToU8(RoundR32i(vector.w * 255.0f))
 	);
 }
 
@@ -96,10 +96,10 @@ PEXPI v4r ToV4rFromColor32(Color32 color)
 PEXPI Color32 ToColor32FromV4r(v4r vector)
 {
 	return MakeColor(
-		ClampCastI32ToU8(RoundR32i(vector.X * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.Y * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.Z * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.W * 255.0f))
+		ClampCastI32ToU8(RoundR32i(vector.x * 255.0f)),
+		ClampCastI32ToU8(RoundR32i(vector.y * 255.0f)),
+		ClampCastI32ToU8(RoundR32i(vector.z * 255.0f)),
+		ClampCastI32ToU8(RoundR32i(vector.w * 255.0f))
 	);
 }
 

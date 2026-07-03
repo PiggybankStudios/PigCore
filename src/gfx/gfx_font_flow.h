@@ -235,9 +235,9 @@ static void DoFontFlow_DrawHighlightRec(FontFlowState* state, FontFlowCallbacks*
 {
 	FontLineMetrics metrics = GetFontLineMetrics(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
 	rec highlightRec = MakeRec(
-		state->highlightStartPos.X,
-		state->highlightStartPos.Y - metrics.centerOffset - metrics.lineHeight/2.0f - 1,
-		state->position.X - state->highlightStartPos.X,
+		state->highlightStartPos.x,
+		state->highlightStartPos.y - metrics.centerOffset - metrics.lineHeight/2.0f - 1,
+		state->position.x - state->highlightStartPos.x,
 		metrics.lineHeight+2
 	);
 	AlignRecToV2(&highlightRec, state->alignPixelSize);
@@ -275,8 +275,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 			flowOut->visualRec = MakeRecV(state->position, V2_Zero);
 			flowOut->logicalRec = MakeRecV(state->position, V2_Zero);
 			FontLineMetrics lineMetrics = GetFontLineMetrics(state->font, state->startFontSize, state->startFontStyle);
-			flowOut->logicalRec.Y -= lineMetrics.maxAscend;
-			flowOut->logicalRec.Height = lineMetrics.maxAscend;
+			flowOut->logicalRec.y -= lineMetrics.maxAscend;
+			flowOut->logicalRec.height = lineMetrics.maxAscend;
 			flowOut->numGlyphs = 0;
 		}
 	}
@@ -334,14 +334,14 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 		{
 			if (state->wordWrapByteIndexIsLineEnd)
 			{
-				state->position.X = state->startPos.X;
+				state->position.x = state->startPos.x;
 				if (state->maxLineHeightThisLine > 0)
 				{
-					state->position.Y += state->maxLineHeightThisLine;
+					state->position.y += state->maxLineHeightThisLine;
 				}
 				else
 				{
-					state->position.Y += GetFontLineHeight(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
+					state->position.y += GetFontLineHeight(state->font, state->currentStyle.fontSize, state->currentStyle.fontStyle);
 				}
 				state->maxLineHeightThisLine = 0.0f;
 				state->highlightStartPos = state->position;
@@ -436,8 +436,8 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					if (predictedScale != 1.0f)
 					{
 						glyphMetrics.glyphSize = MakeV2i(
-							RoundR32i(glyphMetrics.glyphSize.Width * predictedScale),
-							RoundR32i(glyphMetrics.glyphSize.Height * predictedScale)
+							RoundR32i(glyphMetrics.glyphSize.width * predictedScale),
+							RoundR32i(glyphMetrics.glyphSize.height * predictedScale)
 						);
 						glyphMetrics.renderOffset = ScaleV2(glyphMetrics.renderOffset, predictedScale);
 						glyphMetrics.advanceX *= predictedScale;
@@ -450,18 +450,18 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 				if (state->prevGlyphAtlas != nullptr && fontGlyph != nullptr && state->prevGlyphAtlas->metrics.fontScale == fontAtlas->metrics.fontScale) //TODO: Should we check the style flags match?
 				{
 					kerning = GetFontKerningBetweenGlyphs(state->font, fontAtlas->metrics.fontScale, state->prevGlyph, fontGlyph);
-					state->position.X += kerning;
+					state->position.x += kerning;
 					// if (kerning != 0.0f) { PrintLine_D("Kern between \'%c\' and \'%c\' = %f", (char)state->prevGlyph->codepoint, (char)codepoint, kerning); }
 				}
 				
 				glyphDrawRec = MakeRecV(AddV2(state->position, glyphMetrics.renderOffset), ToV2Fromi(glyphMetrics.glyphSize));
-				glyphLogicalRec = MakeRecV(AddV2(state->position, glyphMetrics.logicalRec.TopLeft), glyphMetrics.logicalRec.Size);
-				if (state->alignPixelSize.X != 0) { glyphDrawRec.X = RoundR32(glyphDrawRec.X * state->alignPixelSize.X) / state->alignPixelSize.X; }
-				if (state->alignPixelSize.Y != 0) { glyphDrawRec.Y = RoundR32(glyphDrawRec.Y * state->alignPixelSize.Y) / state->alignPixelSize.Y; }
+				glyphLogicalRec = MakeRecV(AddV2(state->position, glyphMetrics.logicalRec.topLeft), glyphMetrics.logicalRec.Size);
+				if (state->alignPixelSize.x != 0) { glyphDrawRec.x = RoundR32(glyphDrawRec.x * state->alignPixelSize.x) / state->alignPixelSize.x; }
+				if (state->alignPixelSize.y != 0) { glyphDrawRec.y = RoundR32(glyphDrawRec.y * state->alignPixelSize.y) / state->alignPixelSize.y; }
 				
 				// If the character can't fit within wrapWidth, then figure out where to break the line
 				if (state->findingNextWordBeforeWrap && state->wrapWidth > 0.0f &&
-					glyphLogicalRec.X + glyphLogicalRec.Width >= state->startPos.X + state->wrapWidth)
+					glyphLogicalRec.x + glyphLogicalRec.width >= state->startPos.x + state->wrapWidth)
 				{
 					//Either wrap at the last word boundary, or if there was no word boundary this line then wrap before this character
 					//TODO: Sublime seems to not use the last word boundary if it only was like 1-3 characters before the boundary
@@ -527,7 +527,7 @@ PEXP Result DoFontFlow(FontFlowState* state, FontFlowCallbacks* callbacks, FontF
 					flowOut->numGlyphs++;
 				}
 				
-				state->position.X += glyphMetrics.advanceX;
+				state->position.x += glyphMetrics.advanceX;
 				state->glyphIndex++;
 				TracyCZoneEnd(_glyphLogic);
 			}
@@ -594,9 +594,9 @@ PEXPI TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styl
 	TextMeasure result = ZEROED;
 	result.visualRec = flowOut->visualRec;
 	result.logicalRec = flowOut->logicalRec;
-	if (includeAdvanceX && result.logicalRec.Width < flowOut->endPos.X - result.logicalRec.X)
+	if (includeAdvanceX && result.logicalRec.width < flowOut->endPos.x - result.logicalRec.x)
 	{
-		result.logicalRec.Width = flowOut->endPos.X - result.logicalRec.X;
+		result.logicalRec.width = flowOut->endPos.x - result.logicalRec.x;
 	}
 	TracyCZoneEnd(_funcZone);
 	return result;
@@ -661,7 +661,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	Assert(flowResult == Result_Success || flowResult == Result_InvalidUtf8);
 	AssertMsg(flow.numGlyphs <= flow.numGlyphsAlloc, "We shouldn't have more glyphs than there are number of bytes in the string!");
 	
-	if (flow.logicalRec.Width <= maxWidth)
+	if (flow.logicalRec.width <= maxWidth)
 	{
 		SetOptionalOutPntr(beforeEllipseStrOut, text);
 		SetOptionalOutPntr(afterEllipseStrOut, MakeStr8(0, &text.chars[text.length-1]));
@@ -674,15 +674,15 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 	if (!IsEmptyStr(ellipsesStr))
 	{
 		TextMeasure ellipsesMeasure = MeasureTextEx(font, fontSize, styleFlags, false, 0, ellipsesStr);
-		ellipsesWidth = ellipsesMeasure.Width - ellipsesMeasure.OffsetX;
+		ellipsesWidth = ellipsesMeasure.width - ellipsesMeasure.OffsetX;
 	}
 	
 	Str8 leftPortion = StrSlice(text, 0, ellipsesIndex);
 	Str8 rightPortion = StrSliceFrom(text, ellipsesIndex);
 	FontFlowGlyph* leftLastGlyph = leftPortion.length > 0 ? &flow.glyphs[leftPortion.length-1] : nullptr;
-	r32 leftWidth = (leftLastGlyph != nullptr) ? (leftLastGlyph->drawRec.X + leftLastGlyph->drawRec.Width - flow.logicalRec.X) : 0.0f;
+	r32 leftWidth = (leftLastGlyph != nullptr) ? (leftLastGlyph->drawRec.x + leftLastGlyph->drawRec.width - flow.logicalRec.x) : 0.0f;
 	FontFlowGlyph* rightFirstGlyph = rightPortion.length > 0 ? &flow.glyphs[text.length - rightPortion.length] : nullptr;
-	r32 rightWidth = (rightFirstGlyph != nullptr) ? ((flow.logicalRec.X + flow.logicalRec.Width) - rightFirstGlyph->drawRec.X) : 0.0f;
+	r32 rightWidth = (rightFirstGlyph != nullptr) ? ((flow.logicalRec.x + flow.logicalRec.width) - rightFirstGlyph->drawRec.x) : 0.0f;
 	uxx numCharsRemoved = 0;
 	bool removeLeft = true;
 	while (leftPortion.length + rightPortion.length > 0 && leftWidth + ellipsesWidth + rightWidth > maxWidth)
@@ -693,7 +693,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 		{
 			//TODO: This isn't going to work when we have multi-byte UTF-8 characters that account for a single glyph. We should think about how we are indexing into the glyphs to find the one we are about to remove!
 			FontFlowGlyph* leftGlyph = &flow.glyphs[leftPortion.length-1];
-			leftWidth = leftGlyph->drawRec.X - flow.logicalRec.X;
+			leftWidth = leftGlyph->drawRec.x - flow.logicalRec.x;
 			leftPortion.length--;
 			numCharsRemoved++;
 		}
@@ -701,7 +701,7 @@ PEXP uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlag
 		{
 			//TODO: This isn't going to work when we have multi-byte UTF-8 characters that account for a single glyph. We should think about how we are indexing into the glyphs to find the one we are about to remove!
 			FontFlowGlyph* rightGlyph = &flow.glyphs[text.length - rightPortion.length];
-			rightWidth = (flow.logicalRec.X + flow.logicalRec.Width) - (rightGlyph->drawRec.X + rightGlyph->drawRec.Width);
+			rightWidth = (flow.logicalRec.x + flow.logicalRec.width) - (rightGlyph->drawRec.x + rightGlyph->drawRec.width);
 			rightPortion.chars++;
 			rightPortion.length--;
 			numCharsRemoved++;

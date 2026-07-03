@@ -67,7 +67,7 @@ PEXPI Clay_ImageElementConfig ToClayImageEx(Texture* texture, rec sourceRec)
 {
 	Clay_ImageElementConfig result = ZEROED;
 	result.imageData = texture;
-	result.sourceDimensions = sourceRec.Size;
+	result.sourceDimensions = sourceRec.size;
 	return result;
 }
 PEXPI Clay_ImageElementConfig ToClayImage(Texture* texture)
@@ -104,10 +104,10 @@ PEXP CLAY_MEASURE_TEXT_DEF(ClayUIRendererMeasureText)
 	TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, /*includeAdvanceX=*/true, /*wrapWidth=*/0.0f, richText);
 	
 	r32 lineHeight = GetFontLineHeight(font->pntr, fontSize, font->styleFlags);
-	if (measure.Height < lineHeight) { measure.Height = lineHeight; }
+	if (measure.height < lineHeight) { measure.height = lineHeight; }
 	//NOTE: Our measurement can return non-whole numbers, but Clay just truncates these to int, so the CeilR32s here are important!
-	v2 result = MakeV2(CeilR32(measure.Width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.Height, measure.visualRec.Height)));
-	if (config->userData.wrapWidth != 0.0f) { result.Width = MinR32(result.Width, config->userData.wrapWidth); }
+	v2 result = MakeV2(CeilR32(measure.width - measure.OffsetX), CeilR32(MaxR32(measure.logicalRec.height, measure.visualRec.height)));
+	if (config->userData.wrapWidth != 0.0f) { result.width = MinR32(result.width, config->userData.wrapWidth); }
 	ScratchEnd(scratch);
 	return result;
 }
@@ -228,18 +228,18 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 						richText.numPieces > 1) //TODO: We don't support ellipses style contractions with RichStr right now!
 					{
 						rec textClipRec = MakeRec(
-							drawRec.X,
-							drawRec.Y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset - fontLineMetrics.maxAscend,
-							drawRec.Width,
+							drawRec.x,
+							drawRec.y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset - fontLineMetrics.maxAscend,
+							drawRec.width,
 							fontLineMetrics.lineHeight
 						);
 						AlignRec(&textClipRec);
 						if (command->renderData.text.userData.contraction == TextContraction_ClipLeft)
 						{
 							TextMeasure measure = MeasureRichTextEx(font->pntr, fontSize, font->styleFlags, false, 0, richText);
-							if (measure.Width > drawRec.Width)
+							if (measure.width > drawRec.width)
 							{
-								textOffsetX -= (measure.Width - drawRec.Width);
+								textOffsetX -= (measure.width - drawRec.width);
 							}
 						}
 						// GfxSystem_DrawRectangle(system, textClipRec, ColorWithAlpha(MonokaiPurple, 0.2f));
@@ -248,26 +248,26 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 					}
 					else if (command->renderData.text.userData.contraction == TextContraction_EllipseLeft)
 					{
-						text = ShortenTextStartToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
+						text = ShortenTextStartToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.width), StrLit(UNICODE_ELLIPSIS_STR));
 						richText = ToRichStr(text);
 					}
 					else if (command->renderData.text.userData.contraction == TextContraction_EllipseMiddle)
 					{
-						text = ShortenTextToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR), text.length/2);
+						text = ShortenTextToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.width), StrLit(UNICODE_ELLIPSIS_STR), text.length/2);
 						richText = ToRichStr(text);
 					}
 					else if (command->renderData.text.userData.contraction == TextContraction_EllipseRight)
 					{
-						text = ShortenTextEndToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
+						text = ShortenTextEndToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.width), StrLit(UNICODE_ELLIPSIS_STR));
 						richText = ToRichStr(text);
 					}
 					else if (command->renderData.text.userData.contraction == TextContraction_EllipseFilePath)
 					{
-						text = ShortenFilePathToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.Width), StrLit(UNICODE_ELLIPSIS_STR));
+						text = ShortenFilePathToFitWidth(scratch, font->pntr, fontSize, font->styleFlags, text, CeilR32(drawRec.width), StrLit(UNICODE_ELLIPSIS_STR));
 						richText = ToRichStr(text);
 					}
 				}
-				v2 textPos = MakeV2(drawRec.X + textOffsetX, drawRec.Y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset);
+				v2 textPos = MakeV2(drawRec.x + textOffsetX, drawRec.y + fontLineMetrics.lineHeight/2 + fontLineMetrics.centerOffset);
 				AlignV2(&textPos);
 				
 				FontFlowState state = ZEROED;
@@ -311,7 +311,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				Color32 drawColor = command->renderData.image.backgroundColor;
 				if (drawColor.valueU32 == 0) { drawColor = White; } //default value means "untinted"
 				rec sourceRec = command->userData.imageSourceRec;
-				if (sourceRec.X == 0 && sourceRec.Y == 0 && sourceRec.Width == 0 && sourceRec.Height == 0 && texturePntr != nullptr) { sourceRec.Size = ToV2Fromi(texturePntr->size); }
+				if (sourceRec.x == 0 && sourceRec.y == 0 && sourceRec.width == 0 && sourceRec.height == 0 && texturePntr != nullptr) { sourceRec.size = ToV2Fromi(texturePntr->size); }
 				GfxSystem_DrawTexturedRectangleEx(system, drawRec, drawColor, texturePntr, sourceRec);
 				TracyCZoneEnd(Zone_COMMAND_IMAGE);
 			} break;
@@ -324,7 +324,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				TracyCZoneN(Zone_COMMAND_SCISSOR_START, "SCISSOR_START", true);
 				//NOTE: Negative or infinite values for clip rectangle cause OpenGL errors so we guard against that
 				//TODO: We should change Clay so it never produces SCISSOR_START commands with 0 or infinite size
-				if (drawRec.Width > 0 && drawRec.Height > 0 && !IsInfiniteOrNanR32(drawRec.Width) && !IsInfiniteOrNanR32(drawRec.Height))
+				if (drawRec.width > 0 && drawRec.height > 0 && !IsInfiniteOrNanR32(drawRec.width) && !IsInfiniteOrNanR32(drawRec.height))
 				{
 					// r32 oldDepth = system->state.depth;
 					// GfxSystem_SetDepth(system, 0.0f);
@@ -352,7 +352,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 			{
 				TracyCZoneN(Zone_COMMAND_RECTANGLE, "RECTANGLE", true);
 				AlignRec(&drawRec);
-				if (!IsInfiniteOrNanR32(drawRec.Width) && !IsInfiniteOrNanR32(drawRec.Height))
+				if (!IsInfiniteOrNanR32(drawRec.width) && !IsInfiniteOrNanR32(drawRec.height))
 				{
 					Color32 drawColor = command->renderData.rectangle.backgroundColor;
 					GfxSystem_DrawRoundedRectangleEx(system,
@@ -375,7 +375,7 @@ PEXPI void RenderClayCommandArray(ClayUIRenderer* renderer, GfxSystem* system, C
 				TracyCZoneN(Zone_COMMAND_BORDER, "BORDER", true);
 				AlignRec(&drawRec);
 				
-				if (!IsInfiniteOrNanR32(drawRec.Width) && !IsInfiniteOrNanR32(drawRec.Height))
+				if (!IsInfiniteOrNanR32(drawRec.width) && !IsInfiniteOrNanR32(drawRec.height))
 				{
 					Color32 drawColor = command->renderData.border.color;
 					if (command->renderData.border.cornerRadius.topLeft != 0 ||

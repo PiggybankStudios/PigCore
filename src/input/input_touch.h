@@ -134,7 +134,7 @@ PEXP TouchState* StartNewTouch(TouchscreenState* touchscreen, uxx id, v2 startPo
 			result->prevPos = startPos;
 			result->pos = startPos;
 			result->visitRadius = 0.0f;
-			result->visitBounds = MakeRec(startPos.X, startPos.Y, 0, 0);
+			result->visitBounds = MakeRec(startPos.x, startPos.y, 0, 0);
 			for (uxx pIndex = 1; pIndex < TOUCH_PATH_LENGTH; pIndex++) { result->path[pIndex] = TOUCH_PATH_INVALID; }
 			result->path[0] = startPos;
 		}

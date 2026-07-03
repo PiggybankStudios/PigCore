@@ -325,7 +325,7 @@ void Clay__RenderDebugView(void)
 	Clay_TextElementConfig* infoTitleConfig = CLAY_TEXT_CONFIG({ .textColor = CLAY__DEBUGVIEW_COLOR_3, .fontSize = 16, .wrapMode = CLAY_TEXT_WRAP_NONE });
 	Clay_ElementId scrollId = Clay__HashString(CLAY_STRING("Clay__DebugViewOuterScrollPane"), 0, 0);
 	r32 scrollYOffset = 0;
-	bool pointerInDebugView = context->pointerInfo.position.Y < context->layoutDimensions.Height - 300;
+	bool pointerInDebugView = context->pointerInfo.position.y < context->layoutDimensions.height - 300;
 	for (uxx sIndex = 0; sIndex < context->scrollContainerDatas.length; ++sIndex)
 	{
 		Clay__ScrollContainerDataInternal* scrollContainerData = Clay__ScrollContainerDataInternalArray_Get(&context->scrollContainerDatas, sIndex);
@@ -333,25 +333,25 @@ void Clay__RenderDebugView(void)
 		{
 			if (!context->externalScrollHandlingEnabled)
 			{
-				scrollYOffset = scrollContainerData->scrollPosition.Y;
+				scrollYOffset = scrollContainerData->scrollPosition.y;
 			}
 			else
 			{
-				pointerInDebugView = context->pointerInfo.position.Y + scrollContainerData->scrollPosition.Y < context->layoutDimensions.Height - 300;
+				pointerInDebugView = context->pointerInfo.position.y + scrollContainerData->scrollPosition.y < context->layoutDimensions.height - 300;
 			}
 			break;
 		}
 	}
 	i32 highlightedRow = pointerInDebugView
-			? (i32)((context->pointerInfo.position.Y - scrollYOffset) / (r32)CLAY__DEBUGVIEW_ROW_HEIGHT) - 1
+			? (i32)((context->pointerInfo.position.y - scrollYOffset) / (r32)CLAY__DEBUGVIEW_ROW_HEIGHT) - 1
 			: -1;
-	if (context->pointerInfo.position.X < context->layoutDimensions.Width - (r32)Clay__debugViewWidth)
+	if (context->pointerInfo.position.x < context->layoutDimensions.width - (r32)Clay__debugViewWidth)
 	{
 		highlightedRow = -1;
 	}
 	Clay__RenderDebugLayoutData layoutData = ZEROED;
 	CLAY({ .id = CLAY_ID("Clay__DebugView"),
-		 .layout = { .sizing = { CLAY_SIZING_FIXED((r32)Clay__debugViewWidth) , CLAY_SIZING_FIXED(context->layoutDimensions.Height) }, .layoutDirection = CLAY_TOP_TO_BOTTOM },
+		 .layout = { .sizing = { CLAY_SIZING_FIXED((r32)Clay__debugViewWidth) , CLAY_SIZING_FIXED(context->layoutDimensions.height) }, .layoutDirection = CLAY_TOP_TO_BOTTOM },
 		.floating = { .zIndex = 32765, .attachPoints = { .element = CLAY_ATTACH_POINT_LEFT_CENTER, .parent = CLAY_ATTACH_POINT_RIGHT_CENTER }, .attachTo = CLAY_ATTACH_TO_ROOT },
 		.border = { .color = CLAY__DEBUGVIEW_COLOR_3, .width = { .bottom = 1 } }
 	})
@@ -387,7 +387,7 @@ void Clay__RenderDebugView(void)
 						layoutData = Clay__RenderDebugLayoutElementsList((i32)initialRootsLength, highlightedRow);
 					}
 				}
-				r32 contentWidth = Clay__GetHashMapItem(panelContentsId.id)->layoutElement->dimensions.Width;
+				r32 contentWidth = Clay__GetHashMapItem(panelContentsId.id)->layoutElement->dimensions.width;
 				CLAY({ .layout = { .sizing = {.width = CLAY_SIZING_FIXED(contentWidth) }, .layoutDirection = CLAY_TOP_TO_BOTTOM } }) {}
 				for (i32 i = 0; i < layoutData.rowCount; i++)
 				{
@@ -441,13 +441,13 @@ void Clay__RenderDebugView(void)
 					CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT } })
 					{
 						CLAY_TEXT(CLAY_STRING("{ x: "), infoTextConfig);
-						CLAY_TEXT(Clay__IntToString(selectedItem->boundingBox.X), infoTextConfig);
+						CLAY_TEXT(Clay__IntToString(selectedItem->boundingBox.x), infoTextConfig);
 						CLAY_TEXT(CLAY_STRING(", y: "), infoTextConfig);
-						CLAY_TEXT(Clay__IntToString(selectedItem->boundingBox.Y), infoTextConfig);
+						CLAY_TEXT(Clay__IntToString(selectedItem->boundingBox.y), infoTextConfig);
 						CLAY_TEXT(CLAY_STRING(", width: "), infoTextConfig);
-						CLAY_TEXT(Clay__IntToString(selectedItem->boundingBox.Width), infoTextConfig);
+						CLAY_TEXT(Clay__IntToString(selectedItem->boundingBox.width), infoTextConfig);
 						CLAY_TEXT(CLAY_STRING(", height: "), infoTextConfig);
-						CLAY_TEXT(Clay__IntToString(selectedItem->boundingBox.Height), infoTextConfig);
+						CLAY_TEXT(Clay__IntToString(selectedItem->boundingBox.height), infoTextConfig);
 						CLAY_TEXT(CLAY_STRING(" }"), infoTextConfig);
 					}
 					// .layoutDirection
@@ -565,14 +565,14 @@ void Clay__RenderDebugView(void)
 								CLAY({ .id = CLAY_ID("Clay__DebugViewElementInfoImageDimensions") })
 								{
 									CLAY_TEXT(CLAY_STRING("{ width: "), infoTextConfig);
-									CLAY_TEXT(Clay__IntToString(imageConfig->sourceDimensions.Width), infoTextConfig);
+									CLAY_TEXT(Clay__IntToString(imageConfig->sourceDimensions.width), infoTextConfig);
 									CLAY_TEXT(CLAY_STRING(", height: "), infoTextConfig);
-									CLAY_TEXT(Clay__IntToString(imageConfig->sourceDimensions.Height), infoTextConfig);
+									CLAY_TEXT(Clay__IntToString(imageConfig->sourceDimensions.height), infoTextConfig);
 									CLAY_TEXT(CLAY_STRING(" }"), infoTextConfig);
 								}
 								// Image Preview
 								CLAY_TEXT(CLAY_STRING("Preview"), infoTitleConfig);
-								CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0, imageConfig->sourceDimensions.Width) }}, .image = *imageConfig }) {}
+								CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0, imageConfig->sourceDimensions.width) }}, .image = *imageConfig }) {}
 							}
 							break;
 						}
@@ -600,9 +600,9 @@ void Clay__RenderDebugView(void)
 								CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT } })
 								{
 									CLAY_TEXT(CLAY_STRING("{ x: "), infoTextConfig);
-									CLAY_TEXT(Clay__IntToString(floatingConfig->offset.X), infoTextConfig);
+									CLAY_TEXT(Clay__IntToString(floatingConfig->offset.x), infoTextConfig);
 									CLAY_TEXT(CLAY_STRING(", y: "), infoTextConfig);
-									CLAY_TEXT(Clay__IntToString(floatingConfig->offset.Y), infoTextConfig);
+									CLAY_TEXT(Clay__IntToString(floatingConfig->offset.y), infoTextConfig);
 									CLAY_TEXT(CLAY_STRING(" }"), infoTextConfig);
 								}
 								// .expand
@@ -610,9 +610,9 @@ void Clay__RenderDebugView(void)
 								CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT } })
 								{
 									CLAY_TEXT(CLAY_STRING("{ width: "), infoTextConfig);
-									CLAY_TEXT(Clay__IntToString(floatingConfig->expand.Width), infoTextConfig);
+									CLAY_TEXT(Clay__IntToString(floatingConfig->expand.width), infoTextConfig);
 									CLAY_TEXT(CLAY_STRING(", height: "), infoTextConfig);
-									CLAY_TEXT(Clay__IntToString(floatingConfig->expand.Height), infoTextConfig);
+									CLAY_TEXT(Clay__IntToString(floatingConfig->expand.height), infoTextConfig);
 									CLAY_TEXT(CLAY_STRING(" }"), infoTextConfig);
 								}
 								// .zIndex

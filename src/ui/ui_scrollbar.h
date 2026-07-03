@@ -88,19 +88,19 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	UiElement* oldBarElem = GetUiElementByIdInPrevFrame(barId, true);
 	state->isHovered = IsUiElementHovered(barId);
 	bool isGutterHovered = IsUiElementHovered(gutterId);
-	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.Size, UiCtx->scale) : V2_One;
-	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.Size, UiCtx->scale) : V2_One;
-	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.XY, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
+	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.size, UiCtx->scale) : V2_One;
+	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.size, UiCtx->scale) : V2_One;
+	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.xy, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
 	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
-	r32 viewablePercentage = (contentSize.Height > usableViewSize.Height) ? (usableViewSize.Height / contentSize.Height) : 1.0f;
+	r32 viewablePercentage = (contentSize.height > usableViewSize.height) ? (usableViewSize.height / contentSize.height) : 1.0f;
 	v2 barSize = MakeV2(
-		gutterSize.Width - (gutterLeftRightPadding*2),
-		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Height * viewablePercentage)), gutterSize.Height)
+		gutterSize.width - (gutterLeftRightPadding*2),
+		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.height * viewablePercentage)), gutterSize.height)
 	);
 	
 	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
 	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
-		AreSimilarR32(oldScrollViewElem->scroll.Y, oldScrollViewElem->scrollGoto.Y, DEFAULT_R32_TOLERANCE))
+		AreSimilarR32(oldScrollViewElem->scroll.y, oldScrollViewElem->scrollGoto.y, DEFAULT_R32_TOLERANCE))
 	{
 		state->isDraggingSmooth = false;
 	}
@@ -112,14 +112,14 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 			state->isDragging = true;
 			state->isDraggingSmooth = false;
 			state->draggingOffset = V2_Zero;
-			if (oldBarElem != nullptr) { state->draggingOffset = SubV2(UiCtx->mouse->position, oldBarElem->layoutRec.TopLeft); }
+			if (oldBarElem != nullptr) { state->draggingOffset = SubV2(UiCtx->mouse->position, oldBarElem->layoutRec.topLeft); }
 		}
 		else if (isGutterHovered && IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Left)) //TODO: Pass MouseStateHandling*
 		{
 			state->isDragging = true;
 			state->isDraggingSmooth = true;
 			state->draggingOffset = V2_Zero;
-			if (oldBarElem != nullptr) { state->draggingOffset = ShrinkV2(oldBarElem->layoutRec.Size, 2); }
+			if (oldBarElem != nullptr) { state->draggingOffset = ShrinkV2(oldBarElem->layoutRec.size, 2); }
 		}
 		
 		if (state->isDragging)
@@ -130,15 +130,15 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 			else
 			{
 				v2 draggedBarPosition = SubV2(UiCtx->mouse->position, state->draggingOffset);
-				if (oldGutterElem != nullptr) { draggedBarPosition = SubV2(draggedBarPosition, oldGutterElem->layoutRec.TopLeft); }
+				if (oldGutterElem != nullptr) { draggedBarPosition = SubV2(draggedBarPosition, oldGutterElem->layoutRec.topLeft); }
 				draggedBarPosition = ShrinkV2(draggedBarPosition, UiCtx->scale);
-				r32 maxBarY = gutterSize.Height - barSize.Height;
-				r32 newScrollPercentage = (maxBarY > 0.0f) ? draggedBarPosition.Y / maxBarY : 0.0f;
+				r32 maxBarY = gutterSize.height - barSize.height;
+				r32 newScrollPercentage = (maxBarY > 0.0f) ? draggedBarPosition.y / maxBarY : 0.0f;
 				newScrollPercentage = ClampR32(newScrollPercentage, 0.0f, 1.0f);
 				
 				if (oldScrollViewElem != nullptr)
 				{
-					r32 newScrollGotoY = newScrollPercentage * oldScrollViewElem->scrollMax.Y;
+					r32 newScrollGotoY = newScrollPercentage * oldScrollViewElem->scrollMax.y;
 					SetUiElementScroll(scrollViewId, FillV2(-1), MakeV2(-1, newScrollGotoY));
 					if (!state->isDraggingSmooth) { SetUiElementScroll(scrollViewId, MakeV2(-1, newScrollGotoY), FillV2(-1)); }
 				}
@@ -150,7 +150,7 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	splitterContainerConfig.direction = UiLayoutDir_RightToLeft;
 	OpenUiElement(splitterContainerConfig);
 	
-	if (!state->hidden && (!state->autohide || contentSize.Height > usableViewSize.Height))
+	if (!state->hidden && (!state->autohide || contentSize.height > usableViewSize.height))
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_TopDown,
@@ -161,12 +161,12 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 			.color = gutterColor,
 		})
 		{
-			r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.Y > 0) ? oldScrollViewElem->scroll.Y / oldScrollViewElem->scrollMax.Y : 0.0f;
+			r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.y > 0) ? oldScrollViewElem->scroll.y / oldScrollViewElem->scrollMax.y : 0.0f;
 			UIELEM_LEAF({ .id = barId,
-				.sizing = UI_FIXED2(barSize.Width, barSize.Height),
-				.padding = { .outer = { .Top=RoundR32(scrollPercentage * (gutterSize.Height - barSize.Height)) } },
+				.sizing = UI_FIXED2(barSize.width, barSize.height),
+				.padding = { .outer = { .Top=RoundR32(scrollPercentage * (gutterSize.height - barSize.height)) } },
 				.color = barColor,
-				.cornerRadius = FillV4r(barSize.Width/2),
+				.cornerRadius = FillV4r(barSize.width/2),
 			});
 		}
 	}
@@ -191,19 +191,19 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	UiElement* oldBarElem = GetUiElementByIdInPrevFrame(barId, true);
 	state->isHovered = IsUiElementHovered(barId);
 	bool isGutterHovered = IsUiElementHovered(gutterId);
-	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.Size, UiCtx->scale) : V2_One;
-	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.Size, UiCtx->scale) : V2_One;
-	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.XY, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
+	v2 gutterSize = (oldGutterElem != nullptr) ? ShrinkV2(oldGutterElem->layoutRec.size, UiCtx->scale) : V2_One;
+	v2 viewSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->layoutRec.size, UiCtx->scale) : V2_One;
+	v2 usableViewSize = (oldScrollViewElem != nullptr) ? SubV2(viewSize, ShrinkV2(AddV2(oldScrollViewElem->config.padding.inner.xy, oldScrollViewElem->config.padding.inner.ZW), UiCtx->scale)) : viewSize;
 	v2 contentSize = (oldScrollViewElem != nullptr) ? ShrinkV2(oldScrollViewElem->contentSize, UiCtx->scale) : V2_Zero;
-	r32 viewablePercentage = (contentSize.Width > usableViewSize.Width) ? (usableViewSize.Width / contentSize.Width) : 1.0f;
+	r32 viewablePercentage = (contentSize.width > usableViewSize.width) ? (usableViewSize.width / contentSize.width) : 1.0f;
 	v2 barSize = MakeV2(
-		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.Width * viewablePercentage)), gutterSize.Width),
-		gutterSize.Height - (gutterTopBottomPadding*2)
+		MinR32(MaxR32(PIG_UI_SCROLLBAR_MIN_SIZE, RoundR32(gutterSize.width * viewablePercentage)), gutterSize.width),
+		gutterSize.height - (gutterTopBottomPadding*2)
 	);
 	
 	// Once the scroll has reached the scrollGoto then we stop smooth scrolling and follow the mouse movements immediately
 	if (state->isDragging && state->isDraggingSmooth && oldScrollViewElem != nullptr &&
-		AreSimilarR32(oldScrollViewElem->scroll.X, oldScrollViewElem->scrollGoto.X, DEFAULT_R32_TOLERANCE))
+		AreSimilarR32(oldScrollViewElem->scroll.x, oldScrollViewElem->scrollGoto.x, DEFAULT_R32_TOLERANCE))
 	{
 		state->isDraggingSmooth = false;
 	}
@@ -215,14 +215,14 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 			state->isDragging = true;
 			state->isDraggingSmooth = false;
 			state->draggingOffset = V2_Zero;
-			if (oldBarElem != nullptr) { state->draggingOffset = SubV2(UiCtx->mouse->position, oldBarElem->layoutRec.TopLeft); }
+			if (oldBarElem != nullptr) { state->draggingOffset = SubV2(UiCtx->mouse->position, oldBarElem->layoutRec.topLeft); }
 		}
 		else if (isGutterHovered && IsMouseBtnPressed(UiCtx->mouse, nullptr, MouseBtn_Left)) //TODO: Pass MouseStateHandling*
 		{
 			state->isDragging = true;
 			state->isDraggingSmooth = true;
 			state->draggingOffset = V2_Zero;
-			if (oldBarElem != nullptr) { state->draggingOffset = ShrinkV2(oldBarElem->layoutRec.Size, 2); }
+			if (oldBarElem != nullptr) { state->draggingOffset = ShrinkV2(oldBarElem->layoutRec.size, 2); }
 		}
 		
 		if (state->isDragging)
@@ -233,15 +233,15 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 			else
 			{
 				v2 draggedBarPosition = SubV2(UiCtx->mouse->position, state->draggingOffset);
-				if (oldGutterElem != nullptr) { draggedBarPosition = SubV2(draggedBarPosition, oldGutterElem->layoutRec.TopLeft); }
+				if (oldGutterElem != nullptr) { draggedBarPosition = SubV2(draggedBarPosition, oldGutterElem->layoutRec.topLeft); }
 				draggedBarPosition = ShrinkV2(draggedBarPosition, UiCtx->scale);
-				r32 maxBarX = gutterSize.Width - barSize.Width;
-				r32 newScrollPercentage = (maxBarX > 0.0f) ? draggedBarPosition.X / maxBarX : 0.0f;
+				r32 maxBarX = gutterSize.width - barSize.width;
+				r32 newScrollPercentage = (maxBarX > 0.0f) ? draggedBarPosition.x / maxBarX : 0.0f;
 				newScrollPercentage = ClampR32(newScrollPercentage, 0.0f, 1.0f);
 				
 				if (oldScrollViewElem != nullptr)
 				{
-					r32 newScrollGotoX = newScrollPercentage * oldScrollViewElem->scrollMax.X;
+					r32 newScrollGotoX = newScrollPercentage * oldScrollViewElem->scrollMax.x;
 					SetUiElementScroll(scrollViewId, FillV2(-1), MakeV2(newScrollGotoX, -1));
 					if (!state->isDraggingSmooth) { SetUiElementScroll(scrollViewId, MakeV2(newScrollGotoX, -1), FillV2(-1)); }
 				}
@@ -253,7 +253,7 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	splitterContainerConfig.direction = UiLayoutDir_BottomUp;
 	OpenUiElement(splitterContainerConfig);
 	
-	if (state->hidden && (!state->autohide || contentSize.Width > usableViewSize.Width))
+	if (state->hidden && (!state->autohide || contentSize.width > usableViewSize.width))
 	{
 		UIELEM({ .id = gutterId,
 			.direction = UiLayoutDir_LeftToRight,
@@ -264,12 +264,12 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 			.color = gutterColor,
 		})
 		{
-			r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.X > 0) ? oldScrollViewElem->scroll.X / oldScrollViewElem->scrollMax.X : 0.0f;
+			r32 scrollPercentage = (oldScrollViewElem != nullptr && oldScrollViewElem->scrollMax.x > 0) ? oldScrollViewElem->scroll.x / oldScrollViewElem->scrollMax.x : 0.0f;
 			UIELEM_LEAF({ .id = barId,
-				.sizing = UI_FIXED2(barSize.Width, barSize.Height),
-				.padding = { .outer = { .Left=RoundR32(scrollPercentage * (gutterSize.Width - barSize.Width)) } },
+				.sizing = UI_FIXED2(barSize.width, barSize.height),
+				.padding = { .outer = { .Left=RoundR32(scrollPercentage * (gutterSize.width - barSize.width)) } },
 				.color = barColor,
-				.cornerRadius = FillV4r(barSize.Height/2),
+				.cornerRadius = FillV4r(barSize.height/2),
 			});
 		}
 	}

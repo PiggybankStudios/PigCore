@@ -93,7 +93,7 @@ void RunRaylibTests()
 				const char* textStr = "Congrats! You created your first window!";
 				const int textSize = 20;
 				int textWidth = MeasureText(textStr, textSize);
-				DrawText(textStr, windowSize.Width/2 - textWidth/2, windowSize.Height/2 - textSize/2, textSize, LIGHTGRAY);
+				DrawText(textStr, windowSize.width/2 - textWidth/2, windowSize.height/2 - textSize/2, textSize, LIGHTGRAY);
 				
 				#if BUILD_WITH_BOX2D
 				UpdateBox2DTest();
@@ -101,11 +101,11 @@ void RunRaylibTests()
 				#endif
 				
 				#if 0
-				r32 textureScale = MinR32((r32)windowSize.Width / (r32)zipTextureSize.Width, (r32)windowSize.Height / (r32)zipTextureSize.Height);
+				r32 textureScale = MinR32((r32)windowSize.width / (r32)zipTextureSize.width, (r32)windowSize.height / (r32)zipTextureSize.height);
 				v2 textureSize = Mul(ToV2Fromi(zipTextureSize), textureScale);
 				Vector2 topLeft = (Vector2){
-					.x = (r32)windowSize.Width/2 - textureSize.Width/2,
-					.y = (r32)windowSize.Height/2 - textureSize.Height/2
+					.x = (r32)windowSize.width/2 - textureSize.width/2,
+					.y = (r32)windowSize.height/2 - textureSize.height/2
 				};
 				DrawTextureEx(zipTexture, topLeft, 0.0f, textureScale, WHITE);
 				#endif

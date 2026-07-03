@@ -123,32 +123,32 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 		{
 			list->draggingScrollbar = true;
 			list->isDraggingSmooth = false;
-			list->scrollbarGrabOffset = SubV2(context->mouse->position, scrollbarDrawRec.TopLeft);
+			list->scrollbarGrabOffset = SubV2(context->mouse->position, scrollbarDrawRec.topLeft);
 			clickedInScrollArea = true;
 		}
 		else if (Clay_PointerOver(gutterId))
 		{
 			list->draggingScrollbar = true;
 			list->isDraggingSmooth = true;
-			list->scrollbarGrabOffset = ShrinkV2(scrollbarDrawRec.Size, 2);
+			list->scrollbarGrabOffset = ShrinkV2(scrollbarDrawRec.size, 2);
 			clickedInScrollArea = true;
 		}
 	}
 	
 	if (list->draggingScrollbar)
 	{
-		if (scrollData.found && scrollData.contentDimensions.Height <= scrollData.scrollContainerDimensions.Height) { list->draggingScrollbar = false; }
+		if (scrollData.found && scrollData.contentDimensions.height <= scrollData.scrollContainerDimensions.height) { list->draggingScrollbar = false; }
 		else if (!IsMouseBtnDown(context->mouse, context->mouseHandling, MouseBtn_Left)) { list->draggingScrollbar = false; }
 		else
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
-			r32 minY = scrollGutterDrawRec.Y;
-			r32 maxY = scrollGutterDrawRec.Y + scrollGutterDrawRec.Height - scrollbarDrawRec.Height;
+			r32 minY = scrollGutterDrawRec.y;
+			r32 maxY = scrollGutterDrawRec.y + scrollGutterDrawRec.height - scrollbarDrawRec.height;
 			if (maxY > minY)
 			{
-				r32 newScrollbarPos = ClampR32(context->mouse->position.Y - list->scrollbarGrabOffset.Y, minY, maxY);
+				r32 newScrollbarPos = ClampR32(context->mouse->position.y - list->scrollbarGrabOffset.y, minY, maxY);
 				r32 newScrollbarPercent = (newScrollbarPos - minY) / (maxY - minY);
-				scrollData.scrollTarget->Y = -((scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height) * newScrollbarPercent);
+				scrollData.scrollTarget->Y = -((scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height) * newScrollbarPercent);
 				if (!list->isDraggingSmooth) { scrollData.scrollPosition->Y = scrollData.scrollTarget->Y; }
 			}
 		}
@@ -245,7 +245,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 			}
 			
 			// Add an empty container to the bottom of the list to make sure we have some space that the user can click to deselect
-			r32 emptyRowHeight = MinR32(scrollData.scrollContainerDimensions.Height*0.25f, UISCALE_R32(context->uiScale, 30.0f));
+			r32 emptyRowHeight = MinR32(scrollData.scrollContainerDimensions.height*0.25f, UISCALE_R32(context->uiScale, 30.0f));
 			CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(emptyRowHeight) } } }) {}
 			
 			bool isListHovered = (context->mouse->isOverWindow && Clay_PointerOver(list->id));
@@ -280,32 +280,32 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 			},
 		})
 		{
-			if (scrollData.found && scrollData.contentDimensions.Height > scrollData.scrollContainerDimensions.Height)
+			if (scrollData.found && scrollData.contentDimensions.height > scrollData.scrollContainerDimensions.height)
 			{
 				r32 scrollbarYPercent = 0.0f;
 				r32 scrollbarSizePercent = 1.0f;
-				if (scrollData.found && scrollData.contentDimensions.Height > scrollData.scrollContainerDimensions.Height)
+				if (scrollData.found && scrollData.contentDimensions.height > scrollData.scrollContainerDimensions.height)
 				{
-					scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.Height / scrollData.contentDimensions.Height, 0.0f, 1.0f);
-					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->Y / (scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height), 0.0f, 1.0f);
+					scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.height / scrollData.contentDimensions.height, 0.0f, 1.0f);
+					scrollbarYPercent = ClampR32(-scrollData.scrollPosition->Y / (scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height), 0.0f, 1.0f);
 				}
 				rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
 				v2 scrollBarSize = MakeV2(
 					UISCALE_R32(context->uiScale, 8),
-					scrollGutterDrawRec.Height * scrollbarSizePercent
+					scrollGutterDrawRec.height * scrollbarSizePercent
 				);
-				r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
+				r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.height - scrollBarSize.height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.height);
 				
 				CLAY({ .id = scrollbarId,
 					.layout = {
-						.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.X), .height = CLAY_SIZING_FIXED(scrollBarSize.Y) },
+						.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.x), .height = CLAY_SIZING_FIXED(scrollBarSize.y) },
 					},
 					.floating = {
 						.attachTo = CLAY_ATTACH_TO_PARENT,
 						.offset = MakeV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
 					},
 					.backgroundColor = (isScrollbarHovered || list->draggingScrollbar) ? MonokaiWhite : MonokaiLightGray,
-					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2.0f),
+					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.width/2.0f),
 				}) {}
 			}
 		}

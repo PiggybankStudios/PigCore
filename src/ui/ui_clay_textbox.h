@@ -523,7 +523,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 	}
 	
 	rec textboxRec = GetClayElementDrawRec(tbox->id);
-	v2 cursorRelativePos = Sub(tbox->flow.endPos, textboxRec.TopLeft);
+	v2 cursorRelativePos = Sub(tbox->flow.endPos, textboxRec.topLeft);
 	if (tbox->text.length == 0)
 	{
 		//When there is no text being rendered, we need to figure out the start position of the text
@@ -540,7 +540,7 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 			FontFlowGlyph* glyph = &tbox->flow.glyphs[gIndex];
 			if (glyph->byteIndex == tbox->cursorEnd)
 			{
-				cursorRelativePos = Sub(glyph->position, textboxRec.TopLeft);
+				cursorRelativePos = Sub(glyph->position, textboxRec.topLeft);
 				break;
 			}
 		}

@@ -55,10 +55,10 @@ PEXP bool TryParseRec(Str8 str, rec* valueOut, Result* errorOut)
 	Str8 widthStr = StrSlice(str, commaIndices[1]+1, commaIndices[2]);
 	Str8 heightStr = StrSliceFrom(str, commaIndices[2]+1);
 	rec rectangle = Rec_Zero;
-	if (!TryParseR32(xStr, &rectangle.X, errorOut)) { return false; }
-	if (!TryParseR32(yStr, &rectangle.Y, errorOut)) { return false; }
-	if (!TryParseR32(widthStr, &rectangle.Width, errorOut)) { return false; }
-	if (!TryParseR32(heightStr, &rectangle.Height, errorOut)) { return false; }
+	if (!TryParseR32(xStr, &rectangle.x, errorOut)) { return false; }
+	if (!TryParseR32(yStr, &rectangle.y, errorOut)) { return false; }
+	if (!TryParseR32(widthStr, &rectangle.width, errorOut)) { return false; }
+	if (!TryParseR32(heightStr, &rectangle.height, errorOut)) { return false; }
 	SetOptionalOutPntr(valueOut, rectangle);
 	return true;
 }
@@ -93,10 +93,10 @@ PEXP bool TryParseReci(Str8 str, reci* valueOut, Result* errorOut)
 	Str8 widthStr = StrSlice(str, commaIndices[1]+1, commaIndices[2]);
 	Str8 heightStr = StrSliceFrom(str, commaIndices[2]+1);
 	reci rectangle = Reci_Zero;
-	if (!TryParseI32(xStr, &rectangle.X, errorOut)) { return false; }
-	if (!TryParseI32(yStr, &rectangle.Y, errorOut)) { return false; }
-	if (!TryParseI32(widthStr, &rectangle.Width, errorOut)) { return false; }
-	if (!TryParseI32(heightStr, &rectangle.Height, errorOut)) { return false; }
+	if (!TryParseI32(xStr, &rectangle.x, errorOut)) { return false; }
+	if (!TryParseI32(yStr, &rectangle.y, errorOut)) { return false; }
+	if (!TryParseI32(widthStr, &rectangle.width, errorOut)) { return false; }
+	if (!TryParseI32(heightStr, &rectangle.height, errorOut)) { return false; }
 	SetOptionalOutPntr(valueOut, rectangle);
 	return true;
 }
@@ -131,10 +131,10 @@ PEXP bool TryParseRecd(Str8 str, recd* valueOut, Result* errorOut)
 	Str8 widthStr = StrSlice(str, commaIndices[1]+1, commaIndices[2]);
 	Str8 heightStr = StrSliceFrom(str, commaIndices[2]+1);
 	recd rectangle = Recd_Zero;
-	if (!TryParseR64(xStr, &rectangle.X, errorOut)) { return false; }
-	if (!TryParseR64(yStr, &rectangle.Y, errorOut)) { return false; }
-	if (!TryParseR64(widthStr, &rectangle.Width, errorOut)) { return false; }
-	if (!TryParseR64(heightStr, &rectangle.Height, errorOut)) { return false; }
+	if (!TryParseR64(xStr, &rectangle.x, errorOut)) { return false; }
+	if (!TryParseR64(yStr, &rectangle.y, errorOut)) { return false; }
+	if (!TryParseR64(widthStr, &rectangle.width, errorOut)) { return false; }
+	if (!TryParseR64(heightStr, &rectangle.height, errorOut)) { return false; }
 	SetOptionalOutPntr(valueOut, rectangle);
 	return true;
 }

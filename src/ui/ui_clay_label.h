@@ -101,15 +101,15 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 						CLAY({
 							.layout = {
 								.sizing = {
-									.width = CLAY_SIZING_FIXED((r32)copyBtnIcon->Width),
-									.height = CLAY_SIZING_FIXED((r32)copyBtnIcon->Height),
+									.width = CLAY_SIZING_FIXED((r32)copyBtnIcon->width),
+									.height = CLAY_SIZING_FIXED((r32)copyBtnIcon->height),
 								},
 							},
 							.image = {
 								.imageData = copyBtnIcon,
 								.sourceDimensions = {
-									.Width = (r32)(copyBtnIcon->Width),
-									.Height = (r32)(copyBtnIcon->Height),
+									.width = (r32)(copyBtnIcon->width),
+									.height = (r32)(copyBtnIcon->height),
 								},
 							},
 							.backgroundColor = iconColor,

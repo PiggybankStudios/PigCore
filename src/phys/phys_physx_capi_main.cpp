@@ -180,14 +180,14 @@ PEXP PhysicsBodyTransform GetPhysicsBodyTransform(PhysicsBody* body)
 	physx::PxTransform transform = body->actorHandle->getGlobalPose();
 	PhysicsBodyTransform result = ZEROED;
 	
-	result.position.X = transform.p.x;
-	result.position.Y = transform.p.y;
-	result.position.Z = transform.p.z;
+	result.position.x = transform.p.x;
+	result.position.y = transform.p.y;
+	result.position.z = transform.p.z;
 	
-	result.rotation.X = transform.q.x;
-	result.rotation.Y = transform.q.y;
-	result.rotation.Z = transform.q.z;
-	result.rotation.W = transform.q.w;
+	result.rotation.x = transform.q.x;
+	result.rotation.y = transform.q.y;
+	result.rotation.z = transform.q.z;
+	result.rotation.w = transform.q.w;
 	
 	return result;
 }

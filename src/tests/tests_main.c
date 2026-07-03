@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
 	EarlyInit();
 	WriteLine_N("Running tests...\n");
 	
-	v2 _v2_zero1 = { .X=0, .Y=0 };
+	v2 _v2_zero1 = { .x=0, .y=0 };
 	v2 _v2_zero2 = V2_Zero;
 	UNUSED(_v2_zero1);
 	UNUSED(_v2_zero2);
@@ -508,7 +508,7 @@ int main(int argc, char* argv[])
 		obb2 test6 = MakeObb2V(vert0, vert1, 5);
 		obb2 test7 = MakeObb2V_Const(vert1, vert1, 5);
 		obb2 test8 = MakeObb2V_Const(vert1, MakeV2_Const(3, 4), 5);
-		const obb2 test9 = MakeObb2V_Const(((v2){.X=1, .Y=2}), ((v2){.X=3, .Y=4}), 5);
+		const obb2 test9 = MakeObb2V_Const(((v2){.x=1, .y=2}), ((v2){.x=3, .y=4}), 5);
 		
 		mat2 testMat1  = Mat2_Identity;
 		mat2 testMat2  = Mat2_Identity_Const;
@@ -530,25 +530,25 @@ int main(int argc, char* argv[])
 		PrintLine_D("mat4.Columns[2]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2]), STRUCT_VAR_SIZE(mat4, Columns[2]));
 		PrintLine_D("mat4.Columns[3]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3]), STRUCT_VAR_SIZE(mat4, Columns[3]));
 		
-		PrintLine_D("mat4.Columns[0].X: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].X), STRUCT_VAR_SIZE(mat4, Columns[0].X));
-		PrintLine_D("mat4.Columns[0].Y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].Y), STRUCT_VAR_SIZE(mat4, Columns[0].Y));
-		PrintLine_D("mat4.Columns[0].Z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].Z), STRUCT_VAR_SIZE(mat4, Columns[0].Z));
-		PrintLine_D("mat4.Columns[0].W: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].W), STRUCT_VAR_SIZE(mat4, Columns[0].W));
+		PrintLine_D("mat4.Columns[0].x: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].x), STRUCT_VAR_SIZE(mat4, Columns[0].x));
+		PrintLine_D("mat4.Columns[0].y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].y), STRUCT_VAR_SIZE(mat4, Columns[0].y));
+		PrintLine_D("mat4.Columns[0].z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].z), STRUCT_VAR_SIZE(mat4, Columns[0].z));
+		PrintLine_D("mat4.Columns[0].w: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[0].w), STRUCT_VAR_SIZE(mat4, Columns[0].w));
 		
-		PrintLine_D("mat4.Columns[1].X: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].X), STRUCT_VAR_SIZE(mat4, Columns[1].X));
-		PrintLine_D("mat4.Columns[1].Y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].Y), STRUCT_VAR_SIZE(mat4, Columns[1].Y));
-		PrintLine_D("mat4.Columns[1].Z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].Z), STRUCT_VAR_SIZE(mat4, Columns[1].Z));
-		PrintLine_D("mat4.Columns[1].W: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].W), STRUCT_VAR_SIZE(mat4, Columns[1].W));
+		PrintLine_D("mat4.Columns[1].x: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].x), STRUCT_VAR_SIZE(mat4, Columns[1].x));
+		PrintLine_D("mat4.Columns[1].y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].y), STRUCT_VAR_SIZE(mat4, Columns[1].y));
+		PrintLine_D("mat4.Columns[1].z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].z), STRUCT_VAR_SIZE(mat4, Columns[1].z));
+		PrintLine_D("mat4.Columns[1].w: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[1].w), STRUCT_VAR_SIZE(mat4, Columns[1].w));
 		
-		PrintLine_D("mat4.Columns[2].X: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].X), STRUCT_VAR_SIZE(mat4, Columns[2].X));
-		PrintLine_D("mat4.Columns[2].Y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].Y), STRUCT_VAR_SIZE(mat4, Columns[2].Y));
-		PrintLine_D("mat4.Columns[2].Z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].Z), STRUCT_VAR_SIZE(mat4, Columns[2].Z));
-		PrintLine_D("mat4.Columns[2].W: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].W), STRUCT_VAR_SIZE(mat4, Columns[2].W));
+		PrintLine_D("mat4.Columns[2].x: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].x), STRUCT_VAR_SIZE(mat4, Columns[2].x));
+		PrintLine_D("mat4.Columns[2].y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].y), STRUCT_VAR_SIZE(mat4, Columns[2].y));
+		PrintLine_D("mat4.Columns[2].z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].z), STRUCT_VAR_SIZE(mat4, Columns[2].z));
+		PrintLine_D("mat4.Columns[2].w: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[2].w), STRUCT_VAR_SIZE(mat4, Columns[2].w));
 		
-		PrintLine_D("mat4.Columns[3].X: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].X), STRUCT_VAR_SIZE(mat4, Columns[3].X));
-		PrintLine_D("mat4.Columns[3].Y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].Y), STRUCT_VAR_SIZE(mat4, Columns[3].Y));
-		PrintLine_D("mat4.Columns[3].Z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].Z), STRUCT_VAR_SIZE(mat4, Columns[3].Z));
-		PrintLine_D("mat4.Columns[3].W: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].W), STRUCT_VAR_SIZE(mat4, Columns[3].W));
+		PrintLine_D("mat4.Columns[3].x: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].x), STRUCT_VAR_SIZE(mat4, Columns[3].x));
+		PrintLine_D("mat4.Columns[3].y: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].y), STRUCT_VAR_SIZE(mat4, Columns[3].y));
+		PrintLine_D("mat4.Columns[3].z: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].z), STRUCT_VAR_SIZE(mat4, Columns[3].z));
+		PrintLine_D("mat4.Columns[3].w: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Columns[3].w), STRUCT_VAR_SIZE(mat4, Columns[3].w));
 		
 		PrintLine_D("mat4.Elements[0][0]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[0][0]), STRUCT_VAR_SIZE(mat4, Elements[0][0]));
 		PrintLine_D("mat4.Elements[0][1]: offset=%zu size=%zu", STRUCT_VAR_OFFSET(mat4, Elements[0][1]), STRUCT_VAR_SIZE(mat4, Elements[0][1]));
@@ -571,7 +571,7 @@ int main(int argc, char* argv[])
 		oc_vec2 orcaVec2 = { .x = 7, .y = 13 };
 		v2 toPigV2 = ToV2FromOc(orcaVec2);
 		oc_vec2 toOrcaVec2 = ToOcVec2(pigV2);
-		PrintLine_D("ToV2FromOc => (%g, %g)", toPigV2.X, toPigV2.Y);
+		PrintLine_D("ToV2FromOc => (%g, %g)", toPigV2.x, toPigV2.y);
 		PrintLine_D("ToOcVec2 => (%g, %g)", toOrcaVec2.x, toOrcaVec2.y);
 	}
 	#endif
@@ -634,7 +634,7 @@ int main(int argc, char* argv[])
 		v3i fooV3i = V3i_Zero_Const;
 		v4i fooV4i = V4i_Zero_Const;
 		PrintLine_D("sizeof(v2) = %zu", sizeof(v2));
-		PrintLine_D("foobar = (%f, %f)", foobarV2.X, foobarV2.Y);
+		PrintLine_D("foobar = (%f, %f)", foobarV2.x, foobarV2.y);
 	}
 	#endif
 	
@@ -650,20 +650,20 @@ int main(int argc, char* argv[])
 		mat4 barMat4 = NewMat4(16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
 		mat4 foobarMat4 = MulMat4(fooMat4, barMat4);
 		pos = MulMat4AndV3(fooMat4, pos, true);
-		// pos = LinearCombineV4Mat4(ToV4From3(pos, 1.0f), fooMat4).XYZ;
+		// pos = LinearCombineV4Mat4(ToV4From3(pos, 1.0f), fooMat4).xYZ;
 		PrintLine_D("sizeof(mat2) = %zu", sizeof(mat2));
 		PrintLine_D("sizeof(mat3) = %zu", sizeof(mat3));
 		PrintLine_D("sizeof(mat4) = %zu", sizeof(mat4));
-		PrintLine_D("pos = (%.0f, %.0f, %.0f)", pos.X, pos.Y, pos.Z);
-		PrintLine_D("fooMat2 = (%.0f, %.0f)", fooMat2.Columns[0].X, fooMat2.Columns[1].X);
-		PrintLine_D("          (%.0f, %.0f)", fooMat2.Columns[0].Y, fooMat2.Columns[1].Y);
-		PrintLine_D("fooMat3 = (%.0f, %.0f, %.0f)", fooMat3.Columns[0].X, fooMat3.Columns[1].X, fooMat3.Columns[2].X);
-		PrintLine_D("          (%.0f, %.0f, %.0f)", fooMat3.Columns[0].Y, fooMat3.Columns[1].Y, fooMat3.Columns[2].Y);
-		PrintLine_D("          (%.0f, %.0f, %.0f)", fooMat3.Columns[0].Z, fooMat3.Columns[1].Z, fooMat3.Columns[2].Z);
-		PrintLine_D("foobarMat4 = (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].X, foobarMat4.Columns[1].X, foobarMat4.Columns[2].X, foobarMat4.Columns[3].X);
-		PrintLine_D("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].Y, foobarMat4.Columns[1].Y, foobarMat4.Columns[2].Y, foobarMat4.Columns[3].Y);
-		PrintLine_D("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].Z, foobarMat4.Columns[1].Z, foobarMat4.Columns[2].Z, foobarMat4.Columns[3].Z);
-		PrintLine_D("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].W, foobarMat4.Columns[1].W, foobarMat4.Columns[2].W, foobarMat4.Columns[3].W);
+		PrintLine_D("pos = (%.0f, %.0f, %.0f)", pos.x, pos.y, pos.z);
+		PrintLine_D("fooMat2 = (%.0f, %.0f)", fooMat2.Columns[0].x, fooMat2.Columns[1].x);
+		PrintLine_D("          (%.0f, %.0f)", fooMat2.Columns[0].y, fooMat2.Columns[1].y);
+		PrintLine_D("fooMat3 = (%.0f, %.0f, %.0f)", fooMat3.Columns[0].x, fooMat3.Columns[1].x, fooMat3.Columns[2].x);
+		PrintLine_D("          (%.0f, %.0f, %.0f)", fooMat3.Columns[0].y, fooMat3.Columns[1].y, fooMat3.Columns[2].y);
+		PrintLine_D("          (%.0f, %.0f, %.0f)", fooMat3.Columns[0].z, fooMat3.Columns[1].z, fooMat3.Columns[2].z);
+		PrintLine_D("foobarMat4 = (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].x, foobarMat4.Columns[1].x, foobarMat4.Columns[2].x, foobarMat4.Columns[3].x);
+		PrintLine_D("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].y, foobarMat4.Columns[1].y, foobarMat4.Columns[2].y, foobarMat4.Columns[3].y);
+		PrintLine_D("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].z, foobarMat4.Columns[1].z, foobarMat4.Columns[2].z, foobarMat4.Columns[3].z);
+		PrintLine_D("             (%.0f, %.0f, %.0f, %.0f)", foobarMat4.Columns[0].w, foobarMat4.Columns[1].w, foobarMat4.Columns[2].w, foobarMat4.Columns[3].w);
 	}
 	#endif
 	
@@ -675,12 +675,12 @@ int main(int argc, char* argv[])
 		quat foo = Quat_Identity_Const;
 		quat bar = ToQuatFromAxis(NormalizeV3(V3_One), HalfPi32);
 		mat4 barTransform = ToMat4FromQuat(bar);
-		PrintLine_D("foo = (%f, %f, %f, %f)", foo.X, foo.Y, foo.Z, foo.W);
-		PrintLine_D("bar = (%f, %f, %f, %f)", bar.X, bar.Y, bar.Z, bar.W);
-		PrintLine_D("barTransform = (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].X, barTransform.Columns[1].X, barTransform.Columns[2].X, barTransform.Columns[3].X);
-		PrintLine_D("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].Y, barTransform.Columns[1].Y, barTransform.Columns[2].Y, barTransform.Columns[3].Y);
-		PrintLine_D("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].Z, barTransform.Columns[1].Z, barTransform.Columns[2].Z, barTransform.Columns[3].Z);
-		PrintLine_D("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].W, barTransform.Columns[1].W, barTransform.Columns[2].W, barTransform.Columns[3].W);
+		PrintLine_D("foo = (%f, %f, %f, %f)", foo.x, foo.y, foo.z, foo.w);
+		PrintLine_D("bar = (%f, %f, %f, %f)", bar.x, bar.y, bar.z, bar.w);
+		PrintLine_D("barTransform = (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].x, barTransform.Columns[1].x, barTransform.Columns[2].x, barTransform.Columns[3].x);
+		PrintLine_D("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].y, barTransform.Columns[1].y, barTransform.Columns[2].y, barTransform.Columns[3].y);
+		PrintLine_D("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].z, barTransform.Columns[1].z, barTransform.Columns[2].z, barTransform.Columns[3].z);
+		PrintLine_D("               (%.2f, %.2f, %.2f, %.2f)", barTransform.Columns[0].w, barTransform.Columns[1].w, barTransform.Columns[2].w, barTransform.Columns[3].w);
 	}
 	#endif
 	
@@ -696,48 +696,48 @@ int main(int argc, char* argv[])
 		// 	MakeV2(Pi32, -1.5f)
 		// );
 		rec rec3 = Mul(rec1, 0.5f);
-		PrintLine_D("rec1 = (%f, %f, %f, %f)", rec1.X, rec1.Y, rec1.Width, rec1.Height);
-		PrintLine_D("rec2 = (%f, %f, %f, %f)", rec2.X, rec2.Y, rec2.Width, rec2.Height);
-		PrintLine_D("rec3 = (%f, %f, %f, %f)", rec3.X, rec3.Y, rec3.Width, rec3.Height);
+		PrintLine_D("rec1 = (%f, %f, %f, %f)", rec1.x, rec1.y, rec1.width, rec1.height);
+		PrintLine_D("rec2 = (%f, %f, %f, %f)", rec2.x, rec2.y, rec2.width, rec2.height);
+		PrintLine_D("rec3 = (%f, %f, %f, %f)", rec3.x, rec3.y, rec3.width, rec3.height);
 		
 		reci reci1 = NewReci(1, 2, 10, 20);
 		reci reci2 = Reci_Zero;
 		reci reci3 = Reci_Default_Const;
-		PrintLine_D("reci1 = (%d, %d, %d, %d)", reci1.X, reci1.Y, reci1.Width, reci1.Height);
-		PrintLine_D("reci2 = (%d, %d, %d, %d)", reci2.X, reci2.Y, reci2.Width, reci2.Height);
-		PrintLine_D("reci3 = (%d, %d, %d, %d)", reci3.X, reci3.Y, reci3.Width, reci3.Height);
+		PrintLine_D("reci1 = (%d, %d, %d, %d)", reci1.x, reci1.y, reci1.width, reci1.height);
+		PrintLine_D("reci2 = (%d, %d, %d, %d)", reci2.x, reci2.y, reci2.width, reci2.height);
+		PrintLine_D("reci3 = (%d, %d, %d, %d)", reci3.x, reci3.y, reci3.width, reci3.height);
 		
 		box box1 = NewBox(1, 2, 3, 10, 20, 30);
 		box box2 = Box_Default_Const;
 		box box3 = Add(Mul(box1, 0.5f), MakeV3(Pi32, -1.5f, 101.2f));
-		PrintLine_D("box1 = (%f, %f, %f, %f, %f, %f)", box1.X, box1.Y, box1.Z, box1.Width, box1.Height, box1.Depth);
-		PrintLine_D("box2 = (%f, %f, %f, %f, %f, %f)", box2.X, box2.Y, box2.Z, box2.Width, box2.Height, box2.Depth);
-		PrintLine_D("box3 = (%f, %f, %f, %f, %f, %f)", box3.X, box3.Y, box3.Z, box3.Width, box3.Height, box3.Depth);
+		PrintLine_D("box1 = (%f, %f, %f, %f, %f, %f)", box1.x, box1.y, box1.z, box1.width, box1.height, box1.depth);
+		PrintLine_D("box2 = (%f, %f, %f, %f, %f, %f)", box2.x, box2.y, box2.z, box2.width, box2.height, box2.depth);
+		PrintLine_D("box3 = (%f, %f, %f, %f, %f, %f)", box3.x, box3.y, box3.z, box3.width, box3.height, box3.depth);
 		
 		boxi boxi1 = NewBoxi(1, 2, 3, 10, 20, 30);
 		boxi boxi2 = Boxi_Zero;
 		boxi boxi3 = Boxi_Default_Const;
-		PrintLine_D("boxi1 = (%d, %d, %d, %d, %d, %d)", boxi1.X, boxi1.Y, boxi1.Z, boxi1.Width, boxi1.Height, boxi1.Depth);
-		PrintLine_D("boxi2 = (%d, %d, %d, %d, %d, %d)", boxi2.X, boxi2.Y, boxi2.Z, boxi2.Width, boxi2.Height, boxi2.Depth);
-		PrintLine_D("boxi3 = (%d, %d, %d, %d, %d, %d)", boxi3.X, boxi3.Y, boxi3.Z, boxi3.Width, boxi3.Height, boxi3.Depth);
+		PrintLine_D("boxi1 = (%d, %d, %d, %d, %d, %d)", boxi1.x, boxi1.y, boxi1.z, boxi1.width, boxi1.height, boxi1.depth);
+		PrintLine_D("boxi2 = (%d, %d, %d, %d, %d, %d)", boxi2.x, boxi2.y, boxi2.z, boxi2.width, boxi2.height, boxi2.depth);
+		PrintLine_D("boxi3 = (%d, %d, %d, %d, %d, %d)", boxi3.x, boxi3.y, boxi3.z, boxi3.width, boxi3.height, boxi3.depth);
 		
 		obb2 obb2_1 = NewObb2(1, 2, 10, 20, QuarterPi32);
 		obb2 obb2_2 = Obb2_Zero;
 		obb2 obb2_3 = Obb2_Default_Const;
-		PrintLine_D("obb2_1 = (%f, %f, %f, %f, %f)", obb2_1.X, obb2_1.Y, obb2_1.Width, obb2_1.Height, ToDegrees32(obb2_1.Rotation));
-		PrintLine_D("obb2_2 = (%f, %f, %f, %f, %f)", obb2_2.X, obb2_2.Y, obb2_2.Width, obb2_2.Height, ToDegrees32(obb2_2.Rotation));
-		PrintLine_D("obb2_3 = (%f, %f, %f, %f, %f)", obb2_3.X, obb2_3.Y, obb2_3.Width, obb2_3.Height, ToDegrees32(obb2_3.Rotation));
+		PrintLine_D("obb2_1 = (%f, %f, %f, %f, %f)", obb2_1.x, obb2_1.y, obb2_1.width, obb2_1.height, ToDegrees32(obb2_1.Rotation));
+		PrintLine_D("obb2_2 = (%f, %f, %f, %f, %f)", obb2_2.x, obb2_2.y, obb2_2.width, obb2_2.height, ToDegrees32(obb2_2.Rotation));
+		PrintLine_D("obb2_3 = (%f, %f, %f, %f, %f)", obb2_3.x, obb2_3.y, obb2_3.width, obb2_3.height, ToDegrees32(obb2_3.Rotation));
 		
 		obb3 obb3_1 = NewObb3(1, 2, 3, 10, 20, 30, Quat_Identity);
 		obb3 obb3_2 = Obb3_Zero;
 		obb3 obb3_3 = Obb3_Default_Const;
-		PrintLine_D("obb3_1 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_1.X, obb3_1.Y, obb3_1.Z, obb3_1.Width, obb3_1.Height, obb3_1.Depth, obb3_1.Rotation.X, obb3_1.Rotation.Y, obb3_1.Rotation.Z, obb3_1.Rotation.W);
-		PrintLine_D("obb3_2 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_2.X, obb3_2.Y, obb3_2.Z, obb3_2.Width, obb3_2.Height, obb3_2.Depth, obb3_2.Rotation.X, obb3_2.Rotation.Y, obb3_2.Rotation.Z, obb3_2.Rotation.W);
-		PrintLine_D("obb3_3 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_3.X, obb3_3.Y, obb3_3.Z, obb3_3.Width, obb3_3.Height, obb3_3.Depth, obb3_3.Rotation.X, obb3_3.Rotation.Y, obb3_3.Rotation.Z, obb3_3.Rotation.W);
+		PrintLine_D("obb3_1 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_1.x, obb3_1.y, obb3_1.z, obb3_1.width, obb3_1.height, obb3_1.depth, obb3_1.Rotation.x, obb3_1.Rotation.y, obb3_1.Rotation.z, obb3_1.Rotation.w);
+		PrintLine_D("obb3_2 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_2.x, obb3_2.y, obb3_2.z, obb3_2.width, obb3_2.height, obb3_2.depth, obb3_2.Rotation.x, obb3_2.Rotation.y, obb3_2.Rotation.z, obb3_2.Rotation.w);
+		PrintLine_D("obb3_3 = (%f, %f, %f, %f, %f, %f, (%f, %f, %f, %f))", obb3_3.x, obb3_3.y, obb3_3.z, obb3_3.width, obb3_3.height, obb3_3.depth, obb3_3.Rotation.x, obb3_3.Rotation.y, obb3_3.Rotation.z, obb3_3.Rotation.w);
 		
 		rec alignRec = NewRec(15.4f, 13.6f, 10.2f, 3.8f);
 		AlignRec(&alignRec);
-		PrintLine_D("alignRec = (%f, %f, %f, %f)", alignRec.X, alignRec.Y, alignRec.Width, alignRec.Height);
+		PrintLine_D("alignRec = (%f, %f, %f, %f)", alignRec.x, alignRec.y, alignRec.width, alignRec.height);
 	}
 	#endif
 	
@@ -958,8 +958,8 @@ int main(int argc, char* argv[])
 		{
 			Image zipImage = ZEROED;
 			zipImage.data = zipImageData.pixels;
-			zipImage.width = zipImageData.size.Width;
-			zipImage.height = zipImageData.size.Height;
+			zipImage.width = zipImageData.size.width;
+			zipImage.height = zipImageData.size.height;
 			zipImage.mipmaps = 1; //aka no mipmaps
 			zipImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
 			zipTexture = LoadTextureFromImage(zipImage);

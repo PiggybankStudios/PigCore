@@ -31,10 +31,10 @@ NOTE: This file may need to be included manually if you include raylib.h AFTER i
 PEXPI Matrix MatrixFromMat4(mat4 matrix)
 {
 	return rlMakeMatrix(
-		matrix.Columns[0].X, matrix.Columns[1].X, matrix.Columns[2].X, matrix.Columns[3].X,
-		matrix.Columns[0].Y, matrix.Columns[1].Y, matrix.Columns[2].Y, matrix.Columns[3].Y,
-		matrix.Columns[0].Z, matrix.Columns[1].Z, matrix.Columns[2].Z, matrix.Columns[3].Z,
-		matrix.Columns[0].W, matrix.Columns[1].W, matrix.Columns[2].W, matrix.Columns[3].W
+		matrix.Columns[0].x, matrix.Columns[1].x, matrix.Columns[2].x, matrix.Columns[3].x,
+		matrix.Columns[0].y, matrix.Columns[1].y, matrix.Columns[2].y, matrix.Columns[3].y,
+		matrix.Columns[0].z, matrix.Columns[1].z, matrix.Columns[2].z, matrix.Columns[3].z,
+		matrix.Columns[0].w, matrix.Columns[1].w, matrix.Columns[2].w, matrix.Columns[3].w
 	);
 }
 PEXPI mat4 Mat4FromMatrix(Matrix matrix)

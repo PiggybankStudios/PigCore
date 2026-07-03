@@ -37,9 +37,9 @@ PEXPI ImageData NewImageDataInArena(Arena* arena, v2i size)
 {
 	NotNull(arena);
 	ImageData result = ZEROED;
-	if (size.Width <= 0 || size.Height <= 0) { return result; }
+	if (size.width <= 0 || size.height <= 0) { return result; }
 	result.size = size;
-	result.numPixels = (uxx)(size.Width * size.Height);
+	result.numPixels = (uxx)(size.width * size.height);
 	result.pixels = AllocArray(u32, arena, result.numPixels);
 	NotNull(result.pixels);
 	return result;

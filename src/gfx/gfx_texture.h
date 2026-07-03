@@ -73,7 +73,7 @@ plex Texture
 	car
 	{
 		v2i size;
-		plex { i32 Width, Height; };
+		plex { i32 width, height; };
 	};
 	uxx numPixels;
 	uxx pixelSize;
@@ -132,11 +132,11 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 {
 	TracyCZoneN(_funcZone, "GenerateMipmapLayer", true);
 	NotNull(arena);
-	Assert(upperLayer.size.Width >= 2 && upperLayer.size.Height >= 2);
+	Assert(upperLayer.size.width >= 2 && upperLayer.size.height >= 2);
 	ScratchBegin1(scratch, arena);
 	
 	TracyCZoneN(linearConversion, "LinearConversion", true);
-	uxx upperLayerNumPixels = (uxx)(upperLayer.size.Width * upperLayer.size.Height);
+	uxx upperLayerNumPixels = (uxx)(upperLayer.size.width * upperLayer.size.height);
 	Colorf* upperLayerLinear = AllocArray(Colorf, scratch, upperLayerNumPixels);
 	for (uxx pIndex = 0; pIndex < upperLayerNumPixels; pIndex++)
 	{
@@ -152,20 +152,20 @@ PEXP ImageData GenerateMipmapLayer(Arena* arena, ImageData upperLayer)
 	TracyCZoneEnd(linearConversion);
 	
 	ImageData result = ZEROED;
-	result.size = MakeV2i(upperLayer.size.Width/2, upperLayer.size.Height/2);
-	result.numPixels = (uxx)(result.size.Width * result.size.Height);
+	result.size = MakeV2i(upperLayer.size.width/2, upperLayer.size.height/2);
+	result.numPixels = (uxx)(result.size.width * result.size.height);
 	result.pixels = AllocArray(u32, arena, result.numPixels);
 	NotNull(result.pixels);
-	for (i32 yOffset = 0; yOffset < result.size.Height; yOffset++)
+	for (i32 yOffset = 0; yOffset < result.size.height; yOffset++)
 	{
-		for (i32 xOffset = 0; xOffset < result.size.Width; xOffset++)
+		for (i32 xOffset = 0; xOffset < result.size.width; xOffset++)
 		{
-			Color32* outPixel = (Color32*)&result.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, result.size.Width, result.size.Height)];
+			Color32* outPixel = (Color32*)&result.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, result.size.width, result.size.height)];
 			v2i upperPos = MakeV2i(xOffset*2, yOffset*2);
-			if (upperPos.X >= upperLayer.size.Width) { upperPos.X = upperLayer.size.Width-1; }
-			if (upperPos.Y >= upperLayer.size.Height) { upperPos.Y = upperLayer.size.Height-1; }
-			float* inRow0 = (float*)(&upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y, upperLayer.size.Width, upperLayer.size.Height)]);
-			float* inRow1 = (float*)(&upperLayerLinear[INDEX_FROM_COORD2D(upperPos.X, upperPos.Y+1, upperLayer.size.Width, upperLayer.size.Height)]);
+			if (upperPos.x >= upperLayer.size.width) { upperPos.x = upperLayer.size.width-1; }
+			if (upperPos.y >= upperLayer.size.height) { upperPos.y = upperLayer.size.height-1; }
+			float* inRow0 = (float*)(&upperLayerLinear[INDEX_FROM_COORD2D(upperPos.x, upperPos.y, upperLayer.size.width, upperLayer.size.height)]);
+			float* inRow1 = (float*)(&upperLayerLinear[INDEX_FROM_COORD2D(upperPos.x, upperPos.y+1, upperLayer.size.width, upperLayer.size.height)]);
 			r32 floatR = (inRow0[0] + inRow0[4] + inRow1[0] + inRow1[4]) / 4.0f;
 			r32 floatG = (inRow0[1] + inRow0[5] + inRow1[1] + inRow1[5]) / 4.0f;
 			r32 floatB = (inRow0[2] + inRow0[6] + inRow1[2] + inRow1[6]) / 4.0f;
@@ -186,7 +186,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 {
 	NotNull(arena);
 	NotNullStr(name);
-	Assert(size.Width > 0 && size.Height > 0);
+	Assert(size.width > 0 && size.height > 0);
 	NotNull(pixelsPntr);
 	TracyCZoneN(funcZone, "InitTexture", true);
 	ScratchBegin1(scratch, arena);
@@ -200,9 +200,9 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	{
 		TracyCZoneN(_SingleChannelConversion, "SingleChannelConversion", true);
 		uxx inputPixelSize = IsFlagSet(flags, TextureFlag_IsHdr) ? sizeof(r32)*3 : sizeof(u8)*3;
-		uxx inputTotalSize = inputPixelSize * size.Width * size.Height;
+		uxx inputTotalSize = inputPixelSize * size.width * size.height;
 		uxx alphaChannelSize = IsFlagSet(flags, TextureFlag_IsHdr) ? sizeof(r32) : sizeof(u8);
-		uxx newInputSize = inputTotalSize + (alphaChannelSize * size.Width * size.Height);
+		uxx newInputSize = inputTotalSize + (alphaChannelSize * size.width * size.height);
 		u8* newPixels = AllocArray(u8, scratch, newInputSize);
 		if (newPixels == nullptr)
 		{
@@ -214,9 +214,9 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		}
 		const u8* readPntr = (const u8*)pixelsPntr;
 		u8* writePntr = newPixels;
-		for (uxx yIndex = 0; yIndex < (uxx)size.Height; yIndex++)
+		for (uxx yIndex = 0; yIndex < (uxx)size.height; yIndex++)
 		{
-			for (uxx xIndex = 0; xIndex <= (uxx)size.Width; xIndex++)
+			for (uxx xIndex = 0; xIndex <= (uxx)size.width; xIndex++)
 			{
 				MyMemCopy(writePntr, readPntr, inputPixelSize);
 				readPntr += inputPixelSize;
@@ -230,7 +230,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		TracyCZoneEnd(_SingleChannelConversion);
 	}
 	
-	result.numPixels = (uxx)(size.Width * size.Height);
+	result.numPixels = (uxx)(size.width * size.height);
 	result.pixelSize = IsFlagSet(flags, TextureFlag_IsHdr)
 		? (IsFlagSet(flags, TextureFlag_SingleChannel) ? sizeof(r32)*1 : sizeof(r32)*4)
 		: (IsFlagSet(flags, TextureFlag_SingleChannel) ? sizeof(u8)*1 : sizeof(u8)*4);
@@ -259,10 +259,10 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	{
 		ImageData baseImageData = ZEROED;
 		baseImageData.size = size;
-		baseImageData.numPixels = (uxx)(size.Width * size.Height);
+		baseImageData.numPixels = (uxx)(size.width * size.height);
 		baseImageData.pixels = (u32*)pixelsPntr;
 		
-		numMipLevels = MinI32(SG_MAX_MIPMAPS-1, FloorR32i(Log2R32((r32)MinI32(size.Width, size.Height))));
+		numMipLevels = MinI32(SG_MAX_MIPMAPS-1, FloorR32i(Log2R32((r32)MinI32(size.width, size.height))));
 		mipmapRanges = AllocArray(sg_range, scratch, numMipLevels);
 		NotNull(mipmapRanges);
 		ImageData* mipmapImageDatas = AllocArray(ImageData, scratch, numMipLevels);
@@ -271,7 +271,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 		{
 			ImageData upperLayer = (mIndex > 0) ? mipmapImageDatas[mIndex-1] : baseImageData;
 			mipmapImageDatas[mIndex] = GenerateMipmapLayer(scratch, upperLayer);
-			// PrintLine_D("Generated mipmap[%llu] %dx%d (from %dx%d)", mIndex, mipmapImageDatas[mIndex].size.Width, mipmapImageDatas[mIndex].size.Height, upperLayer.size.Width, upperLayer.size.Height);
+			// PrintLine_D("Generated mipmap[%llu] %dx%d (from %dx%d)", mIndex, mipmapImageDatas[mIndex].size.width, mipmapImageDatas[mIndex].size.height, upperLayer.size.width, upperLayer.size.height);
 			mipmapRanges[mIndex] = (sg_range){ mipmapImageDatas[mIndex].pixels, mipmapImageDatas[mIndex].numPixels * result.pixelSize };
 		}
 	}
@@ -285,8 +285,8 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
     imageDesc.usage.immutable = !IsFlagSet(flags, TextureFlag_Mutable);
     imageDesc.usage.dynamic_update = IsFlagSet(flags, TextureFlag_Mutable);
     imageDesc.usage.stream_update = false; //TODO: If we are going to update the texture every frame
-	imageDesc.width = size.Width;
-	imageDesc.height = size.Height;
+	imageDesc.width = size.width;
+	imageDesc.height = size.height;
 	imageDesc.num_mipmaps = (int)(1 + numMipLevels);
 	imageDesc.pixel_format = IsFlagSet(flags, TextureFlag_IsHdr)
 		? (IsFlagSet(flags, TextureFlag_SingleChannel) ? SG_PIXELFORMAT_R32F : SG_PIXELFORMAT_RGBA32F)
@@ -406,26 +406,26 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 	NotNull(texture);
 	NotNull(texture->arena);
 	NotNull(texture->pixelsPntr);
-	Assert(sourceRec.Width >= 0 && sourceRec.Height >= 0);
-	Assert(sourceRec.X >= 0 && sourceRec.Y >= 0);
-	Assert(sourceRec.X + sourceRec.Width <= texture->Width && sourceRec.Y + sourceRec.Height <= texture->Height);
-	if (sourceRec.Width == 0 || sourceRec.Height == 0) { return; }
+	Assert(sourceRec.width >= 0 && sourceRec.height >= 0);
+	Assert(sourceRec.x >= 0 && sourceRec.y >= 0);
+	Assert(sourceRec.x + sourceRec.width <= texture->width && sourceRec.y + sourceRec.height <= texture->height);
+	if (sourceRec.width == 0 || sourceRec.height == 0) { return; }
 	NotNull(pixelsPntr);
 	
 	ImageData newImageData = ZEROED;
 	if (IsFlagSet(texture->flags, TextureFlag_HasCopy))
 	{
-		for (uxx rowIndex = 0; rowIndex < (uxx)sourceRec.Height; rowIndex++)
+		for (uxx rowIndex = 0; rowIndex < (uxx)sourceRec.height; rowIndex++)
 		{
-			const u8* sourceRow = &((u8*)pixelsPntr)[INDEX_FROM_COORD2D(0, rowIndex, sourceRec.Width, sourceRec.Height) * texture->pixelSize];
-			u8* destRow = &texture->pixelsU8[INDEX_FROM_COORD2D(sourceRec.X + 0, sourceRec.Y + rowIndex, texture->Width, texture->Height) * texture->pixelSize];
-			MyMemCopy(destRow, sourceRow, sourceRec.Width * texture->pixelSize);
+			const u8* sourceRow = &((u8*)pixelsPntr)[INDEX_FROM_COORD2D(0, rowIndex, sourceRec.width, sourceRec.height) * texture->pixelSize];
+			u8* destRow = &texture->pixelsU8[INDEX_FROM_COORD2D(sourceRec.x + 0, sourceRec.y + rowIndex, texture->width, texture->height) * texture->pixelSize];
+			MyMemCopy(destRow, sourceRow, sourceRec.width * texture->pixelSize);
 		}
 		newImageData = MakeImageData(texture->size, texture->pixelsPntr);
 	}
 	else
 	{
-		Assert(sourceRec.X == 0 && sourceRec.Y == 0 && sourceRec.Width == texture->Width && sourceRec.Height == texture->Height);
+		Assert(sourceRec.x == 0 && sourceRec.y == 0 && sourceRec.width == texture->width && sourceRec.height == texture->height);
 		newImageData = MakeImageData(texture->size, (u32*)pixelsPntr);
 	}
 	
@@ -446,7 +446,7 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 
 PEXPI void UpdateTexture(Texture* texture, const void* pixelsPntr)
 {
-	UpdateTexturePart(texture, MakeReci(0, 0, texture->Width, texture->Height), pixelsPntr);
+	UpdateTexturePart(texture, MakeReci(0, 0, texture->width, texture->height), pixelsPntr);
 }
 
 PEXPI void BindTexture(sg_bindings* bindings, Texture* texture, uxx textureIndex)

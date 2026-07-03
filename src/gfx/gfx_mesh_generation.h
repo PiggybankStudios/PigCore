@@ -98,14 +98,14 @@ PEXP GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32*
 	const uxx trbIndex = 5; //topRightBack
 	const uxx tlfIndex = 6; //topLeftFront
 	const uxx trfIndex = 7; //topRightFront
-	vertPositions[blbIndex] = MakeV3(boundingBox.X,                     boundingBox.Y,                      boundingBox.Z);
-	vertPositions[brbIndex] = MakeV3(boundingBox.X + boundingBox.Width, boundingBox.Y,                      boundingBox.Z);
-	vertPositions[blfIndex] = MakeV3(boundingBox.X,                     boundingBox.Y,                      boundingBox.Z + boundingBox.Depth);
-	vertPositions[brfIndex] = MakeV3(boundingBox.X + boundingBox.Width, boundingBox.Y,                      boundingBox.Z + boundingBox.Depth);
-	vertPositions[tlbIndex] = MakeV3(boundingBox.X,                     boundingBox.Y + boundingBox.Height, boundingBox.Z);
-	vertPositions[trbIndex] = MakeV3(boundingBox.X + boundingBox.Width, boundingBox.Y + boundingBox.Height, boundingBox.Z);
-	vertPositions[tlfIndex] = MakeV3(boundingBox.X,                     boundingBox.Y + boundingBox.Height, boundingBox.Z + boundingBox.Depth);
-	vertPositions[trfIndex] = MakeV3(boundingBox.X + boundingBox.Width, boundingBox.Y + boundingBox.Height, boundingBox.Z + boundingBox.Depth);
+	vertPositions[blbIndex] = MakeV3(boundingBox.x,                     boundingBox.y,                      boundingBox.z);
+	vertPositions[brbIndex] = MakeV3(boundingBox.x + boundingBox.width, boundingBox.y,                      boundingBox.z);
+	vertPositions[blfIndex] = MakeV3(boundingBox.x,                     boundingBox.y,                      boundingBox.z + boundingBox.depth);
+	vertPositions[brfIndex] = MakeV3(boundingBox.x + boundingBox.width, boundingBox.y,                      boundingBox.z + boundingBox.depth);
+	vertPositions[tlbIndex] = MakeV3(boundingBox.x,                     boundingBox.y + boundingBox.height, boundingBox.z);
+	vertPositions[trbIndex] = MakeV3(boundingBox.x + boundingBox.width, boundingBox.y + boundingBox.height, boundingBox.z);
+	vertPositions[tlfIndex] = MakeV3(boundingBox.x,                     boundingBox.y + boundingBox.height, boundingBox.z + boundingBox.depth);
+	vertPositions[trfIndex] = MakeV3(boundingBox.x + boundingBox.width, boundingBox.y + boundingBox.height, boundingBox.z + boundingBox.depth);
 	
 	i32 vIndex = 0;
 	i32 iIndex = 0;
@@ -232,8 +232,8 @@ PEXP GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRi
 	const i32 bottomCenterIndex = 0;
 	const i32 topCenterIndex = (i32)result.numVertices-1;
 	
-	result.vertices[topCenterIndex].position    = MakeV3(sphere.X, sphere.Y + sphere.Radius, sphere.Z);
-	result.vertices[bottomCenterIndex].position = MakeV3(sphere.X, sphere.Y - sphere.Radius, sphere.Z);
+	result.vertices[topCenterIndex].position    = MakeV3(sphere.x, sphere.y + sphere.Radius, sphere.z);
+	result.vertices[bottomCenterIndex].position = MakeV3(sphere.x, sphere.y - sphere.Radius, sphere.z);
 	
 	v4r colorV4r = ToV4rFromColor32(color);
 	r32 ringStep = Pi32 / (r32)(numRings+1);
@@ -243,14 +243,14 @@ PEXP GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRi
 	for (uxx rIndex = 0; rIndex < numRings; rIndex++)
 	{
 		r32 ringAngle = -HalfPi32 + (ringStep * (rIndex+1));
-		r32 ringY = sphere.Y + (SinR32(ringAngle) * sphere.Radius);
+		r32 ringY = sphere.y + (SinR32(ringAngle) * sphere.Radius);
 		r32 ringRadius = CosR32(ringAngle) * sphere.Radius;
 		for (uxx sIndex = 0; sIndex < numSegments; sIndex++)
 		{
 			r32 segmentAngle = (sIndex * segmentStep);
 			i32 ringVertIndex = (i32)(1 + (rIndex * numSegments) + sIndex);
 			Assert((uxx)ringVertIndex < result.numVertices);
-			result.vertices[ringVertIndex].position = MakeV3(sphere.X + CosR32(segmentAngle) * ringRadius, ringY, sphere.Z + SinR32(segmentAngle) * ringRadius);
+			result.vertices[ringVertIndex].position = MakeV3(sphere.x + CosR32(segmentAngle) * ringRadius, ringY, sphere.z + SinR32(segmentAngle) * ringRadius);
 			result.vertices[ringVertIndex].normal = NormalizeV3(SubV3(result.vertices[ringVertIndex].position, sphere.Center));
 			result.vertices[ringVertIndex].texCoord = MakeV2(1.0f - ((r32)sIndex * texCoordStepX), 1.0f - ((r32)rIndex * texCoordStepY));
 			result.vertices[ringVertIndex].color = colorV4r;

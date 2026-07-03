@@ -342,7 +342,7 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 				// get events for mouse leaving reliably
 				if (!mouse->isOverWindow)
 				{
-					if (event->mouse_x >= 0 && event->mouse_y >= 0 && event->mouse_x < screenSize.Width && event->mouse_y < screenSize.Height)
+					if (event->mouse_x >= 0 && event->mouse_y >= 0 && event->mouse_x < screenSize.width && event->mouse_y < screenSize.height)
 					{
 						mouse->isOverWindow = true;
 					}

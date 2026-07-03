@@ -73,16 +73,16 @@ plex PhysicsWorld
 
 PEXPI void ToOdeMatrix3(mat3 matrix, dReal* matrixOut)
 {
-	matrixOut[0] = matrix.Columns[0].X; matrixOut[1] = matrix.Columns[1].X; matrixOut[2] = matrix.Columns[2].X;
-	matrixOut[4] = matrix.Columns[0].Y; matrixOut[5] = matrix.Columns[1].Y; matrixOut[6] = matrix.Columns[2].Y;
-	matrixOut[8] = matrix.Columns[0].Z; matrixOut[9] = matrix.Columns[1].Z; matrixOut[10] = matrix.Columns[2].Z;
+	matrixOut[0] = matrix.Columns[0].x; matrixOut[1] = matrix.Columns[1].x; matrixOut[2] = matrix.Columns[2].x;
+	matrixOut[4] = matrix.Columns[0].y; matrixOut[5] = matrix.Columns[1].y; matrixOut[6] = matrix.Columns[2].y;
+	matrixOut[8] = matrix.Columns[0].z; matrixOut[9] = matrix.Columns[1].z; matrixOut[10] = matrix.Columns[2].z;
 }
 PEXPI void ToOdeMatrix4(mat3 matrix, dReal* matrixOut)
 {
-	matrixOut[0] = matrix.Columns[0].X; matrixOut[1] = matrix.Columns[1].X; matrixOut[2] = matrix.Columns[2].X; matrixOut[3] = matrix.Columns[3].X;
-	matrixOut[4] = matrix.Columns[0].Y; matrixOut[5] = matrix.Columns[1].Y; matrixOut[6] = matrix.Columns[2].Y; matrixOut[7] = matrix.Columns[3].Y;
-	matrixOut[8] = matrix.Columns[0].Z; matrixOut[9] = matrix.Columns[1].Z; matrixOut[10] = matrix.Columns[2].Z; matrixOut[11] = matrix.Columns[3].Z;
-	matrixOut[12] = matrix.Columns[0].W; matrixOut[13] = matrix.Columns[1].W; matrixOut[14] = matrix.Columns[2].W; matrixOut[15] = matrix.Columns[3].W;
+	matrixOut[0] = matrix.Columns[0].x; matrixOut[1] = matrix.Columns[1].x; matrixOut[2] = matrix.Columns[2].x; matrixOut[3] = matrix.Columns[3].x;
+	matrixOut[4] = matrix.Columns[0].y; matrixOut[5] = matrix.Columns[1].y; matrixOut[6] = matrix.Columns[2].y; matrixOut[7] = matrix.Columns[3].y;
+	matrixOut[8] = matrix.Columns[0].z; matrixOut[9] = matrix.Columns[1].z; matrixOut[10] = matrix.Columns[2].z; matrixOut[11] = matrix.Columns[3].z;
+	matrixOut[12] = matrix.Columns[0].w; matrixOut[13] = matrix.Columns[1].w; matrixOut[14] = matrix.Columns[2].w; matrixOut[15] = matrix.Columns[3].w;
 }
 PEXPI mat3 ToMat3FromOde(const dReal* matrixPntr)
 {
@@ -140,7 +140,7 @@ PEXP PhysicsWorld* InitPhysicsODE(Arena* arena, v3 gravity)
 	
 	result->contactGroup = dJointGroupCreate(0); //max_size = 0
 	
-	dWorldSetGravity(result->world, gravity.X, gravity.Y, gravity.Z);
+	dWorldSetGravity(result->world, gravity.x, gravity.y, gravity.z);
 	//TODO: dWorldSetERP? (Error Reduction Parameter)
 	dWorldSetCFM(result->world, 1e-5f); //CFM = Constraint Force Mixing (this is the default for 32-bit floats)
 	// dWorldSetAutoDisableFlag(result->world, true); //bodies will auto-disable after they stop moving for some time
@@ -165,7 +165,7 @@ PEXPI uxx SpawnPhysicsBox(PhysicsWorld* world, obb3 boundingBox, r32 density)
 	newBody->bodyId = dBodyCreate(world->world);
 	dBodySetData(newBody->bodyId, newBody); //TODO: This won't work since it lives in a VarArray, the pointer will change if too many items are allocated
 	
-	dBodySetPosition(newBody->bodyId, boundingBox.Center.X, boundingBox.Center.Y, boundingBox.Center.Z);
+	dBodySetPosition(newBody->bodyId, boundingBox.Center.x, boundingBox.Center.y, boundingBox.Center.z);
 	dMatrix3 rotationMatrix;
 	mat4 rotationMat4 = ToMat4FromQuat(boundingBox.Rotation);
 	mat3 rotationMat3 = ToMat3From4(rotationMat4);
@@ -173,8 +173,8 @@ PEXPI uxx SpawnPhysicsBox(PhysicsWorld* world, obb3 boundingBox, r32 density)
 	dBodySetRotation(newBody->bodyId, rotationMatrix);
 	
 	dMass boxMass;
-	dMassSetBox(&boxMass, density, boundingBox.Width, boundingBox.Height, boundingBox.Depth);
-	dGeomID geomId = dCreateBox(world->space, boundingBox.Width, boundingBox.Height, boundingBox.Depth);
+	dMassSetBox(&boxMass, density, boundingBox.width, boundingBox.height, boundingBox.Depth);
+	dGeomID geomId = dCreateBox(world->space, boundingBox.width, boundingBox.height, boundingBox.Depth);
 	dGeomSetBody(geomId, newBody->bodyId);
 	newBody->geomIds[newBody->numGeometries] = geomId;
 	newBody->numGeometries++;
@@ -238,7 +238,7 @@ PEXPI void SetBodyPosition(PhysicsWorld* world, uxx bodyIndex, v3 position)
 {
 	Assert(bodyIndex < world->bodies.length);
 	PhysicsBody* body = VarArrayGetHard(PhysicsBody, &world->bodies, bodyIndex);
-	dBodySetPosition(body->bodyId, position.X, position.Y, position.Z);
+	dBodySetPosition(body->bodyId, position.x, position.y, position.z);
 }
 PEXPI void SetBodyRotation(PhysicsWorld* world, uxx bodyIndex, quat rotation)
 {

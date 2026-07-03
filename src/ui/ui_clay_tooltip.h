@@ -136,27 +136,27 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 			
 			u16 fontId = GetClayUIRendererFontId(context->renderer, openTooltip->font, openTooltip->fontStyle);
 			Assert(fontId != CLAY_FONT_ID_INVALID);
-			r32 wrapWidth = UISCALE_R32(context->uiScale, MinR32(screenSize.Width, TOOLTIP_MAX_WIDTH) - (2 * TOOLTIP_PADDING_X));
+			r32 wrapWidth = UISCALE_R32(context->uiScale, MinR32(screenSize.width, TOOLTIP_MAX_WIDTH) - (2 * TOOLTIP_PADDING_X));
 			TextMeasure displayStrMeasure = MeasureTextEx(openTooltip->font, openTooltip->fontSize, openTooltip->fontStyle, false, wrapWidth, openTooltip->displayStr);
-			v2 tooltipSize = AddV2(displayStrMeasure.logicalRec.Size, MakeV2(2 * UISCALE_R32(context->uiScale, TOOLTIP_PADDING_X), 2 * UISCALE_R32(context->uiScale, TOOLTIP_PADDING_Y)));
+			v2 tooltipSize = AddV2(displayStrMeasure.logicalRec.size, MakeV2(2 * UISCALE_R32(context->uiScale, TOOLTIP_PADDING_X), 2 * UISCALE_R32(context->uiScale, TOOLTIP_PADDING_Y)));
 			Clay_FloatingAttachPointType attachPoint = CLAY_ATTACH_POINT_CENTER_TOP;
-			if (attachOffset.Y > screenSize.Height - tooltipSize.Height)
+			if (attachOffset.y > screenSize.height - tooltipSize.height)
 			{
 				attachPoint = CLAY_ATTACH_POINT_CENTER_BOTTOM;
-				attachOffset.Y -= (TOOLTIP_TARGET_DOWN_OFFSET + TOOLTIP_TARGET_UP_OFFSET);
+				attachOffset.y -= (TOOLTIP_TARGET_DOWN_OFFSET + TOOLTIP_TARGET_UP_OFFSET);
 			}
-			if (attachOffset.X < tooltipSize.Width/2.0f)
+			if (attachOffset.x < tooltipSize.width/2.0f)
 			{
-				attachOffset.X = tooltipSize.Width/2.0f;
+				attachOffset.x = tooltipSize.width/2.0f;
 			}
-			else if (attachOffset.X > screenSize.Width - tooltipSize.Width/2.0f)
+			else if (attachOffset.x > screenSize.width - tooltipSize.width/2.0f)
 			{
-				attachOffset.X = screenSize.Width - tooltipSize.Width/2.0f;
+				attachOffset.x = screenSize.width - tooltipSize.width/2.0f;
 			}
 			
 			CLAY({ .id = tooltipId,
 				.layout = {
-					.sizing = { .width = CLAY_SIZING_FIXED(tooltipSize.Width), .height = CLAY_SIZING_FIXED(tooltipSize.Height) },
+					.sizing = { .width = CLAY_SIZING_FIXED(tooltipSize.width), .height = CLAY_SIZING_FIXED(tooltipSize.height) },
 					.padding = {
 						.left = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_X),
 						.top = UISCALE_U16(context->uiScale, TOOLTIP_PADDING_Y*0.75f), //TODO: Get rid of this hacky way to make the text look more vertically centered

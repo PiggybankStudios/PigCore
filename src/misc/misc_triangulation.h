@@ -72,7 +72,7 @@ PEXPI bool IsPolygonClockwiseR64(uxx numVertices, v2d* vertices)
 	{
 		v2d currentVert = vertices[vIndex];
 		v2d nextVert = vertices[(vIndex+1) % numVertices];
-		aggregateValue += (nextVert.X - currentVert.X) * (nextVert.Y + currentVert.Y);
+		aggregateValue += (nextVert.x - currentVert.x) * (nextVert.y + currentVert.y);
 	}
 	return (aggregateValue <= 0);
 }
@@ -87,12 +87,12 @@ PEXPI bool IsInsideTriangleR64(v2d p0, v2d p1, v2d p2, v2d test)
 	v2d perp0 = PerpRightV2d(SubV2d(p1, p0));
 	v2d perp1 = PerpRightV2d(SubV2d(p2, p1));
 	v2d perp2 = PerpRightV2d(SubV2d(p0, p2));
-	if (p0.X == p1.X && test.X == p0.X && test.Y >= MinR64(p0.Y, p1.Y) && test.Y <= MaxR64(p0.Y, p1.Y)) { return true; }
-	if (p1.X == p2.X && test.X == p1.X && test.Y >= MinR64(p1.Y, p2.Y) && test.Y <= MaxR64(p1.Y, p2.Y)) { return true; }
-	if (p2.X == p0.X && test.X == p2.X && test.Y >= MinR64(p2.Y, p0.Y) && test.Y <= MaxR64(p2.Y, p0.Y)) { return true; }
-	if (p0.Y == p1.Y && test.Y == p0.Y && test.X >= MinR64(p0.X, p1.X) && test.X <= MaxR64(p0.X, p1.X)) { return true; }
-	if (p1.Y == p2.Y && test.Y == p1.Y && test.X >= MinR64(p1.X, p2.X) && test.X <= MaxR64(p1.X, p2.X)) { return true; }
-	if (p2.Y == p0.Y && test.Y == p2.Y && test.X >= MinR64(p2.X, p0.X) && test.X <= MaxR64(p2.X, p0.X)) { return true; }
+	if (p0.x == p1.x && test.x == p0.x && test.y >= MinR64(p0.y, p1.y) && test.y <= MaxR64(p0.y, p1.y)) { return true; }
+	if (p1.x == p2.x && test.x == p1.x && test.y >= MinR64(p1.y, p2.y) && test.y <= MaxR64(p1.y, p2.y)) { return true; }
+	if (p2.x == p0.x && test.x == p2.x && test.y >= MinR64(p2.y, p0.y) && test.y <= MaxR64(p2.y, p0.y)) { return true; }
+	if (p0.y == p1.y && test.y == p0.y && test.x >= MinR64(p0.x, p1.x) && test.x <= MaxR64(p0.x, p1.x)) { return true; }
+	if (p1.y == p2.y && test.y == p1.y && test.x >= MinR64(p1.x, p2.x) && test.x <= MaxR64(p1.x, p2.x)) { return true; }
+	if (p2.y == p0.y && test.y == p2.y && test.x >= MinR64(p2.x, p0.x) && test.x <= MaxR64(p2.x, p0.x)) { return true; }
 	return (
 		SignOfR64(DotV2d(SubV2d(p2, p0), perp0)) == SignOfR64(DotV2d(SubV2d(test, p0), perp0)) &&
 		SignOfR64(DotV2d(SubV2d(p0, p1), perp1)) == SignOfR64(DotV2d(SubV2d(test, p1), perp1)) &&

@@ -16,8 +16,8 @@ Date:   01\15\2025
 // +--------------------------------------------------------------+
 #define Add(left, right) _Generic((left), \
 	v2: AddV2,                            \
-	v3: HMM_AddV3,                        \
-	v4: HMM_AddV4,                        \
+	v3: AddV3,                            \
+	v4: AddV4,                            \
 	v2i: AddV2i,                          \
 	v3i: AddV3i,                          \
 	v4i: AddV4i,                          \
@@ -43,8 +43,8 @@ Date:   01\15\2025
 
 #define Sub(left, right) _Generic((left), \
 	v2: SubV2,                            \
-	v3: HMM_SubV3,                        \
-	v4: HMM_SubV4,                        \
+	v3: SubV3,                            \
+	v4: SubV4,                            \
 	v2i: SubV2i,                          \
 	v3i: SubV3i,                          \
 	v4i: SubV4i,                          \
@@ -86,8 +86,8 @@ Date:   01\15\2025
 #define Mul(left, right) _Generic((right), \
 	r32: _Generic((left),                  \
 		v2: ScaleV2,                       \
-		v3: HMM_MulV3F,                    \
-		v4: HMM_MulV4F,                    \
+		v3: ScaleV3,                       \
+		v4: ScaleV4,                       \
 		quat: HMM_MulQF,                   \
 		mat2: HMM_MulM2F,                  \
 		mat3: HMM_MulM3F,                  \
@@ -107,8 +107,8 @@ Date:   01\15\2025
 	mat4: HMM_MulM4,                       \
 	default: _Generic((left),              \
 		v2: MulV2,                         \
-		v3: HMM_MulV3,                     \
-		v4: HMM_MulV4,                     \
+		v3: MulV3,                         \
+		v4: MulV4,                         \
 		v2i: MulV2i,                       \
 		v3i: MulV3i,                       \
 		v4i: MulV4i,                       \
@@ -130,7 +130,7 @@ Date:   01\15\2025
 		obb2d: MulObb2d,                   \
 		obb3: MulObb3,                     \
 		obb3d: MulObb3d                    \
-	)                                      \
+	)
 )((left), (right))
 
 //TODO: For some reason the _Generic on (right) is matching r64 case even when the right-hand argument is clearly a v3. So for now Mul does not support 64-bit types
@@ -149,8 +149,8 @@ Date:   01\15\2025
 #define Div(left, right) _Generic((right), \
 	 r32: _Generic((left),                 \
 		v2: ShrinkV2,                      \
-		v3: HMM_DivV3F,                    \
-		v4: HMM_DivV4F,                    \
+		v3: ShrinkV3,                      \
+		v4: ShrinkV4,                      \
 		quat: HMM_DivQF,                   \
 		mat2: HMM_DivM2F,                  \
 		mat3: HMM_DivM3F,                  \
@@ -167,8 +167,8 @@ Date:   01\15\2025
 	 ),                                    \
 	 default: _Generic((left),             \
 		v2: DivV2,                         \
-		v3: HMM_DivV3,                     \
-		v4: HMM_DivV4,                     \
+		v3: DivV3,                         \
+		v4: DivV4,                         \
 		v2i: DivV2i,                       \
 		v3i: DivV3i,                       \
 		v4i: DivV4i,                       \
@@ -191,8 +191,8 @@ Date:   01\15\2025
 //TODO: These 4 should go in struct_vectors.h directly?
 #define Length(vector) _Generic((vector), \
 		v2: LengthV2,                     \
-		v3: HMM_LenV3,                    \
-		v4: HMM_LenV4,                    \
+		v3: LengthV3,                     \
+		v4: LengthV4,                     \
 		v2i: LengthV2i,                   \
 		v3i: LengthV3i,                   \
 		v4i: LengthV4i,                   \
@@ -203,8 +203,8 @@ Date:   01\15\2025
 
 #define LengthSquared(vector) _Generic((vector), \
 		v2: LengthSquaredV2,                     \
-		v3: HMM_LenSqrV3,                        \
-		v4: HMM_LenSqrV4,                        \
+		v3: LengthSquaredV3,                     \
+		v4: LengthSquaredV4,                     \
 		v2i: LengthSquaredV2i,                   \
 		v3i: LengthSquaredV3i,                   \
 		v4i: LengthSquaredV4i,                   \
@@ -215,8 +215,8 @@ Date:   01\15\2025
 
 #define Normalize(vector) _Generic((vector), \
 		v2: NormalizeV2,                     \
-		v3: HMM_NormV3,                      \
-		v4: HMM_NormV4,                      \
+		v3: NormalizeV3,                     \
+		v4: NormalizeV4,                     \
 		v2d: NormalizeV2d,                   \
 		v3d: NormalizeV3d,                   \
 		v4d: NormalizeV4d,                   \
@@ -226,8 +226,8 @@ Date:   01\15\2025
 
 #define Dot(left, right) _Generic((left), \
 		v2: DotV2,                        \
-		v3: HMM_DotV3,                    \
-		v4: HMM_DotV4,                    \
+		v3: DotV3,                        \
+		v4: DotV4,                        \
 		v2i: DotV2i,                      \
 		v3i: DotV3i,                      \
 		v4i: DotV4i,                      \
@@ -242,8 +242,8 @@ Date:   01\15\2025
 		r32: LerpR32((left), (right), (amount)),    \
 		r64: LerpR64((left), (right), (amount)),    \
 		v2: LerpV2((left), (amount), (right)),      \
-		v3: HMM_LerpV3((left), (amount), (right)),  \
-		v4: HMM_LerpV4((left), (amount), (right)),  \
+		v3: LerpV3((left), (amount), (right)),      \
+		v4: LerpV4((left), (amount), (right)),      \
 		v2d: LerpV2d((left), (right), (amount)),    \
 		v3d: LerpV3d((left), (right), (amount)),    \
 		v4d: LerpV4d((left), (right), (amount)),    \
@@ -253,8 +253,8 @@ Date:   01\15\2025
 
 #define AreEqual(left, right) _Generic((left), \
 		v2: AreEqualV2,                        \
-		v3: HMM_EqV3,                          \
-		v4: HMM_EqV4,                          \
+		v3: AreEqualV3,                        \
+		v4: AreEqualV4,                        \
 		v2i: AreEqualV2i,                      \
 		v3i: AreEqualV3i,                      \
 		v4i: AreEqualV4i,                      \

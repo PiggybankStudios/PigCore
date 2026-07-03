@@ -19,6 +19,24 @@ Description:
 #define DEBUG_FONT_NAME "Consolas"
 #endif
 
+#if TARGET_IS_WINDOWS
+#define TEST_SHEET_PATH   "G:/test_sheet_6x4.png" // "D:/test_sheet_4x4.png"
+#define TEST_IMAGE_PATH   "G:/test.png"
+#define TEST_TEXTURE_PATH "G:/test.png"
+#elif TARGET_IS_OSX
+#define TEST_SHEET_PATH   "/Users/robbitay/test_sheet_2x2.png"
+#define TEST_IMAGE_PATH   "/Users/robbitay/test.png"
+#define TEST_TEXTURE_PATH "/Users/robbitay/test.png"
+#elif TARGET_IS_LINUX
+#define TEST_SHEET_PATH   "/home/robbitay/test_sheet_4x5.png"
+#define TEST_IMAGE_PATH   "/home/robbitay/test.png"
+#define TEST_TEXTURE_PATH "/home/robbitay/test.png"
+#else
+#define TEST_SHEET_PATH   "test_sheet_2x2.png"
+#define TEST_IMAGE_PATH   "test.png"
+#define TEST_TEXTURE_PATH "test.png"
+#endif
+
 #include "lib/lib_sokol_app_impl.c"
 
 #endif //BUILD_WITH_SOKOL_APP
@@ -111,18 +129,18 @@ void UpdateScreenSafeMargins()
 			jobject decorView = jCall_getDecorView(env, window);
 			
 			jobject insets = jCall_getRootWindowInsets(env, decorView);
-			screenMargins.X = (r32)jCall_getSystemWindowInsetLeft(env, insets);
-			screenMargins.Y = (r32)jCall_getSystemWindowInsetTop(env, insets);
-			screenMargins.Z = (r32)jCall_getSystemWindowInsetRight(env, insets);
-			screenMargins.W = (r32)jCall_getSystemWindowInsetBottom(env, insets);
+			screenMargins.x = (r32)jCall_getSystemWindowInsetLeft(env, insets);
+			screenMargins.y = (r32)jCall_getSystemWindowInsetTop(env, insets);
+			screenMargins.z = (r32)jCall_getSystemWindowInsetRight(env, insets);
+			screenMargins.w = (r32)jCall_getSystemWindowInsetBottom(env, insets);
 			
 			jobject displayCutout = jCall_getDisplayCutout(env, insets);
 			if (displayCutout != nullptr)
 			{
-				screenSafeMargins.X = (r32)jCall_getSafeInsetLeft(env, displayCutout);
-				screenSafeMargins.Y = (r32)jCall_getSafeInsetTop(env, displayCutout);
-				screenSafeMargins.Z = (r32)jCall_getSafeInsetRight(env, displayCutout);
-				screenSafeMargins.W = (r32)jCall_getSafeInsetBottom(env, displayCutout);
+				screenSafeMargins.x = (r32)jCall_getSafeInsetLeft(env, displayCutout);
+				screenSafeMargins.y = (r32)jCall_getSafeInsetTop(env, displayCutout);
+				screenSafeMargins.z = (r32)jCall_getSafeInsetRight(env, displayCutout);
+				screenSafeMargins.w = (r32)jCall_getSafeInsetBottom(env, displayCutout);
 				
 				(*env)->DeleteLocalRef(env, displayCutout);
 			}
@@ -314,7 +332,7 @@ UI_THEMER_CALLBACK_DEF(TestsUiThemerCallback)
 void DrawBox(box boundingBox, Color32 color)
 {
 	mat4 worldMat = Mat4_Identity;
-	TransformMat4(&worldMat, MakeScaleMat4(boundingBox.Size));
+	TransformMat4(&worldMat, MakeScaleMat4(boundingBox.size));
 	TransformMat4(&worldMat, MakeTranslateMat4(boundingBox.BottomLeftBack));
 	SetWorldMat(worldMat);
 	SetTintColor(color);
@@ -325,9 +343,9 @@ void DrawObb3(obb3 boundingBox, Color32 color)
 {
 	mat4 worldMat = Mat4_Identity;
 	TransformMat4(&worldMat, MakeTranslateMat4(FillV3(-0.5f)));
-	TransformMat4(&worldMat, MakeScaleMat4(boundingBox.Size));
-	TransformMat4(&worldMat, ToMat4FromQuat(boundingBox.Rotation));
-	TransformMat4(&worldMat, MakeTranslateMat4(boundingBox.Center));
+	TransformMat4(&worldMat, MakeScaleMat4(boundingBox.size));
+	TransformMat4(&worldMat, ToMat4FromQuat(boundingBox.rotation));
+	TransformMat4(&worldMat, MakeTranslateMat4(boundingBox.center));
 	SetWorldMat(worldMat);
 	SetTintColor(color);
 	BindVertBuffer(&cubeBuffer);
@@ -337,7 +355,7 @@ void DrawSphere(Sphere sphere, Color32 color)
 {
 	mat4 worldMat = Mat4_Identity;
 	TransformMat4(&worldMat, MakeScaleMat4(FillV3(sphere.Radius)));
-	TransformMat4(&worldMat, MakeTranslateMat4(sphere.Center));
+	TransformMat4(&worldMat, MakeTranslateMat4(sphere.center));
 	SetWorldMat(worldMat);
 	SetTintColor(color);
 	BindVertBuffer(&sphereBuffer);
@@ -411,14 +429,14 @@ void AppInit(void)
 	InitGfxSystem(stdHeap, &gfx);
 	
 	v2i gradientSize = FillV2i(64);
-	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.Width * gradientSize.Height));
-	for (i32 pixelY = 0; pixelY < gradientSize.Height; pixelY++)
+	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.width * gradientSize.height));
+	for (i32 pixelY = 0; pixelY < gradientSize.height; pixelY++)
 	{
-		for (i32 pixelX = 0; pixelX < gradientSize.Width; pixelX++)
+		for (i32 pixelX = 0; pixelX < gradientSize.width; pixelX++)
 		{
-			Color32* pixel = &gradientPixels[INDEX_FROM_COORD2D(pixelX, pixelY, gradientSize.Width, gradientSize.Height)];
-			pixel->r = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelX / (r32)gradientSize.Width)));
-			pixel->g = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelY / (r32)gradientSize.Height)));
+			Color32* pixel = &gradientPixels[INDEX_FROM_COORD2D(pixelX, pixelY, gradientSize.width, gradientSize.height)];
+			pixel->r = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelX / (r32)gradientSize.width)));
+			pixel->g = ClampCastI32ToU8(RoundR32i(LerpR32(0, 255.0f, (r32)pixelY / (r32)gradientSize.height)));
 			pixel->b = pixel->r/2 + pixel->g/2;
 			pixel->a = 255;
 		}
@@ -427,14 +445,7 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
 	Assert(gradientTexture.error == Result_Success);
 	
-	#if TARGET_IS_WINDOWS
-	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("G:/test_sheet_6x4.png"), true);
-	// testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("D:/test_sheet_4x4.png"), true);
-	#elif TARGET_IS_OSX
-	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/Users/robbitay/test_sheet_2x2.png"), true);
-	#elif TARGET_IS_LINUX
-	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit("/home/robbitay/test_sheet_4x5.png"), true);
-	#endif
+	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit(TEST_SHEET_PATH), true);
 	
 	// #if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	const u32 Filled = 0xFFFFFFFF;
@@ -644,21 +655,8 @@ void AppInit(void)
 	UpdateScreenSafeMargins();
 	oldWindowSize = MakeV2i(sapp_width(), sapp_height());
 	
-	#if TARGET_IS_WINDOWS
-	// FilePath testImagePath = FilePathLit("G:/test.png");
-	// FilePath backgroundImagePath = FilePathLit("G:/test.png");
-	FilePath testImagePath = FilePathLit("G:/test.png");
-	FilePath backgroundImagePath = FilePathLit("G:/test.png");
-	#elif TARGET_IS_LINUX
-	FilePath testImagePath = FilePathLit("/home/robbitay/test.png");
-	FilePath backgroundImagePath = FilePathLit("/home/robbitay/test.png");
-	#elif TARGET_IS_OSX
-	FilePath testImagePath = FilePathLit("/Users/robbitay/test.png");
-	FilePath backgroundImagePath = FilePathLit("/Users/robbitay/test.png");
-	#else
-	FilePath testImagePath = FilePathLit("test.png");
-	FilePath backgroundImagePath = FilePathLit("test.png");
-	#endif
+	FilePath testImagePath = FilePathLit(TEST_IMAGE_PATH);
+	FilePath backgroundImagePath = FilePathLit(TEST_TEXTURE_PATH);
 	mipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_None);
 	noMipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_NoMipmaps);
 	
@@ -666,14 +664,14 @@ void AppInit(void)
 	
 	ImageData testTextureData = ZEROED;
 	testTextureData.size = MakeV2i(512, 512);
-	testTextureData.numPixels = (uxx)(testTextureData.size.Width * testTextureData.size.Height);
+	testTextureData.numPixels = (uxx)(testTextureData.size.width * testTextureData.size.height);
 	testTextureData.pixels = AllocArray(u32, scratch, testTextureData.numPixels);
 	NotNull(testTextureData.pixels);
-	for (i32 yOffset = 0; yOffset < testTextureData.size.Height; yOffset++)
+	for (i32 yOffset = 0; yOffset < testTextureData.size.height; yOffset++)
 	{
-		for (i32 xOffset = 0; xOffset < testTextureData.size.Width; xOffset++)
+		for (i32 xOffset = 0; xOffset < testTextureData.size.width; xOffset++)
 		{
-			Color32* pixel = (Color32*)&testTextureData.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, testTextureData.size.Width, testTextureData.size.Height)];
+			Color32* pixel = (Color32*)&testTextureData.pixels[INDEX_FROM_COORD2D(xOffset, yOffset, testTextureData.size.width, testTextureData.size.height)];
 			//TODO: GetRandU8 causes a very noticable pattern!
 			// pixel->r = GetRandU8(mainRandom);
 			// pixel->g = GetRandU8(mainRandom);
@@ -700,8 +698,8 @@ void DrawRectangle(Shader* shader, v2 topLeft, v2 size, Color32 color)
 	NotNull(shader);
 	
 	mat4 worldMat = Mat4_Identity;
-	TransformMat4(&worldMat, MakeScaleXYZMat4(size.Width, size.Height, 1.0f));
-	TransformMat4(&worldMat, MakeTranslateXYZMat4(topLeft.X, topLeft.Y, 0.0f));
+	TransformMat4(&worldMat, MakeScaleXYZMat4(size.width, size.height, 1.0f));
+	TransformMat4(&worldMat, MakeTranslateXYZMat4(topLeft.x, topLeft.y, 0.0f));
 	SetWorldMat(worldMat);
 	SetTintColor(color);
 	
@@ -741,15 +739,15 @@ bool AppFrame(void)
 	if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_Escape, false) && sapp_mouse_locked()) { sapp_lock_mouse(false); }
 	if (sapp_mouse_locked())
 	{
-		r32 cameraHoriRot = AtanR32(cameraLookDir.Z, cameraLookDir.X);
-		r32 cameraVertRot = AtanR32(cameraLookDir.Y, Length(MakeV2(cameraLookDir.X, cameraLookDir.Z)));
-		cameraHoriRot = AngleFixR32(cameraHoriRot - mouse.lockedPosDelta.X / 500.0f);
-		cameraVertRot = ClampR32(cameraVertRot - mouse.lockedPosDelta.Y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
+		r32 cameraHoriRot = AtanR32(cameraLookDir.z, cameraLookDir.x);
+		r32 cameraVertRot = AtanR32(cameraLookDir.y, Length(MakeV2(cameraLookDir.x, cameraLookDir.z)));
+		cameraHoriRot = AngleFixR32(cameraHoriRot - mouse.lockedPosDelta.x / 500.0f);
+		cameraVertRot = ClampR32(cameraVertRot - mouse.lockedPosDelta.y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
 		r32 horizontalRadius = CosR32(cameraVertRot);
 		cameraLookDir = MakeV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
 		
-		v3 horizontalForwardVec = Normalize(MakeV3(cameraLookDir.X, 0.0f, cameraLookDir.Z));
-		v3 horizontalRightVec = Normalize(MakeV3(cameraLookDir.Z, 0.0f, -cameraLookDir.X));
+		v3 horizontalForwardVec = Normalize(MakeV3(cameraLookDir.x, 0.0f, cameraLookDir.z));
+		v3 horizontalRightVec = Normalize(MakeV3(cameraLookDir.z, 0.0f, -cameraLookDir.x));
 		const r32 moveSpeed = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? 0.08f : 0.02f;
 		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_W)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, moveSpeed)); }
 		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_A)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, -moveSpeed)); }
@@ -767,10 +765,10 @@ bool AppFrame(void)
 			if (touch->moved)
 			{
 				v2 delta = SubV2(touch->pos, touch->prevPos);
-				r32 cameraHoriRot = AtanR32(cameraLookDir.Z, cameraLookDir.X);
-				r32 cameraVertRot = AtanR32(cameraLookDir.Y, Length(MakeV2(cameraLookDir.X, cameraLookDir.Z)));
-				cameraHoriRot = AngleFixR32(cameraHoriRot - delta.X / 500.0f);
-				cameraVertRot = ClampR32(cameraVertRot - delta.Y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
+				r32 cameraHoriRot = AtanR32(cameraLookDir.z, cameraLookDir.x);
+				r32 cameraVertRot = AtanR32(cameraLookDir.y, Length(MakeV2(cameraLookDir.x, cameraLookDir.z)));
+				cameraHoriRot = AngleFixR32(cameraHoriRot - delta.x / 500.0f);
+				cameraVertRot = ClampR32(cameraVertRot - delta.y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
 				r32 horizontalRadius = CosR32(cameraVertRot);
 				cameraLookDir = MakeV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
 			}
@@ -785,15 +783,15 @@ bool AppFrame(void)
 	if (IsKeyboardKeyPressed(&keyboard, nullptr, Key_P, true))
 	{
 		reci sourceRec = MakeReci(
-			GetRandI32Range(mainRandom, 0, testTexture.Width-1),
-			GetRandI32Range(mainRandom, 0, testTexture.Height-1),
+			GetRandI32Range(mainRandom, 0, testTexture.width-1),
+			GetRandI32Range(mainRandom, 0, testTexture.height-1),
 			0, 0
 		);
-		sourceRec.Width = GetRandI32Range(mainRandom, 1, (testTexture.Width - sourceRec.X)+1);
-		sourceRec.Height = GetRandI32Range(mainRandom, 1, (testTexture.Height - sourceRec.Y)+1);
+		sourceRec.width = GetRandI32Range(mainRandom, 1, (testTexture.width - sourceRec.x)+1);
+		sourceRec.height = GetRandI32Range(mainRandom, 1, (testTexture.height - sourceRec.y)+1);
 		ImageData newImageData = ZEROED;
-		newImageData.size = sourceRec.Size;
-		newImageData.numPixels = (uxx)(newImageData.size.Width * newImageData.size.Height);
+		newImageData.size = sourceRec.size;
+		newImageData.numPixels = (uxx)(newImageData.size.width * newImageData.size.height);
 		newImageData.pixels = AllocArray(u32, scratch, newImageData.numPixels);
 		NotNull(newImageData.pixels);
 		Color32 color = GetPredefPalColorByIndex(GetRandU32(mainRandom));
@@ -818,7 +816,7 @@ bool AppFrame(void)
 				fontAtlas->isActive ? " Active" : "",
 				fontAtlas->fontSize,
 				isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "",
-				fontAtlas->texture.Width, fontAtlas->texture.Height,
+				fontAtlas->texture.width, fontAtlas->texture.height,
 				fontAtlas->glyphRange.startCodepoint, fontAtlas->glyphRange.endCodepoint
 			);
 			PrintLine_D("\t%llu Char Range%s:", fontAtlas->charRanges.length, Plural(fontAtlas->charRanges.length, "s"));
@@ -839,11 +837,11 @@ bool AppFrame(void)
 				PrintLine_D("\t\tGlyph[%llu]: \'%s\' 0x%08X sourceRec=(%d, %d, %d, %d) offset=(%g, %g) advanceX=%g logical=(%g, %g, %g, %g)",
 					gIndex,
 					codepointName, glyph->codepoint,
-					glyph->atlasSourcePos.X, glyph->atlasSourcePos.Y,
-					glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height,
-					glyph->metrics.renderOffset.X, glyph->metrics.renderOffset.Y,
+					glyph->atlasSourcePos.x, glyph->atlasSourcePos.y,
+					glyph->metrics.glyphSize.width, glyph->metrics.glyphSize.height,
+					glyph->metrics.renderOffset.x, glyph->metrics.renderOffset.y,
 					glyph->metrics.advanceX,
-					glyph->metrics.logicalRec.X, glyph->metrics.logicalRec.Y, glyph->metrics.logicalRec.Width, glyph->metrics.logicalRec.Height
+					glyph->metrics.logicalRec.x, glyph->metrics.logicalRec.y, glyph->metrics.logicalRec.width, glyph->metrics.logicalRec.height
 				);
 				//TODO: ttfGlyphIndex
 			}
@@ -855,13 +853,13 @@ bool AppFrame(void)
 			if (fontAtlas->isActive)
 			{
 				PrintLine_D("\tLast Used: %llu (%llums ago)", fontAtlas->lastUsedTime, TimeSinceBy(programTime, fontAtlas->lastUsedTime));
-				PrintLine_D("\tCell Size: %dx%d", fontAtlas->activeCellSize.Width, fontAtlas->activeCellSize.Height);
-				PrintLine_D("\tGrid Size: %dx%d", fontAtlas->activeCellGridSize.Width, fontAtlas->activeCellGridSize.Height);
-				for (i32 yOffset = 0; yOffset < fontAtlas->activeCellGridSize.Height; yOffset++)
+				PrintLine_D("\tCell Size: %dx%d", fontAtlas->activeCellSize.width, fontAtlas->activeCellSize.height);
+				PrintLine_D("\tGrid Size: %dx%d", fontAtlas->activeCellGridSize.width, fontAtlas->activeCellGridSize.height);
+				for (i32 yOffset = 0; yOffset < fontAtlas->activeCellGridSize.height; yOffset++)
 				{
-					for (i32 xOffset = 0; xOffset < fontAtlas->activeCellGridSize.Width; xOffset++)
+					for (i32 xOffset = 0; xOffset < fontAtlas->activeCellGridSize.width; xOffset++)
 					{
-						FontActiveCell* cell = &fontAtlas->cells[INDEX_FROM_COORD2D(xOffset, yOffset, fontAtlas->activeCellGridSize.Width, fontAtlas->activeCellGridSize.Height)];
+						FontActiveCell* cell = &fontAtlas->cells[INDEX_FROM_COORD2D(xOffset, yOffset, fontAtlas->activeCellGridSize.width, fontAtlas->activeCellGridSize.height)];
 						if (cell->codepoint != FONT_CODEPOINT_EMPTY)
 						{
 							#if DEBUG_BUILD
@@ -878,7 +876,7 @@ bool AppFrame(void)
 				VarArrayLoop(&fontAtlas->pendingTextureUpdates, uIndex)
 				{
 					VarArrayLoopGet(FontActiveAtlasTextureUpdate, update, &fontAtlas->pendingTextureUpdates, uIndex);
-					PrintLine_D("\t\tUpdate[%llu]: (%d, %d, %d, %d)", uIndex, update->sourcePos.X, update->sourcePos.Y, update->imageData.size.Width, update->imageData.size.Height);
+					PrintLine_D("\t\tUpdate[%llu]: (%d, %d, %d, %d)", uIndex, update->sourcePos.x, update->sourcePos.y, update->imageData.size.width, update->imageData.size.height);
 				}
 			}
 		}
@@ -889,7 +887,7 @@ bool AppFrame(void)
 	if (IsMouseBtnPressed(&mouse, nullptr, MouseBtn_Left))
 	{
 		r32 physMouseX, physMouseY;
-		GetPhysPosFromRenderPos((i32)mouse.position.X, (i32)mouse.position.Y, &physMouseX, &physMouseY);
+		GetPhysPosFromRenderPos((i32)mouse.position.x, (i32)mouse.position.y, &physMouseX, &physMouseY);
 		SpawnBox(physMouseX, physMouseY, GetRandR32Range(mainRandom, 0.3f, 1.0f), GetRandR32Range(mainRandom, 0.3f, 1.0f));
 	}
 	UpdateBox2DTest();
@@ -933,9 +931,9 @@ bool AppFrame(void)
 		{
 			BindShader(&main3dShader);
 			#if defined(SOKOL_GLCORE)
-			mat4 projMat = MakePerspectiveMat4Gl(ToRadians32(45), windowSize.Width/windowSize.Height, 0.05f, 400);
+			mat4 projMat = MakePerspectiveMat4Gl(ToRadians32(45), windowSize.width/windowSize.height, 0.05f, 400);
 			#else
-			mat4 projMat = MakePerspectiveMat4Dx(ToRadians32(45), windowSize.Width/windowSize.Height, 0.05f, 400);
+			mat4 projMat = MakePerspectiveMat4Dx(ToRadians32(45), windowSize.width/windowSize.height, 0.05f, 400);
 			#endif
 			SetProjectionMat(projMat);
 			mat4 viewMat = MakeLookAtMat4(cameraPos, Add(cameraPos, cameraLookDir), V3_Up);
@@ -950,8 +948,8 @@ bool AppFrame(void)
 			{
 				VarArrayLoopGet(PhysicsBody, body, &physWorld->bodies, bIndex);
 				PhysicsBodyTransform transform = GetPhysicsBodyTransform(body);
-				v3 position = MakeV3(transform.position.X, transform.position.Y, transform.position.Z);
-				quat rotation = MakeQuat(transform.rotation.X, transform.rotation.Y, transform.rotation.Z, transform.rotation.W);
+				v3 position = MakeV3(transform.position.x, transform.position.y, transform.position.z);
+				quat rotation = MakeQuat(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w);
 				if (body->index == physWorld->groundPlaneBodyIndex)
 				{
 					//TODO: Figure out how PhysX want's us to intepret rotation/position on a Plane when drawing it
@@ -975,7 +973,7 @@ bool AppFrame(void)
 			BindTexture(&gradientTexture);
 			
 			mat4 projMat = Mat4_Identity;
-			TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.Width/2.0f), 1.0f/(windowSize.Height/2.0f), 1.0f));
+			TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(windowSize.width/2.0f), 1.0f/(windowSize.height/2.0f), 1.0f));
 			TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
 			TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
 			SetProjectionMat(projMat);
@@ -984,23 +982,23 @@ bool AppFrame(void)
 			
 			#if 0
 			{
-				DrawRectangleOutline(NewRec(0, 0, screenSafeMargins.X, windowSize.Height), 10.0f, MonokaiMagenta);
-				DrawRectangleOutline(NewRec(0, 0, windowSize.Width, screenSafeMargins.Y), 10.0f, MonokaiBlue);
-				DrawRectangleOutline(NewRec(windowSize.Width - screenSafeMargins.Z, 0, screenSafeMargins.Z, windowSize.Height), 10.0f, MonokaiPurple);
-				DrawRectangleOutline(NewRec(0, windowSize.Height - screenSafeMargins.W, windowSize.Width, screenSafeMargins.W), 10.0f, MonokaiYellow);
+				DrawRectangleOutline(NewRec(0, 0, screenSafeMargins.x, windowSize.height), 10.0f, MonokaiMagenta);
+				DrawRectangleOutline(NewRec(0, 0, windowSize.width, screenSafeMargins.y), 10.0f, MonokaiBlue);
+				DrawRectangleOutline(NewRec(windowSize.width - screenSafeMargins.z, 0, screenSafeMargins.z, windowSize.height), 10.0f, MonokaiPurple);
+				DrawRectangleOutline(NewRec(0, windowSize.height - screenSafeMargins.w, windowSize.width, screenSafeMargins.w), 10.0f, MonokaiYellow);
 				
-				DrawRectangleOutline(NewRec(0, 0, screenMargins.X, windowSize.Height), 5.0f, MonokaiLightRed);
-				DrawRectangleOutline(NewRec(0, 0, windowSize.Width, screenMargins.Y), 5.0f, MonokaiLightBlue);
-				DrawRectangleOutline(NewRec(windowSize.Width - screenMargins.Z, 0, screenMargins.Z, windowSize.Height), 5.0f, MonokaiLightPurple);
-				DrawRectangleOutline(NewRec(0, windowSize.Height - screenMargins.W, windowSize.Width, screenMargins.W), 5.0f, MonokaiOrange);
+				DrawRectangleOutline(NewRec(0, 0, screenMargins.x, windowSize.height), 5.0f, MonokaiLightRed);
+				DrawRectangleOutline(NewRec(0, 0, windowSize.width, screenMargins.y), 5.0f, MonokaiLightBlue);
+				DrawRectangleOutline(NewRec(windowSize.width - screenMargins.z, 0, screenMargins.z, windowSize.height), 5.0f, MonokaiLightPurple);
+				DrawRectangleOutline(NewRec(0, windowSize.height - screenMargins.w, windowSize.width, screenMargins.w), 5.0f, MonokaiOrange);
 			}
 			#endif
 			
 			#if 0
 			Texture* mipTextureToUse = (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? &noMipmapTexture : &mipmapTexture);
-			rec mipmapTextureRec = MakeRec(windowSize.Width/2, windowSize.Height/2, 0, 0);
-			mipmapTextureRec.Width = mouse.position.X - mipmapTextureRec.X;
-			mipmapTextureRec.Height = mouse.position.Y - mipmapTextureRec.Y;
+			rec mipmapTextureRec = MakeRec(windowSize.width/2, windowSize.height/2, 0, 0);
+			mipmapTextureRec.width = mouse.position.x - mipmapTextureRec.x;
+			mipmapTextureRec.height = mouse.position.y - mipmapTextureRec.y;
 			DrawTexturedRectangle(mipmapTextureRec, White, mipTextureToUse);
 			#endif
 			
@@ -1008,14 +1006,14 @@ bool AppFrame(void)
 			{
 				r32 fontLineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
 				r32 fontMaxAscend = GetFontMaxAscend(&testFont, 18*textScale, FontStyleFlag_None);
-				v2 textPos = MakeV2(screenSafeMargins.X + 10, screenSafeMargins.Y + 410 + fontMaxAscend);
-				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.Width, windowSize.Height);
+				v2 textPos = MakeV2(screenSafeMargins.x + 10, screenSafeMargins.y + 410 + fontMaxAscend);
+				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.width, windowSize.height);
 				BindFont(&debugFont);
 				DrawText(infoStr, textPos, MonokaiWhite);
-				textPos.Y += fontLineHeight;
+				textPos.y += fontLineHeight;
 				
-				r32 wrapWidth = MaxR32(wrapPos.X - textPos.X, 0.0f);
-				if (wrapWidth == 0.0f) { wrapWidth = windowSize.Width - textPos.X; }
+				r32 wrapWidth = MaxR32(wrapPos.x - textPos.x, 0.0f);
+				if (wrapWidth == 0.0f) { wrapWidth = windowSize.width - textPos.x; }
 				char kanjiUtf8Buffer[16];
 				uxx kanjiBufferIndex = 0;
 				u32 kanjiCodepoints[] = { 0x4E09, 0x5CF6, 0x5E83, 0x5C0F, 0x8DEF };
@@ -1082,12 +1080,12 @@ bool AppFrame(void)
 				// rec visualRec = gfx.prevFontFlow.visualRec;
 				// DrawRectangleOutlineEx(logicalRec, 1, MonokaiYellow, false);
 				// DrawRectangleOutlineEx(visualRec, 1, MonokaiBlue, false);
-				DrawRectangle(MakeRec(textPos.X + wrapWidth, 0, 1, windowSize.Height), MonokaiRed);
+				DrawRectangle(MakeRec(textPos.x + wrapWidth, 0, 1, windowSize.height), MonokaiRed);
 			}
 			#endif
 			
 			#if 0
-			rec buttonRec = NewRec(screenSafeMargins.X + 10, screenSafeMargins.Y + 10, 100, 100);
+			rec buttonRec = NewRec(screenSafeMargins.x + 10, screenSafeMargins.y + 10, 100, 100);
 			DrawRectangle(buttonRec, ColorWithAlpha(MonokaiRed, 0.40f));
 			for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
 			{
@@ -1122,21 +1120,21 @@ bool AppFrame(void)
 					bool isMainTouch = (touchscreen.mainTouchIndex == tIndex);
 					DrawCircle(MakeCircleV(touch->startPos, touch->visitRadius), ColorWithAlpha(isMainTouch ? MonokaiYellow : MonokaiOrange, 0.25f));
 					DrawRectangle(touch->visitBounds, ColorWithAlpha(MonokaiGreen, 0.25f));
-					DrawRectangle(NewRecCentered(touch->startPos.X, touch->startPos.Y, 15, 15), MonokaiBlue);
-					DrawRectangle(NewRecCentered(touch->pos.X, touch->pos.Y, 15, 15), MonokaiMagenta);
+					DrawRectangle(NewRecCentered(touch->startPos.x, touch->startPos.y, 15, 15), MonokaiBlue);
+					DrawRectangle(NewRecCentered(touch->pos.x, touch->pos.y, 15, 15), MonokaiMagenta);
 				}
 			}
 			#endif
 			
 			#if 0
 			v2 tileSize = ToV2Fromi(gradientTexture.size); //MakeV2(48, 27);
-			i32 numColumns = FloorR32i(windowSize.Width / tileSize.Width);
-			i32 numRows = FloorR32i(windowSize.Height / tileSize.Height);
+			i32 numColumns = FloorR32i(windowSize.width / tileSize.width);
+			i32 numRows = FloorR32i(windowSize.height / tileSize.height);
 			for (i32 yIndex = 0; yIndex < numRows; yIndex++)
 			{
 				for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
 				{
-					DrawTexturedRectangle(NewRec(tileSize.Width * xIndex, tileSize.Height * yIndex, tileSize.Width, tileSize.Height), White, &gradientTexture);
+					DrawTexturedRectangle(NewRec(tileSize.width * xIndex, tileSize.height * yIndex, tileSize.width, tileSize.height), White, &gradientTexture);
 				}
 			}
 			#endif
@@ -1145,25 +1143,25 @@ bool AppFrame(void)
 			r32 atlasRenderPosX = 10.0f;
 			#if BUILD_WITH_CLAY
 			rec topbarRec = GetClayElementDrawRec(CLAY_ID("Topbar"));
-			r32 atlasRenderPosY = topbarRec.Y + topbarRec.Height + 10;
+			r32 atlasRenderPosY = topbarRec.y + topbarRec.height + 10;
 			#else
 			r32 atlasRenderPosY = 10.0f;
 			#endif
 			VarArrayLoop(&testFont.atlases, aIndex)
 			{
 				VarArrayLoopGet(FontAtlas, fontAtlas, &testFont.atlases, aIndex);
-				rec atlasRenderRec = MakeRec(atlasRenderPosX, atlasRenderPosY, (r32)fontAtlas->texture.Width, (r32)fontAtlas->texture.Height);
+				rec atlasRenderRec = MakeRec(atlasRenderPosX, atlasRenderPosY, (r32)fontAtlas->texture.width, (r32)fontAtlas->texture.height);
 				if (fontAtlas->isActive)
 				{
-					for (i32 cellY = 0; cellY < fontAtlas->activeCellGridSize.Height; cellY++)
+					for (i32 cellY = 0; cellY < fontAtlas->activeCellGridSize.height; cellY++)
 					{
-						for (i32 cellX = 0; cellX < fontAtlas->activeCellGridSize.Width; cellX++)
+						for (i32 cellX = 0; cellX < fontAtlas->activeCellGridSize.width; cellX++)
 						{
 							rec cellRec = MakeRec(
-								atlasRenderRec.X + (r32)(cellX * fontAtlas->activeCellSize.Width),
-								atlasRenderRec.Y + (r32)(cellY * fontAtlas->activeCellSize.Height),
-								(r32)fontAtlas->activeCellSize.Width,
-								(r32)fontAtlas->activeCellSize.Height
+								atlasRenderRec.x + (r32)(cellX * fontAtlas->activeCellSize.width),
+								atlasRenderRec.y + (r32)(cellY * fontAtlas->activeCellSize.height),
+								(r32)fontAtlas->activeCellSize.width,
+								(r32)fontAtlas->activeCellSize.height
 							);
 							DrawRectangle(cellRec, ColorWithAlpha(MonokaiWhite, ((cellX + cellY)%2 == 0) ? 0.1f : 0.0f));
 						}
@@ -1172,26 +1170,26 @@ bool AppFrame(void)
 				DrawTexturedRectangle(atlasRenderRec, White, &fontAtlas->texture);
 				DrawRectangleOutline(atlasRenderRec, 1, White);
 				BindFont(&debugFont);
-				v2 infoTextPos = MakeV2(atlasRenderRec.X, atlasRenderRec.Y + atlasRenderRec.Height + 5 + GetMaxAscend());
-				Str8 infoStr = PrintInArenaStr(scratch, "%g %dx%d%s", fontAtlas->fontSize, fontAtlas->texture.Width, fontAtlas->texture.Height, fontAtlas->isActive ? "" : " (Static)");
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
+				v2 infoTextPos = MakeV2(atlasRenderRec.x, atlasRenderRec.y + atlasRenderRec.height + 5 + GetMaxAscend());
+				Str8 infoStr = PrintInArenaStr(scratch, "%g %dx%d%s", fontAtlas->fontSize, fontAtlas->texture.width, fontAtlas->texture.height, fontAtlas->isActive ? "" : " (Static)");
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.y += GetLineHeight();
 				bool isBold = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Bold);
 				bool isItalic = IsFlagSet(fontAtlas->styleFlags, FontStyleFlag_Italic);
 				infoStr = PrintInArenaStr(scratch, "%s%s%s%s", (!isBold && !isItalic) ? "Default" : "", isBold ? "Bold" : "", (isBold && isItalic) ? "|" : "", isItalic ? "Italic" : "");
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.y += GetLineHeight();
 				infoStr = PrintInArenaStr(scratch, "%llu glyph%s", fontAtlas->glyphs.length, Plural(fontAtlas->glyphs.length, "s"));
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.y += GetLineHeight();
 				infoStr = PrintInArenaStr(scratch, "%llu range%s", fontAtlas->charRanges.length, Plural(fontAtlas->charRanges.length, "s"));
-				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
-				atlasRenderPosX += atlasRenderRec.Width + 10;
+				DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.y += GetLineHeight();
+				atlasRenderPosX += atlasRenderRec.width + 10;
 				VarArrayLoop(&fontAtlas->glyphs, gIndex)
 				{
 					VarArrayLoopGet(FontGlyph, glyph, &fontAtlas->glyphs, gIndex);
 					rec glyphRec = MakeRec(
-						atlasRenderRec.X + atlasRenderRec.Width * ((r32)glyph->atlasSourcePos.X / fontAtlas->texture.Width),
-						atlasRenderRec.Y + atlasRenderRec.Height * ((r32)glyph->atlasSourcePos.Y / fontAtlas->texture.Height),
-						atlasRenderRec.Width * ((r32)glyph->metrics.glyphSize.Width / fontAtlas->texture.Width),
-						atlasRenderRec.Height * ((r32)glyph->metrics.glyphSize.Height / fontAtlas->texture.Height)
+						atlasRenderRec.x + atlasRenderRec.width * ((r32)glyph->atlasSourcePos.x / fontAtlas->texture.width),
+						atlasRenderRec.y + atlasRenderRec.height * ((r32)glyph->atlasSourcePos.y / fontAtlas->texture.height),
+						atlasRenderRec.width * ((r32)glyph->metrics.glyphSize.width / fontAtlas->texture.width),
+						atlasRenderRec.height * ((r32)glyph->metrics.glyphSize.height / fontAtlas->texture.height)
 					);
 					bool isMouseHovered = IsInsideRec(glyphRec, mouse.position);
 					DrawRectangleOutline(glyphRec, 1, isMouseHovered ? MonokaiLightPurple : MonokaiPurple);
@@ -1202,8 +1200,8 @@ bool AppFrame(void)
 						#else
 						const char* codepointName = "-";
 						#endif
-						infoStr = PrintInArenaStr(scratch, "Glyph[%llu] \'%s\' 0x%08X %dx%d", gIndex, codepointName, glyph->codepoint, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height);
-						DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.Y += GetLineHeight();
+						infoStr = PrintInArenaStr(scratch, "Glyph[%llu] \'%s\' 0x%08X %dx%d", gIndex, codepointName, glyph->codepoint, glyph->metrics.glyphSize.width, glyph->metrics.glyphSize.height);
+						DrawText(infoStr, infoTextPos, MonokaiWhite); infoTextPos.y += GetLineHeight();
 					}
 				}
 			}
@@ -1212,7 +1210,7 @@ bool AppFrame(void)
 			#if 0
 			BindFont(&debugFont);
 			Str8 loremIpsum = StrLit("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum");
-			uxx numLines = (uxx)CeilR32i(mouse.position.Y / GetLineHeight());
+			uxx numLines = (uxx)CeilR32i(mouse.position.y / GetLineHeight());
 			Str8 lines;
 			lines.length = (loremIpsum.length+1) * numLines;
 			lines.chars = AllocArray(char, scratch, lines.length);
@@ -1243,13 +1241,13 @@ bool AppFrame(void)
 				CLAY({ .id = CLAY_ID("FullscreenContainer"),
 					.layout = {
 						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-						.padding = { .left = (u16)screenMargins.X, .top = (u16)screenMargins.Y, .right = (u16)screenMargins.Z, .bottom = (u16)screenMargins.W },
+						.padding = { .left = (u16)screenMargins.x, .top = (u16)screenMargins.y, .right = (u16)screenMargins.z, .bottom = (u16)screenMargins.w },
 					}
 				})
 				{
 					CLAY({.id = CLAY_ID("SafeInsetLeft"),
 						.layout = {
-							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.X), .height=CLAY_SIZING_FIXED(windowSize.Height) }
+							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.x), .height=CLAY_SIZING_FIXED(windowSize.height) }
 						},
 						.floating = {
 							.attachTo = CLAY_ATTACH_TO_PARENT,
@@ -1259,7 +1257,7 @@ bool AppFrame(void)
 					}) { }
 					CLAY({.id = CLAY_ID("SafeInsetTop"),
 						.layout = {
-							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.Width), .height=CLAY_SIZING_FIXED(screenMargins.Y) }
+							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.width), .height=CLAY_SIZING_FIXED(screenMargins.y) }
 						},
 						.floating = {
 							.attachTo = CLAY_ATTACH_TO_PARENT,
@@ -1269,7 +1267,7 @@ bool AppFrame(void)
 					}) { }
 					CLAY({.id = CLAY_ID("SafeInsetRight"),
 						.layout = {
-							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.Z), .height=CLAY_SIZING_FIXED(windowSize.Height) }
+							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.z), .height=CLAY_SIZING_FIXED(windowSize.height) }
 						},
 						.floating = {
 							.attachTo = CLAY_ATTACH_TO_PARENT,
@@ -1279,7 +1277,7 @@ bool AppFrame(void)
 					}) { }
 					CLAY({.id = CLAY_ID("SafeInsetBottom"),
 						.layout = {
-							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.Width), .height=CLAY_SIZING_FIXED(screenMargins.W) }
+							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.width), .height=CLAY_SIZING_FIXED(screenMargins.w) }
 						},
 						.floating = {
 							.attachTo = CLAY_ATTACH_TO_PARENT,
@@ -1361,9 +1359,9 @@ bool AppFrame(void)
 			// |      Pig UI System Test      |
 			// +==============================+
 			#if BUILD_WITH_PIG_UI
-			// if (mouse.scrollDelta.Y != 0.0f)
+			// if (mouse.scrollDelta.y != 0.0f)
 			// {
-			// 	uiScale *= 1.0f + (0.1f * (mouse.scrollDelta.Y > 0 ? 1.0f : -1.0f));
+			// 	uiScale *= 1.0f + (0.1f * (mouse.scrollDelta.y > 0 ? 1.0f : -1.0f));
 			// 	uiScale = RoundR32(uiScale * 100.0f) / 100.0f;
 			// 	uiScale = ClampR32(uiScale, 0.1f, 10.0f);
 			// }
@@ -1529,7 +1527,7 @@ bool AppFrame(void)
 					{
 						// Texture* texture = ((tIndex%2) == 0) ? &mipmapTexture : &noMipmapTexture;
 						UIELEM_LEAF({ .id = UiIdLitIndex("SheetCell", tIndex),
-							// .sizing = UI_FIXED2(texture->Width*0.3f, texture->Height*0.3f),
+							// .sizing = UI_FIXED2(texture->width*0.3f, texture->height*0.3f),
 							.color=ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
 							// .texture = texture,
 							.spriteSheet = &testSheet,
@@ -1586,7 +1584,7 @@ bool AppFrame(void)
 						{
 							DrawRectangle(cmd->rectangle.rectangle, cmd->color);
 						}
-						if (cmd->rectangle.borderThickness.X > 0.0f)
+						if (cmd->rectangle.borderThickness.x > 0.0f)
 						{
 							DrawRectangleOutlineSidesEx(
 								cmd->rectangle.rectangle,
@@ -1696,7 +1694,7 @@ bool AppFrame(void)
 			GfxSystem_ImguiEndFrame(&gfx, imgui);
 			#endif
 			
-			// rec testTextureRec = MakeRec(windowSize.Width - (r32)testTexture.Width, windowSize.Height - (r32)testTexture.Height, (r32)testTexture.Width, (r32)testTexture.Height);
+			// rec testTextureRec = MakeRec(windowSize.width - (r32)testTexture.width, windowSize.height - (r32)testTexture.height, (r32)testTexture.width, (r32)testTexture.height);
 			// DrawTexturedRectangle(testTextureRec, White, &testTexture);
 			
 			// +==============================+

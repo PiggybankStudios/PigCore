@@ -106,15 +106,15 @@ PEXP void RenderPerfGraph(PerfGraph* graph, GfxSystem* gfxSystem, PigFont* font,
 	
 	uxx numFrames = PerfGraphGetNumFilledFrames(graph);
 	r32 graphHeightMs = graph->targetFrameTime*2; //TODO: Make this dynamic
-	r32 graphFrameWidthPx = graphRec.Width / PERF_GRAPH_NUM_FRAMES;
-	r32 graphRecRight = graphRec.X + graphRec.Width;
-	r32 graphRecBottom = graphRec.Y + graphRec.Height;
+	r32 graphFrameWidthPx = graphRec.width / PERF_GRAPH_NUM_FRAMES;
+	r32 graphRecRight = graphRec.x + graphRec.width;
+	r32 graphRecBottom = graphRec.y + graphRec.height;
 	
 	GfxSystem_DrawRectangle(gfxSystem, graphRec, ColorWithAlpha(MonokaiDarkGray, 0.5f));
 	
-	r32 targetFrameTimeHeight = (graph->targetFrameTime / graphHeightMs) * graphRec.Height;
+	r32 targetFrameTimeHeight = (graph->targetFrameTime / graphHeightMs) * graphRec.height;
 	GfxSystem_DrawLine(gfxSystem,
-		MakeV2(graphRec.X, graphRecBottom - targetFrameTimeHeight),
+		MakeV2(graphRec.x, graphRecBottom - targetFrameTimeHeight),
 		MakeV2(graphRecRight, graphRecBottom - targetFrameTimeHeight),
 		1.0f, MonokaiBlue
 	);
@@ -132,8 +132,8 @@ PEXP void RenderPerfGraph(PerfGraph* graph, GfxSystem* gfxSystem, PigFont* font,
 		averageFrame.renderMs += frame->renderMs;
 		if (prevFrame != nullptr)
 		{
-			r32 frameUpdateHeight = (frame->updateMs / graphHeightMs) * graphRec.Height;
-			r32 prevFrameUpdateHeight = (prevFrame->updateMs / graphHeightMs) * graphRec.Height;
+			r32 frameUpdateHeight = (frame->updateMs / graphHeightMs) * graphRec.height;
+			r32 prevFrameUpdateHeight = (prevFrame->updateMs / graphHeightMs) * graphRec.height;
 			v2 updateLineStart = MakeV2(
 				graphRecRight - ((numFrames - (frameIndex-1)) * graphFrameWidthPx),
 				graphRecBottom - prevFrameUpdateHeight
@@ -158,8 +158,8 @@ PEXP void RenderPerfGraph(PerfGraph* graph, GfxSystem* gfxSystem, PigFont* font,
 		PerfGraphFrame* frame = &graph->frames[fifoIndex];
 		if (prevFrame != nullptr)
 		{
-			r32 frameFlipHeight = ((frame->updateMs + frame->renderMs) / graphHeightMs) * graphRec.Height;
-			r32 prevFrameFlipHeight = ((prevFrame->updateMs + prevFrame->renderMs) / graphHeightMs) * graphRec.Height;
+			r32 frameFlipHeight = ((frame->updateMs + frame->renderMs) / graphHeightMs) * graphRec.height;
+			r32 prevFrameFlipHeight = ((prevFrame->updateMs + prevFrame->renderMs) / graphHeightMs) * graphRec.height;
 			v2 updateLineStart = MakeV2(
 				graphRecRight - ((numFrames - (frameIndex-1)) * graphFrameWidthPx),
 				graphRecBottom - prevFrameFlipHeight
@@ -179,23 +179,23 @@ PEXP void RenderPerfGraph(PerfGraph* graph, GfxSystem* gfxSystem, PigFont* font,
 	
 	GfxSystem_BindFontEx(gfxSystem, font, fontSize, fontStyle);
 	r32 lineHeight = GfxSystem_GetLineHeight(gfxSystem);
-	v2 textPos = MakeV2(graphRec.X + graphRec.Width + 5, graphRec.Y + GfxSystem_GetMaxAscend(gfxSystem));
+	v2 textPos = MakeV2(graphRec.x + graphRec.width + 5, graphRec.y + GfxSystem_GetMaxAscend(gfxSystem));
 	
 	Str8 fpsText = ScratchPrintStr("%.0f FPS", 1000.0f / (averageFrame.updateMs + averageFrame.renderMs));
 	TextMeasure fpsTextMeasure = MeasureTextEx(font, fontSize, fontStyle, false, 0.0f, fpsText);
-	v2 fpsTextPos = MakeV2(graphRec.X + graphRec.Width - 5 - fpsTextMeasure.Width, textPos.Y + 2);
+	v2 fpsTextPos = MakeV2(graphRec.x + graphRec.width - 5 - fpsTextMeasure.width, textPos.y + 2);
 	// GfxSystem_DrawText(gfxSystem, fpsText, AddV2(fpsTextPos, MakeV2( 0,  1)), Black);
 	// GfxSystem_DrawText(gfxSystem, fpsText, AddV2(fpsTextPos, MakeV2( 0, -1)), Black);
 	// GfxSystem_DrawText(gfxSystem, fpsText, AddV2(fpsTextPos, MakeV2( 1,  0)), Black);
 	// GfxSystem_DrawText(gfxSystem, fpsText, AddV2(fpsTextPos, MakeV2(-1,  0)), Black);
 	GfxSystem_DrawText(gfxSystem, fpsText, fpsTextPos, MonokaiWhite);
 	
-	// GfxSystem_DrawText(gfxSystem, ScratchPrintStr("%llu frames", numFrames), textPos, MonokaiWhite); textPos.Y += lineHeight;
+	// GfxSystem_DrawText(gfxSystem, ScratchPrintStr("%llu frames", numFrames), textPos, MonokaiWhite); textPos.y += lineHeight;
 	
 	if (finalFrame != nullptr)
 	{
-		GfxSystem_DrawTextEmbossed(gfxSystem, ScratchPrintStr("GPU %.1fms", finalFrame->renderMs), textPos, MonokaiMagenta); textPos.Y += lineHeight;
-		GfxSystem_DrawTextEmbossed(gfxSystem, ScratchPrintStr("CPU %.1fms", finalFrame->updateMs), textPos, MonokaiYellow); textPos.Y += lineHeight;
+		GfxSystem_DrawTextEmbossed(gfxSystem, ScratchPrintStr("GPU %.1fms", finalFrame->renderMs), textPos, MonokaiMagenta); textPos.y += lineHeight;
+		GfxSystem_DrawTextEmbossed(gfxSystem, ScratchPrintStr("CPU %.1fms", finalFrame->updateMs), textPos, MonokaiYellow); textPos.y += lineHeight;
 	}
 	
 	ScratchEnd(scratch);

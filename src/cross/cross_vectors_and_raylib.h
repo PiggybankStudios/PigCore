@@ -66,13 +66,13 @@ NOTE: This file may need to be included manually if you include raylib.h AFTER i
 
 #if PIG_CORE_IMPLEMENTATION
 
-PEXPI Vector2 Vector2FromV2(v2 vector) { return rlMakeVector2(vector.X, vector.Y); }
+PEXPI Vector2 Vector2FromV2(v2 vector) { return rlMakeVector2(vector.x, vector.y); }
 PEXPI v2 V2FromVector2(Vector2 vector) { return MakeV2(vector.x, vector.y); }
 
-PEXPI Vector3 Vector3FromV3(v3 vector) { return rlMakeVector3(vector.X, vector.Y, vector.Z); }
+PEXPI Vector3 Vector3FromV3(v3 vector) { return rlMakeVector3(vector.x, vector.y, vector.z); }
 PEXPI v3 V3FromVector3(Vector3 vector) { return MakeV3(vector.x, vector.y, vector.z); }
 
-PEXPI Vector4 Vector4FromV4(v4 vector) { return rlMakeVector4(vector.X, vector.Y, vector.Z, vector.W); }
+PEXPI Vector4 Vector4FromV4(v4 vector) { return rlMakeVector4(vector.x, vector.y, vector.z, vector.w); }
 PEXPI v4 V4FromVector4(Vector4 vector) { return MakeV4(vector.x, vector.y, vector.z, vector.w); }
 
 #endif //PIG_CORE_IMPLEMENTATION

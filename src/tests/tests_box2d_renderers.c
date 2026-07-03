@@ -195,14 +195,14 @@ void DebugBox2d_Sokol_DrawSolidPolygon(b2Transform transform, const b2Vec2* vert
 		v2 center = Mul(Add(verticesV2[0], verticesV2[2]), 0.5f);
 		r32 width = LengthV2(Sub(verticesV2[1], verticesV2[0]));
 		r32 height = LengthV2(Sub(verticesV2[3], verticesV2[0]));
-		r32 rotation = AtanR32(verticesV2[1].Y - verticesV2[0].Y, verticesV2[1].X - verticesV2[0].X);
-		DrawObb2(MakeObb2(center.X, center.Y, width, height, rotation), Color32FromB2HexColor(color));
+		r32 rotation = AtanR32(verticesV2[1].y - verticesV2[0].y, verticesV2[1].x - verticesV2[0].x);
+		DrawObb2(MakeObb2(center.x, center.y, width, height, rotation), Color32FromB2HexColor(color));
 	}
 	else
 	{
 		for (int vIndex = 0; vIndex < vertexCount; vIndex++)
 		{
-			DrawRectangle(NewRecCentered(verticesV2[vIndex].X, verticesV2[vIndex].Y, 2, 2), Color32FromB2HexColor(color));
+			DrawRectangle(NewRecCentered(verticesV2[vIndex].x, verticesV2[vIndex].y, 2, 2), Color32FromB2HexColor(color));
 		}
 	}
 	ScratchEnd(scratch);

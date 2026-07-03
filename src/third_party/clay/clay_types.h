@@ -55,9 +55,9 @@ CLAY_PACKED_ENUM Clay_LayoutDirection
 typedef CLAY_PACKED_ENUM Clay_LayoutAlignmentX Clay_LayoutAlignmentX;
 CLAY_PACKED_ENUM Clay_LayoutAlignmentX
 {
-	// (Default) Aligns child elements to the left hand side of this element, offset by padding.Width.left
+	// (Default) Aligns child elements to the left hand side of this element, offset by padding.width.left
 	CLAY_ALIGN_X_LEFT,
-	// Aligns child elements to the right hand side of this element, offset by padding.Width.right
+	// Aligns child elements to the right hand side of this element, offset by padding.width.right
 	CLAY_ALIGN_X_RIGHT,
 	// Aligns child elements horizontally to the center of this element
 	CLAY_ALIGN_X_CENTER,
@@ -67,9 +67,9 @@ CLAY_PACKED_ENUM Clay_LayoutAlignmentX
 typedef CLAY_PACKED_ENUM Clay_LayoutAlignmentY Clay_LayoutAlignmentY;
 CLAY_PACKED_ENUM Clay_LayoutAlignmentY
 {
-	// (Default) Aligns child elements to the top of this element, offset by padding.Width.top
+	// (Default) Aligns child elements to the top of this element, offset by padding.width.top
 	CLAY_ALIGN_Y_TOP,
-	// Aligns child elements to the bottom of this element, offset by padding.Width.bottom
+	// Aligns child elements to the bottom of this element, offset by padding.width.bottom
 	CLAY_ALIGN_Y_BOTTOM,
 	// Aligns child elements vertiically to the center of this element
 	CLAY_ALIGN_Y_CENTER,
