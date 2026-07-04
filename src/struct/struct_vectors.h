@@ -625,6 +625,110 @@ plex Vec4R64Slice
 	PIG_CORE_INLINE void AlignV4dToV4d(v4d* vectorOut, v4d alignmentScale);
 	PIG_CORE_INLINE void AlignV4dTo(v4d* vectorOut, r64 alignmentScale);
 	PIG_CORE_INLINE void AlignV4d(v4d* vectorOut);
+	#if LANGUAGE_IS_CPP
+	PIG_CORE_INLINE v2  Add(v2  left, v2  right);
+	PIG_CORE_INLINE v3  Add(v3  left, v3  right);
+	PIG_CORE_INLINE v4  Add(v4  left, v4  right);
+	PIG_CORE_INLINE v2i Add(v2i left, v2i right);
+	PIG_CORE_INLINE v3i Add(v3i left, v3i right);
+	PIG_CORE_INLINE v4i Add(v4i left, v4i right);
+	PIG_CORE_INLINE v2d Add(v2d left, v2d right);
+	PIG_CORE_INLINE v3d Add(v3d left, v3d right);
+	PIG_CORE_INLINE v4d Add(v4d left, v4d right);
+	PIG_CORE_INLINE v2  Sub(v2  left, v2  right);
+	PIG_CORE_INLINE v3  Sub(v3  left, v3  right);
+	PIG_CORE_INLINE v4  Sub(v4  left, v4  right);
+	PIG_CORE_INLINE v2i Sub(v2i left, v2i right);
+	PIG_CORE_INLINE v3i Sub(v3i left, v3i right);
+	PIG_CORE_INLINE v4i Sub(v4i left, v4i right);
+	PIG_CORE_INLINE v2d Sub(v2d left, v2d right);
+	PIG_CORE_INLINE v3d Sub(v3d left, v3d right);
+	PIG_CORE_INLINE v4d Sub(v4d left, v4d right);
+	PIG_CORE_INLINE v2  Mul(v2  left, v2  right);
+	PIG_CORE_INLINE v3  Mul(v3  left, v3  right);
+	PIG_CORE_INLINE v4  Mul(v4  left, v4  right);
+	PIG_CORE_INLINE v2i Mul(v2i left, v2i right);
+	PIG_CORE_INLINE v3i Mul(v3i left, v3i right);
+	PIG_CORE_INLINE v4i Mul(v4i left, v4i right);
+	PIG_CORE_INLINE v2d Mul(v2d left, v2d right);
+	PIG_CORE_INLINE v3d Mul(v3d left, v3d right);
+	PIG_CORE_INLINE v4d Mul(v4d left, v4d right);
+	PIG_CORE_INLINE v2  Div(v2  left, v2  right);
+	PIG_CORE_INLINE v3  Div(v3  left, v3  right);
+	PIG_CORE_INLINE v4  Div(v4  left, v4  right);
+	PIG_CORE_INLINE v2i Div(v2i left, v2i right);
+	PIG_CORE_INLINE v3i Div(v3i left, v3i right);
+	PIG_CORE_INLINE v4i Div(v4i left, v4i right);
+	PIG_CORE_INLINE v2d Div(v2d left, v2d right);
+	PIG_CORE_INLINE v3d Div(v3d left, v3d right);
+	PIG_CORE_INLINE v4d Div(v4d left, v4d right);
+	PIG_CORE_INLINE v2  Mul(v2  vector, r32 scalar);
+	PIG_CORE_INLINE v3  Mul(v3  vector, r32 scalar);
+	PIG_CORE_INLINE v4  Mul(v4  vector, r32 scalar);
+	PIG_CORE_INLINE v2i Mul(v2i vector, i32 scalar);
+	PIG_CORE_INLINE v3i Mul(v3i vector, i32 scalar);
+	PIG_CORE_INLINE v4i Mul(v4i vector, i32 scalar);
+	PIG_CORE_INLINE v2d Mul(v2d vector, r64 scalar);
+	PIG_CORE_INLINE v3d Mul(v3d vector, r64 scalar);
+	PIG_CORE_INLINE v4d Mul(v4d vector, r64 scalar);
+	PIG_CORE_INLINE v2  Div(v2  vector, r32 scalar);
+	PIG_CORE_INLINE v3  Div(v3  vector, r32 scalar);
+	PIG_CORE_INLINE v4  Div(v4  vector, r32 scalar);
+	PIG_CORE_INLINE v2i Div(v2i vector, i32 scalar);
+	PIG_CORE_INLINE v3i Div(v3i vector, i32 scalar);
+	PIG_CORE_INLINE v4i Div(v4i vector, i32 scalar);
+	PIG_CORE_INLINE v2d Div(v2d vector, r64 scalar);
+	PIG_CORE_INLINE v3d Div(v3d vector, r64 scalar);
+	PIG_CORE_INLINE v4d Div(v4d vector, r64 scalar);
+	PIG_CORE_INLINE r32 LengthSquared(v2  vector);
+	PIG_CORE_INLINE r32 LengthSquared(v3  vector);
+	PIG_CORE_INLINE r32 LengthSquared(v4  vector);
+	PIG_CORE_INLINE i32 LengthSquared(v2i vector);
+	PIG_CORE_INLINE i32 LengthSquared(v3i vector);
+	PIG_CORE_INLINE i32 LengthSquared(v4i vector);
+	PIG_CORE_INLINE r64 LengthSquared(v2d vector);
+	PIG_CORE_INLINE r64 LengthSquared(v3d vector);
+	PIG_CORE_INLINE r64 LengthSquared(v4d vector);
+	PIG_CORE_INLINE r32 Length(v2  vector);
+	PIG_CORE_INLINE r32 Length(v3  vector);
+	PIG_CORE_INLINE r32 Length(v4  vector);
+	PIG_CORE_INLINE r32 Length(v2i vector);
+	PIG_CORE_INLINE r32 Length(v3i vector);
+	PIG_CORE_INLINE r32 Length(v4i vector);
+	PIG_CORE_INLINE r64 Length(v2d vector);
+	PIG_CORE_INLINE r64 Length(v3d vector);
+	PIG_CORE_INLINE r64 Length(v4d vector);
+	PIG_CORE_INLINE v2  Normalize(v2  vector);
+	PIG_CORE_INLINE v3  Normalize(v3  vector);
+	PIG_CORE_INLINE v4  Normalize(v4  vector);
+	PIG_CORE_INLINE v2d Normalize(v2d vector);
+	PIG_CORE_INLINE v3d Normalize(v3d vector);
+	PIG_CORE_INLINE v4d Normalize(v4d vector);
+	PIG_CORE_INLINE r32 Dot(v2  left, v2  right);
+	PIG_CORE_INLINE r32 Dot(v3  left, v3  right);
+	PIG_CORE_INLINE r32 Dot(v4  left, v4  right);
+	PIG_CORE_INLINE r32 Dot(v2i left, v2i right);
+	PIG_CORE_INLINE r32 Dot(v3i left, v3i right);
+	PIG_CORE_INLINE r32 Dot(v4i left, v4i right);
+	PIG_CORE_INLINE r64 Dot(v2d left, v2d right);
+	PIG_CORE_INLINE r64 Dot(v3d left, v3d right);
+	PIG_CORE_INLINE r64 Dot(v4d left, v4d right);
+	PIG_CORE_INLINE v2  Lerp(v2  left, v2  right, r32 amount);
+	PIG_CORE_INLINE v3  Lerp(v3  left, v3  right, r32 amount);
+	PIG_CORE_INLINE v4  Lerp(v4  left, v4  right, r32 amount);
+	PIG_CORE_INLINE v2d Lerp(v2d left, v2d right, r32 amount);
+	PIG_CORE_INLINE v3d Lerp(v3d left, v3d right, r32 amount);
+	PIG_CORE_INLINE v4d Lerp(v4d left, v4d right, r32 amount);
+	PIG_CORE_INLINE bool AreEqual(v2  left, v2  right);
+	PIG_CORE_INLINE bool AreEqual(v3  left, v3  right);
+	PIG_CORE_INLINE bool AreEqual(v4  left, v4  right);
+	PIG_CORE_INLINE bool AreEqual(v2i left, v2i right);
+	PIG_CORE_INLINE bool AreEqual(v3i left, v3i right);
+	PIG_CORE_INLINE bool AreEqual(v4i left, v4i right);
+	PIG_CORE_INLINE bool AreEqual(v2d left, v2d right);
+	PIG_CORE_INLINE bool AreEqual(v3d left, v3d right);
+	PIG_CORE_INLINE bool AreEqual(v4d left, v4d right);
+	#endif //LANGUAGE_IS_CPP
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -990,15 +1094,15 @@ PEXPI bool operator==(v2d left, v2d right) { return (left.x == right.x && left.y
 PEXPI bool operator==(v3d left, v3d right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
 PEXPI bool operator==(v4d left, v4d right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
 
-PEXPI bool operator!=(v2  left, v2  right) { return (left.x != right.x && left.y != right.y); }
-PEXPI bool operator!=(v3  left, v3  right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
-PEXPI bool operator!=(v4  left, v4  right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
-PEXPI bool operator!=(v2i left, v2i right) { return (left.x != right.x && left.y != right.y); }
-PEXPI bool operator!=(v3i left, v3i right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
-PEXPI bool operator!=(v4i left, v4i right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
-PEXPI bool operator!=(v2d left, v2d right) { return (left.x != right.x && left.y != right.y); }
-PEXPI bool operator!=(v3d left, v3d right) { return (left.x != right.x && left.y != right.y && left.z != right.z); }
-PEXPI bool operator!=(v4d left, v4d right) { return (left.x != right.x && left.y != right.y && left.z != right.z && left.w != right.w); }
+PEXPI bool operator!=(v2  left, v2  right) { return (left.x != right.x || left.y != right.y); }
+PEXPI bool operator!=(v3  left, v3  right) { return (left.x != right.x || left.y != right.y || left.z != right.z); }
+PEXPI bool operator!=(v4  left, v4  right) { return (left.x != right.x || left.y != right.y || left.z != right.z || left.w != right.w); }
+PEXPI bool operator!=(v2i left, v2i right) { return (left.x != right.x || left.y != right.y); }
+PEXPI bool operator!=(v3i left, v3i right) { return (left.x != right.x || left.y != right.y || left.z != right.z); }
+PEXPI bool operator!=(v4i left, v4i right) { return (left.x != right.x || left.y != right.y || left.z != right.z || left.w != right.w); }
+PEXPI bool operator!=(v2d left, v2d right) { return (left.x != right.x || left.y != right.y); }
+PEXPI bool operator!=(v3d left, v3d right) { return (left.x != right.x || left.y != right.y || left.z != right.z); }
+PEXPI bool operator!=(v4d left, v4d right) { return (left.x != right.x || left.y != right.y || left.z != right.z || left.w != right.w); }
 
 #endif //LANGUAGE_IS_CPP
 
@@ -1120,9 +1224,9 @@ PEXPI v2d NormalizeV2d(v2d vec2d) { return ShrinkV2d(vec2d, LengthV2d(vec2d)); }
 PEXPI v3d NormalizeV3d(v3d vec3d) { return ShrinkV3d(vec3d, LengthV3d(vec3d)); }
 PEXPI v4d NormalizeV4d(v4d vec4d) { return ShrinkV4d(vec4d, LengthV4d(vec4d)); }
 
-PEXPI v2   LerpV2(v2  start, v2  end, r32 amount) { return AddV2(ScaleV2(start, (1.0f - amount)), ScaleV2(end, amount)); }
-PEXPI v3   LerpV3(v3  start, v3  end, r32 amount) { return AddV3(ScaleV3(start, (1.0f - amount)), ScaleV3(end, amount)); }
-PEXPI v4   LerpV4(v4  start, v4  end, r32 amount) { return AddV4(ScaleV4(start, (1.0f - amount)), ScaleV4(end, amount)); }
+PEXPI v2   LerpV2(v2  start, v2  end, r32 amount) { return  AddV2(ScaleV2(start, (1.0f - amount)),  ScaleV2(end, amount)); }
+PEXPI v3   LerpV3(v3  start, v3  end, r32 amount) { return  AddV3(ScaleV3(start, (1.0f - amount)),  ScaleV3(end, amount)); }
+PEXPI v4   LerpV4(v4  start, v4  end, r32 amount) { return  AddV4(ScaleV4(start, (1.0f - amount)),  ScaleV4(end, amount)); }
 PEXPI v2d LerpV2d(v2d start, v2d end, r64 amount) { return AddV2d(ScaleV2d(start, (1.0 - amount)), ScaleV2d(end, amount)); }
 PEXPI v3d LerpV3d(v3d start, v3d end, r64 amount) { return AddV3d(ScaleV3d(start, (1.0 - amount)), ScaleV3d(end, amount)); }
 PEXPI v4d LerpV4d(v4d start, v4d end, r64 amount) { return AddV4d(ScaleV4d(start, (1.0 - amount)), ScaleV4d(end, amount)); }
@@ -1134,62 +1238,62 @@ PEXPI v4d LerpV4d(v4d start, v4d end, r64 amount) { return AddV4d(ScaleV4d(start
 // They actually take floating point vector types, even though the name reads like
 // functions that take integer vector types. They RETURN integer vector types, and
 // that's what the i suffix is meant to convey.
-PEXPI v2 FloorV2(v2 vec2) { return MakeV2(FloorR32(vec2.x), FloorR32(vec2.y)); }
-PEXPI v3 FloorV3(v3 vec3) { return MakeV3(FloorR32(vec3.x), FloorR32(vec3.y), FloorR32(vec3.z)); }
-PEXPI v4 FloorV4(v4 vec4) { return MakeV4(FloorR32(vec4.x), FloorR32(vec4.y), FloorR32(vec4.z), FloorR32(vec4.w)); }
-PEXPI v2i FloorV2i(v2 vec2) { return MakeV2i(FloorR32i(vec2.x), FloorR32i(vec2.y)); }
-PEXPI v3i FloorV3i(v3 vec3) { return MakeV3i(FloorR32i(vec3.x), FloorR32i(vec3.y), FloorR32i(vec3.z)); }
-PEXPI v4i FloorV4i(v4 vec4) { return MakeV4i(FloorR32i(vec4.x), FloorR32i(vec4.y), FloorR32i(vec4.z), FloorR32i(vec4.w)); }
-PEXPI v2d FloorV2d(v2d vec2d) { return MakeV2d(FloorR64(vec2d.x), FloorR64(vec2d.y)); }
-PEXPI v3d FloorV3d(v3d vec3d) { return MakeV3d(FloorR64(vec3d.x), FloorR64(vec3d.y), FloorR64(vec3d.z)); }
-PEXPI v4d FloorV4d(v4d vec4d) { return MakeV4d(FloorR64(vec4d.x), FloorR64(vec4d.y), FloorR64(vec4d.z), FloorR64(vec4d.w)); }
+PEXPI v2  FloorV2(v2    vec2)  { return  MakeV2(FloorR32(vec2.x), FloorR32(vec2.y)); }
+PEXPI v3  FloorV3(v3    vec3)  { return  MakeV3(FloorR32(vec3.x), FloorR32(vec3.y), FloorR32(vec3.z)); }
+PEXPI v4  FloorV4(v4    vec4)  { return  MakeV4(FloorR32(vec4.x), FloorR32(vec4.y), FloorR32(vec4.z), FloorR32(vec4.w)); }
+PEXPI v2i FloorV2i(v2   vec2)  { return MakeV2i(FloorR32i(vec2.x), FloorR32i(vec2.y)); }
+PEXPI v3i FloorV3i(v3   vec3)  { return MakeV3i(FloorR32i(vec3.x), FloorR32i(vec3.y), FloorR32i(vec3.z)); }
+PEXPI v4i FloorV4i(v4   vec4)  { return MakeV4i(FloorR32i(vec4.x), FloorR32i(vec4.y), FloorR32i(vec4.z), FloorR32i(vec4.w)); }
+PEXPI v2d FloorV2d(v2d  vec2d) { return MakeV2d(FloorR64(vec2d.x), FloorR64(vec2d.y)); }
+PEXPI v3d FloorV3d(v3d  vec3d) { return MakeV3d(FloorR64(vec3d.x), FloorR64(vec3d.y), FloorR64(vec3d.z)); }
+PEXPI v4d FloorV4d(v4d  vec4d) { return MakeV4d(FloorR64(vec4d.x), FloorR64(vec4d.y), FloorR64(vec4d.z), FloorR64(vec4d.w)); }
 PEXPI v2i FloorV2di(v2d vec2d) { return MakeV2i((i32)FloorR64i(vec2d.x), (i32)FloorR64i(vec2d.y)); }
 PEXPI v3i FloorV3di(v3d vec3d) { return MakeV3i((i32)FloorR64i(vec3d.x), (i32)FloorR64i(vec3d.y), (i32)FloorR64i(vec3d.z)); }
 PEXPI v4i FloorV4di(v4d vec4d) { return MakeV4i((i32)FloorR64i(vec4d.x), (i32)FloorR64i(vec4d.y), (i32)FloorR64i(vec4d.z), (i32)FloorR64i(vec4d.w)); }
 
-PEXPI v2 CeilV2(v2 vec2) { return MakeV2(CeilR32(vec2.x), CeilR32(vec2.y)); }
-PEXPI v3 CeilV3(v3 vec3) { return MakeV3(CeilR32(vec3.x), CeilR32(vec3.y), CeilR32(vec3.z)); }
-PEXPI v4 CeilV4(v4 vec4) { return MakeV4(CeilR32(vec4.x), CeilR32(vec4.y), CeilR32(vec4.z), CeilR32(vec4.w)); }
-PEXPI v2i CeilV2i(v2 vec2) { return MakeV2i(CeilR32i(vec2.x), CeilR32i(vec2.y)); }
-PEXPI v3i CeilV3i(v3 vec3) { return MakeV3i(CeilR32i(vec3.x), CeilR32i(vec3.y), CeilR32i(vec3.z)); }
-PEXPI v4i CeilV4i(v4 vec4) { return MakeV4i(CeilR32i(vec4.x), CeilR32i(vec4.y), CeilR32i(vec4.z), CeilR32i(vec4.w)); }
-PEXPI v2d CeilV2d(v2d vec2d) { return MakeV2d(CeilR64(vec2d.x), CeilR64(vec2d.y)); }
-PEXPI v3d CeilV3d(v3d vec3d) { return MakeV3d(CeilR64(vec3d.x), CeilR64(vec3d.y), CeilR64(vec3d.z)); }
-PEXPI v4d CeilV4d(v4d vec4d) { return MakeV4d(CeilR64(vec4d.x), CeilR64(vec4d.y), CeilR64(vec4d.z), CeilR64(vec4d.w)); }
+PEXPI v2  CeilV2(v2    vec2)  { return  MakeV2(CeilR32(vec2.x), CeilR32(vec2.y)); }
+PEXPI v3  CeilV3(v3    vec3)  { return  MakeV3(CeilR32(vec3.x), CeilR32(vec3.y), CeilR32(vec3.z)); }
+PEXPI v4  CeilV4(v4    vec4)  { return  MakeV4(CeilR32(vec4.x), CeilR32(vec4.y), CeilR32(vec4.z), CeilR32(vec4.w)); }
+PEXPI v2i CeilV2i(v2   vec2)  { return MakeV2i(CeilR32i(vec2.x), CeilR32i(vec2.y)); }
+PEXPI v3i CeilV3i(v3   vec3)  { return MakeV3i(CeilR32i(vec3.x), CeilR32i(vec3.y), CeilR32i(vec3.z)); }
+PEXPI v4i CeilV4i(v4   vec4)  { return MakeV4i(CeilR32i(vec4.x), CeilR32i(vec4.y), CeilR32i(vec4.z), CeilR32i(vec4.w)); }
+PEXPI v2d CeilV2d(v2d  vec2d) { return MakeV2d(CeilR64(vec2d.x), CeilR64(vec2d.y)); }
+PEXPI v3d CeilV3d(v3d  vec3d) { return MakeV3d(CeilR64(vec3d.x), CeilR64(vec3d.y), CeilR64(vec3d.z)); }
+PEXPI v4d CeilV4d(v4d  vec4d) { return MakeV4d(CeilR64(vec4d.x), CeilR64(vec4d.y), CeilR64(vec4d.z), CeilR64(vec4d.w)); }
 PEXPI v2i CeilV2di(v2d vec2d) { return MakeV2i((i32)CeilR64i(vec2d.x), (i32)CeilR64i(vec2d.y)); }
 PEXPI v3i CeilV3di(v3d vec3d) { return MakeV3i((i32)CeilR64i(vec3d.x), (i32)CeilR64i(vec3d.y), (i32)CeilR64i(vec3d.z)); }
 PEXPI v4i CeilV4di(v4d vec4d) { return MakeV4i((i32)CeilR64i(vec4d.x), (i32)CeilR64i(vec4d.y), (i32)CeilR64i(vec4d.z), (i32)CeilR64i(vec4d.w)); }
 
-PEXPI v2 RoundV2(v2 vec2) { return MakeV2(RoundR32(vec2.x), RoundR32(vec2.y)); }
-PEXPI v3 RoundV3(v3 vec3) { return MakeV3(RoundR32(vec3.x), RoundR32(vec3.y), RoundR32(vec3.z)); }
-PEXPI v4 RoundV4(v4 vec4) { return MakeV4(RoundR32(vec4.x), RoundR32(vec4.y), RoundR32(vec4.z), RoundR32(vec4.w)); }
-PEXPI v2i RoundV2i(v2 vec2) { return MakeV2i(RoundR32i(vec2.x), RoundR32i(vec2.y)); }
-PEXPI v3i RoundV3i(v3 vec3) { return MakeV3i(RoundR32i(vec3.x), RoundR32i(vec3.y), RoundR32i(vec3.z)); }
-PEXPI v4i RoundV4i(v4 vec4) { return MakeV4i(RoundR32i(vec4.x), RoundR32i(vec4.y), RoundR32i(vec4.z), RoundR32i(vec4.w)); }
-PEXPI v2d RoundV2d(v2d vec2d) { return MakeV2d(RoundR64(vec2d.x), RoundR64(vec2d.y)); }
-PEXPI v3d RoundV3d(v3d vec3d) { return MakeV3d(RoundR64(vec3d.x), RoundR64(vec3d.y), RoundR64(vec3d.z)); }
-PEXPI v4d RoundV4d(v4d vec4d) { return MakeV4d(RoundR64(vec4d.x), RoundR64(vec4d.y), RoundR64(vec4d.z), RoundR64(vec4d.w)); }
+PEXPI v2  RoundV2(v2    vec2)  { return  MakeV2(RoundR32(vec2.x), RoundR32(vec2.y)); }
+PEXPI v3  RoundV3(v3    vec3)  { return  MakeV3(RoundR32(vec3.x), RoundR32(vec3.y), RoundR32(vec3.z)); }
+PEXPI v4  RoundV4(v4    vec4)  { return  MakeV4(RoundR32(vec4.x), RoundR32(vec4.y), RoundR32(vec4.z), RoundR32(vec4.w)); }
+PEXPI v2i RoundV2i(v2   vec2)  { return MakeV2i(RoundR32i(vec2.x), RoundR32i(vec2.y)); }
+PEXPI v3i RoundV3i(v3   vec3)  { return MakeV3i(RoundR32i(vec3.x), RoundR32i(vec3.y), RoundR32i(vec3.z)); }
+PEXPI v4i RoundV4i(v4   vec4)  { return MakeV4i(RoundR32i(vec4.x), RoundR32i(vec4.y), RoundR32i(vec4.z), RoundR32i(vec4.w)); }
+PEXPI v2d RoundV2d(v2d  vec2d) { return MakeV2d(RoundR64(vec2d.x), RoundR64(vec2d.y)); }
+PEXPI v3d RoundV3d(v3d  vec3d) { return MakeV3d(RoundR64(vec3d.x), RoundR64(vec3d.y), RoundR64(vec3d.z)); }
+PEXPI v4d RoundV4d(v4d  vec4d) { return MakeV4d(RoundR64(vec4d.x), RoundR64(vec4d.y), RoundR64(vec4d.z), RoundR64(vec4d.w)); }
 PEXPI v2i RoundV2di(v2d vec2d) { return MakeV2i((i32)RoundR64i(vec2d.x), (i32)RoundR64i(vec2d.y)); }
 PEXPI v3i RoundV3di(v3d vec3d) { return MakeV3i((i32)RoundR64i(vec3d.x), (i32)RoundR64i(vec3d.y), (i32)RoundR64i(vec3d.z)); }
 PEXPI v4i RoundV4di(v4d vec4d) { return MakeV4i((i32)RoundR64i(vec4d.x), (i32)RoundR64i(vec4d.y), (i32)RoundR64i(vec4d.z), (i32)RoundR64i(vec4d.w)); }
 
-PEXPI v2 MinV2(v2 left, v2 right) { return MakeV2(MinR32(left.x, right.x), MinR32(left.y, right.y)); }
-PEXPI v3 MinV3(v3 left, v3 right) { return MakeV3(MinR32(left.x, right.x), MinR32(left.y, right.y), MinR32(left.z, right.z)); }
-PEXPI v4 MinV4(v4 left, v4 right) { return MakeV4(MinR32(left.x, right.x), MinR32(left.y, right.y), MinR32(left.z, right.z), MinR32(left.w, right.w)); }
+PEXPI v2  MinV2(v2   left, v2  right) { return  MakeV2(MinR32(left.x, right.x), MinR32(left.y, right.y)); }
+PEXPI v3  MinV3(v3   left, v3  right) { return  MakeV3(MinR32(left.x, right.x), MinR32(left.y, right.y), MinR32(left.z, right.z)); }
+PEXPI v4  MinV4(v4   left, v4  right) { return  MakeV4(MinR32(left.x, right.x), MinR32(left.y, right.y), MinR32(left.z, right.z), MinR32(left.w, right.w)); }
 PEXPI v2d MinV2d(v2d left, v2d right) { return MakeV2d(MinR64(left.x, right.x), MinR64(left.y, right.y)); }
 PEXPI v3d MinV3d(v3d left, v3d right) { return MakeV3d(MinR64(left.x, right.x), MinR64(left.y, right.y), MinR64(left.z, right.z)); }
 PEXPI v4d MinV4d(v4d left, v4d right) { return MakeV4d(MinR64(left.x, right.x), MinR64(left.y, right.y), MinR64(left.z, right.z), MinR64(left.w, right.w)); }
 
-PEXPI v2 MaxV2(v2 left, v2 right) { return MakeV2(MaxR32(left.x, right.x), MaxR32(left.y, right.y)); }
-PEXPI v3 MaxV3(v3 left, v3 right) { return MakeV3(MaxR32(left.x, right.x), MaxR32(left.y, right.y), MaxR32(left.z, right.z)); }
-PEXPI v4 MaxV4(v4 left, v4 right) { return MakeV4(MaxR32(left.x, right.x), MaxR32(left.y, right.y), MaxR32(left.z, right.z), MaxR32(left.w, right.w)); }
+PEXPI v2  MaxV2(v2   left, v2  right) { return  MakeV2(MaxR32(left.x, right.x), MaxR32(left.y, right.y)); }
+PEXPI v3  MaxV3(v3   left, v3  right) { return  MakeV3(MaxR32(left.x, right.x), MaxR32(left.y, right.y), MaxR32(left.z, right.z)); }
+PEXPI v4  MaxV4(v4   left, v4  right) { return  MakeV4(MaxR32(left.x, right.x), MaxR32(left.y, right.y), MaxR32(left.z, right.z), MaxR32(left.w, right.w)); }
 PEXPI v2d MaxV2d(v2d left, v2d right) { return MakeV2d(MaxR64(left.x, right.x), MaxR64(left.y, right.y)); }
 PEXPI v3d MaxV3d(v3d left, v3d right) { return MakeV3d(MaxR64(left.x, right.x), MaxR64(left.y, right.y), MaxR64(left.z, right.z)); }
 PEXPI v4d MaxV4d(v4d left, v4d right) { return MakeV4d(MaxR64(left.x, right.x), MaxR64(left.y, right.y), MaxR64(left.z, right.z), MaxR64(left.w, right.w)); }
 
-PEXPI v2 AbsV2(v2 vec2) { return MakeV2(AbsR32(vec2.x), AbsR32(vec2.y)); }
-PEXPI v3 AbsV3(v3 vec3) { return MakeV3(AbsR32(vec3.x), AbsR32(vec3.y), AbsR32(vec3.z)); }
-PEXPI v4 AbsV4(v4 vec4) { return MakeV4(AbsR32(vec4.x), AbsR32(vec4.y), AbsR32(vec4.z), AbsR32(vec4.w)); }
+PEXPI v2  AbsV2(v2   vec2)  { return  MakeV2(AbsR32(vec2.x), AbsR32(vec2.y)); }
+PEXPI v3  AbsV3(v3   vec3)  { return  MakeV3(AbsR32(vec3.x), AbsR32(vec3.y), AbsR32(vec3.z)); }
+PEXPI v4  AbsV4(v4   vec4)  { return  MakeV4(AbsR32(vec4.x), AbsR32(vec4.y), AbsR32(vec4.z), AbsR32(vec4.w)); }
 PEXPI v2i AbsV2i(v2i vec2i) { return MakeV2i(AbsI32(vec2i.x), AbsI32(vec2i.y)); }
 PEXPI v3i AbsV3i(v3i vec3i) { return MakeV3i(AbsI32(vec3i.x), AbsI32(vec3i.y), AbsI32(vec3i.z)); }
 PEXPI v4i AbsV4i(v4i vec4i) { return MakeV4i(AbsI32(vec4i.x), AbsI32(vec4i.y), AbsI32(vec4i.z), AbsI32(vec4i.w)); }
@@ -1197,9 +1301,9 @@ PEXPI v2d AbsV2d(v2d vec2d) { return MakeV2d(AbsR64(vec2d.x), AbsR64(vec2d.y)); 
 PEXPI v3d AbsV3d(v3d vec3d) { return MakeV3d(AbsR64(vec3d.x), AbsR64(vec3d.y), AbsR64(vec3d.z)); }
 PEXPI v4d AbsV4d(v4d vec4d) { return MakeV4d(AbsR64(vec4d.x), AbsR64(vec4d.y), AbsR64(vec4d.z), AbsR64(vec4d.w)); }
 
-PEXPI v2 ClampV2(v2 vec2, v2 minVec2, v2 maxVec2) { return MakeV2(ClampR32(vec2.x, minVec2.x, maxVec2.x), ClampR32(vec2.y, minVec2.y, maxVec2.y)); }
-PEXPI v3 ClampV3(v3 vec3, v3 minVec3, v3 maxVec3) { return MakeV3(ClampR32(vec3.x, minVec3.x, maxVec3.x), ClampR32(vec3.y, minVec3.y, maxVec3.y), ClampR32(vec3.z, minVec3.z, maxVec3.z)); }
-PEXPI v4 ClampV4(v4 vec4, v4 minVec4, v4 maxVec4) { return MakeV4(ClampR32(vec4.x, minVec4.x, maxVec4.x), ClampR32(vec4.y, minVec4.y, maxVec4.y), ClampR32(vec4.z, minVec4.z, maxVec4.z), ClampR32(vec4.w, minVec4.w, maxVec4.w)); }
+PEXPI v2  ClampV2(v2   vec2,  v2  minVec2,  v2  maxVec2)  { return  MakeV2(ClampR32(vec2.x, minVec2.x, maxVec2.x), ClampR32(vec2.y, minVec2.y, maxVec2.y)); }
+PEXPI v3  ClampV3(v3   vec3,  v3  minVec3,  v3  maxVec3)  { return  MakeV3(ClampR32(vec3.x, minVec3.x, maxVec3.x), ClampR32(vec3.y, minVec3.y, maxVec3.y), ClampR32(vec3.z, minVec3.z, maxVec3.z)); }
+PEXPI v4  ClampV4(v4   vec4,  v4  minVec4,  v4  maxVec4)  { return  MakeV4(ClampR32(vec4.x, minVec4.x, maxVec4.x), ClampR32(vec4.y, minVec4.y, maxVec4.y), ClampR32(vec4.z, minVec4.z, maxVec4.z), ClampR32(vec4.w, minVec4.w, maxVec4.w)); }
 PEXPI v2i ClampV2i(v2i vec2i, v2i minVec2i, v2i maxVec2i) { return MakeV2i(ClampI32(vec2i.x, minVec2i.x, maxVec2i.x), ClampI32(vec2i.y, minVec2i.y, maxVec2i.y)); }
 PEXPI v3i ClampV3i(v3i vec3i, v3i minVec3i, v3i maxVec3i) { return MakeV3i(ClampI32(vec3i.x, minVec3i.x, maxVec3i.x), ClampI32(vec3i.y, minVec3i.y, maxVec3i.y), ClampI32(vec3i.z, minVec3i.z, maxVec3i.z)); }
 PEXPI v4i ClampV4i(v4i vec4i, v4i minVec4i, v4i maxVec4i) { return MakeV4i(ClampI32(vec4i.x, minVec4i.x, maxVec4i.x), ClampI32(vec4i.y, minVec4i.y, maxVec4i.y), ClampI32(vec4i.z, minVec4i.z, maxVec4i.z), ClampI32(vec4i.w, minVec4i.w, maxVec4i.w)); }
@@ -1333,6 +1437,130 @@ PEXPI void AlignV4dToV4d(v4d* vectorOut, v4d alignmentScale)
 }
 PEXPI void AlignV4dTo(v4d* vectorOut, r64 alignmentScale) { AlignV4dToV4d(vectorOut, FillV4d(alignmentScale)); }
 PEXPI void AlignV4d(v4d* vectorOut) { AlignV4dToV4d(vectorOut, V4d_One); }
+
+// +--------------------------------------------------------------+
+// |                    C++ Function Overloads                    |
+// +--------------------------------------------------------------+
+//NOTE: See cross_vectors_quaternion_matrices_and_rectangles.h for C macros that use C23 _Generic to generate the type-specific function name
+#if LANGUAGE_IS_CPP
+
+PEXPI v2  Add(v2  left, v2  right) { return AddV2(left,  right); }
+PEXPI v3  Add(v3  left, v3  right) { return AddV3(left,  right); }
+PEXPI v4  Add(v4  left, v4  right) { return AddV4(left,  right); }
+PEXPI v2i Add(v2i left, v2i right) { return AddV2i(left, right); }
+PEXPI v3i Add(v3i left, v3i right) { return AddV3i(left, right); }
+PEXPI v4i Add(v4i left, v4i right) { return AddV4i(left, right); }
+PEXPI v2d Add(v2d left, v2d right) { return AddV2d(left, right); }
+PEXPI v3d Add(v3d left, v3d right) { return AddV3d(left, right); }
+PEXPI v4d Add(v4d left, v4d right) { return AddV4d(left, right); }
+
+PEXPI v2  Sub(v2  left, v2  right) { return SubV2(left,  right); }
+PEXPI v3  Sub(v3  left, v3  right) { return SubV3(left,  right); }
+PEXPI v4  Sub(v4  left, v4  right) { return SubV4(left,  right); }
+PEXPI v2i Sub(v2i left, v2i right) { return SubV2i(left, right); }
+PEXPI v3i Sub(v3i left, v3i right) { return SubV3i(left, right); }
+PEXPI v4i Sub(v4i left, v4i right) { return SubV4i(left, right); }
+PEXPI v2d Sub(v2d left, v2d right) { return SubV2d(left, right); }
+PEXPI v3d Sub(v3d left, v3d right) { return SubV3d(left, right); }
+PEXPI v4d Sub(v4d left, v4d right) { return SubV4d(left, right); }
+
+PEXPI v2  Mul(v2  left, v2  right) { return MulV2(left,  right); }
+PEXPI v3  Mul(v3  left, v3  right) { return MulV3(left,  right); }
+PEXPI v4  Mul(v4  left, v4  right) { return MulV4(left,  right); }
+PEXPI v2i Mul(v2i left, v2i right) { return MulV2i(left, right); }
+PEXPI v3i Mul(v3i left, v3i right) { return MulV3i(left, right); }
+PEXPI v4i Mul(v4i left, v4i right) { return MulV4i(left, right); }
+PEXPI v2d Mul(v2d left, v2d right) { return MulV2d(left, right); }
+PEXPI v3d Mul(v3d left, v3d right) { return MulV3d(left, right); }
+PEXPI v4d Mul(v4d left, v4d right) { return MulV4d(left, right); }
+
+PEXPI v2  Div(v2  left, v2  right) { return DivV2(left,  right); }
+PEXPI v3  Div(v3  left, v3  right) { return DivV3(left,  right); }
+PEXPI v4  Div(v4  left, v4  right) { return DivV4(left,  right); }
+PEXPI v2i Div(v2i left, v2i right) { return DivV2i(left, right); }
+PEXPI v3i Div(v3i left, v3i right) { return DivV3i(left, right); }
+PEXPI v4i Div(v4i left, v4i right) { return DivV4i(left, right); }
+PEXPI v2d Div(v2d left, v2d right) { return DivV2d(left, right); }
+PEXPI v3d Div(v3d left, v3d right) { return DivV3d(left, right); }
+PEXPI v4d Div(v4d left, v4d right) { return DivV4d(left, right); }
+
+PEXPI v2  Mul(v2  vector, r32 scalar) { return ScaleV2(vector,  scalar); }
+PEXPI v3  Mul(v3  vector, r32 scalar) { return ScaleV3(vector,  scalar); }
+PEXPI v4  Mul(v4  vector, r32 scalar) { return ScaleV4(vector,  scalar); }
+PEXPI v2i Mul(v2i vector, i32 scalar) { return ScaleV2i(vector, scalar); }
+PEXPI v3i Mul(v3i vector, i32 scalar) { return ScaleV3i(vector, scalar); }
+PEXPI v4i Mul(v4i vector, i32 scalar) { return ScaleV4i(vector, scalar); }
+PEXPI v2d Mul(v2d vector, r64 scalar) { return ScaleV2d(vector, scalar); }
+PEXPI v3d Mul(v3d vector, r64 scalar) { return ScaleV3d(vector, scalar); }
+PEXPI v4d Mul(v4d vector, r64 scalar) { return ScaleV4d(vector, scalar); }
+
+PEXPI v2  Div(v2  vector, r32 scalar) { return ShrinkV2(vector,  scalar); }
+PEXPI v3  Div(v3  vector, r32 scalar) { return ShrinkV3(vector,  scalar); }
+PEXPI v4  Div(v4  vector, r32 scalar) { return ShrinkV4(vector,  scalar); }
+PEXPI v2i Div(v2i vector, i32 scalar) { return ShrinkV2i(vector, scalar); }
+PEXPI v3i Div(v3i vector, i32 scalar) { return ShrinkV3i(vector, scalar); }
+PEXPI v4i Div(v4i vector, i32 scalar) { return ShrinkV4i(vector, scalar); }
+PEXPI v2d Div(v2d vector, r64 scalar) { return ShrinkV2d(vector, scalar); }
+PEXPI v3d Div(v3d vector, r64 scalar) { return ShrinkV3d(vector, scalar); }
+PEXPI v4d Div(v4d vector, r64 scalar) { return ShrinkV4d(vector, scalar); }
+
+PEXPI r32 LengthSquared(v2  vector) { return LengthSquaredV2(vector);  }
+PEXPI r32 LengthSquared(v3  vector) { return LengthSquaredV3(vector);  }
+PEXPI r32 LengthSquared(v4  vector) { return LengthSquaredV4(vector);  }
+PEXPI i32 LengthSquared(v2i vector) { return LengthSquaredV2i(vector); }
+PEXPI i32 LengthSquared(v3i vector) { return LengthSquaredV3i(vector); }
+PEXPI i32 LengthSquared(v4i vector) { return LengthSquaredV4i(vector); }
+PEXPI r64 LengthSquared(v2d vector) { return LengthSquaredV2d(vector); }
+PEXPI r64 LengthSquared(v3d vector) { return LengthSquaredV3d(vector); }
+PEXPI r64 LengthSquared(v4d vector) { return LengthSquaredV4d(vector); }
+
+PEXPI r32 Length(v2  vector) { return LengthV2(vector);  }
+PEXPI r32 Length(v3  vector) { return LengthV3(vector);  }
+PEXPI r32 Length(v4  vector) { return LengthV4(vector);  }
+PEXPI r32 Length(v2i vector) { return LengthV2i(vector); }
+PEXPI r32 Length(v3i vector) { return LengthV3i(vector); }
+PEXPI r32 Length(v4i vector) { return LengthV4i(vector); }
+PEXPI r64 Length(v2d vector) { return LengthV2d(vector); }
+PEXPI r64 Length(v3d vector) { return LengthV3d(vector); }
+PEXPI r64 Length(v4d vector) { return LengthV4d(vector); }
+
+PEXPI v2  Normalize(v2  vector) { return NormalizeV2(vector);  }
+PEXPI v3  Normalize(v3  vector) { return NormalizeV3(vector);  }
+PEXPI v4  Normalize(v4  vector) { return NormalizeV4(vector);  }
+//NOTE: No Normalize functions for integer vector types
+PEXPI v2d Normalize(v2d vector) { return NormalizeV2d(vector); }
+PEXPI v3d Normalize(v3d vector) { return NormalizeV3d(vector); }
+PEXPI v4d Normalize(v4d vector) { return NormalizeV4d(vector); }
+
+PEXPI r32 Dot(v2  left, v2  right) { return DotV2(left,  right); }
+PEXPI r32 Dot(v3  left, v3  right) { return DotV3(left,  right); }
+PEXPI r32 Dot(v4  left, v4  right) { return DotV4(left,  right); }
+PEXPI r32 Dot(v2i left, v2i right) { return DotV2i(left, right); }
+PEXPI r32 Dot(v3i left, v3i right) { return DotV3i(left, right); }
+PEXPI r32 Dot(v4i left, v4i right) { return DotV4i(left, right); }
+PEXPI r64 Dot(v2d left, v2d right) { return DotV2d(left, right); }
+PEXPI r64 Dot(v3d left, v3d right) { return DotV3d(left, right); }
+PEXPI r64 Dot(v4d left, v4d right) { return DotV4d(left, right); }
+
+PEXPI v2  Lerp(v2  left, v2  right, r32 amount) { return LerpV2(left,  right, amount); }
+PEXPI v3  Lerp(v3  left, v3  right, r32 amount) { return LerpV3(left,  right, amount); }
+PEXPI v4  Lerp(v4  left, v4  right, r32 amount) { return LerpV4(left,  right, amount); }
+//NOTE: No Lerp functions for integer vector types
+PEXPI v2d Lerp(v2d left, v2d right, r32 amount) { return LerpV2d(left, right, amount); }
+PEXPI v3d Lerp(v3d left, v3d right, r32 amount) { return LerpV3d(left, right, amount); }
+PEXPI v4d Lerp(v4d left, v4d right, r32 amount) { return LerpV4d(left, right, amount); }
+
+PEXPI bool AreEqual(v2  left, v2  right) { return AreEqualV2(left,  right); }
+PEXPI bool AreEqual(v3  left, v3  right) { return AreEqualV3(left,  right); }
+PEXPI bool AreEqual(v4  left, v4  right) { return AreEqualV4(left,  right); }
+PEXPI bool AreEqual(v2i left, v2i right) { return AreEqualV2i(left, right); }
+PEXPI bool AreEqual(v3i left, v3i right) { return AreEqualV3i(left, right); }
+PEXPI bool AreEqual(v4i left, v4i right) { return AreEqualV4i(left, right); }
+PEXPI bool AreEqual(v2d left, v2d right) { return AreEqualV2d(left, right); }
+PEXPI bool AreEqual(v3d left, v3d right) { return AreEqualV3d(left, right); }
+PEXPI bool AreEqual(v4d left, v4d right) { return AreEqualV4d(left, right); }
+
+#endif
 
 #endif //PIG_CORE_IMPLEMENTATION
 

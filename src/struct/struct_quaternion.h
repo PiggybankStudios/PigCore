@@ -92,6 +92,32 @@ typedef Quaternion_R64 quatd;
 	PIG_CORE_INLINE quatd NormalizeQuatd(quatd quaternion);
 	PIG_CORE_INLINE quatd LerpQuatd(quatd start, quatd end, r64 amount);
 	PIG_CORE_INLINE quatd SlerpQuatd(quatd start, quatd end, r64 amount);
+	#if LANGUAGE_IS_CPP
+	PIG_CORE_INLINE quat  Add(quat  left, quat  right);
+	PIG_CORE_INLINE quatd Add(quatd left, quatd right);
+	PIG_CORE_INLINE quat  Sub(quat  left, quat  right);
+	PIG_CORE_INLINE quatd Sub(quatd left, quatd right);
+	PIG_CORE_INLINE quat  Mul(quat  left, quat  right);
+	PIG_CORE_INLINE quatd Mul(quatd left, quatd right);
+	PIG_CORE_INLINE quat  Mul(quat  quaternion, r32 scalar);
+	PIG_CORE_INLINE quatd Mul(quatd quaternion, r64 scalar);
+	PIG_CORE_INLINE quat  Div(quat  quaternion, r32 scalar);
+	PIG_CORE_INLINE quatd Div(quatd quaternion, r64 scalar);
+	PIG_CORE_INLINE r32 LengthSquared(quat  quaternion);
+	// TODO: PIG_CORE_INLINE r64 LengthSquared(quatd quaternion);
+	PIG_CORE_INLINE r32 Length(quat  quaternion);
+	// TODO: PIG_CORE_INLINE r64 Length(quatd quaternion);
+	PIG_CORE_INLINE quat  Normalize(quat  quaternion);
+	PIG_CORE_INLINE quatd Normalize(quatd quaternion);
+	PIG_CORE_INLINE r32 Dot(quat  left, quat  right);
+	PIG_CORE_INLINE r64 Dot(quatd left, quatd right);
+	PIG_CORE_INLINE quat  Lerp(quat  left, quat  right, r32 amount);
+	PIG_CORE_INLINE quatd Lerp(quatd left, quatd right, r64 amount);
+	PIG_CORE_INLINE quat  Slerp(quat  left, quat  right, r32 amount);
+	PIG_CORE_INLINE quatd Slerp(quatd left, quatd right, r64 amount);
+	PIG_CORE_INLINE bool AreEqual(quat  left, quat  right);
+	PIG_CORE_INLINE bool AreEqual(quatd left, quatd right);
+	#endif //LANGUAGE_IS_CPP
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -436,6 +462,72 @@ PEXPI quatd SlerpQuatd(quatd start, quatd end, r64 amount)
 	
 	return result;
 }
+
+// +--------------------------------------------------------------+
+// |                    C++ Operator Overloads                    |
+// +--------------------------------------------------------------+
+#if LANGUAGE_IS_CPP
+PEXPI quat operator+(quat left, quat right) { return AddQuat(left, right); }
+PEXPI quat operator-(quat left, quat right) { return SubQuat(left, right); }
+PEXPI quat operator*(quat left, quat right) { return MulQuat(left, right); }
+//NOTE: No operator/(quat, quat)
+PEXPI quat operator*(quat quaternion, r32 scalar) { return ScaleQuat(quaternion, scalar); }
+PEXPI quat operator/(quat quaternion, r32 scalar) { return ShrinkQuat(quaternion, scalar); }
+PEXPI quat operator+=(quat& left, quat right) { return left = AddQuat(left, right); }
+PEXPI quat operator-=(quat& left, quat right) { return left = SubQuat(left, right); }
+PEXPI quat operator*=(quat& left, quat right) { return left = MulQuat(left, right); }
+//NOTE: No operator/=(quat, quat)
+PEXPI quat operator*=(quat& quaternion, r32 scalar) { return quaternion = ScaleQuat(quaternion, scalar); }
+PEXPI quat operator/=(quat& quaternion, r32 scalar) { return quaternion = ShrinkQuat(quaternion, scalar); }
+PEXPI bool operator==(quat left, quat right) { return AreEqualQuat(left, right); }
+PEXPI bool operator!=(quat left, quat right) { return !AreEqualQuat(left, right); }
+#endif //LANGUAGE_IS_CPP
+
+// +--------------------------------------------------------------+
+// |                    C++ Function Overloads                    |
+// +--------------------------------------------------------------+
+//NOTE: See cross_vectors_quaternion_matrices_and_rectangles.h for C macros that use C23 _Generic to generate the type-specific function name
+#if LANGUAGE_IS_CPP
+
+PEXPI quat  Add(quat  left, quat  right) { return  AddQuat(left, right); }
+PEXPI quatd Add(quatd left, quatd right) { return AddQuatd(left, right); }
+
+PEXPI quat  Sub(quat  left, quat  right) { return  SubQuat(left, right); }
+PEXPI quatd Sub(quatd left, quatd right) { return SubQuatd(left, right); }
+
+PEXPI quat  Mul(quat  left, quat  right) { return  MulQuat(left, right); }
+PEXPI quatd Mul(quatd left, quatd right) { return MulQuatd(left, right); }
+
+//NOTE: No Div(quat, quat) or Div(quatd, quatd)
+
+PEXPI quat  Mul(quat  quaternion, r32 scalar) { return  ScaleQuat(quaternion, scalar); }
+PEXPI quatd Mul(quatd quaternion, r64 scalar) { return ScaleQuatd(quaternion, scalar); }
+
+PEXPI quat  Div(quat  quaternion, r32 scalar) { return  ShrinkQuat(quaternion, scalar); }
+PEXPI quatd Div(quatd quaternion, r64 scalar) { return ShrinkQuatd(quaternion, scalar); }
+
+PEXPI r32 LengthSquared(quat  quaternion) { return  LengthSquaredQuat(quaternion); }
+// PEXPI r64 LengthSquared(quatd quaternion) { return LengthSquaredQuatd(quaternion); } //TODO: Uncomment these once the function is implemented above
+
+PEXPI r32 Length(quat  quaternion) { return  LengthQuat(quaternion); }
+// PEXPI r64 Length(quatd quaternion) { return LengthQuatd(quaternion); } //TODO: Uncomment these once the function is implemented above
+
+PEXPI quat  Normalize(quat  quaternion) { return  NormalizeQuat(quaternion); }
+PEXPI quatd Normalize(quatd quaternion) { return NormalizeQuatd(quaternion); }
+
+PEXPI r32 Dot(quat  left, quat  right) { return  DotQuat(left, right); }
+PEXPI r64 Dot(quatd left, quatd right) { return DotQuatd(left, right); }
+
+PEXPI quat  Lerp(quat  left, quat  right, r32 amount) { return  LerpQuat(left, right, amount); }
+PEXPI quatd Lerp(quatd left, quatd right, r64 amount) { return LerpQuatd(left, right, amount); }
+
+PEXPI quat  Slerp(quat  left, quat  right, r32 amount) { return  SlerpQuat(left, right, amount); }
+PEXPI quatd Slerp(quatd left, quatd right, r64 amount) { return SlerpQuatd(left, right, amount); }
+
+PEXPI bool AreEqual(quat  left, quat  right) { return  AreEqualQuat(left, right); }
+PEXPI bool AreEqual(quatd left, quatd right) { return AreEqualQuatd(left, right); }
+
+#endif //LANGUAGE_IS_CPP
 
 #endif //PIG_CORE_IMPLEMENTATION
 

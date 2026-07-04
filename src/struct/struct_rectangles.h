@@ -366,6 +366,76 @@ typedef Obb3D_R64 obb3d;
 	PIG_CORE_INLINE recd RelativeRecd(recd reference, recd subReference, recd other);
 	PIG_CORE_INLINE box RelativeBox(box reference, box subReference, box other);
 	PIG_CORE_INLINE boxd RelativeBoxd(boxd reference, boxd subReference, boxd other);
+	#if LANGUAGE_IS_CPP
+	PIG_CORE_INLINE rec   Add(rec   rectangle,   v2  offset);
+	PIG_CORE_INLINE reci  Add(reci  rectangle,   v2i offset);
+	PIG_CORE_INLINE recd  Add(recd  rectangle,   v2d offset);
+	PIG_CORE_INLINE box   Add(box   boundingBox, v3  offset);
+	PIG_CORE_INLINE boxi  Add(boxi  boundingBox, v3i offset);
+	PIG_CORE_INLINE boxd  Add(boxd  boundingBox, v3d offset);
+	PIG_CORE_INLINE obb2  Add(obb2  boundingBox, v2  offset);
+	PIG_CORE_INLINE obb2d Add(obb2d boundingBox, v2d offset);
+	PIG_CORE_INLINE obb3  Add(obb3  boundingBox, v3  offset);
+	PIG_CORE_INLINE obb3d Add(obb3d boundingBox, v3d offset);
+	PIG_CORE_INLINE rec   Sub(rec   rectangle,   v2  offset);
+	PIG_CORE_INLINE reci  Sub(reci  rectangle,   v2i offset);
+	PIG_CORE_INLINE recd  Sub(recd  rectangle,   v2d offset);
+	PIG_CORE_INLINE box   Sub(box   boundingBox, v3  offset);
+	PIG_CORE_INLINE boxi  Sub(boxi  boundingBox, v3i offset);
+	PIG_CORE_INLINE boxd  Sub(boxd  boundingBox, v3d offset);
+	PIG_CORE_INLINE obb2  Sub(obb2  boundingBox, v2  offset);
+	PIG_CORE_INLINE obb2d Sub(obb2d boundingBox, v2d offset);
+	PIG_CORE_INLINE obb3  Sub(obb3  boundingBox, v3  offset);
+	PIG_CORE_INLINE obb3d Sub(obb3d boundingBox, v3d offset);
+	PIG_CORE_INLINE rec   Mul(rec   rectangle,   r32 scalar);
+	PIG_CORE_INLINE reci  Mul(reci  rectangle,   i32 scalar);
+	PIG_CORE_INLINE recd  Mul(recd  rectangle,   r64 scalar);
+	PIG_CORE_INLINE box   Mul(box   boundingBox, r32 scalar);
+	PIG_CORE_INLINE boxi  Mul(boxi  boundingBox, i32 scalar);
+	PIG_CORE_INLINE boxd  Mul(boxd  boundingBox, r64 scalar);
+	PIG_CORE_INLINE obb2  Mul(obb2  boundingBox, r32 scalar);
+	PIG_CORE_INLINE obb2d Mul(obb2d boundingBox, r64 scalar);
+	PIG_CORE_INLINE obb3  Mul(obb3  boundingBox, r32 scalar);
+	PIG_CORE_INLINE obb3d Mul(obb3d boundingBox, r64 scalar);
+	PIG_CORE_INLINE rec   Div(rec   rectangle,   r32 scalar);
+	PIG_CORE_INLINE reci  Div(reci  rectangle,   i32 scalar);
+	PIG_CORE_INLINE recd  Div(recd  rectangle,   r64 scalar);
+	PIG_CORE_INLINE box   Div(box   boundingBox, r32 scalar);
+	PIG_CORE_INLINE boxi  Div(boxi  boundingBox, i32 scalar);
+	PIG_CORE_INLINE boxd  Div(boxd  boundingBox, r64 scalar);
+	PIG_CORE_INLINE obb2  Div(obb2  boundingBox, r32 scalar);
+	PIG_CORE_INLINE obb2d Div(obb2d boundingBox, r64 scalar);
+	PIG_CORE_INLINE obb3  Div(obb3  boundingBox, r32 scalar);
+	PIG_CORE_INLINE obb3d Div(obb3d boundingBox, r64 scalar);
+	PIG_CORE_INLINE bool AreEqual(rec   left, rec   right);
+	PIG_CORE_INLINE bool AreEqual(reci  left, reci  right);
+	PIG_CORE_INLINE bool AreEqual(recd  left, recd  right);
+	PIG_CORE_INLINE bool AreEqual(box   left, box   right);
+	PIG_CORE_INLINE bool AreEqual(boxi  left, boxi  right);
+	PIG_CORE_INLINE bool AreEqual(boxd  left, boxd  right);
+	PIG_CORE_INLINE bool AreEqual(obb2  left, obb2  right);
+	PIG_CORE_INLINE bool AreEqual(obb2d left, obb2d right);
+	PIG_CORE_INLINE bool AreEqual(obb3  left, obb3  right);
+	PIG_CORE_INLINE bool AreEqual(obb3d left, obb3d right);
+	PIG_CORE_INLINE bool DoesOverlap(rec   rectangle1,   rec   rectangle2,   bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlap(reci  rectangle1,   reci  rectangle2,   bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlap(recd  rectangle1,   recd  rectangle2,   bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlap(box   boundingBox1, box   boundingBox2, bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlap(boxi  boundingBox1, boxi  boundingBox2, bool inclusive);
+	PIG_CORE_INLINE bool DoesOverlap(boxd  boundingBox1, boxd  boundingBox2, bool inclusive);
+	PIG_CORE_INLINE rec  Inflate(rec  rectangle,   r32 amount);
+	PIG_CORE_INLINE reci Inflate(reci rectangle,   i32 amount);
+	PIG_CORE_INLINE recd Inflate(recd rectangle,   r64 amount);
+	PIG_CORE_INLINE box  Inflate(box  boundingBox, r32 amount);
+	PIG_CORE_INLINE boxi Inflate(boxi boundingBox, i32 amount);
+	PIG_CORE_INLINE boxd Inflate(boxd boundingBox, r64 amount);
+	PIG_CORE_INLINE rec  Both(rec  rectangle1,   rec  rectangle2);
+	PIG_CORE_INLINE reci Both(reci rectangle1,   reci rectangle2);
+	PIG_CORE_INLINE recd Both(recd rectangle1,   recd rectangle2);
+	PIG_CORE_INLINE box  Both(box  boundingBox1, box  boundingBox2);
+	PIG_CORE_INLINE boxi Both(boxi boundingBox1, boxi boundingBox2);
+	PIG_CORE_INLINE boxd Both(boxd boundingBox1, boxd boundingBox2);
+	#endif //LANGUAGE_IS_CPP
 #endif
 
 // +--------------------------------------------------------------+
@@ -767,6 +837,123 @@ PEXPI bool AreEqualObb3d(obb3d left, obb3d right) { return (left.x == right.x &&
 //TODO: AreSimilarRec?
 
 // +--------------------------------------------------------------+
+// |                    C++ Operator Overloads                    |
+// +--------------------------------------------------------------+
+#if LANGUAGE_IS_CPP
+
+PEXPI rec   operator+(rec   rectangle,   v2  offset) { return AddRec(rectangle,     offset); }
+PEXPI reci  operator+(reci  rectangle,   v2i offset) { return AddReci(rectangle,    offset); }
+PEXPI recd  operator+(recd  rectangle,   v2d offset) { return AddRecd(rectangle,    offset); }
+PEXPI box   operator+(box   boundingBox, v3  offset) { return AddBox(boundingBox,   offset); }
+PEXPI boxi  operator+(boxi  boundingBox, v3i offset) { return AddBoxi(boundingBox,  offset); }
+PEXPI boxd  operator+(boxd  boundingBox, v3d offset) { return AddBoxd(boundingBox,  offset); }
+PEXPI obb2  operator+(obb2  boundingBox, v2  offset) { return AddObb2(boundingBox,  offset); }
+PEXPI obb2d operator+(obb2d boundingBox, v2d offset) { return AddObb2d(boundingBox, offset); }
+PEXPI obb3  operator+(obb3  boundingBox, v3  offset) { return AddObb3(boundingBox,  offset); }
+PEXPI obb3d operator+(obb3d boundingBox, v3d offset) { return AddObb3d(boundingBox, offset); }
+
+PEXPI rec   operator-(rec   rectangle,   v2  offset) { return SubRec(rectangle,     offset); }
+PEXPI reci  operator-(reci  rectangle,   v2i offset) { return SubReci(rectangle,    offset); }
+PEXPI recd  operator-(recd  rectangle,   v2d offset) { return SubRecd(rectangle,    offset); }
+PEXPI box   operator-(box   boundingBox, v3  offset) { return SubBox(boundingBox,   offset); }
+PEXPI boxi  operator-(boxi  boundingBox, v3i offset) { return SubBoxi(boundingBox,  offset); }
+PEXPI boxd  operator-(boxd  boundingBox, v3d offset) { return SubBoxd(boundingBox,  offset); }
+PEXPI obb2  operator-(obb2  boundingBox, v2  offset) { return SubObb2(boundingBox,  offset); }
+PEXPI obb2d operator-(obb2d boundingBox, v2d offset) { return SubObb2d(boundingBox, offset); }
+PEXPI obb3  operator-(obb3  boundingBox, v3  offset) { return SubObb3(boundingBox,  offset); }
+PEXPI obb3d operator-(obb3d boundingBox, v3d offset) { return SubObb3d(boundingBox, offset); }
+
+PEXPI rec   operator*(rec   rectangle,   r32 scalar) { return ScaleRec(rectangle,     scalar); }
+PEXPI reci  operator*(reci  rectangle,   i32 scalar) { return ScaleReci(rectangle,    scalar); }
+PEXPI recd  operator*(recd  rectangle,   r64 scalar) { return ScaleRecd(rectangle,    scalar); }
+PEXPI box   operator*(box   boundingBox, r32 scalar) { return ScaleBox(boundingBox,   scalar); }
+PEXPI boxi  operator*(boxi  boundingBox, i32 scalar) { return ScaleBoxi(boundingBox,  scalar); }
+PEXPI boxd  operator*(boxd  boundingBox, r64 scalar) { return ScaleBoxd(boundingBox,  scalar); }
+PEXPI obb2  operator*(obb2  boundingBox, r32 scalar) { return ScaleObb2(boundingBox,  scalar); }
+PEXPI obb2d operator*(obb2d boundingBox, r64 scalar) { return ScaleObb2d(boundingBox, scalar); }
+PEXPI obb3  operator*(obb3  boundingBox, r32 scalar) { return ScaleObb3(boundingBox,  scalar); }
+PEXPI obb3d operator*(obb3d boundingBox, r64 scalar) { return ScaleObb3d(boundingBox, scalar); }
+
+PEXPI rec   operator/(rec   rectangle,   r32 scalar) { return ShrinkRec(rectangle,     scalar); }
+PEXPI reci  operator/(reci  rectangle,   i32 scalar) { return ShrinkReci(rectangle,    scalar); }
+PEXPI recd  operator/(recd  rectangle,   r64 scalar) { return ShrinkRecd(rectangle,    scalar); }
+PEXPI box   operator/(box   boundingBox, r32 scalar) { return ShrinkBox(boundingBox,   scalar); }
+PEXPI boxi  operator/(boxi  boundingBox, i32 scalar) { return ShrinkBoxi(boundingBox,  scalar); }
+PEXPI boxd  operator/(boxd  boundingBox, r64 scalar) { return ShrinkBoxd(boundingBox,  scalar); }
+PEXPI obb2  operator/(obb2  boundingBox, r32 scalar) { return ShrinkObb2(boundingBox,  scalar); }
+PEXPI obb2d operator/(obb2d boundingBox, r64 scalar) { return ShrinkObb2d(boundingBox, scalar); }
+PEXPI obb3  operator/(obb3  boundingBox, r32 scalar) { return ShrinkObb3(boundingBox,  scalar); }
+PEXPI obb3d operator/(obb3d boundingBox, r64 scalar) { return ShrinkObb3d(boundingBox, scalar); }
+
+PEXPI rec   operator+=(rec&   rectangle,   v2  offset) { return rectangle   = AddRec(rectangle,     offset); }
+PEXPI reci  operator+=(reci&  rectangle,   v2i offset) { return rectangle   = AddReci(rectangle,    offset); }
+PEXPI recd  operator+=(recd&  rectangle,   v2d offset) { return rectangle   = AddRecd(rectangle,    offset); }
+PEXPI box   operator+=(box&   boundingBox, v3  offset) { return boundingBox = AddBox(boundingBox,   offset); }
+PEXPI boxi  operator+=(boxi&  boundingBox, v3i offset) { return boundingBox = AddBoxi(boundingBox,  offset); }
+PEXPI boxd  operator+=(boxd&  boundingBox, v3d offset) { return boundingBox = AddBoxd(boundingBox,  offset); }
+PEXPI obb2  operator+=(obb2&  boundingBox, v2  offset) { return boundingBox = AddObb2(boundingBox,  offset); }
+PEXPI obb2d operator+=(obb2d& boundingBox, v2d offset) { return boundingBox = AddObb2d(boundingBox, offset); }
+PEXPI obb3  operator+=(obb3&  boundingBox, v3  offset) { return boundingBox = AddObb3(boundingBox,  offset); }
+PEXPI obb3d operator+=(obb3d& boundingBox, v3d offset) { return boundingBox = AddObb3d(boundingBox, offset); }
+
+PEXPI rec   operator-=(rec&   rectangle,   v2  offset) { return rectangle   = SubRec(rectangle,     offset); }
+PEXPI reci  operator-=(reci&  rectangle,   v2i offset) { return rectangle   = SubReci(rectangle,    offset); }
+PEXPI recd  operator-=(recd&  rectangle,   v2d offset) { return rectangle   = SubRecd(rectangle,    offset); }
+PEXPI box   operator-=(box&   boundingBox, v3  offset) { return boundingBox = SubBox(boundingBox,   offset); }
+PEXPI boxi  operator-=(boxi&  boundingBox, v3i offset) { return boundingBox = SubBoxi(boundingBox,  offset); }
+PEXPI boxd  operator-=(boxd&  boundingBox, v3d offset) { return boundingBox = SubBoxd(boundingBox,  offset); }
+PEXPI obb2  operator-=(obb2&  boundingBox, v2  offset) { return boundingBox = SubObb2(boundingBox,  offset); }
+PEXPI obb2d operator-=(obb2d& boundingBox, v2d offset) { return boundingBox = SubObb2d(boundingBox, offset); }
+PEXPI obb3  operator-=(obb3&  boundingBox, v3  offset) { return boundingBox = SubObb3(boundingBox,  offset); }
+PEXPI obb3d operator-=(obb3d& boundingBox, v3d offset) { return boundingBox = SubObb3d(boundingBox, offset); }
+
+PEXPI rec   operator*=(rec&   rectangle,   r32 scalar) { return rectangle   = ScaleRec(rectangle,     scalar); }
+PEXPI reci  operator*=(reci&  rectangle,   i32 scalar) { return rectangle   = ScaleReci(rectangle,    scalar); }
+PEXPI recd  operator*=(recd&  rectangle,   r64 scalar) { return rectangle   = ScaleRecd(rectangle,    scalar); }
+PEXPI box   operator*=(box&   boundingBox, r32 scalar) { return boundingBox = ScaleBox(boundingBox,   scalar); }
+PEXPI boxi  operator*=(boxi&  boundingBox, i32 scalar) { return boundingBox = ScaleBoxi(boundingBox,  scalar); }
+PEXPI boxd  operator*=(boxd&  boundingBox, r64 scalar) { return boundingBox = ScaleBoxd(boundingBox,  scalar); }
+PEXPI obb2  operator*=(obb2&  boundingBox, r32 scalar) { return boundingBox = ScaleObb2(boundingBox,  scalar); }
+PEXPI obb2d operator*=(obb2d& boundingBox, r64 scalar) { return boundingBox = ScaleObb2d(boundingBox, scalar); }
+PEXPI obb3  operator*=(obb3&  boundingBox, r32 scalar) { return boundingBox = ScaleObb3(boundingBox,  scalar); }
+PEXPI obb3d operator*=(obb3d& boundingBox, r64 scalar) { return boundingBox = ScaleObb3d(boundingBox, scalar); }
+
+PEXPI rec   operator/=(rec&   rectangle,   r32 scalar) { return rectangle   = ShrinkRec(rectangle,     scalar); }
+PEXPI reci  operator/=(reci&  rectangle,   i32 scalar) { return rectangle   = ShrinkReci(rectangle,    scalar); }
+PEXPI recd  operator/=(recd&  rectangle,   r64 scalar) { return rectangle   = ShrinkRecd(rectangle,    scalar); }
+PEXPI box   operator/=(box&   boundingBox, r32 scalar) { return boundingBox = ShrinkBox(boundingBox,   scalar); }
+PEXPI boxi  operator/=(boxi&  boundingBox, i32 scalar) { return boundingBox = ShrinkBoxi(boundingBox,  scalar); }
+PEXPI boxd  operator/=(boxd&  boundingBox, r64 scalar) { return boundingBox = ShrinkBoxd(boundingBox,  scalar); }
+PEXPI obb2  operator/=(obb2&  boundingBox, r32 scalar) { return boundingBox = ShrinkObb2(boundingBox,  scalar); }
+PEXPI obb2d operator/=(obb2d& boundingBox, r64 scalar) { return boundingBox = ShrinkObb2d(boundingBox, scalar); }
+PEXPI obb3  operator/=(obb3&  boundingBox, r32 scalar) { return boundingBox = ShrinkObb3(boundingBox,  scalar); }
+PEXPI obb3d operator/=(obb3d& boundingBox, r64 scalar) { return boundingBox = ShrinkObb3d(boundingBox, scalar); }
+
+PEXPI bool operator==(rec   left, rec   right) { return AreEqualRec(left,   right); }
+PEXPI bool operator==(reci  left, reci  right) { return AreEqualReci(left,  right); }
+PEXPI bool operator==(recd  left, recd  right) { return AreEqualRecd(left,  right); }
+PEXPI bool operator==(box   left, box   right) { return AreEqualBox(left,   right); }
+PEXPI bool operator==(boxi  left, boxi  right) { return AreEqualBoxi(left,  right); }
+PEXPI bool operator==(boxd  left, boxd  right) { return AreEqualBoxd(left,  right); }
+PEXPI bool operator==(obb2  left, obb2  right) { return AreEqualObb2(left,  right); }
+PEXPI bool operator==(obb2d left, obb2d right) { return AreEqualObb2d(left, right); }
+PEXPI bool operator==(obb3  left, obb3  right) { return AreEqualObb3(left,  right); }
+PEXPI bool operator==(obb3d left, obb3d right) { return AreEqualObb3d(left, right); }
+
+PEXPI bool operator!=(rec   left, rec   right) { return !AreEqualRec(left,   right); }
+PEXPI bool operator!=(reci  left, reci  right) { return !AreEqualReci(left,  right); }
+PEXPI bool operator!=(recd  left, recd  right) { return !AreEqualRecd(left,  right); }
+PEXPI bool operator!=(box   left, box   right) { return !AreEqualBox(left,   right); }
+PEXPI bool operator!=(boxi  left, boxi  right) { return !AreEqualBoxi(left,  right); }
+PEXPI bool operator!=(boxd  left, boxd  right) { return !AreEqualBoxd(left,  right); }
+PEXPI bool operator!=(obb2  left, obb2  right) { return !AreEqualObb2(left,  right); }
+PEXPI bool operator!=(obb2d left, obb2d right) { return !AreEqualObb2d(left, right); }
+PEXPI bool operator!=(obb3  left, obb3  right) { return !AreEqualObb3(left,  right); }
+PEXPI bool operator!=(obb3d left, obb3d right) { return !AreEqualObb3d(left, right); }
+
+#endif //LANGUAGE_IS_CPP
+
+// +--------------------------------------------------------------+
 // |            Basic Manipulation and Math Functions             |
 // +--------------------------------------------------------------+
 //TODO: InvertRec/InvertXRec/InvertYRec?
@@ -1075,6 +1262,98 @@ PEXPI boxd RelativeBoxd(boxd reference, boxd subReference, boxd other)
 		other.depth * InverseLerpR64(0, reference.depth, subReference.depth)
 	);
 }
+
+// +--------------------------------------------------------------+
+// |                    C++ Function Overloads                    |
+// +--------------------------------------------------------------+
+//NOTE: See cross_vectors_quaternion_matrices_and_rectangles.h for C macros that use C23 _Generic to generate the type-specific function name
+#if LANGUAGE_IS_CPP
+
+PEXPI rec   Add(rec   rectangle,   v2  offset) { return AddRec(rectangle,     offset); }
+PEXPI reci  Add(reci  rectangle,   v2i offset) { return AddReci(rectangle,    offset); }
+PEXPI recd  Add(recd  rectangle,   v2d offset) { return AddRecd(rectangle,    offset); }
+PEXPI box   Add(box   boundingBox, v3  offset) { return AddBox(boundingBox,   offset); }
+PEXPI boxi  Add(boxi  boundingBox, v3i offset) { return AddBoxi(boundingBox,  offset); }
+PEXPI boxd  Add(boxd  boundingBox, v3d offset) { return AddBoxd(boundingBox,  offset); }
+PEXPI obb2  Add(obb2  boundingBox, v2  offset) { return AddObb2(boundingBox,  offset); }
+PEXPI obb2d Add(obb2d boundingBox, v2d offset) { return AddObb2d(boundingBox, offset); }
+PEXPI obb3  Add(obb3  boundingBox, v3  offset) { return AddObb3(boundingBox,  offset); }
+PEXPI obb3d Add(obb3d boundingBox, v3d offset) { return AddObb3d(boundingBox, offset); }
+
+PEXPI rec   Sub(rec   rectangle,   v2  offset) { return SubRec(rectangle,     offset); }
+PEXPI reci  Sub(reci  rectangle,   v2i offset) { return SubReci(rectangle,    offset); }
+PEXPI recd  Sub(recd  rectangle,   v2d offset) { return SubRecd(rectangle,    offset); }
+PEXPI box   Sub(box   boundingBox, v3  offset) { return SubBox(boundingBox,   offset); }
+PEXPI boxi  Sub(boxi  boundingBox, v3i offset) { return SubBoxi(boundingBox,  offset); }
+PEXPI boxd  Sub(boxd  boundingBox, v3d offset) { return SubBoxd(boundingBox,  offset); }
+PEXPI obb2  Sub(obb2  boundingBox, v2  offset) { return SubObb2(boundingBox,  offset); }
+PEXPI obb2d Sub(obb2d boundingBox, v2d offset) { return SubObb2d(boundingBox, offset); }
+PEXPI obb3  Sub(obb3  boundingBox, v3  offset) { return SubObb3(boundingBox,  offset); }
+PEXPI obb3d Sub(obb3d boundingBox, v3d offset) { return SubObb3d(boundingBox, offset); }
+
+PEXPI rec   Mul(rec   rectangle,   r32 scalar) { return ScaleRec(rectangle,     scalar); }
+PEXPI reci  Mul(reci  rectangle,   i32 scalar) { return ScaleReci(rectangle,    scalar); }
+PEXPI recd  Mul(recd  rectangle,   r64 scalar) { return ScaleRecd(rectangle,    scalar); }
+PEXPI box   Mul(box   boundingBox, r32 scalar) { return ScaleBox(boundingBox,   scalar); }
+PEXPI boxi  Mul(boxi  boundingBox, i32 scalar) { return ScaleBoxi(boundingBox,  scalar); }
+PEXPI boxd  Mul(boxd  boundingBox, r64 scalar) { return ScaleBoxd(boundingBox,  scalar); }
+PEXPI obb2  Mul(obb2  boundingBox, r32 scalar) { return ScaleObb2(boundingBox,  scalar); }
+PEXPI obb2d Mul(obb2d boundingBox, r64 scalar) { return ScaleObb2d(boundingBox, scalar); }
+PEXPI obb3  Mul(obb3  boundingBox, r32 scalar) { return ScaleObb3(boundingBox,  scalar); }
+PEXPI obb3d Mul(obb3d boundingBox, r64 scalar) { return ScaleObb3d(boundingBox, scalar); }
+
+PEXPI rec   Div(rec   rectangle,   r32 scalar) { return ShrinkRec(rectangle,     scalar); }
+PEXPI reci  Div(reci  rectangle,   i32 scalar) { return ShrinkReci(rectangle,    scalar); }
+PEXPI recd  Div(recd  rectangle,   r64 scalar) { return ShrinkRecd(rectangle,    scalar); }
+PEXPI box   Div(box   boundingBox, r32 scalar) { return ShrinkBox(boundingBox,   scalar); }
+PEXPI boxi  Div(boxi  boundingBox, i32 scalar) { return ShrinkBoxi(boundingBox,  scalar); }
+PEXPI boxd  Div(boxd  boundingBox, r64 scalar) { return ShrinkBoxd(boundingBox,  scalar); }
+PEXPI obb2  Div(obb2  boundingBox, r32 scalar) { return ShrinkObb2(boundingBox,  scalar); }
+PEXPI obb2d Div(obb2d boundingBox, r64 scalar) { return ShrinkObb2d(boundingBox, scalar); }
+PEXPI obb3  Div(obb3  boundingBox, r32 scalar) { return ShrinkObb3(boundingBox,  scalar); }
+PEXPI obb3d Div(obb3d boundingBox, r64 scalar) { return ShrinkObb3d(boundingBox, scalar); }
+
+PEXPI bool AreEqual(rec   left, rec   right) { return   AreEqualRec(left, right); }
+PEXPI bool AreEqual(reci  left, reci  right) { return  AreEqualReci(left, right); }
+PEXPI bool AreEqual(recd  left, recd  right) { return  AreEqualRecd(left, right); }
+PEXPI bool AreEqual(box   left, box   right) { return   AreEqualBox(left, right); }
+PEXPI bool AreEqual(boxi  left, boxi  right) { return  AreEqualBoxi(left, right); }
+PEXPI bool AreEqual(boxd  left, boxd  right) { return  AreEqualBoxd(left, right); }
+PEXPI bool AreEqual(obb2  left, obb2  right) { return  AreEqualObb2(left, right); }
+PEXPI bool AreEqual(obb2d left, obb2d right) { return AreEqualObb2d(left, right); }
+PEXPI bool AreEqual(obb3  left, obb3  right) { return  AreEqualObb3(left, right); }
+PEXPI bool AreEqual(obb3d left, obb3d right) { return AreEqualObb3d(left, right); }
+
+PEXPI bool DoesOverlap(rec   rectangle1,   rec   rectangle2,   bool inclusive) { return   DoesOverlapRec(rectangle1,   rectangle2,   inclusive); }
+PEXPI bool DoesOverlap(reci  rectangle1,   reci  rectangle2,   bool inclusive) { return  DoesOverlapReci(rectangle1,   rectangle2,   inclusive); }
+PEXPI bool DoesOverlap(recd  rectangle1,   recd  rectangle2,   bool inclusive) { return  DoesOverlapRecd(rectangle1,   rectangle2,   inclusive); }
+PEXPI bool DoesOverlap(box   boundingBox1, box   boundingBox2, bool inclusive) { return   DoesOverlapBox(boundingBox1, boundingBox2, inclusive); }
+PEXPI bool DoesOverlap(boxi  boundingBox1, boxi  boundingBox2, bool inclusive) { return  DoesOverlapBoxi(boundingBox1, boundingBox2, inclusive); }
+PEXPI bool DoesOverlap(boxd  boundingBox1, boxd  boundingBox2, bool inclusive) { return  DoesOverlapBoxd(boundingBox1, boundingBox2, inclusive); }
+//TODO: DoesOverlap(obb2, obb2)
+//TODO: DoesOverlap(obb2d, obb2d)
+//TODO: DoesOverlap(obb3, obb3)
+//TODO: DoesOverlap(obb3d, obb3d)
+
+PEXPI rec  Inflate(rec  rectangle,   r32 amount) { return  InflateRec(rectangle, amount); }
+PEXPI reci Inflate(reci rectangle,   i32 amount) { return InflateReci(rectangle, amount); }
+PEXPI recd Inflate(recd rectangle,   r64 amount) { return InflateRecd(rectangle, amount); }
+PEXPI box  Inflate(box  boundingBox, r32 amount) { return  InflateBox(boundingBox, amount); }
+PEXPI boxi Inflate(boxi boundingBox, i32 amount) { return InflateBoxi(boundingBox, amount); }
+PEXPI boxd Inflate(boxd boundingBox, r64 amount) { return InflateBoxd(boundingBox, amount); }
+//TODO: Inflate(obb2, r32 amount)
+//TODO: Inflate(obb2d, r64 amount)
+//TODO: Inflate(obb3, r32 amount)
+//TODO: Inflate(obb3d, r64 amount)
+
+PEXPI rec  Both(rec  rectangle1,   rec  rectangle2)   { return BothRec(rectangle2,    rectangle2);   }
+PEXPI reci Both(reci rectangle1,   reci rectangle2)   { return BothReci(rectangle2,   rectangle2);   }
+PEXPI recd Both(recd rectangle1,   recd rectangle2)   { return BothRecd(rectangle2,   rectangle2);   }
+PEXPI box  Both(box  boundingBox1, box  boundingBox2) { return BothBox(boundingBox2,  boundingBox2); }
+PEXPI boxi Both(boxi boundingBox1, boxi boundingBox2) { return BothBoxi(boundingBox2, boundingBox2); }
+PEXPI boxd Both(boxd boundingBox1, boxd boundingBox2) { return BothBoxd(boundingBox2, boundingBox2); }
+
+#endif //LANGUAGE_IS_CPP
 
 #endif //PIG_CORE_IMPLEMENTATION
 

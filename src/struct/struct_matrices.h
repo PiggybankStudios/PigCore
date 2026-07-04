@@ -176,6 +176,26 @@ typedef Matrix4x4_R32 mat4;
 	PIG_CORE_INLINE mat4 MakePerspectiveMat4Dx_LH(r32 fov, r32 aspectRatio, r32 zNear, r32 zFar);
 	PIG_CORE_INLINE mat4 MakeLookAtMat4_RH(v3 eyePos, v3 targetPos, v3 upVec);
 	PIG_CORE_INLINE mat4 MakeLookAtMat4_LH(v3 eyePos, v3 targetPos, v3 upVec);
+	#if LANGUAGE_IS_CPP
+	PIG_CORE_INLINE mat2 Add(mat2 left, mat2 right);
+	PIG_CORE_INLINE mat3 Add(mat3 left, mat3 right);
+	PIG_CORE_INLINE mat4 Add(mat4 left, mat4 right);
+	PIG_CORE_INLINE mat2 Sub(mat2 left, mat2 right);
+	PIG_CORE_INLINE mat3 Sub(mat3 left, mat3 right);
+	PIG_CORE_INLINE mat4 Sub(mat4 left, mat4 right);
+	PIG_CORE_INLINE mat2 Mul(mat2 left, mat2 right);
+	PIG_CORE_INLINE mat3 Mul(mat3 left, mat3 right);
+	PIG_CORE_INLINE mat4 Mul(mat4 left, mat4 right);
+	PIG_CORE_INLINE mat2 Mul(mat2 matrix, r32 scalar);
+	PIG_CORE_INLINE mat3 Mul(mat3 matrix, r32 scalar);
+	PIG_CORE_INLINE mat4 Mul(mat4 matrix, r32 scalar);
+	PIG_CORE_INLINE mat2 Div(mat2 matrix, r32 scalar);
+	PIG_CORE_INLINE mat3 Div(mat3 matrix, r32 scalar);
+	PIG_CORE_INLINE mat4 Div(mat4 matrix, r32 scalar);
+	PIG_CORE_INLINE bool AreEqual(mat2 left, mat2 right);
+	PIG_CORE_INLINE bool AreEqual(mat3 left, mat3 right);
+	PIG_CORE_INLINE bool AreEqual(mat4 left, mat4 right);
+	#endif //LANGUAGE_IS_CPP
 #endif //!PIG_CORE_IMPLEMENTATION
 
 // +--------------------------------------------------------------+
@@ -394,6 +414,28 @@ PEXPI mat2 InverseMat2(mat2 matrix)
 	return result;
 }
 
+// +==================================+
+// | Matrix2x2 C++ Operator Overloads |
+// +==================================+
+#if LANGUAGE_IS_CPP
+PEXPI mat2 operator+(mat2 left, mat2 right) { return AddMat2(left, right); }
+PEXPI mat2 operator-(mat2 left, mat2 right) { return SubMat2(left, right); }
+PEXPI mat2 operator*(mat2 left, mat2 right) { return MulMat2(left, right); }
+//NOTE: No operator/(mat2, mat2)
+PEXPI mat2 operator*(mat2 matrix, r32 scalar) { return ScaleMat2(matrix, scalar); }
+PEXPI mat2 operator/(mat2 matrix, r32 scalar) { return ShrinkMat2(matrix, scalar); }
+//TODO: Add mat2 * v2 operator?
+PEXPI mat2 operator+=(mat2& left, mat2 right) { return left = AddMat2(left, right); }
+PEXPI mat2 operator-=(mat2& left, mat2 right) { return left = SubMat2(left, right); }
+PEXPI mat2 operator*=(mat2& left, mat2 right) { return left = MulMat2(left, right); }
+//NOTE: No operator/=(mat2, mat2)
+PEXPI mat2 operator*=(mat2& matrix, r32 scalar) { return matrix = ScaleMat2(matrix, scalar); }
+PEXPI mat2 operator/=(mat2& matrix, r32 scalar) { return matrix = ShrinkMat2(matrix, scalar); }
+//TODO: Add v2 *= mat2 operator?
+PEXPI bool operator==(mat2 left, mat2 right) { return AreEqualMat2(left, right); }
+PEXPI bool operator!=(mat2 left, mat2 right) { return !AreEqualMat2(left, right); }
+#endif //LANGUAGE_IS_CPP
+
 // +--------------------------------------------------------------+
 // |                     Matrix3x3 Functions                      |
 // +--------------------------------------------------------------+
@@ -518,6 +560,28 @@ PEXPI mat3 InverseMat3(mat3 matrix)
 	
 	return TransposeMat3(result);
 }
+
+// +==================================+
+// | Matrix3x3 C++ Operator Overloads |
+// +==================================+
+#if LANGUAGE_IS_CPP
+PEXPI mat3 operator+(mat3 left, mat3 right) { return AddMat3(left, right); }
+PEXPI mat3 operator-(mat3 left, mat3 right) { return SubMat3(left, right); }
+PEXPI mat3 operator*(mat3 left, mat3 right) { return MulMat3(left, right); }
+//NOTE: No operator/(mat3, mat3)
+PEXPI mat3 operator*(mat3 matrix, r32 scalar) { return ScaleMat3(matrix, scalar); }
+PEXPI mat3 operator/(mat3 matrix, r32 scalar) { return ShrinkMat3(matrix, scalar); }
+//TODO: Add mat3 * v3 operator?
+PEXPI mat3 operator+=(mat3& left, mat3 right) { return left = AddMat3(left, right); }
+PEXPI mat3 operator-=(mat3& left, mat3 right) { return left = SubMat3(left, right); }
+PEXPI mat3 operator*=(mat3& left, mat3 right) { return left = MulMat3(left, right); }
+//NOTE: No operator/=(mat3, mat3)
+PEXPI mat3 operator*=(mat3& matrix, r32 scalar) { return matrix = ScaleMat3(matrix, scalar); }
+PEXPI mat3 operator/=(mat3& matrix, r32 scalar) { return matrix = ShrinkMat3(matrix, scalar); }
+//TODO: Add v3 *= mat3 operator?
+PEXPI bool operator==(mat3 left, mat3 right) { return AreEqualMat3(left, right); }
+PEXPI bool operator!=(mat3 left, mat3 right) { return !AreEqualMat3(left, right); }
+#endif //LANGUAGE_IS_CPP
 
 // +--------------------------------------------------------------+
 // |                     Matrix4x4 Functions                      |
@@ -749,6 +813,28 @@ PEXPI v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* w
 }
 PEXPI v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation) { return MulMat4AndV3GetW(matrix4, vec3, includeTranslation, nullptr); }
 
+// +==================================+
+// | Matrix4x4 C++ Operator Overloads |
+// +==================================+
+#if LANGUAGE_IS_CPP
+PEXPI mat4 operator+(mat4 left, mat4 right) { return AddMat4(left, right); }
+PEXPI mat4 operator-(mat4 left, mat4 right) { return SubMat4(left, right); }
+PEXPI mat4 operator*(mat4 left, mat4 right) { return MulMat4(left, right); }
+//NOTE: No operator/(mat4, mat4)
+PEXPI mat4 operator*(mat4 matrix, r32 scalar) { return ScaleMat4(matrix, scalar); }
+PEXPI mat4 operator/(mat4 matrix, r32 scalar) { return ShrinkMat4(matrix, scalar); }
+//TODO: Add mat4 * v4 operator?
+PEXPI mat4 operator+=(mat4& left, mat4 right) { return left = AddMat4(left, right); }
+PEXPI mat4 operator-=(mat4& left, mat4 right) { return left = SubMat4(left, right); }
+PEXPI mat4 operator*=(mat4& left, mat4 right) { return left = MulMat4(left, right); }
+//NOTE: No operator/=(mat4, mat4)
+PEXPI mat4 operator*=(mat4& matrix, r32 scalar) { return matrix = ScaleMat4(matrix, scalar); }
+PEXPI mat4 operator/=(mat4& matrix, r32 scalar) { return matrix = ShrinkMat4(matrix, scalar); }
+//TODO: Add v4 *= mat4 operator?
+PEXPI bool operator==(mat4 left, mat4 right) { return AreEqualMat4(left, right); }
+PEXPI bool operator!=(mat4 left, mat4 right) { return !AreEqualMat4(left, right); }
+#endif //LANGUAGE_IS_CPP
+
 // +--------------------------------------------------------------+
 // |                 Common Matrix4x4 Transforms                  |
 // +--------------------------------------------------------------+
@@ -922,6 +1008,44 @@ PEXPI mat4 MakeLookAtMat4_LH(v3 eyePos, v3 targetPos, v3 upVec)
 //TODO: #define InvertOrthographicMat4(matrix4) HMM_InvOrthographic(matrix4)
 //TODO: #define InvertPerspectiveMat4(matrix4) HMM_InvPerspective_LH(matrix4)
 //TODO: #define InvertLookAtMat4(matrix4) HMM_InvLookAt(matrix4)
+
+// +--------------------------------------------------------------+
+// |                    C++ Function Overloads                    |
+// +--------------------------------------------------------------+
+//NOTE: See cross_vectors_quaternion_matrices_and_rectangles.h for C macros that use C23 _Generic to generate the type-specific function name
+#if LANGUAGE_IS_CPP
+
+PEXPI mat2 Add(mat2 left, mat2 right) { return AddMat2(left, right); }
+PEXPI mat3 Add(mat3 left, mat3 right) { return AddMat3(left, right); }
+PEXPI mat4 Add(mat4 left, mat4 right) { return AddMat4(left, right); }
+
+PEXPI mat2 Sub(mat2 left, mat2 right) { return SubMat2(left, right); }
+PEXPI mat3 Sub(mat3 left, mat3 right) { return SubMat3(left, right); }
+PEXPI mat4 Sub(mat4 left, mat4 right) { return SubMat4(left, right); }
+
+PEXPI mat2 Mul(mat2 left, mat2 right) { return MulMat2(left, right); }
+PEXPI mat3 Mul(mat3 left, mat3 right) { return MulMat3(left, right); }
+PEXPI mat4 Mul(mat4 left, mat4 right) { return MulMat4(left, right); }
+
+//NOTE: No Div(mat2, mat2), Div(mat3, mat3), or Div(mat4, mat4)
+
+PEXPI mat2 Mul(mat2 matrix, r32 scalar) { return ScaleMat2(matrix, scalar); }
+PEXPI mat3 Mul(mat3 matrix, r32 scalar) { return ScaleMat3(matrix, scalar); }
+PEXPI mat4 Mul(mat4 matrix, r32 scalar) { return ScaleMat4(matrix, scalar); }
+
+PEXPI mat2 Div(mat2 matrix, r32 scalar) { return ShrinkMat2(matrix, scalar); }
+PEXPI mat3 Div(mat3 matrix, r32 scalar) { return ShrinkMat3(matrix, scalar); }
+PEXPI mat4 Div(mat4 matrix, r32 scalar) { return ShrinkMat4(matrix, scalar); }
+
+//TODO: Add Mul(mat2, v2) overload?
+//TODO: Add Mul(mat3, v3) overload?
+//TODO: Add Mul(mat4, v4) overload?
+
+PEXPI bool AreEqual(mat2 left, mat2 right) { return AreEqualMat2(left, right); }
+PEXPI bool AreEqual(mat3 left, mat3 right) { return AreEqualMat3(left, right); }
+PEXPI bool AreEqual(mat4 left, mat4 right) { return AreEqualMat4(left, right); }
+
+#endif //LANGUAGE_IS_CPP
 
 #endif //PIG_CORE_IMPLEMENTATION
 

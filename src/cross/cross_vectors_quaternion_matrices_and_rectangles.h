@@ -238,18 +238,18 @@ Date:   01\15\2025
 		quatd: DotQuatd                   \
 )((left), (right))
 
-#define Lerp(left, right, amount) _Generic((left),  \
-		r32: LerpR32((left), (right), (amount)),    \
-		r64: LerpR64((left), (right), (amount)),    \
-		v2: LerpV2((left), (amount), (right)),      \
-		v3: LerpV3((left), (amount), (right)),      \
-		v4: LerpV4((left), (amount), (right)),      \
-		v2d: LerpV2d((left), (right), (amount)),    \
-		v3d: LerpV3d((left), (right), (amount)),    \
-		v4d: LerpV4d((left), (right), (amount)),    \
-		quat: LerpQuat((left), (amount), (right)),  \
-		quatd: LerpQuatd((left), (right), (amount)) \
-)
+#define Lerp(left, right, amount) _Generic((left),   \
+		r32:   LerpR32,                              \
+		r64:   LerpR64,                              \
+		v2:    LerpV2,                               \
+		v3:    LerpV3,                               \
+		v4:    LerpV4,                               \
+		v2d:   LerpV2d,                              \
+		v3d:   LerpV3d,                              \
+		v4d:   LerpV4d,                              \
+		quat:  LerpQuat,                             \
+		quatd: LerpQuatd                             \
+)((left), (right), (amount))
 
 #define AreEqual(left, right) _Generic((left), \
 		v2: AreEqualV2,                        \

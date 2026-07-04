@@ -627,14 +627,69 @@ int main(int argc, char* argv[])
 	#if 0
 	{
 		v2 foobarV2 = Div(Add(V2_Half, MakeV2(0, 2)), 3.0f);
-		v2 fooV2 = V2_Zero_Const;
+		v2 fooV2 = MakeV2_Const(1.0f, 1.0f);
 		v3 fooV3 = V3_Zero_Const;
 		v4 fooV4 = V4_Zero_Const;
 		v2i fooV2i = V2i_Zero_Const;
 		v3i fooV3i = V3i_Zero_Const;
 		v4i fooV4i = V4i_Zero_Const;
-		PrintLine_D("sizeof(v2) = %zu", sizeof(v2));
+		v2d fooV2d = V2d_Zero_Const;
+		v3d fooV3d = V3d_Zero_Const;
+		v4d fooV4d = V4d_Zero_Const;
+		PrintLine_D("sizeof(v2) = %zu",  sizeof(v2));
+		PrintLine_D("sizeof(v3) = %zu",  sizeof(v3));
+		PrintLine_D("sizeof(v4) = %zu",  sizeof(v4));
+		PrintLine_D("sizeof(v2i) = %zu", sizeof(v2i));
+		PrintLine_D("sizeof(v3i) = %zu", sizeof(v3i));
+		PrintLine_D("sizeof(v4i) = %zu", sizeof(v4i));
+		PrintLine_D("sizeof(v2d) = %zu", sizeof(v2d));
+		PrintLine_D("sizeof(v3d) = %zu", sizeof(v3d));
+		PrintLine_D("sizeof(v4d) = %zu", sizeof(v4d));
 		PrintLine_D("foobar = (%f, %f)", foobarV2.x, foobarV2.y);
+		
+		v2 newFoo;
+		r32 dot; UNUSED(dot);
+		newFoo = AddV2(fooV2, foobarV2);
+		newFoo = Add(fooV2, foobarV2);
+		newFoo = SubV2(fooV2, foobarV2);
+		newFoo = Sub(fooV2, foobarV2);
+		newFoo = MulV2(fooV2, foobarV2);
+		newFoo = Mul(fooV2, foobarV2);
+		newFoo = DivV2(fooV2, foobarV2);
+		newFoo = Div(fooV2, foobarV2);
+		newFoo = ScaleV2(fooV2, 2.0f);
+		newFoo = Mul(fooV2, 2.0f);
+		newFoo = ShrinkV2(fooV2, 4.0f);
+		newFoo = Div(fooV2, 4.0f);
+		PrintLine_D("LengthSquaredV2(fooV2): %g", LengthSquaredV2(fooV2));
+		PrintLine_D("LengthSquared(fooV2): %g", LengthSquared(fooV2));
+		PrintLine_D("LengthV2(fooV2): %g", LengthV2(fooV2));
+		PrintLine_D("Length(fooV2): %g", Length(fooV2));
+		newFoo = NormalizeV2(newFoo);
+		newFoo = Normalize(newFoo);
+		dot = DotV2(fooV2, foobarV2);
+		dot = Dot(fooV2, foobarV2);
+		newFoo = LerpV2(fooV2, foobarV2, 0.5f);
+		newFoo = Lerp(fooV2, foobarV2, 0.5f);
+		PrintLine_D("AreEqualV2(fooV2, foobarV2): %s", AreEqualV2(fooV2, foobarV2) ? "true" : "false");
+		PrintLine_D("AreEqual(fooV2, foobarV2): %s", AreEqual(fooV2, foobarV2) ? "true" : "false");
+		#if LANGUAGE_IS_CPP
+		newFoo = fooV2 + foobarV2;
+		newFoo += foobarV2;
+		newFoo = fooV2 - foobarV2;
+		newFoo -= foobarV2;
+		newFoo = fooV2 * foobarV2;
+		newFoo *= foobarV2;
+		newFoo = fooV2 / foobarV2;
+		newFoo /= foobarV2;
+		newFoo = fooV2 * 2.0f;
+		// newFoo = 2.0f * fooV2; //TODO: Make this work?
+		newFoo *= 2.0f;
+		newFoo = fooV2 / 2.0f;
+		// newFoo = 2.0f / fooV2; //TODO: Make this work?
+		newFoo /= 2.0f;
+		PrintLine_D("fooV2 == foobarV2: %s", (fooV2 == foobarV2) ? "true" : "false");
+		#endif
 	}
 	#endif
 	
