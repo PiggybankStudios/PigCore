@@ -211,9 +211,9 @@ typedef ARRAY_VISIT_FUNC_DEF(ArrayVisitFunc_f);
 #define VarArrayPush(type, arrayPntr, value) VarArrayAddValue(type, (arrayPntr), (value))
 
 #if LANGUAGE_IS_C
-#define VarArrayAddMulti(type, arrayPntr, numItems) VarArrayAddMulti_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (numItems))
+#define VarArrayAddMulti(type, arrayPntr, numItems) (type*)VarArrayAddMulti_((uxx)sizeof(type), (uxx)_Alignof(type), (arrayPntr), (numItems))
 #else
-#define VarArrayAddMulti(type, arrayPntr, numItems) VarArrayAddMulti_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (numItems))
+#define VarArrayAddMulti(type, arrayPntr, numItems) (type*)VarArrayAddMulti_((uxx)sizeof(type), (uxx)std::alignment_of<type>(), (arrayPntr), (numItems))
 #endif
 //NOTE: valuesPntr should never point to elements in the arrayPntr! We will access the valuesPntr AFTER the Add meaning the items may be reallocated and the pointer would be invalid!
 //      You can make a call to VarArrayGet for the valuesPntr argument, that call will be done after the Add so it will be safe

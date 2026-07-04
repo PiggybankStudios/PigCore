@@ -16,7 +16,6 @@ Date:   09\14\2025
 #include "misc/misc_two_pass.h"
 
 // These are escape sequences found in C-like strings
-typedef enum EscapeSequence EscapeSequence;
 enum EscapeSequence
 {
 	EscapeSequence_None = 0x00,
@@ -33,6 +32,7 @@ enum EscapeSequence
 	EscapeSequence_All            = 0xFF,
 	EscapeSequence_Common         = (EscapeSequence_Backslash|EscapeSequence_Quote|EscapeSequence_Apostrophe|EscapeSequence_Tab|EscapeSequence_NewLine), //Not CarriageReturn, Backspace, or Bell
 };
+typedef enum EscapeSequence EscapeSequence;
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

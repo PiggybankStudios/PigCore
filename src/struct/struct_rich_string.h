@@ -30,7 +30,6 @@ Description:
 #include "misc/misc_parsing.h"
 #include "misc/misc_two_pass.h"
 
-typedef enum FontStyleFlag FontStyleFlag;
 enum FontStyleFlag
 {
 	FontStyleFlag_None           = 0x00,
@@ -46,6 +45,7 @@ enum FontStyleFlag
 	FontStyleFlag_FontFileFlags  = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_ColoredGlyphs, //These are flags that affect which font file we pull from for rasterization
 	FontStyleFlag_FontAtlasFlags = FontStyleFlag_Bold|FontStyleFlag_Italic|FontStyleFlag_Inverted, //These are flags that affect which font atlas we use
 };
+typedef enum FontStyleFlag FontStyleFlag;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetFontStyleFlagStr(FontStyleFlag enumValue);
 #else
@@ -66,7 +66,6 @@ PEXP const char* GetFontStyleFlagStr(FontStyleFlag enumValue)
 }
 #endif
 
-typedef enum RichStrStyleChangeType RichStrStyleChangeType;
 enum RichStrStyleChangeType
 {
 	RichStrStyleChangeType_None = 0,
@@ -77,6 +76,7 @@ enum RichStrStyleChangeType
 	RichStrStyleChangeType_Alpha,
 	RichStrStyleChangeType_Count,
 };
+typedef enum RichStrStyleChangeType RichStrStyleChangeType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetRichStrStyleChangeTypeStr(RichStrStyleChangeType enumValue);
 #else
@@ -130,13 +130,13 @@ plex RichStrStyleChange
 };
 #define MakeRichStrStyleChangeOfType_Const(typeValue)         { .type=(typeValue), .Unused1 = 0x00000000 }
 #define MakeRichStrStyleChangeOfType(type)                    NEW_STRUCT(RichStrStyleChange)MakeRichStrStyleChangeOfType_Const(type)
-#define MakeRichStrStyleChangeSize(size)                      NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontSize, { .fontSize=(size) } }
-#define MakeRichStrStyleChangeEnableFlags(styleFlags)         NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, { .enableStyleFlags=(styleFlags), .disableStyleFlags=0, .defaultStyleFlags=0 } }
-#define MakeRichStrStyleChangeDisableFlags(styleFlags)        NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, { .enableStyleFlags=0, .disableStyleFlags=(styleFlags), .defaultStyleFlags=0 } }
-#define MakeRichStrStyleChangeDefaultFlags(styleFlags)        NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, { .enableStyleFlags=0, .disableStyleFlags=0, .defaultStyleFlags=(styleFlags) } }
-#define MakeRichStrStyleChangeColor(colorValue, includeAlpha) NEW_STRUCT(RichStrStyleChange){ .type=(includeAlpha ? RichStrStyleChangeType_ColorAndAlpha : RichStrStyleChangeType_Color), { .color=(colorValue) } }
-#define MakeRichStrStyleChangeAlpha(alphaValue)               NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_Alpha, { .alpha=(alphaValue) } }
-#define MakeRichStrStyleChangeAlphaU8(alphaValueU8)           NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_Alpha, { .alpha=(r32)(alphaValueU8) / 255.0f } }
+#define MakeRichStrStyleChangeSize(size)                      NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontSize, .fontSize=(size) }
+#define MakeRichStrStyleChangeEnableFlags(styleFlags)         NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, .enableStyleFlags=(styleFlags), .disableStyleFlags=0, .defaultStyleFlags=0 }
+#define MakeRichStrStyleChangeDisableFlags(styleFlags)        NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, .enableStyleFlags=0, .disableStyleFlags=(styleFlags), .defaultStyleFlags=0 }
+#define MakeRichStrStyleChangeDefaultFlags(styleFlags)        NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_FontStyle, .enableStyleFlags=0, .disableStyleFlags=0, .defaultStyleFlags=(styleFlags) }
+#define MakeRichStrStyleChangeColor(colorValue, includeAlpha) NEW_STRUCT(RichStrStyleChange){ .type=(includeAlpha ? RichStrStyleChangeType_ColorAndAlpha : RichStrStyleChangeType_Color), .color=(colorValue) }
+#define MakeRichStrStyleChangeAlpha(alphaValue)               NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_Alpha, .alpha=(alphaValue) }
+#define MakeRichStrStyleChangeAlphaU8(alphaValueU8)           NEW_STRUCT(RichStrStyleChange){ .type=RichStrStyleChangeType_Alpha, .alpha=(r32)(alphaValueU8) / 255.0f }
 
 #define RichStrStyleChange_None_Const MakeRichStrStyleChangeOfType_Const(RichStrStyleChangeType_None)
 #define RichStrStyleChange_None       MakeRichStrStyleChangeOfType(RichStrStyleChangeType_None)

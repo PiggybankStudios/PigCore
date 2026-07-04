@@ -13,6 +13,7 @@ Description:
 #pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
 #pragma clang diagnostic ignored "-Wdeprecated-declarations" //warning: 'NSOpenGLView' is deprecated: first deprecated in macOS 10.14 - Please use MTKView instead.
 #pragma clang diagnostic ignored "-Wunused-variable" //warning: unused variable 'frameResult'
+#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion" //warning: bitwise operation between different enumeration types ('CGImageAlphaInfo' and 'CGImageByteOrderInfo') is deprecated
 #endif
 
 #include "third_party/sokol/sokol_app.h"

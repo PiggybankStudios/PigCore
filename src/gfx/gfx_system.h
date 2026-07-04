@@ -379,10 +379,6 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 	v4r clearColorVec = ToV4rFromColor32(clearColor);
 	sg_pass mainPass = {
 		.action = {
-			.colors[0] = {
-				.load_action = SG_LOADACTION_CLEAR,
-				.clear_value = { clearColorVec.r, clearColorVec.g, clearColorVec.b, clearColorVec.a }
-			},
 			.depth = {
 				.load_action = SG_LOADACTION_CLEAR,
 				.clear_value = clearDepth,
@@ -390,6 +386,10 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 		},
 		.swapchain = system->swapchain,
 		.label = "mainPass",
+	};
+	mainPass.action.colors[0] = {
+		.load_action = SG_LOADACTION_CLEAR,
+		.clear_value = { clearColorVec.r, clearColorVec.g, clearColorVec.b, clearColorVec.a }
 	};
 	sg_begin_pass(&mainPass);
 	
@@ -605,7 +605,7 @@ PEXPI FontGlyphMetrics GfxSystem_GetGlyphMetricsFor(GfxSystem* system, u32 codep
 PEXPI void GfxSystem_SetClipRec(GfxSystem* system, reci clipRec)
 {
 	NotNull(system);
-	if (!AreEqual(system->state.clipRec, clipRec))
+	if (!AreEqualReci(system->state.clipRec, clipRec))
 	{
 		sg_apply_scissor_rect(clipRec.x, clipRec.y, clipRec.width, clipRec.height, true);
 		system->state.clipRec = clipRec;
@@ -615,7 +615,7 @@ PEXPI reci GfxSystem_AddClipRec(GfxSystem* system, reci clipRec)
 {
 	NotNull(system);
 	reci oldClipRec = system->state.clipRec;
-	if (!AreEqual(system->state.clipRec, clipRec))
+	if (!AreEqualReci(system->state.clipRec, clipRec))
 	{
 		reci overlapRec = OverlapPartReci(system->state.clipRec, clipRec);
 		sg_apply_scissor_rect(overlapRec.x, overlapRec.y, overlapRec.width, overlapRec.height, true);

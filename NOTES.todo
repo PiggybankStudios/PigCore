@@ -38,8 +38,6 @@ This file is a dumping ground for all kinds of textual notes that we take while 
 	[ ] Space partitioning acceleration structures
 	[ ] iOS support
 	[ ] Basic multiplayer support/testing
-	[ ] Change vector/quaternion/rectangle members to lowercase (.x, .y, .z, .w instead of .X, .Y, .Z, .W)
-	[ ] Flatten HandmadeMath.h
 	[ ] Work on Sublime text custom types plugin
 	[?] Investigate Qt support?
 	[ ] Some way to automatically update an application

@@ -828,8 +828,8 @@ PEXP void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColo
 	UiElement* rootElement = OpenUiElement(NEW_STRUCT(UiElemConfig){
 		.id = UiId_Root,
 		.sizing = UI_FIXED2(screenSize.width / context->scale, screenSize.height / context->scale),
-		.color = backgroundColor,
 		.depth = PIG_UI_ROOT_DEPTH,
+		.color = backgroundColor,
 	});
 	UNUSED(rootElement);
 }

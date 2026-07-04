@@ -27,7 +27,6 @@ Description:
 //how many physical keys we can have mapped to a single enum value
 #define MAX_ALT_KEY_MAPPINGS  2
 
-typedef enum ModifierKey ModifierKey;
 enum ModifierKey
 {
 	ModifierKey_None    = 0x00,
@@ -37,6 +36,7 @@ enum ModifierKey
 	ModifierKey_All     = 0x07,
 	ModifierKey_Any     = 0x10,
 };
+typedef enum ModifierKey ModifierKey;
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetModifierKeyStr(ModifierKey enumValue);
@@ -66,7 +66,6 @@ PEXP const char* GetModifierKeyShortStr(ModifierKey enumValue)
 }
 #endif
 
-typedef enum Key Key;
 enum Key
 {
 	Key_None = 0,
@@ -209,6 +208,7 @@ enum Key
 	
 	Key_Count,
 };
+typedef enum Key Key;
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetKeyStr(Key key);

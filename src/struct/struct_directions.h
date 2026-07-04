@@ -53,7 +53,6 @@ Description:
 //           Bottom
 //            Down
 
-typedef enum Dir2 Dir2;
 enum Dir2
 {
 	Dir2_None  = 0x00,
@@ -66,6 +65,7 @@ enum Dir2
 	Dir2_All   = 0x0F,
 	Dir2_Count = 4,
 };
+typedef enum Dir2 Dir2;
 
 //NOTE: Rotation2 is an alias for Dir2, it's functionally exactly the same but the names are a little easier to
 //      remember and work with when we are talking about 90 degree rotations of a 2D object rather than directions
@@ -77,7 +77,6 @@ typedef Dir2 Rot2;
 #define Rot2_270   Dir2_Up
 #define Rot2_All   Dir2_All
 
-typedef enum Dir2Ex Dir2Ex;
 enum Dir2Ex
 {
 	Dir2Ex_None        = 0x00,
@@ -96,8 +95,8 @@ enum Dir2Ex
 	Dir2Ex_All         = 0xFF,
 	Dir2Ex_Count = 8,
 };
+typedef enum Dir2Ex Dir2Ex;
 
-typedef enum Dir3 Dir3;
 enum Dir3
 {
 	Dir3_None        = 0x00,
@@ -119,6 +118,7 @@ enum Dir3
 	Dir3_All         = 0x3F,
 	Dir3_Count = 6,
 };
+typedef enum Dir3 Dir3;
 
 /*
 TODO: If Dir3Ex is actually useful for a particular use-case, then maybe we should implement it fully
@@ -168,7 +168,6 @@ enum Dir3Ex_t
 };
 */
 
-typedef enum Axis Axis;
 enum Axis
 {
 	Axis_None  = 0x00,
@@ -181,6 +180,7 @@ enum Axis
 	Axis_All4  = 0x0F,
 	Axis_Count = 4,
 };
+typedef enum Axis Axis;
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

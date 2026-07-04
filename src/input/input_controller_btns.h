@@ -10,7 +10,6 @@ Date:   02\03\2025
 #include "base/base_defines_check.h"
 #include "base/base_macros.h"
 
-typedef enum ContBtn ContBtn;
 enum ContBtn
 {
 	ContBtn_None = 0,
@@ -50,6 +49,7 @@ enum ContBtn
 	
 	ContBtn_Count,
 };
+typedef enum ContBtn ContBtn;
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetContBtnStr(ContBtn enumValue);

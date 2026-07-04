@@ -30,7 +30,6 @@ plex UriParts
 	Str8 anchor; //aka fragment, ex. "section-1.1"
 };
 
-typedef enum HttpVerb HttpVerb;
 enum HttpVerb
 {
 	HttpVerb_None = 0,
@@ -40,6 +39,7 @@ enum HttpVerb
 	//TODO: Should we support HEAD, PUT, CONNECT, OPTIONS, and TRACE? Or others registered at https://www.iana.org/assignments/http-methods/http-methods.xhtml
 	HttpVerb_Count,
 };
+typedef enum HttpVerb HttpVerb;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetHttpVerbStr(HttpVerb enumValue);
 #else
@@ -57,13 +57,13 @@ PEXP const char* GetHttpVerbStr(HttpVerb enumValue)
 #endif
 
 //See: https://www.iana.org/assignments/media-types/media-types.xhtml
-typedef enum MimeType MimeType;
 enum MimeType
 {
 	MimeType_None = 0,
 	MimeType_FormUrlEncoded, //application/x-www-form-urlencoded
 	MimeType_Count,
 };
+typedef enum MimeType MimeType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetMimeTypeStr(MimeType enumValue);
 const char* GetMimeTypeOfficialName(MimeType enumValue);

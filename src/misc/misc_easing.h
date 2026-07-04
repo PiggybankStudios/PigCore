@@ -38,7 +38,6 @@ Description:
 // ||            
 // +------------> t
 
-typedef enum EasingStyle EasingStyle;
 enum EasingStyle
 {
 	EasingStyle_None = 0,
@@ -80,6 +79,7 @@ enum EasingStyle
 	
 	EasingStyle_NumStyles,
 };
+typedef enum EasingStyle EasingStyle;
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetEasingStyleStr(EasingStyle style);

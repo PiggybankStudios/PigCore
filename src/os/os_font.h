@@ -262,7 +262,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		// Return the first match (caller must CFRelease)
 		CTFontDescriptorRef fontDescriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(matchesArray, 0);
 		
-		CFURLRef fontUrlCf = CTFontDescriptorCopyAttribute(fontDescriptor, kCTFontURLAttribute);
+		CFURLRef fontUrlCf = (CFURLRef)CTFontDescriptorCopyAttribute(fontDescriptor, kCTFontURLAttribute);
 		
 		char pathArray[PATH_MAX];
 		CFURLGetFileSystemRepresentation(fontUrlCf, true, (u8*)pathArray, sizeof(pathArray));

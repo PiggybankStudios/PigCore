@@ -7,7 +7,9 @@ Date:   01\21\2025
 #ifndef _CROSS_ZIP_AND_FILE_H
 #define _CROSS_ZIP_AND_FILE_H
 
-#if !TARGET_IS_ORCA && !TARGET_IS_PLAYDATE //TODO: miniz.h relies on time.h which isn't available in Orca std C-lib, nor Playdate stdlib
+//TODO: miniz.h relies on time.h which isn't available in Orca std C-lib, nor Playdate stdlib
+//TODO: miniz.c doesn't compile in C++ mode (at least not with Apple Clang)
+#if !TARGET_IS_ORCA && !TARGET_IS_PLAYDATE && !LANGUAGE_IS_CPP
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

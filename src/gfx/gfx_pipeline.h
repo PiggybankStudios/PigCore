@@ -24,7 +24,6 @@ Description:
 
 #if BUILD_WITH_SOKOL_GFX
 
-typedef enum GfxPipelineBlendMode GfxPipelineBlendMode;
 enum GfxPipelineBlendMode
 {
 	GfxPipelineBlendMode_None = 0,
@@ -33,6 +32,7 @@ enum GfxPipelineBlendMode
 	GfxPipelineBlendMode_PremultipliedNormal,
 	GfxPipelineBlendMode_Count,
 };
+typedef enum GfxPipelineBlendMode GfxPipelineBlendMode;
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetGfxPipelineBlendModeStr(GfxPipelineBlendMode enumValue);

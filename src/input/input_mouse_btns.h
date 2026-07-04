@@ -18,7 +18,6 @@ Description:
 #include "base/base_macros.h"
 
 //NOTE: The name "CursorShape" conflicts with X11 headers
-typedef enum MouseCursorShape MouseCursorShape;
 enum MouseCursorShape
 {
 	MouseCursorShape_Default = 0,
@@ -30,6 +29,7 @@ enum MouseCursorShape
 	MouseCursorShape_ResizeDiagSwNe, //TODO: This is the naming conventions others use, can we think of a better one? Maybe "LeanLeft" and "LeanRight"?
 	MouseCursorShape_Count,
 };
+typedef enum MouseCursorShape MouseCursorShape;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetMouseCursorShapeStr(MouseCursorShape enumValue);
 #else
@@ -49,7 +49,6 @@ PEXP const char* GetMouseCursorShapeStr(MouseCursorShape enumValue)
 }
 #endif
 
-typedef enum MouseBtn MouseBtn;
 enum MouseBtn
 {
 	MouseBtn_None = 0,
@@ -63,6 +62,7 @@ enum MouseBtn
 	MouseBtn_ScrollDown,
 	MouseBtn_Count,
 };
+typedef enum MouseBtn MouseBtn;
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetMouseBtnStr(MouseBtn enumValue);

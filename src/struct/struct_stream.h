@@ -18,7 +18,6 @@ Description:
 #include "struct/struct_string.h"
 #include "os/os_file.h"
 
-typedef enum DataStreamType DataStreamType;
 enum DataStreamType
 {
 	DataStreamType_None = 0,
@@ -27,6 +26,7 @@ enum DataStreamType
 	DataStreamType_Socket,
 	DataStreamType_Count,
 };
+typedef enum DataStreamType DataStreamType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetDataStreamTypeStr(DataStreamType enumValue);
 #else

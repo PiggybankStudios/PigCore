@@ -417,41 +417,41 @@ PEXP void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fon
 		Color32 iconColor = (icon != nullptr) ? icon->color : MonokaiWhite;
 		
 		UIELEM({ .id = notificationId,
-			.depth = depth,
-			.sizing = UI_FIT2(),
 			.direction = UiLayoutDir_LeftToRight,
-			.padding = { .inner=FillV4r(NOTIFICATION_PADDING), .child=5 },
+			.sizing = UI_FIT2(),
 			.alignment = UI_ALIGN_CENTER(),
+			.padding = { .inner=FillV4r(NOTIFICATION_PADDING), .child=5 },
+			.depth = depth,
+			.color = backgroundColor,
+			.cornerRadius = FillV4r(8),
+			.borderThickness = FillV4r(2),
+			.borderColor = borderColor,
 			.floating = {
 				.type = UiFloatingType_Parent,
 				.offset = offset,
 				.parentSide = UiSide_BottomRight,
 				.elemSide = (notificationElem != nullptr) ? UiSide_BottomRight : UiSide_BottomLeft,
 			},
-			.color = backgroundColor,
-			.cornerRadius = FillV4r(8),
-			.borderColor = borderColor,
-			.borderThickness = FillV4r(2),
 		})
 		{
 			if (iconTexture != nullptr)
 			{
 				UIELEM_LEAF({
 					.sizing = UI_FIXED2(icon->sourceRec.width * icon->scale, icon->sourceRec.height * icon->scale),
+					.color = ColorWithAlpha(iconColor, 1.0f - disappearAnimAmount),
 					.texture = icon->texture,
 					.textureSourceRec = icon->sourceRec,
-					.color = ColorWithAlpha(iconColor, 1.0f - disappearAnimAmount),
 				});
 			}
 			
 			UIELEM_LEAF({
 				.sizing = UI_FIXED2(notification->textMeasure.width, notification->textMeasure.height),
-				.textWrapWidth = notification->textMeasureWrapWidth,
 				.text = notification->messageStr,
+				.textColor = textColor,
+				.textWrapWidth = notification->textMeasureWrapWidth,
 				.font = font,
 				.fontSize = fontSize,
 				.fontStyle = fontStyle,
-				.textColor = textColor,
 			});
 		}
 	}

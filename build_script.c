@@ -139,6 +139,7 @@ int main(int argc, char* argv[])
 	bool BUILD_PIGGEN                      = GetBoolConfig("BUILD_PIGGEN",                      buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_SHADERS                     = GetBoolConfig("BUILD_SHADERS",                     buildConfigContents, argc, argv, &buildConfigTags);
 	bool GENERATE_COMPILE_COMMANDS_FOR_LSP = GetBoolConfig("GENERATE_COMPILE_COMMANDS_FOR_LSP", buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_IN_CPP_MODE                 = GetBoolConfig("BUILD_IN_CPP_MODE",                 buildConfigContents, argc, argv, &buildConfigTags);
 	bool RUN_PIGGEN                        = GetBoolConfig("RUN_PIGGEN",                        buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_TRACY_DLL                   = GetBoolConfig("BUILD_TRACY_DLL",                   buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_IMGUI_OBJ                   = GetBoolConfig("BUILD_IMGUI_OBJ",                   buildConfigContents, argc, argv, &buildConfigTags);
@@ -1012,8 +1013,11 @@ int main(int argc, char* argv[])
 		StrArray testsTags = EMPTY;
 		AddTag(&testsTags, T_PIG_CORE_TESTS);
 		AddTag(&testsTags, T_PIG_CORE); //We add this because we are compiling PigCore implementation directly into tests.exe (not linking as a .dll)
-		AddTag(&testsTags, BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C);
+		AddTag(&testsTags, BUILD_IN_CPP_MODE ? (BUILDING_ON_OSX ? T_LANG_OBJECTIVECPP : T_LANG_CPP) : (BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C));
 		AddTag(&testsTags, T_PROGRAM);
+		
+		if (BUILD_IN_CPP_MODE && !DoesFileExist(StrLit("tests_main.cpp"))) { CreateAndWriteFile(StrLit("tests_main.cpp"), StrLit("\n#include \"tests_main.c\"\n"), true); }
+		if (BUILD_IN_CPP_MODE && !DoesFileExist(StrLit("tests_main.mm")))  { CreateAndWriteFile(StrLit("tests_main.mm"),  StrLit("\n#include \"tests_main.m\"\n"), true); }
 		
 		// +==============================+
 		// |      Windows tests.exe       |
@@ -1024,7 +1028,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for Windows...]", FILENAME_TESTS_EXE);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_TESTS_EXE);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArg(&cmd, CL_LINK);
@@ -1051,7 +1055,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			AddArgList(&cmd, &pigCoreCompilerFlags);
@@ -1091,7 +1095,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for OSX...]", FILENAME_TESTS);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/tests/tests_main.m");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.mm" : "[ROOT]/src/tests/tests_main.m");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
@@ -1127,7 +1131,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.rootDirPath = StrLit("../..");
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, USE_EMSCRIPTEN ? FILENAME_INDEX_HTML : FILENAME_APP_WASM);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
@@ -1211,7 +1215,7 @@ int main(int argc, char* argv[])
 			Str androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"));
 			
 			CliArgs cmdBase = EMPTY;
-			AddArgNt(&cmdBase, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArgNt(&cmdBase, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
 			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
 			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
 			AddArgNt(&cmdBase, CLANG_LIB_SO_NAME, FILENAME_TESTS_SO);
@@ -1386,7 +1390,7 @@ int main(int argc, char* argv[])
 			CliArgs cmd = EMPTY;
 			cmd.rootDirPath = StrLit("../..");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_MODULE_WASM);
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);
 			AddArgList(&cmd, &thingsToLink);
@@ -1421,7 +1425,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs compileCmd = EMPTY;
 			AddArg(&compileCmd, GCC_COMPILE);
-			AddArgNt(&compileCmd, CLI_QUOTED_ARG, "[ROOT]/tests/tests_main.c");
+			AddArgNt(&compileCmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
 			AddArgNt(&compileCmd, GCC_OUTPUT_FILE, FILENAME_TESTS_OBJ);
 			AddArgList(&compileCmd, &pigCoreCompilerFlags);
 			

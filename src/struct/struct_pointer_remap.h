@@ -183,7 +183,7 @@ PEXP void AddRemapRange(PointerRemap* remap, uintptr_t from, uintptr_t to, size_
 		#else
 		uxx alignment = std::alignment_of<PointerRemapRange>();
 		#endif
-		remap->ranges = ReallocMemAligned(remap->arena, remap->ranges, sizeof(PointerRemapRange) * remap->numRangesAlloc, alignment, sizeof(PointerRemapRange) * newAllocCount, alignment);
+		remap->ranges = (PointerRemapRange*)ReallocMemAligned(remap->arena, remap->ranges, sizeof(PointerRemapRange) * remap->numRangesAlloc, alignment, sizeof(PointerRemapRange) * newAllocCount, alignment);
 		remap->numRangesAlloc = newAllocCount;
 	}
 	

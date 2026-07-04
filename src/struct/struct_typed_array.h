@@ -52,8 +52,8 @@ functionDecor void arrayStructName##_Free(arrayStructName* array, Arena* arena) 
 functionDecor arrayStructName arrayStructName##_Init(uxx initialCapacity, Arena* arena)                \
 {                                                                                                      \
 	return NEW_STRUCT(arrayStructName) {                                                               \
-		.allocLength = initialCapacity,                                                                \
 		.length = 0,                                                                                   \
+		.allocLength = initialCapacity,                                                                \
 		.items = AllocArray(elementType, arena, initialCapacity)                                       \
 	};                                                                                                 \
 }                                                                                                      \
@@ -111,14 +111,14 @@ typedef plex                                                                    
     uxx length;                                                                  \
     elementType* items;                                                          \
 } arrayStructName##Slice;                                                        \
-DECLARE_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor) \
+DECLARE_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor)
 
 #define IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)   \
-IMPLEMENT_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor) \
+IMPLEMENT_TYPED_ARRAY_FUNCTIONS_DECOR(elementType, arrayStructName, functionDecor)
 
 #define DECLARE_AND_IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor) \
 DECLARE_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)                       \
-IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)                     \
+IMPLEMENT_TYPED_ARRAY_DECOR(elementType, arrayStructName, functionDecor)
 
 #define DECLARE_TYPED_ARRAY_FUNCTIONS(type, arrayStructName)            DECLARE_TYPED_ARRAY_FUNCTIONS_DECOR(type, arrayStructName, )
 #define IMPLEMENT_TYPED_ARRAY_FUNCTIONS(type, arrayStructName)          IMPLEMENT_TYPED_ARRAY_FUNCTIONS_DECOR(type, arrayStructName, )

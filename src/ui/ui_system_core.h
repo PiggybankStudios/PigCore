@@ -120,7 +120,6 @@ plex UiId
 #define UiIdPrint(formatString, ...)              PrintUiId(UiId_None, PIG_UI_ID_INDEX_NONE, (formatString),     ##__VA_ARGS__)
 #define UiIdPrintIndex(index, formatString, ...)  PrintUiId(UiId_None, (index),              (formatString),     ##__VA_ARGS__)
 
-typedef enum UiLayoutDir UiLayoutDir;
 enum UiLayoutDir
 {
 	UiLayoutDir_TopDown = 0,
@@ -130,6 +129,7 @@ enum UiLayoutDir
 	UiLayoutDir_Count,
 	UiLayoutDir_Default = UiLayoutDir_TopDown,
 };
+typedef enum UiLayoutDir UiLayoutDir;
 #if !PIG_CORE_IMPLEMENTATION
 PIG_CORE_INLINE const char* GetUiLayoutDirStr(UiLayoutDir enumValue);
 #else
@@ -149,7 +149,6 @@ PEXPI const char* GetUiLayoutDirStr(UiLayoutDir enumValue)
 #define IsUiDirHorizontal(direction) ( (direction) == UiLayoutDir_RightToLeft || (direction) == UiLayoutDir_LeftToRight )
 #define IsUiDirVertical(direction)   ( (direction) == UiLayoutDir_TopDown     || (direction) == UiLayoutDir_BottomUp    )
 
-typedef enum UiSizingType UiSizingType;
 enum UiSizingType
 {
 	UiSizingType_Expand = 0,
@@ -161,6 +160,7 @@ enum UiSizingType
 	UiSizingType_Count,
 	UiSizingType_Default = UiSizingType_Expand,
 };
+typedef enum UiSizingType UiSizingType;
 #if !PIG_CORE_IMPLEMENTATION
 PIG_CORE_INLINE const char* GetUiSizingTypeStr(UiSizingType enumValue);
 #else
@@ -208,7 +208,6 @@ car UiSizing
 #define UI_TEXT_CLIP(minWidth)          NEW_STRUCT(UiSizing){ .x={.type=UiSizingType_TextClip, .value=(minWidth)}, .y={.type=UiSizingType_TextClip} }
 #define UI_TEXT_FULL()                  UI_TEXT_CLIP(-1.0f)
 
-typedef enum UiAlign UiAlign;
 enum UiAlign
 {
 	UiAlign_Center = 0,
@@ -219,6 +218,7 @@ enum UiAlign
 	UiAlign_Top = UiAlign_Left,
 	UiAlign_Bottom = UiAlign_Right,
 };
+typedef enum UiAlign UiAlign;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetUiAlignStr(UiAlign enumValue);
 #else
@@ -275,7 +275,6 @@ car UiScrolling
 #define UI_SCROLL_VERTICAL_NO_LAG()          { .x={ .enabled=false, .lag=0.0f                  }, .y={ .enabled=true,  .lag=UI_SCROLL_LAG_NONE    } }
 #define UI_SCROLL_BOTH_NO_LAG()              { .x={ .enabled=true,  .lag=UI_SCROLL_LAG_NONE    }, .y={ .enabled=true,  .lag=UI_SCROLL_LAG_NONE    } }
 
-typedef enum UiFloatingType UiFloatingType;
 enum UiFloatingType
 {
 	UiFloatingType_None = 0,
@@ -285,6 +284,7 @@ enum UiFloatingType
 	UiFloatingType_Count,
 	UiFloatingType_Default = UiFloatingType_None,
 };
+typedef enum UiFloatingType UiFloatingType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetUiFloatingTypeStr(UiFloatingType enumValue);
 #else
@@ -319,7 +319,6 @@ plex UiPadding
 	r32 child; //space in-between each child, along the layout direction
 };
 
-typedef enum UiConditionType UiConditionType;
 enum UiConditionType
 {
 	UiConditionType_None = 0,
@@ -333,6 +332,7 @@ enum UiConditionType
 	UiConditionType_Count,
 	UiConditionType_Default = UiConditionType_None,
 };
+typedef enum UiConditionType UiConditionType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetUiConditionTypeStr(UiConditionType enumValue);
 #else
@@ -623,7 +623,6 @@ plex UiThemerRegistry
 	VarArray basicOptions; //BasicUiThemerOptions
 };
 
-typedef enum UiRenderCmdType UiRenderCmdType;
 enum UiRenderCmdType
 {
 	UiRenderCmdType_None = 0,
@@ -633,6 +632,7 @@ enum UiRenderCmdType
 	UiRenderCmdType_Scissor,
 	UiRenderCmdType_Count,
 };
+typedef enum UiRenderCmdType UiRenderCmdType;
 #if !PIG_CORE_IMPLEMENTATION
 PIG_CORE_INLINE const char* GetUiRenderCmdTypeStr(UiRenderCmdType enumValue);
 #else

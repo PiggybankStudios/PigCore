@@ -26,7 +26,6 @@ Date:   01\30\2025
 #error Somehow sokol_gfx.h was not included properly before gfx_texture.h!
 #endif
 
-typedef enum TextureFlag TextureFlag;
 enum TextureFlag
 {
 	TextureFlag_None = 0x00,
@@ -40,6 +39,7 @@ enum TextureFlag
 	TextureFlag_Mutable       = 0x80,
 	TextureFlag_All = 0xFF,
 };
+typedef enum TextureFlag TextureFlag;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetTextureFlagStr(TextureFlag enumValue);
 #else
@@ -421,7 +421,7 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 			u8* destRow = &texture->pixelsU8[INDEX_FROM_COORD2D(sourceRec.x + 0, sourceRec.y + rowIndex, texture->width, texture->height) * texture->pixelSize];
 			MyMemCopy(destRow, sourceRow, sourceRec.width * texture->pixelSize);
 		}
-		newImageData = MakeImageData(texture->size, texture->pixelsPntr);
+		newImageData = MakeImageData(texture->size, texture->pixelsU32);
 	}
 	else
 	{

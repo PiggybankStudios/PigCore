@@ -72,6 +72,7 @@ static void StbImageWriteFree(void* allocPntr)
 #if (COMPILER_IS_CLANG || COMPILER_IS_EMSCRIPTEN)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
+#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'context' initializer
 #endif
 
 #include "third_party/stb/stb_image_write.h"

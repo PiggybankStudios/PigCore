@@ -16,7 +16,6 @@ Description:
 
 #define MAX_NUM_VERT_ATTRIBUTES    8
 
-typedef enum VertAttributeType VertAttributeType;
 enum VertAttributeType
 {
 	VertAttributeType_None = 0,
@@ -27,6 +26,7 @@ enum VertAttributeType
 	VertAttributeType_TexCoord,
 	VertAttributeType_Count,
 };
+typedef enum VertAttributeType VertAttributeType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetVertAttributeTypeStr(VertAttributeType enumValue);
 const char* GetVertAttributeMatchStr(VertAttributeType enumValue);

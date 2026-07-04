@@ -81,7 +81,6 @@ plex ShaderAttribute
 	VertAttributeType type; //this is inferred based off the name!
 };
 
-typedef enum ShaderUniformType ShaderUniformType;
 enum ShaderUniformType
 {
 	ShaderUniformType_None = 0,
@@ -92,6 +91,7 @@ enum ShaderUniformType
 	ShaderUniformType_SourceRec,
 	ShaderUniformType_Count,
 };
+typedef enum ShaderUniformType ShaderUniformType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetShaderUniformTypeStr(ShaderUniformType enumValue);
 const char* GetShaderUniformMatchStr(ShaderUniformType enumValue);

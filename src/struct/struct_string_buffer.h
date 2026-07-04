@@ -23,7 +23,6 @@ use cases for this type of data structure benefit greatly from being shorter and
 
 #define STRING_BUFFER_DEFAULT_LENGTH 256 //bytes
 
-typedef enum StrBuffFlag StrBuffFlag;
 enum StrBuffFlag
 {
 	StrBuffFlag_None = 0x00,
@@ -32,8 +31,8 @@ enum StrBuffFlag
 	StrBuffFlag_PrintError       = 0x04,
 	StrBuffFlag_All = 0x03,
 };
+typedef enum StrBuffFlag StrBuffFlag;
 
-typedef plex StringBuffer StringBuffer;
 plex StringBuffer
 {
 	u8 flags;
@@ -48,6 +47,7 @@ plex StringBuffer
 		};
 	};
 };
+typedef plex StringBuffer StringBuffer;
 
 // +--------------------------------------------------------------+
 // |                 Header Function Declarations                 |

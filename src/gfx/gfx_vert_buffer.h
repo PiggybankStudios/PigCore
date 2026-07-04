@@ -29,7 +29,6 @@ Description:
 _Static_assert(MAX_NUM_VERT_ATTRIBUTES <= SG_MAX_VERTEX_ATTRIBUTES);
 #endif
 
-typedef enum VertBufferUsage VertBufferUsage;
 enum VertBufferUsage
 {
 	VertBufferUsage_None = 0,
@@ -38,6 +37,7 @@ enum VertBufferUsage
 	VertBufferUsage_Streaming,
 	VertBufferUsage_Count,
 };
+typedef enum VertBufferUsage VertBufferUsage;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetVertBufferUsageStr(VertBufferUsage enumValue);
 #else

@@ -29,7 +29,6 @@ Description:
 #include "struct/struct_var_array.h"
 #include "misc/misc_escaping.h"
 
-typedef enum cTokenType cTokenType;
 enum cTokenType
 {
 	cTokenType_None = 0,
@@ -41,6 +40,7 @@ enum cTokenType
 	cTokenType_Operator,
 	cTokenType_Count,
 };
+typedef enum cTokenType cTokenType;
 const char* GetcTokenTypeStr(cTokenType enumValue)
 {
 	switch (enumValue)
@@ -57,7 +57,6 @@ const char* GetcTokenTypeStr(cTokenType enumValue)
 	}
 }
 
-typedef enum cTokenFlags cTokenFlags;
 enum cTokenFlags
 {
 	cTokenFlag_None                    = 0x00,
@@ -69,6 +68,7 @@ enum cTokenFlags
 	cTokenFlag_All                     = 0x07,
 	cTokenFlag_Count                   = 3,
 };
+typedef enum cTokenFlags cTokenFlags;
 
 typedef plex cToken cToken;
 plex cToken

@@ -30,7 +30,6 @@ plex LineParser
 #define MakeLineParserEx(byteIndexValue, lineBeginByteIndexValue, lineIndexValue, inputStrValue) NEW_STRUCT(LineParser){ .byteIndex=(byteIndexValue), .lineBeginByteIndex=(lineBeginByteIndexValue), .lineIndex=(lineIndexValue), .inputStr=(inputStrValue) }
 #define MakeLineParser(inputStr) MakeLineParserEx(0, 0, 0, (inputStr))
 
-typedef enum ParsingTokenType ParsingTokenType;
 enum ParsingTokenType
 {
 	ParsingTokenType_None = 0,
@@ -40,6 +39,7 @@ enum ParsingTokenType
 	ParsingTokenType_Comment, //anything after a // on any line
 	ParsingTokenType_Count,
 };
+typedef enum ParsingTokenType ParsingTokenType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetParsingTokenTypeStr(ParsingTokenType enumValue);
 #else

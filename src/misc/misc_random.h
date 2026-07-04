@@ -26,7 +26,6 @@ Other Page: https://peteroupc.github.io/random.html#Existing_RNG_APIs_in_Program
 // +--------------------------------------------------------------+
 // |                  Type/Structure Definitions                  |
 // +--------------------------------------------------------------+
-typedef enum RandomSeriesType RandomSeriesType;
 enum RandomSeriesType
 {
 	RandomSeriesType_None = 0,
@@ -38,6 +37,7 @@ enum RandomSeriesType
 	RandomSeriesType_XoroShiro128,           //XS128
 	RandomSeriesType_NumTypes,
 };
+typedef enum RandomSeriesType RandomSeriesType;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetRandomSeriesTypeStr(RandomSeriesType enumValue);
 const char* GetRandomSeriesTypeAcronymStr(RandomSeriesType enumValue);

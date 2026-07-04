@@ -20,7 +20,14 @@ Description:
 #include "os/os_path.h"
 #include "misc/misc_result.h"
 
-#if !TARGET_IS_ORCA && !TARGET_IS_PLAYDATE //TODO: miniz.h relies on time.h which isn't available in Orca std C-lib, nor Playdate stdlib
+//TODO: miniz.h relies on time.h which isn't available in Orca std C-lib, nor Playdate stdlib
+//TODO: miniz.c Does not compile in C++ mode (at least not with Apple Clang). Gives the following error:
+//      pig_core/src/third_party/miniz/miniz.c:1254:22: error: default initialization of an object of const type 'const mz_uint[11]' (aka 'const unsigned int[11]')
+//         1254 | static const mz_uint s_tdefl_num_probes[11];
+//              |                      ^
+//      pig_core/src/third_party/miniz/miniz.c:2113:22: error: redefinition of 's_tdefl_num_probes'
+//         2113 | static const mz_uint s_tdefl_num_probes[11] = { 0, 1, 6, 32, 16, 32, 128, 256, 512, 768, 1500 };
+#if !TARGET_IS_ORCA && !TARGET_IS_PLAYDATE && !LANGUAGE_IS_CPP
 
 #define MINIZ_NO_STDIO //to disable all usage and any functions which rely on stdio for file I/O.
 #if USING_CUSTOM_STDLIB

@@ -45,6 +45,8 @@ Description:
 #define BUILD_SHADERS 0
 // Generates a compile_commands.json into the build folder so an language server can be run on the project - NOTE: In order for this to work you need a number of things installed: `python3`, and `python3-pip` (any maybe `python3-full` for `python3-venv`)
 #define GENERATE_COMPILE_COMMANDS_FOR_LSP 0
+// Generates a tests_main.cpp that #includes tests_main.c so we can compile all of the tests as C++
+#define BUILD_IN_CPP_MODE  1
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0

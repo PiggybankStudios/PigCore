@@ -148,7 +148,6 @@ plex TextLayout
 	FontFlowGlyph* glyphs;
 };
 
-typedef enum TextContraction TextContraction;
 enum TextContraction
 {
 	TextContraction_None = 0,
@@ -160,6 +159,7 @@ enum TextContraction
 	TextContraction_EllipseFilePath,
 	TextContraction_Count,
 };
+typedef enum TextContraction TextContraction;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetTextContractionStr(TextContraction enumValue);
 #else

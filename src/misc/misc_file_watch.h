@@ -20,7 +20,6 @@ Description:
 #include "struct/struct_string.h"
 #include "os/os_file.h"
 
-typedef enum OsFileWatchChange OsFileWatchChange;
 enum OsFileWatchChange
 {
 	OsFileWatchChange_None = 0,
@@ -29,6 +28,7 @@ enum OsFileWatchChange
 	OsFileWatchChange_Deleted,
 	OsFileWatchChange_Count,
 };
+typedef enum OsFileWatchChange OsFileWatchChange;
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetOsFileWatchChangeStr(OsFileWatchChange enumValue);
 #else

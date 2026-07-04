@@ -43,9 +43,11 @@ Description:
 
 #if BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP
 
+MAYBE_START_EXTERN_C
 #include "tests/simple_shader.glsl.h"
 #include "tests/main2d_shader.glsl.h"
 #include "tests/main3d_shader.glsl.h"
+MAYBE_END_EXTERN_C
 
 static void EarlyInit();
 int MyMain(int argc, char* argv[]);
@@ -421,9 +423,9 @@ void AppInit(void)
 	
 	ScratchBegin(scratch);
 	InitSokolGraphics((sg_desc){
+		.metal = { .use_command_buffer_with_retained_references = true, },
+		.logger = { .func = SokolLogCallback },
 		.environment = GetSokolGfxEnvironment(),
-		.logger.func = SokolLogCallback,
-		.metal.use_command_buffer_with_retained_references = true,
 	});
 	
 	InitGfxSystem(stdHeap, &gfx);
@@ -740,21 +742,21 @@ bool AppFrame(void)
 	if (sapp_mouse_locked())
 	{
 		r32 cameraHoriRot = AtanR32(cameraLookDir.z, cameraLookDir.x);
-		r32 cameraVertRot = AtanR32(cameraLookDir.y, Length(MakeV2(cameraLookDir.x, cameraLookDir.z)));
+		r32 cameraVertRot = AtanR32(cameraLookDir.y, LengthV2(MakeV2(cameraLookDir.x, cameraLookDir.z)));
 		cameraHoriRot = AngleFixR32(cameraHoriRot - mouse.lockedPosDelta.x / 500.0f);
 		cameraVertRot = ClampR32(cameraVertRot - mouse.lockedPosDelta.y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
 		r32 horizontalRadius = CosR32(cameraVertRot);
 		cameraLookDir = MakeV3(CosR32(cameraHoriRot) * horizontalRadius, SinR32(cameraVertRot), SinR32(cameraHoriRot) * horizontalRadius);
 		
-		v3 horizontalForwardVec = Normalize(MakeV3(cameraLookDir.x, 0.0f, cameraLookDir.z));
-		v3 horizontalRightVec = Normalize(MakeV3(cameraLookDir.z, 0.0f, -cameraLookDir.x));
+		v3 horizontalForwardVec = NormalizeV3(MakeV3(cameraLookDir.x, 0.0f, cameraLookDir.z));
+		v3 horizontalRightVec = NormalizeV3(MakeV3(cameraLookDir.z, 0.0f, -cameraLookDir.x));
 		const r32 moveSpeed = IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? 0.08f : 0.02f;
-		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_W)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_A)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, -moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_S)) { cameraPos = Add(cameraPos, Mul(horizontalForwardVec, -moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_D)) { cameraPos = Add(cameraPos, Mul(horizontalRightVec, moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_E)) { cameraPos = Add(cameraPos, Mul(V3_Up, moveSpeed)); }
-		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_Q)) { cameraPos = Add(cameraPos, Mul(V3_Down, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_W)) { cameraPos = AddV3(cameraPos, ScaleV3(horizontalForwardVec, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_A)) { cameraPos = AddV3(cameraPos, ScaleV3(horizontalRightVec, -moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_S)) { cameraPos = AddV3(cameraPos, ScaleV3(horizontalForwardVec, -moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_D)) { cameraPos = AddV3(cameraPos, ScaleV3(horizontalRightVec, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_E)) { cameraPos = AddV3(cameraPos, ScaleV3(V3_Up, moveSpeed)); }
+		if (IsKeyboardKeyDown(&keyboard, nullptr, Key_Q)) { cameraPos = AddV3(cameraPos, ScaleV3(V3_Down, moveSpeed)); }
 	}
 	
 	for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
@@ -766,7 +768,7 @@ bool AppFrame(void)
 			{
 				v2 delta = SubV2(touch->pos, touch->prevPos);
 				r32 cameraHoriRot = AtanR32(cameraLookDir.z, cameraLookDir.x);
-				r32 cameraVertRot = AtanR32(cameraLookDir.y, Length(MakeV2(cameraLookDir.x, cameraLookDir.z)));
+				r32 cameraVertRot = AtanR32(cameraLookDir.y, LengthV2(MakeV2(cameraLookDir.x, cameraLookDir.z)));
 				cameraHoriRot = AngleFixR32(cameraHoriRot - delta.x / 500.0f);
 				cameraVertRot = ClampR32(cameraVertRot - delta.y / 500.0f, -HalfPi32+0.05f, HalfPi32-0.05f);
 				r32 horizontalRadius = CosR32(cameraVertRot);
@@ -1392,9 +1394,9 @@ bool AppFrame(void)
 			// 	.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
 			// 	.child = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
 			// }});
-			PushUiFields({ .borderThickness = FillV4r(2.0f), .padding = {.inner = FillV4r(2.0f) }, .borderColor = ColorWithAlpha(White, 0.75f) });
+			PushUiFields({ .padding = { .inner = FillV4r(2.0f) }, .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
 			PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
-			#define SIMPLETEXTELEM(strLit, isMousePassthrough) UIELEM_LEAF({ .sizing = UI_TEXT_FULL(), .padding = { .outer = FillV4r(4) }, .text = StrLit(strLit), .font = &testFont, .textColor = MonokaiWhite, .mousePassthrough=(isMousePassthrough)});
+			#define SIMPLETEXTELEM(strLit, isMousePassthrough) UIELEM_LEAF({ .sizing = UI_TEXT_FULL(), .padding = { .outer = FillV4r(4) }, .text = StrLit(strLit), .textColor = MonokaiWhite, .font = &testFont, .mousePassthrough=(isMousePassthrough)});
 			
 			UiElemConfig rootElem = { .id = UiIdLit("Root") };
 			rootElem.direction = UiLayoutDir_TopDown; // IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown;
@@ -1495,20 +1497,20 @@ bool AppFrame(void)
 				}
 				
 				UIELEM({ .id = UiIdLit("Red"),
+					.direction = UiLayoutDir_LeftToRight,
 					.sizing = { .x=UI_FIT(), .y=UI_EXPAND() },
 					.padding = {
 						// .inner = { .Right = 15 },
 						.child = 15,
 					},
-					.direction = UiLayoutDir_LeftToRight,
 					.color=MonokaiRed,
 					.colorRecursive = MonokaiPurple,
 				})
 				{
 					UIELEM({ .id = UiIdLit("DarkGreen"),
-						.color=MonokaiDarkGreen,
 						.sizing=UI_FIXED2(100, 200),
 						.alignment = { .y = UiAlign_Top },
+						.color=MonokaiDarkGreen,
 					})
 					{
 						SIMPLETEXTELEM("Green", false);
@@ -1517,9 +1519,9 @@ bool AppFrame(void)
 					UIELEM_LEAF({ .id = UiIdLit("LoremIpsum"),
 						.sizing = UI_TEXT_WRAP(30.0f),
 						.padding = { .outer = FillV4r(4) },
+						.color = ColorWithAlpha(MonokaiDarkGray, 0.95f),
 						.richText = DecodeStrToRichStr(UiCtx->frameArena, StrLit("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed [alpha=0.5]do eiusmod tempor incididunt[alpha] ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum")),
 						.font = &testFont,
-						.color = ColorWithAlpha(MonokaiDarkGray, 0.95f),
 						// .textColor = MonokaiWhite,
 					});
 					
@@ -1539,24 +1541,24 @@ bool AppFrame(void)
 				if (UiCtx->mouseHoveredId.id != 0 && GetUiElementById(UiCtx->mouseHoveredId, false) != nullptr)
 				{
 					UIELEM({ .id = UiIdLit("FloatingMenu"),
+						.direction = UiLayoutDir_TopDown,
 						.sizing = UI_FIT2(),
 						// .sizing = UI_PERCENT2(0.8f, 0.5f),
 						// .sizing = UI_EXPAND2(),
-						.direction = UiLayoutDir_TopDown,
-						.padding = { .child = 5, .inner = FillV4r(10) },
+						.padding = { .inner = FillV4r(10), .child = 5 },
+						.depth = -1.0f,
 						.color=MonokaiDarkGray,
 						.colorRecursive = ColorWithAlpha(White, 0.5f),
-						.depth = -1.0f,
-						.mousePassthrough = true,
 						.floating = {
 							// .type = UiFloatingType_Parent,
 							.type = UiFloatingType_Id,
-							.attachId = UiCtx->mouseHoveredId,
 							.offset = MakeV2(0, -2 * uiScale), //SubV2(mouse.position, ScaleV2(windowSize, 0.25f)), //MakeV2(15, 45),
+							.attachId = UiCtx->mouseHoveredId,
 							.parentSide = UiSide_TopCenter,
 							.elemSide = UiSide_BottomCenter,
 						},
 						.clipChildren = true,
+						.mousePassthrough = true,
 					})
 					{
 						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiRed,    .mousePassthrough = true }) { SIMPLETEXTELEM("Red", true); }
@@ -1837,8 +1839,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.height = 630,
 		.high_dpi = true,
 		.window_title = "Simple Sokol App!",
-		.icon.sokol_default = true,
-		.logger.func = SokolLogCallback,
+		.icon = { .sokol_default = true },
+		.logger = { .func = SokolLogCallback },
 		.enable_touch_input = true,
 	};
 	

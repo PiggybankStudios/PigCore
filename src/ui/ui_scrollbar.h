@@ -153,10 +153,10 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 	if (!state->hidden && (!state->autohide || contentSize.height > usableViewSize.height))
 	{
 		UIELEM({ .id = gutterId,
-			.direction = UiLayoutDir_TopDown,
 			.scrollRelayId = scrollViewId,
-			.alignment = UI_ALIGN_TOP_CENTER(),
+			.direction = UiLayoutDir_TopDown,
 			.sizing = { .width=UI_FIXED(gutterWidth), .height=UI_PERCENT(1.0f) },
+			.alignment = UI_ALIGN_TOP_CENTER(),
 			.padding = { .inner = { .left=gutterLeftRightPadding, .right=gutterLeftRightPadding } },
 			.color = gutterColor,
 		})
@@ -256,10 +256,10 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 	if (state->hidden && (!state->autohide || contentSize.width > usableViewSize.width))
 	{
 		UIELEM({ .id = gutterId,
-			.direction = UiLayoutDir_LeftToRight,
 			.scrollRelayId = scrollViewId,
-			.alignment = UI_ALIGN_LEFT_CENTER(),
+			.direction = UiLayoutDir_LeftToRight,
 			.sizing = { .width=UI_PERCENT(1.0f), .height=UI_FIXED(gutterHeight) },
+			.alignment = UI_ALIGN_LEFT_CENTER(),
 			.padding = { .inner = { .top=gutterTopBottomPadding, .bottom=gutterTopBottomPadding } },
 			.color = gutterColor,
 		})
