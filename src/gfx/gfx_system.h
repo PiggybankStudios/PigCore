@@ -387,7 +387,7 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 		.swapchain = system->swapchain,
 		.label = "mainPass",
 	};
-	mainPass.action.colors[0] = {
+	mainPass.action.colors[0] = NEW_STRUCT(sg_color_attachment_action){
 		.load_action = SG_LOADACTION_CLEAR,
 		.clear_value = { clearColorVec.r, clearColorVec.g, clearColorVec.b, clearColorVec.a }
 	};
