@@ -129,8 +129,8 @@ PEXP uxx GetShaderUniformMatchSize(ShaderUniformType enumValue)
 		case ShaderUniformType_ProjMatrix:  return sizeof(mat4);
 		case ShaderUniformType_ViewMatrix:  return sizeof(mat4);
 		case ShaderUniformType_WorldMatrix: return sizeof(mat4);
-		case ShaderUniformType_TintColor:   return sizeof(v4r);
-		case ShaderUniformType_SourceRec:   return sizeof(v4r);
+		case ShaderUniformType_TintColor:   return sizeof(v4);
+		case ShaderUniformType_SourceRec:   return sizeof(v4);
 		default: return 0;
 	}
 }
@@ -189,9 +189,8 @@ plex Shader
 	PIG_CORE_INLINE bool SetShaderProjectionMat(Shader* shader, mat4 matrix);
 	PIG_CORE_INLINE bool SetShaderViewMat(Shader* shader, mat4 matrix);
 	PIG_CORE_INLINE bool SetShaderWorldMat(Shader* shader, mat4 matrix);
-	PIG_CORE_INLINE bool SetShaderTintColorRaw(Shader* shader, v4r color);
+	PIG_CORE_INLINE bool SetShaderTintColorRaw(Shader* shader, v4 color);
 	PIG_CORE_INLINE bool SetShaderTintColor(Shader* shader, Color32 color);
-	PIG_CORE_INLINE bool SetShaderSourceRecRaw(Shader* shader, v4r rectangle); //TODO: Change these to rec type!
 	PIG_CORE_INLINE bool SetShaderSourceRec(Shader* shader, v4 rectangle); //TODO: Change these to rec type!
 	PIG_CORE_INLINE bool SetShaderUniformByName(Shader* shader, Str8 uniformName, uxx valueSize, const void* valuePntr);
 	PIG_CORE_INLINE bool SetShaderUniformByNameR32(Shader* shader, Str8 uniformName, r32 value);
@@ -460,10 +459,9 @@ PEXPI bool SetShaderUniformByType(Shader* shader, ShaderUniformType type, uxx va
 PEXPI bool SetShaderProjectionMat(Shader* shader, mat4 matrix) { return SetShaderUniformByType(shader, ShaderUniformType_ProjMatrix, sizeof(matrix), &matrix); }
 PEXPI bool SetShaderViewMat(Shader* shader, mat4 matrix) { return SetShaderUniformByType(shader, ShaderUniformType_ViewMatrix, sizeof(matrix), &matrix); }
 PEXPI bool SetShaderWorldMat(Shader* shader, mat4 matrix) { return SetShaderUniformByType(shader, ShaderUniformType_WorldMatrix, sizeof(matrix), &matrix); }
-PEXPI bool SetShaderTintColorRaw(Shader* shader, v4r color) { return SetShaderUniformByType(shader, ShaderUniformType_TintColor, sizeof(color), &color); }
-PEXPI bool SetShaderTintColor(Shader* shader, Color32 color) { return SetShaderTintColorRaw(shader, ToV4rFromColor32(color)); }
-PEXPI bool SetShaderSourceRecRaw(Shader* shader, v4r rectangle) { return SetShaderUniformByType(shader, ShaderUniformType_SourceRec, sizeof(rectangle), &rectangle); } //TODO: Change these to rec type!
-PEXPI bool SetShaderSourceRec(Shader* shader, v4 rectangle) { return SetShaderSourceRecRaw(shader, ToV4rFrom4(rectangle)); } //TODO: Change these to rec type!
+PEXPI bool SetShaderTintColorRaw(Shader* shader, v4 color) { return SetShaderUniformByType(shader, ShaderUniformType_TintColor, sizeof(color), &color); }
+PEXPI bool SetShaderTintColor(Shader* shader, Color32 color) { return SetShaderTintColorRaw(shader, ToV4FromColor32(color)); }
+PEXPI bool SetShaderSourceRec(Shader* shader, v4 rectangle) { return SetShaderUniformByType(shader, ShaderUniformType_SourceRec, sizeof(rectangle), &rectangle); } //TODO: Change these to rec type!
 
 PEXPI bool SetShaderUniformByName(Shader* shader, Str8 uniformName, uxx valueSize, const void* valuePntr)
 {

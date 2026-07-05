@@ -133,37 +133,6 @@ car Vector4_R32
 #define FillV4_Const(value)       MakeV4_Const((value), (value), (value), (value))
 #define FillV4(value)             MakeV4((value), (value), (value), (value))
 
-//TODO: Remove me!
-//NOTE: Vec4Raw is exactly the same as HMM_Vec4 but it doesn't include the SSE type __m128
-//      which means it's alignment is 4 instead of 16! HMM_Vec4 is the only HMM vector
-//      type that is 16-byte aligned, so this is the only "Raw" variant we have
-typedef car Vec4Raw Vec4Raw;
-car Vec4Raw
-{
-	r32 elem[4];
-	plex { r32 x, y, z, w; };
-	plex { r32 r, g, b, a; };
-	plex { r32 red, green, blue, alpha; };
-	plex { r32 width, height, depth, wDepth; };
-	plex { r32 left, top, right, bottom; }; //NOTE: These aliases are mostly used for UI side parameters (like borderThickness and margins)
-	plex { r32 topLeft, topRight, bottomRight, bottomLeft; }; //NOTE: These aliases are mostly used for UI cornerRadius
-	plex { Vector3_R32 xyz; r32 _unused1; };
-	plex { r32 _unused2; Vector3_R32 yzw; };
-	plex { Vector2_R32 xy, zw; };
-	plex { r32 _unused3; Vector2_R32 yz; r32 _unused4; };
-	plex { Vector3_R32 rgb; r32 _unused5; };
-	plex { r32 _unused6; Vector3_R32 gba; };
-	plex { Vector2_R32 rg, ba; };
-	plex { r32 _unused7; Vector2_R32 gb; r32 _unused8; };
-	#if LANGUAGE_IS_CPP
-	inline r32& operator[](const int& elemIndex) { return elem[elemIndex]; }
-	#endif
-};
-#define MakeV4r_Const(X, Y, Z, W)  { .x=(X), .y=(Y), .z=(Z), .w=(W) }
-#define MakeV4r(x, y, z, w)        NEW_STRUCT(Vec4Raw)MakeV4r_Const((x), (y), (z), (w))
-#define FillV4r_Const(value)       MakeV4r_Const((value), (value), (value), (value))
-#define FillV4r(value)             MakeV4r((value), (value), (value), (value))
-
 typedef car Vector2_I32 Vector2_I32;
 car Vector2_I32
 {
@@ -301,7 +270,6 @@ car Vector4_R64
 //NOTE: The default assumption for vectors is r32 members
 //    'i' suffix refers to "integer" members and implicitly means 32-bit (unsigned and 64-bit integers are not yet supported)
 //    'd' suffix refers to "double" members which are 64-bit (we went with a 'd' suffix instead of something like 'r64' because a single character suffix reads a lot nicer and "double" is a well known word to refer to 64-bit floating point numbers)
-//    'r' suffix refers to "raw", which is the same as normal (r32 members) but without SIMD member so alignment is 4 instead of 16
 typedef Vector2_R32 v2;
 typedef Vector2_I32 v2i;
 typedef Vector2_R64 v2d;
@@ -313,7 +281,6 @@ typedef Vector3_R64 v3d;
 typedef Vector4_R32 v4;
 typedef Vector4_I32 v4i;
 typedef Vector4_R64 v4d;
-typedef Vec4Raw     v4r; //TODO: Remove me!
 
 // +--------------------------------------------------------------+
 // |                      Helper Slice Types                      |
@@ -360,12 +327,6 @@ plex Vec4Slice
 	uxx length;
 	car { void* pntr; r32 components; v4* vectors; };
 };
-typedef plex Vec4RawSlice Vec4RawSlice;
-plex Vec4RawSlice
-{
-	uxx length;
-	car { void* pntr; r32 components; v4r* vectors; };
-};
 typedef plex Vec4iSlice Vec4iSlice;
 plex Vec4iSlice
 {
@@ -409,8 +370,6 @@ plex Vec4R64Slice
 	PIG_CORE_INLINE v4 ToV4Fromd(v4d vec4d);
 	PIG_CORE_INLINE v4 ToV4From3(v3 vec3, r32 w);
 	PIG_CORE_INLINE v4i ToV4iFrom3(v3i vec3i, i32 w);
-	PIG_CORE_INLINE v4r ToV4rFrom4(v4 vec4);
-	PIG_CORE_INLINE v4 ToV4Fromr(v4r vec4r);
 	#if TARGET_IS_ORCA
 	PIG_CORE_INLINE oc_vec2 ToOcVec2(v2 vector);
 	PIG_CORE_INLINE v2 ToV2FromOc(oc_vec2 orcaVector);
@@ -420,8 +379,6 @@ plex Vec4R64Slice
 	PIG_CORE_INLINE v4 ToV4FromOc(oc_vec4 orcaVector);
 	PIG_CORE_INLINE oc_vec2i ToOcVec2i(v2i vector);
 	PIG_CORE_INLINE v2i ToV2iFromOc(oc_vec2i orcaVector);
-	PIG_CORE_INLINE oc_color ToOcColorFromV4r(v4r colorVec);
-	PIG_CORE_INLINE v4r ToV4rFromOcColor(oc_color orcaColor);
 	#endif //TARGET_IS_ORCA
 	PIG_CORE_INLINE v2 AddV2(v2 left, v2 right);
 	PIG_CORE_INLINE v3 AddV3(v3 left, v3 right);
@@ -480,7 +437,6 @@ plex Vec4R64Slice
 	PIG_CORE_INLINE bool AreEqualV2(v2 left, v2 right);
 	PIG_CORE_INLINE bool AreEqualV3(v3 left, v3 right);
 	PIG_CORE_INLINE bool AreEqualV4(v4 left, v4 right);
-	PIG_CORE_INLINE bool AreEqualV4r(v4r left, v4r right);
 	PIG_CORE_INLINE bool AreEqualV2i(v2i left, v2i right);
 	PIG_CORE_INLINE bool AreEqualV3i(v3i left, v3i right);
 	PIG_CORE_INLINE bool AreEqualV4i(v4i left, v4i right);
@@ -761,7 +717,6 @@ plex Vec4R64Slice
 #define V3i_Zero_Const  MakeV3i_Const(0, 0, 0)
 #define V3d_Zero_Const  MakeV3d_Const(0.0, 0.0, 0.0)
 #define V4_Zero_Const   MakeV4_Const(0.0f, 0.0f, 0.0f, 0.0f)
-#define V4r_Zero_Const  MakeV4r_Const(0.0f, 0.0f, 0.0f, 0.0f)
 #define V4i_Zero_Const  MakeV4i_Const(0, 0, 0, 0)
 #define V4d_Zero_Const  MakeV4d_Const(0.0, 0.0, 0.0, 0.0)
 
@@ -846,22 +801,6 @@ plex Vec4R64Slice
 #define V4_Prevward  MakeV4( 0.0f,  0.0f,  0.0f, -1.0f)
 #define V4_Nextward  MakeV4( 0.0f,  0.0f,  0.0f,  1.0f)
 
-#define V4r_Zero      MakeV4r( 0.0f,  0.0f,  0.0f,  0.0f)
-#define V4r_One       MakeV4r( 1.0f,  1.0f,  1.0f,  1.0f)
-#define V4r_Half      MakeV4r( 0.5f,  0.5f,  0.5f,  0.5f)
-#define V4r_Left      MakeV4r(-1.0f,  0.0f,  0.0f,  0.0f)
-#define V4r_Right     MakeV4r( 1.0f,  0.0f,  0.0f,  0.0f)
-#define V4r_Bottom    MakeV4r( 0.0f, -1.0f,  0.0f,  0.0f)
-#define V4r_Top       MakeV4r( 0.0f,  1.0f,  0.0f,  0.0f)
-#define V4r_Back      MakeV4r( 0.0f,  0.0f, -1.0f,  0.0f)
-#define V4r_Front     MakeV4r( 0.0f,  0.0f,  1.0f,  0.0f)
-#define V4r_Down      MakeV4r( 0.0f, -1.0f,  0.0f,  0.0f)
-#define V4r_Up        MakeV4r( 0.0f,  1.0f,  0.0f,  0.0f)
-#define V4r_Backward  MakeV4r( 0.0f,  0.0f, -1.0f,  0.0f)
-#define V4r_Forward   MakeV4r( 0.0f,  0.0f,  1.0f,  0.0f)
-#define V4r_Prevward  MakeV4r( 0.0f,  0.0f,  0.0f, -1.0f)
-#define V4r_Nextward  MakeV4r( 0.0f,  0.0f,  0.0f,  1.0f)
-
 #define V4i_Zero      MakeV4i( 0,  0,  0,  0)
 #define V4i_One       MakeV4i( 1,  1,  1,  0)
 #define V4i_Left      MakeV4i(-1,  0,  0,  0)
@@ -929,8 +868,6 @@ PEXPI v4d ToV4dFromf(v4 vec4) { return MakeV4d((r64)vec4.x, (r64)vec4.y, (r64)ve
 PEXPI v4 ToV4Fromd(v4d vec4d) { return MakeV4((r32)vec4d.x, (r32)vec4d.y, (r32)vec4d.z, (r32)vec4d.w); }
 PEXPI v4 ToV4From3(v3 vec3, r32 w) { return MakeV4(vec3.x, vec3.y, vec3.z, w); }
 PEXPI v4i ToV4iFrom3(v3i vec3i, i32 w) { return MakeV4i(vec3i.x, vec3i.y, vec3i.z, w); }
-PEXPI v4r ToV4rFrom4(v4 vec4) { return MakeV4r(vec4.x, vec4.y, vec4.z, vec4.w); }
-PEXPI v4 ToV4Fromr(v4r vec4r) { return MakeV4(vec4r.x, vec4r.y, vec4r.z, vec4r.w); }
 
 #if TARGET_IS_ORCA
 PEXPI oc_vec2 ToOcVec2(v2 vector) { return NEW_STRUCT(oc_vec2){ .x = vector.x, .y = vector.y }; }
@@ -944,9 +881,6 @@ PEXPI v3 ToV3FromOc(oc_vec3 orcaVector) { return MakeV3(orcaVector.x, orcaVector
 
 PEXPI oc_vec4 ToOcVec4(v4 vector) { return NEW_STRUCT(oc_vec4){ .x = vector.x, .y = vector.y, .z = vector.z, .w = vector.w }; }
 PEXPI v4 ToV4FromOc(oc_vec4 orcaVector) { return MakeV4(orcaVector.x, orcaVector.y, orcaVector.z, orcaVector.w); }
-
-PEXPI oc_color ToOcColorFromV4r(v4r colorVec) { return NEW_STRUCT(oc_color){ .r = colorVec.x, .g = colorVec.y, .b = colorVec.z, .a = colorVec.w }; }
-PEXPI v4r ToV4rFromOcColor(oc_color orcaColor) { return MakeV4r(orcaColor.r, orcaColor.g, orcaColor.b, orcaColor.a); }
 #endif //TARGET_IS_ORCA
 
 // +--------------------------------------------------------------+
@@ -1172,7 +1106,6 @@ PEXPI v4d ShrinkV4d(v4d left, r64 divisor) { v4d result; result.x = left.x / div
 PEXPI bool  AreEqualV2(v2  left, v2  right) { return (left.x == right.x && left.y == right.y); }
 PEXPI bool  AreEqualV3(v3  left, v3  right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
 PEXPI bool  AreEqualV4(v4  left, v4  right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
-PEXPI bool AreEqualV4r(v4r left, v4r right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }
 PEXPI bool AreEqualV2i(v2i left, v2i right) { return (left.x == right.x && left.y == right.y); }
 PEXPI bool AreEqualV3i(v3i left, v3i right) { return (left.x == right.x && left.y == right.y && left.z == right.z); }
 PEXPI bool AreEqualV4i(v4i left, v4i right) { return (left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w); }

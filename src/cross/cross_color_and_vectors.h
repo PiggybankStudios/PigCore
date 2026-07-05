@@ -17,8 +17,6 @@ typedef v4 Colorf;
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE v4 ToV4FromColor32(Color32 color);
 	PIG_CORE_INLINE Color32 ToColor32FromV4(v4 vector);
-	PIG_CORE_INLINE v4r ToV4rFromColor32(Color32 color);
-	PIG_CORE_INLINE Color32 ToColor32FromV4r(v4r vector);
 	PIG_CORE_INLINE r32 ToLinearFromGammaR32(r32 channelValue);
 	PIG_CORE_INLINE r32 ToGammaFromLinearR32(r32 channelValue);
 	Colorf ToLinearFromGamma(Colorf color);
@@ -75,25 +73,6 @@ PEXPI v4 ToV4FromColor32(Color32 color)
 	);
 }
 PEXPI Color32 ToColor32FromV4(v4 vector)
-{
-	return MakeColor(
-		ClampCastI32ToU8(RoundR32i(vector.x * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.y * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.z * 255.0f)),
-		ClampCastI32ToU8(RoundR32i(vector.w * 255.0f))
-	);
-}
-
-PEXPI v4r ToV4rFromColor32(Color32 color)
-{
-	return MakeV4r(
-		(r32)color.r / 255.0f,
-		(r32)color.g / 255.0f,
-		(r32)color.b / 255.0f,
-		(r32)color.a / 255.0f
-	);
-}
-PEXPI Color32 ToColor32FromV4r(v4r vector)
 {
 	return MakeColor(
 		ClampCastI32ToU8(RoundR32i(vector.x * 255.0f)),
@@ -180,8 +159,8 @@ PEXPI Colorf LinearColorAverage3(Colorf color1, Colorf color2, Colorf color3) { 
 PEXPI Colorf LinearColorAverage4(Colorf color1, Colorf color2, Colorf color3, Colorf color4) { return LerpV4(LerpV4(color1, color2, 0.5f), LerpV4(color3, color4, 0.5f), 0.5f); }
 
 #if TARGET_IS_ORCA
-PEXPI oc_color ToOcColorFromColor32(Color32 color) { return ToOcColorFromV4r(ToV4rFromColor32(color)); }
-PEXPI Color32 ToColor32FromOcColor(oc_color orcaColor) { return ToColor32FromV4r(ToV4rFromOcColor(orcaColor)); }
+PEXPI oc_color ToOcColorFromColor32(Color32 color) { return ToOcColorFromV4(ToV4FromColor32(color)); }
+PEXPI Color32 ToColor32FromOcColor(oc_color orcaColor) { return ToColor32FromV4(ToV4FromOcColor(orcaColor)); }
 #endif //TARGET_IS_ORCA
 
 #endif //PIG_CORE_IMPLEMENTATION

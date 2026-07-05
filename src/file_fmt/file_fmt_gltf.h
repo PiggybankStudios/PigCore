@@ -307,7 +307,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 		
 		if (parsedMaterial->has_pbr_metallic_roughness)
 		{
-			material->albedoFactor = MakeV4r(parsedMaterial->pbr_metallic_roughness.base_color_factor[0], parsedMaterial->pbr_metallic_roughness.base_color_factor[1], parsedMaterial->pbr_metallic_roughness.base_color_factor[2], parsedMaterial->pbr_metallic_roughness.base_color_factor[3]);
+			material->albedoFactor = MakeV4(parsedMaterial->pbr_metallic_roughness.base_color_factor[0], parsedMaterial->pbr_metallic_roughness.base_color_factor[1], parsedMaterial->pbr_metallic_roughness.base_color_factor[2], parsedMaterial->pbr_metallic_roughness.base_color_factor[3]);
 			material->metallicFactor = parsedMaterial->pbr_metallic_roughness.metallic_factor;
 			material->roughnessFactor = parsedMaterial->pbr_metallic_roughness.roughness_factor;
 			if (parsedMaterial->pbr_metallic_roughness.base_color_texture.texture != nullptr)
@@ -327,7 +327,7 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 		}
 		else
 		{
-			material->albedoFactor = FillV4r(1);
+			material->albedoFactor = FillV4(1);
 			material->metallicFactor = 0.0f;
 			material->roughnessFactor = 0.5f;
 			material->albedoTextureIndex = UINTXX_MAX;
@@ -493,9 +493,9 @@ PEXP Result TryParseGltfFileEx(Slice fileContents, Arena* arena, ModelData* mode
 							(vIndex * colorAttrib->data->stride) +
 							colorAttrib->data->offset
 						];
-						newVertex->color = MakeV4r(colorDataPntr[0], colorDataPntr[1], colorDataPntr[2], colorDataPntr[3]);
+						newVertex->color = MakeV4(colorDataPntr[0], colorDataPntr[1], colorDataPntr[2], colorDataPntr[3]);
 					}
-					else { newVertex->color = FillV4r(1); }
+					else { newVertex->color = FillV4(1); }
 				}
 				
 				if (primitive->indices != nullptr)

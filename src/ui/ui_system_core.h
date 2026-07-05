@@ -314,8 +314,8 @@ plex UiFloatingConfig
 typedef plex UiPadding UiPadding;
 plex UiPadding
 {
-	v4r inner; //space between our bounds and our childrens' bounds
-	v4r outer; //space between allocated area and our bounds
+	v4 inner; //space between our bounds and our childrens' bounds
+	v4 outer; //space between allocated area and our bounds
 	r32 child; //space in-between each child, along the layout direction
 };
 
@@ -375,8 +375,8 @@ plex UiElemConfig
 	rec textureSourceRec;
 	SpriteSheet* spriteSheet;
 	v2i sheetCell;
-	v4r cornerRadius;
-	v4r borderThickness;
+	v4 cornerRadius;
+	v4 borderThickness;
 	Color32 borderColor;
 	r32 borderDepth; //0.0f will result in borderDepth inheriting value of depth
 	Str8 text;
@@ -668,8 +668,8 @@ plex UiRenderCmd
 		plex
 		{
 			rec rectangle;
-			v4r cornerRadius;
-			v4r borderThickness;
+			v4 cornerRadius;
+			v4 borderThickness;
 			Color32 borderColor;
 			Texture* texture;
 			rec sourceRec;

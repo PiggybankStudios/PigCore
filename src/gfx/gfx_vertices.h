@@ -75,7 +75,7 @@ car Vertex2D
 	{
 		v2 position;
 		v2 texCoord;
-		v4r color;
+		v4 color;
 	};
 	plex
 	{
@@ -87,7 +87,7 @@ car Vertex2D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Vertex2D) == sizeof(r32)*8, "Vertex2D contains padding!");
 #endif
-#define MakeVertex2D(positionV2, texCoordV2, colorV4r) NEW_STRUCT(Vertex2D){ .position=(positionV2), .texCoord=(texCoordV2), .color=(colorV4r) }
+#define MakeVertex2D(positionV2, texCoordV2, colorV4) NEW_STRUCT(Vertex2D){ .position=(positionV2), .texCoord=(texCoordV2), .color=(colorV4) }
 
 typedef car Vertex3D Vertex3D;
 car Vertex3D
@@ -98,7 +98,7 @@ car Vertex3D
 		v3 position;
 		v3 normal;
 		v2 texCoord;
-		v4r color;
+		v4 color;
 	};
 	plex
 	{
@@ -111,17 +111,17 @@ car Vertex3D
 #if STATIC_ASSERT_AVAILABLE
 _Static_assert(sizeof(Vertex3D) == sizeof(r32)*12, "Vertex3D contains padding!");
 #endif
-#define MakeVertex3D(positionV3, normalV3, texCoordV2, colorV4r) NEW_STRUCT(Vertex3D){ .position=(positionV3), .normal=(normalV3), .texCoord=(texCoordV2), .color=(colorV4r) }
+#define MakeVertex3D(positionV3, normalV3, texCoordV2, colorV4) NEW_STRUCT(Vertex3D){ .position=(positionV3), .normal=(normalV3), .texCoord=(texCoordV2), .color=(colorV4) }
 
 // +--------------------------------------------------------------+
 // |                           Defines                            |
 // +--------------------------------------------------------------+
 #define Vertex2D_Size       sizeof(Vertex2D)
 #define Vertex2D_NumFloats  (sizeof(Vertex2D)/sizeof(r32))
-#define Vertex2D_Zero       MakeVertex2D(V2_Zero, V2_Zero, V4r_Zero)
+#define Vertex2D_Zero       MakeVertex2D(V2_Zero, V2_Zero, V4_Zero)
 
 #define Vertex3D_Size       sizeof(Vertex3D)
 #define Vertex3D_NumFloats  (sizeof(Vertex3D)/sizeof(r32))
-#define Vertex3D_Zero       MakeVertex3D(V3_Zero, V3_Zero, V2_Zero, V4r_Zero)
+#define Vertex3D_Zero       MakeVertex3D(V3_Zero, V3_Zero, V2_Zero, V4_Zero)
 
 #endif //  _GFX_VERTICES_H

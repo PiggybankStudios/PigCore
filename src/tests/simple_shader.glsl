@@ -1,7 +1,7 @@
 @ctype mat4 mat4
 @ctype vec2 v2
 @ctype vec3 v3
-@ctype vec4 v4r
+@ctype vec4 v4
 
 // +--------------------------------------------------------------+
 // |                        Vertex Shader                         |

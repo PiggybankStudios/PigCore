@@ -50,7 +50,7 @@ plex ModelDataMaterial
 	uxx index;
 	Str8 name;
 	
-	v4r albedoFactor;
+	v4 albedoFactor;
 	r32 roughnessFactor;
 	r32 metallicFactor;
 	r32 ambientOcclusionFactor;

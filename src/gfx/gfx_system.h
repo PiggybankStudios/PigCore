@@ -70,8 +70,8 @@ plex GfxSystemState
 	mat4 projectionMat;
 	mat4 viewMat;
 	mat4 worldMat;
-	v4r tintColor;
-	v4r sourceRec; //TODO: Change this to rec type!
+	v4 tintColor;
+	v4 sourceRec; //TODO: Change this to rec type!
 };
 
 typedef plex GfxSystem GfxSystem;
@@ -144,9 +144,9 @@ plex GfxSystem
 	PIG_CORE_INLINE void GfxSystem_SetProjectionMat(GfxSystem* system, mat4 matrix);
 	PIG_CORE_INLINE void GfxSystem_SetViewMat(GfxSystem* system, mat4 matrix);
 	PIG_CORE_INLINE void GfxSystem_SetWorldMat(GfxSystem* system, mat4 matrix);
-	PIG_CORE_INLINE void GfxSystem_SetTintColorRaw(GfxSystem* system, v4r colorVec);
+	PIG_CORE_INLINE void GfxSystem_SetTintColorRaw(GfxSystem* system, v4 colorVec);
 	PIG_CORE_INLINE void GfxSystem_SetTintColor(GfxSystem* system, Color32 color);
-	PIG_CORE_INLINE void GfxSystem_SetSourceRecRaw(GfxSystem* system, v4r rectangle);
+	PIG_CORE_INLINE void GfxSystem_SetSourceRecRaw(GfxSystem* system, v4 rectangleV4);
 	PIG_CORE_INLINE void GfxSystem_SetSourceRec(GfxSystem* system, rec rectangle);
 	void GfxSystem_DrawTexturedRectangleEx(GfxSystem* system, rec rectangle, Color32 color, Texture* texture, rec sourceRec);
 	PIG_CORE_INLINE void GfxSystem_DrawTexturedRectangle(GfxSystem* system, rec rectangle, Color32 color, Texture* texture);
@@ -248,8 +248,8 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 	systemOut->state.projectionMat = Mat4_Identity;
 	systemOut->state.viewMat = Mat4_Identity;
 	systemOut->state.worldMat = Mat4_Identity;
-	systemOut->state.tintColor = FillV4r(1.0f);
-	systemOut->state.sourceRec = MakeV4r(0.0f, 0.0f, 1.0f, 1.0f);
+	systemOut->state.tintColor = FillV4(1.0f);
+	systemOut->state.sourceRec = MakeV4(0.0f, 0.0f, 1.0f, 1.0f);
 	
 	Color32 pixel = White;
 	systemOut->pixelTexture = InitTexture(arena, StrLit("pixel"), V2i_One, &pixel, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
@@ -273,9 +273,9 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 		r32 angle1 = (r32)(sIndex+1) * (TwoPi32 / GFX_SYSTEM_CIRCLE_NUM_SIDES);
 		v2 positionAndTexCoord0 = MakeV2(0.5f + CosR32(angle0)*0.5f, 0.5f + SinR32(angle0)*0.5f);
 		v2 positionAndTexCoord1 = MakeV2(0.5f + CosR32(angle1)*0.5f, 0.5f + SinR32(angle1)*0.5f);
-		circleVertices[sIndex*3 + 0] = MakeVertex2D(positionAndTexCoord0, positionAndTexCoord0, FillV4r(1));
-		circleVertices[sIndex*3 + 1] = MakeVertex2D(positionAndTexCoord1, positionAndTexCoord1, FillV4r(1));
-		circleVertices[sIndex*3 + 2] = MakeVertex2D(V2_Half, V2_Half, FillV4r(1));
+		circleVertices[sIndex*3 + 0] = MakeVertex2D(positionAndTexCoord0, positionAndTexCoord0, FillV4(1));
+		circleVertices[sIndex*3 + 1] = MakeVertex2D(positionAndTexCoord1, positionAndTexCoord1, FillV4(1));
+		circleVertices[sIndex*3 + 2] = MakeVertex2D(V2_Half, V2_Half, FillV4(1));
 	}
 	systemOut->circleBuffer = InitVertBuffer2D(arena, StrLit("circle"), VertBufferUsage_Static, ArrayCount(circleVertices), &circleVertices[0], false);
 	Assert(systemOut->circleBuffer.error == Result_Success);
@@ -293,12 +293,12 @@ PEXP void InitGfxSystem(Arena* arena, GfxSystem* systemOut)
 			v2 positionAndTexCoordOuter0 = MakeV2(0.5f + CosR32(angle0)*outerRadius, 0.5f + SinR32(angle0)*outerRadius);
 			v2 positionAndTexCoordInner1 = MakeV2(0.5f + CosR32(angle1)*innerRadius, 0.5f + SinR32(angle1)*innerRadius);
 			v2 positionAndTexCoordOuter1 = MakeV2(0.5f + CosR32(angle1)*outerRadius, 0.5f + SinR32(angle1)*outerRadius);
-			ringVertices[sIndex*6 + 0] = MakeVertex2D(positionAndTexCoordInner0, positionAndTexCoordInner0, FillV4r(1));
-			ringVertices[sIndex*6 + 1] = MakeVertex2D(positionAndTexCoordOuter0, positionAndTexCoordOuter0, FillV4r(1));
-			ringVertices[sIndex*6 + 2] = MakeVertex2D(positionAndTexCoordOuter1, positionAndTexCoordOuter1, FillV4r(1));
-			ringVertices[sIndex*6 + 3] = MakeVertex2D(positionAndTexCoordInner0, positionAndTexCoordInner0, FillV4r(1));
-			ringVertices[sIndex*6 + 4] = MakeVertex2D(positionAndTexCoordOuter1, positionAndTexCoordOuter1, FillV4r(1));
-			ringVertices[sIndex*6 + 5] = MakeVertex2D(positionAndTexCoordInner1, positionAndTexCoordInner1, FillV4r(1));
+			ringVertices[sIndex*6 + 0] = MakeVertex2D(positionAndTexCoordInner0, positionAndTexCoordInner0, FillV4(1));
+			ringVertices[sIndex*6 + 1] = MakeVertex2D(positionAndTexCoordOuter0, positionAndTexCoordOuter0, FillV4(1));
+			ringVertices[sIndex*6 + 2] = MakeVertex2D(positionAndTexCoordOuter1, positionAndTexCoordOuter1, FillV4(1));
+			ringVertices[sIndex*6 + 3] = MakeVertex2D(positionAndTexCoordInner0, positionAndTexCoordInner0, FillV4(1));
+			ringVertices[sIndex*6 + 4] = MakeVertex2D(positionAndTexCoordOuter1, positionAndTexCoordOuter1, FillV4(1));
+			ringVertices[sIndex*6 + 5] = MakeVertex2D(positionAndTexCoordInner1, positionAndTexCoordInner1, FillV4(1));
 		}
 		systemOut->ringBuffers[tIndex] = InitVertBuffer2D(arena, ScratchPrintStr("ring%llu", (u64)tIndex+1), VertBufferUsage_Static, ArrayCount(ringVertices), &ringVertices[0], false);
 		Assert(systemOut->ringBuffers[tIndex].error == Result_Success);
@@ -376,7 +376,7 @@ PEXPI void GfxSystem_BeginFrame(GfxSystem* system, sg_swapchain swapchain, v2i s
 	Assert(!system->frameStarted);
 	system->swapchain = swapchain;
 	
-	v4r clearColorVec = ToV4rFromColor32(clearColor);
+	v4 clearColorVec = ToV4FromColor32(clearColor);
 	sg_pass mainPass = {
 		.action = {
 			.depth = {
@@ -464,7 +464,7 @@ PEXPI void GfxSystem_BindShader(GfxSystem* system, Shader* shader)
 			SetShaderViewMat(shader, system->state.viewMat);
 			SetShaderWorldMat(shader, system->state.worldMat);
 			SetShaderTintColorRaw(shader, system->state.tintColor);
-			SetShaderSourceRecRaw(shader, system->state.sourceRec);
+			SetShaderSourceRec(shader, system->state.sourceRec);
 			for (uxx tIndex = 0; tIndex < MAX_NUM_SHADER_VIEWS; tIndex++)
 			{
 				if (system->state.textures[tIndex] != nullptr)
@@ -729,31 +729,31 @@ PEXPI void GfxSystem_SetWorldMat(GfxSystem* system, mat4 matrix)
 	}
 }
 
-PEXPI void GfxSystem_SetTintColorRaw(GfxSystem* system, v4r colorVec)
+PEXPI void GfxSystem_SetTintColorRaw(GfxSystem* system, v4 colorVec)
 {
 	NotNull(system);
 	NotNull(system->arena);
-	if (!AreEqualV4r(colorVec, system->state.tintColor))
+	if (!AreEqualV4(colorVec, system->state.tintColor))
 	{
 		if (system->state.shader != nullptr) { SetShaderTintColorRaw(system->state.shader, colorVec); }
 		system->state.tintColor = colorVec;
 		system->uniformsChanged = true;
 	}
 }
-PEXPI void GfxSystem_SetTintColor(GfxSystem* system, Color32 color) { GfxSystem_SetTintColorRaw(system, ToV4rFromColor32(color)); }
+PEXPI void GfxSystem_SetTintColor(GfxSystem* system, Color32 color) { GfxSystem_SetTintColorRaw(system, ToV4FromColor32(color)); }
 
-PEXPI void GfxSystem_SetSourceRecRaw(GfxSystem* system, v4r rectangleV4r)
+PEXPI void GfxSystem_SetSourceRecRaw(GfxSystem* system, v4 rectangleV4)
 {
 	NotNull(system);
 	NotNull(system->arena);
-	if (!AreEqualV4r(rectangleV4r, system->state.sourceRec))
+	if (!AreEqualV4(rectangleV4, system->state.sourceRec))
 	{
-		if (system->state.shader != nullptr) { SetShaderSourceRecRaw(system->state.shader, rectangleV4r); }
-		system->state.sourceRec = rectangleV4r;
+		if (system->state.shader != nullptr) { SetShaderSourceRec(system->state.shader, rectangleV4); }
+		system->state.sourceRec = rectangleV4;
 		system->uniformsChanged = true;
 	}
 }
-PEXPI void GfxSystem_SetSourceRec(GfxSystem* system, rec rectangle) { GfxSystem_SetSourceRecRaw(system, ToV4rFromRec(rectangle)); }
+PEXPI void GfxSystem_SetSourceRec(GfxSystem* system, rec rectangle) { GfxSystem_SetSourceRecRaw(system, ToV4FromRec(rectangle)); }
 
 // +--------------------------------------------------------------+
 // |                      Drawing Functions                       |

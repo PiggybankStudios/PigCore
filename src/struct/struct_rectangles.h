@@ -216,7 +216,6 @@ typedef Obb3D_R64 obb3d;
 	PIG_CORE_INLINE reci ToReciFromf(rec rectangle);
 	PIG_CORE_INLINE rec ToRecFromV4(v4 vector);
 	PIG_CORE_INLINE v4 ToV4FromRec(rec rectangle);
-	PIG_CORE_INLINE v4r ToV4rFromRec(rec rectangle);
 	PIG_CORE_INLINE v4d ToV4dFromRecd(recd rectangle);
 	PIG_CORE_INLINE box ToBoxFromi(boxi boundingBox);
 	PIG_CORE_INLINE boxd ToBoxdFromi(boxi boundingBox);
@@ -737,7 +736,6 @@ PEXPI rec   ToRecFromd(recd rectangle)        { return MakeRec((r32)rectangle.x,
 PEXPI reci  ToReciFromf(rec rectangle)        { return MakeReci((i32)rectangle.x, (i32)rectangle.y, (i32)rectangle.width, (i32)rectangle.height); }
 PEXPI rec   ToRecFromV4(v4 vector)            { return MakeRec(vector.x, vector.y, vector.z, vector.w); }
 PEXPI v4    ToV4FromRec(rec rectangle)        { return MakeV4(rectangle.x, rectangle.y, rectangle.width, rectangle.height); }
-PEXPI v4r   ToV4rFromRec(rec rectangle)       { return MakeV4r(rectangle.x, rectangle.y, rectangle.width, rectangle.height); }
 PEXPI v4d   ToV4dFromRecd(recd rectangle)     { return MakeV4d(rectangle.x, rectangle.y, rectangle.width, rectangle.height); }
 PEXPI box   ToBoxFromi(boxi boundingBox)      { return MakeBox((r32)boundingBox.x, (r32)boundingBox.y, (r32)boundingBox.z, (r32)boundingBox.width, (r32)boundingBox.height, (r32)boundingBox.depth); }
 PEXPI boxd  ToBoxdFromi(boxi boundingBox)     { return MakeBoxd((r64)boundingBox.x, (r64)boundingBox.y, (r64)boundingBox.z, (r64)boundingBox.width, (r64)boundingBox.height, (r64)boundingBox.depth); }

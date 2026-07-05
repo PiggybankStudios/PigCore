@@ -166,7 +166,7 @@ PEXP void ContainerWithVerticalScrollbar_(UiId scrollViewId, UiScrollbarState* s
 				.sizing = UI_FIXED2(barSize.width, barSize.height),
 				.padding = { .outer = { .top=RoundR32(scrollPercentage * (gutterSize.height - barSize.height)) } },
 				.color = barColor,
-				.cornerRadius = FillV4r(barSize.width/2),
+				.cornerRadius = FillV4(barSize.width/2),
 			});
 		}
 	}
@@ -269,7 +269,7 @@ PEXP void ContainerWithHorizontalScrollbar_(UiId scrollViewId, UiScrollbarState*
 				.sizing = UI_FIXED2(barSize.width, barSize.height),
 				.padding = { .outer = { .left=RoundR32(scrollPercentage * (gutterSize.width - barSize.width)) } },
 				.color = barColor,
-				.cornerRadius = FillV4r(barSize.height/2),
+				.cornerRadius = FillV4(barSize.height/2),
 			});
 		}
 	}

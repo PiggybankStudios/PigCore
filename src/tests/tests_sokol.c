@@ -305,9 +305,9 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 // bool TestsGlobalUiThemerCallback(plex UiContext* context, UiElement* element, void* userPntr)
 UI_THEMER_CALLBACK_DEF(TestsGlobalUiThemerCallback)
 {
-	// if (AreEqualV4r(element->config.borderThickness, V4r_Zero) && element->config.borderColor.valueU32 == PigUiDefaultColor_Value)
+	// if (AreEqualV4(element->config.borderThickness, V4_Zero) && element->config.borderColor.valueU32 == PigUiDefaultColor_Value)
 	// {
-	// 	element->config.borderThickness = FillV4r(2.0f);
+	// 	element->config.borderThickness = FillV4(2.0f);
 	// 	element->config.borderColor = ColorWithAlpha(Black, 0.5f);
 	// }
 	// if (element->depth >= (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? 4 : 3)) { return false; }
@@ -1391,12 +1391,12 @@ bool AppFrame(void)
 			// PushUiFields({ .color = MonokaiDarkGray });
 			PushUiFieldsText({ .textColor = MonokaiDarkGray });
 			// PushUiFields({ .padding = {
-			// 	.outer = FillV4r(15.0f), //FillV4r(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
+			// 	.outer = FillV4(15.0f), //FillV4(OscillateBy(programTime, 0.0f, 15.0f, 4000, 0)),
 			// 	.child = 15.0f, //OscillateBy(programTime, 0.0f, 15.0f, 4000, 0),
 			// }});
-			PushUiFields({ .padding = { .inner = FillV4r(2.0f) }, .borderThickness = FillV4r(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
+			PushUiFields({ .padding = { .inner = FillV4(2.0f) }, .borderThickness = FillV4(2.0f), .borderColor = ColorWithAlpha(White, 0.75f) });
 			PushUiThemer(&uiContext.themers, TestsGlobalUiThemerCallback, nullptr);
-			#define SIMPLETEXTELEM(strLit, isMousePassthrough) UIELEM_LEAF({ .sizing = UI_TEXT_FULL(), .padding = { .outer = FillV4r(4) }, .text = StrLit(strLit), .textColor = MonokaiWhite, .font = &testFont, .mousePassthrough=(isMousePassthrough)});
+			#define SIMPLETEXTELEM(strLit, isMousePassthrough) UIELEM_LEAF({ .sizing = UI_TEXT_FULL(), .padding = { .outer = FillV4(4) }, .text = StrLit(strLit), .textColor = MonokaiWhite, .font = &testFont, .mousePassthrough=(isMousePassthrough)});
 			
 			UiElemConfig rootElem = { .id = UiIdLit("Root") };
 			rootElem.direction = UiLayoutDir_TopDown; // IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? UiLayoutDir_BottomUp : UiLayoutDir_TopDown;
@@ -1412,7 +1412,7 @@ bool AppFrame(void)
 					scrollableElem1.direction = UiLayoutDir_TopDown;
 					scrollableElem1.sizing.x = UI_PERCENT(0.5f);
 					scrollableElem1.sizing.y = UI_PERCENT(0.8f);
-					scrollableElem1.padding.inner = FillV4r(8);
+					scrollableElem1.padding.inner = FillV4(8);
 					// scrollableElem1.padding.outer.Bottom = 64;
 					scrollableElem1.padding.child = 8;
 					scrollableElem1.scrolling = NEW_STRUCT(UiScrolling)UI_SCROLL_VERTICAL();
@@ -1432,7 +1432,7 @@ bool AppFrame(void)
 					scrollableElem2.direction = UiLayoutDir_LeftToRight;
 					scrollableElem2.sizing.x = UI_PERCENT(0.2f);
 					scrollableElem2.sizing.y = UI_EXPAND();
-					scrollableElem2.padding.inner = FillV4r(8);
+					scrollableElem2.padding.inner = FillV4(8);
 					scrollableElem2.padding.child = 8;
 					scrollableElem2.scrolling = NEW_STRUCT(UiScrolling)UI_SCROLL_HORIZONTAL();
 					scrollableElem2.color = MonokaiPurple;
@@ -1450,7 +1450,7 @@ bool AppFrame(void)
 				
 				UiElemConfig percentageRowElem = { .id = UiIdLit("PercentageRow") };
 				percentageRowElem.direction = UiLayoutDir_RightToLeft;
-				percentageRowElem.borderThickness = FillV4r(IsUiElementBeingClicked(percentageRowElem.id, MouseBtn_Left) ? 30.0f : 0.0f);
+				percentageRowElem.borderThickness = FillV4(IsUiElementBeingClicked(percentageRowElem.id, MouseBtn_Left) ? 30.0f : 0.0f);
 				percentageRowElem.borderColor = MonokaiPurple;
 				percentageRowElem.borderDepth = UI_DEPTH_ZERO;
 				percentageRowElem.condition = UiConditionType_MouseHover;
@@ -1518,22 +1518,28 @@ bool AppFrame(void)
 					
 					UIELEM_LEAF({ .id = UiIdLit("LoremIpsum"),
 						.sizing = UI_TEXT_WRAP(30.0f),
-						.padding = { .outer = FillV4r(4) },
+						.padding = { .outer = FillV4(4) },
 						.color = ColorWithAlpha(MonokaiDarkGray, 0.95f),
 						.richText = DecodeStrToRichStr(UiCtx->frameArena, StrLit("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed [alpha=0.5]do eiusmod tempor incididunt[alpha] ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum")),
 						.font = &testFont,
 						// .textColor = MonokaiWhite,
 					});
 					
+					static u32 randomCellOffset = UINT32_MAX;
+					u32 numCellsInSheet = (u32)testSheet.gridWidth * (u32)testSheet.gridHeight;
+					if (randomCellOffset == UINT32_MAX || IsKeyboardKeyPressed(&keyboard, nullptr, Key_R, true)) { randomCellOffset = GetRandU32Range(mainRandom, 0, numCellsInSheet); PrintLine_D("Chose offset %u", randomCellOffset); }
+					r32 cellScale = 1.0f;
+					if (cellScale * testSheet.cellWidth > windowSize.width/8) { cellScale = MinR32(cellScale, (windowSize.width/8) / testSheet.cellWidth); }
+					if (cellScale * testSheet.cellHeight > windowSize.height/3) { cellScale = MinR32(cellScale, (windowSize.height/3) / testSheet.cellHeight); }
 					for (uxx tIndex = 0; tIndex < 4; tIndex++)
 					{
 						// Texture* texture = ((tIndex%2) == 0) ? &mipmapTexture : &noMipmapTexture;
 						UIELEM_LEAF({ .id = UiIdLitIndex("SheetCell", tIndex),
-							// .sizing = UI_FIXED2(texture->width*0.3f, texture->height*0.3f),
-							.color=ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
+							.sizing = UI_FIXED2(testSheet.cellWidth*cellScale, testSheet.cellHeight*cellScale),
+							.color = ColorLerpSimple(GetPredefPalColorByIndex(tIndex), White, 0.5f),
 							// .texture = texture,
 							.spriteSheet = &testSheet,
-							.sheetCell = MakeV2i((i32)(tIndex) % testSheet.gridWidth, (i32)(tIndex) / testSheet.gridWidth),
+							.sheetCell = MakeV2i((i32)(tIndex + randomCellOffset) % testSheet.gridWidth, ((i32)(tIndex + randomCellOffset) / testSheet.gridWidth) % testSheet.gridHeight),
 						});
 					}
 				}
@@ -1545,7 +1551,7 @@ bool AppFrame(void)
 						.sizing = UI_FIT2(),
 						// .sizing = UI_PERCENT2(0.8f, 0.5f),
 						// .sizing = UI_EXPAND2(),
-						.padding = { .inner = FillV4r(10), .child = 5 },
+						.padding = { .inner = FillV4(10), .child = 5 },
 						.depth = -1.0f,
 						.color=MonokaiDarkGray,
 						.colorRecursive = ColorWithAlpha(White, 0.5f),
@@ -1561,9 +1567,9 @@ bool AppFrame(void)
 						.mousePassthrough = true,
 					})
 					{
-						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiRed,    .mousePassthrough = true }) { SIMPLETEXTELEM("Red", true); }
-						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiPurple, .mousePassthrough = true }) { SIMPLETEXTELEM("Purple", true); }
-						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4r(8)}, .color = MonokaiOrange, .mousePassthrough = true }) { SIMPLETEXTELEM("OrangeOrangeOrangeOrange", true); }
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4(8)}, .color = MonokaiRed,    .mousePassthrough = true }) { SIMPLETEXTELEM("Red", true); }
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4(8)}, .color = MonokaiPurple, .mousePassthrough = true }) { SIMPLETEXTELEM("Purple", true); }
+						UIELEM({.sizing={.x=UI_FIXED(100),.y=UI_FIT()}, .padding={.inner=FillV4(8)}, .color = MonokaiOrange, .mousePassthrough = true }) { SIMPLETEXTELEM("OrangeOrangeOrangeOrange", true); }
 					}
 				}
 			}
