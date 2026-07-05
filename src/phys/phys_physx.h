@@ -117,8 +117,8 @@ plex PhysicsWorld
 typedef plex PhysicsBodyTransform PhysicsBodyTransform;
 plex PhysicsBodyTransform
 {
-	plex { r32 X, Y, Z; } position;
-	plex { r32 X, Y, Z, W; } rotation;
+	plex { r32 x, y, z; } position;
+	plex { r32 x, y, z, w; } rotation;
 };
 
 // +--------------------------------------------------------------+
