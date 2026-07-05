@@ -24,6 +24,8 @@ Description:
 #define PIG_BUILD_INCLUDE_OPTIONAL_HEADERS 1
 #include "pig_build.h"
 
+#include "src/third_party/box3d/build_script.c"
+
 #define BUILD_CONFIG_PATH       "../build_config.h"
 
 #define FOLDERNAME_GENERATED_CODE  "gen"
