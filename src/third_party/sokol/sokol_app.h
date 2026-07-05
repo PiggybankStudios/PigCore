@@ -9177,7 +9177,7 @@ _SOKOL_PRIVATE void _sapp_win32_timing_measure(void) {
     #endif
 }
 
-_SOKOL_PRIVATE void _sapp_win32_frame(bool from_winproc) {
+_SOKOL_PRIVATE bool _sapp_win32_frame(bool from_winproc) {
 	bool frameResult = false;
     #if defined(SOKOL_WGPU)
         frameResult = _sapp_wgpu_frame();
@@ -9186,7 +9186,6 @@ _SOKOL_PRIVATE void _sapp_win32_frame(bool from_winproc) {
     #else
         frameResult = _sapp_frame();
     #endif
-    UNUSED(frameResult); //TODO: Taylor: Use frame result to determine if we should do a frame flip or not
     #if defined(SOKOL_D3D11)
         bool do_not_wait = from_winproc;
         _sapp_d3d11_present(do_not_wait);
@@ -9199,6 +9198,7 @@ _SOKOL_PRIVATE void _sapp_win32_frame(bool from_winproc) {
             Sleep((DWORD)(16 * _sapp.swap_interval));
         }
     }
+    return frameResult;
 }
 
 sapp_event_type _sapp_win32_get_touch_event_type(DWORD dwFlags, DWORD dwMask)

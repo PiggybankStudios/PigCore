@@ -63,10 +63,10 @@ plex Str8
 	uxx length;
 	car { char* chars; u8* bytes; void* pntr; const char* charsConst; const void* pntrConst; };
 };
-#define MakeStr8_Const(lengthValue, charPntr) { .length=(lengthValue), .charsConst=(charPntr) }
-#define MakeStr8Nt_Const(nullTermStr)         { .length=(uxx)MyStrLength(nullTermStr), .charsConst=(nullTermStr) }
-#define MakeStr8Char_Const(charStrLit)        { .length=1, .charsConst=(charStrLit) }
-#define StrLit_Const(stringLiteral)           { .length=ArrayCount(CheckStrLit(stringLiteral))-1, .charsConst=CheckStrLit(stringLiteral) }
+#define MakeStr8_Const(lengthValue, charPntr) { .length=(lengthValue), .pntrConst=(charPntr) }
+#define MakeStr8Nt_Const(nullTermStr)         { .length=(uxx)MyStrLength(nullTermStr), .pntrConst=(nullTermStr) }
+#define MakeStr8Char_Const(charStrLit)        { .length=1, .pntrConst=(charStrLit) }
+#define StrLit_Const(stringLiteral)           { .length=ArrayCount(CheckStrLit(stringLiteral))-1, .pntrConst=CheckStrLit(stringLiteral) }
 #define MakeStr8(length, charPntr)            NEW_STRUCT(Str8)MakeStr8_Const((length), (charPntr))
 #define MakeStr8Nt(nullTermStr)               NEW_STRUCT(Str8)MakeStr8Nt_Const(nullTermStr)
 #define MakeStr8Char(charStrLit)              NEW_STRUCT(Str8)MakeStr8Char_Const(charStrLit)
@@ -86,10 +86,10 @@ typedef plex Str16 Str16;
 plex Str16
 {
 	uxx length;
-	car { char16_t* chars; u16* words; void* pntr; const char16_t* charsConst; };
+	car { char16_t* chars; u16* words; void* pntr; const char16_t* charsConst; const void* pntrConst; };
 };
-#define MakeStr16_Const(lengthValue, char16Pntr) { .length=(lengthValue), .charsConst=(char16Pntr) }
-#define MakeStr16Nt_Const(nullTermStr)           { .length=(uxx)MyWideStrLength(nullTermStr), .charsConst=(nullTermStr) }
+#define MakeStr16_Const(lengthValue, char16Pntr) { .length=(lengthValue), .pntrConst=(char16Pntr) }
+#define MakeStr16Nt_Const(nullTermStr)           { .length=(uxx)MyWideStrLength(nullTermStr), .pntrConst=(nullTermStr) }
 #define MakeStr16(length, char16Pntr)            NEW_STRUCT(Str16)MakeStr16_Const((length), (char16Pntr))
 #define MakeStr16Nt(nullTermStr)                 NEW_STRUCT(Str16)MakeStr16Nt_Const((nullTermStr))
 //TODO: Can we do Str16Lit? What is the cross-platform syntax in C for wide string literals? Does ArrayCount return the correct value?

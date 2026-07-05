@@ -44,14 +44,14 @@ Description:
 #endif
 
 #if LANGUAGE_IS_CPP
-	#define CLAY_PACKED_ENUM enum : u8
-#else //!LANGUAGE_IS_CPP
+#define CLAY_PACKED_ENUM(enumName, ...) enum enumName : u8 __VA_ARGS__
+#else //LANGUAGE_IS_C
 	#if COMPILER_IS_MSVC
-	#define CLAY_PACKED_ENUM __pragma(pack(push, 1)) enum __pragma(pack(pop))
+		#define CLAY_PACKED_ENUM(enumName, ...) __pragma(pack(push, 1)); typedef enum enumName enumName; enum enumName __pragma(pack(pop)) __VA_ARGS__
 	#else
-	#define CLAY_PACKED_ENUM enum __attribute__((__packed__))
+		#define CLAY_PACKED_ENUM(enumName, ...) typedef enum __attribute__((__packed__)) enumName enumName; enum __attribute__((__packed__)) enumName __VA_ARGS__
 	#endif
-#endif // LANGUAGE_IS_CPP
+#endif
 
 #endif //  _CLAY_OPTIONS_H
 

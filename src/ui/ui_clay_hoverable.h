@@ -57,7 +57,7 @@ PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContex
 	{
 		ClayId id = ToClayId(idStr);
 		Clay__OpenElement();
-		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+		Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){
 			.id = id,
 			.layout = {
 				.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0), },
@@ -156,15 +156,15 @@ PEXP UiHoverableSection DoUiHoverable(UiHoverableSection section, UiWidgetContex
 			}
 			
 			Clay__OpenElement();
-			Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+			Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){
 				.id = tooltipId,
 				.layout = {
 					.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0), },
 				},
 				.floating = {
-					.attachTo = attachTo,
-					.attachPoints = { .parent = parentAttach, .element = tooltipAttach },
+					.attachPoints = { .element = tooltipAttach, .parent = parentAttach },
 					.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+					.attachTo = attachTo,
 				},
 			});
 			return UiHoverableSection_Tooltip;

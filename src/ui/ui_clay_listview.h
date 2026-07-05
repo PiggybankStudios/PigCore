@@ -161,7 +161,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 			.padding = CLAY_PADDING_ALL(UISCALE_BORDER(context->uiScale, 1)),
 		},
 		.backgroundColor = MonokaiDarkGray,
-		.border = { .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)), .color = MonokaiLightGray },
+		.border = { .color = MonokaiLightGray, .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)) },
 	})
 	{
 		// +==============================+
@@ -209,7 +209,6 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 				CLAY({ .id = fullId,
 					.layout = {
 						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
-						.layoutDirection = CLAY_LEFT_TO_RIGHT,
 						.padding = {
 							.left   = UISCALE_U16(context->uiScale, list->itemPaddingLeft),
 							.right  = UISCALE_U16(context->uiScale, list->itemPaddingRight),
@@ -217,6 +216,7 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 							.bottom = UISCALE_U16(context->uiScale, list->itemPaddingBottom),
 						},
 						.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+						.layoutDirection = CLAY_LEFT_TO_RIGHT,
 					},
 					.backgroundColor = (isSelected ? MonokaiLightGray : (isHovered ? MonokaiBack : Transparent)),
 				})
@@ -233,9 +233,9 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 						CLAY_TEXT(
 							item->displayStr,
 							CLAY_TEXT_CONFIG({
+								.textColor = isSelected ? MonokaiDarkGray : MonokaiWhite,
 								.fontId = fontId,
 								.fontSize = (u16)item->fontSize,
-								.textColor = isSelected ? MonokaiDarkGray : MonokaiWhite,
 								.wrapMode = CLAY_TEXT_WRAP_NONE,
 								.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 								.userData = { .contraction = item->contraction },
@@ -300,12 +300,12 @@ PEXP void DoUiListView(UiWidgetContext* context, UiListView* list, Clay_SizingAx
 					.layout = {
 						.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.x), .height = CLAY_SIZING_FIXED(scrollBarSize.y) },
 					},
-					.floating = {
-						.attachTo = CLAY_ATTACH_TO_PARENT,
-						.offset = MakeV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
-					},
 					.backgroundColor = (isScrollbarHovered || list->draggingScrollbar) ? MonokaiWhite : MonokaiLightGray,
 					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.width/2.0f),
+					.floating = {
+						.offset = MakeV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
+						.attachTo = CLAY_ATTACH_TO_PARENT,
+					},
 				}) {}
 			}
 		}

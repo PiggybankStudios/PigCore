@@ -639,14 +639,14 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 							{
 								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
 								styleChange.type = RichStrStyleChangeType_FontStyle;
-								if (valueBool) { styleChange.enableStyleFlags = styleFlag; FlagSet(state.enabledFlags, styleFlag); }
-								else { styleChange.disableStyleFlags = styleFlag; FlagUnset(state.enabledFlags, styleFlag); }
+								if (valueBool) { styleChange.enableStyleFlags = (u8)styleFlag; FlagSet(state.enabledFlags, styleFlag); }
+								else { styleChange.disableStyleFlags = (u8)styleFlag; FlagUnset(state.enabledFlags, styleFlag); }
 							}
 							else if (StrAnyCaseEquals(valuePart, StrLit("default")))
 							{
 								styleChangePartLength = (nextPipeIndex + 1) - bIndex;
 								styleChange.type = RichStrStyleChangeType_FontStyle;
-								styleChange.defaultStyleFlags = styleFlag;
+								styleChange.defaultStyleFlags = (u8)styleFlag;
 								FlagUnset(state.enabledFlags, styleFlag);
 							}
 						}
@@ -708,8 +708,8 @@ PEXP RichStr DecodeStrToRichStr(Arena* arena, Str8 encodedString)
 							
 							styleChangePartLength = (nextPipeIndex + 1) - bIndex;
 							styleChange.type = RichStrStyleChangeType_FontStyle;
-							if (IsFlagSet(state.enabledFlags, styleFlag)) { styleChange.defaultStyleFlags = styleFlag; FlagUnset(state.enabledFlags, styleFlag); }
-							else { styleChange.enableStyleFlags = styleFlag; FlagSet(state.enabledFlags, styleFlag); }
+							if (IsFlagSet(state.enabledFlags, styleFlag)) { styleChange.defaultStyleFlags = (u8)styleFlag; FlagUnset(state.enabledFlags, styleFlag); }
+							else { styleChange.enableStyleFlags = (u8)styleFlag; FlagSet(state.enabledFlags, styleFlag); }
 						}
 						else if (StrAnyCaseEquals(namePart, StrLit("color")) ||
 							StrAnyCaseEquals(namePart, StrLit("rgb")))

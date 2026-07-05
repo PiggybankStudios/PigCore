@@ -252,7 +252,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 	if (!IsEmptyStr(name)) { result.name = AllocStr8(arena, name); NotNull(result.name.chars); }
 	
 	//SEE https://github.com/floooh/sokol/issues/102 AND https://github.com/Deins/sokol/tree/soft_gen_mipmaps
-	sg_range pixelsRange = (sg_range){ pixelsPntr, result.totalSize };
+	sg_range pixelsRange = NEW_STRUCT(sg_range){ pixelsPntr, result.totalSize };
 	sg_range* mipmapRanges = nullptr;
 	uxx numMipLevels = 0;
 	if (!IsFlagSet(flags, TextureFlag_NoMipmaps))
@@ -272,7 +272,7 @@ PEXP Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPn
 			ImageData upperLayer = (mIndex > 0) ? mipmapImageDatas[mIndex-1] : baseImageData;
 			mipmapImageDatas[mIndex] = GenerateMipmapLayer(scratch, upperLayer);
 			// PrintLine_D("Generated mipmap[%llu] %dx%d (from %dx%d)", mIndex, mipmapImageDatas[mIndex].size.width, mipmapImageDatas[mIndex].size.height, upperLayer.size.width, upperLayer.size.height);
-			mipmapRanges[mIndex] = (sg_range){ mipmapImageDatas[mIndex].pixels, mipmapImageDatas[mIndex].numPixels * result.pixelSize };
+			mipmapRanges[mIndex] = NEW_STRUCT(sg_range){ mipmapImageDatas[mIndex].pixels, mipmapImageDatas[mIndex].numPixels * result.pixelSize };
 		}
 	}
 	
@@ -433,7 +433,7 @@ PEXP void UpdateTexturePart(Texture* texture, reci sourceRec, const void* pixels
 	{
 		Assert(IsFlagSet(texture->flags, TextureFlag_NoMipmaps));
 		sg_image_data sokolImageData = ZEROED;
-		sokolImageData.mip_levels[0] = (sg_range){ texture->pixelsPntr, texture->totalSize };
+		sokolImageData.mip_levels[0] = NEW_STRUCT(sg_range){ texture->pixelsPntr, texture->totalSize };
 		sg_update_image(texture->image, &sokolImageData);
 	}
 	else

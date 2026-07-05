@@ -278,7 +278,7 @@ PEXP void ChangeVerticesInVertBufferEx(VertBuffer* buffer, uxx numVertices, uxx 
 	if (numVertices < buffer->numVertices) { MyMemSet(&allVerticesPntr[vertexSize * numVertices], 0x00, vertexSize * (buffer->numVertices - numVertices)); }
 	
 	//TODO: Maybe we don't have to update the entire buffer? Maybe we can just update the beginning? Is that more performant since we don't have to pass potentially a lot of zeroes?
-	sg_range verticesRange = (sg_range){verticesPntr, allVerticesSize};
+	sg_range verticesRange = NEW_STRUCT(sg_range){verticesPntr, allVerticesSize};
 	sg_update_buffer(buffer->handle, &verticesRange);
 	
 	ScratchEnd(scratch);
@@ -317,7 +317,7 @@ PEXP void ChangeIndicesInVertBufferEx(VertBuffer* buffer, uxx numIndices, uxx in
 	if (numIndices < buffer->numIndices) { MyMemSet(&allIndicesPntr[indexSize * numIndices], 0x00, indexSize * (buffer->numIndices - numIndices)); }
 	
 	//TODO: Maybe we don't have to update the entire buffer? Maybe we can just update the beginning? Is that more performant since we don't have to pass potentially a lot of zeroes?
-	sg_range indicesRange = (sg_range){indicesPntr, allIndicesSize};
+	sg_range indicesRange = NEW_STRUCT(sg_range){indicesPntr, allIndicesSize};
 	sg_update_buffer(buffer->indicesHandle, &indicesRange);
 	
 	ScratchEnd(scratch);

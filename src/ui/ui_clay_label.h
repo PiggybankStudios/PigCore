@@ -60,8 +60,8 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 		
 		CLAY({ .id = containerId,
 			.layout = {
-				.layoutDirection = CLAY_LEFT_TO_RIGHT,
 				.childGap = UISCALE_U16(context->uiScale, 2),
+				.layoutDirection = CLAY_LEFT_TO_RIGHT,
 			},
 		})
 		{
@@ -71,9 +71,9 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 			CLAY_TEXT(
 				label,
 				CLAY_TEXT_CONFIG({
+					.textColor = color,
 					.fontId = fontId,
 					.fontSize = (u16)fontSize,
-					.textColor = color,
 					.wrapMode = CLAY_TEXT_WRAP_WORDS,
 					.textAlignment = CLAY_TEXT_ALIGN_LEFT,
 				})
@@ -87,8 +87,8 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 						.sizing = { .width=CLAY_SIZING_FIXED(lineHeight), .height=CLAY_SIZING_FIXED(lineHeight) },
 						.childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER },
 					},
-					.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(context->uiScale, 2)),
 					.backgroundColor = ColorWithAlpha(White, isBtnHovered ? 0.5f : 0.0f),
+					.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(context->uiScale, 2)),
 					.border = {
 						.color = ColorWithAlpha(White, 0.75f),
 						.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, isBtnHovered ? 1 : 0)),
@@ -105,6 +105,7 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 									.height = CLAY_SIZING_FIXED((r32)copyBtnIcon->height),
 								},
 							},
+							.backgroundColor = iconColor,
 							.image = {
 								.imageData = copyBtnIcon,
 								.sourceDimensions = {
@@ -112,7 +113,6 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 									.height = (r32)(copyBtnIcon->height),
 								},
 							},
-							.backgroundColor = iconColor,
 						}) {}
 					}
 					else
@@ -120,9 +120,9 @@ PEXP void DoUiLabel(UiWidgetContext* context, Str8 idStr, uxx idIndex, Str8 labe
 						CLAY_TEXT(
 							StrLit("C"),
 							CLAY_TEXT_CONFIG({
+								.textColor = iconColor,
 								.fontId = fontId,
 								.fontSize = (u16)fontSize,
-								.textColor = iconColor,
 								.wrapMode = CLAY_TEXT_WRAP_NONE,
 								.textAlignment = CLAY_TEXT_ALIGN_LEFT,
 							})

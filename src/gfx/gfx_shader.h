@@ -436,7 +436,7 @@ PEXPI void ApplyShaderUniforms(Shader* shader)
 		if (shader->uniformBlocks[bIndex].valueChanged)
 		{
 			shader->uniformBlocks[bIndex].valueChanged = false;
-			sg_range blockSokolRange = (sg_range){ shader->uniformBlocks[bIndex].value.bytes, shader->uniformBlocks[bIndex].value.length };
+			sg_range blockSokolRange = NEW_STRUCT(sg_range){ shader->uniformBlocks[bIndex].value.bytes, shader->uniformBlocks[bIndex].value.length };
 			sg_apply_uniforms((int)bIndex, &blockSokolRange);
 		}
 	}

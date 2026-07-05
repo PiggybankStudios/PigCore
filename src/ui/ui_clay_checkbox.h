@@ -65,9 +65,9 @@ PEXP void DoUiCheckbox(UiWidgetContext* context, Str8 idStr, bool* isChecked, r3
 	CLAY({ .id = containerId,
 		.layout = {
 			.sizing = { .width = CLAY_SIZING_FIT(0), .height = CLAY_SIZING_FIT(0) },
-			.layoutDirection = (isVerticallyAligned ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT),
-			.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 			.childGap = UISCALE_U16(context->uiScale, isVerticallyAligned ? 2 : 6),
+			.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+			.layoutDirection = (isVerticallyAligned ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT),
 		},
 	})
 	{
@@ -76,9 +76,9 @@ PEXP void DoUiCheckbox(UiWidgetContext* context, Str8 idStr, bool* isChecked, r3
 			CLAY_TEXT(                                                                                      \
 				AllocStr8(context->uiArena, label),                                                         \
 				CLAY_TEXT_CONFIG({                                                                          \
+					.textColor = MonokaiWhite,                                                              \
 					.fontId = fontId,                                                                       \
 					.fontSize = (u16)fontSize,                                                              \
-					.textColor = MonokaiWhite,                                                              \
 					.wrapMode = CLAY_TEXT_WRAP_NONE,                                                        \
 					.textAlignment = (isVerticallyAligned ? CLAY_TEXT_ALIGN_CENTER : CLAY_TEXT_ALIGN_LEFT), \
 			}));                                                                                            \
@@ -91,13 +91,13 @@ PEXP void DoUiCheckbox(UiWidgetContext* context, Str8 idStr, bool* isChecked, r3
 		CLAY({ .id = boxId,
 			.layout = {
 				.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, boxSize*2)), .height = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, boxSize)) },
+				.padding = CLAY_PADDING_ALL((u16)(borderSize*2)),
 				.childAlignment = { .x = (*isChecked) ? CLAY_ALIGN_X_RIGHT : CLAY_ALIGN_X_LEFT, .y = CLAY_ALIGN_Y_CENTER },
-				.padding = CLAY_PADDING_ALL(borderSize*2),
 			},
 			.backgroundColor = (*isChecked) ? greenColor : Transparent,
-			.border = { .width = CLAY_BORDER_OUTSIDE(borderSize), .color = borderColor },
-			.userData = { .outsideBorder = true },
 			.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(context->uiScale, boxSize/2)),
+			.border = { .color = borderColor, .width = CLAY_BORDER_OUTSIDE(borderSize) },
+			.userData = { .outsideBorder = true },
 		})
 		{
 			if (checkboxTexture != nullptr && (*isChecked))

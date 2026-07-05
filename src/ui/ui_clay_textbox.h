@@ -559,12 +559,12 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 			.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 			.layoutDirection = CLAY_TOP_TO_BOTTOM,
 		},
+		.backgroundColor = MonokaiDarkGray,
 		.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(context->uiScale, 5)),
 		.border = {
-			.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)),
 			.color = tbox->displayRedOutline ? MonokaiMagenta : MonokaiLightGray,
+			.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)),
 		},
-		.backgroundColor = MonokaiDarkGray,
 	})
 	{
 		uxx numStyleRanges = 0;
@@ -594,9 +594,9 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		CLAY_TEXT(
 			encodedRichText,
 			CLAY_TEXT_CONFIG({
+				.textColor = MonokaiWhite,
 				.fontId = fontId,
 				.fontSize = (u16)fontSize,
-				.textColor = MonokaiWhite,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 				.userData = {
@@ -612,18 +612,18 @@ PEXP void DoUiTextbox(UiWidgetContext* context, UiTextbox* tbox, PigFont* font, 
 		{
 			v2 cursorTopLeft = Add(cursorRelativePos, MakeV2(UISCALE_R32(context->uiScale, -1), -fontLineMetrics.centerOffset - fontLineMetrics.lineHeight/2));
 			CLAY({.id = ToClayIdPrint(context->uiArena, "%.*sCursor", StrPrint(tbox->idStr)),
-				.backgroundColor = MonokaiYellow, //TODO: Change this color
 				.layout = {
 					.sizing = { .width = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, 2)), .height = CLAY_SIZING_FIXED(fontLineMetrics.lineHeight) },
 				},
+				.backgroundColor = MonokaiYellow, //TODO: Change this color
 				.floating = {
-					.attachTo = CLAY_ATTACH_TO_PARENT,
 					.offset = cursorTopLeft,
 					.zIndex = 5,
 					.attachPoints = {
-						.parent = CLAY_ATTACH_POINT_LEFT_TOP,
 						.element = CLAY_ATTACH_POINT_LEFT_TOP,
+						.parent = CLAY_ATTACH_POINT_LEFT_TOP,
 					},
+					.attachTo = CLAY_ATTACH_TO_PARENT,
 				},
 			}) {}
 		}

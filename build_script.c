@@ -1016,8 +1016,9 @@ int main(int argc, char* argv[])
 		AddTag(&testsTags, BUILD_IN_CPP_MODE ? (BUILDING_ON_OSX ? T_LANG_OBJECTIVECPP : T_LANG_CPP) : (BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C));
 		AddTag(&testsTags, T_PROGRAM);
 		
-		if (BUILD_IN_CPP_MODE && !DoesFileExist(StrLit("tests_main.cpp"))) { CreateAndWriteFile(StrLit("tests_main.cpp"), StrLit("\n#include \"tests_main.c\"\n"), true); }
-		if (BUILD_IN_CPP_MODE && !DoesFileExist(StrLit("tests_main.mm")))  { CreateAndWriteFile(StrLit("tests_main.mm"),  StrLit("\n#include \"tests_main.m\"\n"), true); }
+		if (BUILDING_ON_OSX  &&                      !DoesFileExist(StrLit("tests_main.m")))   { CreateAndWriteFile(StrLit("tests_main.m"),   StrLit("\n#include \"tests/tests_main.c\"\n"), true); }
+		if (!BUILDING_ON_OSX && BUILD_IN_CPP_MODE && !DoesFileExist(StrLit("tests_main.cpp"))) { CreateAndWriteFile(StrLit("tests_main.cpp"), StrLit("\n#include \"tests/tests_main.c\"\n"), true); }
+		if (BUILDING_ON_OSX  && BUILD_IN_CPP_MODE && !DoesFileExist(StrLit("tests_main.mm")))  { CreateAndWriteFile(StrLit("tests_main.mm"),  StrLit("\n#include \"tests/tests_main.c\"\n"), true); }
 		
 		// +==============================+
 		// |      Windows tests.exe       |

@@ -312,22 +312,22 @@ PEXP void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fon
 				.padding = CLAY_PADDING_ALL(UISCALE_U16(context->uiScale, NOTIFICATION_PADDING)),
 				.childAlignment = { CLAY_ALIGN_X_CENTER, CLAY_ALIGN_Y_CENTER },
 			},
-			.floating = {
-				.zIndex = 102,
-				.offset = offset,
-				.attachTo = CLAY_ATTACH_TO_PARENT,
-				.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_CAPTURE,
-				.attachPoints = {
-					.parent = CLAY_ATTACH_POINT_RIGHT_BOTTOM,
-					.element = (isSizeKnown ? CLAY_ATTACH_POINT_RIGHT_BOTTOM : CLAY_ATTACH_POINT_LEFT_BOTTOM),
-				},
-			},
 			.backgroundColor = backgroundColor,
 			.cornerRadius = CLAY_CORNER_RADIUS(UISCALE_R32(context->uiScale, 8)),
-			.border = { .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 2)), .color = borderColor },
+			.floating = {
+				.offset = offset,
+				.zIndex = 102,
+				.attachPoints = {
+					.element = (isSizeKnown ? CLAY_ATTACH_POINT_RIGHT_BOTTOM : CLAY_ATTACH_POINT_LEFT_BOTTOM),
+					.parent = CLAY_ATTACH_POINT_RIGHT_BOTTOM,
+				},
+				.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_CAPTURE,
+				.attachTo = CLAY_ATTACH_TO_PARENT,
+			},
+			.border = { .color = borderColor, .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 2)) },
 		})
 		{
-			CLAY({ .layout={ .layoutDirection=CLAY_LEFT_TO_RIGHT, .childGap=UISCALE_U16(context->uiScale, 5), .childAlignment={ .y=CLAY_ALIGN_Y_CENTER } } })
+			CLAY({ .layout={ .childGap=UISCALE_U16(context->uiScale, 5), .childAlignment={ .y=CLAY_ALIGN_Y_CENTER }, .layoutDirection=CLAY_LEFT_TO_RIGHT } })
 			{
 				if (iconTexture != nullptr)
 				{
@@ -338,11 +338,11 @@ PEXP void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fon
 								.height = CLAY_SIZING_FIXED(UISCALE_R32(context->uiScale, icon->sourceRec.height * icon->scale)),
 							},
 						},
+						.backgroundColor = ColorWithAlpha(iconColor, 1.0f - disappearAnimAmount),
 						.image = {
 							.imageData = iconTexture,
 							.sourceDimensions = ToV2Fromi(iconTexture->size),
 						},
-						.backgroundColor = ColorWithAlpha(iconColor, 1.0f - disappearAnimAmount),
 						.userData = { .imageSourceRec = icon->sourceRec },
 					}) {}
 				}
@@ -352,9 +352,9 @@ PEXP void DoUiNotificationQueue(NotificationQueue* queue, PigFont* font, r32 fon
 					CLAY_TEXT(
 						AllocStr8(context->uiArena, notification->messageStr),
 						CLAY_TEXT_CONFIG({
+							.textColor = textColor,
 							.fontId = fontId,
 							.fontSize = (u16)fontSize,
-							.textColor = textColor,
 							.wrapMode = CLAY_TEXT_WRAP_NONE,
 							.textAlignment = CLAY_TEXT_ALIGN_LEFT,
 							.userData = { .wrapWidth = wrapWidth },

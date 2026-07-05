@@ -115,16 +115,16 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 	if (section == UiResizableSplitSection_None)
 	{
 		Clay__OpenElement();
-		Clay__ConfigureOpenElement((Clay_ElementDeclaration){ .id = outerId,
+		Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){ .id = outerId,
 			.layout = {
 				.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-				.layoutDirection = split->horizontal ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
 				.childGap = UISCALE_U16(context->uiScale, split->dividerPadding),
+				.layoutDirection = split->horizontal ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
 			},
 		});
 		
 		Clay__OpenElement();
-		Clay__ConfigureOpenElement((Clay_ElementDeclaration){ .id = firstSectionId,
+		Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){ .id = firstSectionId,
 			.layout = {
 				.sizing = {
 					.width  = split->horizontal ? CLAY_SIZING_PERCENT(split->splitPercent) : CLAY_SIZING_GROW(0),
@@ -140,7 +140,7 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 		Clay__CloseElement();
 		
 		Clay__OpenElement();
-		Clay__ConfigureOpenElement((Clay_ElementDeclaration){ .id = secondSectionId,
+		Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){ .id = secondSectionId,
 			.layout = {
 				.sizing = {
 					.width = split->horizontal ? CLAY_SIZING_PERCENT(1.0f - split->splitPercent) : CLAY_SIZING_GROW(0),
@@ -169,13 +169,13 @@ PEXP UiResizableSplitSection DoUiResizableSplit(UiResizableSplitSection section,
 					},
 				},
 				.floating = {
-					.attachTo = CLAY_ATTACH_TO_ELEMENT_WITH_ID,
-					.parentId = secondSectionId.id,
 					.offset = MakeV2(split->horizontal ? -(dividerPadding/2.0f) : 0, split->horizontal ? 0 : -(dividerPadding/2.0f)),
+					.parentId = secondSectionId.id,
 					.attachPoints = {
-						.parent = CLAY_ATTACH_POINT_LEFT_TOP,
 						.element = split->horizontal ? CLAY_ATTACH_POINT_CENTER_TOP : CLAY_ATTACH_POINT_LEFT_CENTER,
+						.parent = CLAY_ATTACH_POINT_LEFT_TOP,
 					},
+					.attachTo = CLAY_ATTACH_TO_ELEMENT_WITH_ID,
 				},
 			}) {}
 			

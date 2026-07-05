@@ -707,9 +707,9 @@ plex Vec4R64Slice
 	PIG_CORE_INLINE r32 Dot(v2  left, v2  right);
 	PIG_CORE_INLINE r32 Dot(v3  left, v3  right);
 	PIG_CORE_INLINE r32 Dot(v4  left, v4  right);
-	PIG_CORE_INLINE r32 Dot(v2i left, v2i right);
-	PIG_CORE_INLINE r32 Dot(v3i left, v3i right);
-	PIG_CORE_INLINE r32 Dot(v4i left, v4i right);
+	PIG_CORE_INLINE i32 Dot(v2i left, v2i right);
+	PIG_CORE_INLINE i32 Dot(v3i left, v3i right);
+	PIG_CORE_INLINE i32 Dot(v4i left, v4i right);
 	PIG_CORE_INLINE r64 Dot(v2d left, v2d right);
 	PIG_CORE_INLINE r64 Dot(v3d left, v3d right);
 	PIG_CORE_INLINE r64 Dot(v4d left, v4d right);
@@ -1040,19 +1040,19 @@ PEXPI v4  operator*(v4  vector, r32 scalar) { v4  result; result.x = vector.x * 
 PEXPI v2i operator*(v2i vector, i32 scalar) { v2i result; result.x = vector.x * scalar; result.y = vector.y * scalar; return result; }
 PEXPI v3i operator*(v3i vector, i32 scalar) { v3i result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; return result; }
 PEXPI v4i operator*(v4i vector, i32 scalar) { v4i result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; result.w = vector.w * scalar; return result; }
-PEXPI v2d operator*(v2d vector, i32 scalar) { v2d result; result.x = vector.x * scalar; result.y = vector.y * scalar; return result; }
-PEXPI v3d operator*(v3d vector, i32 scalar) { v3d result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; return result; }
-PEXPI v4d operator*(v4d vector, i32 scalar) { v4d result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; result.w = vector.w * scalar; return result; }
+PEXPI v2d operator*(v2d vector, r64 scalar) { v2d result; result.x = vector.x * scalar; result.y = vector.y * scalar; return result; }
+PEXPI v3d operator*(v3d vector, r64 scalar) { v3d result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; return result; }
+PEXPI v4d operator*(v4d vector, r64 scalar) { v4d result; result.x = vector.x * scalar; result.y = vector.y * scalar; result.z = vector.z * scalar; result.w = vector.w * scalar; return result; }
 
 PEXPI v2  operator*=(v2&  vector, r32 scalar) { return vector = vector * scalar; }
 PEXPI v3  operator*=(v3&  vector, r32 scalar) { return vector = vector * scalar; }
 PEXPI v4  operator*=(v4&  vector, r32 scalar) { return vector = vector * scalar; }
-PEXPI v2i operator*=(v2i& vector, r32 scalar) { return vector = vector * scalar; }
-PEXPI v3i operator*=(v3i& vector, r32 scalar) { return vector = vector * scalar; }
-PEXPI v4i operator*=(v4i& vector, r32 scalar) { return vector = vector * scalar; }
-PEXPI v2d operator*=(v2d& vector, r32 scalar) { return vector = vector * scalar; }
-PEXPI v3d operator*=(v3d& vector, r32 scalar) { return vector = vector * scalar; }
-PEXPI v4d operator*=(v4d& vector, r32 scalar) { return vector = vector * scalar; }
+PEXPI v2i operator*=(v2i& vector, i32 scalar) { return vector = vector * scalar; }
+PEXPI v3i operator*=(v3i& vector, i32 scalar) { return vector = vector * scalar; }
+PEXPI v4i operator*=(v4i& vector, i32 scalar) { return vector = vector * scalar; }
+PEXPI v2d operator*=(v2d& vector, r64 scalar) { return vector = vector * scalar; }
+PEXPI v3d operator*=(v3d& vector, r64 scalar) { return vector = vector * scalar; }
+PEXPI v4d operator*=(v4d& vector, r64 scalar) { return vector = vector * scalar; }
 
 PEXPI v2  operator/(v2  vector, r32 scalar) { v2  result; result.x = vector.x / scalar; result.y = vector.y / scalar; return result; }
 PEXPI v3  operator/(v3  vector, r32 scalar) { v3  result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; return result; }
@@ -1060,19 +1060,19 @@ PEXPI v4  operator/(v4  vector, r32 scalar) { v4  result; result.x = vector.x / 
 PEXPI v2i operator/(v2i vector, i32 scalar) { v2i result; result.x = vector.x / scalar; result.y = vector.y / scalar; return result; }
 PEXPI v3i operator/(v3i vector, i32 scalar) { v3i result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; return result; }
 PEXPI v4i operator/(v4i vector, i32 scalar) { v4i result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; result.w = vector.w / scalar; return result; }
-PEXPI v2d operator/(v2d vector, i32 scalar) { v2d result; result.x = vector.x / scalar; result.y = vector.y / scalar; return result; }
-PEXPI v3d operator/(v3d vector, i32 scalar) { v3d result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; return result; }
-PEXPI v4d operator/(v4d vector, i32 scalar) { v4d result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; result.w = vector.w / scalar; return result; }
+PEXPI v2d operator/(v2d vector, r64 scalar) { v2d result; result.x = vector.x / scalar; result.y = vector.y / scalar; return result; }
+PEXPI v3d operator/(v3d vector, r64 scalar) { v3d result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; return result; }
+PEXPI v4d operator/(v4d vector, r64 scalar) { v4d result; result.x = vector.x / scalar; result.y = vector.y / scalar; result.z = vector.z / scalar; result.w = vector.w / scalar; return result; }
 
 PEXPI v2  operator/=(v2&  vector, r32 scalar) { return vector = vector / scalar; }
 PEXPI v3  operator/=(v3&  vector, r32 scalar) { return vector = vector / scalar; }
 PEXPI v4  operator/=(v4&  vector, r32 scalar) { return vector = vector / scalar; }
-PEXPI v2i operator/=(v2i& vector, r32 scalar) { return vector = vector / scalar; }
-PEXPI v3i operator/=(v3i& vector, r32 scalar) { return vector = vector / scalar; }
-PEXPI v4i operator/=(v4i& vector, r32 scalar) { return vector = vector / scalar; }
-PEXPI v2d operator/=(v2d& vector, r32 scalar) { return vector = vector / scalar; }
-PEXPI v3d operator/=(v3d& vector, r32 scalar) { return vector = vector / scalar; }
-PEXPI v4d operator/=(v4d& vector, r32 scalar) { return vector = vector / scalar; }
+PEXPI v2i operator/=(v2i& vector, i32 scalar) { return vector = vector / scalar; }
+PEXPI v3i operator/=(v3i& vector, i32 scalar) { return vector = vector / scalar; }
+PEXPI v4i operator/=(v4i& vector, i32 scalar) { return vector = vector / scalar; }
+PEXPI v2d operator/=(v2d& vector, r64 scalar) { return vector = vector / scalar; }
+PEXPI v3d operator/=(v3d& vector, r64 scalar) { return vector = vector / scalar; }
+PEXPI v4d operator/=(v4d& vector, r64 scalar) { return vector = vector / scalar; }
 
 PEXPI v2  operator-(v2  vector) { v2  result; result.x = -vector.x; result.y = -vector.y; return result; }
 PEXPI v3  operator-(v3  vector) { v3  result; result.x = -vector.x; result.y = -vector.y; result.z = -vector.z; return result; }
@@ -1535,9 +1535,9 @@ PEXPI v4d Normalize(v4d vector) { return NormalizeV4d(vector); }
 PEXPI r32 Dot(v2  left, v2  right) { return DotV2(left,  right); }
 PEXPI r32 Dot(v3  left, v3  right) { return DotV3(left,  right); }
 PEXPI r32 Dot(v4  left, v4  right) { return DotV4(left,  right); }
-PEXPI r32 Dot(v2i left, v2i right) { return DotV2i(left, right); }
-PEXPI r32 Dot(v3i left, v3i right) { return DotV3i(left, right); }
-PEXPI r32 Dot(v4i left, v4i right) { return DotV4i(left, right); }
+PEXPI i32 Dot(v2i left, v2i right) { return DotV2i(left, right); }
+PEXPI i32 Dot(v3i left, v3i right) { return DotV3i(left, right); }
+PEXPI i32 Dot(v4i left, v4i right) { return DotV4i(left, right); }
 PEXPI r64 Dot(v2d left, v2d right) { return DotV2d(left, right); }
 PEXPI r64 Dot(v3d left, v3d right) { return DotV3d(left, right); }
 PEXPI r64 Dot(v4d left, v4d right) { return DotV4d(left, right); }

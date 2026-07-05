@@ -323,11 +323,11 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 	CLAY({ .id = tview->id,
 		.layout = {
 			.sizing = { .width = viewWidth, .height = viewHeight },
-			.layoutDirection = CLAY_LEFT_TO_RIGHT,
 			.padding = CLAY_PADDING_ALL(UISCALE_BORDER(context->uiScale, 1)),
+			.layoutDirection = CLAY_LEFT_TO_RIGHT,
 		},
 		.backgroundColor = MonokaiDarkGray,
-		.border = { .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)), .color = MonokaiLightGray },
+		.border = { .color = MonokaiLightGray, .width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)), },
 	})
 	{
 		CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) }, .layoutDirection = CLAY_TOP_TO_BOTTOM } })
@@ -336,7 +336,7 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 				.layout = {
 					.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
 				},
-				.scroll = { .vertical = true, .horizontal = !tview->wordWrapEnabled, .scrollLag = 5.0f },
+				.scroll = { .horizontal = !tview->wordWrapEnabled, .vertical = true, .scrollLag = 5.0f },
 			})
 			{
 				scrollData = Clay_GetScrollContainerData(scrollContainerId, false);
@@ -419,10 +419,10 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 										.sizing = { .width = lineContainerWidth, .height = CLAY_SIZING_FIXED(lineRec.height) },
 									},
 									.floating = {
-										.attachTo = CLAY_ATTACH_TO_PARENT,
-										.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
 										.offset = SubV2(lineRec.topLeft, contentRec.topLeft),
+										.attachPoints = { .element = CLAY_ATTACH_POINT_LEFT_TOP, .parent = CLAY_ATTACH_POINT_LEFT_TOP },
 										.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+										.attachTo = CLAY_ATTACH_TO_PARENT,
 									},
 									// .backgroundColor = ColorWithAlpha(MonokaiWhite, ((lIndex%2) == 0) ? 0.25f : 0.1f),
 								})
@@ -430,9 +430,9 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 									CLAY_TEXT(
 										line->line,
 										CLAY_TEXT_CONFIG({
+											.textColor = MonokaiWhite,
 											.fontId = fontId,
 											.fontSize = (u16)fontSize,
-											.textColor = MonokaiWhite,
 											.wrapMode = CLAY_TEXT_WRAP_NONE,
 											.textAlignment = CLAY_TEXT_ALIGN_LEFT,
 											.userData = { .wrapWidth = line->wrapWidth },
@@ -476,12 +476,12 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 						.layout = {
 							.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.x), .height = CLAY_SIZING_FIXED(scrollBarSize.y) },
 						},
-						.floating = {
-							.attachTo = CLAY_ATTACH_TO_PARENT,
-							.offset = MakeV2(scrollBarOffsetX, UISCALE_R32(context->uiScale, 1)),
-						},
 						.backgroundColor = (isHoriScrollbarHovered || tview->draggingHoriScrollbar) ? MonokaiWhite : MonokaiLightGray,
 						.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.width/2.0f),
+						.floating = {
+							.offset = MakeV2(scrollBarOffsetX, UISCALE_R32(context->uiScale, 1)),
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+						},
 					}) {}
 				}
 			}
@@ -519,12 +519,12 @@ PEXP void DoUiLargeTextView(UiWidgetContext* context, UiLargeTextView* tview, Cl
 					.layout = {
 						.sizing = { .width = CLAY_SIZING_FIXED(scrollBarSize.x), .height = CLAY_SIZING_FIXED(scrollBarSize.y) },
 					},
-					.floating = {
-						.attachTo = CLAY_ATTACH_TO_PARENT,
-						.offset = MakeV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
-					},
 					.backgroundColor = (isVertScrollbarHovered || tview->draggingVertScrollbar) ? MonokaiWhite : MonokaiLightGray,
 					.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.width/2.0f),
+					.floating = {
+						.offset = MakeV2(UISCALE_R32(context->uiScale, 1), scrollBarOffsetY),
+						.attachTo = CLAY_ATTACH_TO_PARENT,
+					},
 				}) {}
 			}
 		}

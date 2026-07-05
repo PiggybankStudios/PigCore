@@ -293,16 +293,16 @@ Clay__MeasureTextCacheItem* Clay__MeasureTextCached(Str8* text, Clay_TextElement
 			if (current == ' ')
 			{
 				dimensions.width += spaceWidth;
-				previousWord = Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = start, .length = length + 1, .width = dimensions.width, .next = -1 }, previousWord);
+				previousWord = Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = (i32)start, .length = (i32)length + 1, .width = dimensions.width, .next = -1 }, previousWord);
 				lineWidth += dimensions.width;
 			}
 			if (current == '\n')
 			{
 				if (length > 0)
 				{
-					previousWord = Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = start, .length = length, .width = dimensions.width, .next = -1 }, previousWord);
+					previousWord = Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = (i32)start, .length = (i32)length, .width = dimensions.width, .next = -1 }, previousWord);
 				}
-				previousWord = Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = end + 1, .length = 0, .width = 0, .next = -1 }, previousWord);
+				previousWord = Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = (i32)end + 1, .length = 0, .width = 0, .next = -1 }, previousWord);
 				lineWidth += dimensions.width;
 				measuredWidth = MaxR32(lineWidth, measuredWidth);
 				measured->containsNewlines = true;
@@ -315,7 +315,7 @@ Clay__MeasureTextCacheItem* Clay__MeasureTextCached(Str8* text, Clay_TextElement
 	if (end - start > 0)
 	{
 		v2 dimensions = Clay__MeasureText(StrSlice(*text, start, end), config, context->measureTextUserData);
-		Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = start, .length = end - start, .width = dimensions.width, .next = -1 }, previousWord);
+		Clay__AddMeasuredWord(NEW_STRUCT(Clay__MeasuredWord) { .startOffset = (i32)start, .length = (i32)(end - start), .width = dimensions.width, .next = -1 }, previousWord);
 		lineWidth += dimensions.width;
 		measuredHeight = MaxR32(measuredHeight, dimensions.height);
 	}
@@ -680,7 +680,7 @@ CLAY_DECOR void Clay__OpenTextElement(Str8 text, Clay_TextElementConfig* textCon
 	);
 	textElement->dimensions = textDimensions;
 	textElement->minDimensions = MakeV2(textMeasured->unwrappedDimensions.height, textDimensions.height); // TODO not sure this is the best way to decide min width for text
-	textElement->childrenOrTextContent.textElementData = Clay__TextElementDataArray_Add(&context->textElementData, NEW_STRUCT(Clay__TextElementData) { .text = text, .preferredDimensions = textMeasured->unwrappedDimensions, .elementIndex = context->layoutElements.length - 1 });
+	textElement->childrenOrTextContent.textElementData = Clay__TextElementDataArray_Add(&context->textElementData, NEW_STRUCT(Clay__TextElementData) { .text = text, .preferredDimensions = textMeasured->unwrappedDimensions, .elementIndex = (i32)context->layoutElements.length - 1 });
 	textElement->elementConfigs = NEW_STRUCT(Clay__ElementConfigArraySlice) {
 		.length = 1,
 		.items = Clay__ElementConfigArray_Add(&context->elementConfigs, NEW_STRUCT(Clay_ElementConfig) { .type = CLAY__ELEMENT_CONFIG_TYPE_TEXT, .config = { .textElementConfig = textConfig }})
@@ -842,7 +842,7 @@ CLAY_DECOR void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declara
 		}
 		if (!scrollOffset)
 		{
-			scrollOffset = Clay__ScrollContainerDataInternalArray_Add(&context->scrollContainerDatas, NEW_STRUCT(Clay__ScrollContainerDataInternal){.layoutElement = openLayoutElement, .scrollOrigin = FillV2(-1), .elementId = openLayoutElement->id, .scrollLag = declaration.scroll.scrollLag, .openThisFrame = true});
+			scrollOffset = Clay__ScrollContainerDataInternalArray_Add(&context->scrollContainerDatas, NEW_STRUCT(Clay__ScrollContainerDataInternal){.layoutElement = openLayoutElement, .scrollOrigin = FillV2(-1), .scrollLag = declaration.scroll.scrollLag, .elementId = openLayoutElement->id, .openThisFrame = true});
 		}
 		if (context->externalScrollHandlingEnabled)
 		{
@@ -1212,7 +1212,7 @@ Str8 Clay__IntToString(i32 integer)
 		chars[k] = temp;
 	}
 	context->dynamicStringData.length += length;
-	return MakeStr8(length, chars);
+	return MakeStr8((uxx)length, chars);
 }
 
 void Clay__AddRenderCommand(Clay_RenderCommand renderCommand)
@@ -1283,7 +1283,7 @@ void Clay__CalculateFinalLayout(void)
 			// Only word on the line is too large, just render it anyway
 			if (lineLengthChars == 0 && lineWidth + measuredWord->width > containerElement->dimensions.width && considerMaxWidth)
 			{
-				Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(measuredWord->width, lineHeight), { .length = measuredWord->length, .chars = &textElementData->text.chars[measuredWord->startOffset] } });
+				Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(measuredWord->width, lineHeight), { .length = (uxx)measuredWord->length, .chars = &textElementData->text.chars[measuredWord->startOffset] } });
 				textElementData->wrappedLines.length++;
 				wordIndex = measuredWord->next;
 				lineStartOffset = measuredWord->startOffset + measuredWord->length;
@@ -1293,7 +1293,7 @@ void Clay__CalculateFinalLayout(void)
 			{
 				// Wrapped text lines list has overflowed, just render out the line
 				bool finalCharIsSpace = textElementData->text.chars[lineStartOffset + lineLengthChars - 1] == ' ';
-				Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(lineWidth + (finalCharIsSpace ? -spaceWidth : 0), lineHeight), { .length = lineLengthChars + (finalCharIsSpace ? -1 : 0), .chars = &textElementData->text.chars[lineStartOffset] } });
+				Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(lineWidth + (finalCharIsSpace ? -spaceWidth : 0), lineHeight), { .length = (uxx)lineLengthChars + (finalCharIsSpace ? -1 : 0), .chars = &textElementData->text.chars[lineStartOffset] } });
 				textElementData->wrappedLines.length++;
 				if (lineLengthChars == 0 || measuredWord->length == 0) { wordIndex = measuredWord->next; }
 				lineWidth = 0;
@@ -1309,7 +1309,7 @@ void Clay__CalculateFinalLayout(void)
 		}
 		if (lineLengthChars > 0)
 		{
-			Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(lineWidth, lineHeight), {.length = lineLengthChars, .chars = &textElementData->text.chars[lineStartOffset] } });
+			Clay__WrappedTextLineArray_Add(&context->wrappedTextLines, NEW_STRUCT(Clay__WrappedTextLine) { MakeV2(lineWidth, lineHeight), {.length = (uxx)lineLengthChars, .chars = &textElementData->text.chars[lineStartOffset] } });
 			textElementData->wrappedLines.length++;
 		}
 		containerElement->dimensions.height = lineHeight * (r32)textElementData->wrappedLines.length;

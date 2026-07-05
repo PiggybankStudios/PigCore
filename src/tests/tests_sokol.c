@@ -210,7 +210,7 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 	Clay_ElementId menuId = ToClayId(menuIdStr);
 	bool isBtnHoveredOrMenuOpen = (Clay_PointerOver(btnId) || *isOpenPntr);
 	Clay__OpenElement();
-	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+	Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){
 		.id = btnId,
 		.layout = { .padding = { 12, 12, 8, 8 } },
 		.backgroundColor = (isBtnHoveredOrMenuOpen ? highlightColor : backColor),
@@ -219,9 +219,9 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 	CLAY_TEXT(
 		MakeStr8Nt(btnText),
 		CLAY_TEXT_CONFIG({
+			.textColor = textColor,
 			.fontId = clayFont,
 			.fontSize = (u16)(18*textScale),
-			.textColor = textColor,
 		})
 	);
 	bool isHovered = (Clay_PointerOver(btnId) || Clay_PointerOver(menuId));
@@ -233,27 +233,27 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 	if (*isOpenPntr)
 	{
 		Clay__OpenElement();
-		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+		Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){
 			.id = menuId,
+			.layout = {
+				.padding = { 0, 0, 0, 0 },
+			},
 			.floating = {
-				.attachTo = CLAY_ATTACH_TO_PARENT,
 				.attachPoints = {
 					.parent = CLAY_ATTACH_POINT_LEFT_BOTTOM,
 				},
-			},
-			.layout = {
-				.padding = { 0, 0, 0, 0 },
+				.attachTo = CLAY_ATTACH_TO_PARENT,
 			}
 		});
 		
 		Clay__OpenElement();
-		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+		Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){
 			.layout = {
-				.layoutDirection = CLAY_TOP_TO_BOTTOM,
 				.sizing = {
 					.width = CLAY_SIZING_FIXED(dropDownWidth),
 				},
 				.childGap = 2,
+				.layoutDirection = CLAY_TOP_TO_BOTTOM,
 			},
 			.backgroundColor = MonokaiBack,
 			.cornerRadius = CLAY_CORNER_RADIUS(8),
@@ -275,11 +275,11 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 	bool isHovered = Clay_PointerOver(btnId);
 	bool isPressed = (isHovered && (IsMouseBtnDown(&mouse, nullptr, MouseBtn_Left) || (touchscreen.mainTouch->id != TOUCH_ID_INVALID && !touchscreen.mainTouch->stopped)));
 	Clay__OpenElement();
-	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+	Clay__ConfigureOpenElement(NEW_STRUCT(Clay_ElementDeclaration){
 		.id = btnId,
 		.layout = {
-			.padding = CLAY_PADDING_ALL(8),
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
+			.padding = CLAY_PADDING_ALL(8),
 		},
 		.backgroundColor = (isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
 		.cornerRadius = CLAY_CORNER_RADIUS(8),
@@ -287,9 +287,9 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 	CLAY_TEXT(
 		MakeStr8Nt(btnText),
 		CLAY_TEXT_CONFIG({
+			.textColor = textColor,
 			.fontId = clayFont,
 			.fontSize = (u16)(18*textScale),
-			.textColor = textColor,
 			.userData = { .richText = true },
 		})
 	);
@@ -386,7 +386,7 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 		ScratchEnd(scratch);
 		return result;
 	}
-	result = InitTexture(arena, path, imageData.size, imageData.pixels, flags);
+	result = InitTexture(arena, path, imageData.size, imageData.pixels, (u8)flags);
 	ScratchEnd(scratch);
 	return result;
 }
@@ -422,7 +422,7 @@ void AppInit(void)
 	MyMain(argc_copy, argv_copy); //call MyMain to initialize arenas and whatnot
 	
 	ScratchBegin(scratch);
-	InitSokolGraphics((sg_desc){
+	InitSokolGraphics(NEW_STRUCT(sg_desc){
 		.metal = { .use_command_buffer_with_retained_references = true, },
 		.logger = { .func = SokolLogCallback },
 		.environment = GetSokolGfxEnvironment(),
@@ -1243,7 +1243,7 @@ bool AppFrame(void)
 				CLAY({ .id = CLAY_ID("FullscreenContainer"),
 					.layout = {
 						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-						.padding = { .left = (u16)screenMargins.x, .top = (u16)screenMargins.y, .right = (u16)screenMargins.z, .bottom = (u16)screenMargins.w },
+						.padding = { .left = (u16)screenMargins.x, .right = (u16)screenMargins.z, .top = (u16)screenMargins.y, .bottom = (u16)screenMargins.w },
 					}
 				})
 				{
@@ -1251,51 +1251,51 @@ bool AppFrame(void)
 						.layout = {
 							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.x), .height=CLAY_SIZING_FIXED(windowSize.height) }
 						},
-						.floating = {
-							.attachTo = CLAY_ATTACH_TO_PARENT,
-							.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
-						},
 						.backgroundColor = MonokaiBack,
+						.floating = {
+							.attachPoints = { .element = CLAY_ATTACH_POINT_LEFT_TOP, .parent = CLAY_ATTACH_POINT_LEFT_TOP },
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+						},
 					}) { }
 					CLAY({.id = CLAY_ID("SafeInsetTop"),
 						.layout = {
 							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.width), .height=CLAY_SIZING_FIXED(screenMargins.y) }
 						},
-						.floating = {
-							.attachTo = CLAY_ATTACH_TO_PARENT,
-							.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = CLAY_ATTACH_POINT_LEFT_TOP },
-						},
 						.backgroundColor = MonokaiBack,
+						.floating = {
+							.attachPoints = { .element = CLAY_ATTACH_POINT_LEFT_TOP, .parent = CLAY_ATTACH_POINT_LEFT_TOP },
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+						},
 					}) { }
 					CLAY({.id = CLAY_ID("SafeInsetRight"),
 						.layout = {
 							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.z), .height=CLAY_SIZING_FIXED(windowSize.height) }
 						},
-						.floating = {
-							.attachTo = CLAY_ATTACH_TO_PARENT,
-							.attachPoints = { .parent = CLAY_ATTACH_POINT_RIGHT_TOP, .element = CLAY_ATTACH_POINT_RIGHT_TOP },
-						},
 						.backgroundColor = MonokaiBack,
+						.floating = {
+							.attachPoints = { .element = CLAY_ATTACH_POINT_RIGHT_TOP, .parent = CLAY_ATTACH_POINT_RIGHT_TOP },
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+						},
 					}) { }
 					CLAY({.id = CLAY_ID("SafeInsetBottom"),
 						.layout = {
 							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.width), .height=CLAY_SIZING_FIXED(screenMargins.w) }
 						},
-						.floating = {
-							.attachTo = CLAY_ATTACH_TO_PARENT,
-							.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_BOTTOM, .element = CLAY_ATTACH_POINT_LEFT_BOTTOM },
-						},
 						.backgroundColor = MonokaiBack,
+						.floating = {
+							.attachPoints = { .element = CLAY_ATTACH_POINT_LEFT_BOTTOM, .parent = CLAY_ATTACH_POINT_LEFT_BOTTOM },
+							.attachTo = CLAY_ATTACH_TO_PARENT,
+						},
 					}) { }
 					
-					CLAY({ .id = CLAY_ID("SafeContainer"), .layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM, .sizing={ .width=CLAY_SIZING_GROW(0), .height=CLAY_SIZING_GROW(0) } } })
+					CLAY({ .id = CLAY_ID("SafeContainer"), .layout = { .sizing={ .width=CLAY_SIZING_GROW(0), .height=CLAY_SIZING_GROW(0) }, .layoutDirection = CLAY_TOP_TO_BOTTOM } })
 					{
 						r32 lineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
 						CLAY({ .id = CLAY_ID("Topbar"),
 							.layout = {
 								.sizing = {
-									.height = CLAY_SIZING_FIXED(lineHeight + 30),
 									.width = CLAY_SIZING_GROW(0),
+									.height = CLAY_SIZING_FIXED(lineHeight + 30),
 								},
 								.padding = { 0, 0, 0, 0 },
 								.childGap = 2,
@@ -1344,9 +1344,9 @@ bool AppFrame(void)
 							CLAY_TEXT(
 								displayStr,
 								CLAY_TEXT_CONFIG({
+									.textColor = MonokaiWhite,
 									.fontId = clayFont,
 									.fontSize = (u16)(18*textScale),
-									.textColor = MonokaiWhite,
 								})
 							);
 						}

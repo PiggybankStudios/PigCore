@@ -180,7 +180,7 @@ PEXP void InitClayUI(Arena* arena, v2 windowSize, ClayMeasureText_f* measureText
 	clayOut->measureTextFunc = measureTextFunc;
 	clayOut->registerTooltipFunc = registerTooltipFunc;
 	
-	clayOut->context = Clay_Initialize(arena, windowSize, (Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
+	clayOut->context = Clay_Initialize(arena, windowSize, NEW_STRUCT(Clay_ErrorHandler){ .errorHandlerFunction=ClayErrorCallback });
 	
 	Clay_SetMeasureTextFunction(measureTextFunc, measureUserData);
 	Clay_SetRegisterTooltipFunction(registerTooltipFunc, tooltipUserData);

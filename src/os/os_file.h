@@ -1027,7 +1027,7 @@ PEXP bool OsOpenFile(Arena* arena, FilePath path, OsOpenFileMode mode, bool calc
 		
 		//TODO: We should convert the path to UCS2 and call CreateFileW!
 		HANDLE fileHandle = CreateFileA(
-			fullPath.pntr,       //lpFileName
+			fullPath.chars,      //lpFileName
 			desiredAccess,       //dwDesiredAccess
 			shareMode,           //dwShareMode
 			NULL,                //lpSecurityAttributes

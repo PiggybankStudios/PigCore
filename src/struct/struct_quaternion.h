@@ -65,7 +65,7 @@ typedef Quaternion_R64 quatd;
 	PIG_CORE_INLINE quatd ToQuatdFromV4d(v4d vec4d);
 	PIG_CORE_INLINE v4 ToV4FromQuat(quat quaternion);
 	PIG_CORE_INLINE v4d ToV4dFromQuatd(quatd quaternion);
-	PIG_CORE_INLINE quat ToQuatFromAxis_RH(v3 axisVec, r64 angleOfRotation);
+	PIG_CORE_INLINE quat ToQuatFromAxis_RH(v3 axisVec, r32 angleOfRotation);
 	PIG_CORE_INLINE bool AreEqualQuat(quat left, quat right);
 	PIG_CORE_INLINE bool AreEqualQuatd(quatd left, quatd right);
 	PIG_CORE_INLINE quat AddQuat(quat left, quat right);
@@ -149,7 +149,7 @@ PEXPI quatd ToQuatdFromV4d(v4d vec4d) { return MakeQuatd(vec4d.x, vec4d.y, vec4d
 PEXPI v4 ToV4FromQuat(quat quaternion) { return MakeV4(quaternion.x, quaternion.y, quaternion.z, quaternion.w); }
 PEXPI v4d ToV4dFromQuatd(quatd quaternion) { return MakeV4d(quaternion.x, quaternion.y, quaternion.z, quaternion.w); }
 
-PEXPI quat ToQuatFromAxis_RH(v3 axisVec, r64 angleOfRotation)
+PEXPI quat ToQuatFromAxis_RH(v3 axisVec, r32 angleOfRotation)
 {
 	quat result;
 	v3 axisNormalized = NormalizeV3(axisVec);

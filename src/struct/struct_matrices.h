@@ -166,7 +166,7 @@ typedef Matrix4x4_R32 mat4;
 	PIG_CORE_INLINE v3 MulMat4AndV3GetW(mat4 matrix4, v3 vec3, bool includeTranslation, r32* wOut);
 	PIG_CORE_INLINE v3 MulMat4AndV3(mat4 matrix4, v3 vec3, bool includeTranslation);
 	PIG_CORE_INLINE mat4 MakeRotateMat4_RH(r32 angle, v3 axis);
-	PIG_CORE_INLINE mat4 MakeOrthographicMat4Gl_RH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 far);
+	PIG_CORE_INLINE mat4 MakeOrthographicMat4Gl_RH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 zFar);
 	PIG_CORE_INLINE mat4 MakeOrthographicMat4Dx_RH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 zFar);
 	PIG_CORE_INLINE mat4 MakeOrthographicMat4Gl_LH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 zFar);
 	PIG_CORE_INLINE mat4 MakeOrthographicMat4Dx_LH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 zFar);
@@ -863,17 +863,17 @@ PEXPI mat4 MakeRotateMat4_RH(r32 angle, v3 axis)
 
 // Produces a right-handed orthographic projection matrix with Z ranging from -1 to 1 (the GL convention).
 // left, right, bottom, and top specify the coordinates of their respective clipping planes.
-// zNear and far specify the distances to the near and far clipping planes.
-PEXPI mat4 MakeOrthographicMat4Gl_RH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 far)
+// zNear and zFar specify the distances to the near and far clipping planes.
+PEXPI mat4 MakeOrthographicMat4Gl_RH(r32 left, r32 right, r32 bottom, r32 top, r32 zNear, r32 zFar)
 {
 	mat4 result = ZEROED;
 	result.elem[0][0] = 2.0f / (right - left);
 	result.elem[1][1] = 2.0f / (top - bottom);
-	result.elem[2][2] = 2.0f / (zNear - far);
+	result.elem[2][2] = 2.0f / (zNear - zFar);
 	result.elem[3][3] = 1.0f;
 	result.elem[3][0] = (left + right) / (left - right);
 	result.elem[3][1] = (bottom + top) / (bottom - top);
-	result.elem[3][2] = (zNear + far) / (zNear - far);
+	result.elem[3][2] = (zNear + zFar) / (zNear - zFar);
 	return result;
 }
 // Produces a right-handed orthographic projection matrix with Z ranging from 0 to 1 (the DirectX convention).

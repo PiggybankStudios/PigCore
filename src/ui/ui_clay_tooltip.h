@@ -165,15 +165,15 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 					},
 					// .childAlignment = { .x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER }, //TODO: Enable this once the clay renderer properly vertically aligns multi-line text
 				},
-				.floating = {
-					.attachTo = CLAY_ATTACH_TO_PARENT,
-					.parentId = targetId.id,
-					.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
-					.attachPoints = { .parent = CLAY_ATTACH_POINT_LEFT_TOP, .element = attachPoint },
-					.zIndex = 10,
-					.offset = attachOffset,
-				},
 				.backgroundColor = ColorWithAlpha(TOOLTIP_BACKGROUND_COLOR, tooltipAlpha),
+				.floating = {
+					.offset = attachOffset,
+					.parentId = targetId.id,
+					.zIndex = 10,
+					.attachPoints = { .element = attachPoint, .parent = CLAY_ATTACH_POINT_LEFT_TOP },
+					.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH,
+					.attachTo = CLAY_ATTACH_TO_PARENT,
+				},
 				.border = {
 					.color = ColorWithAlpha(MonokaiWhite, tooltipAlpha),
 					.width = CLAY_BORDER_OUTSIDE(UISCALE_BORDER(context->uiScale, 1)),
@@ -183,9 +183,9 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 				CLAY_TEXT(
 					AllocStr8(context->uiArena, openTooltip->displayStr),
 					CLAY_TEXT_CONFIG({
+						.textColor = ColorWithAlpha(TOOLTIP_TEXT_COLOR, tooltipAlpha),
 						.fontId = fontId,
 						.fontSize = (u16)openTooltip->fontSize,
-						.textColor = ColorWithAlpha(TOOLTIP_TEXT_COLOR, tooltipAlpha),
 						.wrapMode = CLAY_TEXT_WRAP_NONE,
 						.textAlignment = CLAY_TEXT_ALIGN_LEFT,
 						.userData = {

@@ -42,8 +42,7 @@ struct Clay_CornerRadius
 // |       Element Configs        |
 // +==============================+
 // Controls the direction in which child elements will be automatically laid out.
-typedef CLAY_PACKED_ENUM Clay_LayoutDirection Clay_LayoutDirection;
-CLAY_PACKED_ENUM Clay_LayoutDirection
+CLAY_PACKED_ENUM(Clay_LayoutDirection)
 {
 	// (Default) Lays out child elements from left to right with increasing x.
 	CLAY_LEFT_TO_RIGHT,
@@ -52,8 +51,7 @@ CLAY_PACKED_ENUM Clay_LayoutDirection
 };
 
 // Controls the alignment along the x axis (horizontal) of child elements.
-typedef CLAY_PACKED_ENUM Clay_LayoutAlignmentX Clay_LayoutAlignmentX;
-CLAY_PACKED_ENUM Clay_LayoutAlignmentX
+CLAY_PACKED_ENUM(Clay_LayoutAlignmentX)
 {
 	// (Default) Aligns child elements to the left hand side of this element, offset by padding.width.left
 	CLAY_ALIGN_X_LEFT,
@@ -64,8 +62,7 @@ CLAY_PACKED_ENUM Clay_LayoutAlignmentX
 };
 
 // Controls the alignment along the y axis (vertical) of child elements.
-typedef CLAY_PACKED_ENUM Clay_LayoutAlignmentY Clay_LayoutAlignmentY;
-CLAY_PACKED_ENUM Clay_LayoutAlignmentY
+CLAY_PACKED_ENUM(Clay_LayoutAlignmentY)
 {
 	// (Default) Aligns child elements to the top of this element, offset by padding.width.top
 	CLAY_ALIGN_Y_TOP,
@@ -76,8 +73,7 @@ CLAY_PACKED_ENUM Clay_LayoutAlignmentY
 };
 
 // Controls how the element takes up space inside its parent container.
-typedef CLAY_PACKED_ENUM Clay__SizingType Clay__SizingType;
-CLAY_PACKED_ENUM Clay__SizingType
+CLAY_PACKED_ENUM(Clay__SizingType)
 {
 	// (default) Wraps tightly to the size of the element's contents.
 	CLAY__SIZING_TYPE_FIT,
@@ -153,8 +149,7 @@ struct Clay_LayoutConfig
 CLAY__WRAPPER_STRUCT(Clay_LayoutConfig);
 
 // Controls how text "wraps", that is how it is broken into multiple lines when there is insufficient horizontal space.
-typedef CLAY_PACKED_ENUM Clay_TextElementConfigWrapMode Clay_TextElementConfigWrapMode;
-CLAY_PACKED_ENUM Clay_TextElementConfigWrapMode
+CLAY_PACKED_ENUM(Clay_TextElementConfigWrapMode)
 {
 	// (default) breaks on whitespace characters.
 	CLAY_TEXT_WRAP_WORDS,
@@ -165,8 +160,7 @@ CLAY_PACKED_ENUM Clay_TextElementConfigWrapMode
 };
 
 // Controls how wrapped lines of text are horizontally aligned within the outer text bounding box.
-typedef CLAY_PACKED_ENUM Clay_TextAlignment Clay_TextAlignment;
-CLAY_PACKED_ENUM Clay_TextAlignment
+CLAY_PACKED_ENUM(Clay_TextAlignment)
 {
 	// (default) Horizontally aligns wrapped lines of text to the left hand side of their bounding box.
 	CLAY_TEXT_ALIGN_LEFT,
@@ -231,8 +225,7 @@ CLAY__WRAPPER_STRUCT(Clay_ImageElementConfig);
 // +==============================+
 // Controls where a floating element is offset relative to its parent element.
 // Note: see https://github.com/user-attachments/assets/b8c6dfaa-c1b1-41a4-be55-013473e4a6ce for a visual explanation.
-typedef CLAY_PACKED_ENUM Clay_FloatingAttachPointType Clay_FloatingAttachPointType;
-CLAY_PACKED_ENUM Clay_FloatingAttachPointType
+CLAY_PACKED_ENUM(Clay_FloatingAttachPointType)
 {
 	CLAY_ATTACH_POINT_LEFT_TOP,
 	CLAY_ATTACH_POINT_LEFT_CENTER,
@@ -254,8 +247,7 @@ struct Clay_FloatingAttachPoints
 };
 
 // Controls how mouse pointer events like hover and click are captured or passed through to elements underneath a floating element.
-typedef CLAY_PACKED_ENUM Clay_PointerCaptureMode Clay_PointerCaptureMode;
-CLAY_PACKED_ENUM Clay_PointerCaptureMode
+CLAY_PACKED_ENUM(Clay_PointerCaptureMode)
 {
 	// (default) "Capture" the pointer event and don't allow events like hover and click to pass through to elements underneath.
 	CLAY_POINTER_CAPTURE_MODE_CAPTURE,
@@ -266,8 +258,7 @@ CLAY_PACKED_ENUM Clay_PointerCaptureMode
 };
 
 // Controls which element a floating element is "attached" to (i.e. relative offset from).
-typedef CLAY_PACKED_ENUM Clay_FloatingAttachToElement Clay_FloatingAttachToElement;
-CLAY_PACKED_ENUM Clay_FloatingAttachToElement
+CLAY_PACKED_ENUM(Clay_FloatingAttachToElement)
 {
 	// (default) Disables floating for this element.
 	CLAY_ATTACH_TO_NONE,
@@ -475,8 +466,7 @@ union Clay_RenderData
 };
 
 // Used by renderers to determine specific handling for each render command.
-typedef CLAY_PACKED_ENUM Clay_RenderCommandType Clay_RenderCommandType;
-CLAY_PACKED_ENUM Clay_RenderCommandType
+CLAY_PACKED_ENUM(Clay_RenderCommandType)
 {
 	// This command type should be skipped.
 	CLAY_RENDER_COMMAND_TYPE_NONE,
@@ -565,8 +555,7 @@ struct Clay_ElementData
 };
 
 // Represents the current state of interaction with clay this frame.
-typedef CLAY_PACKED_ENUM Clay_PointerDataInteractionState Clay_PointerDataInteractionState;
-CLAY_PACKED_ENUM Clay_PointerDataInteractionState
+CLAY_PACKED_ENUM(Clay_PointerDataInteractionState)
 {
 	// A left mouse click, or touch occurred this frame.
 	CLAY_POINTER_DATA_PRESSED_THIS_FRAME,
@@ -629,8 +618,7 @@ CLAY__WRAPPER_STRUCT(Clay_ElementDeclaration);
 // |          Callbacks           |
 // +==============================+
 // Represents the type of error clay encountered while computing layout.
-typedef CLAY_PACKED_ENUM Clay_ErrorType Clay_ErrorType;
-CLAY_PACKED_ENUM Clay_ErrorType
+CLAY_PACKED_ENUM(Clay_ErrorType)
 {
 	// A text measurement function wasn't provided using Clay_SetMeasureTextFunction(), or the provided function was null.
 	CLAY_ERROR_TYPE_TEXT_MEASUREMENT_FUNCTION_NOT_PROVIDED,
@@ -721,8 +709,7 @@ struct Clay_SharedElementConfig
 
 CLAY__WRAPPER_STRUCT(Clay_SharedElementConfig);
 
-typedef CLAY_PACKED_ENUM Clay__ElementConfigType Clay__ElementConfigType;
-CLAY_PACKED_ENUM Clay__ElementConfigType
+CLAY_PACKED_ENUM(Clay__ElementConfigType)
 {
 	CLAY__ELEMENT_CONFIG_TYPE_NONE,
 	CLAY__ELEMENT_CONFIG_TYPE_BORDER,
