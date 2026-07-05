@@ -261,9 +261,9 @@ typedef Matrix4x4_R32 mat4;
 #define MakeScaleMat4(scaleVec)       NEW_STRUCT(Matrix4x4_R32)MakeScaleXYZMat4_Const((scaleVec).x, (scaleVec).y, (scaleVec).z)
 #define MakeScaleXYMat4(x, y)         MakeScaleXYZMat4((x), (y), 0.0f)
 #define Make2DScaleMat4(scaleVec)     MakeScaleXYMat4((scaleVec).x, (scaleVec).y)
-#define MakeScaleXMat4(x)             MakeScaleXYZMat4((x), 0.0f, 0.0f)
-#define MakeScaleYMat4(y)             MakeScaleXYZMat4(0.0f, (y), 0.0f)
-#define MakeScaleZMat4(z)             MakeScaleXYZMat4(0.0f, 0.0f, (z))
+#define MakeScaleXMat4(x)             MakeScaleXYZMat4((x),  1.0f, 1.0f)
+#define MakeScaleYMat4(y)             MakeScaleXYZMat4(1.0f,  (y), 1.0f)
+#define MakeScaleZMat4(z)             MakeScaleXYZMat4(1.0f, 1.0f,  (z))
 
 #define MakeTranslateXYZMat4_Const(x, y, z) MakeMat4_Const( \
 	1.0f, 0.0f, 0.0f, (x),                                  \
