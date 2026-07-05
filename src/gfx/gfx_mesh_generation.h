@@ -45,8 +45,8 @@ plex GeneratedMesh
 // +--------------------------------------------------------------+
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE void FreeGeneratedMesh(GeneratedMesh* mesh);
-	GeneratedMesh GenerateVertsForBoxEx(Arena* arena, Box boundingBox, Color32* colors);
-	PIG_CORE_INLINE GeneratedMesh GenerateVertsForBox(Arena* arena, Box boundingBox, Color32 color);
+	GeneratedMesh GenerateVertsForBoxEx(Arena* arena, box boundingBox, Color32* colors);
+	PIG_CORE_INLINE GeneratedMesh GenerateVertsForBox(Arena* arena, box boundingBox, Color32 color);
 	GeneratedMesh GenerateVertsForSphere(Arena* arena, Sphere sphere, uxx numRings, uxx numSegments, Color32 color);
 #endif //!PIG_CORE_IMPLEMENTATION
 
