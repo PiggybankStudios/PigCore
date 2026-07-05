@@ -21,7 +21,7 @@ Date:   12\04\2025
 #include "gfx/gfx_font_flow.h"
 #include "gfx/gfx_clay_renderer.h"
 #include "ui/ui_clay.h"
-#include "ui/ui_clay_tooltip_registry.h"
+#include "ui/ui_tooltip_registry.h"
 #include "ui/ui_clay_widget_context.h"
 
 #if BUILD_WITH_CLAY && BUILD_WITH_SOKOL_GFX

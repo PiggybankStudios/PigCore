@@ -60,6 +60,19 @@
 			],
 		},
 		{
+			"path": "src/third_party/box3d",
+			"name": "Box3D",
+			"folder_exclude_patterns": [
+				"build",
+			],
+			"file_exclude_patterns": [
+				"LICENSE",
+				"build.bat",
+				"build.sh",
+				".gitignore",
+			],
+		},
+		{
 			"path": "src/third_party/sokol",
 			"name": "Sokol",
 			"folder_exclude_patterns": [
