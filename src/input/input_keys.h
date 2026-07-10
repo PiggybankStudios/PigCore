@@ -31,12 +31,29 @@ enum ModifierKey
 {
 	ModifierKey_None    = 0x00,
 	ModifierKey_Shift   = 0x01,
-	ModifierKey_Control = 0x02,
+	ModifierKey_Control = 0x02, //careful, this has a different meaning on Mac-OS
 	ModifierKey_Alt     = 0x04,
-	ModifierKey_All     = 0x07,
-	ModifierKey_Any     = 0x10,
+	ModifierKey_Command = 0x08,
+	ModifierKey_Option  = 0x10,
+	ModifierKey_All     = 0x1F,
+	ModifierKey_Any     = 0x20,
 };
 typedef enum ModifierKey ModifierKey;
+
+//These are all Windows/Linux binding first, then OSX binding second (Since "Control" exists on both platforms it can be confusing)
+#if TARGET_IS_OSX
+#define ModifierKey_CtrlOrCmd ModifierKey_Command
+#define ModifierKey_AltOrCmd  ModifierKey_Command
+#define ModifierKey_CtrlOrOpt ModifierKey_Option
+#define ModifierKey_AltOrOpt  ModifierKey_Option
+#define ModifierKey_AltOrCtrl ModifierKey_Control
+#else
+#define ModifierKey_CtrlOrCmd ModifierKey_Control
+#define ModifierKey_AltOrCmd  ModifierKey_Alt
+#define ModifierKey_CtrlOrOpt ModifierKey_Control
+#define ModifierKey_AltOrOpt  ModifierKey_Alt
+#define ModifierKey_AltOrCtrl ModifierKey_Alt
+#endif
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetModifierKeyStr(ModifierKey enumValue);
@@ -50,6 +67,8 @@ PEXP const char* GetModifierKeyStr(ModifierKey enumValue)
 		case ModifierKey_Shift:   return "Shift";
 		case ModifierKey_Control: return "Control";
 		case ModifierKey_Alt:     return "Alt";
+		case ModifierKey_Command: return "Command";
+		case ModifierKey_Option:  return "Option";
 		case ModifierKey_All:     return "All";
 		default: return UNKNOWN_STR;
 	}
@@ -61,6 +80,8 @@ PEXP const char* GetModifierKeyShortStr(ModifierKey enumValue)
 		case ModifierKey_Shift:   return "Shift";
 		case ModifierKey_Control: return "Ctrl";
 		case ModifierKey_Alt:     return "Alt";
+		case ModifierKey_Command: return "Cmd";
+		case ModifierKey_Option:  return "Opt";
 		default: return UNKNOWN_STR;
 	}
 }
@@ -209,6 +230,21 @@ enum Key
 	Key_Count,
 };
 typedef enum Key Key;
+
+//These are all Windows/Linux binding first, then OSX binding second (Since "Control" exists on both platforms it can be confusing)
+#if TARGET_IS_OSX
+#define Key_CtrlOrCmd Key_Command
+#define Key_AltOrCmd  Key_Command
+#define Key_CtrlOrOpt Key_Option
+#define Key_AltOrOpt  Key_Option
+#define Key_AltOrCtrl Key_Control
+#else
+#define Key_CtrlOrCmd Key_Control
+#define Key_AltOrCmd  Key_Alt
+#define Key_CtrlOrOpt Key_Control
+#define Key_AltOrOpt  Key_Alt
+#define Key_AltOrCtrl Key_Alt
+#endif
 
 #if !PIG_CORE_IMPLEMENTATION
 const char* GetKeyStr(Key key);
@@ -432,6 +468,8 @@ PEXP const char* GetKeyStr(Key key)
 #define KEY_RIGHT_CODEPOINT           0xE04E
 #define KEY_ALT_CODEPOINT             0xE04F
 #define KEY_CTRL_CODEPOINT            0xE050
+//TODO: Add KEY_COMMAND_CODEPOINT
+//TODO: Add KEY_OPTION_CODEPOINT
 
 #define KEY_EMPTY_SQUARE1_CODEPOINT   0xE051
 #define KEY_EMPTY_SQUARE2_CODEPOINT   0xE052
@@ -629,6 +667,8 @@ PEXP u32 GetCodepointForKey(Key key)
 		case Key_Right: return KEY_RIGHT_CODEPOINT;
 		case Key_Alt: return KEY_ALT_CODEPOINT;
 		case Key_Control: return KEY_CTRL_CODEPOINT;
+		//TODO: Handle Key_Command
+		//TODO: Handle Key_Option
 		// case Key_EMPTY_SQUARE1: return KEY_EMPTY_SQUARE1_CODEPOINT;
 		// case Key_EMPTY_SQUARE2: return KEY_EMPTY_SQUARE2_CODEPOINT;
 		// case Key_EMPTY_RECTANGLE: return KEY_EMPTY_RECTANGLE_CODEPOINT;

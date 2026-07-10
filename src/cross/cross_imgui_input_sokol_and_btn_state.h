@@ -75,8 +75,9 @@ PEXP void UpdateImguiInput(ImguiUI* imgui, const ImguiInput* input, ImguiOutput*
 	
 	if (!input->isTyping)
 	{
-		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Ctrl, IsKeyboardKeyDown(input->keyboard, nullptr, Key_Control));
-		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Alt, IsKeyboardKeyDown(input->keyboard, nullptr, Key_Alt));
+		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Ctrl,  IsKeyboardKeyDown(input->keyboard, nullptr, Key_Control));
+		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Alt,   IsKeyboardKeyDown(input->keyboard, nullptr, Key_AltOrOpt));
+		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Super, IsKeyboardKeyDown(input->keyboard, nullptr, Key_Command));
 		ImGuiIO_AddKeyEvent(imgui->io, ImGuiMod_Shift, IsKeyboardKeyDown(input->keyboard, nullptr, Key_Shift));
 		
 		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++)

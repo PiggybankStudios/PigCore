@@ -269,12 +269,12 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 			_Static_assert(MAX_ALT_KEY_MAPPINGS == 2);
 			#endif
 			bool isKeyDown = (event->type == SAPP_EVENTTYPE_KEY_DOWN);
-			//TODO: Add support for SAPP_MODIFIER_SUPER
 			//TODO: Add support for SAPP_MODIFIER_LMB/SAPP_MODIFIER_RMB/SAPP_MODIFIER_MMB?
 			u8 modifierKeys = 
-				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SHIFT) ? ModifierKey_Shift   : 0) |
-				(IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL)  ? ModifierKey_Control : 0) |
-				(IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT)   ? ModifierKey_Alt     : 0);
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SHIFT) ? ModifierKey_Shift    : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL)  ? ModifierKey_Control  : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT)   ? ModifierKey_AltOrOpt : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SUPER) ? ModifierKey_Command  : 0);
 			Key primaryKey = GetKeyFromSokolKeycodeEx(event->key_code, 0);
 			Key altKey = GetKeyFromSokolKeycodeEx(event->key_code, 1);
 			if (primaryKey != Key_None)
@@ -304,9 +304,10 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 		{
 			MouseBtn mouseBtn = GetMouseBtnFromSokolMouseButton(event->mouse_button);
 			u8 modifierKeys = 
-				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SHIFT) ? ModifierKey_Shift   : 0) |
-				(IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL)  ? ModifierKey_Control : 0) |
-				(IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT)   ? ModifierKey_Alt     : 0);
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SHIFT) ? ModifierKey_Shift    : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL)  ? ModifierKey_Control  : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT)   ? ModifierKey_AltOrOpt : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SUPER) ? ModifierKey_Command  : 0);
 			if (mouseBtn != MouseBtn_None)
 			{
 				UpdateMouseBtn(mouse, currentTime, mouseBtn, (event->type == SAPP_EVENTTYPE_MOUSE_DOWN), modifierKeys);
@@ -367,10 +368,11 @@ PEXP bool HandleSokolKeyboardMouseAndTouchEvents(const sapp_event* event, u64 cu
 		// +==============================+
 		case SAPP_EVENTTYPE_CHAR:
 		{
-			u8 modifierKeys = ModifierKey_None;
-			if (IsFlagSet(event->modifiers, SAPP_MODIFIER_SHIFT)) { FlagSet(modifierKeys, ModifierKey_Shift);   }
-			if (IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL))  { FlagSet(modifierKeys, ModifierKey_Control); }
-			if (IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT))   { FlagSet(modifierKeys, ModifierKey_Alt);     }
+			u8 modifierKeys = 
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SHIFT) ? ModifierKey_Shift    : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_CTRL)  ? ModifierKey_Control  : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_ALT)   ? ModifierKey_AltOrOpt : 0) |
+				(IsFlagSet(event->modifiers, SAPP_MODIFIER_SUPER) ? ModifierKey_Command  : 0);
 			AddKeyboardCharInput(keyboard, event->char_code, modifierKeys);
 			handled = true;
 		} break;

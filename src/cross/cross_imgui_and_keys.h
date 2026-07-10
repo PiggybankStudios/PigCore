@@ -23,6 +23,7 @@ Date:   02\21\2025
 // +--------------------------------------------------------------+
 #if PIG_CORE_IMPLEMENTATION
 
+//NOTE: This doesn't return anythinf for Key_Control, or similar multi-mapping keys. Use Key_LeftControl or Key_RightControl instead
 PEXP ImGuiKey GetImGuiKey(Key key)
 {
 	switch (key)
@@ -108,9 +109,16 @@ PEXP ImGuiKey GetImGuiKey(Key key)
 		case Key_CapsLock: return ImGuiKey_CapsLock;
 		case Key_NumLock: return ImGuiKey_NumLock;
 		
-		case Key_Control: return ImGuiKey_LeftCtrl;
-		case Key_Alt: return ImGuiKey_LeftAlt;
-		case Key_Shift: return ImGuiKey_LeftShift;
+		case Key_LeftControl: return ImGuiKey_LeftCtrl;
+		case Key_LeftAlt: return ImGuiKey_LeftAlt;
+		case Key_LeftCommand: return ImGuiKey_LeftSuper;
+		case Key_LeftOption: return ImGuiKey_LeftAlt;
+		case Key_LeftShift: return ImGuiKey_LeftShift;
+		case Key_RightControl: return ImGuiKey_RightCtrl;
+		case Key_RightAlt: return ImGuiKey_RightAlt;
+		case Key_RightCommand: return ImGuiKey_RightSuper;
+		case Key_RightOption: return ImGuiKey_RightAlt;
+		case Key_RightShift: return ImGuiKey_RightShift;
 		
 		case Key_Right: return ImGuiKey_RightArrow;
 		case Key_Left: return ImGuiKey_LeftArrow;
