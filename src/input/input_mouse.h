@@ -22,6 +22,12 @@ Description:
 #include "input/input_btn_state.h"
 #include "struct/struct_vectors.h"
 
+#if TARGET_IS_OSX
+#define OS_SPECIFIC_SCROLL_SCALE_MULT   0.3f //TODO: What should this be? I just sort of imperically tuned this on my MacBook
+#else
+#define OS_SPECIFIC_SCROLL_SCALE_MULT   1.0f //one notch on Windows is general is +-120.0
+#endif
+
 typedef plex MouseState MouseState;
 plex MouseState
 {

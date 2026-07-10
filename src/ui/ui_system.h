@@ -1342,7 +1342,7 @@ static bool HandleMouseScrollWheelOnAxisAfterUiLayout(bool xAxis, UiElement* ele
 	{
 		r32* scrollGotoPntr = (xAxis ? &element->scrollGoto.x : &element->scrollGoto.y);
 		r32 scrollMax = (xAxis ? element->scrollMax.x : element->scrollMax.y);
-		*scrollGotoPntr = ClampR32(*scrollGotoPntr - (scrollDelta * 35.0f), 0.0f, scrollMax); //TODO: Make 35.0f multiplier configurable!
+		*scrollGotoPntr = ClampR32(*scrollGotoPntr - (scrollDelta * UI_SCROLL_WHEEL_MULT), 0.0f, scrollMax); //TODO: Make 35.0f multiplier configurable!
 		handled = true;
 	}
 	return handled;

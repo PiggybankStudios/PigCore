@@ -55,9 +55,11 @@ Description:
 #define PigUiDefaultColor       TransparentBlack
 
 #define UI_SCROLL_LAG_DEFAULT_CONSTANT 15.0f
-#define UI_SCROLL_LAG_DEFAULT 0.0f
-#define UI_SCROLL_LAG_NONE    -1.0f
-#define UI_SCROLL_GOTO_SNAP_DISTANCE 0.5f //px
+#define UI_SCROLL_LAG_DEFAULT          0.0f
+#define UI_SCROLL_LAG_NONE            -1.0f
+#define UI_SCROLL_GOTO_SNAP_DISTANCE   0.5f //px
+
+#define UI_SCROLL_WHEEL_MULT (35.0f * OS_SPECIFIC_SCROLL_SCALE_MULT)
 
 #define UiSide_TopLeft      Dir2Ex_TopLeft
 #define UiSide_TopCenter    Dir2Ex_Up
