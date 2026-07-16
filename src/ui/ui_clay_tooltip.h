@@ -81,9 +81,9 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 			VarArrayLoopGet(RegisteredTooltip, tooltip, &registry->tooltips, tIndex);
 			if (tooltip->active)
 			{
-				if (!IsEmptyStr(tooltip->targetClayIdStr))
+				if (!IsEmptyStr(tooltip->targetUiIdStr))
 				{
-					if (Clay_PointerOver(ToClayIdEx(tooltip->targetClayIdStr, tooltip->targetClayIdIndex)) &&
+					if (Clay_PointerOver(ToClayIdEx(tooltip->targetUiIdStr, tooltip->targetUiIdIndex)) &&
 						(tooltip->targetContainerClayId.id == 0 || Clay_PointerOver(tooltip->targetContainerClayId)))
 					{
 						newMouseHoverId = tooltip->id;
@@ -125,9 +125,9 @@ PEXP void DoUiTooltips(UiWidgetContext* context, TooltipRegistry* registry, v2 s
 		if (openTooltip != nullptr && openTooltip->active)
 		{
 			NotNull(openTooltip->font);
-			bool attachToElement = !IsEmptyStr(openTooltip->targetClayIdStr);
-			ClayId targetId = attachToElement ? ToClayId(openTooltip->targetClayIdStr) : ClayId_Invalid;
-			Str8 tooltipIdStr = PrintInArenaStr(context->uiArena, "%.*s%sTooltip%llu", StrPrint(openTooltip->targetClayIdStr), attachToElement ? "_" : "", openTooltip->id);
+			bool attachToElement = !IsEmptyStr(openTooltip->targetUiIdStr);
+			ClayId targetId = attachToElement ? ToClayId(openTooltip->targetUiIdStr) : ClayId_Invalid;
+			Str8 tooltipIdStr = PrintInArenaStr(context->uiArena, "%.*s%sTooltip%llu", StrPrint(openTooltip->targetUiIdStr), attachToElement ? "_" : "", openTooltip->id);
 			ClayId tooltipId = ToClayId(tooltipIdStr);
 			Assert(openTooltip->font == nullptr || context->renderer != nullptr);
 			v2 attachOffset = AddV2(registry->openTooltipTargetPos, MakeV2(0, TOOLTIP_TARGET_DOWN_OFFSET));
