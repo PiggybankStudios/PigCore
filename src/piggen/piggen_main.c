@@ -164,6 +164,8 @@ int main(int argc, char* argv[])
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
 	
+	InitDebugOutputRouter(nullptr);
+	
 	PrintLine_N("Running piggen...");
 	fflush(stdout);
 	fflush(stderr);

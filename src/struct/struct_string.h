@@ -183,7 +183,7 @@ plex Str8Pair
 #define NotNullStr(string)          Assert(!IsNullStr(string))
 #define NotNullStrPntr(stringPntr)  Assert((stringPntr) != nullptr && !IsNullStr(*(stringPntr)))
 #define NotEmptyStr(string)         Assert(!IsEmptyStr(string))
-#define NotEmptyStrPntr(stringPntr) Assert(stringPntr != nullptr && !IsEmptyStr(*(stringPntr)))
+#define NotEmptyStrPntr(stringPntr) Assert((stringPntr) != nullptr && !IsEmptyStr(*(stringPntr)))
 #if DEBUG_BUILD
 #define DebugAssertNullTerm(string)      AssertNullTerm(string)
 #define DebugNotNullStr(string)          NotNullStr(string)
