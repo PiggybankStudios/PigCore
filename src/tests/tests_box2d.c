@@ -47,6 +47,7 @@ void SpawnBox(r32 x, r32 y, r32 width, r32 height)
 
 	b2Polygon box = b2MakeBox(width, height);
 	b2ShapeId bodyShapeId = b2CreatePolygonShape(bodyId, &shapeDef, &box);
+	UNUSED(bodyShapeId);
 }
 
 void InitBox2DTest()

@@ -305,6 +305,8 @@ bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor)
 // bool TestsGlobalUiThemerCallback(plex UiContext* context, UiElement* element, void* userPntr)
 UI_THEMER_CALLBACK_DEF(TestsGlobalUiThemerCallback)
 {
+	UNUSED(context);
+	UNUSED(userPntr);
 	// if (AreEqualV4(element->config.borderThickness, V4_Zero) && element->config.borderColor.valueU32 == PigUiDefaultColor_Value)
 	// {
 	// 	element->config.borderThickness = FillV4(2.0f);
@@ -322,6 +324,8 @@ UI_THEMER_CALLBACK_DEF(TestsGlobalUiThemerCallback)
 // bool TestsUiThemerCallback(plex UiContext* context, UiElement* element, void* userPntr)
 UI_THEMER_CALLBACK_DEF(TestsUiThemerCallback)
 {
+	UNUSED(context);
+	UNUSED(userPntr);
 	if (!element->config.themer.isButton && element->config.texture == nullptr && IsEmptyStr(element->config.text) && IsEmptyRichStr(element->config.richText))
 	{
 		element->config.texture = &backgroundTexture;

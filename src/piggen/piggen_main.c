@@ -502,6 +502,7 @@ int main(int argc, char* argv[])
 // +--------------------------------------------------------------+
 PEXP void NotificationRouter(const char* filePath, u32 lineNumber, const char* funcName, DbgLevel level, u64 duration, const char* message)
 {
+	UNUSED(duration); //TODO: We should use this!
 	if ((level == DbgLevel_Debug   && ENABLE_NOTIFICATION_LEVEL_DEBUG)   ||
 		(level == DbgLevel_Regular && ENABLE_NOTIFICATION_LEVEL_REGULAR) ||
 		(level == DbgLevel_Info    && ENABLE_NOTIFICATION_LEVEL_INFO)    ||

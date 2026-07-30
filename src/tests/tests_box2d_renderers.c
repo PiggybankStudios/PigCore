@@ -28,6 +28,7 @@ Color RaylibColorFromB2HexColor(b2HexColor b2Color)
 
 void DebugBox2d_Raylib_DrawPolygon(const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context)
 {
+	UNUSED(context);
 	// static int a = 0; MyPrint("DrawPolygon[%d]", a++);
 	for (int vIndex = 0; vIndex < vertexCount; vIndex++)
 	{
@@ -41,6 +42,8 @@ void DebugBox2d_Raylib_DrawPolygon(const b2Vec2* vertices, int vertexCount, b2He
 
 void DebugBox2d_Raylib_DrawSolidPolygon(b2Transform transform, const b2Vec2* vertices, int vertexCount, float radius, b2HexColor color, void* context)
 {
+	UNUSED(radius);
+	UNUSED(context);
 	// static int a = 0; MyPrint("DrawSolidPolygon[%d]", a++);
 	ScratchBegin(scratch);
 	if (vertexCount > 0)
@@ -62,6 +65,7 @@ void DebugBox2d_Raylib_DrawSolidPolygon(b2Transform transform, const b2Vec2* ver
 
 void DebugBox2d_Raylib_DrawCircle(b2Vec2 center, float radius, b2HexColor color, void* context)
 {
+	UNUSED(context);
 	// static int a = 0; MyPrint("DrawCircle[%d]", a++);
 	int centerX, centerY;
 	GetPhysRenderPos(center.x, center.y, &centerX, &centerY);
@@ -70,6 +74,7 @@ void DebugBox2d_Raylib_DrawCircle(b2Vec2 center, float radius, b2HexColor color,
 
 void DebugBox2d_Raylib_DrawSolidCircle(b2Transform transform, float radius, b2HexColor color, void* context)
 {
+	UNUSED(context);
 	// static int a = 0; MyPrint("DrawSolidCircle[%d]", a++);
 	//TODO: Take into account the transform.r!
 	int centerX, centerY;
@@ -79,18 +84,29 @@ void DebugBox2d_Raylib_DrawSolidCircle(b2Transform transform, float radius, b2He
 
 void DebugBox2d_Raylib_DrawCapsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context)
 {
+	UNUSED(p1);
+	UNUSED(p2);
+	UNUSED(radius);
+	UNUSED(color);
+	UNUSED(context);
 	static int a = 0; MyPrint("DrawCapsule[%d]", a++);
 	//TODO: Implement me!
 }
 
 void DebugBox2d_Raylib_DrawSolidCapsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context)
 {
+	UNUSED(p1);
+	UNUSED(p2);
+	UNUSED(radius);
+	UNUSED(color);
+	UNUSED(context);
 	static int a = 0; MyPrint("DrawSolidCapsule[%d]", a++);
 	//TODO: Implement me!
 }
 
 void DebugBox2d_Raylib_DrawSegment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void* context)
 {
+	UNUSED(context);
 	// static int a = 0; MyPrint("DrawSegment[%d]", a++);
 	int p1X, p1Y;
 	GetPhysRenderPos(p1.x, p1.y, &p1X, &p1Y);
@@ -101,18 +117,25 @@ void DebugBox2d_Raylib_DrawSegment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void*
 
 void DebugBox2d_Raylib_DrawTransform(b2Transform transform, void* context)
 {
+	UNUSED(transform);
+	UNUSED(context);
 	static int a = 0; MyPrint("DrawTransform[%d]", a++);
 	//TODO: Implement me!
 }
 
 void DebugBox2d_Raylib_DrawPoint(b2Vec2 p, float size, b2HexColor color, void* context)
 {
+	UNUSED(p);
+	UNUSED(size);
+	UNUSED(color);
+	UNUSED(context);
 	static int a = 0; MyPrint("DrawPoint[%d]", a++);
 	//TODO: Implement me!
 }
 
 void DebugBox2d_Raylib_DrawString(b2Vec2 p, const char* s, void* context)
 {
+	UNUSED(context);
 	// static int a = 0; MyPrint("DrawString[%d]", a++);
 	int textX, textY;
 	GetPhysRenderPos(p.x, p.y, &textX, &textY);

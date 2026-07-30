@@ -23,6 +23,9 @@ Description:
 #pragma warning(push)
 #pragma warning(disable:4100) //unreferenced formal parameter
 #pragma warning(disable:5262) //implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#elif COMPILER_IS_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter" //warning: unused parameter 'label'
 #endif
 
 // #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS //TODO: Should we be defining this?
@@ -37,6 +40,8 @@ Description:
 
 #if TARGET_IS_WINDOWS
 #pragma warning(pop)
+#elif COMPILER_IS_CLANG
+#pragma clang diagnostic pop
 #endif
 
 START_EXTERN_C
