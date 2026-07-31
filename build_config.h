@@ -22,12 +22,10 @@ Description:
 // Enables linking with tracy.lib to enable profiling through Tracy
 #define PROFILING_ENABLED 0
 
-// Build .exe binaries for Windows platform
-#define BUILD_WINDOWS             1
-// Build binaries for Linux platform(s)
-#define BUILD_LINUX               0
-// Build binaries for OSX platform
-#define BUILD_OSX                 0
+// Build for Windows when on Windows, for Linux on Linux, and OSX on OSX
+#define BUILD_THIS_PLATFORM       1
+// On Windows we can build a Linux binaries by running clang inside WSL (Windows Subsystem for Linux)
+#define BUILD_LINUX_VIA_WSL       1
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB                 0
 // Build the native .so files for Android

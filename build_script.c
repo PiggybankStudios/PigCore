@@ -157,9 +157,8 @@ int main(int argc, char* argv[])
 	bool USE_EMSCRIPTEN                    = GetBoolConfig("USE_EMSCRIPTEN",                    buildConfigContents, argc, argv, &buildConfigTags);
 	// bool ENABLE_AUTO_PROFILE               = GetBoolConfig("ENABLE_AUTO_PROFILE",            buildConfigContents, argc, argv, &buildConfigTags);
 	// bool RUN_FUZZER                        = GetBoolConfig("RUN_FUZZER",                     buildConfigContents, argc, argv, &buildConfigTags);
-	bool BUILD_WINDOWS                     = GetBoolConfig("BUILD_WINDOWS",                     buildConfigContents, argc, argv, &buildConfigTags);
-	bool BUILD_LINUX                       = GetBoolConfig("BUILD_LINUX",                       buildConfigContents, argc, argv, &buildConfigTags);
-	bool BUILD_OSX                         = GetBoolConfig("BUILD_OSX",                         buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_THIS_PLATFORM               = GetBoolConfig("BUILD_THIS_PLATFORM",                     buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_LINUX_VIA_WSL               = GetBoolConfig("BUILD_LINUX_VIA_WSL",                       buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WEB                         = GetBoolConfig("BUILD_WEB",                         buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_ANDROID                     = GetBoolConfig("BUILD_ANDROID",                     buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_ANDROID_APK                 = GetBoolConfig("BUILD_ANDROID_APK",                 buildConfigContents, argc, argv, &buildConfigTags);
@@ -179,6 +178,10 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_PROTOBUF               = GetBoolConfig("BUILD_WITH_PROTOBUF",               buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WITH_FREETYPE               = GetBoolConfig("BUILD_WITH_FREETYPE",               buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WITH_GTK                    = GetBoolConfig("BUILD_WITH_GTK",                    buildConfigContents, argc, argv, &buildConfigTags);
+	
+	bool BUILD_WINDOWS = (BUILD_THIS_PLATFORM  && BUILDING_ON_WINDOWS);
+	bool BUILD_LINUX   = ((BUILD_THIS_PLATFORM && BUILDING_ON_LINUX) || (BUILD_LINUX_VIA_WSL && BUILDING_ON_WINDOWS));
+	bool BUILD_OSX     = (BUILD_THIS_PLATFORM  && BUILDING_ON_OSX);
 	
 	Str ANDROID_SIGNING_KEY_PATH = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")));
 	Str ANDROID_SIGNING_PASSWORD = Str_Empty;
