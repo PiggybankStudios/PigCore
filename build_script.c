@@ -214,15 +214,10 @@ int main(int argc, char* argv[])
 	// +==============================+
 	// | Enforce Option Restrictions  |
 	// +==============================+
-	if (BUILD_WINDOWS && !BUILDING_ON_WINDOWS)
+	if (BUILD_LINUX_VIA_WSL && !BUILDING_ON_WINDOWS)
 	{
-		PrintLine_E("BUILD_WINDOWS does not working when building on non-Windows platforms");
-		BUILD_WINDOWS = false;
-	}
-	if (BUILD_OSX && !BUILDING_ON_OSX)
-	{
-		PrintLine_E("BUILD_OSX does not working when building on non-OSX platforms");
-		BUILD_OSX = false;
+		PrintLine_E("BUILD_LINUX_VIA_WSL does not work on " BUILDING_ON_NAME "!");
+		BUILD_LINUX_VIA_WSL = false;
 	}
 	
 	// +==============================+

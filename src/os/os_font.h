@@ -205,7 +205,7 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 		FcValue fontValue;
 		FcPatternGet(font, FC_FILE, 0, &fontValue);
 		NotNull(fontValue.u.f);
-		FilePath fontFilePath = AllocStrAndCopyNt(scratch, fontValue.u.f, false);
+		FilePath fontFilePath = AllocStrAndCopyNt(scratch, (const char*)fontValue.u.s, false);
 		
 		FcPatternDestroy(font);
 		FcFontSetDestroy(fontSet);
