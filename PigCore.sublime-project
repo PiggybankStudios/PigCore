@@ -18,18 +18,11 @@
 			],
 		},
 		{
-			"path": "pig_build",
-			"name": "Pig Build",
+			"name": "PigBuild",
+			"path": "../pig_build/src",
 			"file_exclude_patterns": [
-				"build.sh",
-				"README.md",
-				"NOTES.todo",
-				".gitignore",
-				"*.sublime-*",
 			],
 			"folder_exclude_patterns": [
-				"shell",
-				"examples",
 			],
 		},
 		{

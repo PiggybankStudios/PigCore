@@ -25,7 +25,7 @@ Description:
 // Build for Windows when on Windows, for Linux on Linux, and OSX on OSX
 #define BUILD_THIS_PLATFORM       1
 // On Windows we can build a Linux binaries by running clang inside WSL (Windows Subsystem for Linux)
-#define BUILD_LINUX_VIA_WSL       1
+#define BUILD_LINUX_VIA_WSL       0
 // Build the WASM binary for operating as a webpage
 #define BUILD_WEB                 0
 // Build the native .so files for Android
@@ -44,7 +44,7 @@ Description:
 // Generates a compile_commands.json into the build folder so an language server can be run on the project - NOTE: In order for this to work you need a number of things installed: `python3`, and `python3-pip` (any maybe `python3-full` for `python3-venv`)
 #define GENERATE_COMPILE_COMMANDS_FOR_LSP 0
 // Generates a tests_main.cpp that #includes tests_main.c so we can compile all of the tests as C++
-#define BUILD_IN_CPP_MODE  1
+#define BUILD_IN_CPP_MODE  0
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
@@ -60,7 +60,7 @@ Description:
 #define BUILD_PHYSX_OBJ 0
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
-#define BUILD_PIG_CORE_DLL 1
+#define BUILD_PIG_CORE_DLL 0
 
 // Compiles tests/main.c
 #define BUILD_TESTS       1

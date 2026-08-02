@@ -20,9 +20,9 @@ Description:
 #endif
 
 #if TARGET_IS_WINDOWS
-#define TEST_SHEET_PATH   "G:/test_sheet_6x4.png" // "D:/test_sheet_4x4.png"
-#define TEST_IMAGE_PATH   "G:/test.png"
-#define TEST_TEXTURE_PATH "G:/test.png"
+#define TEST_SHEET_PATH   "F:/test_sheet_4x5.png" // "D:/test_sheet_4x4.png", "G:/test_sheet_6x4.png"
+#define TEST_IMAGE_PATH   "F:/test.png"
+#define TEST_TEXTURE_PATH "F:/test.png"
 #elif TARGET_IS_OSX
 #define TEST_SHEET_PATH   "/Users/robbitay/test_sheet_2x2.png"
 #define TEST_IMAGE_PATH   "/Users/robbitay/test.png"

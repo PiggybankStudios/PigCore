@@ -1,2 +1,2 @@
 #!/bin/bash
-./pig_build/shell/build.sh $@
+../pig_build/shell/build.sh $@
