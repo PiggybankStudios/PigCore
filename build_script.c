@@ -1096,7 +1096,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for OSX...]", FILENAME_TESTS);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.mm" : "[ROOT]/src/tests/tests_main.m");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.mm" : "tests_main.m");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TESTS);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArgList(&cmd, &pigCoreLinkerFlags);

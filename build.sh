@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# TODO: We should pull out PIG_BUILD_RELATIVE_PATH and PIG_BUILD_ABSOLUTE_PATH like the batch script
-if [ ! -d "../pig_build" ]; then
-	if [ ! which git ]; then
-		echo "Git is not installed! Please download PigBuild into $(cd "../pig_build" && pwd)"
+PIG_BUILD_RELATIVE_PATH="../pig_build"
+PIG_BUILD_ABSOLUTE_PATH="$(cd .. && pwd)/pig_build"
+if [ ! -d $PIG_BUILD_RELATIVE_PATH ]; then
+	if [ ! $(which git) ]; then
+		echo "Git is not installed! Please manually download PigBuild into $PIG_BUILD_ABSOLUTE_PATH"
+		exit
 	fi
-	git clone https://github.com/PiggybankStudios/PigBuild ../pig_build
+	git clone https://github.com/PiggybankStudios/PigBuild $PIG_BUILD_RELATIVE_PATH
 fi
 
-../pig_build/shell/build.sh $@
+$PIG_BUILD_RELATIVE_PATH/shell/build.sh $@
