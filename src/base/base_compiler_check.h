@@ -132,6 +132,14 @@ Description:
 // +--------------------------------------------------------------+
 // |                    Derived TARGET Aspects                    |
 // +--------------------------------------------------------------+
+#if defined(__arm64__) || defined(__aarch64__)
+#define TARGET_IS_INTEL 0
+#define TARGET_IS_ARM   1
+#else
+#define TARGET_IS_INTEL 1
+#define TARGET_IS_ARM   0
+#endif
+
 #if (TARGET_IS_PLAYDATE_DEVICE || TARGET_IS_PLAYDATE_SIMULATOR)
 #define TARGET_IS_PLAYDATE 1
 #else
