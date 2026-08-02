@@ -20,9 +20,8 @@ Description:
 #error PIG_BUILD_ROOT was not defined by the shell script!
 #endif
 
-#define PIG_BUILD_PRINT_SYS_CMDS 0
-#define PIG_BUILD_INCLUDE_OPTIONAL_HEADERS 1
 #include "pig_build.h"
+#include "pig_build_optional.h"
 
 #include "src/third_party/box3d/build_script.c"
 
@@ -122,6 +121,7 @@ bool GetBoolConfig(const char* defineName, Str buildConfigContents, int argc, ch
 
 int main(int argc, char* argv[])
 {
+	PigBuildDebugMode = false;
 	RecompileIfNeeded(StrArray_Empty);
 	PrintLine("[" BUILD_SCRIPT_EXE_NAME "...]");
 	
