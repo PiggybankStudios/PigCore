@@ -43,6 +43,7 @@ typedef Str8 FilePath;
 	Str8 GetFileExtPart(FilePath path, bool includeSubExtensions, bool includeLeadingPeriod);
 	PIG_CORE_INLINE FilePath GetFileFolderPart(FilePath path);
 	PIG_CORE_INLINE bool DoesPathHaveExt(FilePath path);
+	FilePath JoinPathsInArena(Arena* arena, FilePath leftPath, FilePath rightPath, bool addNullTerm);
 	uxx CountPathParts(FilePath path, bool includeEmptyBeginOrEnd);
 	Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd);
 	FilePath ShortenFilePath(Arena* arena, FilePath fullPath, uxx maxNumChars, Str8 ellipsesStr);
@@ -142,6 +143,29 @@ PEXPI bool DoesPathHaveExt(FilePath path)
 		if (path.chars[cIndex] == '/' || path.chars[cIndex] == '\\') { result = false; }
 		if (path.chars[cIndex] == '.') { result = true; }
 	}
+	return result;
+}
+
+PEXP FilePath JoinPathsInArena(Arena* arena, FilePath leftPath, FilePath rightPath, bool addNullTerm)
+{
+	NotNull(arena);
+	NotNullStr(leftPath);
+	NotNullStr(rightPath);
+	
+	bool leftPathEndsWithSlash = (leftPath.length > 0 && IsCharSlash(leftPath.chars[leftPath.length-1]));
+	bool rightPathStartsWithSlash = (rightPath.length > 0 && IsCharSlash(rightPath.chars[0]));
+	Str8 leftPathNoSlash = StrSlice(leftPath, 0, leftPathEndsWithSlash ? leftPath.length-1 : leftPath.length);
+	Str8 rightPathNoSlash = StrSliceFrom(rightPath, rightPathStartsWithSlash ? 1 : 0);
+	FilePath result = ZEROED;
+	result.length = leftPathNoSlash.length + 1 + rightPathNoSlash.length;
+	result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
+	NotNull(result.chars);
+	MyMemCopy(&result.chars[0], leftPathNoSlash.chars, leftPathNoSlash.length);
+	result.chars[leftPathNoSlash.length] = '/';
+	MyMemCopy(&result.chars[leftPathNoSlash.length + 1], rightPathNoSlash.chars, rightPathNoSlash.length);
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	
+	FixPathSlashes(result);
 	return result;
 }
 
