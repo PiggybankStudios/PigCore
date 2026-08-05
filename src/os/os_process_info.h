@@ -113,6 +113,7 @@ PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 	}
 	#elif TARGET_IS_LINUX
 	{
+		//NOTE: This doesn't work on OSX, it returns an empty string
 		ScratchBegin1(scratch, arena);
 		
 		//TODO: Rather than using PATH_MAX here we should call lstat("/proc/self/exe") and look at stat.st_size to find the size of the executable path
@@ -145,12 +146,23 @@ PEXP FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)
 		
 		ScratchEnd(scratch);
 	}
-	// #elif TARGET_IS_OSX
-	// {
-	//	//TODO: Implement me!
-	// 	SetOptionalOutPntr(resultOut, Result_UnsupportedPlatform);
-	// 	return FilePath_Empty;
-	// }
+	#elif TARGET_IS_OSX
+	{
+		//TODO: To get a path out of our bundle we can do:
+		// NSBundle* bundleHandle = [NSBundle mainBundle];
+		// NSString* resourcesPath = [bundle pathForResource:@"resources" ofType:nil];
+		
+		#if (defined(BUILD_INTO_SINGLE_UNIT) && BUILD_INTO_SINGLE_UNIT)
+		NSBundle* bundle = [NSBundle mainBundle];
+		NSString* bundlePathNsString = bundle.bundlePath;
+		// NSString* bundleDirNsString = [[bundlePathNsString stringByDeletingLastPathComponent] stringByAppendingPathComponent:@"resources"];
+		const char* bundlePathNt = [bundlePathNsString UTF8String];
+		resultPath = AllocStr8Nt(arena, bundlePathNt);
+		#else
+		//TODO: Can we fall back to the LINUX method when we are not packaged into an .app bundle?
+		SetOptionalOutPntr(resultOut, Result_UnsupportedPlatform);
+		#endif
+	}
 	#else
 	{
 		AssertMsg(false, "OsGetExecutablePath does not support the current platform yet!");
