@@ -31,12 +31,20 @@ Description:
 #if !defined(SOKOL_D3D11) && !defined(SOKOL_GLCORE) && !defined(SOKOL_GLES3) && !defined(SOKOL_METAL) && !defined(SOKOL_WGPU) && !defined(SOKOL_DUMMY_BACKEND)
 #if TARGET_IS_WINDOWS
 	#if PREFER_OPENGL_OVER_D3D11
+	#if TARGET_IS_ARM
 	#define SOKOL_GLCORE
+	#else
+	#define SOKOL_GLES3
+	#endif 
 	#else
 	#define SOKOL_D3D11
 	#endif
 #elif TARGET_IS_LINUX
+	#if TARGET_IS_ARM
+	#define SOKOL_GLES3
+	#else
 	#define SOKOL_GLCORE
+	#endif
 #elif TARGET_IS_OSX
 	#define SOKOL_METAL
 	// #define SOKOL_GLCORE
