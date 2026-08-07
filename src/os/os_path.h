@@ -152,10 +152,11 @@ PEXP FilePath JoinPathsInArena(Arena* arena, FilePath leftPath, FilePath rightPa
 	NotNullStr(leftPath);
 	NotNullStr(rightPath);
 	
-	bool leftPathEndsWithSlash = (leftPath.length > 0 && IsCharSlash(leftPath.chars[leftPath.length-1]));
+	bool leftPathEndsWithSlash    = (leftPath.length  > 0 && IsCharSlash(leftPath.chars[leftPath.length-1]));
 	bool rightPathStartsWithSlash = (rightPath.length > 0 && IsCharSlash(rightPath.chars[0]));
-	Str8 leftPathNoSlash = StrSlice(leftPath, 0, leftPathEndsWithSlash ? leftPath.length-1 : leftPath.length);
+	Str8 leftPathNoSlash  = StrSlice(leftPath, 0, leftPathEndsWithSlash ? leftPath.length-1 : leftPath.length);
 	Str8 rightPathNoSlash = StrSliceFrom(rightPath, rightPathStartsWithSlash ? 1 : 0);
+	
 	FilePath result = ZEROED;
 	result.length = leftPathNoSlash.length + 1 + rightPathNoSlash.length;
 	result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
@@ -163,6 +164,38 @@ PEXP FilePath JoinPathsInArena(Arena* arena, FilePath leftPath, FilePath rightPa
 	MyMemCopy(&result.chars[0], leftPathNoSlash.chars, leftPathNoSlash.length);
 	result.chars[leftPathNoSlash.length] = '/';
 	MyMemCopy(&result.chars[leftPathNoSlash.length + 1], rightPathNoSlash.chars, rightPathNoSlash.length);
+	if (addNullTerm) { result.chars[result.length] = '\0'; }
+	
+	FixPathSlashes(result);
+	return result;
+}
+PEXP FilePath JoinPathsInArena3(Arena* arena, FilePath leftPath, FilePath middlePath, FilePath rightPath, bool addNullTerm)
+{
+	NotNull(arena);
+	NotNullStr(leftPath);
+	NotNullStr(middlePath);
+	NotNullStr(rightPath);
+	if (middlePath.length == 0) { return JoinPathsInArena(arena, leftPath,   rightPath,  addNullTerm); }
+	if (leftPath.length   == 0) { return JoinPathsInArena(arena, middlePath, rightPath,  addNullTerm); }
+	if (rightPath.length  == 0) { return JoinPathsInArena(arena, leftPath,   middlePath, addNullTerm); }
+	
+	bool leftPathEndsWithSlash     = (leftPath.length   > 0 && IsCharSlash(leftPath.chars[leftPath.length-1]));
+	bool middlePathStartsWithSlash = (middlePath.length > 0 && IsCharSlash(middlePath.chars[0]));
+	bool middlePathEndsWithSlash   = (middlePath.length > 0 && IsCharSlash(middlePath.chars[middlePath.length-1]));
+	bool rightPathStartsWithSlash  = (rightPath.length  > 0 && IsCharSlash(rightPath.chars[0]));
+	Str8 leftPathNoSlash     = StrSlice(leftPath, 0, leftPathEndsWithSlash ? leftPath.length-1 : leftPath.length);
+	Str8 middlePathNoSlashes = StrSlice(leftPath, middlePathStartsWithSlash ? 1 : 0, middlePathEndsWithSlash ? middlePath.length-1 : middlePath.length);
+	Str8 rightPathNoSlash    = StrSliceFrom(rightPath, rightPathStartsWithSlash ? 1 : 0);
+	
+	FilePath result = ZEROED;
+	result.length = leftPathNoSlash.length + 1 + middlePathNoSlashes.length + 1 + rightPathNoSlash.length;
+	result.chars = (char*)AllocMem(arena, result.length + (addNullTerm ? 1 : 0));
+	NotNull(result.chars);
+	MyMemCopy(&result.chars[0], leftPathNoSlash.chars, leftPathNoSlash.length);
+	result.chars[leftPathNoSlash.length] = '/';
+	MyMemCopy(&result.chars[leftPathNoSlash.length + 1], middlePathNoSlashes.chars, middlePathNoSlashes.length);
+	result.chars[leftPathNoSlash.length + 1 + middlePathNoSlashes.length] = '/';
+	MyMemCopy(&result.chars[leftPathNoSlash.length + 1 + middlePathNoSlashes.length + 1], rightPathNoSlash.chars, rightPathNoSlash.length);
 	if (addNullTerm) { result.chars[result.length] = '\0'; }
 	
 	FixPathSlashes(result);
