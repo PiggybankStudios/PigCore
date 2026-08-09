@@ -2761,6 +2761,7 @@
 			"Dir2 ToDir2(Axis axis, bool positive)",
 			"Dir3 ToDir3(Axis axis, bool positive)",
 			"FilePath GetFileFolderPart(FilePath path)",
+			"FilePath JoinPathsInArena(Arena* arena, FilePath leftPath, FilePath rightPath, bool addNullTerm)",
 			"FilePath OsGetExecutablePath(Arena* arena, Result* resultOut)",
 			"FilePath OsGetFullPath(Arena* arena, FilePath relativePath)",
 			"FilePath OsGetSettingsSavePath(Arena* arena, Str8 companyName, Str8 programName, bool createFolders)",
