@@ -21,7 +21,8 @@ void InitTextShapingTests()
 	textShaping = AllocType(TextShapingState, stdHeap);
 	NotNull(textShaping);
 	ClearPointer(textShaping);
-	textShaping->context = kbts_CreateShapeContext(/*AllocatorFunc*/ nullptr, /*AllocatorData*/ (void*)stdHeap);
+	textShaping->context = kbts_CreateShapeContext(/*AllocatorFunc*/ nullptr, /*AllocatorData*/ (void*)untrackedStdHeap);
+	// kbts_DestroyShapeContext(textShaping->context);
 }
 
 //Pre-declared in tests_main.c

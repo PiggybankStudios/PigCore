@@ -103,7 +103,9 @@ RandomSeries* mainRandom = nullptr;
 Arena wasmMemory = ZEROED;
 #else
 Arena stdHeapStruct = ZEROED;
+Arena untrackedStdHeapStruct = ZEROED;
 Arena* stdHeap = nullptr;
+Arena* untrackedStdHeap = nullptr;
 #endif
 
 #if (BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP)
@@ -318,7 +320,10 @@ static void EarlyInit()
 		FlagSet(wasmMemory.flags, ArenaFlag_AssertOnFailedAlloc);
 		#else
 		InitArenaStdHeap(&stdHeapStruct);
+		InitArenaStdHeap(&untrackedStdHeapStruct);
+		FlagSet(untrackedStdHeapStruct.flags, ArenaFlag_AllowFreeWithoutSize);
 		stdHeap = &stdHeapStruct;
+		untrackedStdHeap = &untrackedStdHeapStruct;
 		Arena stdAlias = ZEROED;
 		InitArenaAlias(&stdAlias, stdHeap);
 		#endif

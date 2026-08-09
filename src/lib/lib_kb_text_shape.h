@@ -12,14 +12,20 @@ Decription:
 #define _LIB_KB_TEXT_SHAPE_H
 
 #include "base/base_defines_check.h"
+#include "base/base_typedefs.h"
+#include "base/base_debug_output.h"
 #include "std/std_memset.h"
 #include "mem/mem_arena.h"
+#include "misc/misc_standard_names.h"
+
+static void* KbTextShapeMalloc(Arena* arenaPntr, uxx numBytes);
+static void KbTextShapeFree(Arena* arenaPntr, void* allocPntr);
 
 #define KB_TEXT_SHAPE_NO_CRT
 #define KBTS_MEMSET MyMemSet
 #define KBTS_MEMCPY MyMemCopy
-#define KBTS_MALLOC(allocatorPntr, numBytes) AllocMem((Arena*)(allocatorPntr), (numBytes))
-#define KBTS_FREE(allocatorPntr, allocPntr)   FreeMem((Arena*)(allocatorPntr), (allocPntr), 0)
+#define KBTS_MALLOC(allocatorPntr, numBytes)  KbTextShapeMalloc((Arena*)(allocatorPntr), (numBytes))
+#define KBTS_FREE(allocatorPntr, allocPntr)   KbTextShapeFree((Arena*)(allocatorPntr), (allocPntr))
 
 // #define KB_TEXT_SHAPE_STATIC
 
@@ -34,6 +40,25 @@ Decription:
 #include "third_party/kb_text_shape/kb_text_shape.h"
 #if COMPILER_IS_MSVC
 #pragma warning(pop)
+#endif
+
+#if PIG_CORE_IMPLEMENTATION
+	static void* KbTextShapeMalloc(Arena* arenaPntr, uxx numBytes)
+	{
+		void* result = AllocMem(arenaPntr, numBytes);
+		PrintLine_D("kb_malloc(%p, %llu) -> %p", arenaPntr, numBytes, result);
+		if (numBytes == sizeof(kbts_shape_context))
+		{
+			Str8 name = GetStandardPeopleFirstName((uxx)result);
+			PrintLine_D("kbts_shape_context at %p! %.*s", result, StrPrint(name));
+		}
+		return result;
+	}
+	static void KbTextShapeFree(Arena* arenaPntr, void* allocPntr)
+	{
+		PrintLine_D("kb_free(%p, %p)", arenaPntr, allocPntr);
+		FreeMem(arenaPntr, allocPntr, 0);
+	}
 #endif
 
 #endif //  _LIB_KB_TEXT_SHAPE_H
