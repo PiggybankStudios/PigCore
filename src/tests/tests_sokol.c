@@ -434,6 +434,8 @@ void AppInit(void)
 	
 	InitGfxSystem(stdHeap, &gfx);
 	
+	InitTextShapingTests();
+	
 	v2i gradientSize = FillV2i(64);
 	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.width * gradientSize.height));
 	for (i32 pixelY = 0; pixelY < gradientSize.height; pixelY++)
@@ -738,6 +740,8 @@ bool AppFrame(void)
 	FontNewFrame(&testFont, programTime);
 	#endif
 	
+	UpdateTextShapingTests();
+	
 	if (IsMouseBtnDown(&mouse, nullptr, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
 	
@@ -985,6 +989,8 @@ bool AppFrame(void)
 			SetProjectionMat(projMat);
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
+			
+			RenderTextShapingTests();
 			
 			#if 0
 			{

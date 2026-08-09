@@ -12,9 +12,16 @@ Decription:
 #define _LIB_KB_TEXT_SHAPE_H
 
 #include "base/base_defines_check.h"
+#include "std/std_memset.h"
+#include "mem/mem_arena.h"
+
+#define KB_TEXT_SHAPE_NO_CRT
+#define KBTS_MEMSET MyMemSet
+#define KBTS_MEMCPY MyMemCopy
+#define KBTS_MALLOC(allocatorPntr, numBytes) AllocMem((Arena*)(allocatorPntr), (numBytes))
+#define KBTS_FREE(allocatorPntr, allocPntr)   FreeMem((Arena*)(allocatorPntr), (allocPntr), 0)
 
 // #define KB_TEXT_SHAPE_STATIC
-// #define KB_TEXT_SHAPE_NO_CRT
 
 #if PIG_CORE_IMPLEMENTATION
 #define KB_TEXT_SHAPE_IMPLEMENTATION

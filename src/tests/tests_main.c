@@ -106,12 +106,20 @@ Arena stdHeapStruct = ZEROED;
 Arena* stdHeap = nullptr;
 #endif
 
+#if (BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP)
+// These live in tests_text_shaping.c but get called from tests_sokol.c
+void InitTextShapingTests();
+void UpdateTextShapingTests();
+void RenderTextShapingTests();
+#endif //(BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP)
+
 // +--------------------------------------------------------------+
 // |                      tests Source Files                      |
 // +--------------------------------------------------------------+
 #include "tests/tests_parsing.c"
 #include "tests/tests_box2d.c"
 #include "tests/tests_sokol.c"
+#include "tests/tests_text_shaping.c"
 #include "tests/tests_raylib.c"
 #include "tests/tests_vr.c"
 #include "tests/tests_wasm_std.c"
