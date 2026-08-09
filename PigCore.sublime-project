@@ -3688,6 +3688,8 @@
 			"uxx CeilDivUXX(uxx dividend, uxx divisor)",
 			"uxx ChangePathSlashesTo(FilePath path, char slashType)",
 			"uxx ClampUXX(uxx value, uxx min, uxx max)",
+			"uxx CountCodepointsUtf8(uxx utf8StrLength, const char* utf8StrPntr)",
+			"uxx CountCodepointsUtf8Str(Str8 utf8Str)",
 			"uxx CountPathParts(FilePath path, bool includeEmptyBeginOrEnd)",
 			"uxx FindNextCharInStr(Str8 target, uxx startIndex, Str8 searchCharsStr)",
 			"uxx FindNextCharInStrEx(Str8 target, uxx startIndex, Str8 searchCharsStr, bool ignoreCharsInQuotes)",

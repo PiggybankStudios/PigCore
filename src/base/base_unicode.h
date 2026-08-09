@@ -165,6 +165,7 @@ Description:
 	u8 GetCodepointUtf8Size(u32 codepoint);
 	u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut);
 	u8 GetPrevCodepointForUtf8(u64 numBytesBeforePntr, const char* strEndPntr, u32* codepointOut);
+	PIG_CORE_INLINE uxx CountCodepointsUtf8(uxx utf8StrLength, const char* utf8StrPntr);
 	u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOut);
 	i32 CompareCodepoints(u32 codepoint1, u32 codepoint2);
 	bool DoesNtStrContainMultibyteUtf8Chars(const char* nullTermStr);
@@ -426,6 +427,20 @@ PEXP u8 GetPrevCodepointForUtf8(u64 numBytesBeforePntr, const char* strEndPntr, 
 	}
 	return codepointSize;
 }
+
+PEXPI uxx CountCodepointsUtf8(uxx utf8StrLength, const char* utf8StrPntr)
+{
+	DebugAssert(utf8StrPntr != nullptr || utf8StrLength == 0);
+	uxx numCodepoints = 0;
+	uxx bIndex = 0;
+	while (bIndex < utf8StrLength)
+	{
+		bIndex += (uxx)GetCodepointForUtf8(utf8StrLength - bIndex, utf8StrPntr + bIndex, nullptr);
+		numCodepoints++;
+	}
+	return numCodepoints;
+}
+
 
 //Using the startIndex as a known max length to walk backwards this function will look backwards through a string until it finds a full encoded character
 //Returns the number of bytes that encoded character took up and stores the codepoint for it in codepointOut

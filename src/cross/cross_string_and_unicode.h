@@ -17,6 +17,7 @@ Description:
 #if !PIG_CORE_IMPLEMENTATION
 	PIG_CORE_INLINE u8 GetCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut);
 	PIG_CORE_INLINE u8 GetPrevCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut);
+	PIG_CORE_INLINE uxx CountCodepointsUtf8Str(Str8 utf8Str);
 	bool DoesStrContainMultibyteUtf8Chars(Str8 str);
 	uxx FindNextCharInStrEx(Str8 target, uxx startIndex, Str8 searchCharsStr, bool ignoreCharsInQuotes);
 	PIG_CORE_INLINE uxx FindNextCharInStr(Str8 target, uxx startIndex, Str8 searchCharsStr);
@@ -41,6 +42,11 @@ PEXPI u8 GetPrevCodepointForUtf8Str(Str8 str, uxx index, u32* codepointOut)
 {
 	Assert(index <= str.length);
 	return GetPrevCodepointForUtf8(index, str.chars + index, codepointOut);
+}
+
+PEXPI uxx CountCodepointsUtf8Str(Str8 utf8Str)
+{
+	return CountCodepointsUtf8(utf8Str.length, utf8Str.chars);
 }
 
 PEXP bool DoesStrContainMultibyteUtf8Chars(Str8 str)
