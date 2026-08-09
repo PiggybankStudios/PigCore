@@ -9,6 +9,7 @@ Date:   10\27\2025
 #define _LIB_ALL_H
 
 #include "lib/lib_freetype.h"
+#include "lib/lib_kb_text_shape.h"
 #include "lib/lib_metadesk.h"
 #include "lib/lib_plutosvg.h"
 #include "lib/lib_raddbg.h"
