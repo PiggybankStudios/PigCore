@@ -54,32 +54,6 @@ void InitTextShapingTests()
 		VarArrayAddValue(kbts_font*, &textShaping->fonts, newKbFontPntr);
 	}
 	
-    // Layout runs naively left to right.
-    {
-		kbts_ShapeBegin(textShaping->context, KBTS_DIRECTION_DONT_KNOW, KBTS_LANGUAGE_DONT_KNOW);
-		Str8 text = StrLit("Let's shape something!");
-		kbts_ShapeUtf8(textShaping->context, text.chars, (int)text.length, KBTS_USER_ID_GENERATION_MODE_CODEPOINT_INDEX);
-		kbts_ShapeEnd(textShaping->context);
-		
-    	PrintLine_D("Shaping \"%.*s\" (%llu bytes, %llu codepoints)", StrPrint(text), text.length, CountCodepointsUtf8Str(text));
-		kbts_run kbRun;
-		v2i cursorPos = V2i_Zero_Const;
-		while(kbts_ShapeRun(textShaping->context, &kbRun))
-		{
-			kbts_glyph* glyph;
-			while(kbts_GlyphIteratorNext(&kbRun.Glyphs, &glyph))
-			{
-				v2i glyphPos = AddV2i(cursorPos, MakeV2i(glyph->OffsetX, glyph->OffsetY));
-				
-				PrintLine_D("Display 0x%X \'%c\' at (%d, %d)", glyph->Codepoint, (char)glyph->Codepoint, glyphPos.x, glyphPos.y);
-				// DisplayGlyph(glyph->Id, glyphPos.x, glyphPos.y);
-				
-				cursorPos.x += glyph->AdvanceX;
-				cursorPos.y += glyph->AdvanceY;
-			}
-		}
-	}
-	
 	ScratchEnd(scratch);
 }
 
@@ -95,6 +69,53 @@ void RenderTextShapingTests()
 {
 	NotNull(textShaping);
 	
+    // Layout runs naively left to right.
+    {
+		kbts_ShapeBegin(textShaping->context, KBTS_DIRECTION_DONT_KNOW, KBTS_LANGUAGE_DONT_KNOW);
+		Str8 text = StrLit("Let's shape something!");
+		kbts_ShapeUtf8(textShaping->context, text.chars, (int)text.length, KBTS_USER_ID_GENERATION_MODE_CODEPOINT_INDEX);
+		kbts_ShapeEnd(textShaping->context);
+		
+		r32 textScale = TEXT_SCALE/sapp_dpi_scale();
+    	// PrintLine_D("Shaping \"%.*s\" (%llu bytes, %llu codepoints)", StrPrint(text), text.length, CountCodepointsUtf8Str(text));
+		kbts_run kbRun;
+		v2i cursorPos = MakeV2i(50, 250);
+		while(kbts_ShapeRun(textShaping->context, &kbRun))
+		{
+			kbts_glyph* glyph;
+			while(kbts_GlyphIteratorNext(&kbRun.Glyphs, &glyph))
+			{
+				v2i glyphPos = AddV2i(cursorPos, MakeV2i(glyph->OffsetX, glyph->OffsetY));
+				
+				// PrintLine_D("Display 0x%X \'%c\' at (%d, %d)", glyph->Codepoint, (char)glyph->Codepoint, glyphPos.x, glyphPos.y);
+				// DisplayGlyph(glyph->Id, glyphPos.x, glyphPos.y);
+				
+				FontAtlas* fontAtlas = nullptr;
+				FontGlyph* fontGlyph = TryGetFontGlyphForCodepoint(&testFont, glyph->Codepoint, 18*textScale, FontStyleFlag_None, /*allowActiveAtlasCreation*/true, &fontAtlas);
+				rec glyphDrawRec = MakeRec((r32)glyphPos.x, (r32)glyphPos.y-10, 10, 10);
+				if (fontGlyph != nullptr)
+				{
+					glyphDrawRec = MakeRec(
+						glyphPos.x + fontGlyph->metrics.renderOffset.x,
+						glyphPos.y + fontGlyph->metrics.renderOffset.x,
+						(r32)fontGlyph->metrics.glyphSize.width,
+						(r32)fontGlyph->metrics.glyphSize.height
+					);
+					CommitFontAtlasTextureUpdates(&testFont, fontAtlas);
+					rec atlasSourceRec = ToRecFromi(MakeReciV(fontGlyph->atlasSourcePos, fontGlyph->metrics.glyphSize));
+					DrawTexturedRectangleEx(glyphDrawRec, White, &fontAtlas->texture, atlasSourceRec);
+				}
+				else
+				{
+					DrawRectangleOutline(glyphDrawRec, 1, MonokaiRed);
+					DrawRectangleOutline(InflateRec(glyphDrawRec, -2), 1, MonokaiBlue);
+				}
+				
+				cursorPos.x += glyph->AdvanceX;
+				cursorPos.y += glyph->AdvanceY;
+			}
+		}
+	}
 }
 
 #endif //(BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP)
