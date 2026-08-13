@@ -45,6 +45,7 @@ Description:
 #define FILENAME_PHYSX_O               "physx_capi.o"
 #define FILENAME_PIG_CORE_DLL          "pig_core.dll"
 #define FILENAME_PIG_CORE_SO           "libpig_core.so"
+#define FILENAME_PIG_CORE_DYLIB        "libpig_core.dylib"
 #define FILENAME_TESTS                 "tests"
 #define FILENAME_TESTS_EXE             "tests.exe"
 #define FILENAME_TESTS_APK             "tests.apk"
@@ -936,8 +937,11 @@ int main(int argc, char* argv[])
 	{
 		StrArray pigCoreTags = EMPTY;
 		AddTag(&pigCoreTags, T_PIG_CORE);
-		AddTag(&pigCoreTags, T_LANG_C);
 		AddTag(&pigCoreTags, T_LIBRARY);
+		
+		if (BUILDING_ON_OSX  &&                      !DoesFileExist(StrLit("dll_main.m")))   { CreateAndWriteFile(StrLit("dll_main.m"),   StrLit("\n#include \"dll/dll_main.c\"\n"), true); }
+		if (!BUILDING_ON_OSX && BUILD_IN_CPP_MODE && !DoesFileExist(StrLit("dll_main.cpp"))) { CreateAndWriteFile(StrLit("dll_main.cpp"), StrLit("\n#include \"dll/dll_main.c\"\n"), true); }
+		if (BUILDING_ON_OSX  && BUILD_IN_CPP_MODE && !DoesFileExist(StrLit("dll_main.mm")))  { CreateAndWriteFile(StrLit("dll_main.mm"),  StrLit("\n#include \"dll/dll_main.c\"\n"), true); }
 		
 		if (BUILD_WINDOWS)
 		{
@@ -945,7 +949,7 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/dll/dll_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "dll_main.cpp" : "[ROOT]/src/dll/dll_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIG_CORE_DLL);
 			AddArgList(&cmd, &pigCoreCompilerFlags);
 			AddArg(&cmd, CL_LINK);
@@ -957,6 +961,7 @@ int main(int argc, char* argv[])
 			AddStrArray(&tags, &pigCoreTags);
 			AddTag(&tags, T_MSVC_CL);
 			AddTag(&tags, T_WINDOWS);
+			AddTag(&tags, BUILD_IN_CPP_MODE ? T_LANG_CPP : T_LANG_C);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
@@ -969,7 +974,7 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/src/dll/dll_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "dll_main.cpp" : "[ROOT]/src/dll/dll_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIG_CORE_SO);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
@@ -982,6 +987,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
 			AddTag(&tags, T_UNIX);
+			AddTag(&tags, BUILD_IN_CPP_MODE ? T_LANG_CPP : T_LANG_C);
 			AddStrArray(&tags, &buildConfigTags);
 			
 			#if BUILDING_ON_LINUX
@@ -1000,6 +1006,33 @@ int main(int argc, char* argv[])
 			#if !BUILDING_ON_LINUX
 			chdir("..");
 			#endif
+		}
+		
+		if (BUILD_OSX)
+		{
+			PrintLine("\n[Building %s for OSX...]", FILENAME_PIG_CORE_DYLIB);
+			
+			CliArgs cmd = EMPTY;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "dll_main.mm" : "dll_main.m");
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIG_CORE_DYLIB);
+			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
+			AddArg(&cmd, CLANG_fPIC);
+			AddArgList(&cmd, &pigCoreCompilerFlags);
+			AddArgList(&cmd, &pigCoreLinkerFlags);
+			AddArgList(&cmd, &thingsToLink);
+			
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &pigCoreTags);
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_OSX);
+			AddTag(&tags, T_UNIX);
+			AddTag(&tags, BUILD_IN_CPP_MODE ? T_LANG_OBJECTIVECPP : T_LANG_OBJECTIVEC);
+			AddStrArray(&tags, &buildConfigTags);
+			
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_CLANG), tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DYLIB "!"));
+			AssertFileExist(StrLit(FILENAME_PIG_CORE_DYLIB), true);
+			PrintLine("[Built %s for OSX!]", FILENAME_PIG_CORE_DYLIB);
 		}
 	}
 	
