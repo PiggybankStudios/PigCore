@@ -33,7 +33,7 @@ void InitTextShapingTests()
 		"NotoSansSymbols-Regular.ttf", //   185,152 bytes, 1 font
 		"NotoEmoji-Regular.ttf",       //   880,860 bytes, 1 font
 		"NotoColorEmoji-Regular.ttf",  //25,096,376 bytes, 1 font
-		"seguiemj.ttf",                //12,450,664 bytes, 1 font
+		// "seguiemj.ttf",                //12,450,664 bytes, 1 font
 	};
 	InitVarArrayWithInitial(Slice, &textShaping->fontFiles, stdHeap, ArrayCount(fontFileNames));
 	InitVarArrayWithInitial(kbts_font*, &textShaping->fonts, stdHeap, ArrayCount(fontFileNames));

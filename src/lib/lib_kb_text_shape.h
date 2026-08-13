@@ -27,19 +27,27 @@ static void KbTextShapeFree(Arena* arenaPntr, void* allocPntr);
 #define KBTS_MALLOC(allocatorPntr, numBytes)  KbTextShapeMalloc((Arena*)(allocatorPntr), (numBytes))
 #define KBTS_FREE(allocatorPntr, allocPntr)   KbTextShapeFree((Arena*)(allocatorPntr), (allocPntr))
 
-// #define KB_TEXT_SHAPE_STATIC
-
 #if PIG_CORE_IMPLEMENTATION
+#define KBTS_EXPORT PEXP
 #define KB_TEXT_SHAPE_IMPLEMENTATION
+#else
+#define KBTS_EXPORT //nothing
 #endif
 
 #if COMPILER_IS_MSVC
 #pragma warning(push)
 #pragma warning(disable:5262) //error C5262: implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
 #endif
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough" //warning: unannotated fall-through between switch labels
+#endif
 #include "third_party/kb_text_shape/kb_text_shape.h"
 #if COMPILER_IS_MSVC
 #pragma warning(pop)
+#endif
+#if COMPILER_IS_CLANG
+#pragma clang diagnostic pop
 #endif
 
 #if PIG_CORE_IMPLEMENTATION
