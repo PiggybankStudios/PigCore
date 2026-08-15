@@ -275,8 +275,8 @@ int main(int argc, char* argv[])
 	FillPlaydateFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
 	FillOrcaFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, orcaSdkPath);
 	
-	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL,      CL_INCLUDE_DIR, "[ROOT]");
-	AddTaggedArgNt(&pigCoreCompilerFlags, T_CLANG T_UNIX, CLANG_INCLUDE_DIR, "[ROOT]");
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR, "[ROOT]/src");
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/src");
 	
 	//We'll put shader objects, imgui.obj/o, tracy.dll/so, and physx_capi.obj/o into this list
 	CliArgs thingsToLink = EMPTY;
@@ -1328,7 +1328,7 @@ int main(int argc, char* argv[])
 				compileResCmd.pathSepChar = '/';
 				compileResCmd.rootDirPath = StrLit("../..");
 				AddArg(&compileResCmd, "compile");
-				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/tests/android/res");
+				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/src/tests/android/res");
 				AddArgNt(&compileResCmd, "-o \"[VAL]\"", FILENAME_ANDROID_RESOURCES_ZIP);
 				RunCliProgramAndExitOnFailure(aaptExe, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
 				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
@@ -1342,7 +1342,7 @@ int main(int argc, char* argv[])
 				AddArgNt(&linkApkCmd, "-o \"[VAL]\"", FILENAME_TESTS_APK);
 				AddArgStr(&linkApkCmd, "-I \"[VAL]\"", androidJarPath);
 				AddArgNt(&linkApkCmd, "-0 [VAL]", "resources.arsc");
-				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/tests/android/AndroidManifest.xml");
+				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/src/tests/android/AndroidManifest.xml");
 				AddArgNt(&linkApkCmd, CLI_QUOTED_ARG, FILENAME_ANDROID_RESOURCES_ZIP);
 				RunCliProgramAndExitOnFailure(aaptExe, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
 				AssertFileExist(StrLit(FILENAME_TESTS_APK), true);
