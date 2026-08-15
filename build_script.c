@@ -20,6 +20,10 @@ Description:
 #error PIG_BUILD_ROOT was not defined by the shell script!
 #endif
 
+#include "pig_build_base.h"
+#if BUILDING_ON_OSX
+#define ANDROID_SDK "/Users/robbitay/Library/Android/sdk"
+#endif
 #include "pig_build.h"
 #include "pig_build_optional.h"
 
@@ -239,13 +243,29 @@ int main(int argc, char* argv[])
 	Str androidNdkToolchainDir = Str_Empty;
 	if (BUILD_ANDROID)
 	{
+		// Installing Android SDK and tools
+		// On Windows:
+		//    ?
+		// On OSX:
+		//    brew install --cask android-commandlinetools
+		//    brew install --cask temurin
+		//    android sdk install platform-tools //For things like `adb`
+		//    android sdk install ndk/29.0.13599879 //Must match ANDROID_NDK_VERSION (larger download)
+		//    android sdk install build-tools/36.0.0 //Must match ANDROID_BUILD_TOOLS_VERSION
+		//    android sdk install platforms/android-36 //Must match ANDROID_PLATFORM_FOLDERNAME
+		//    Set ANDROID_SDK above if needed (check with `android info`)
+		
 		androidSdkDir = GetAndroidSdkPath();
 		PrintLine("Android SDK path: \"%.*s\"", StrPrint(androidSdkDir));
 		androidSdkBuildToolsDir = JoinStrings3(androidSdkDir, StrLit("/build-tools/"), ANDROID_BUILD_TOOLS_VERSION);
 		androidSdkPlatformDir = JoinStrings3(androidSdkDir, StrLit("/platforms/"), ANDROID_PLATFORM_FOLDERNAME);
 		androidNdkDir = JoinStrings3(androidSdkDir, StrLit("/ndk/"), ANDROID_NDK_VERSION);
-		//TODO: "windows-x86_64" is going to be different when compiling on Linux or OSX, we should figure out how we want that configured once we get there
+		#if BUILDING_ON_OSX
+		androidNdkToolchainDir = JoinStrings3(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/"), StrLit("darwin-x86_64"));
+		#else
+		//TODO: "windows-x86_64" is going to be different when compiling on Linux, we should figure out how we want that configured once we get there
 		androidNdkToolchainDir = JoinStrings3(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/"), StrLit("windows-x86_64"));
+		#endif
 		//TODO: We should check to see if all these folders actually exist and give a nice error to the user when they need to install something or change the build_config.h
 	}
 	
@@ -599,7 +619,6 @@ int main(int argc, char* argv[])
 			
 			StrArray shaderTags = EMPTY;
 			AddTag(&shaderTags, T_SHADER);
-			AddTag(&shaderTags, BUILDING_ON_OSX ? T_LANG_OBJECTIVEC : T_LANG_C);
 			AddTag(&shaderTags, T_OBJECT);
 			
 			if (BUILD_WINDOWS)
@@ -617,6 +636,7 @@ int main(int argc, char* argv[])
 				AddStrArray(&tags, &shaderTags);
 				AddTag(&tags, T_MSVC_CL);
 				AddTag(&tags, T_WINDOWS);
+				AddTag(&tags, T_LANG_C);
 				AddStrArray(&tags, &buildConfigTags);
 				
 				Str errorMessage = JoinStrings3(StrLit("Failed to build "), objPath, StrLit(" for Windows!"));
@@ -640,6 +660,7 @@ int main(int argc, char* argv[])
 				AddTag(&tags, T_CLANG);
 				AddTag(&tags, T_LINUX);
 				AddTag(&tags, T_UNIX);
+				AddTag(&tags, T_LANG_C);
 				AddStrArray(&tags, &buildConfigTags);
 				
 				#if BUILDING_ON_LINUX
@@ -677,6 +698,7 @@ int main(int argc, char* argv[])
 				AddTag(&tags, T_CLANG);
 				AddTag(&tags, T_OSX);
 				AddTag(&tags, T_UNIX);
+				AddTag(&shaderTags, T_LANG_OBJECTIVEC);
 				AddStrArray(&tags, &buildConfigTags);
 				
 				Str errorMessage = JoinStrings3(StrLit("Failed to build "), oPath, StrLit(" for OSX!"));
@@ -713,6 +735,7 @@ int main(int argc, char* argv[])
 					AddStrArray(&tags, &shaderTags);
 					AddTag(&tags, T_CLANG);
 					AddTag(&tags, T_ANDROID);
+					AddTag(&tags, T_LANG_C);
 					AddStr(&tags, architectureStr);
 					AddStrArray(&tags, &buildConfigTags);
 					
@@ -1235,14 +1258,19 @@ int main(int argc, char* argv[])
 			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ANDROID);
 			
-			Str clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang.exe"));
+			#if BUILDING_ON_WINDOWS
+			#define SHELL_EXT ".bat"
+			#else
+			#define SHELL_EXT ""
+			#endif
+			Str clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang" EXE_EXT));
 			FixPathSlashes(clangExe, PATH_SEP_CHAR);
-			Str javacExe = StrLit("javac.exe");
-			Str d8Exe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/d8.bat"));
+			Str javacExe = StrLit("javac" EXE_EXT);
+			Str d8Exe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/d8" SHELL_EXT));
 			FixPathSlashes(d8Exe, PATH_SEP_CHAR);
-			Str aaptExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/aapt2.exe"));
+			Str aaptExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/aapt2" EXE_EXT));
 			FixPathSlashes(aaptExe, PATH_SEP_CHAR);
-			Str apksignerExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/apksigner.bat"));
+			Str apksignerExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/apksigner" SHELL_EXT));
 			FixPathSlashes(apksignerExe, PATH_SEP_CHAR);
 			Str zipalignExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/zipalign"));
 			FixPathSlashes(zipalignExe, PATH_SEP_CHAR);
@@ -1333,7 +1361,7 @@ int main(int argc, char* argv[])
 				RunCliProgramAndExitOnFailure(aaptExe, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
 				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
 				
-				RemoveFile(StrLit(FILENAME_TESTS_APK));
+				TryRemoveFile(StrLit(FILENAME_TESTS_APK));
 				PrintLine("Linking %s...", FILENAME_TESTS_APK);
 				CliArgs linkApkCmd = EMPTY;
 				linkApkCmd.pathSepChar = '/';
@@ -1383,7 +1411,7 @@ int main(int argc, char* argv[])
 				
 				WriteLine("Performing ZIP alignment...");
 				Str tempAlignedApkName = StrLit("tests_aligned.apk");
-				RemoveFile(tempAlignedApkName);
+				TryRemoveFile(tempAlignedApkName);
 				CliArgs alignApkCmd = EMPTY;
 				AddArg(&alignApkCmd, "-v");
 				AddArg(&alignApkCmd, "4");
