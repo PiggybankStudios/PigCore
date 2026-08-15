@@ -49,6 +49,7 @@ void InitTextShapingTests()
 		//TODO: Does kb now own the memory, can we drop our copy of the font now?
 		kbts_font* newKbFontPntr = kbts_ShapePushFontFromMemory(textShaping->context, newFontContents.bytes, (int)newFontContents.length, /*FontIndex=*/0);
 		NotNull(newKbFontPntr);
+		PrintLine_D("Font \"%s\" is %p", fontFileNames[fIndex-1], newKbFontPntr);
 		Assert(kbts_FontIsValid(newKbFontPntr));
 		VarArrayAddValue(Slice, &textShaping->fontFiles, newFontContents);
 		VarArrayAddValue(kbts_font*, &textShaping->fonts, newKbFontPntr);
@@ -77,22 +78,30 @@ void RenderTextShapingTests()
 		kbts_ShapeEnd(textShaping->context);
 		
 		r32 textScale = TEXT_SCALE/sapp_dpi_scale();
+		r32 fontSize = 18*textScale;
+		FontFile* fontFile = TryFindFontFileForCodepointAtSize(&testFont, CharToU32(' '), fontSize, FontStyleFlag_None, true, nullptr, nullptr);
+		NotNull(fontFile);
+		r32 shapingScale = stbtt_ScaleForPixelHeight(&fontFile->ttfInfo, fontSize);
+		shapingScale *= 2.0f;
+		// PrintLine_D("shapingScale: %g", shapingScale);
     	// PrintLine_D("Shaping \"%.*s\" (%llu bytes, %llu codepoints)", StrPrint(text), text.length, CountCodepointsUtf8Str(text));
 		kbts_run kbRun;
-		v2i cursorPos = MakeV2i(50, 250);
+		uxx runIndex = 0;
+		v2 cursorPos = MakeV2(50, 250);
 		while(kbts_ShapeRun(textShaping->context, &kbRun))
 		{
+			PrintLine_D("run[%llu] is font %p", runIndex, kbRun.Font);
 			kbts_glyph* glyph;
 			while(kbts_GlyphIteratorNext(&kbRun.Glyphs, &glyph))
 			{
-				v2i glyphPos = AddV2i(cursorPos, MakeV2i(glyph->OffsetX, glyph->OffsetY));
+				v2 glyphPos = AddV2(cursorPos, MakeV2(glyph->OffsetX * shapingScale, glyph->OffsetY * shapingScale));
 				
 				// PrintLine_D("Display 0x%X \'%c\' at (%d, %d)", glyph->Codepoint, (char)glyph->Codepoint, glyphPos.x, glyphPos.y);
 				// DisplayGlyph(glyph->Id, glyphPos.x, glyphPos.y);
 				
 				FontAtlas* fontAtlas = nullptr;
-				FontGlyph* fontGlyph = TryGetFontGlyphForCodepoint(&testFont, glyph->Codepoint, 18*textScale, FontStyleFlag_None, /*allowActiveAtlasCreation*/true, &fontAtlas);
-				rec glyphDrawRec = MakeRec((r32)glyphPos.x, (r32)glyphPos.y-10, 10, 10);
+				FontGlyph* fontGlyph = TryGetFontGlyphForCodepoint(&testFont, glyph->Codepoint, fontSize, FontStyleFlag_None, /*allowActiveAtlasCreation*/true, &fontAtlas);
+				rec glyphDrawRec = MakeRec(glyphPos.x, glyphPos.y-10, 10, 10);
 				if (fontGlyph != nullptr)
 				{
 					glyphDrawRec = MakeRec(
@@ -111,9 +120,10 @@ void RenderTextShapingTests()
 					DrawRectangleOutline(InflateRec(glyphDrawRec, -2), 1, MonokaiBlue);
 				}
 				
-				cursorPos.x += glyph->AdvanceX;
-				cursorPos.y += glyph->AdvanceY;
+				cursorPos.x += glyph->AdvanceX * shapingScale;
+				cursorPos.y += glyph->AdvanceY * shapingScale;
 			}
+			runIndex++;
 		}
 	}
 }
