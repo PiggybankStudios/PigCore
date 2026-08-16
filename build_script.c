@@ -244,11 +244,7 @@ int main(int argc, char* argv[])
 		InitializeEmsdkIf(StrLit(".."), &isEmsdkInitialized);
 	}
 	
-	Str androidSdkDir = Str_Empty;
-	Str androidSdkBuildToolsDir = Str_Empty;
-	Str androidSdkPlatformDir = Str_Empty;
-	Str androidNdkDir = Str_Empty;
-	Str androidNdkToolchainDir = Str_Empty;
+	AndroidBinPaths androidPaths = EMPTY;
 	if (BUILD_ANDROID)
 	{
 		// Installing Android SDK and tools
@@ -262,19 +258,9 @@ int main(int argc, char* argv[])
 		//    android sdk install build-tools/36.0.0 //Must match ANDROID_BUILD_TOOLS_VERSION
 		//    android sdk install platforms/android-36 //Must match ANDROID_PLATFORM_FOLDERNAME
 		//    Set ANDROID_SDK above if needed (check with `android info`)
-		
-		androidSdkDir = GetAndroidSdkPath();
+		Str androidSdkDir = GetAndroidSdkPath();
 		PrintLine("Android SDK path: \"%.*s\"", StrPrint(androidSdkDir));
-		androidSdkBuildToolsDir = JoinStrings3(androidSdkDir, StrLit("/build-tools/"), ANDROID_BUILD_TOOLS_VERSION);
-		androidSdkPlatformDir = JoinStrings3(androidSdkDir, StrLit("/platforms/"), ANDROID_PLATFORM_FOLDERNAME);
-		androidNdkDir = JoinStrings3(androidSdkDir, StrLit("/ndk/"), ANDROID_NDK_VERSION);
-		#if BUILDING_ON_OSX
-		androidNdkToolchainDir = JoinStrings3(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/"), StrLit("darwin-x86_64"));
-		#else
-		//TODO: "windows-x86_64" is going to be different when compiling on Linux, we should figure out how we want that configured once we get there
-		androidNdkToolchainDir = JoinStrings3(androidNdkDir, StrLit("/toolchains/llvm/prebuilt/"), StrLit("windows-x86_64"));
-		#endif
-		//TODO: We should check to see if all these folders actually exist and give a nice error to the user when they need to install something or change the build_config.h
+		FillAndroidBinPaths(&androidPaths, androidSdkDir, ANDROID_NDK_VERSION, ANDROID_PLATFORM_FOLDERNAME, ANDROID_BUILD_TOOLS_VERSION);
 	}
 	
 	Str orcaSdkPath = Str_Empty;
@@ -299,7 +285,7 @@ int main(int argc, char* argv[])
 	CliArgs pigCoreCompilerFlags = EMPTY;
 	CliArgs pigCoreLinkerFlags = EMPTY;
 	FillPigCoreFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, StrLit("[ROOT]"));
-	FillAndroidFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, androidNdkDir, androidNdkToolchainDir);
+	FillAndroidFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, &androidPaths);
 	FillPlaydateFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
 	FillOrcaFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, orcaSdkPath);
 	
@@ -1283,24 +1269,6 @@ int main(int argc, char* argv[])
 			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ANDROID);
 			
-			#if BUILDING_ON_WINDOWS
-			#define SHELL_EXT ".bat"
-			#else
-			#define SHELL_EXT ""
-			#endif
-			Str clangExe = JoinStrings2(androidNdkToolchainDir, StrLit("\\bin\\clang" EXE_EXT));
-			FixPathSlashes(clangExe, PATH_SEP_CHAR);
-			Str javacExe = StrLit("javac" EXE_EXT);
-			Str d8Exe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/d8" SHELL_EXT));
-			FixPathSlashes(d8Exe, PATH_SEP_CHAR);
-			Str aaptExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/aapt2" EXE_EXT));
-			FixPathSlashes(aaptExe, PATH_SEP_CHAR);
-			Str apksignerExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/apksigner" SHELL_EXT));
-			FixPathSlashes(apksignerExe, PATH_SEP_CHAR);
-			Str zipalignExe = JoinStrings2(androidSdkBuildToolsDir, StrLit("/zipalign"));
-			FixPathSlashes(zipalignExe, PATH_SEP_CHAR);
-			Str androidJarPath = JoinStrings2(androidSdkPlatformDir, StrLit("/android.jar"));
-			
 			CliArgs cmdBase = EMPTY;
 			AddArgNt(&cmdBase, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
 			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
@@ -1313,35 +1281,38 @@ int main(int argc, char* argv[])
 			for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 			{
 				AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
-				mkdir(GetAndroidTargetArchitectureFolderName(architecture), FOLDER_PERMISSIONS);
-				chdir(GetAndroidTargetArchitectureFolderName(architecture));
-				PrintLine("Building for %s...", GetAndroidTargetArchitectureFolderName(architecture));
-				Str architectureStr = MakeStrNt(GetAndroidTargetArchitectureTargetStr(architecture));
-				
-				CliArgs cmd = EMPTY;
-				cmd.pathSepChar = '/';
-				cmd.rootDirPath = StrLit("../../../..");
-				AddArgList(&cmd, &cmdBase);
-				AddArgStr(&cmd, CLANG_TARGET_ARCHITECTURE, architectureStr);
-				Str sysrootRelativePath = JoinStrings3(StrLit("/sysroot/usr/lib/"), architectureStr, StrLit("/35/"));
-				AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinStrings2(androidNdkToolchainDir, sysrootRelativePath));
-				if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_AndroidShaderObjects[archIndex]); } //TODO: Remove me!
-				AddArgList(&cmd, &pigCoreCompilerFlags);
-				AddArgList(&cmd, &pigCoreLinkerFlags);
-				AddArgList(&cmd, &thingsToLink);
-				
-				StrArray tags = EMPTY;
-				AddStrArray(&tags, &testsTags);
-				AddTag(&tags, T_CLANG);
-				AddTag(&tags, T_ANDROID);
-				AddStr(&tags, architectureStr);
-				AddStrArray(&tags, &buildConfigTags);
-				
-				RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
-				if (DUMP_PREPROCESSOR) { chdir(".."); continue; }
-				AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
-				
-				chdir("..");
+				if (architecture == AndroidTargetArchitecture_Arm8 || !DEBUG_BUILD)
+				{
+					mkdir(GetAndroidTargetArchitectureFolderName(architecture), FOLDER_PERMISSIONS);
+					chdir(GetAndroidTargetArchitectureFolderName(architecture));
+					PrintLine("Building for %s...", GetAndroidTargetArchitectureFolderName(architecture));
+					Str architectureStr = MakeStrNt(GetAndroidTargetArchitectureTargetStr(architecture));
+					
+					CliArgs cmd = EMPTY;
+					cmd.pathSepChar = '/';
+					cmd.rootDirPath = StrLit("../../../..");
+					AddArgList(&cmd, &cmdBase);
+					AddArgStr(&cmd, CLANG_TARGET_ARCHITECTURE, architectureStr);
+					Str sysrootRelativePath = JoinPaths3(StrLit("/sysroot/usr/lib/"), architectureStr, StrLit("/35/"));
+					AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinPaths(androidPaths.ndkToolchainDir, sysrootRelativePath));
+					if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_AndroidShaderObjects[archIndex]); } //TODO: Remove me!
+					AddArgList(&cmd, &pigCoreCompilerFlags);
+					AddArgList(&cmd, &pigCoreLinkerFlags);
+					AddArgList(&cmd, &thingsToLink);
+					
+					StrArray tags = EMPTY;
+					AddStrArray(&tags, &testsTags);
+					AddTag(&tags, T_CLANG);
+					AddTag(&tags, T_ANDROID);
+					AddStr(&tags, architectureStr);
+					AddStrArray(&tags, &buildConfigTags);
+					
+					RunCliProgramAndExitOnFailureTags(androidPaths.clang, tags, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
+					if (DUMP_PREPROCESSOR) { chdir(".."); continue; }
+					AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
+					
+					chdir("..");
+				}
 			}
 			chdir("..");
 			
@@ -1361,18 +1332,18 @@ int main(int argc, char* argv[])
 					javacCmd.pathSepChar = '/';
 					javacCmd.rootDirPath = StrLit("../..");
 					AddArgNt(&javacCmd, "-d \"[VAL]\"", ".");
-					AddArgStr(&javacCmd, "-classpath \"[VAL]\"", androidJarPath);
+					AddArgStr(&javacCmd, "-classpath \"[VAL]\"", androidPaths.androidJar);
 					AddArgNt(&javacCmd, CLI_QUOTED_ARG, FILENAME_DUMMY_JAVA);
-					RunCliProgramAndExitOnFailure(javacExe, &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
+					RunCliProgramAndExitOnFailure(androidPaths.javac, &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
 					AssertFileExist(StrLit(FILENAME_DUMMY_CLASS), true);
 					
 					CliArgs d8Cmd = EMPTY;
 					d8Cmd.pathSepChar = '/';
 					d8Cmd.rootDirPath = StrLit("../..");
-					AddArgStr(&d8Cmd, "--lib \"[VAL]\"", androidJarPath);
+					AddArgStr(&d8Cmd, "--lib \"[VAL]\"", androidPaths.androidJar);
 					AddArgNt(&d8Cmd, "--output \"[VAL]\"", "./");
 					AddArgNt(&d8Cmd, CLI_QUOTED_ARG, FILENAME_DUMMY_CLASS);
-					RunCliProgramAndExitOnFailure(d8Exe, &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
+					RunCliProgramAndExitOnFailure(androidPaths.d8, &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
 					AssertFileExist(StrLit(FILENAME_CLASSES_DEX), true);
 				}
 				
@@ -1383,7 +1354,7 @@ int main(int argc, char* argv[])
 				AddArg(&compileResCmd, "compile");
 				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/src/tests/android/res");
 				AddArgNt(&compileResCmd, "-o \"[VAL]\"", FILENAME_ANDROID_RESOURCES_ZIP);
-				RunCliProgramAndExitOnFailure(aaptExe, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
+				RunCliProgramAndExitOnFailure(androidPaths.aapt2, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
 				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
 				
 				TryRemoveFile(StrLit(FILENAME_TESTS_APK));
@@ -1393,11 +1364,11 @@ int main(int argc, char* argv[])
 				linkApkCmd.rootDirPath = StrLit("../..");
 				AddArg(&linkApkCmd, "link");
 				AddArgNt(&linkApkCmd, "-o \"[VAL]\"", FILENAME_TESTS_APK);
-				AddArgStr(&linkApkCmd, "-I \"[VAL]\"", androidJarPath);
+				AddArgStr(&linkApkCmd, "-I \"[VAL]\"", androidPaths.androidJar);
 				AddArgNt(&linkApkCmd, "-0 [VAL]", "resources.arsc");
 				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/src/tests/android/AndroidManifest.xml");
 				AddArgNt(&linkApkCmd, CLI_QUOTED_ARG, FILENAME_ANDROID_RESOURCES_ZIP);
-				RunCliProgramAndExitOnFailure(aaptExe, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
+				RunCliProgramAndExitOnFailure(androidPaths.aapt2, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
 				AssertFileExist(StrLit(FILENAME_TESTS_APK), true);
 				
 				//NOTE: In order to insert our .so files into the apk, we need to unpack it into a folder, add the .so files manually, and then repack it
@@ -1434,18 +1405,21 @@ int main(int argc, char* argv[])
 					MyRemoveDirectory(StrLit("apk_temp"), true);
 				}
 				
-				WriteLine("Performing ZIP alignment...");
-				Str tempAlignedApkName = StrLit("tests_aligned.apk");
-				TryRemoveFile(tempAlignedApkName);
-				CliArgs alignApkCmd = EMPTY;
-				AddArg(&alignApkCmd, "-v");
-				AddArg(&alignApkCmd, "4");
-				AddArgNt(&alignApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK); //input
-				AddArgStr(&alignApkCmd, CLI_QUOTED_ARG, tempAlignedApkName); //output
-				RunCliProgramAndExitOnFailure(zipalignExe, &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
-				AssertFileExist(tempAlignedApkName, true);
-				CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK), true);
-				RemoveFile(tempAlignedApkName);
+				if (!DEBUG_BUILD)
+				{
+					WriteLine("Performing ZIP alignment...");
+					Str tempAlignedApkName = StrLit("tests_aligned.apk");
+					TryRemoveFile(tempAlignedApkName);
+					CliArgs alignApkCmd = EMPTY;
+					AddArg(&alignApkCmd, "-v");
+					AddArg(&alignApkCmd, "4");
+					AddArgNt(&alignApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK); //input
+					AddArgStr(&alignApkCmd, CLI_QUOTED_ARG, tempAlignedApkName); //output
+					RunCliProgramAndExitOnFailure(androidPaths.zipalign, &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
+					AssertFileExist(tempAlignedApkName, true);
+					CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK), true);
+					RemoveFile(tempAlignedApkName);
+				}
 				
 				PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, StrPrint(ANDROID_SIGNING_KEY_PATH));
 				CliArgs signApkCmd = EMPTY;
@@ -1457,7 +1431,7 @@ int main(int argc, char* argv[])
 				else if (ANDROID_SIGNING_PASS_PATH.length > 0) { AddArgStr(&signApkCmd, "--ks-pass file:[VAL]", ANDROID_SIGNING_PASS_PATH); }
 				else { WriteLine_E("You must provide either a ANDROID_SIGNING_PASSWORD or ANDROID_SIGNING_PASS_PATH in order to sign an Android .apk!"); exit(4); }
 				AddArgNt(&signApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK);
-				RunCliProgramAndExitOnFailure(apksignerExe, &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
+				RunCliProgramAndExitOnFailure(androidPaths.apksigner, &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
 			}
 			
 			PrintLine("[Built %s for Android!]", BUILD_ANDROID_APK ? FILENAME_TESTS_APK : FILENAME_TESTS_SO);
@@ -1655,12 +1629,12 @@ int main(int argc, char* argv[])
 	if (INSTALL_TESTS_APK)
 	{
 		PrintLine("\n[Installing %s on AVD...]", FILENAME_TESTS_APK);
-		Str adbExe = JoinStrings2(androidSdkDir, StrLit("/platform-tools/adb" EXE_EXT));
+		Str adbExe = JoinStrings2(androidPaths.sdkDir, StrLit("/platform-tools/adb" EXE_EXT));
 		
 		CliArgs installCmd = EMPTY;
 		installCmd.pathSepChar = '/';
 		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
-		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd" EXE_EXT " install exited With Error!"));
+		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd install exited With Error!"));
 		
 		PrintLine_E("Launching \"%.*s\"...", StrPrint(ANDROID_ACTIVITY_PATH));
 		CliArgs launchCmd = EMPTY;
@@ -1669,7 +1643,7 @@ int main(int argc, char* argv[])
 		AddArg(&launchCmd, "am");
 		AddArg(&launchCmd, "start");
 		AddArgStr(&launchCmd, "-n \"[VAL]\"", ANDROID_ACTIVITY_PATH);
-		RunCliProgramAndExitOnFailure(adbExe, &launchCmd, StrLit("abd.exe shell exited With Error!"));
+		RunCliProgramAndExitOnFailure(adbExe, &launchCmd, StrLit("abd shell exited With Error!"));
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", BUILD_SCRIPT_EXE_NAME);

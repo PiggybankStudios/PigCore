@@ -807,7 +807,7 @@ bool AppFrame(void)
 	#if TARGET_IS_ANDROID
 	UpdateScreenRotation();
 	#endif
-	if (AreEqualV2i(oldWindowSize, windowSizei)) { UpdateScreenSafeMargins(); }
+	UpdateScreenSafeMargins();
 	if (frameIndex > 0) { UpdatePerfGraph(&perfGraph, prevUpdateMs, (elapsedMs - prevUpdateMs)); }
 	#if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	FontNewFrame(&testFont, programTime);
@@ -1069,17 +1069,17 @@ bool AppFrame(void)
 			RenderTextShapingTests();
 			#endif
 			
-			#if 0
+			#if 1
 			{
-				DrawRectangleOutline(NewRec(0, 0, screenSafeMargins.x, windowSize.height), 10.0f, MonokaiMagenta);
-				DrawRectangleOutline(NewRec(0, 0, windowSize.width, screenSafeMargins.y), 10.0f, MonokaiBlue);
-				DrawRectangleOutline(NewRec(windowSize.width - screenSafeMargins.z, 0, screenSafeMargins.z, windowSize.height), 10.0f, MonokaiPurple);
-				DrawRectangleOutline(NewRec(0, windowSize.height - screenSafeMargins.w, windowSize.width, screenSafeMargins.w), 10.0f, MonokaiYellow);
+				DrawRectangleOutline(MakeRec(0, 0, screenSafeMargins.x, windowSize.height), 10.0f, MonokaiMagenta);
+				DrawRectangleOutline(MakeRec(0, 0, windowSize.width, screenSafeMargins.y), 10.0f, MonokaiBlue);
+				DrawRectangleOutline(MakeRec(windowSize.width - screenSafeMargins.z, 0, screenSafeMargins.z, windowSize.height), 10.0f, MonokaiPurple);
+				DrawRectangleOutline(MakeRec(0, windowSize.height - screenSafeMargins.w, windowSize.width, screenSafeMargins.w), 10.0f, MonokaiYellow);
 				
-				DrawRectangleOutline(NewRec(0, 0, screenMargins.x, windowSize.height), 5.0f, MonokaiLightRed);
-				DrawRectangleOutline(NewRec(0, 0, windowSize.width, screenMargins.y), 5.0f, MonokaiLightBlue);
-				DrawRectangleOutline(NewRec(windowSize.width - screenMargins.z, 0, screenMargins.z, windowSize.height), 5.0f, MonokaiLightPurple);
-				DrawRectangleOutline(NewRec(0, windowSize.height - screenMargins.w, windowSize.width, screenMargins.w), 5.0f, MonokaiOrange);
+				DrawRectangleOutline(MakeRec(0, 0, screenMargins.x, windowSize.height), 5.0f, MonokaiLightRed);
+				DrawRectangleOutline(MakeRec(0, 0, windowSize.width, screenMargins.y), 5.0f, MonokaiLightBlue);
+				DrawRectangleOutline(MakeRec(windowSize.width - screenMargins.z, 0, screenMargins.z, windowSize.height), 5.0f, MonokaiLightPurple);
+				DrawRectangleOutline(MakeRec(0, windowSize.height - screenMargins.w, windowSize.width, screenMargins.w), 5.0f, MonokaiOrange);
 			}
 			#endif
 			
@@ -1095,7 +1095,7 @@ bool AppFrame(void)
 			{
 				r32 fontLineHeight = GetFontLineHeight(&testFont, 18*textScale, FontStyleFlag_None);
 				r32 fontMaxAscend = GetFontMaxAscend(&testFont, 18*textScale, FontStyleFlag_None);
-				v2 textPos = MakeV2(screenSafeMargins.x + 10, screenSafeMargins.y + 410 + fontMaxAscend);
+				v2 textPos = MakeV2(screenSafeMargins.x + 10, screenSafeMargins.y + 712 + fontMaxAscend);
 				Str8 infoStr = PrintInArenaStr(scratch, "HighDpi: %s Scale: x%g WindowSize: %gx%g", sapp_high_dpi() ? "true" : "false", sapp_dpi_scale(), windowSize.width, windowSize.height);
 				BindFont(&debugFont);
 				DrawText(infoStr, textPos, MonokaiWhite);
@@ -1234,7 +1234,7 @@ bool AppFrame(void)
 			rec topbarRec = GetClayElementDrawRec(CLAY_ID("Topbar"));
 			r32 atlasRenderPosY = topbarRec.y + topbarRec.height + 10;
 			#else
-			r32 atlasRenderPosY = 10.0f;
+			r32 atlasRenderPosY = screenSafeMargins.y + 10.0f;
 			#endif
 			VarArrayLoop(&testFont.atlases, aIndex)
 			{
@@ -1338,7 +1338,7 @@ bool AppFrame(void)
 						.layout = {
 							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.x), .height=CLAY_SIZING_FIXED(windowSize.height) }
 						},
-						.backgroundColor = MonokaiBack,
+						.backgroundColor = ColorWithAlpha(Black, 0.25f),
 						.floating = {
 							.attachPoints = { .element = CLAY_ATTACH_POINT_LEFT_TOP, .parent = CLAY_ATTACH_POINT_LEFT_TOP },
 							.attachTo = CLAY_ATTACH_TO_PARENT,
@@ -1358,7 +1358,7 @@ bool AppFrame(void)
 						.layout = {
 							.sizing = { .width=CLAY_SIZING_FIXED(screenMargins.z), .height=CLAY_SIZING_FIXED(windowSize.height) }
 						},
-						.backgroundColor = MonokaiBack,
+						.backgroundColor = ColorWithAlpha(Black, 0.25f),
 						.floating = {
 							.attachPoints = { .element = CLAY_ATTACH_POINT_RIGHT_TOP, .parent = CLAY_ATTACH_POINT_RIGHT_TOP },
 							.attachTo = CLAY_ATTACH_TO_PARENT,
@@ -1368,7 +1368,7 @@ bool AppFrame(void)
 						.layout = {
 							.sizing = { .width=CLAY_SIZING_FIXED(windowSize.width), .height=CLAY_SIZING_FIXED(screenMargins.w) }
 						},
-						.backgroundColor = MonokaiBack,
+						.backgroundColor = ColorWithAlpha(Black, 0.25f),
 						.floating = {
 							.attachPoints = { .element = CLAY_ATTACH_POINT_LEFT_BOTTOM, .parent = CLAY_ATTACH_POINT_LEFT_BOTTOM },
 							.attachTo = CLAY_ATTACH_TO_PARENT,
