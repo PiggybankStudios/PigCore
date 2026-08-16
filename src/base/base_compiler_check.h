@@ -121,6 +121,14 @@ Description:
 #define TARGET_IS_WEB 0
 #endif
 
+#if defined(__arm64__) || defined(__aarch64__)
+#define TARGET_IS_INTEL 0
+#define TARGET_IS_ARM   1
+#else
+#define TARGET_IS_INTEL 1
+#define TARGET_IS_ARM   0
+#endif
+
 //Make sure we have exactly one of the TARGET defines set to true
 #if TARGET_IS_ANDROID + TARGET_IS_LINUX + TARGET_IS_WINDOWS + TARGET_IS_OSX + TARGET_IS_PLAYDATE_DEVICE + TARGET_IS_PLAYDATE_SIMULATOR + TARGET_IS_WEB + TARGET_IS_ORCA > 1
 #error Somehow we think we are on more than one TARGET based on the pre-defined compiler flags!
@@ -132,12 +140,18 @@ Description:
 // +--------------------------------------------------------------+
 // |                    Derived TARGET Aspects                    |
 // +--------------------------------------------------------------+
-#if defined(__arm64__) || defined(__aarch64__)
-#define TARGET_IS_INTEL 0
-#define TARGET_IS_ARM   1
+#if (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
+#define TARGET_IS_UNIX 1
 #else
-#define TARGET_IS_INTEL 1
-#define TARGET_IS_ARM   0
+#define TARGET_IS_UNIX 0
+#endif
+
+#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX || TARGET_IS_OSX)
+#define TARGET_IS_DESKTOP 1
+#define TARGET_IS_MOBILE  0
+#else
+#define TARGET_IS_DESKTOP 0
+#define TARGET_IS_MOBILE  1
 #endif
 
 #if (TARGET_IS_PLAYDATE_DEVICE || TARGET_IS_PLAYDATE_SIMULATOR)
