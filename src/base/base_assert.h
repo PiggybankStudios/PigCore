@@ -21,7 +21,7 @@ Description:
 #if ASSERTIONS_ENABLED
 
 #if (TARGET_IS_WINDOWS || (TARGET_IS_WEB && !USE_EMSCRIPTEN))
-#define MyBreakMsg(message) __debugbreak()
+#define MyBreakMsg(message) __debugbreak() //TODO: Route the message somewhere?
 #define MyBreak()           MyBreakMsg("")
 #elif (TARGET_IS_OSX || TARGET_IS_LINUX)
 // ANSI Escape sequences make the output red and invertedto make it very visible
@@ -84,3 +84,7 @@ Description:
 #endif //ASSERTIONS_ENABLED
 
 #endif //  _BASE_ASSERT_H
+
+#if defined(_BASE_ASSERT_H) && defined(_BASE_DEBUG_OUTPUT_H)
+#include "cross/cross_assert_and_debug_output.h"
+#endif

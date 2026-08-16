@@ -237,3 +237,7 @@ DEBUG_PRINT_HANDLER_DEF(DebugPrintRouter);
 #endif
 
 #endif //  _BASE_DEBUG_OUTPUT_H
+
+#if defined(_BASE_ASSERT_H) && defined(_BASE_DEBUG_OUTPUT_H)
+#include "cross/cross_assert_and_debug_output.h"
+#endif
