@@ -155,6 +155,9 @@ int main(int argc, char* argv[])
 	bool BUILD_TESTS                       = GetBoolConfig("BUILD_TESTS",                       buildConfigContents, argc, argv, &buildConfigTags);
 	bool RUN_TESTS                         = GetBoolConfig("RUN_TESTS",                         buildConfigContents, argc, argv, &buildConfigTags);
 	bool INSTALL_TESTS_APK                 = GetBoolConfig("INSTALL_TESTS_APK",                 buildConfigContents, argc, argv, &buildConfigTags);
+	bool ZIP_RESOURCES_FOR_EMBEDDING       = GetBoolConfig("ZIP_RESOURCES_FOR_EMBEDDING",       buildConfigContents, argc, argv, &buildConfigTags);
+	bool USE_EMBEDDED_RESOURCES_ZIP        = GetBoolConfig("USE_EMBEDDED_RESOURCES_ZIP",        buildConfigContents, argc, argv, &buildConfigTags);
+	bool USE_OSX_APP_BUNDLE_RESOURCES      = GetBoolConfig("USE_OSX_APP_BUNDLE_RESOURCES",      buildConfigContents, argc, argv, &buildConfigTags);
 	bool GENERATE_PROTOBUF                 = GetBoolConfig("GENERATE_PROTOBUF",                 buildConfigContents, argc, argv, &buildConfigTags);
 	bool DUMP_PREPROCESSOR                 = GetBoolConfig("DUMP_PREPROCESSOR",                 buildConfigContents, argc, argv, &buildConfigTags);
 	bool DUMP_ASSEMBLY                     = GetBoolConfig("DUMP_ASSEMBLY",                     buildConfigContents, argc, argv, &buildConfigTags);
@@ -223,6 +226,11 @@ int main(int argc, char* argv[])
 	{
 		PrintLine_E("BUILD_LINUX_VIA_WSL does not work on " BUILDING_ON_NAME "!");
 		BUILD_LINUX_VIA_WSL = false;
+	}
+	if (USE_EMBEDDED_RESOURCES_ZIP && !ZIP_RESOURCES_FOR_EMBEDDING && !DoesFileExist(StrLit("resources.zip")))
+	{
+		WriteLine("Bundling resources.zip because it's missing");
+		ZIP_RESOURCES_FOR_EMBEDDING = true;
 	}
 	
 	// +==============================+
@@ -295,8 +303,10 @@ int main(int argc, char* argv[])
 	FillPlaydateFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
 	FillOrcaFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, orcaSdkPath);
 	
-	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR, "[ROOT]/src");
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/src");
 	AddTaggedArgNt(&pigCoreCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/src");
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/build/gen");
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/build/gen");
 	
 	//We'll put shader objects, imgui.obj/o, tracy.dll/so, and physx_capi.obj/o into this list
 	CliArgs thingsToLink = EMPTY;
@@ -482,6 +492,21 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/fuzzing/");
 		
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                       Embed Resources                        |
+	// +--------------------------------------------------------------+
+	if (ZIP_RESOURCES_FOR_EMBEDDING)
+	{
+		MyCreateFolder(StrLit("gen"), false);
+		BundleResourcesZip(
+			StrLit("../resources"),
+			StrLit("resources.zip"),
+			StrLit("gen/resources_zip.h"),
+			StrLit("gen/resources_zip.c"),
+			StrLit("resources_zip_bytes")
+		);
 	}
 	
 	// +--------------------------------------------------------------+
@@ -1630,12 +1655,12 @@ int main(int argc, char* argv[])
 	if (INSTALL_TESTS_APK)
 	{
 		PrintLine("\n[Installing %s on AVD...]", FILENAME_TESTS_APK);
-		Str adbExe = JoinStrings2(androidSdkDir, StrLit("/platform-tools/adb.exe"));
+		Str adbExe = JoinStrings2(androidSdkDir, StrLit("/platform-tools/adb" EXE_EXT));
 		
 		CliArgs installCmd = EMPTY;
 		installCmd.pathSepChar = '/';
 		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
-		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd.exe install exited With Error!"));
+		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd" EXE_EXT " install exited With Error!"));
 		
 		PrintLine_E("Launching \"%.*s\"...", StrPrint(ANDROID_ACTIVITY_PATH));
 		CliArgs launchCmd = EMPTY;

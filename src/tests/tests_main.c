@@ -94,6 +94,8 @@ Description:
 #endif
 #endif
 
+#include "tests/tests_resources.h"
+
 // +--------------------------------------------------------------+
 // |                           Globals                            |
 // +--------------------------------------------------------------+
@@ -118,6 +120,7 @@ void RenderTextShapingTests();
 // +--------------------------------------------------------------+
 // |                      tests Source Files                      |
 // +--------------------------------------------------------------+
+#include "tests/tests_resources.c"
 #include "tests/tests_parsing.c"
 #include "tests/tests_box2d.c"
 #include "tests/tests_sokol.c"
@@ -293,9 +296,13 @@ static void PrintRichStr(RichStr richStr)
 	}
 }
 
-static void EarlyInit()
+// Declared in tests_sokol.c
+// This function gets called from main (sometimes called MyMain or WinMain) but also in sokol_main()
+// On Android, the sokol_main() function gets called on a different thread from the AppInit/AppFrame callbacks
+static void EarlyInit(bool isOnMainThread)
 {
 	static bool isEarlyInitialized = false;
+	static THREAD_LOCAL bool isThreadInitialized = false;
 	if (!isEarlyInitialized)
 	{
 		#if PROFILING_ENABLED
@@ -303,12 +310,6 @@ static void EarlyInit()
 		TracyCAppInfo(projectName.chars, projectName.length);
 		#endif
 		TracyCZoneN(Zone_EarlyInit, "EarlyInit", true);
-		
-		#if TARGET_HAS_THREADING
-		//TODO: On Android this is actually a different thread than the one we will normally be updating/rendering in. We should probably track the other thread ID as the "main thread"
-		MainThreadId = OsGetCurrentThreadId();
-		OsSetThreadName(nullptr, StrLit("Main"));
-		#endif
 		
 		OsMarkStartTime(); //NOTE: For Sokol applications, this gets reset at the end of AppInit
 		
@@ -328,6 +329,20 @@ static void EarlyInit()
 		InitArenaAlias(&stdAlias, stdHeap);
 		#endif
 		
+		isEarlyInitialized = true;
+		TracyCZoneEnd(Zone_EarlyInit);
+	}
+	
+	if (!isThreadInitialized)
+	{
+		TracyCZoneN(Zone_EarlyInitThread, "EarlyInitThread", true);
+		
+		#if TARGET_HAS_THREADING
+		//TODO: On Android this is actually a different thread than the one we will normally be updating/rendering in. We should probably track the other thread ID as the "main thread"
+		MainThreadId = OsGetCurrentThreadId();
+		OsSetThreadName(nullptr, isOnMainThread ? StrLit("Main") : StrLit("Other"));
+		#endif
+		
 		// Initialize scratch arenas
 		#if TARGET_IS_PLAYDATE
 		InitScratchArenas(Megabytes(1), stdHeap);
@@ -340,14 +355,15 @@ static void EarlyInit()
 		#endif
 		PrintLine_I("Initialized scratch arenas to %llu bytes%s", scratchArenasArray[0].size, (scratchArenasArray[0].type == ArenaType_StackVirtual) ? " (Virtual)" : "");
 		
-		isEarlyInitialized = true;
-		TracyCZoneEnd(Zone_EarlyInit);
+		isThreadInitialized = true;
+		TracyCZoneEnd(Zone_EarlyInitThread);
 	}
 }
 
 // +--------------------------------------------------------------+
 // |                             Main                             |
 // +--------------------------------------------------------------+
+// Declared in tests_sokol.c when BUILD_WITH_SOKOL_APP
 #if !RUN_FUZZER
 #if (BUILD_WITH_SOKOL_APP || TARGET_IS_ORCA || TARGET_IS_PLAYDATE || TARGET_IS_ANDROID)
 int MyMain(int argc, char* argv[])
@@ -368,7 +384,7 @@ int main(int argc, char* argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 	#endif
-	EarlyInit();
+	EarlyInit(/*isOnMainThread*/ true);
 	WriteLine_N("Running tests...\n");
 	
 	v2 _v2_zero1 = { .x=0, .y=0 };
@@ -427,6 +443,8 @@ int main(int argc, char* argv[])
 	SeedRandomSeriesU64(&mainRandomStruct, randomSeed);
 	mainRandom = &mainRandomStruct;
 	#endif
+	
+	InitAppResources();
 	
 	#if (TARGET_IS_LINUX && BUILD_WITH_GTK)
 	gtk_init();

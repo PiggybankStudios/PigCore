@@ -60,14 +60,21 @@ Description:
 #define BUILD_PHYSX_OBJ 0
 
 // Builds dll_main.c into pig_core.dll (mostly as a test to make sure dll compilation is working properly)
-#define BUILD_PIG_CORE_DLL 0
+#define BUILD_PIG_CORE_DLL 1
 
 // Compiles tests/main.c
 #define BUILD_TESTS       1
 // Runs the result of compiling tests/main.c, aka the tests.exe
 #define RUN_TESTS         0
 // Installs the Android .apk onto a running Virtual Device (AVD) through abd.exe
-#define INSTALL_TESTS_APK 0
+#define INSTALL_TESTS_APK 1
+
+// This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
+#define ZIP_RESOURCES_FOR_EMBEDDING  0
+// The .exe will use the resources_zip.h/c file instead of loading resources from disk
+#define USE_EMBEDDED_RESOURCES_ZIP   1
+// On OSX we can either look at the resources folder next to our .app bundle, or we can look inside the bundle (only applicable if !USE_EMBEDDED_RESOURCES_ZIP)
+#define USE_OSX_APP_BUNDLE_RESOURCES 1
 
 // Runs protoc --c_out (which uses protoc-gen-c plugin) to generate pb-c.h and pb-c.c files from all .proto files
 #define GENERATE_PROTOBUF 0

@@ -9,8 +9,9 @@ Description:
 #if BUILD_WITH_SOKOL_APP
 
 #if TARGET_IS_ANDROID
-#define MAIN_FONT_NAME  "DroidSansMono"
-#define DEBUG_FONT_NAME "Consolas"
+// Do `adb shell ls /system/fonts` to see which fonts are available on Android
+#define MAIN_FONT_NAME  "DroidSans"
+#define DEBUG_FONT_NAME "DroidSansMono" //Could also do Roboto?
 #elif TARGET_IS_OSX
 #define MAIN_FONT_NAME "Arial"
 #define DEBUG_FONT_NAME "Courier New"
@@ -19,7 +20,11 @@ Description:
 #define DEBUG_FONT_NAME "Consolas"
 #endif
 
-#if TARGET_IS_WINDOWS
+#if USE_EMBEDDED_RESOURCES_ZIP
+#define TEST_SHEET_PATH   "../resources/images/test_sheet_2x2.png" // "D:/test_sheet_4x4.png", "G:/test_sheet_6x4.png"
+#define TEST_IMAGE_PATH   "../resources/images/test.png"
+#define TEST_TEXTURE_PATH "../resources/images/test.png"
+#elif TARGET_IS_WINDOWS
 #define TEST_SHEET_PATH   "F:/test_sheet_4x5.png" // "D:/test_sheet_4x4.png", "G:/test_sheet_6x4.png"
 #define TEST_IMAGE_PATH   "F:/test.png"
 #define TEST_TEXTURE_PATH "F:/test.png"
@@ -49,8 +54,8 @@ MAYBE_START_EXTERN_C
 #include "tests/main3d_shader.glsl.h"
 MAYBE_END_EXTERN_C
 
-static void EarlyInit();
-int MyMain(int argc, char* argv[]);
+static void EarlyInit(bool isOnMainThread); //implemented in tests_main.c
+int MyMain(int argc, char* argv[]); //implemented in tests_main.c
 
 // +--------------------------------------------------------------+
 // |                           Globals                            |
@@ -373,11 +378,11 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 	ScratchBegin1(scratch, arena);
 	Texture result = ZEROED;
 	Slice fileContents = Slice_Empty;
-	bool readFileResult = OsReadBinFile(path, scratch, &fileContents);
-	if (!readFileResult)
+	Result readResult = TryReadAppResource(scratch, path, false, &fileContents);
+	if (readResult != Result_Success)
 	{
-		DebugAssertMsg(readFileResult == true, "Failed to find texture file!");
-		result.error = Result_FailedToReadFile;
+		AssertFmt(readResult == Result_Success, "Failed to open/read texture file \"%.*s\" %s!", StrPrint(path), GetResultStr(readResult));
+		result.error = readResult;
 		ScratchEnd(scratch);
 		return result;
 	}
@@ -385,7 +390,7 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 	Result parseResult = TryParseImageFile(fileContents, arena, &imageData);
 	if (parseResult != Result_Success)
 	{
-		DebugAssertMsg(parseResult == Result_Success, "Failed to parse texture file!");
+		AssertFmt(parseResult == Result_Success, "Failed to parse texture file \"%.*s\" %s!", StrPrint(path), GetResultStr(parseResult));
 		result.error = parseResult;
 		ScratchEnd(scratch);
 		return result;
@@ -395,15 +400,82 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 	return result;
 }
 
-Result TryAttachLocalFontFile(PigFont* font, Str8 fileName, u8 styleFlags)
+void AttachOsTtfFileToFont(PigFont* font, Str8 fontName, r32 fontSize, u8 ttfStyleFlags)
+{
+	Result attachResult = TryAttachOsTtfFileToFont(font, fontName, fontSize, ttfStyleFlags);
+	AssertFmt(attachResult == Result_Success, "Failed to find/attach OS font named \"%.*s\": %s", StrPrint(fontName), GetResultStr(attachResult));
+}
+Result TryAttachLocalFontFile(PigFont* font, FilePath fontPath, u8 styleFlags)
 {
 	ScratchBegin1(scratch, font->arena);
-	Str8 filePath = JoinStringsInArena(scratch, StrLit("../fonts/"), fileName, false); //TODO: Change to JoinPathsInArena
+	Str8 filePath = JoinPathsInArena(scratch, StrLit("../resources/fonts"), fontPath, false);
 	Slice fileContents = Slice_Empty;
-	if (!OsReadBinFile(filePath, scratch, &fileContents)) { ScratchEnd(scratch); return Result_FailedToReadFile; }
-	Result result = TryAttachFontFile(font, fileName, fileContents, styleFlags, true);
+	Result result = TryReadAppResource(scratch, filePath, false, &fileContents);
+	if (result == Result_Success)
+	{
+		result = TryAttachFontFile(font, fontPath, fileContents, styleFlags, true);
+	}
 	ScratchEnd(scratch);
 	return result;
+}
+void AttachLocalFontFile(PigFont* font, FilePath fontPath, u8 styleFlags)
+{
+	Result attachResult = TryAttachLocalFontFile(font, fontPath, styleFlags);
+	AssertFmt(attachResult == Result_Success, "Failed to parse/attach font resource \"%.*s\" %s", StrPrint(fontPath), GetResultStr(attachResult)); 
+}
+void BakeFontAtlas(PigFont* font, r32 fontSize, u8 styleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+{
+	Result bakeResult = TryBakeFontAtlas(font, fontSize, styleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges);
+	if (bakeResult != Result_Success && bakeResult != Result_Partial)
+	{
+		uxx numCodepoints = 0;
+		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++) { numCodepoints += charRanges[rIndex].endCodepoint - charRanges[rIndex].startCodepoint + 1; }
+		AssertFmt(bakeResult == Result_Success || bakeResult == Result_Partial, "Failed to bake font atlas with %llu glyph%s (%llu range%s) at size %g between %dx%d to %dx%d: %s",
+			numCodepoints, Plural(numCodepoints, "s"),
+			numCharRanges, Plural(numCharRanges, "s"),
+			fontSize,
+			minAtlasSize, minAtlasSize,
+			maxAtlasSize, maxAtlasSize,
+			GetResultStr(bakeResult)
+		);
+	}
+}
+void BakeFontAtlasWithCustomGlyphs(PigFont* font, r32 fontSize, u8 styleFlags, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)
+{
+	Result bakeResult = TryBakeFontAtlasWithCustomGlyphs(font, fontSize, styleFlags, minAtlasSize, maxAtlasSize, numCharRanges, charRanges, numCustomGlyphRanges, customGlyphRanges);
+	if (bakeResult != Result_Success && bakeResult != Result_Partial)
+	{
+		uxx numCodepoints = 0;
+		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++) { numCodepoints += charRanges[rIndex].endCodepoint - charRanges[rIndex].startCodepoint + 1; }
+		uxx numCustomGlyphs = 0;
+		for (uxx rIndex = 0; rIndex < numCustomGlyphRanges; rIndex++) { numCodepoints += customGlyphRanges[rIndex].endCodepoint - customGlyphRanges[rIndex].startCodepoint + 1; }
+		AssertFmt(bakeResult == Result_Success || bakeResult == Result_Partial, "Failed to bake font atlas with %llu+%llu glyph%s (%llu+%llu range%s) at size %g between %dx%d to %dx%d: %s",
+			numCodepoints, numCustomGlyphs, Plural(numCodepoints + numCustomGlyphs, "s"),
+			numCharRanges, numCustomGlyphRanges, Plural(numCharRanges + numCustomGlyphRanges, "s"),
+			fontSize,
+			minAtlasSize, minAtlasSize,
+			maxAtlasSize, maxAtlasSize,
+			GetResultStr(bakeResult)
+		);
+	}
+}
+void AttachAndMultiBakeFontAtlases(PigFont* font, uxx numSettings, const FontBakeSettings* settings, i32 minAtlasSize, i32 maxAtlasSize, uxx numCharRanges, const FontCharRange* charRanges)
+{
+	Result attachAndBakeResult = TryAttachAndMultiBakeFontAtlases(font, numSettings, settings, minAtlasSize, maxAtlasSize, numCharRanges, charRanges);
+	if (attachAndBakeResult != Result_Success && attachAndBakeResult != Result_Partial)
+	{
+		uxx numCodepoints = 0;
+		for (uxx rIndex = 0; rIndex < numCharRanges; rIndex++) { numCodepoints += charRanges[rIndex].endCodepoint - charRanges[rIndex].startCodepoint + 1; }
+		AssertFmt(attachAndBakeResult == Result_Success || attachAndBakeResult == Result_Partial, "Failed to attach \"%.*s\" and bake font atlas with %llu glyph%s (%llu range%s) at size %g between %dx%d to %dx%d: %s",
+			StrPrint(settings->name),
+			numCodepoints, Plural(numCodepoints, "s"),
+			numCharRanges, Plural(numCharRanges, "s"),
+			settings->size,
+			minAtlasSize, minAtlasSize,
+			maxAtlasSize, maxAtlasSize,
+			GetResultStr(attachAndBakeResult)
+		);
+	}
 }
 
 void UpdateTimingInfo()
@@ -434,7 +506,10 @@ void AppInit(void)
 	
 	InitGfxSystem(stdHeap, &gfx);
 	
+	//TODO: Shaping tests currently rely on fonts that don't exist on Android. We need to choose better fonts before we can enable this
+	#if !TARGET_IS_ANDROID
 	InitTextShapingTests();
+	#endif
 	
 	v2i gradientSize = FillV2i(64);
 	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.width * gradientSize.height));
@@ -506,13 +581,13 @@ void AppInit(void)
 		// 	FontCharRange_Katakana,
 		// };
 		
-		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
-		// bakeResult = TryBakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success);
+		// AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None);
+		// BakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]);
 		// FillFontKerningTable(&testFont);
 		// RemoveAttachedFontFiles(&testFont);
 		
-		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
-		// bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success);
+		// AttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None);
+		// BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]);
 		// RemoveAttachedFontFiles(&testFont);
 		
 		#if 0
@@ -526,34 +601,34 @@ void AppInit(void)
 			MakeFontCharRangeSingle(0x1F60D), //😍
 			MakeFontCharRangeSingle(0x1F64C), //🙌
 		};
-		attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
-		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
+		AttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs);
+		BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]);
 		RemoveAttachedFontFiles(&testFont);
-		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
-		bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]); Assert(bakeResult == Result_Success);
+		AttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs);
+		BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(emojiCharRanges), &emojiCharRanges[0]);
 		RemoveAttachedFontFiles(&testFont);
 		#endif
 		
 		MakeFontActive(&testFont, 64, 256, 5, 0, 0);
-		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
+		AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_None);
 		#if !TARGET_IS_OSX //TODO: It seems like Arial regular is available on OSX but not Arial Bold
-		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
-		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic); Assert(attachResult == Result_Success);
-		attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic); Assert(attachResult == Result_Success);
+			AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold);
+			AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Italic);
+			AttachOsTtfFileToFont(&testFont, StrLit(MAIN_FONT_NAME), 18*textScale, FontStyleFlag_Bold|FontStyleFlag_Italic);
 		#endif //!TARGET_IS_OSX
-		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
-		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
-		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None); Assert(attachResult == Result_Success);
-		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoSansSymbols-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
-		// attachResult = TryAttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold); Assert(attachResult == Result_Success);
-		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None); Assert(attachResult == Result_Success);
+		// AttachOsTtfFileToFont(&testFont, StrLit("Meiryo UI Regular"), 18*textScale, FontStyleFlag_None);
+		AttachLocalFontFile(&testFont, StrLit("NotoSansJP-Regular.ttf"), FontStyleFlag_None);
+		// AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_None);
+		AttachLocalFontFile(&testFont, StrLit("NotoSansSymbols-Regular.ttf"), FontStyleFlag_None);
+		// AttachOsTtfFileToFont(&testFont, StrLit("Segoe UI Symbol"), 18*textScale, FontStyleFlag_Bold);
+		// AttachLocalFontFile(&testFont, StrLit("NotoEmoji-Regular.ttf"), FontStyleFlag_None);
 		#if TARGET_IS_WINDOWS //TODO: Remove this once we have NotoColorEmoji-Regular.ttf committed to the repository
-		attachResult = TryAttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
+			AttachLocalFontFile(&testFont, StrLit("NotoColorEmoji-Regular.ttf"), FontStyleFlag_ColoredGlyphs);
 		#endif
-		// attachResult = TryAttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs); Assert(attachResult == Result_Success);
+		// AttachLocalFontFile(&testFont, StrLit("seguiemj.ttf"), FontStyleFlag_ColoredGlyphs);
 		
-		bakeResult = TryBakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]); Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
-		// bakeResult = TryBakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]); Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
+		BakeFontAtlasWithCustomGlyphs(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(basicCharRanges), &basicCharRanges[0], ArrayCount(customCharRanges), &customCharRanges[0]);
+		// BakeFontAtlas(&testFont, 18*textScale, FontStyleFlag_None, 256, 1024, ArrayCount(japaneseCharRanges), &japaneseCharRanges[0]);
 	}
 	else
 	{
@@ -577,8 +652,7 @@ void AppInit(void)
 			{ .name=StrLit(MAIN_FONT_NAME), .size=26*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
 		};
 		
-		Result bakeResult = TryAttachAndMultiBakeFontAtlases(&testFont, ArrayCount(bakeSettings), &bakeSettings[0], 256, 1024, ArrayCount(charRanges), &charRanges[0]);
-		Assert(bakeResult == Result_Success);
+		AttachAndMultiBakeFontAtlases(&testFont, ArrayCount(bakeSettings), &bakeSettings[0], 256, 1024, ArrayCount(charRanges), &charRanges[0]);
 	}
 	
 	debugFont = InitFont(stdHeap, StrLit("debugFont"));
@@ -595,8 +669,7 @@ void AppInit(void)
 			{ .name=StrLit(DEBUG_FONT_NAME), .size=12*textScale, .style=FontStyleFlag_Bold|FontStyleFlag_Italic },
 			#endif //!TARGET_IS_OSX
 		};
-		Result bakeResult = TryAttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
-		Assert(bakeResult == Result_Success);
+		AttachAndMultiBakeFontAtlases(&debugFont, ArrayCount(bakeSettings), &bakeSettings[0], 128, 512, ArrayCount(charRanges), &charRanges[0]);
 	}
 	// #endif //!TARGET_IS_OSX
 	
@@ -740,7 +813,9 @@ bool AppFrame(void)
 	FontNewFrame(&testFont, programTime);
 	#endif
 	
+	#if !TARGET_IS_ANDROID
 	UpdateTextShapingTests();
+	#endif
 	
 	if (IsMouseBtnDown(&mouse, nullptr, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
@@ -990,7 +1065,9 @@ bool AppFrame(void)
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
 			
+			#if !TARGET_IS_ANDROID
 			RenderTextShapingTests();
+			#endif
 			
 			#if 0
 			{
@@ -1840,7 +1917,11 @@ sapp_desc sokol_main(int argc, char* argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 	
-	EarlyInit();
+	#if TARGET_IS_ANDROID
+	EarlyInit(/*isOnMainThread*/ false);
+	#else
+	EarlyInit(/*isOnMainThread*/ true);
+	#endif
 	
 	//NOTE: On some platforms (like Android) this call happens on a separate thread to AppInit, AppFrame, etc. So we shouldn't do any initialization here that is thread specific
 	argc_copy = argc;

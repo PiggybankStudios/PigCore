@@ -6,7 +6,8 @@ Description:
 	** Holds some test code that exercises the kb_text_shape.h APIs
 */
 
-#if (BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP)
+//TODO: Shaping tests currently rely on fonts that don't exist on Android. We need to choose better fonts before we can enable this
+#if (BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP && !TARGET_IS_ANDROID)
 
 typedef plex TextShapingState TextShapingState;
 plex TextShapingState
