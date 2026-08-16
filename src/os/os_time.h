@@ -1,3 +1,4 @@
+
 /*
 File:   os_time.h
 Author: Taylor Robbins
@@ -24,7 +25,7 @@ plex OsTime
 	
 	#if TARGET_IS_WINDOWS
 	LARGE_INTEGER largeInteger;
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif TARGET_IS_UNIX
 	struct timespec timeValue;
 	#endif
 };
@@ -143,7 +144,7 @@ PEXP u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, boo
 			if (result >= WIN32_FILETIME_SEC_OFFSET) { result -= WIN32_FILETIME_SEC_OFFSET; }
 		}
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX || TARGET_IS_ANDROID)
+	#elif TARGET_IS_UNIX
 	{
 		if (offsetToLocal)
 		{
@@ -223,7 +224,7 @@ PEXPI u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut)
 			SetOptionalOutPntr(remainderOut, (r32)FractionalPartR64((r64)now / 1000000.0));
 		}
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif TARGET_IS_UNIX
 	{
 		SetOptionalOutPntr(remainderOut, 0.0f); //TODO: Fill remainderOut
 		if (end.timeValue.tv_sec > start.timeValue.tv_sec ||
@@ -234,10 +235,6 @@ PEXPI u64 OsTimeDiffMsU64(OsTime start, OsTime end, r32* remainderOut)
 			else { result -= (start.timeValue.tv_nsec - end.timeValue.tv_nsec)/Million(1); }
 		}
 	}
-	// #elif TARGET_IS_OSX
-	//TODO: Implement me!
-	// #elif TARGET_IS_ANDROID
-	//TODO: Implement me!
 	#else
 	UNUSED(start);
 	UNUSED(end);
@@ -254,6 +251,7 @@ PEXPI r32 OsTimeDiffMsR32(OsTime start, OsTime end)
 	return (r32)result + remainder;
 }
 
+//TODO: Should we rename this? It's more like OsGetMonotonicTime or OsGetPerfTime
 PEXPI OsTime OsGetTime()
 {
 	OsTime result = OsTime_Zero;
@@ -262,14 +260,10 @@ PEXPI OsTime OsGetTime()
 	{
 		QueryPerformanceCounter(&result.largeInteger);
 	}
-	#elif (TARGET_IS_LINUX || TARGET_IS_OSX)
+	#elif TARGET_IS_UNIX
 	{
 		clock_gettime(CLOCK_MONOTONIC, &result.timeValue);
 	}
-	// #elif TARGET_IS_OSX
-	// //TODO: Implement me!
-	// #elif TARGET_IS_ANDROID
-	// //TODO: Implement me!
 	// #elif TARGET_IS_WASM
 	// //TODO: Implement me!
 	// #elif TARGET_IS_PLAYDATE
