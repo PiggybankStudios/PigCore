@@ -1,0 +1,11 @@
+# Sprite Meta
+// June 27th 2026
+
+(0, 0)
+	Name: grid_off
+(1, 0)
+	Name: grid_on
+(0, 1)
+	Name: stack_off
+(1, 1)
+	Name: stack_on
