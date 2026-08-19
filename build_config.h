@@ -98,6 +98,8 @@ Description:
 #define PREFER_OPENGL_OVER_D3D11 1
 // Disable this option when you intend to run tests.exe in a terminal that doesn't handle terminal escape sequences for color (like when doing RUN_TESTS in Sublime Text)
 #define DEBUG_OUTPUT_PRINT_COLOR_PREFIX 0
+// Compile native .so binaries to arm64-v8a, armeabi-v7a, and x86_64. If disabled we only compile for arm64-v8a (aka 64-bit ARM, most phones). See https://developer.android.com/ndk/guides/abis
+#define BUILD_FAT_APK 1
 
 // +===============================+
 // | Optional Libraries/Frameworks |

@@ -165,8 +165,9 @@ int main(int argc, char* argv[])
 	bool USE_EMSCRIPTEN                    = GetBoolConfig("USE_EMSCRIPTEN",                    buildConfigContents, argc, argv, &buildConfigTags);
 	// bool ENABLE_AUTO_PROFILE               = GetBoolConfig("ENABLE_AUTO_PROFILE",            buildConfigContents, argc, argv, &buildConfigTags);
 	// bool RUN_FUZZER                        = GetBoolConfig("RUN_FUZZER",                     buildConfigContents, argc, argv, &buildConfigTags);
-	bool BUILD_THIS_PLATFORM               = GetBoolConfig("BUILD_THIS_PLATFORM",                     buildConfigContents, argc, argv, &buildConfigTags);
-	bool BUILD_LINUX_VIA_WSL               = GetBoolConfig("BUILD_LINUX_VIA_WSL",                       buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_FAT_APK                     = GetBoolConfig("BUILD_FAT_APK",                     buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_THIS_PLATFORM               = GetBoolConfig("BUILD_THIS_PLATFORM",               buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_LINUX_VIA_WSL               = GetBoolConfig("BUILD_LINUX_VIA_WSL",               buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WEB                         = GetBoolConfig("BUILD_WEB",                         buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_ANDROID                     = GetBoolConfig("BUILD_ANDROID",                     buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_ANDROID_APK                 = GetBoolConfig("BUILD_ANDROID_APK",                 buildConfigContents, argc, argv, &buildConfigTags);
@@ -1281,7 +1282,7 @@ int main(int argc, char* argv[])
 			for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 			{
 				AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
-				if (architecture == AndroidTargetArchitecture_Arm8 || !DEBUG_BUILD)
+				if (architecture == AndroidTargetArchitecture_Arm8 || BUILD_FAT_APK)
 				{
 					mkdir(GetAndroidTargetArchitectureFolderName(architecture), FOLDER_PERMISSIONS);
 					chdir(GetAndroidTargetArchitectureFolderName(architecture));
