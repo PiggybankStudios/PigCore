@@ -500,7 +500,7 @@ int main(int argc, char* argv[])
 	// |                        Build Shaders                         |
 	// +--------------------------------------------------------------+
 	FindShadersContext findContext = EMPTY;
-	CliArgs clang_AndroidShaderObjects[AndroidTargetArchitecture_Count] = EMPTY;
+	StrArray clang_AndroidShaderObjects[AndroidTargetArchitecture_Count] = EMPTY;
 	if (BUILD_SHADERS || BUILD_WITH_SOKOL_GFX)
 	{
 		const char* ignoreList[] = { ".git", "template", "src/third_party", "build" };
@@ -552,9 +552,9 @@ int main(int argc, char* argv[])
 					Str archFolderName = MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture));
 					Str archFolderPath = JoinStrings3(StrLit("lib/"), archFolderName, StrLit("/"));
 					Str oPath = findContext.oPaths.strings[sIndex];
-					AddArgStr(&clang_AndroidShaderObjects[archIndex], CLI_QUOTED_ARG, oPath);
 					Str oRelativePath = JoinStrings3(StrLit(FOLDERNAME_ANDROID "/"), archFolderPath, oPath);
 					if (!DoesFileExist(oRelativePath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oRelativePath)); BUILD_SHADERS = true; }
+					AddStr(&clang_AndroidShaderObjects[archIndex], JoinPaths(StrLit("[ROOT]/build/"), oRelativePath));
 				}
 			}
 		}
@@ -1262,7 +1262,7 @@ int main(int argc, char* argv[])
 		}
 		
 		// +==============================+
-		// |        Android tests         |
+		// |      Android tests.apk       |
 		// +==============================+
 		if (BUILD_ANDROID)
 		{
@@ -1270,52 +1270,27 @@ int main(int argc, char* argv[])
 			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ANDROID);
 			
-			CliArgs cmdBase = EMPTY;
-			AddArgNt(&cmdBase, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
-			AddArg(&cmdBase, CLANG_BUILD_SHARED_LIB);
-			AddArgNt(&cmdBase, CLANG_OUTPUT_FILE, DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
-			AddArgNt(&cmdBase, CLANG_LIB_SO_NAME, FILENAME_TESTS_SO);
-			
-			// MyRemoveDirectory(StrLit("lib"), true);
-			mkdir("lib", FOLDER_PERMISSIONS);
-			chdir("lib");
-			for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
+			CliArgs compilerArgs = EMPTY;
+			AddArgNt(&compilerArgs, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
+			if (BUILD_WITH_SOKOL_GFX)
 			{
-				AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
-				if (architecture == AndroidTargetArchitecture_Arm8 || BUILD_FAT_APK)
+				for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 				{
-					mkdir(GetAndroidTargetArchitectureFolderName(architecture), FOLDER_PERMISSIONS);
-					chdir(GetAndroidTargetArchitectureFolderName(architecture));
-					PrintLine("Building for %s...", GetAndroidTargetArchitectureFolderName(architecture));
-					Str architectureStr = MakeStrNt(GetAndroidTargetArchitectureTargetStr(architecture));
-					
-					CliArgs cmd = EMPTY;
-					cmd.pathSepChar = '/';
-					cmd.rootDirPath = StrLit("../../../..");
-					AddArgList(&cmd, &cmdBase);
-					AddArgStr(&cmd, CLANG_TARGET_ARCHITECTURE, architectureStr);
-					Str sysrootRelativePath = JoinPaths3(StrLit("/sysroot/usr/lib/"), architectureStr, StrLit("/35/"));
-					AddArgStr(&cmd, CLANG_LIBRARY_DIR, JoinPaths(androidPaths.ndkToolchainDir, sysrootRelativePath));
-					if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_AndroidShaderObjects[archIndex]); } //TODO: Remove me!
-					AddArgList(&cmd, &pigCoreCompilerFlags);
-					AddArgList(&cmd, &pigCoreLinkerFlags);
-					AddArgList(&cmd, &thingsToLink);
-					
-					StrArray tags = EMPTY;
-					AddStrArray(&tags, &testsTags);
-					AddTag(&tags, T_CLANG);
-					AddTag(&tags, T_ANDROID);
-					AddStr(&tags, architectureStr);
-					AddStrArray(&tags, &buildConfigTags);
-					
-					RunCliProgramAndExitOnFailureTags(androidPaths.clang, tags, &cmd, StrLit("Failed to build " FILENAME_TESTS_SO "!"));
-					if (DUMP_PREPROCESSOR) { chdir(".."); continue; }
-					AssertFileExist(StrLit(FILENAME_TESTS_SO), true);
-					
-					chdir("..");
+					AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
+					for (u64 sIndex = 0; sIndex < clang_AndroidShaderObjects[archIndex].length; sIndex++)
+					{
+						AddTaggedArgStr(&compilerArgs, GetAndroidTargetArchitectureTag(architecture), CLI_QUOTED_ARG, clang_AndroidShaderObjects[archIndex].strings[sIndex]);
+					}
 				}
 			}
-			chdir("..");
+			AddArgList(&compilerArgs, &pigCoreCompilerFlags);
+			AddArgList(&compilerArgs, &pigCoreLinkerFlags);
+			AddArgList(&compilerArgs, &thingsToLink);
+			StrArray compileTags = EMPTY;
+			AddStrArray(&compileTags, &testsTags);
+			AddStrArray(&compileTags, &buildConfigTags);
+			Str compileOutputFilename = MakeStrNt(DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
+			BuildAndroidSharedLibraries(&androidPaths, &compilerArgs, &compileTags, StrLit("lib"), compileOutputFilename, BUILD_FAT_APK);
 			
 			if (BUILD_ANDROID_APK && !DUMP_PREPROCESSOR)
 			{
