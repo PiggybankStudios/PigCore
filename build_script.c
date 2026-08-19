@@ -59,7 +59,6 @@ Description:
 // #define FILENAME_DUMMY                 "dummy"
 // #define FILENAME_DUMMY_EXE             "dummy.exe"
 #define FILENAME_DUMMY_JAVA            "Dummy.java"
-#define FILENAME_DUMMY_CLASS           "Dummy.class"
 #define FILENAME_CLASSES_DEX           "classes.dex"
 #define FILENAME_APP_WASM              "app.wasm"
 #define FILENAME_APP_WAT               "app.wat"
@@ -1270,57 +1269,41 @@ int main(int argc, char* argv[])
 			mkdir(FOLDERNAME_ANDROID, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_ANDROID);
 			
-			CliArgs compilerArgs = EMPTY;
-			AddArgNt(&compilerArgs, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
-			if (BUILD_WITH_SOKOL_GFX)
+			// Compile the program to .so that will get embedded into the .apk under `/lib/[arch]/FILENAME_TESTS_SO'
 			{
-				for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
+				CliArgs compilerArgs = EMPTY;
+				AddArgNt(&compilerArgs, CLI_QUOTED_ARG, BUILD_IN_CPP_MODE ? "tests_main.cpp" : "[ROOT]/src/tests/tests_main.c");
+				if (BUILD_WITH_SOKOL_GFX)
 				{
-					AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
-					for (u64 sIndex = 0; sIndex < clang_AndroidShaderObjects[archIndex].length; sIndex++)
+					for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
 					{
-						AddTaggedArgStr(&compilerArgs, GetAndroidTargetArchitectureTag(architecture), CLI_QUOTED_ARG, clang_AndroidShaderObjects[archIndex].strings[sIndex]);
+						AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
+						for (u64 sIndex = 0; sIndex < clang_AndroidShaderObjects[archIndex].length; sIndex++)
+						{
+							AddTaggedArgStr(&compilerArgs, GetAndroidTargetArchitectureTag(architecture), CLI_QUOTED_ARG, clang_AndroidShaderObjects[archIndex].strings[sIndex]);
+						}
 					}
 				}
+				AddArgList(&compilerArgs, &pigCoreCompilerFlags);
+				AddArgList(&compilerArgs, &pigCoreLinkerFlags);
+				AddArgList(&compilerArgs, &thingsToLink);
+				
+				StrArray compileTags = EMPTY;
+				AddStrArray(&compileTags, &testsTags);
+				AddStrArray(&compileTags, &buildConfigTags);
+				
+				Str compileOutputFilename = MakeStrNt(DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
+				
+				BuildAndroidSharedLibraries(&androidPaths, &compilerArgs, &compileTags, StrLit("lib"), compileOutputFilename, BUILD_FAT_APK);
 			}
-			AddArgList(&compilerArgs, &pigCoreCompilerFlags);
-			AddArgList(&compilerArgs, &pigCoreLinkerFlags);
-			AddArgList(&compilerArgs, &thingsToLink);
-			StrArray compileTags = EMPTY;
-			AddStrArray(&compileTags, &testsTags);
-			AddStrArray(&compileTags, &buildConfigTags);
-			Str compileOutputFilename = MakeStrNt(DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
-			BuildAndroidSharedLibraries(&androidPaths, &compilerArgs, &compileTags, StrLit("lib"), compileOutputFilename, BUILD_FAT_APK);
 			
 			if (BUILD_ANDROID_APK && !DUMP_PREPROCESSOR)
 			{
-				if (!DoesFileExist(StrLit(FILENAME_CLASSES_DEX)))
+				Str classesDexPath = StrLit(FILENAME_CLASSES_DEX);
+				if (!DoesFileExist(classesDexPath))
 				{
-					WriteLine("Compiling " FILENAME_DUMMY_JAVA "...");
-					
-					if (!DoesFileExist(StrLit(FILENAME_DUMMY_JAVA)))
-					{
-						const char* dummyClassCode = "public class Dummy { }\n";
-						CreateAndWriteFile(StrLit(FILENAME_DUMMY_JAVA), MakeStrNt(dummyClassCode), true);
-					}
-					
-					CliArgs javacCmd = EMPTY;
-					javacCmd.pathSepChar = '/';
-					javacCmd.rootDirPath = StrLit("../..");
-					AddArgNt(&javacCmd, "-d \"[VAL]\"", ".");
-					AddArgStr(&javacCmd, "-classpath \"[VAL]\"", androidPaths.androidJar);
-					AddArgNt(&javacCmd, CLI_QUOTED_ARG, FILENAME_DUMMY_JAVA);
-					RunCliProgramAndExitOnFailure(androidPaths.javac, &javacCmd, StrLit("Failed to compile " FILENAME_DUMMY_JAVA "!"));
-					AssertFileExist(StrLit(FILENAME_DUMMY_CLASS), true);
-					
-					CliArgs d8Cmd = EMPTY;
-					d8Cmd.pathSepChar = '/';
-					d8Cmd.rootDirPath = StrLit("../..");
-					AddArgStr(&d8Cmd, "--lib \"[VAL]\"", androidPaths.androidJar);
-					AddArgNt(&d8Cmd, "--output \"[VAL]\"", "./");
-					AddArgNt(&d8Cmd, CLI_QUOTED_ARG, FILENAME_DUMMY_CLASS);
-					RunCliProgramAndExitOnFailure(androidPaths.d8, &d8Cmd, StrLit("Failed to convert Dummy.class to classes.dex!"));
-					AssertFileExist(StrLit(FILENAME_CLASSES_DEX), true);
+					WriteLine("Compiling " FILENAME_DUMMY_JAVA " to " FILENAME_CLASSES_DEX "...");
+					CompileDummyJavaToClassesDex(&androidPaths, StrLit(FILENAME_DUMMY_JAVA), classesDexPath);
 				}
 				
 				PrintLine("Compiling %s...", FILENAME_ANDROID_RESOURCES_ZIP);
