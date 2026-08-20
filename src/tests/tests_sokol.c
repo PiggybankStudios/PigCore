@@ -506,10 +506,7 @@ void AppInit(void)
 	
 	InitGfxSystem(stdHeap, &gfx);
 	
-	//TODO: Shaping tests currently rely on fonts that don't exist on Android. We need to choose better fonts before we can enable this
-	#if !TARGET_IS_ANDROID
 	InitTextShapingTests();
-	#endif
 	
 	v2i gradientSize = FillV2i(64);
 	Color32* gradientPixels = AllocArray(Color32, scratch, (uxx)(gradientSize.width * gradientSize.height));
@@ -813,9 +810,7 @@ bool AppFrame(void)
 	FontNewFrame(&testFont, programTime);
 	#endif
 	
-	#if !TARGET_IS_ANDROID
 	UpdateTextShapingTests();
-	#endif
 	
 	if (IsMouseBtnDown(&mouse, nullptr, MouseBtn_Left)) { wrapPos = mouse.position; }
 	if (touchscreen.mainTouch->id != TOUCH_ID_INVALID) { wrapPos = touchscreen.mainTouch->pos; }
@@ -1065,9 +1060,7 @@ bool AppFrame(void)
 			SetViewMat(Mat4_Identity);
 			SetTextBackgroundColor(MonokaiBack);
 			
-			#if !TARGET_IS_ANDROID
 			RenderTextShapingTests();
-			#endif
 			
 			#if 1
 			{

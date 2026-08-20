@@ -176,7 +176,7 @@ Description:
 #define PIG_CONCAT(leftPart, rightPart)       PIG_CONCAT_INNER(leftPart, rightPart)
 
 //This is used to make sure a macro parameters is a string literal, not just a pointer, by checking to see if it implicitly concatenates with empty strings
-#define CheckStrLit(stringLiteral) ("" stringLiteral "")
+#define CheckStrLit(stringLiteral) "" stringLiteral ""
 
 #define INDEX_FROM_COORD2D(coordX, coordY, arrayWidth, arrayHeight) ( \
 	(coordY) * (arrayWidth) +                                         \
