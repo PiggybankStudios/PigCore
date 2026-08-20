@@ -1308,29 +1308,15 @@ int main(int argc, char* argv[])
 					CompileDummyJavaToClassesDex(&androidPaths, StrLit(FILENAME_DUMMY_JAVA), classesDexPath);
 				}
 				
-				PrintLine("Compiling %s...", FILENAME_ANDROID_RESOURCES_ZIP);
-				CliArgs compileResCmd = EMPTY;
-				compileResCmd.pathSepChar = '/';
-				compileResCmd.rootDirPath = StrLit("../..");
-				AddArg(&compileResCmd, "compile");
-				AddArgNt(&compileResCmd, "--dir \"[VAL]\"", "[ROOT]/src/tests/android/res");
-				AddArgNt(&compileResCmd, "-o \"[VAL]\"", FILENAME_ANDROID_RESOURCES_ZIP);
-				RunCliProgramAndExitOnFailure(androidPaths.aapt2, &compileResCmd, StrLit("Failed to compile " FILENAME_ANDROID_RESOURCES_ZIP "!"));
-				AssertFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP), true);
+				if (!DoesFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP)))
+				{
+					WriteLine("Packaging " FILENAME_ANDROID_RESOURCES_ZIP "...");
+					PackageAndroidResourcesZip(&androidPaths, StrLit("[ROOT]/src/tests/android/res"), StrLit(FILENAME_ANDROID_RESOURCES_ZIP));
+				}
 				
-				TryRemoveFile(StrLit(FILENAME_TESTS_APK));
 				PrintLine("Linking %s...", FILENAME_TESTS_APK);
-				CliArgs linkApkCmd = EMPTY;
-				linkApkCmd.pathSepChar = '/';
-				linkApkCmd.rootDirPath = StrLit("../..");
-				AddArg(&linkApkCmd, "link");
-				AddArgNt(&linkApkCmd, "-o \"[VAL]\"", FILENAME_TESTS_APK);
-				AddArgStr(&linkApkCmd, "-I \"[VAL]\"", androidPaths.androidJar);
-				AddArgNt(&linkApkCmd, "-0 [VAL]", "resources.arsc");
-				AddArgNt(&linkApkCmd, "--manifest \"[VAL]\"", "[ROOT]/src/tests/android/AndroidManifest.xml");
-				AddArgNt(&linkApkCmd, CLI_QUOTED_ARG, FILENAME_ANDROID_RESOURCES_ZIP);
-				RunCliProgramAndExitOnFailure(androidPaths.aapt2, &linkApkCmd, StrLit("Failed to link " FILENAME_TESTS_APK "!"));
-				AssertFileExist(StrLit(FILENAME_TESTS_APK), true);
+				TryRemoveFile(StrLit(FILENAME_TESTS_APK));
+				LinkAndroidApk(&androidPaths, StrLit("[ROOT]/src/tests/android/AndroidManifest.xml"), StrLit(FILENAME_ANDROID_RESOURCES_ZIP), StrLit(FILENAME_TESTS_APK));
 				
 				//NOTE: In order to insert our .so files into the apk, we need to unpack it into a folder, add the .so files manually, and then repack it
 				{
