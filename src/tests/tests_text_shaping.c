@@ -7,7 +7,7 @@ Description:
 */
 
 //TODO: Shaping tests currently rely on fonts that don't exist on Android. We need to choose better fonts before we can enable this
-#if (BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP && !TARGET_IS_ANDROID)
+#if (BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP && !TARGET_IS_ANDROID && !TARGET_IS_ARM)
 
 typedef plex TextShapingState TextShapingState;
 plex TextShapingState
@@ -129,4 +129,10 @@ void RenderTextShapingTests()
 	}
 }
 
-#endif //(BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP)
+#else
+
+void InitTextShapingTests() { /*Do nothing*/ }
+void UpdateTextShapingTests() { /*Do nothing*/ }
+void RenderTextShapingTests() { /*Do nothing*/ }
+
+#endif //(BUILD_WITH_SOKOL_GFX && BUILD_WITH_SOKOL_APP && !TARGET_IS_ANDROID && !TARGET_IS_ARM)
