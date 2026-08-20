@@ -289,6 +289,8 @@ int main(int argc, char* argv[])
 	FillPlaydateFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
 	FillOrcaFlags(&pigCoreCompilerFlags, &pigCoreLinkerFlags, orcaSdkPath);
 	
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]");
+	AddTaggedArgNt(&pigCoreCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]");
 	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/src");
 	AddTaggedArgNt(&pigCoreCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/src");
 	AddTaggedArgNt(&pigCoreCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/build/gen");

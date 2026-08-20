@@ -373,7 +373,7 @@ void DrawSphere(Sphere sphere, Color32 color)
 	DrawVertices();
 }
 
-Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
+Texture LoadTextureResource(Arena* arena, Str8 path, TextureFlag flags)
 {
 	ScratchBegin1(scratch, arena);
 	Texture result = ZEROED;
@@ -396,6 +396,42 @@ Texture LoadTexture(Arena* arena, Str8 path, TextureFlag flags)
 		return result;
 	}
 	result = InitTexture(arena, path, imageData.size, imageData.pixels, (u8)flags);
+	ScratchEnd(scratch);
+	return result;
+}
+SpriteSheet LoadSpriteSheetResource(Arena* arena, Str8 debugName, Str8 filePath, bool tryLoadMetaFile)
+{
+	ScratchBegin1(scratch, arena);
+	SpriteSheet result = ZEROED;
+	
+	Slice imageFileContents = Slice_Empty;
+	Result readImageResult = TryReadAppResource(scratch, filePath, false, &imageFileContents);
+	if (readImageResult != Result_Success)
+	{
+		AssertFmt(readImageResult == Result_Success, "Failed to open/read texture file \"%.*s\" %s!", StrPrint(filePath), GetResultStr(readImageResult));
+		result.error = readImageResult;
+		ScratchEnd(scratch);
+		return result;
+	}
+	
+	Slice metaFileContents = Slice_Empty;
+	if (tryLoadMetaFile)
+	{
+		Str8 fileExt = GetFileExtPart(filePath, /*includeSubExtensions*/ false, /*includeLeadingPeriod*/ true);
+		FilePath filePathWithoutExt = StrSlice(filePath, 0, filePath.length - fileExt.length);
+		FilePath metaFilePath = JoinStringsInArena(scratch, filePathWithoutExt, StrLit(".meta"), false);
+		Result readResult = TryReadAppResource(scratch, metaFilePath, true, &metaFileContents);
+		UNUSED(readResult); //ignore success/failure, if we don't read the file than metaFileContents will just be empty which is fine
+	}
+	
+	result = InitSpriteSheet(arena, debugName, filePath, imageFileContents, metaFileContents);
+	if (result.error != Result_Success)
+	{
+		AssertFmt(result.error == Result_Success, "Failed to parse texture file \"%.*s\" %s!", StrPrint(filePath), GetResultStr(result.error));
+		ScratchEnd(scratch);
+		return result;
+	}
+	
 	ScratchEnd(scratch);
 	return result;
 }
@@ -528,7 +564,7 @@ void AppInit(void)
 	gradientTexture = InitTexture(stdHeap, StrLit("gradient"), gradientSize, gradientPixels, TextureFlag_IsRepeating|TextureFlag_NoMipmaps);
 	Assert(gradientTexture.error == Result_Success);
 	
-	testSheet = LoadSpriteSheet(stdHeap, StrLit("sheet"), FilePathLit(TEST_SHEET_PATH), true);
+	testSheet = LoadSpriteSheetResource(stdHeap, StrLit("sheet"), FilePathLit(TEST_SHEET_PATH), true);
 	
 	// #if !TARGET_IS_OSX //TODO: Remove me once we get fonts working on OSX
 	const u32 Filled = 0xFFFFFFFF;
@@ -738,10 +774,10 @@ void AppInit(void)
 	
 	FilePath testImagePath = FilePathLit(TEST_IMAGE_PATH);
 	FilePath backgroundImagePath = FilePathLit(TEST_TEXTURE_PATH);
-	mipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_None);
-	noMipmapTexture = LoadTexture(stdHeap, testImagePath, TextureFlag_NoMipmaps);
+	mipmapTexture = LoadTextureResource(stdHeap, testImagePath, TextureFlag_None);
+	noMipmapTexture = LoadTextureResource(stdHeap, testImagePath, TextureFlag_NoMipmaps);
 	
-	backgroundTexture = LoadTexture(stdHeap, backgroundImagePath, TextureFlag_IsRepeating);
+	backgroundTexture = LoadTextureResource(stdHeap, backgroundImagePath, TextureFlag_IsRepeating);
 	
 	ImageData testTextureData = ZEROED;
 	testTextureData.size = MakeV2i(512, 512);
@@ -1083,11 +1119,20 @@ bool AppFrame(void)
 			}
 			#endif
 			
-			#if 0
+			#if 1
+			rec mipmapTextureRec = MakeRec(windowSize.width/4, windowSize.height/4, 256, 256);
+			#if TARGET_IS_ANDROID
+			Texture* mipTextureToUse = ((touchscreen.numTouches > 0) ? &noMipmapTexture : &mipmapTexture);
+			if (touchscreen.mainTouch != nullptr)
+			{
+				mipmapTextureRec.width = touchscreen.mainTouch->pos.x - mipmapTextureRec.x;
+				mipmapTextureRec.height = touchscreen.mainTouch->pos.y - mipmapTextureRec.y;
+			}
+			#else
 			Texture* mipTextureToUse = (IsKeyboardKeyDown(&keyboard, nullptr, Key_Shift) ? &noMipmapTexture : &mipmapTexture);
-			rec mipmapTextureRec = MakeRec(windowSize.width/2, windowSize.height/2, 0, 0);
 			mipmapTextureRec.width = mouse.position.x - mipmapTextureRec.x;
 			mipmapTextureRec.height = mouse.position.y - mipmapTextureRec.y;
+			#endif
 			DrawTexturedRectangle(mipmapTextureRec, White, mipTextureToUse);
 			#endif
 			
@@ -1223,7 +1268,7 @@ bool AppFrame(void)
 			{
 				for (i32 xIndex = 0; xIndex < numColumns; xIndex++)
 				{
-					DrawTexturedRectangle(NewRec(tileSize.width * xIndex, tileSize.height * yIndex, tileSize.width, tileSize.height), White, &gradientTexture);
+					DrawTexturedRectangle(MakeRec(tileSize.width * xIndex, tileSize.height * yIndex, tileSize.width, tileSize.height), White, &gradientTexture);
 				}
 			}
 			#endif
