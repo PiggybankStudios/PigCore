@@ -1305,52 +1305,37 @@ int main(int argc, char* argv[])
 				if (!DoesFileExist(classesDexPath))
 				{
 					WriteLine("Compiling " FILENAME_DUMMY_JAVA " to " FILENAME_CLASSES_DEX "...");
-					CompileDummyJavaToClassesDex(&androidPaths, StrLit(FILENAME_DUMMY_JAVA), classesDexPath);
+					CompileDummyJavaToClassesDex(&androidPaths,
+						StrLit(FILENAME_DUMMY_JAVA),
+						classesDexPath
+					);
 				}
 				
 				if (!DoesFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP)))
 				{
 					WriteLine("Packaging " FILENAME_ANDROID_RESOURCES_ZIP "...");
-					PackageAndroidResourcesZip(&androidPaths, StrLit("[ROOT]/src/tests/android/res"), StrLit(FILENAME_ANDROID_RESOURCES_ZIP));
+					PackageAndroidResourcesZip(&androidPaths,
+						StrLit("[ROOT]/src/tests/android/res"),
+						StrLit(FILENAME_ANDROID_RESOURCES_ZIP)
+					);
 				}
 				
 				PrintLine("Linking %s...", FILENAME_TESTS_APK);
 				TryRemoveFile(StrLit(FILENAME_TESTS_APK));
-				LinkAndroidApk(&androidPaths, StrLit("[ROOT]/src/tests/android/AndroidManifest.xml"), StrLit(FILENAME_ANDROID_RESOURCES_ZIP), StrLit(FILENAME_TESTS_APK));
+				LinkAndroidApk(&androidPaths,
+					StrLit("[ROOT]/src/tests/android/AndroidManifest.xml"),
+					StrLit(FILENAME_ANDROID_RESOURCES_ZIP),
+					StrLit(FILENAME_TESTS_APK)
+				);
 				
-				//NOTE: In order to insert our .so files into the apk, we need to unpack it into a folder, add the .so files manually, and then repack it
-				{
-					PrintLine("Inserting %s files (and " FILENAME_CLASSES_DEX ") into apk...", FILENAME_TESTS_SO);
-					MyRemoveDirectory(StrLit("apk_temp"), true);
-					mkdir("apk_temp", FOLDER_PERMISSIONS);
-					chdir("apk_temp");
-					
-					CliArgs unpackApkCmd = EMPTY;
-					AddArg(&unpackApkCmd, "xf");
-					AddArg(&unpackApkCmd, "../" FILENAME_TESTS_APK);
-					RunCliProgramAndExitOnFailure(StrLit("jar"), &unpackApkCmd, StrLit("Failed to unpack " FILENAME_TESTS_APK "!"));
-					
-					CopyFileToFolder(StrLit("../" FILENAME_CLASSES_DEX), StrLit("./"), true);
-					
-					mkdir("lib", FOLDER_PERMISSIONS);
-					for (u64 archIndex = 1; archIndex < AndroidTargetArchitecture_Count; archIndex++)
-					{
-						AndroidTargetArchitecture architecture = (AndroidTargetArchitecture)archIndex;
-						Str apkFolder = JoinStrings2(StrLit("lib/"), MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture)));
-						Str buildFolder = JoinStrings2(StrLit("../lib/"), MakeStrNt(GetAndroidTargetArchitectureFolderName(architecture)));
-						mkdir(apkFolder.chars, FOLDER_PERMISSIONS);
-						CopyFileToFolder(JoinStrings2(buildFolder, StrLit("/" FILENAME_TESTS_SO)), apkFolder, true);
-					}
-					
-					CliArgs repackApkCmd = EMPTY;
-					AddArg(&repackApkCmd, "cf0");
-					AddArg(&repackApkCmd, "../" FILENAME_TESTS_APK);
-					AddArg(&repackApkCmd, "*");
-					RunCliProgramAndExitOnFailure(StrLit("jar"), &repackApkCmd, StrLit("Failed to repack " FILENAME_TESTS_APK "!"));
-					
-					chdir("..");
-					MyRemoveDirectory(StrLit("apk_temp"), true);
-				}
+				AddNativeBinariesAndClassesDexToAndroidApk(&androidPaths,
+					StrLit(FILENAME_TESTS_APK),
+					StrLit("apk_temp"),
+					StrLit("lib"),
+					StrLit(FILENAME_TESTS_SO),
+					classesDexPath,
+					BUILD_FAT_APK
+				);
 				
 				if (!DEBUG_BUILD)
 				{

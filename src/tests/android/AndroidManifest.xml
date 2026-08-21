@@ -8,6 +8,15 @@
 	<uses-feature android:glEsVersion="0x00020000"/>
 	<uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
 	
+	<!-- TODO: Is this required for using the touchscreen? -->
+	<!-- <uses-feature android:name="android.hardware.touchscreen" android:required="true" /> -->
+	
+	<!-- TODO: Required for mouse input events -->
+	<!-- <uses-feature android:name="android.hardware.type.pc" android:required="false" /> -->
+	
+	<!-- TODO: <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
+	<!-- TODO: <uses-permission android:name="android.permission.VIBRATE" /> -->
+	
 	<!-- android:theme="@style/Theme.Sputnik" -->
 	<!-- android:dataExtractionRules="@xml/data_extraction_rules" -->
 	<!-- android:fullBackupContent="@xml/backup_rules" -->
