@@ -191,15 +191,12 @@ int main(int argc, char* argv[])
 	bool BUILD_LINUX   = ((BUILD_THIS_PLATFORM && BUILDING_ON_LINUX) || (BUILD_LINUX_VIA_WSL && BUILDING_ON_WINDOWS));
 	bool BUILD_OSX     = (BUILD_THIS_PLATFORM  && BUILDING_ON_OSX);
 	
-	Str ANDROID_SIGNING_KEY_PATH = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH")));
-	Str ANDROID_SIGNING_PASSWORD = Str_Empty;
-	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASSWORD"), &ANDROID_SIGNING_PASSWORD)) { ANDROID_SIGNING_PASSWORD = CopyStr(ANDROID_SIGNING_PASSWORD); }
-	Str ANDROID_SIGNING_PASS_PATH = Str_Empty;
-	if (TryExtractDefineFrom(buildConfigContents, StrLit("ANDROID_SIGNING_PASS_PATH"), &ANDROID_SIGNING_PASS_PATH)) { ANDROID_SIGNING_PASS_PATH = CopyStr(ANDROID_SIGNING_PASS_PATH); }
-	Str ANDROID_NDK_VERSION = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_NDK_VERSION")));
-	Str ANDROID_PLATFORM_FOLDERNAME = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_PLATFORM_FOLDERNAME")));
-	Str ANDROID_BUILD_TOOLS_VERSION = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_BUILD_TOOLS_VERSION")));
-	Str ANDROID_ACTIVITY_PATH = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("ANDROID_ACTIVITY_PATH")));
+	Str ANDROID_SIGNING_KEY_PATH    = CopyStr(TryExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_KEY_PATH"),  Str_Empty));
+	Str ANDROID_SIGNING_PASS_PATH   = CopyStr(TryExtractStrDefine(buildConfigContents, StrLit("ANDROID_SIGNING_PASS_PATH"), Str_Empty));
+	Str ANDROID_NDK_VERSION         = CopyStr(ExtractStrDefine(buildConfigContents,    StrLit("ANDROID_NDK_VERSION")));
+	Str ANDROID_PLATFORM_FOLDERNAME = CopyStr(ExtractStrDefine(buildConfigContents,    StrLit("ANDROID_PLATFORM_FOLDERNAME")));
+	Str ANDROID_BUILD_TOOLS_VERSION = CopyStr(ExtractStrDefine(buildConfigContents,    StrLit("ANDROID_BUILD_TOOLS_VERSION")));
+	Str ANDROID_ACTIVITY_PATH       = CopyStr(ExtractStrDefine(buildConfigContents,    StrLit("ANDROID_ACTIVITY_PATH")));
 	
 	free(buildConfigContents.chars);
 	
@@ -1337,33 +1334,23 @@ int main(int argc, char* argv[])
 					BUILD_FAT_APK
 				);
 				
+				// Aligning the zip takes a little time and we don't have to do it for debug builds
 				if (!DEBUG_BUILD)
 				{
 					WriteLine("Performing ZIP alignment...");
-					Str tempAlignedApkName = StrLit("tests_aligned.apk");
-					TryRemoveFile(tempAlignedApkName);
-					CliArgs alignApkCmd = EMPTY;
-					AddArg(&alignApkCmd, "-v");
-					AddArg(&alignApkCmd, "4");
-					AddArgNt(&alignApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK); //input
-					AddArgStr(&alignApkCmd, CLI_QUOTED_ARG, tempAlignedApkName); //output
-					RunCliProgramAndExitOnFailure(androidPaths.zipalign, &alignApkCmd, StrLit("Failed to ZIP align " FILENAME_TESTS_APK "!"));
-					AssertFileExist(tempAlignedApkName, true);
-					CopyFileToPath(tempAlignedApkName, StrLit(FILENAME_TESTS_APK), true);
-					RemoveFile(tempAlignedApkName);
+					AlignAndroidApk(&androidPaths, StrLit(FILENAME_TESTS_APK), StrLit("aligned.apk"));
 				}
 				
-				PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, StrPrint(ANDROID_SIGNING_KEY_PATH));
-				CliArgs signApkCmd = EMPTY;
-				signApkCmd.pathSepChar = '/';
-				signApkCmd.rootDirPath = StrLit("../..");
-				AddArg(&signApkCmd, "sign");
-				AddArgStr(&signApkCmd, "--ks \"[VAL]\"", ANDROID_SIGNING_KEY_PATH);
-				if (ANDROID_SIGNING_PASSWORD.length > 0) { AddArgStr(&signApkCmd, "--ks-pass pass:[VAL]", ANDROID_SIGNING_PASSWORD); }
-				else if (ANDROID_SIGNING_PASS_PATH.length > 0) { AddArgStr(&signApkCmd, "--ks-pass file:[VAL]", ANDROID_SIGNING_PASS_PATH); }
-				else { WriteLine_E("You must provide either a ANDROID_SIGNING_PASSWORD or ANDROID_SIGNING_PASS_PATH in order to sign an Android .apk!"); exit(4); }
-				AddArgNt(&signApkCmd, CLI_QUOTED_ARG, FILENAME_TESTS_APK);
-				RunCliProgramAndExitOnFailure(androidPaths.apksigner, &signApkCmd, StrLit("Failed to sign " FILENAME_TESTS_APK "!"));
+				if (!IsEmptyStr(ANDROID_SIGNING_KEY_PATH))
+				{
+					PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, StrPrint(ANDROID_SIGNING_KEY_PATH));
+					SignAndroidApk(&androidPaths, StrLit(FILENAME_TESTS_APK), ANDROID_SIGNING_KEY_PATH, ANDROID_SIGNING_PASS_PATH);
+				}
+				else
+				{
+					PrintLine("Debug Signing %s...", FILENAME_TESTS_APK);
+					DebugSignAndroidApk(&androidPaths, StrLit(FILENAME_TESTS_APK), StrLit("debug.keystore"));
+				}
 			}
 			
 			PrintLine("[Built %s for Android!]", BUILD_ANDROID_APK ? FILENAME_TESTS_APK : FILENAME_TESTS_SO);
@@ -1560,22 +1547,8 @@ int main(int argc, char* argv[])
 	
 	if (INSTALL_TESTS_APK)
 	{
-		PrintLine("\n[Installing %s on AVD...]", FILENAME_TESTS_APK);
-		Str adbExe = JoinStrings2(androidPaths.sdkDir, StrLit("/platform-tools/adb" EXE_EXT));
-		
-		CliArgs installCmd = EMPTY;
-		installCmd.pathSepChar = '/';
-		AddArgNt(&installCmd, "install \"[VAL]\"", FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK);
-		RunCliProgramAndExitOnFailure(adbExe, &installCmd, StrLit("abd install exited With Error!"));
-		
-		PrintLine_E("Launching \"%.*s\"...", StrPrint(ANDROID_ACTIVITY_PATH));
-		CliArgs launchCmd = EMPTY;
-		launchCmd.pathSepChar = '/';
-		AddArg(&launchCmd, "shell");
-		AddArg(&launchCmd, "am");
-		AddArg(&launchCmd, "start");
-		AddArgStr(&launchCmd, "-n \"[VAL]\"", ANDROID_ACTIVITY_PATH);
-		RunCliProgramAndExitOnFailure(adbExe, &launchCmd, StrLit("abd shell exited With Error!"));
+		PrintLine("\n[Installing %s on Device...]", FILENAME_TESTS_APK);
+		InstallAndroidApk(&androidPaths, StrLit(FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK), ANDROID_ACTIVITY_PATH);
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", BUILD_SCRIPT_EXE_NAME);
