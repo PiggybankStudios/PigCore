@@ -3,13 +3,13 @@ File:   build_config.h
 Author: Taylor Robbins
 Date:   12\31\2024
 Description:
-	** This file contains a bunch of options that control the build.bat.
+	** This file contains a bunch of options that control the build script.
 	** This file is both a C header file that can be #included from a .c file,
-	** and it is also scraped by the build.bat to extract values to change the work it performs.
+	** and it is also scraped by the build script to extract values to change the work it performs.
 	** Because it is scraped, and not parsed with the full C language spec, we must
 	** be careful to keep this file very simple and not introduce any syntax that
 	** would confuse the scraper when it's searching for values
-	** NOTE: See tools\extract_define_main.c for the source code of the scraper
+	** NOTE: See pig_build_misc.h for the logic that extracts #defines from header files
 */
 
 #ifndef _BUILD_CONFIG_H

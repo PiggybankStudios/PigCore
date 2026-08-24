@@ -1293,7 +1293,13 @@ int main(int argc, char* argv[])
 				
 				Str compileOutputFilename = MakeStrNt(DUMP_PREPROCESSOR ? "tests_android_PREPROCESSED.c" : FILENAME_TESTS_SO);
 				
-				BuildAndroidSharedLibraries(&androidPaths, &compilerArgs, &compileTags, StrLit("lib"), compileOutputFilename, BUILD_FAT_APK);
+				BuildAndroidSharedLibraries(&androidPaths, StrLit("../.."),
+					&compilerArgs,
+					&compileTags,
+					StrLit("lib"),
+					compileOutputFilename,
+					BUILD_FAT_APK
+				);
 			}
 			
 			if (BUILD_ANDROID_APK && !DUMP_PREPROCESSOR)
@@ -1302,7 +1308,7 @@ int main(int argc, char* argv[])
 				if (!DoesFileExist(classesDexPath))
 				{
 					WriteLine("Compiling " FILENAME_DUMMY_JAVA " to " FILENAME_CLASSES_DEX "...");
-					CompileDummyJavaToClassesDex(&androidPaths,
+					CompileDummyJavaToClassesDex(&androidPaths, StrLit("../.."),
 						StrLit(FILENAME_DUMMY_JAVA),
 						classesDexPath
 					);
@@ -1311,7 +1317,7 @@ int main(int argc, char* argv[])
 				if (!DoesFileExist(StrLit(FILENAME_ANDROID_RESOURCES_ZIP)))
 				{
 					WriteLine("Packaging " FILENAME_ANDROID_RESOURCES_ZIP "...");
-					PackageAndroidResourcesZip(&androidPaths,
+					PackageAndroidResourcesZip(&androidPaths, StrLit("../.."),
 						StrLit("[ROOT]/src/tests/android/res"),
 						StrLit(FILENAME_ANDROID_RESOURCES_ZIP)
 					);
@@ -1319,13 +1325,13 @@ int main(int argc, char* argv[])
 				
 				PrintLine("Linking %s...", FILENAME_TESTS_APK);
 				TryRemoveFile(StrLit(FILENAME_TESTS_APK));
-				LinkAndroidApk(&androidPaths,
+				LinkAndroidApk(&androidPaths, StrLit("../.."),
 					StrLit("[ROOT]/src/tests/android/AndroidManifest.xml"),
 					StrLit(FILENAME_ANDROID_RESOURCES_ZIP),
 					StrLit(FILENAME_TESTS_APK)
 				);
 				
-				AddNativeBinariesAndClassesDexToAndroidApk(&androidPaths,
+				AddNativeBinariesAndClassesDexToAndroidApk(&androidPaths, StrLit("../.."),
 					StrLit(FILENAME_TESTS_APK),
 					StrLit("apk_temp"),
 					StrLit("lib"),
@@ -1338,18 +1344,18 @@ int main(int argc, char* argv[])
 				if (!DEBUG_BUILD)
 				{
 					WriteLine("Performing ZIP alignment...");
-					AlignAndroidApk(&androidPaths, StrLit(FILENAME_TESTS_APK), StrLit("aligned.apk"));
+					AlignAndroidApk(&androidPaths, StrLit("../.."), StrLit(FILENAME_TESTS_APK), StrLit("aligned.apk"));
 				}
 				
 				if (!IsEmptyStr(ANDROID_SIGNING_KEY_PATH))
 				{
 					PrintLine("Signing %s with %.*s...", FILENAME_TESTS_APK, StrPrint(ANDROID_SIGNING_KEY_PATH));
-					SignAndroidApk(&androidPaths, StrLit(FILENAME_TESTS_APK), ANDROID_SIGNING_KEY_PATH, ANDROID_SIGNING_PASS_PATH);
+					SignAndroidApk(&androidPaths, StrLit("../.."), StrLit(FILENAME_TESTS_APK), ANDROID_SIGNING_KEY_PATH, ANDROID_SIGNING_PASS_PATH);
 				}
 				else
 				{
 					PrintLine("Debug Signing %s...", FILENAME_TESTS_APK);
-					DebugSignAndroidApk(&androidPaths, StrLit(FILENAME_TESTS_APK), StrLit("debug.keystore"));
+					DebugSignAndroidApk(&androidPaths, StrLit("../.."), StrLit(FILENAME_TESTS_APK), StrLit("debug.keystore"));
 				}
 			}
 			
@@ -1548,7 +1554,7 @@ int main(int argc, char* argv[])
 	if (INSTALL_TESTS_APK)
 	{
 		PrintLine("\n[Installing %s on Device...]", FILENAME_TESTS_APK);
-		InstallAndroidApk(&androidPaths, StrLit(FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK), ANDROID_ACTIVITY_PATH);
+		InstallAndroidApk(&androidPaths, StrLit(".."), StrLit(FOLDERNAME_ANDROID "/" FILENAME_TESTS_APK), ANDROID_ACTIVITY_PATH);
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", BUILD_SCRIPT_EXE_NAME);
