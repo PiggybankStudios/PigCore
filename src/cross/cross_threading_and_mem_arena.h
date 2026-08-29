@@ -27,6 +27,8 @@ THREAD_LOCAL Str8 CurrentThreadName = Str8_Empty_Const;
 
 #if PIG_CORE_IMPLEMENTATION
 
+//The arena is optional, but then the memory in name string must last the entire lifespan of the thread
+//  (like a string literal, and even then those go away if they exist in a hot-reloaded DLL address space)
 PEXPI void OsSetThreadName(Arena* arena, Str8 name)
 {
 	if (arena != nullptr && CurrentThreadName.chars != nullptr && CanArenaFree(arena))
