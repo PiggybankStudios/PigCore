@@ -7,6 +7,7 @@ Description:
 	** This file is not automatically included as a dependency (except for in base_all.h)
 	** so it must be manually included if you #include any file that depends on base_debug_output.h
 	** See base_debug_output.h description for a longer explanation
+	** NOTE: DEBUG_OUTPUT_CALLBACK_GLOBAL defaults to 1 in base_debug_output.h
 */
 
 #ifndef _BASE_DEBUG_OUTPUT_IMPL_H
