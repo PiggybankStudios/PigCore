@@ -339,7 +339,7 @@ static void EarlyInit(bool isOnMainThread)
 		
 		#if TARGET_HAS_THREADING
 		//TODO: On Android this is actually a different thread than the one we will normally be updating/rendering in. We should probably track the other thread ID as the "main thread"
-		MainThreadId = OsGetCurrentThreadId();
+		if (isOnMainThread) { MainThreadId = OsGetCurrentThreadId(); }
 		OsSetThreadName(nullptr, isOnMainThread ? StrLit("Main") : StrLit("Other"));
 		#endif
 		
