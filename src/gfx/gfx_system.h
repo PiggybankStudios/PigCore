@@ -193,6 +193,7 @@ plex GfxSystem
 	PIG_CORE_INLINE Result GfxSystem_DrawTextAtSize(GfxSystem* system, r32 fontSize, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextBold(GfxSystem* system, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawTextItalic(GfxSystem* system, Str8 text, v2 position, Color32 color);
+	PIG_CORE_INLINE Result GfxSystem_DrawRichText(GfxSystem* system, RichStr richText, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawText(GfxSystem* system, Str8 text, v2 position, Color32 color);
 	PIG_CORE_INLINE Result GfxSystem_DrawWrappedText(GfxSystem* system, Str8 text, v2 position, r32 wrapWidth, Color32 color);
 #endif
@@ -1353,6 +1354,12 @@ PEXPI Result GfxSystem_DrawTextItalic(GfxSystem* system, Str8 text, v2 position,
 	NotNull(system);
 	NotNull(system->state.font);
 	return GfxSystem_DrawWrappedRichTextWithFont(system, system->state.font, system->state.fontSize, (system->state.fontStyleFlags | FontStyleFlag_Italic), ToRichStr(text), position, 0.0f, color);
+}
+PEXPI Result GfxSystem_DrawRichText(GfxSystem* system, RichStr richText, v2 position, Color32 color)
+{
+	NotNull(system);
+	NotNull(system->state.font);
+	return GfxSystem_DrawWrappedRichTextWithFont(system, system->state.font, system->state.fontSize, system->state.fontStyleFlags, richText, position, 0.0f, color);
 }
 PEXPI Result GfxSystem_DrawText(GfxSystem* system, Str8 text, v2 position, Color32 color)
 {

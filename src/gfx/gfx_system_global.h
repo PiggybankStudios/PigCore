@@ -172,6 +172,7 @@ With this file:
 #define DrawTextAtSize(fontSize, text, position, color)                                           GfxSystem_DrawTextAtSize(&gfx, (fontSize), (text), (position), (color))
 #define DrawTextBold(text, position, color)                                                       GfxSystem_DrawTextBold(&gfx, (text), (position), (color))
 #define DrawTextItalic(text, position, color)                                                     GfxSystem_DrawTextItalic(&gfx, (text), (position), (color))
+#define DrawRichText(richText, position, color)                                                   GfxSystem_DrawRichText(&gfx, (richText), (position), (color))
 #define DrawText(text, position, color)                                                           GfxSystem_DrawText(&gfx, (text), (position), (color))
 #define DrawWrappedText(text, position, wrapWidth, color)                                         GfxSystem_DrawWrappedText(&gfx, (text), (position), (wrapWidth), (color))
 

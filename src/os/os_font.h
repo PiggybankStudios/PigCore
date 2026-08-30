@@ -40,6 +40,7 @@ Description:
 static FcConfig* fontConfig = nullptr;
 #endif
 
+//NOTE: On Android, we manually append -Bold or -Italic or -BoldItalic or -Regular so the fontName should not include that part of the font file name
 PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool bold, bool italic, Slice* fileContentsOut)
 {
 	NotNull(arena);
@@ -288,10 +289,25 @@ PEXP Result OsReadPlatformFont(Arena* arena, Str8 fontName, i32 fontSize, bool b
 	#elif TARGET_IS_ANDROID
 	{
 		UNUSED(fontSize);
-		UNUSED(bold);
-		UNUSED(italic);
 		ScratchBegin1(scratch, arena);
-		FilePath fontPath = JoinStringsInArena3(scratch, FilePathLit("/system/fonts/"), fontName, StrLit(".ttf"), true);
+		Str8 modifiedFontName = fontName;
+		if (bold || italic) { modifiedFontName = JoinStringsInArena(scratch, modifiedFontName, StrLit("-"), false); }
+		if (bold) { modifiedFontName = JoinStringsInArena(scratch, modifiedFontName, StrLit("Bold"), false); }
+		if (italic) { modifiedFontName = JoinStringsInArena(scratch, modifiedFontName, StrLit("Italic"), false); }
+		FilePath fontPath = JoinStringsInArena3(scratch, FilePathLit("/system/fonts/"), modifiedFontName, StrLit(".ttf"), true);
+		// PrintLine_D("Looking for font at \"%.*s\"", StrPrint(fontPath));
+		if ((bold || italic) && !OsDoesFileExist(fontPath))
+		{
+			modifiedFontName = fontName;
+			fontPath = JoinStringsInArena3(scratch, FilePathLit("/system/fonts/"), modifiedFontName, StrLit(".ttf"), true);
+			// PrintLine_D("Re-looking for font at \"%.*s\"", StrPrint(fontPath));
+		}
+		if (!bold && !italic && !OsDoesFileExist(fontPath))
+		{
+			modifiedFontName = JoinStringsInArena(scratch, modifiedFontName, StrLit("-Regular"), false);
+			fontPath = JoinStringsInArena3(scratch, FilePathLit("/system/fonts/"), modifiedFontName, StrLit(".ttf"), true);
+			// PrintLine_D("Re-looking for font at \"%.*s\"", StrPrint(fontPath));
+		}
 		if (OsDoesFileExist(fontPath))
 		{
 			if (OsReadBinFile(fontPath, arena, fileContentsOut))

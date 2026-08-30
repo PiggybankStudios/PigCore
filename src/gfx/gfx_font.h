@@ -481,6 +481,14 @@ PEXP Result TryAttachFontFile(PigFont* font, Str8 nameOrPath, Slice fileContents
 		}
 		NotNull(newFile->freeTypeFace);
 		
+		// PrintLine_D("There %s %d face%s in font \"%.*s\"", PluralEx(newFile->freeTypeFace->num_faces, "is", "are"), newFile->freeTypeFace->num_faces, Plural(newFile->freeTypeFace->num_faces, "s"), StrPrint(nameOrPath));
+		// PrintLine_D("\t%s / %s  flags=%lx  nglyphs=%ld",
+		// 	newFile->freeTypeFace->family_name,
+		// 	newFile->freeTypeFace->style_name,
+		// 	newFile->freeTypeFace->style_flags,
+		// 	newFile->freeTypeFace->num_glyphs
+		// );
+		
 		#if 0
 		PrintLine_D("Scanning font file \"%.*s\" %s%s for available chars:", StrPrint(nameOrPath), IsFlagSet(styleFlags, FontStyleFlag_Bold) ? "Bold" : "", IsFlagSet(styleFlags, FontStyleFlag_Italic) ? "Italic" : "");
 		FT_ULong rangeStart = 0;
