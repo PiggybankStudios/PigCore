@@ -37,6 +37,7 @@ static void KbTextShapeFree(Arena* arenaPntr, void* allocPntr);
 #if COMPILER_IS_MSVC
 #pragma warning(push)
 #pragma warning(disable:5262) //error C5262: implicit fall-through occurs here; are you missing a break statement? Use [[fallthrough]] when a break statement is intentionally omitted between cases
+#pragma warning(disable:4100) //warning C4100: 'SubtableCount': unreferenced parameter
 #endif
 #if COMPILER_IS_CLANG
 #pragma clang diagnostic push
