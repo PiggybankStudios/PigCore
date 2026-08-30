@@ -111,7 +111,9 @@ plex JvmReturn
 	JvmReturn jObjCall(JNIEnv* env, jobject jobj, bool isStaticMethod, const char* funcNameNt, const char* funcTypeSignatureNt, JvmType returnType, bool assertOnNullReturn, ...);
 	JvmReturn jClassCall(JNIEnv* env, const char* classNameNt, const char* funcNameNt, const char* funcTypeSignatureNt, JvmType returnType, bool assertOnNullReturn, ...);
 	JvmReturn jObjGetField(JNIEnv* env, jobject jobj, bool isStaticField, const char* fieldNameNt, const char* typeSignatureNt, JvmType fieldType, bool assertOnNull);
-	JvmReturn jClassGetField(JNIEnv* env, const char* classNameNt, const char* fieldNameNt, const char* typeSignatureNt, JvmType fieldType, bool assertOnNull);
+	void jObjSetField(JNIEnv* env, jobject jobj, bool isStaticField, const char* fieldNameNt, const char* typeSignatureNt, JvmReturn value);
+	JvmReturn jClassGetField(JNIEnv* env, bool isStaticField, const char* classNameNt, const char* fieldNameNt, const char* typeSignatureNt, JvmType fieldType, bool assertOnNull);
+	void jClassSetField(JNIEnv* env, bool isStaticField, const char* classNameNt, const char* fieldNameNt, const char* typeSignatureNt, JvmReturn value);
 #endif
 
 // +--------------------------------------------------------------+
@@ -136,10 +138,24 @@ JavaVM* AndroidJavaVM = nullptr;
 		(*AndroidJavaVM)->AttachCurrentThread(AndroidJavaVM, &envVarName, NULL), \
 		(*AndroidJavaVM)->DetachCurrentThread(AndroidJavaVM))
 
+#define MakeJvmReturnBool(value)      NEW_STRUCT(JvmReturn){ .type=JvmType_Bool,      .boolValue=(value)      }
+#define MakeJvmReturnByte(value)      NEW_STRUCT(JvmReturn){ .type=JvmType_Byte,      .byteValue=(value)      }
+#define MakeJvmReturnChar(value)      NEW_STRUCT(JvmReturn){ .type=JvmType_Char,      .charValue=(value)      }
+#define MakeJvmReturnShort(value)     NEW_STRUCT(JvmReturn){ .type=JvmType_Short,     .shortValue=(value)     }
+#define MakeJvmReturnInt(value)       NEW_STRUCT(JvmReturn){ .type=JvmType_Int,       .intValue=(value)       }
+#define MakeJvmReturnLong(value)      NEW_STRUCT(JvmReturn){ .type=JvmType_Long,      .longValue=(value)      }
+#define MakeJvmReturnFloat(value)     NEW_STRUCT(JvmReturn){ .type=JvmType_Float,     .floatValue=(value)     }
+#define MakeJvmReturnDouble(value)    NEW_STRUCT(JvmReturn){ .type=JvmType_Double,    .doubleValue=(value)    }
+#define MakeJvmReturnObject(value)    NEW_STRUCT(JvmReturn){ .type=JvmType_Object,    .objectValue=(value)    }
+#define MakeJvmReturnClass(value)     NEW_STRUCT(JvmReturn){ .type=JvmType_Class,     .classValue=(value)     }
+#define MakeJvmReturnString(value)    NEW_STRUCT(JvmReturn){ .type=JvmType_String,    .stringValue=(value)    }
+#define MakeJvmReturnThrowable(value) NEW_STRUCT(JvmReturn){ .type=JvmType_Throwable, .throwableValue=(value) }
+#define MakeJvmReturnArray(value)     NEW_STRUCT(JvmReturn){ .type=JvmType_Array,     .arrayValue=(value)     }
+
 // +==============================+
 // |       Field Signatures       |
 // +==============================+
-#define jGetField_Build_VERSION_CODES(env, levelFieldNameNt) jClassGetField(env, "android/os/Build$VERSION_CODES", (levelFieldNameNt), "I", JvmType_Int, true).intValue
+#define jGetField_Build_VERSION_CODES(env, levelFieldNameNt) jClassGetField(env, true, "android/os/Build$VERSION_CODES", (levelFieldNameNt), "I", JvmType_Int, true).intValue
 
 // +==============================+
 // |     Function Signatures      |
@@ -159,13 +175,16 @@ JavaVM* AndroidJavaVM = nullptr;
 
 // android.app.Activity Functions (https://developer.android.com/reference/android/app/Activity)
 #define jCall_getWindow(env, activity) jObjCall((env), (activity)->clazz, false, "getWindow", "()Landroid/view/Window;", JvmType_Object, true).objectValue
+#define jCall_getResources(env, activity) jObjCall((env), (activity)->clazz, false, "getResources", "()Landroid/content/res/Resources;", JvmType_Object, true).objectValue
 
 // android.app.NativeActivity Functions (https://developer.android.com/reference/android/app/NativeActivity)
 #define jCall_getSystemService(env, nativeActivity, serviceJStr) jObjCall((env), (nativeActivity)->clazz, false, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;", JvmType_Object, true, (serviceJStr)).objectValue
 #define jCall_getFilesDir(env, nativeActivity) jObjCall((env), (nativeActivity)->clazz, false, "getFilesDir", "()Ljava/io/File;", JvmType_Object, true).objectValue
 
 // android.view.Window Functions (https://developer.android.com/reference/android/view/Window)
-#define jCall_getDecorView(env, window) jObjCall((env), (window), false, "getDecorView", "()Landroid/view/View;", JvmType_Object, true).objectValue
+#define jCall_getDecorView(env, window)           jObjCall((env), (window), false, "getDecorView",  "()Landroid/view/View;",                        JvmType_Object, true).objectValue
+#define jCall_getAttributes(env, window)          jObjCall((env), (window), false, "getAttributes", "()Landroid/view/WindowManager$LayoutParams;",  JvmType_Object, true).objectValue
+#define jCall_setAttributes(env, window, attribs) jObjCall((env), (window), false, "setAttributes", "(Landroid/view/WindowManager$LayoutParams;)V", JvmType_Void,   false, (attribs))
 
 // android.view.WindowManager Functions (https://developer.android.com/reference/android/view/WindowManager)
 #define jCall_getDefaultDisplay(env, windowManager) jObjCall((env), (windowManager), false, "getDefaultDisplay", "()Landroid/view/Display;", JvmType_Object, true).objectValue
@@ -177,7 +196,7 @@ JavaVM* AndroidJavaVM = nullptr;
 #define jCall_getRotation(env, display) jObjCall((env), (display), false, "getRotation", "()I", JvmType_Int, true).intValue
 
 // android.view.WindowInsets (https://developer.android.com/reference/android/view/WindowInsets)
-#define jCall_getDisplayCutout(env, windowInsets) jObjCall((env), (windowInsets), false, "getDisplayCutout", "()Landroid/view/DisplayCutout;", JvmType_Object, false).objectValue
+#define jCall_getDisplayCutout(env, windowInsets)           jObjCall((env), (windowInsets), false, "getDisplayCutout", "()Landroid/view/DisplayCutout;", JvmType_Object, false).objectValue
 #define jCall_getSystemWindowInsetBottom(env, windowInsets) jObjCall((env), (windowInsets), false, "getSystemWindowInsetBottom", "()I", JvmType_Int, true).intValue
 #define jCall_getSystemWindowInsetLeft(env, windowInsets)   jObjCall((env), (windowInsets), false, "getSystemWindowInsetLeft",   "()I", JvmType_Int, true).intValue
 #define jCall_getSystemWindowInsetRight(env, windowInsets)  jObjCall((env), (windowInsets), false, "getSystemWindowInsetRight",  "()I", JvmType_Int, true).intValue
@@ -202,6 +221,9 @@ JavaVM* AndroidJavaVM = nullptr;
 #define jCall_getItemAt(env, clipData, indexJInt) jObjCall((env), (clipData), false, "getItemAt", "(I)Landroid/content/ClipData$Item;", JvmType_Object, true, (indexJInt)).objectValue
 #define jCall_getText(env, clipDataItem) jObjCall((env), (clipDataItem), false, "getText", "()Ljava/lang/CharSequence;", JvmType_Object, true).objectValue
 #define jCall_toString(env, charSequence) jObjCall((env), (charSequence), false, "toString", "()Ljava/lang/String;", JvmType_String, true).stringValue
+
+// android.content.res.Resources Functions (https://developer.android.com/reference/android/content/res/Resources)
+#define jCall_getConfiguration(env, resources) jObjCall((env), (resources), false, "getConfiguration", "()Landroid/content/res/Configuration;", JvmType_Object, true).objectValue
 
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
@@ -349,30 +371,62 @@ PEXP JvmReturn jObjGetField(JNIEnv* env, jobject jobj, bool isStaticField, const
 	return result;
 }
 
-PEXP JvmReturn jClassGetField(JNIEnv* env, const char* classNameNt, const char* fieldNameNt, const char* typeSignatureNt, JvmType fieldType, bool assertOnNull)
+PEXP void jObjSetField(JNIEnv* env, jobject jobj, bool isStaticField, const char* fieldNameNt, const char* typeSignatureNt, JvmReturn value)
+{
+	jclass classRef = (*env)->GetObjectClass(env, jobj);
+	AssertMsg(classRef != nullptr, "Couldn't get Java object's class reference!");
+	jfieldID fieldId = isStaticField
+		? (*env)->GetStaticFieldID(env, classRef, fieldNameNt, typeSignatureNt)
+		: (*env)->GetFieldID(env, classRef, fieldNameNt, typeSignatureNt);
+	
+	if (fieldId == nullptr) { NotifyPrint_E("Couldn't find field \"%s\" of type \"%s\" on Java object", fieldNameNt, typeSignatureNt); }
+	AssertMsg(fieldId != nullptr, "Couldn't find Java field by name/signature on object's class!");
+	
+	switch (value.type)
+	{
+		case JvmType_Bool:      (isStaticField ? (*env)->SetStaticBooleanField(env, classRef, fieldId, value.boolValue)      : (*env)->SetBooleanField(env, jobj, fieldId, value.boolValue));      break;
+		case JvmType_Byte:      (isStaticField ? (*env)->SetStaticByteField(env,    classRef, fieldId, value.byteValue)      : (*env)->SetByteField(env,    jobj, fieldId, value.byteValue));      break;
+		case JvmType_Char:      (isStaticField ? (*env)->SetStaticCharField(env,    classRef, fieldId, value.charValue)      : (*env)->SetCharField(env,    jobj, fieldId, value.charValue));      break;
+		case JvmType_Short:     (isStaticField ? (*env)->SetStaticShortField(env,   classRef, fieldId, value.shortValue)     : (*env)->SetShortField(env,   jobj, fieldId, value.shortValue));     break;
+		case JvmType_Int:       (isStaticField ? (*env)->SetStaticIntField(env,     classRef, fieldId, value.intValue)       : (*env)->SetIntField(env,     jobj, fieldId, value.intValue));       break;
+		case JvmType_Long:      (isStaticField ? (*env)->SetStaticLongField(env,    classRef, fieldId, value.longValue)      : (*env)->SetLongField(env,    jobj, fieldId, value.longValue));      break;
+		case JvmType_Float:     (isStaticField ? (*env)->SetStaticFloatField(env,   classRef, fieldId, value.floatValue)     : (*env)->SetFloatField(env,   jobj, fieldId, value.floatValue));     break;
+		case JvmType_Double:    (isStaticField ? (*env)->SetStaticDoubleField(env,  classRef, fieldId, value.doubleValue)    : (*env)->SetDoubleField(env,  jobj, fieldId, value.doubleValue));    break;
+		case JvmType_Object:    (isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.objectValue)    : (*env)->SetObjectField(env,  jobj, fieldId, value.objectValue));    break;
+		case JvmType_Class:     (isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.classValue)     : (*env)->SetObjectField(env,  jobj, fieldId, value.classValue));     break;
+		case JvmType_String:    (isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.stringValue)    : (*env)->SetObjectField(env,  jobj, fieldId, value.stringValue));    break;
+		case JvmType_Throwable: (isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.throwableValue) : (*env)->SetObjectField(env,  jobj, fieldId, value.throwableValue)); break;
+		case JvmType_Array:     (isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.arrayValue)     : (*env)->SetObjectField(env,  jobj, fieldId, value.arrayValue));     break;
+		default: AssertMsg(false, "Unsupported fieldType in JObjSetField!"); break;
+	}
+}
+
+PEXP JvmReturn jClassGetField(JNIEnv* env, bool isStaticField, const char* classNameNt, const char* fieldNameNt, const char* typeSignatureNt, JvmType fieldType, bool assertOnNull)
 {
 	jclass classRef = (*env)->FindClass(env, classNameNt);
 	if (classRef == nullptr) { NotifyPrint_E("Couldn't find Java class named \"%s\"", classNameNt); }
 	AssertMsg(classRef != nullptr, "Couldn't find Java class by name!");
-	jfieldID fieldId = (*env)->GetStaticFieldID(env, classRef, fieldNameNt, typeSignatureNt);
+	jfieldID fieldId = isStaticField
+		? (*env)->GetStaticFieldID(env, classRef, fieldNameNt, typeSignatureNt)
+		: (*env)->GetFieldID(env, classRef, fieldNameNt, typeSignatureNt);
 	if (fieldId == nullptr) { NotifyPrint_E("Couldn't find field \"%s\" of type \"%s\" on Java class \"%s\"", fieldNameNt, typeSignatureNt, classNameNt); }
 	AssertMsg(fieldId != nullptr, "Couldn't find Java field by name/signature on found class!");
 	JvmReturn result = { .type = fieldType };
 	switch (fieldType)
 	{
-		case JvmType_Bool:      result.boolValue      = (*env)->GetStaticBooleanField(env, classRef, fieldId); break;
-		case JvmType_Byte:      result.byteValue      = (*env)->GetStaticByteField(env,    classRef, fieldId); break;
-		case JvmType_Char:      result.charValue      = (*env)->GetStaticCharField(env,    classRef, fieldId); break;
-		case JvmType_Short:     result.shortValue     = (*env)->GetStaticShortField(env,   classRef, fieldId); break;
-		case JvmType_Int:       result.intValue       = (*env)->GetStaticIntField(env,     classRef, fieldId); break;
-		case JvmType_Long:      result.longValue      = (*env)->GetStaticLongField(env,    classRef, fieldId); break;
-		case JvmType_Float:     result.floatValue     = (*env)->GetStaticFloatField(env,   classRef, fieldId); break;
-		case JvmType_Double:    result.doubleValue    = (*env)->GetStaticDoubleField(env,  classRef, fieldId); break;
-		case JvmType_Object:    result.objectValue    = (*env)->GetStaticObjectField(env,  classRef, fieldId); break;
-		case JvmType_Class:     result.classValue     = (*env)->GetStaticObjectField(env,  classRef, fieldId); break;
-		case JvmType_String:    result.stringValue    = (*env)->GetStaticObjectField(env,  classRef, fieldId); break;
-		case JvmType_Throwable: result.throwableValue = (*env)->GetStaticObjectField(env,  classRef, fieldId); break;
-		case JvmType_Array:     result.arrayValue     = (*env)->GetStaticObjectField(env,  classRef, fieldId); break;
+		case JvmType_Bool:      result.boolValue      = (isStaticField ? (*env)->GetStaticBooleanField(env, classRef, fieldId) : (*env)->GetBooleanField(env, classRef, fieldId)); break;
+		case JvmType_Byte:      result.byteValue      = (isStaticField ? (*env)->GetStaticByteField(env,    classRef, fieldId) : (*env)->GetByteField(env,    classRef, fieldId)); break;
+		case JvmType_Char:      result.charValue      = (isStaticField ? (*env)->GetStaticCharField(env,    classRef, fieldId) : (*env)->GetCharField(env,    classRef, fieldId)); break;
+		case JvmType_Short:     result.shortValue     = (isStaticField ? (*env)->GetStaticShortField(env,   classRef, fieldId) : (*env)->GetShortField(env,   classRef, fieldId)); break;
+		case JvmType_Int:       result.intValue       = (isStaticField ? (*env)->GetStaticIntField(env,     classRef, fieldId) : (*env)->GetIntField(env,     classRef, fieldId)); break;
+		case JvmType_Long:      result.longValue      = (isStaticField ? (*env)->GetStaticLongField(env,    classRef, fieldId) : (*env)->GetLongField(env,    classRef, fieldId)); break;
+		case JvmType_Float:     result.floatValue     = (isStaticField ? (*env)->GetStaticFloatField(env,   classRef, fieldId) : (*env)->GetFloatField(env,   classRef, fieldId)); break;
+		case JvmType_Double:    result.doubleValue    = (isStaticField ? (*env)->GetStaticDoubleField(env,  classRef, fieldId) : (*env)->GetDoubleField(env,  classRef, fieldId)); break;
+		case JvmType_Object:    result.objectValue    = (isStaticField ? (*env)->GetStaticObjectField(env,  classRef, fieldId) : (*env)->GetObjectField(env,  classRef, fieldId)); break;
+		case JvmType_Class:     result.classValue     = (isStaticField ? (*env)->GetStaticObjectField(env,  classRef, fieldId) : (*env)->GetObjectField(env,  classRef, fieldId)); break;
+		case JvmType_String:    result.stringValue    = (isStaticField ? (*env)->GetStaticObjectField(env,  classRef, fieldId) : (*env)->GetObjectField(env,  classRef, fieldId)); break;
+		case JvmType_Throwable: result.throwableValue = (isStaticField ? (*env)->GetStaticObjectField(env,  classRef, fieldId) : (*env)->GetObjectField(env,  classRef, fieldId)); break;
+		case JvmType_Array:     result.arrayValue     = (isStaticField ? (*env)->GetStaticObjectField(env,  classRef, fieldId) : (*env)->GetObjectField(env,  classRef, fieldId)); break;
 		default: AssertMsg(false, "Unsupported fieldType in jClassGetField!"); break;
 	}
 	if (assertOnNull && (fieldType == JvmType_Object || fieldType == JvmType_String))
@@ -381,6 +435,36 @@ PEXP JvmReturn jClassGetField(JNIEnv* env, const char* classNameNt, const char* 
 		AssertMsg(result.objectValue != nullptr, "Java field was null!");
 	}
 	return result;
+}
+
+PEXP void jClassSetField(JNIEnv* env, bool isStaticField, const char* classNameNt, const char* fieldNameNt, const char* typeSignatureNt, JvmReturn value)
+{
+	jclass classRef = (*env)->FindClass(env, classNameNt);
+	if (classRef == nullptr) { NotifyPrint_E("Couldn't find Java class named \"%s\"", classNameNt); }
+	AssertMsg(classRef != nullptr, "Couldn't find Java class by name!");
+	jfieldID fieldId = isStaticField
+		? (*env)->GetStaticFieldID(env, classRef, fieldNameNt, typeSignatureNt)
+		: (*env)->GetFieldID(env, classRef, fieldNameNt, typeSignatureNt);
+	if (fieldId == nullptr) { NotifyPrint_E("Couldn't find field \"%s\" of type \"%s\" on Java class \"%s\"", fieldNameNt, typeSignatureNt, classNameNt); }
+	AssertMsg(fieldId != nullptr, "Couldn't find Java field by name/signature on found class!");
+	
+	switch (value.type)
+	{
+		case JvmType_Bool:      isStaticField ? (*env)->SetStaticBooleanField(env, classRef, fieldId, value.boolValue)      : (*env)->SetBooleanField(env, classRef, fieldId, value.boolValue);      break;
+		case JvmType_Byte:      isStaticField ? (*env)->SetStaticByteField(env,    classRef, fieldId, value.byteValue)      : (*env)->SetByteField(env,    classRef, fieldId, value.byteValue);      break;
+		case JvmType_Char:      isStaticField ? (*env)->SetStaticCharField(env,    classRef, fieldId, value.charValue)      : (*env)->SetCharField(env,    classRef, fieldId, value.charValue);      break;
+		case JvmType_Short:     isStaticField ? (*env)->SetStaticShortField(env,   classRef, fieldId, value.shortValue)     : (*env)->SetShortField(env,   classRef, fieldId, value.shortValue);     break;
+		case JvmType_Int:       isStaticField ? (*env)->SetStaticIntField(env,     classRef, fieldId, value.intValue)       : (*env)->SetIntField(env,     classRef, fieldId, value.intValue);       break;
+		case JvmType_Long:      isStaticField ? (*env)->SetStaticLongField(env,    classRef, fieldId, value.longValue)      : (*env)->SetLongField(env,    classRef, fieldId, value.longValue);      break;
+		case JvmType_Float:     isStaticField ? (*env)->SetStaticFloatField(env,   classRef, fieldId, value.floatValue)     : (*env)->SetFloatField(env,   classRef, fieldId, value.floatValue);     break;
+		case JvmType_Double:    isStaticField ? (*env)->SetStaticDoubleField(env,  classRef, fieldId, value.doubleValue)    : (*env)->SetDoubleField(env,  classRef, fieldId, value.doubleValue);    break;
+		case JvmType_Object:    isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.objectValue)    : (*env)->SetObjectField(env,  classRef, fieldId, value.objectValue);    break;
+		case JvmType_Class:     isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.classValue)     : (*env)->SetObjectField(env,  classRef, fieldId, value.classValue);     break;
+		case JvmType_String:    isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.stringValue)    : (*env)->SetObjectField(env,  classRef, fieldId, value.stringValue);    break;
+		case JvmType_Throwable: isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.throwableValue) : (*env)->SetObjectField(env,  classRef, fieldId, value.throwableValue); break;
+		case JvmType_Array:     isStaticField ? (*env)->SetStaticObjectField(env,  classRef, fieldId, value.arrayValue)     : (*env)->SetObjectField(env,  classRef, fieldId, value.arrayValue);     break;
+		default: AssertMsg(false, "Unsupported fieldType in jClassSetField!"); break;
+	}
 }
 
 #endif //PIG_CORE_IMPLEMENTATION
