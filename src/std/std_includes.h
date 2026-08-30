@@ -168,8 +168,9 @@ typedef uint16_t char16_t;
 	#include <jni.h>
 	#include <android/log.h>
 	#include <android/looper.h>
-	#include <android/native_activity.h>
-	#include <android/configuration.h>
+	#include <android/native_activity.h> //for ANativeActivity* which is passed back from sapp_android_get_native_activity()
+	#include <android/configuration.h> //for AConfiguration_getDensity
+	#include <android/asset_manager.h> //for AConfiguration_fromAssetManager
 	//TODO: Should we gate this behind something like BUILD_WITH_SOKOL_GFX?
 	#include <GLES2/gl2.h>
 	#include <GLES2/gl2ext.h>
