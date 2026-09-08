@@ -79,6 +79,20 @@ plex TouchscreenStateHandling
 	PIG_CORE_INLINE void RefreshTouchscreenStateHandling(const TouchscreenState* touchscreen, TouchscreenStateHandling* handling);
 #endif
 
+// Example:
+//  TouchLoop(tIndex)
+//  {
+//  	TouchLoopGet(&touchscreen, touch, tIndex)
+//  	{
+//  		//...
+//  	}
+//  }
+#define TouchLoop(touchIndexVarName) \
+	for (uxx touchIndexVarName = 0; touchIndexVarName < MAX_TOUCH_INPUTS; touchIndexVarName++)
+#define TouchLoopGet(touchscreenPntr, touchPntrVarName, touchIndexVarName)         \
+	TouchState* touchPntrVarName = &(touchscreenPntr)->touches[touchIndexVarName]; \
+	if (touchPntrVarName->id != TOUCH_ID_INVALID)
+
 // +--------------------------------------------------------------+
 // |                   Function Implementations                   |
 // +--------------------------------------------------------------+

@@ -81,6 +81,7 @@ Description:
 	PIG_CORE_INLINE UiElement* GetUiElementByIdInPrevFrame(UiId id, bool matchLocalIds);
 	PIG_CORE_INLINE UiElement* GetUiElementById(UiId id, bool matchLocalIds);
 	PIG_CORE_INLINE UiElement* GetUiElementAttachParent(UiElement* element);
+	
 	PIG_CORE_INLINE bool IsUiElementHoveredStrict(UiId id);
 	PIG_CORE_INLINE bool IsUiElementHovered(UiId id);
 	PIG_CORE_INLINE bool IsCurrentUiElementHoveredStrict();
@@ -92,6 +93,15 @@ Description:
 	PIG_CORE_INLINE bool IsCurrentUiElementBeingClicked(MouseBtn mouseBtn);
 	PIG_CORE_INLINE bool WasCurrentUiElementClicked(MouseBtn mouseBtn);
 	PIG_CORE_INLINE bool DidCurrentUiElementClickStart(MouseBtn mouseBtn);
+	
+	PIG_CORE_INLINE bool IsUiElementBeingTouchedStrict(UiId id);
+	PIG_CORE_INLINE bool IsUiElementBeingTouched(UiId id);
+	PIG_CORE_INLINE bool IsCurrentUiElementBeingTouchedStrict(UiId id);
+	PIG_CORE_INLINE bool IsCurrentUiElementBeingTouched(UiId id);
+	PIG_CORE_INLINE bool DidTouchStartInsideUiElement(UiId id, uxx touchIndex);
+	PIG_CORE_INLINE bool WasUiElementTapped(UiId id);
+	PIG_CORE_INLINE bool WasCurrentUiElementTapped(UiId id);
+	
 	PIG_CORE_INLINE void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto);
 	PIG_CORE_INLINE UiElement* CloseUiElement();
 	PIG_CORE_INLINE void CloseUiElementMulti(u64 numElements); //mostly useful for DeferBlock
@@ -390,7 +400,11 @@ PEXPI UiElement* GetUiElementAttachParent(UiElement* element)
 	else { DebugAssert(false); return nullptr; }
 }
 
-PEXPI bool IsUiElementHoveredStrict(UiId id) { DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr); return (UiCtx->mouseHoveredId.id == id.id || UiCtx->mouseHoveredLocalId.id == id.id); }
+PEXPI bool IsUiElementHoveredStrict(UiId id)
+{
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
+	return (UiCtx->mouseHoveredId.id == id.id || UiCtx->mouseHoveredLocalId.id == id.id);
+}
 PEXPI bool IsUiElementHovered(UiId id)
 {
 	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
@@ -493,6 +507,79 @@ PEXPI bool DidCurrentUiElementClickStart(MouseBtn mouseBtn)
 	UiElement* currentUiElement = GetCurrentUiElement();
 	NotNull(currentUiElement);
 	return DidUiElementClickStart(currentUiElement->id, mouseBtn);
+}
+
+
+PEXPI bool IsUiElementBeingTouchedStrict(UiId id)
+{
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
+	if (UiCtx->touchscreen != nullptr)
+	{
+		TouchLoop(tIndex)
+		{
+			TouchLoopGet(UiCtx->touchscreen, touch, tIndex)
+			{
+				if (UiCtx->touchHoveredId[tIndex].id == id.id) { return true; }
+				if (UiCtx->touchHoveredLocalId[tIndex].id == id.id) { return true; }
+			}
+		}
+	}
+	return false;
+}
+PEXPI bool IsUiElementBeingTouched(UiId id)
+{
+	DebugAssert(UiCtx != nullptr && UiCtx->arena != nullptr);
+	if (UiCtx->touchscreen != nullptr)
+	{
+		TouchLoop(tIndex)
+		{
+			TouchLoopGet(UiCtx->touchscreen, touch, tIndex)
+			{
+				if (UiCtx->touchHoveredId[tIndex].id == id.id) { return true; }
+				if (UiCtx->touchHoveredLocalId[tIndex].id == id.id) { return true; }
+				if (UiCtx->touchHoveredId[tIndex].id != 0)
+				{
+					UiElement* hoveredElement = (UiCtx->layoutDone ? GetUiElementById(UiCtx->touchHoveredId[tIndex], false) : GetUiElementByIdInPrevFrame(UiCtx->touchHoveredId[tIndex], false));
+					if (hoveredElement != nullptr && hoveredElement->config.floating.type == UiFloatingType_None)
+					{
+						UiElement* parent = GetUiElementParent(hoveredElement, 0);
+						while (parent != nullptr)
+						{
+							if (parent->id.id == id.id || parent->config.id.id == id.id) { return true; }
+							if (parent->config.floating.type != UiFloatingType_None) { break; }
+							parent = GetUiElementParent(parent, 0);
+						}
+					}
+					// else { PrintLine_W("Couldn't find hovered element in %s frame hierarchy!", UiCtx->layoutDone ? "current" : "previous"); }
+				}
+			}
+		}
+	}
+	return false;
+}
+PEXPI bool IsCurrentUiElementBeingTouchedStrict(UiId id)
+{
+	UiElement* currentUiElement = GetCurrentUiElement();
+	NotNull(currentUiElement);
+	return IsUiElementBeingTouchedStrict(currentUiElement->id);
+}
+PEXPI bool IsCurrentUiElementBeingTouched(UiId id)
+{
+	UiElement* currentUiElement = GetCurrentUiElement();
+	NotNull(currentUiElement);
+	return IsUiElementBeingTouched(currentUiElement->id);
+}
+PEXPI bool DidTouchStartInsideUiElement(UiId id, uxx touchIndex)
+{
+	Unimplemented(); return false; //TODO: Implement me!
+}
+PEXPI bool WasUiElementTapped(UiId id)
+{
+	Unimplemented(); return false; //TODO: Implement me!
+}
+PEXPI bool WasCurrentUiElementTapped(UiId id)
+{
+	Unimplemented(); return false; //TODO: Implement me!
 }
 
 PEXPI void SetUiElementScroll(UiId elementId, v2 newScroll, v2 newScrollGoto)
@@ -1429,6 +1516,53 @@ static void TrackMouseInteractionAfterUiLayout()
 	}
 }
 
+//TODO: Does this keep the ID active during the frame where the touch is ending? I think that frame might have the touch ID as TOUCH_ID_INVALID
+static void TrackTouchInteractionAfterUiLayout()
+{
+	UiElement* touchedElements[MAX_TOUCH_INPUTS] = ZEROED;
+	if (UiCtx->touchscreen != nullptr && UiCtx->touchscreen->numTouches > 0)
+	{
+		TouchLoop(tIndex)
+		{
+			const TouchLoopGet(UiCtx->touchscreen, touch, tIndex)
+			{
+				VarArrayLoop(&UiCtx->elements, eIndex)
+				{
+					VarArrayLoopGet(UiElement, element, &UiCtx->elements, eIndex);
+					if (!element->config.mousePassthrough && IsInsideRec(element->layoutRec, touch->pos) && IsInsideRec(element->clipRec, touch->pos))
+					{
+						if (touchedElements[tIndex] == nullptr ||
+							element->config.depth < touchedElements[tIndex]->config.depth ||
+							(element->config.depth == touchedElements[tIndex]->config.depth && element->elementIndex >= touchedElements[tIndex]->elementIndex))
+						{
+							touchedElements[tIndex] = element;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	for (uxx tIndex = 0; tIndex < MAX_TOUCH_INPUTS; tIndex++)
+	{
+		UiCtx->touchHoveredId[tIndex]      = (touchedElements[tIndex] != nullptr) ? touchedElements[tIndex]->id        : UiId_None;
+		UiCtx->touchHoveredLocalId[tIndex] = (touchedElements[tIndex] != nullptr) ? touchedElements[tIndex]->config.id : UiId_None;
+		TouchState* touch = &UiCtx->touchscreen->touches[tIndex];
+		if (touch->id == TOUCH_ID_INVALID)
+		{
+			UiCtx->touchStartId[tIndex] = UiId_None;
+			UiCtx->touchStartLocalId[tIndex] = UiId_None;
+		}
+		else if (touch->started)
+		{
+			UiCtx->touchStartId[tIndex] = UiCtx->touchHoveredId[tIndex];
+			UiCtx->touchStartLocalId[tIndex] = UiCtx->touchHoveredLocalId[tIndex];
+		}
+	}
+	
+	//TODO: Handle touch movements to move scrollable elements
+}
+
 // +==================================================+
 // | UiElementPntr_FloatDepthThenElementIndex_Compare |
 // +==================================================+
@@ -1776,6 +1910,7 @@ static void UiSystemDoLayout()
 	UiCtx->hasDoneOneLayout = true;
 	
 	TrackMouseInteractionAfterUiLayout();
+	TrackTouchInteractionAfterUiLayout();
 	ScratchEnd(scratch);
 }
 

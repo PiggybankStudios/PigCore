@@ -753,6 +753,10 @@ plex UiContext
 	UiId mouseHoveredLocalId;
 	UiId clickStartHoveredId[MouseBtn_Count];
 	UiId clickStartHoveredLocalId[MouseBtn_Count];
+	UiId touchHoveredId[MAX_TOUCH_INPUTS];
+	UiId touchHoveredLocalId[MAX_TOUCH_INPUTS];
+	UiId touchStartId[MAX_TOUCH_INPUTS];
+	UiId touchStartLocalId[MAX_TOUCH_INPUTS];
 	bool smoothScrollingInProgress;
 	VarArray pendingScrollSets; //UiPendingScrollSet
 	
