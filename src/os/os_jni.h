@@ -181,6 +181,10 @@ JavaVM* AndroidJavaVM = nullptr;
 #define jCall_getSystemService(env, nativeActivity, serviceJStr) jObjCall((env), (nativeActivity)->clazz, false, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;", JvmType_Object, true, (serviceJStr)).objectValue
 #define jCall_getFilesDir(env, nativeActivity) jObjCall((env), (nativeActivity)->clazz, false, "getFilesDir", "()Ljava/io/File;", JvmType_Object, true).objectValue
 
+//TODO: What class is this function on?
+// 0=SHOW_NONE, 1=SHOW_IMPLICIT, 2=SHOW_FORCED -- 0=HIDE_NONE, 1=HIDE_IMPLICIT_ONLY
+#define jCall_toggleSoftInput(env, inputMethodService, showMode, hideMode) jObjCall((env), (inputMethodService), false, "toggleSoftInput", "(II)V", JvmType_Void, false, showMode)
+
 // android.view.Window Functions (https://developer.android.com/reference/android/view/Window)
 #define jCall_getDecorView(env, window)           jObjCall((env), (window), false, "getDecorView",  "()Landroid/view/View;",                        JvmType_Object, true).objectValue
 #define jCall_getAttributes(env, window)          jObjCall((env), (window), false, "getAttributes", "()Landroid/view/WindowManager$LayoutParams;",  JvmType_Object, true).objectValue
