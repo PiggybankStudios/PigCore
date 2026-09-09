@@ -121,6 +121,7 @@ Description:
 #define TARGET_IS_WEB 0
 #endif
 
+//TODO: Maybe we should check __mips64 or _MIPS_SIM or mips? Or maybe there is something very specific to mips64-elf-gcc toolchain from libdragon?
 #if defined(_MIPS_ARCH_VR4300)
 #define TARGET_IS_N64 1
 #else
@@ -179,7 +180,7 @@ Description:
 #endif
 
 //TODO: Is there a more robust way to determine whether we are compiling 32-bit or 64-bit?
-#if (TARGET_IS_WASM || TARGET_IS_PLAYDATE_DEVICE)
+#if (TARGET_IS_WASM || TARGET_IS_PLAYDATE_DEVICE || TARGET_IS_N64)
 #define TARGET_IS_32BIT 1
 #define TARGET_IS_64BIT 0
 #else

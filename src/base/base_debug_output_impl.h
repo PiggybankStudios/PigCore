@@ -139,6 +139,10 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 				}
 			}
 			#endif
+			#if COMPILER_IS_GCC
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wformat-overflow"
+			#endif
 			MyPrintNoLine("%.*s%.*s%s%s%s%s%s%.*s%s",
 				StrPrint(beginColorStr),
 				StrPrint(threadNameIfNewLine),
@@ -150,6 +154,9 @@ PEXP DEBUG_OUTPUT_HANDLER_DEF(DebugOutputRouter)
 				StrPrint(endColorStr),
 				newLine ? "\n" : ""
 			);
+			#if COMPILER_IS_GCC
+			#pragma GCC diagnostic pop
+			#endif
 			
 			#if TARGET_IS_WINDOWS
 			{

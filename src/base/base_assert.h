@@ -33,6 +33,9 @@ Description:
 #elif TARGET_IS_PLAYDATE
 #define MyBreakMsg(message) pd->system->error(message)
 #define MyBreak()           pd->system->error("MyBreak()")
+#elif TARGET_IS_N64
+#define MyBreakMsg(message) assertf(0, message)
+#define MyBreak()           assert(0 && "Hit MyBreak()")
 #else
 #define MyBreakMsg(message) //nothing
 #define MyBreak() //nothing

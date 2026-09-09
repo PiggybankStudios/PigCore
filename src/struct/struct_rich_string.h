@@ -483,6 +483,7 @@ PEXPI void ApplyRichStyleChange(RichStrStyle* style, RichStrStyleChange styleCha
 		case RichStrStyleChangeType_Color: { u8 oldAlpha = style->color.a; style->color = (styleChange.color.valueU32 != RICH_STYLE_DEFAULT_COLOR_VALUE) ? styleChange.color : defaultColor; style->color.a = oldAlpha; } break;
 		case RichStrStyleChangeType_ColorAndAlpha: style->color = (styleChange.color.valueU32 != RICH_STYLE_DEFAULT_COLOR_VALUE) ? styleChange.color : defaultColor; break;
 		case RichStrStyleChangeType_Alpha: style->color.a = (styleChange.alpha >= 0) ? (u8)RoundR32i(styleChange.alpha * 255) : defaultColor.a; break;
+		default: /* nothing */ break;
 	}
 }
 

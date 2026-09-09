@@ -179,6 +179,13 @@ typedef uint16_t char16_t;
 	#include <EGL/egl.h>
 #endif //TARGET_IS_ANDROID
 
+#if TARGET_IS_N64
+	#include <GL/gl.h>
+	#include <GL/gl_integration.h>
+	#include <libdragon.h>
+	#include <model64.h>
+#endif //TARGET_IS_N64
+
 #if BUILD_WITH_GTK
 	#include <gtk/gtk.h>
 #endif
