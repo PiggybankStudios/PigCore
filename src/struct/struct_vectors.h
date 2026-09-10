@@ -33,6 +33,7 @@ Description:
 #define _STRUCT_VECTORS_H
 
 #include "base/base_defines_check.h"
+#include "base/base_assert.h"
 #include "base/base_typedefs.h"
 #include "base/base_macros.h"
 #include "std/std_includes.h"
