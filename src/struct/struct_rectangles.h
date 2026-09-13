@@ -361,6 +361,10 @@ typedef Obb3D_R64 obb3d;
 	PIG_CORE_INLINE void AlignBoxdToV3d(boxd* boundingBoxOut, v3d alignmentScale);
 	PIG_CORE_INLINE void AlignBoxdTo(boxd* boundingBoxOut, r64 alignmentScale);
 	PIG_CORE_INLINE void AlignBoxd(boxd* boundingBoxOut);
+	PIG_CORE_INLINE rec ExpandRecToV2(rec rectangle, v2 vector);
+	PIG_CORE_INLINE reci ExpandReciToV2i(reci rectangle, v2i vector);
+	PIG_CORE_INLINE box ExpandBoxToV3(box boundingBox, v3 vector);
+	PIG_CORE_INLINE boxi ExpandBoxiToV3i(boxi boundingBox, v3i vector);
 	PIG_CORE_INLINE rec RelativeRec(rec reference, rec subReference, rec other);
 	PIG_CORE_INLINE recd RelativeRecd(recd reference, recd subReference, recd other);
 	PIG_CORE_INLINE box RelativeBox(box reference, box subReference, box other);
@@ -1195,7 +1199,47 @@ PEXPI void AlignBoxdToV3d(boxd* boundingBoxOut, v3d alignmentScale)
 PEXPI void AlignBoxdTo(boxd* boundingBoxOut, r64 alignmentScale) { AlignBoxdToV3d(boundingBoxOut, FillV3d(alignmentScale)); }
 PEXPI void AlignBoxd(boxd* boundingBoxOut) { AlignBoxdToV3d(boundingBoxOut, V3d_One); }
 
-//TODO: ExpandRecToV2/ExpandReciToV2i?
+PEXPI rec ExpandRecToV2(rec rectangle, v2 vector)
+{
+	rec result = rectangle;
+	if (vector.x > result.x + result.width)  { result.width  = vector.x - result.x; }
+	if (vector.y > result.y + result.height) { result.height = vector.y - result.y; }
+	if (vector.x < result.x)  { result.width  += result.x - vector.x; result.x = vector.x; }
+	if (vector.y < result.y)  { result.height += result.y - vector.y; result.y = vector.y; }
+	return result;
+}
+PEXPI reci ExpandReciToV2i(reci rectangle, v2i vector)
+{
+	reci result = rectangle;
+	if (vector.x > result.x + result.width)  { result.width  = vector.x - result.x; }
+	if (vector.y > result.y + result.height) { result.height = vector.y - result.y; }
+	if (vector.x < result.x)  { result.width  += result.x - vector.x; result.x = vector.x; }
+	if (vector.y < result.y)  { result.height += result.y - vector.y; result.y = vector.y; }
+	return result;
+}
+PEXPI box ExpandBoxToV3(box boundingBox, v3 vector)
+{
+	box result = boundingBox;
+	if (vector.x > result.x + result.width)  { result.width  = vector.x - result.x; }
+	if (vector.y > result.y + result.height) { result.height = vector.y - result.y; }
+	if (vector.z > result.z + result.depth)  { result.depth  = vector.z - result.z; }
+	if (vector.x < result.x)  { result.width  += result.x - vector.x; result.x = vector.x; }
+	if (vector.y < result.y)  { result.height += result.y - vector.y; result.y = vector.y; }
+	if (vector.z < result.z)  { result.depth  += result.z - vector.z; result.z = vector.z; }
+	return result;
+}
+PEXPI boxi ExpandBoxiToV3i(boxi boundingBox, v3i vector)
+{
+	boxi result = boundingBox;
+	if (vector.x > result.x + result.width)  { result.width  = vector.x - result.x; }
+	if (vector.y > result.y + result.height) { result.height = vector.y - result.y; }
+	if (vector.z > result.z + result.depth)  { result.depth  = vector.z - result.z; }
+	if (vector.x < result.x)  { result.width  += result.x - vector.x; result.x = vector.x; }
+	if (vector.y < result.y)  { result.height += result.y - vector.y; result.y = vector.y; }
+	if (vector.z < result.z)  { result.depth  += result.z - vector.z; result.z = vector.z; }
+	return result;
+}
+
 //TODO: IsInsideBox/IsInsideObb2/IsRecInsideRec?
 //TODO: ?
 //TODO: GetObb2AlignedBounds?
