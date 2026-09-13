@@ -57,6 +57,9 @@ Description:
 #if BUILD_WITH_BOX2D
 #include "third_party/box2d/box2d.h"
 #endif
+#if BUILD_WITH_BOX3D
+#include "third_party/box3d/include/box3d/box3d.h"
+#endif
 #if BUILD_WITH_SDL
 #if COMPILER_IS_EMSCRIPTEN
 #include <SDL/SDL.h>
@@ -123,6 +126,7 @@ void RenderTextShapingTests();
 #include "tests/tests_resources.c"
 #include "tests/tests_parsing.c"
 #include "tests/tests_box2d.c"
+#include "tests/tests_box3d.c"
 #include "tests/tests_sokol.c"
 #include "tests/tests_text_shaping.c"
 #include "tests/tests_raylib.c"

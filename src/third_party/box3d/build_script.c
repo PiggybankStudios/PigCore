@@ -14,6 +14,9 @@ Description:
 
 #include "pig_build.h"
 
+#define BOX3D_LIB_FILENAME  "box3d" LIB_EXT
+#define BOX3D_DLL_FILENAME  "box3d" DLL_EXT
+
 #define BOX3D_SOURCE_FILES {          \
 	"[ROOT]/shared/benchmarks.c",     \
 	"[ROOT]/shared/benchmarks.h",     \
@@ -171,7 +174,7 @@ void BuildObject(Str box3dRootFolder, Str sourcePath, Str objectPath, CliArgs* c
 	bool isObjectiveC = IsObjectiveCExt(sourceFileName);
 	
 	CliArgs args = EMPTY;
-	args.rootDirPath = box3dRootFolder;
+	args.rootDirPath = ResolveRootTo(box3dRootFolder, StrLit(".."));
 	AddTaggedArg(&args, T_MSVC_CL, CL_COMPILE);
 	AddTaggedArg(&args, T_CLANG,   CLANG_COMPILE);
 	AddTaggedArgStr(&args, T_MSVC_CL, CL_OBJ_FILE, objectPath);
@@ -199,8 +202,8 @@ void BuildBox3D(bool debugBuild, Str box3dRootFolder)
 	#endif
 	const char* sourcePathsNt[] = BOX3D_SOURCE_FILES;
 	// const char* includePathsNt[] = BOX3D_INCLUDE_FILES;
-	Str box3dDllPath = StrLit("box3d" DLL_EXT);
-	Str box3dLibPath = StrLit("box3d" LIB_EXT);
+	Str box3dDllPath = StrLit(BOX3D_DLL_FILENAME);
+	Str box3dLibPath = StrLit(BOX3D_LIB_FILENAME);
 	IF_WINDOWS(Str box3dPdbPath = StrLit("box3d.pdb"));
 	
 	CliArgs compilerFlags = EMPTY;

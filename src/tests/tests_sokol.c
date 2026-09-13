@@ -759,6 +759,9 @@ void AppInit(void)
 	#if BUILD_WITH_BOX2D
 	InitBox2DTest();
 	#endif
+	#if BUILD_WITH_BOX3D
+	InitBox3DTest();
+	#endif
 	
 	#if BUILD_WITH_PHYSX
 	FlagSet(stdHeap->flags, ArenaFlag_AllowFreeWithoutSize);
@@ -1009,6 +1012,10 @@ bool AppFrame(void)
 	UpdateBox2DTest();
 	#endif
 	
+	#if BUILD_WITH_BOX3D
+	UpdateBox3DTest(&mouse, cameraPos);
+	#endif
+	
 	#if BUILD_WITH_PHYSX
 	UpdatePhysicsWorld(physWorld, 16.6f);
 	if (IsKeyboardKeyDown(&keyboard, nullptr, Key_R)) { CreatePhysicsTest(physWorld); }
@@ -1058,6 +1065,10 @@ bool AppFrame(void)
 			BindTexture(&gfx.pixelTexture);
 			DrawBox(MakeBox(3, 0.5f, 0, 1, 1, 1), MonokaiPurple);
 			DrawSphere(MakeSphere(2.5f, 0, 0.8f, 1.0f), MonokaiGreen);
+			
+			#if BUILD_WITH_BOX3D
+			RenderBox3DTest();
+			#endif
 			
 			#if BUILD_WITH_PHYSX
 			VarArrayLoop(&physWorld->bodies, bIndex)

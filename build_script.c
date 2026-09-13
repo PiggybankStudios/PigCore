@@ -126,7 +126,7 @@ bool GetBoolConfig(const char* defineName, Str buildConfigContents, int argc, ch
 int main(int argc, char* argv[])
 {
 	PigBuildDebugMode = false;
-	RecompileIfNeeded(StrArray_Empty);
+	RecompileIfNeeded(MakeStrArrayVa("../src/third_party/box3d/build_script.c"));
 	PrintLine("[" BUILD_SCRIPT_EXE_NAME "...]");
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
@@ -175,6 +175,7 @@ int main(int argc, char* argv[])
 	bool BUILD_PLAYDATE_SIMULATOR          = GetBoolConfig("BUILD_PLAYDATE_SIMULATOR",          buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WITH_RAYLIB                 = GetBoolConfig("BUILD_WITH_RAYLIB",                 buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WITH_BOX2D                  = GetBoolConfig("BUILD_WITH_BOX2D",                  buildConfigContents, argc, argv, &buildConfigTags);
+	bool BUILD_WITH_BOX3D                  = GetBoolConfig("BUILD_WITH_BOX3D",                  buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WITH_SOKOL_GFX              = GetBoolConfig("BUILD_WITH_SOKOL_GFX",              buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WITH_SOKOL_APP              = GetBoolConfig("BUILD_WITH_SOKOL_APP",              buildConfigContents, argc, argv, &buildConfigTags);
 	bool BUILD_WITH_SDL                    = GetBoolConfig("BUILD_WITH_SDL",                    buildConfigContents, argc, argv, &buildConfigTags);
@@ -478,6 +479,17 @@ int main(int argc, char* argv[])
 		
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
 	}
+	
+	// +--------------------------------------------------------------+
+	// |                         Build Box3D                          |
+	// +--------------------------------------------------------------+
+	if (BUILD_WITH_BOX3D && (!DoesFileExist(StrLit(BOX3D_DLL_FILENAME)) || !DoesFileExist(StrLit(BOX3D_LIB_FILENAME))))
+	{
+		BuildBox3D(DEBUG_BUILD, StrLit("[ROOT]/src/third_party/box3d"));
+		AssertFileExist(StrLit(BOX3D_DLL_FILENAME), true);
+		AssertFileExist(StrLit(BOX3D_LIB_FILENAME), true);
+	}
+	AddTaggedArgNt(&thingsToLink, "BUILD_WITH_BOX3D", CLI_QUOTED_ARG, BOX3D_LIB_FILENAME);
 	
 	// +--------------------------------------------------------------+
 	// |                       Embed Resources                        |
