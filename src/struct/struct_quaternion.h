@@ -296,7 +296,7 @@ PEXPI r32 LengthQuat(quat quaternion)
 
 PEXPI quat NormalizeQuat(quat quaternion)
 {
-	return  ShrinkQuat(quaternion, LengthQuat(quaternion));
+	return ShrinkQuat(quaternion, LengthQuat(quaternion));
 }
 
 PEXPI quat MixQuat(quat left, float mixLeft, quat right, float mixRight) {

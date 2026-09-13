@@ -10,10 +10,17 @@ Date:   01\15\2025
 //TODO: Should we add functions for quatd? Maybe once we have 64-bit matrices?
 
 #if !PIG_CORE_IMPLEMENTATION
+	PIG_CORE_INLINE mat4 ToMat4FromQuat(quat quaternion);
+	quat QuatFromForwardAndUp_RH(v3 forwardVec, v3 upVec);
 	quat QuatFromMat3(mat3 matrix3);
 #endif
 
+//TODO: Replace this! We no longer have HandmadeMath.h!
 #define ToQuatFromMat4(matrix4) HMM_M4ToQ_LH(matrix4)
+
+//TODO: Check if we need to do anything else based on handedness?
+#define QuatFromForwardAndUp_LH(forwardVec, upVec) QuatFromForwardAndUp_RH((upVec), (forwardVec))
+#define QuatFromForwardAndUp(forwardVec, upVec) QuatFromForwardAndUp_LH((forwardVec), (upVec))
 
 #if PIG_CORE_IMPLEMENTATION
 
@@ -55,6 +62,51 @@ PEXPI mat4 ToMat4FromQuat(quat quaternion)
 	return result;
 }
 
+//NOTE: The two vectors passed in should be normalized an perpendicular to each other!
+PEXP quat QuatFromForwardAndUp_RH(v3 forwardVec, v3 upVec)
+{
+	v3 rightVec = CrossV3(forwardVec, upVec);
+	mat3 rotationMat = MakeMat3_Const(
+		rightVec.x, upVec.x, forwardVec.x,
+		rightVec.y, upVec.y, forwardVec.y,
+		rightVec.z, upVec.z, forwardVec.z
+	);
+	r32 trace = rotationMat.r0c0 + rotationMat.r1c1 + rotationMat.r2c2;
+	quat result;
+	if (trace > 0.0f)
+	{
+		r32 sqrtValue = SqrtR32(trace + 1.0f) * 2.0f; //s = 4*qw
+		result.w = 0.25f * sqrtValue;
+		result.x = (rotationMat.r2c1 - rotationMat.r1c2) / sqrtValue;
+		result.y = (rotationMat.r0c2 - rotationMat.r2c0) / sqrtValue;
+		result.z = (rotationMat.r1c0 - rotationMat.r0c1) / sqrtValue;
+	}
+	else if (rotationMat.r0c0 > rotationMat.r1c1 && rotationMat.r0c0 > rotationMat.r2c2)
+	{
+		r32 sqrtValue = SqrtR32(1.0f + rotationMat.r0c0 - rotationMat.r1c1 - rotationMat.r2c2) * 2.0f; //s = 4*qx
+		result.w = (rotationMat.r2c1 - rotationMat.r1c2) / sqrtValue;
+		result.x = 0.25f * sqrtValue;
+		result.y = (rotationMat.r0c1 - rotationMat.r1c0) / sqrtValue;
+		result.z = (rotationMat.r0c2 - rotationMat.r2c0) / sqrtValue;
+	}
+	else if (rotationMat.r1c1 > rotationMat.r2c2)
+	{
+		r32 sqrtValue = SqrtR32(1.0f + rotationMat.r1c1 - rotationMat.r0c0 - rotationMat.r2c2) * 2.0f; //s = 4*qy
+		result.w = (rotationMat.r0c2 - rotationMat.r2c0) / sqrtValue;
+		result.x = (rotationMat.r0c1 - rotationMat.r1c0) / sqrtValue;
+		result.y = 0.25f * sqrtValue;
+		result.z = (rotationMat.r1c2 - rotationMat.r2c1) / sqrtValue;
+	}
+	else
+	{
+		r32 sqrtValue = SqrtR32(1.0f + rotationMat.r2c2 - rotationMat.r0c0 - rotationMat.r1c1) * 2.0f; //s = 4*qz
+		result.w = (rotationMat.r1c0 - rotationMat.r0c1) / sqrtValue;
+		result.x = (rotationMat.r0c2 - rotationMat.r2c0) / sqrtValue;
+		result.y = (rotationMat.r1c2 - rotationMat.r2c1) / sqrtValue;
+		result.z = 0.25f * sqrtValue;
+	}
+	return NormalizeQuat(result);
+}
 
 PEXP quat QuatFromMat3(mat3 matrix3)
 {

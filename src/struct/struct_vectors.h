@@ -564,6 +564,8 @@ plex Vec4R64Slice
 	PIG_CORE_INLINE r64 AngleBetweenV3d(v3d left, v3d right);
 	PIG_CORE_INLINE v3 Vec3From2Angles(r32 facingDirection, r32 rotationUpDown, r32 radius);
 	PIG_CORE_INLINE v3d Vec3dFrom2Angles(r64 facingDirection, r64 rotationUpDown, r64 radius);
+	bool IsInsideTriangleV2(v2 p0, v2 p1, v2 p2, v2 queryPos);
+	r32 DistanceToTriangleEdgeV2(v2 p0, v2 p1, v2 p2, v2 queryPos);
 	PIG_CORE_INLINE void AlignV2ToV2(v2* vectorOut, v2 alignmentScale);
 	PIG_CORE_INLINE void AlignV2To(v2* vectorOut, r32 alignmentScale);
 	PIG_CORE_INLINE void AlignV2(v2* vectorOut);
@@ -1310,6 +1312,63 @@ PEXPI v3d Vec3dFrom2Angles(r64 facingDirection, r64 rotationUpDown, r64 radius)
 		SinR64(facingDirection) * circleRadius,
 		SinR64(rotationUpDown)
 	);
+}
+
+//TODO: This should probably find a better home. I didn't want to put it in misc_triangulation.h because it doesn't need memory management
+PEXP bool IsInsideTriangleV2(v2 p0, v2 p1, v2 p2, v2 queryPos)
+{
+	if (p0.x == p1.x && queryPos.x == p0.x && queryPos.y >= MinR32(p0.y, p1.y) && queryPos.y <= MaxR32(p0.y, p1.y)) { return true; }
+	if (p1.x == p2.x && queryPos.x == p1.x && queryPos.y >= MinR32(p1.y, p2.y) && queryPos.y <= MaxR32(p1.y, p2.y)) { return true; }
+	if (p2.x == p0.x && queryPos.x == p2.x && queryPos.y >= MinR32(p2.y, p0.y) && queryPos.y <= MaxR32(p2.y, p0.y)) { return true; }
+	if (p0.y == p1.y && queryPos.y == p0.y && queryPos.x >= MinR32(p0.x, p1.x) && queryPos.x <= MaxR32(p0.x, p1.x)) { return true; }
+	if (p1.y == p2.y && queryPos.y == p1.y && queryPos.x >= MinR32(p1.x, p2.x) && queryPos.x <= MaxR32(p1.x, p2.x)) { return true; }
+	if (p2.y == p0.y && queryPos.y == p2.y && queryPos.x >= MinR32(p2.x, p0.x) && queryPos.x <= MaxR32(p2.x, p0.x)) { return true; }
+	v2 perp0 = PerpRightV2(SubV2(p1, p0));
+	v2 perp1 = PerpRightV2(SubV2(p2, p1));
+	v2 perp2 = PerpRightV2(SubV2(p0, p2));
+	return (
+		SignOfR32(DotV2(SubV2(p2, p0), perp0)) == SignOfR32(DotV2(SubV2(queryPos, p0), perp0)) &&
+		SignOfR32(DotV2(SubV2(p0, p1), perp1)) == SignOfR32(DotV2(SubV2(queryPos, p1), perp1)) &&
+		SignOfR32(DotV2(SubV2(p1, p2), perp2)) == SignOfR32(DotV2(SubV2(queryPos, p2), perp2))
+	);
+}
+PEXP r32 DistanceToTriangleEdgeV2(v2 p0, v2 p1, v2 p2, v2 queryPos)
+{
+	if (p0.x == p1.x && queryPos.x == p0.x && queryPos.y >= MinR32(p0.y, p1.y) && queryPos.y <= MaxR32(p0.y, p1.y)) { return 0.0f; }
+	if (p1.x == p2.x && queryPos.x == p1.x && queryPos.y >= MinR32(p1.y, p2.y) && queryPos.y <= MaxR32(p1.y, p2.y)) { return 0.0f; }
+	if (p2.x == p0.x && queryPos.x == p2.x && queryPos.y >= MinR32(p2.y, p0.y) && queryPos.y <= MaxR32(p2.y, p0.y)) { return 0.0f; }
+	if (p0.y == p1.y && queryPos.y == p0.y && queryPos.x >= MinR32(p0.x, p1.x) && queryPos.x <= MaxR32(p0.x, p1.x)) { return 0.0f; }
+	if (p1.y == p2.y && queryPos.y == p1.y && queryPos.x >= MinR32(p1.x, p2.x) && queryPos.x <= MaxR32(p1.x, p2.x)) { return 0.0f; }
+	if (p2.y == p0.y && queryPos.y == p2.y && queryPos.x >= MinR32(p2.x, p0.x) && queryPos.x <= MaxR32(p2.x, p0.x)) { return 0.0f; }
+	v2 edgeNorm01 = NormalizeV2(SubV2(p1, p0));
+	v2 edgeNorm12 = NormalizeV2(SubV2(p2, p1));
+	v2 edgeNorm20 = NormalizeV2(SubV2(p0, p2));
+	v2 perp01 = PerpRightV2(edgeNorm01);
+	v2 perp12 = PerpRightV2(edgeNorm12);
+	v2 perp20 = PerpRightV2(edgeNorm20);
+	r32 dot0 = -DotV2(edgeNorm20, perp01);
+	r32 dot1 = -DotV2(edgeNorm01, perp12);
+	r32 dot2 = -DotV2(edgeNorm12, perp20);
+	r32 queryDot0 = DotV2(SubV2(queryPos, p0), perp01);
+	r32 queryDot1 = DotV2(SubV2(queryPos, p1), perp12);
+	r32 queryDot2 = DotV2(SubV2(queryPos, p2), perp20);
+	bool insideEdge0 = (SignOfR32(dot0) == SignOfR32(queryDot0));
+	bool insideEdge1 = (SignOfR32(dot1) == SignOfR32(queryDot1));
+	bool insideEdge2 = (SignOfR32(dot2) == SignOfR32(queryDot2));
+	if (insideEdge0 && insideEdge1 && insideEdge2)
+	{
+		return 0.0f;
+	}
+	else
+	{
+		if (!insideEdge0 && !insideEdge1) { return LengthV2(SubV2(queryPos, p1)); }
+		else if (!insideEdge1 && !insideEdge2) { return LengthV2(SubV2(queryPos, p2)); }
+		else if (!insideEdge2 && !insideEdge0) { return LengthV2(SubV2(queryPos, p0)); }
+		else if (!insideEdge0) { return AbsR32(queryDot0); }
+		else if (!insideEdge1) { return AbsR32(queryDot1); }
+		else if (!insideEdge2) { return AbsR32(queryDot2); }
+		else { return 0.0f; } //Really we shouldn't reach this
+	}
 }
 
 // +--------------------------------------------------------------+
