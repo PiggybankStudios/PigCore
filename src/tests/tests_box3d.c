@@ -18,9 +18,7 @@ void SpawnBox3D(r32 x, r32 y, r32 z, r32 width, r32 height, r32 depth)
 {
 	b3BodyDef bodyDef = b3DefaultBodyDef();
 	bodyDef.type = b3_dynamicBody;
-	bodyDef.position.x = x;
-	bodyDef.position.y = y;
-	bodyDef.position.z = z;
+	bodyDef.position = MakeB3Vec3(x, y, z);
 	b3BodyId bodyId = b3CreateBody(physWorld3D, &bodyDef);
 
 	b3ShapeDef shapeDef = b3DefaultShapeDef();
@@ -55,9 +53,9 @@ void InitBox3DTest()
 		b3CreateHullShape(groundId, &shapeDef, &boxHull.base);
 	}
 	
-	SpawnBox3D(0,10.0f,0, 0.3f,0.4f,0.3f);
-	SpawnBox3D(0,11.5f,0, 0.2f,0.3f,0.2f);
-	SpawnBox3D(0,13.0f,0, 0.3f,0.3f,0.5f);
+	SpawnBox3D(2,10.0f,1, 0.3f,0.4f,0.3f);
+	SpawnBox3D(2,11.5f,1, 0.2f,0.3f,0.2f);
+	SpawnBox3D(2,13.0f,1, 0.3f,0.3f,0.5f);
 	
 	#if BUILD_WITH_SOKOL_GFX
 	InitSokolBox3DRender();

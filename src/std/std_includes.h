@@ -190,4 +190,12 @@ typedef uint16_t char16_t;
 	#include <gtk/gtk.h>
 #endif
 
+#if BUILD_WITH_BOX2D
+	#include "third_party/box2d/box2d.h"
+#endif
+
+#if BUILD_WITH_BOX3D
+	#include "third_party/box3d/include/box3d/box3d.h"
+#endif
+
 #endif //  _STD_INCLUDES_H

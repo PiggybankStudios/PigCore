@@ -1574,3 +1574,11 @@ PEXPI bool AreEqual(v4d left, v4d right) { return AreEqualV4d(left, right); }
 #if defined(_STRUCT_VECTORS_H) && defined(RAYLIB_H)
 #include "cross/cross_vectors_and_raylib.h"
 #endif
+
+#if defined(_STRUCT_VECTORS_H) && BUILD_WITH_BOX3D
+#include "cross/cross_vectors_and_box3d.h"
+#endif
+
+#if defined(_STRUCT_VECTORS_H) && defined(_STRUCT_QUATERNION_H) && BUILD_WITH_BOX3D
+#include "cross/cross_vectors_quaternion_and_box3d.h"
+#endif

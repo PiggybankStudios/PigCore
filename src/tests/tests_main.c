@@ -54,12 +54,6 @@ Description:
 #include "cross/cross_matrices_and_raylib.h"
 #include "cross/cross_color_and_raylib.h"
 #endif
-#if BUILD_WITH_BOX2D
-#include "third_party/box2d/box2d.h"
-#endif
-#if BUILD_WITH_BOX3D
-#include "third_party/box3d/include/box3d/box3d.h"
-#endif
 #if BUILD_WITH_SDL
 #if COMPILER_IS_EMSCRIPTEN
 #include <SDL/SDL.h>

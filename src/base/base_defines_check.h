@@ -149,6 +149,14 @@ Description:
 #define BUILD_WITH_PIG_UI 0
 #endif
 
+#ifndef BUILD_WITH_BOX2D
+#define BUILD_WITH_BOX2D 0
+#endif
+
+#ifndef BUILD_WITH_BOX3D
+#define BUILD_WITH_BOX3D 0
+#endif
+
 // +--------------------------------------------------------------+
 // |                       Check Conflicts                        |
 // +--------------------------------------------------------------+

@@ -31,9 +31,7 @@ void* DebugBox3d_Sokol_CreateDebugShapeCallback(const b3DebugShape* debugShape, 
 	Box3DShape* result = AllocType(Box3DShape, (Arena*)userContext);
 	ClearPointer(result);
 	result->vertBuffer = &cube3DBuffer;
-	result->scale.x = (debugShape->hull->aabb.upperBound.x - debugShape->hull->aabb.lowerBound.x);
-	result->scale.y = (debugShape->hull->aabb.upperBound.y - debugShape->hull->aabb.lowerBound.y);
-	result->scale.z = (debugShape->hull->aabb.upperBound.z - debugShape->hull->aabb.lowerBound.z);
+	result->scale = SubV3(ToV3FromB3Vec3(debugShape->hull->aabb.upperBound), ToV3FromB3Vec3(debugShape->hull->aabb.lowerBound));
 	return result;
 }
 void DebugBox3d_Sokol_DestroyDebugShapeCallback(void* userShape, void* userContext)
@@ -66,9 +64,14 @@ bool DebugBox3d_Sokol_DrawShape(void* userShape, b3WorldTransform transform, b3H
 		// 	shape->scale.x, shape->scale.y, shape->scale.z,
 		// 	transform.p.x, transform.p.y, transform.p.z
 		// );
-		obb3 box = MakeObb3_Const(
-			transform.p.x, transform.p.y, transform.p.z,
-			shape->scale.x, shape->scale.y, shape->scale.z,
+		b3Transform test1 = MakeB3Transform_Const(1, 2, 3, 0, 0, 0, 1);
+		v3 test3 = MakeV3_Const(1,2,3);
+		quat test4 = Quat_Identity_Const;
+		b3Transform test2 = MakeB3TransformV_Const(test3, test4);
+		
+		obb3 box = MakeObb3V_Const(
+			MakeV3FromB3Vec3_Const(transform.p),
+			MakeV3FromB3Vec3_Const(shape->scale),
 			MakeQuat_Const(transform.q.v.x, transform.q.v.y, transform.q.v.z, transform.q.s)
 		);
 		DrawObb3D(box, MakeColorU32(color | 0xFF000000));
@@ -81,9 +84,9 @@ void DebugBox3d_Sokol_DrawBox(b3Vec3 extents, b3WorldTransform transform, b3HexC
 {
 	UNUSED(context);
 	PrintLine_D("Drawing box at (%g, %g, %g)", transform.p.x, transform.p.y, transform.p.z);
-	obb3 box = MakeObb3_Const(
-		transform.p.x, transform.p.y, transform.p.z,
-		extents.x, extents.y, extents.z,
+	obb3 box = MakeObb3V_Const(
+		MakeV3FromB3Vec3_Const(transform.p),
+		MakeV3FromB3Vec3_Const(extents),
 		MakeQuat_Const(transform.q.v.x, transform.q.v.y, transform.q.v.z, transform.q.s)
 	);
 	DrawObb3D(box, MakeColorU32(color | 0xFF000000));
