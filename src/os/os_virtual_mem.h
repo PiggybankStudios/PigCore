@@ -114,7 +114,7 @@ PEXP void* OsReserveMemory(uxx numBytes)
 		result = mmap(
 			nullptr, //addr
 			numBytes, //length
-			PROT_READ|PROT_WRITE, //prot
+			PROT_NONE, //prot (we don't do PROT_READ|PROT_WRITE here, that would cause the memory to be counted as "used" on some OSes)
 			MAP_ANONYMOUS | MAP_PRIVATE, //flags
 			-1, //fd,
 			0 //offset
