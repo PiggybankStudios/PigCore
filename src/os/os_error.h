@@ -50,6 +50,20 @@ PEXP const char* Win32_GetErrorCodeStr(DWORD windowsErrorCode)
 		case ERROR_PIPE_BUSY:            return "ERROR_PIPE_BUSY";            //231
 		case ERROR_DIRECTORY:            return "ERROR_DIRECTORY";            //267
 		case ERROR_CLASS_ALREADY_EXISTS: return "ERROR_CLASS_ALREADY_EXISTS"; //1410
+		case WSAEACCES:                  return "WSAEACCES";                  //10013
+		case WSAEINVAL:                  return "WSAEINVAL";                  //10022
+		case WSAENOTSOCK:                return "WSAENOTSOCK";                //10038
+		case WSAEAFNOSUPPORT:            return "WSAEAFNOSUPPORT";            //10047
+		case WSAEADDRINUSE:              return "WSAEADDRINUSE";              //10048
+		case WSAEADDRNOTAVAIL:           return "WSAEADDRNOTAVAIL";           //10049
+		case WSAENETDOWN:                return "WSAENETDOWN";                //10050
+		case WSAENETUNREACH:             return "WSAENETUNREACH";             //10051
+		case WSAECONNABORTED:            return "WSAECONNABORTED";            //10053
+		case WSAECONNRESET:              return "WSAECONNRESET";              //10054
+		case WSAETIMEDOUT:               return "WSAETIMEDOUT";               //10060
+		case WSAECONNREFUSED:            return "WSAECONNREFUSED";            //10061
+		case WSAEHOSTUNREACH:            return "WSAEHOSTUNREACH";            //10065
+		case WSANOTINITIALISED:          return "WSANOTINITIALISED";          //10093
 		// default: return (printUnknownValue ? TempPrint("(0x%08X)", windowsErrorCode) : UNKNOWN_STR); //TODO: Add this option back in once we have PrintInArena function!
 		default: return UNKNOWN_STR;
 	}
