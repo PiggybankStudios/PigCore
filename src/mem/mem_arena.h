@@ -632,7 +632,7 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 			{
 				if (arena->used + alignedNumBytes <= arena->size)
 				{
-					result = (void*)((u8*)arena->mainPntr + arena->used);
+					result = (void*)((u8*)arena->mainPntr + arena->used + alignmentBytesNeeded);
 					arena->used += alignedNumBytes;
 					IncrementUXX(arena->allocCount);
 				}
@@ -672,7 +672,7 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 					arena->committed += (numNewPagesNeeded * osMemPageSize);
 				}
 				
-				result = (void*)((u8*)arena->mainPntr + arena->used);
+				result = (void*)((u8*)arena->mainPntr + arena->used + alignmentBytesNeeded);
 				arena->used += alignedNumBytes;
 				IncrementUXX(arena->allocCount);
 			}
@@ -704,7 +704,7 @@ NODISCARD PEXP void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOv
 					arena->committed += numNewBytesNeeded;
 				}
 				
-				result = (void*)((u8*)arena->mainPntr + arena->used);
+				result = (void*)((u8*)arena->mainPntr + arena->used + alignmentBytesNeeded);
 				arena->used += alignedNumBytes;
 				IncrementUXX(arena->allocCount);
 			}
